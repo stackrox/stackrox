@@ -10,11 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var log = logging.LoggerForModule()
@@ -40,7 +40,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		log.Warn(fmt.Sprintf("token validation failed: %s", err.Error()))
+		log.Warnf("token validation failed: %s", err.Error())
 		return nil, errors.New("token validation failed")
 	}
 
@@ -90,7 +90,7 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 		return nil, errors.Wrap(err, "failed to read roles")
 	}
 	if len(resolvedRoles) == 0 {
-		return nil, utils.Should(errors.New("none of the roles referenced by the token were found"))
+		return nil, errorhelpers.GenericNoValidRole()
 	}
 
 	var email string
@@ -133,6 +133,9 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	resolvedRoles, err := roleMapper.FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
+	}
+	if len(resolvedRoles) == 0 {
+		return nil, errorhelpers.GenericNoValidRole()
 	}
 	if err := authProvider.MarkAsActive(); err != nil {
 		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())

@@ -4,24 +4,30 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 type identityContextKey struct{}
 type identityErrorContextKey struct{}
 
-// IdentityFromContext retrieves the identity from the context, if any.
-func IdentityFromContext(ctx context.Context) (Identity, error) {
+// IdentityFromContextOrError retrieves the identity from the context or returns error otherwise.
+func IdentityFromContextOrError(ctx context.Context) (Identity, error) {
 	id, _ := ctx.Value(identityContextKey{}).(Identity)
 	err, _ := ctx.Value(identityErrorContextKey{}).(error)
-	if id == nil && err == nil {
+	switch {
+	case err != nil:
+		return nil, errorhelpers.NewErrNoCredentials(err.Error())
+	case id == nil && err == nil:
 		return nil, errorhelpers.ErrNoCredentials
+	default:
+		return id, nil
 	}
-	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrNoCredentials, err.Error())
-	}
-	return id, nil
+}
+
+// IdentityFromContextOrNil retrieves the identity from the context, if any.
+func IdentityFromContextOrNil(ctx context.Context) Identity {
+	id, _ := ctx.Value(identityContextKey{}).(Identity)
+	return id
 }
 
 // ContextWithIdentity adds the given identity to the context. It is to be used only for testing --

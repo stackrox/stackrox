@@ -10,7 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var log = logging.LoggerForModule()
 
 // Extractor is the identity extractor for the basic auth identity.
 type Extractor struct {
@@ -48,6 +51,7 @@ func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	username, password, err := parseBasicAuthToken(basicAuthToken)
 	if err != nil {
+		log.Warnf("failed to parse basic auth token: %s", err.Error())
 		return nil, err
 	}
 

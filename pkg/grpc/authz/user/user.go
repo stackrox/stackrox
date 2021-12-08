@@ -30,12 +30,9 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	}
 
 	// Pull the identity from the context.
-	id, err := authn.IdentityFromContext(ctx)
+	id, err := authn.IdentityFromContextOrError(ctx)
 	if err != nil {
 		return err
-	}
-	if len(id.Roles()) == 0 {
-		return errorhelpers.GenericNoValidRole()
 	}
 
 	// If sac scope checker is configured, skip role check.

@@ -31,7 +31,8 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 
 	cert, err := parseToken(token, e.maxLeeway)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse service cert token")
+		log.Warnf("could not parse service cert token: %s", err.Error())
+		return nil, errors.New("could not parse service cert token")
 	}
 
 	verifiedChains, err := cert.Verify(e.verifyOpts)
@@ -51,7 +52,7 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	if e.validator != nil {
 		if err := e.validator.ValidateClientCertificate(ctx, chain[0]); err != nil {
 			log.Errorf("Validating client certificate from service cert token: %v", err)
-			return nil, err
+			return nil, errors.New("Validating client certificate from service cert token")
 		}
 	}
 

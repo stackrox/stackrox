@@ -346,7 +346,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 		return s.predicateBasedDryRunPolicy(ctx, c, request)
 	}
 
-	identity, err := authn.IdentityFromContext(ctx)
+	identity, err := authn.IdentityFromContextOrError(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
@@ -707,7 +707,7 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 		return errors.New("Invalid job.")
 	}
 
-	id, err := authn.IdentityFromContext(ctx)
+	id, err := authn.IdentityFromContextOrError(ctx)
 	if err != nil {
 		return status.Error(codes.Unauthenticated, err.Error())
 	}

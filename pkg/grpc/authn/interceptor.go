@@ -29,10 +29,10 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 		// Ignore id value if error is not nil.
 		return context.WithValue(ctx, identityErrorContextKey{}, err), nil
 	}
-	if id == nil {
-		return ctx, nil
+	if id != nil {
+		return context.WithValue(ctx, identityContextKey{}, id), nil
 	}
-	return context.WithValue(ctx, identityContextKey{}, id), nil
+	return ctx, nil
 }
 
 // ContextUpdater returns a context updater for the given identity extractors
