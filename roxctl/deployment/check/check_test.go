@@ -486,8 +486,8 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 
 func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
 	standardizedFormat bool) {
+	const colorTestPrefix = "color_"
 	for name, c := range cases {
-		const colorTestPrefix = "color_"
 		d.Run(name, func() {
 			deployCheckCmd, out, closeF := d.createDeployCheckCmd(c, printer, standardizedFormat)
 			defer closeF()

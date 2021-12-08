@@ -56,6 +56,10 @@ type colorWriter struct {
 	out             io.Writer
 }
 
-func (w colorWriter) Write(p []byte) (n int, err error) {
-	return w.out.Write([]byte(w.colorfulPrinter.ColorWords(string(p))))
+func (w colorWriter) Write(p []byte) (int, error) {
+	n, err := w.out.Write([]byte(w.colorfulPrinter.ColorWords(string(p))))
+	if err != nil {
+		return n, err
+	}
+	return len(p), nil
 }
