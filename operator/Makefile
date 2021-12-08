@@ -229,7 +229,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: validate
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
-validate:
+validate: install
 	./tests/scripts/validate-crs.sh ./tests $(CRDS)
 
 test-e2e: build install validate kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
