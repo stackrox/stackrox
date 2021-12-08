@@ -6,6 +6,7 @@ import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMess
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { useFormik } from 'formik';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
+import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 
 export type ApproveDeferralFormValues = {
     comment: string;
@@ -13,9 +14,7 @@ export type ApproveDeferralFormValues = {
 
 export type ApproveDeferralModalProps = {
     isOpen: boolean;
-    numRequestsToBeAssessed: number;
-    numImpactedDeployments: number;
-    numImpactedImages: number;
+    vulnerabilityRequests: VulnerabilityRequest[];
     onSendRequest: (values: ApproveDeferralFormValues) => Promise<FormResponseMessage>;
     onCompleteRequest: () => void;
     onCancel: () => void;
@@ -27,9 +26,7 @@ const validationSchema = yup.object().shape({
 
 function ApproveDeferralModal({
     isOpen,
-    numRequestsToBeAssessed,
-    numImpactedDeployments,
-    numImpactedImages,
+    vulnerabilityRequests,
     onSendRequest,
     onCompleteRequest,
     onCancel,
@@ -71,6 +68,14 @@ function ApproveDeferralModal({
         setMessage(null);
         onCancel();
     }
+
+    const numRequestsToBeAssessed = vulnerabilityRequests.length;
+    const numImpactedDeployments = vulnerabilityRequests.reduce((acc, curr) => {
+        return acc + curr.deploymentCount;
+    }, 0);
+    const numImpactedImages = vulnerabilityRequests.reduce((acc, curr) => {
+        return acc + curr.imageCount;
+    }, 0);
 
     const title = `Approve deferrals (${numRequestsToBeAssessed})`;
 

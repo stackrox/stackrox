@@ -17,7 +17,8 @@ import useRiskAcceptance from '../useRiskAcceptance';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import ApprovedFalsePositiveActionsColumn from './ApprovedFalsePositiveActionsColumn';
-import VulnRequestType from '../VulnRequestType';
+import ImpactedEntities from '../ImpactedEntities';
+import RequestedAction from '../RequestedAction';
 
 export type ApprovedFalsePositivesTableProps = {
     rows: VulnerabilityRequest[];
@@ -93,10 +94,9 @@ function ApprovedFalsePositivesTable({
                             }}
                         />
                         <Th>Requested Entity</Th>
-                        <Th>Type</Th>
+                        <Th>Requested Action</Th>
                         <Th>Scope</Th>
                         <Th>Impacted Entities</Th>
-                        <Th>Requested Action</Th>
                         <Th>Apply to</Th>
                         <Th>Comments</Th>
                         <Th>Requestor</Th>
@@ -114,17 +114,23 @@ function ApprovedFalsePositivesTable({
                                     }}
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
-                                <Td dataLabel="Type">
-                                    <VulnRequestType
+                                <Td dataLabel="Requested Action">
+                                    <RequestedAction
                                         targetState={row.targetState}
                                         requestStatus={row.status}
+                                        deferralReq={row.deferralReq}
+                                        updatedDeferralReq={row.updatedDeferralReq}
                                     />
                                 </Td>
                                 <Td dataLabel="Scope">
                                     {row.scope.imageScope ? 'image' : 'global'}
                                 </Td>
-                                <Td dataLabel="Impacted entities">-</Td>
-                                <Td dataLabel="Requested Action">Mark false positive</Td>
+                                <Td dataLabel="Impacted entities">
+                                    <ImpactedEntities
+                                        deploymentCount={row.deploymentCount}
+                                        imageCount={row.imageCount}
+                                    />
+                                </Td>
                                 <Td dataLabel="Apply to">
                                     <VulnerabilityRequestScope scope={row.scope} />
                                 </Td>
