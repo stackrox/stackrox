@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
+const (
 	imageRegistryKey         = "ImageRegistry"
 	collectorRegistryKey     = "CollectorRegistry"
 	collectorImageRemoteKey  = "CollectorImageRemote"
