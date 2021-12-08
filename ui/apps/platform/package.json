@@ -26,7 +26,7 @@
         "cytoscape-node-html-label": "^1.2.2",
         "cytoscape-popper": "^2.0.0",
         "d3-axis": "^1.0.12",
-        "d3-brush": "^2.1.0",
+        "d3-brush": "^3.0.0",
         "d3-scale": "^3.2.3",
         "d3-selection": "^2.0.0",
         "d3-zoom": "^2.0.0",
