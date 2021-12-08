@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -52,7 +53,7 @@ func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	username, password, err := parseBasicAuthToken(basicAuthToken)
 	if err != nil {
 		log.Warnf("failed to parse basic auth token: %s", err.Error())
-		return nil, err
+		return nil, errors.New("failed to parse basic auth token")
 	}
 
 	return e.manager.IdentityForCreds(ctx, username, password, e.authProvider)
