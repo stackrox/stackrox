@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -24,7 +25,7 @@ import (
 )
 
 var (
-	metaValues = map[string]interface{}{
+	metaValues = charts.MetaValues{
 		"Versions": version.Versions{
 			ChartVersion:     "50.0.60-gac5d043be8",
 			CollectorVersion: "1.2.3",

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,7 @@ func TestBundleResourcesComplete(t *testing.T) {
 	for _, ff := range features.Flags {
 		featureFlags[ff.EnvVar()] = ff.Enabled()
 	}
-	metaValues := map[string]interface{}{
+	metaValues := charts.MetaValues{
 		"Versions": version.Versions{
 			ChartVersion:     "1.0.0",
 			MainVersion:      "3.0.49.0",

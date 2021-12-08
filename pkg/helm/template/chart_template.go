@@ -6,6 +6,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"helm.sh/helm/v3/pkg/chart"
@@ -38,7 +39,7 @@ var (
 
 type element struct {
 	name string
-	get  func(vals interface{}) ([]byte, error)
+	get  func(vals map[string]interface{}) ([]byte, error)
 }
 
 // Name returns the name of the element
@@ -78,7 +79,7 @@ func Load(files []*loader.BufferedFile) (*ChartTemplate, error) {
 			if err != nil {
 				return nil, errors.Wrapf(err, "parsing template file %s", file.Name)
 			}
-			elem.get = func(vals interface{}) ([]byte, error) {
+			elem.get = func(vals map[string]interface{}) ([]byte, error) {
 				var keepEmpty bool
 				keepEmptyFuncMap := template.FuncMap{
 					"helmTplKeepEmptyFile": func() string {
@@ -98,7 +99,7 @@ func Load(files []*loader.BufferedFile) (*ChartTemplate, error) {
 			}
 		} else {
 			stringutils.ConsumeSuffix(&elem.name, NoTemplateFileSuffix)
-			elem.get = func(interface{}) ([]byte, error) {
+			elem.get = func(map[string]interface{}) ([]byte, error) {
 				return data, nil
 			}
 		}
@@ -115,10 +116,11 @@ func Load(files []*loader.BufferedFile) (*ChartTemplate, error) {
 // a set of raw files, which can be loaded as a Helm template. Note that the resulting set of
 // files might even contain a `.helmignore` file, in order to apply it before loading the
 // instantiated chart, use `helmutil.LoadChart` instead of `loader.LoadFiles`.
-func (t *ChartTemplate) InstantiateRaw(metaVals interface{}) ([]*loader.BufferedFile, error) {
+func (t *ChartTemplate) InstantiateRaw(metaVals charts.MetaValues) ([]*loader.BufferedFile, error) {
+	metaValsRaw := metaVals.ToRaw()
 	files := make([]*loader.BufferedFile, 0, len(t.elements))
 	for _, elem := range t.elements {
-		data, err := elem.get(metaVals)
+		data, err := elem.get(metaValsRaw)
 		if err != nil {
 			return nil, errors.Wrapf(err, "instantiating file %s", elem.name)
 		}
@@ -140,7 +142,7 @@ func (t *ChartTemplate) InstantiateRaw(metaVals interface{}) ([]*loader.Buffered
 // InstantiateAndLoad instantiates a chart template using the given meta-values, and loads
 // the resulting Helm chart. It is a convenience method, combining `InstantiateRaw` and
 // `helmutil.LoadChart`.
-func (t *ChartTemplate) InstantiateAndLoad(metaVals interface{}) (*chart.Chart, error) {
+func (t *ChartTemplate) InstantiateAndLoad(metaVals charts.MetaValues) (*chart.Chart, error) {
 	instantiatedFiles, err := t.InstantiateRaw(metaVals)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating chart template files")
