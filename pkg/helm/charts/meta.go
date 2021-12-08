@@ -1,6 +1,8 @@
 package charts
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
@@ -23,10 +25,12 @@ type ImagePullSecrets struct {
 // DefaultMetaValues are the default meta values for rendering the StackRox charts in production.
 func DefaultMetaValues() MetaValues {
 	metaValues := map[string]interface{}{
-		"Versions":          version.GetAllVersions(),
-		"MainRegistry":      defaults.MainImageRegistry(),
-		"CollectorRegistry": defaults.CollectorImageRegistry(),
-		"RenderMode":        "",
+		"Versions":              version.GetAllVersions(),
+		"MainRegistry":          defaults.MainImageRegistry(),
+		"CollectorRegistry":     defaults.CollectorImageRegistry(),
+		"CollectorFullImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
+		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
+		"RenderMode":            "",
 		"ChartRepo": ChartRepo{
 			URL: "https://charts.stackrox.io",
 		},
@@ -46,10 +50,12 @@ func DefaultMetaValues() MetaValues {
 // RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
 func RHACSMetaValues() MetaValues {
 	metaValues := map[string]interface{}{
-		"Versions":          version.GetAllVersions(),
-		"MainRegistry":      "registry.redhat.io/rh-acs",
-		"CollectorRegistry": "registry.redhat.io/rh-acs",
-		"RenderMode":        "",
+		"Versions":              version.GetAllVersions(),
+		"MainRegistry":          "registry.redhat.io/rh-acs",
+		"CollectorRegistry":     "registry.redhat.io/rh-acs",
+		"CollectorFullImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
+		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
+		"RenderMode":            "",
 		"ChartRepo": ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},

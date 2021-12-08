@@ -26,13 +26,16 @@ import (
 var (
 	metaValues = map[string]interface{}{
 		"Versions": version.Versions{
-			ChartVersion:   "50.0.60-gac5d043be8",
-			MainVersion:    "3.0.50.x-60-gac5d043be8",
-			ScannerVersion: "2.5.0",
+			ChartVersion:     "50.0.60-gac5d043be8",
+			CollectorVersion: "1.2.3",
+			MainVersion:      "3.0.50.x-60-gac5d043be8",
+			ScannerVersion:   "2.5.0",
 		},
-		"MainRegistry":      defaults.MainImageRegistry(),
-		"CollectorRegistry": defaults.CollectorImageRegistry(),
-		"RenderMode":        "",
+		"MainRegistry":          defaults.MainImageRegistry(),
+		"CollectorRegistry":     defaults.CollectorImageRegistry(),
+		"CollectorFullImageTag": "1.2.3-latest",
+		"CollectorSlimImageTag": "1.2.3-slim",
+		"RenderMode":            "",
 	}
 
 	installOpts = helmUtil.Options{
