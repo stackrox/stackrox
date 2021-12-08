@@ -206,6 +206,13 @@ function PolicyBehaviorForm() {
                             <Card className="pf-u-h-100">
                                 <CardHeader>
                                     <CardTitle>Build</CardTitle>
+                                    <CardActions>
+                                        <Switch
+                                            isChecked={hasEnforcementForLifecycle('BUILD')}
+                                            isDisabled={!hasBuild}
+                                            onChange={onEnforcementActionChangeHandler('BUILD')}
+                                        />
+                                    </CardActions>
                                 </CardHeader>
                                 <CardBody>
                                     If enabled, ACS will fail your CI builds when images match the
