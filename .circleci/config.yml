@@ -2795,13 +2795,13 @@ jobs:
 
             REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
             for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
-              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
-              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
 
-              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
-              # TODO(RS-341): remove this line once Helm charts are updated to respect image flavors
-              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector:${MAIN_TAG}-slim"
-              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
+              # TODO(RS-381): remove this line once Helm charts are updated to respect image flavors
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector:${MAIN_TAG}-slim"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
             done
 
       - run:
@@ -4481,6 +4481,7 @@ jobs:
       - run:
           name: Push collector & scanner images tagged with main-version to stackrox.io
           command: |
+            docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
             docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" stackrox.io
             docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
@@ -4488,18 +4489,20 @@ jobs:
             SCANNER_VERSION="$(make --quiet scanner-tag)"
             COLLECTOR_VERSION="$(make --quiet collector-tag)"
 
-            ./scripts/ci/pull-retag-push.sh "stackrox.io/scanner:${SCANNER_VERSION}"    "stackrox.io/scanner:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "stackrox.io/scanner-db:${SCANNER_VERSION}" "stackrox.io/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "stackrox.io/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "stackrox.io/scanner-db:${MAIN_TAG}"
 
-            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_VERSION}"      "collector.stackrox.io/collector:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector:${MAIN_TAG}-slim"
-            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector-slim:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "collector.stackrox.io/collector:${MAIN_TAG}"
+            # TODO(RS-381): remove this line once Helm charts are updated to respect image flavors
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector:${MAIN_TAG}-slim"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector-slim:${MAIN_TAG}"
 
             # Externally exposed registries require '-rhel' suffix for backwards compatibility with some customers.
-            ./scripts/ci/pull-retag-push.sh "stackrox.io/scanner:${MAIN_TAG}"                   "stackrox.io/scanner-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "stackrox.io/scanner-db:${MAIN_TAG}"                "stackrox.io/scanner-db-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${MAIN_TAG}"       "collector.stackrox.io/collector-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${MAIN_TAG}-slim"  "collector.stackrox.io/collector-rhel:${MAIN_TAG}-slim"
+            # TODO(RS-381): drop retagging with -rhel
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${MAIN_TAG}"         "stackrox.io/scanner-rhel:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"      "stackrox.io/scanner-db-rhel:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}"       "collector.stackrox.io/collector-rhel:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}-slim"  "collector.stackrox.io/collector-rhel:${MAIN_TAG}-slim"
 
       - run:
           name: Push roxctl to stackrox-hub
