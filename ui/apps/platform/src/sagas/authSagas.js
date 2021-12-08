@@ -338,8 +338,6 @@ function* watchLocationForAuthProviders() {
 
 function* fetchAvailableProviderTypes() {
     const result = yield call(AuthService.fetchAvailableProviderTypes);
-    // eslint-disable-next-line no-console
-    console.log(`Response ${result?.response}`);
     yield put(actions.setAvailableProviderTypes(result?.response || []));
 }
 
