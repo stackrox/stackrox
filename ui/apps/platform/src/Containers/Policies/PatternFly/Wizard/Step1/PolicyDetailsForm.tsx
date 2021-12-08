@@ -4,11 +4,7 @@ import { Title, Divider, Flex, FlexItem } from '@patternfly/react-core';
 import PolicyMetadataFormSection from './PolicyMetadataFormSection';
 import AttachNotifiersFormSection from './AttachNotifiersFormSection';
 
-type PolicyDetailsFormProps = {
-    handleChange: (e) => void;
-};
-
-function PolicyDetailsForm({ handleChange }: PolicyDetailsFormProps): ReactElement {
+function PolicyDetailsForm(): ReactElement {
     return (
         <div>
             <Title headingLevel="h2">Policy details</Title>
@@ -18,7 +14,7 @@ function PolicyDetailsForm({ handleChange }: PolicyDetailsFormProps): ReactEleme
             <Divider component="div" />
             <Flex direction={{ default: 'row' }}>
                 <FlexItem className="pf-u-mb-md" grow={{ default: 'grow' }}>
-                    <PolicyMetadataFormSection handleChange={handleChange} />
+                    <PolicyMetadataFormSection />
                 </FlexItem>
                 <Divider component="div" isVertical />
                 <FlexItem className="pf-u-w-33">

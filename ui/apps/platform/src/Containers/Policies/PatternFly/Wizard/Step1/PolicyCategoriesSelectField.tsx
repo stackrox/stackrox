@@ -9,8 +9,7 @@ function PolicyCategoriesSelectField(): ReactElement {
     // manage state for Categories select below
     const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [field, meta, helpers] = useField('categories');
+    const [field, , helpers] = useField('categories');
 
     function onCategoriesToggle(isOpen) {
         setIsCategoriesOpen(isOpen);

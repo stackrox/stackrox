@@ -9,7 +9,7 @@ import { policiesBasePathPatternFly } from 'routePaths';
 import { SearchFilter } from 'types/search';
 
 import { getSearchStringForFilter, parsePoliciesSearchString } from './policies.utils';
-import PoliciesTablePage from './PoliciesTablePage';
+import PoliciesTablePage from './Table/PoliciesTablePage';
 import PolicyPage from './PolicyPage';
 
 const permissionsSelector = createStructuredSelector({
@@ -40,6 +40,7 @@ function PoliciesPage() {
 
     function handleChangeSearchFilter(changedSearchFilter: SearchFilter) {
         // Browser history has only the most recent search filter.
+        console.log('handleChangeSearchFilter', changedSearchFilter);
         history.replace({
             pathname: policiesBasePathPatternFly,
             search: getSearchStringForFilter(changedSearchFilter),
