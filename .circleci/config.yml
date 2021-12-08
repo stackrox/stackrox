@@ -2784,7 +2784,7 @@ jobs:
             fi
 
       - run:
-          name: Retag collector & scanner images with main-version tag
+          name: Push collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
@@ -4478,7 +4478,7 @@ jobs:
             DRY_RUN=false ./scripts/redhat-registry-publish/push.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
 
       - run:
-          name: Retag collector & scanner images with main-version tag
+          name: Push collector & scanner images tagged with main-version to stackrox.io
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
