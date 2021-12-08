@@ -13,5 +13,5 @@ SRC="$1"
 DEST="$2"
 
 docker pull "${SRC}" | cat
-docker tag "${SRC}" "${DEST}" | cat
+docker tag "${SRC}" "${DEST}"
 "${DIR}/../ci/push-as-manifest-list.sh" "${DEST}" | cat
