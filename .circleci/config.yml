@@ -305,7 +305,7 @@ downloadDiagnosticBundle: &downloadDiagnosticBundle
     when: always
 
 storeDiagnosticBundle: &storeDiagnosticBundle
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/diagnostic-bundle
     destination: diagnostic-bundle
 
@@ -329,12 +329,12 @@ collectMonitoringImages: &collectMonitoringImages
     when: always
 
 storeMonitoringImages: &storeMonitoringImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images
 
 storeMonitoringMetrics: &storeMonitoringMetrics
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/rawmetrics.zip
     destination: monitoring-metrics.zip
 
@@ -346,7 +346,7 @@ benchmarkDashboard: &benchmarkDashboard
       ./scripts/ci/bench-and-graph.sh .*Dashboard ./scale/tests/
 
 storeDashBenchImages: &storeDashBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-dashboard-bench
 
@@ -361,7 +361,7 @@ benchmarkCompliance: &benchmarkCompliance
       ./scripts/ci/bench-and-graph.sh .*Compliance ./scale/tests/
 
 storeComplianceBenchImages: &storeComplianceBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-compliance-bench
 
@@ -373,17 +373,17 @@ benchmarkDryRunPolicies: &benchmarkDryRunPolicies
       ./scripts/ci/bench-and-graph.sh .*DryRunPolicies ./scale/tests
 
 storeDryRunBenchImages: &storeDryRunBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-dryrun-bench
 
 storeQALogs: &storeQALogs
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/qa-tests-backend-logs
     destination: qa-tests-backend-logs
 
 storeProfilingResults: &storeProfilingResults
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/pprof.zip
     destination: pprof.zip
 
@@ -392,7 +392,7 @@ storeUITestReports: &storeUITestReports
     path: ui/test-results/reports
 
 storeUITestArtifacts: &storeUITestArtifacts
-  store_artifacts:
+  ci-artifacts/store:
     path: ui/test-results/artifacts
     destination: ui-test-artifacts
 
@@ -408,7 +408,7 @@ checkQASpockResults: &checkQASpockResults
         < ./qa-tests-backend/build/spock-reports/aggregated_report.json || true
 
 storeQASpockReports: &storeQASpockReports
-  store_artifacts:
+  ci-artifacts/store:
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
@@ -420,7 +420,7 @@ backupCentral: &backupCentral
       roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output central-backup
 
 storeCentralBackupArtifact: &storeCentralBackupArtifact
-  store_artifacts:
+  ci-artifacts/store:
     path: central-backup
     destination: central-backup
 
@@ -496,6 +496,7 @@ parameters:
 
 orbs:
   win: circleci/windows@2.2.0
+  ci-artifacts: stackrox/ci-artifacts-orb@0.0.4
 
 executors:
   custom:
@@ -665,7 +666,7 @@ commands:
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir debug-dump
             ls -l debug-dump
-      - store_artifacts:
+      - ci-artifacts/store:
           path: debug-dump
           destination: debug
 
@@ -677,7 +678,7 @@ commands:
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir diagnostic-bundle --insecure-skip-tls-verify
             ls -l diagnostic-bundle
-      - store_artifacts:
+      - ci-artifacts/store:
           path: diagnostic-bundle
           destination: diagnostic
 
@@ -694,7 +695,7 @@ commands:
             ./scripts/grab-data-from-central.sh << parameters.destination >>
             ls -l << parameters.destination >>
           when: always
-      - store_artifacts:
+      - ci-artifacts/store:
           path: << parameters.destination >>
           destination: << parameters.destination >>
 
@@ -705,7 +706,7 @@ commands:
         default: k8s-service-logs
     description: Stores StackRox and cluster logs as artifacts
     steps:
-    - store_artifacts:
+    - ci-artifacts/store:
         path: /tmp/k8s-service-logs
         destination: << parameters.destination >>
 
@@ -1616,7 +1617,7 @@ commands:
             fi
             set -e
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift
           destination: openshift
 
@@ -1627,7 +1628,7 @@ commands:
             export KUBECONFIG="$PWD/openshift/artifacts/config"
             kubectl get nodes -o wide
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift
           destination: openshift
 
@@ -2079,7 +2080,7 @@ commands:
     steps:
       - store_test_results:
           path: << parameters.path >>
-      - store_artifacts:
+      - ci-artifacts/store:
           path: << parameters.path >>
 
   pre-go-unit-tests:
@@ -2241,7 +2242,7 @@ jobs:
           name: Run style checks
           command: make style
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: qa-tests-backend/build/reports/codenarc
           destination: reports/codenarc
 
@@ -2327,7 +2328,7 @@ jobs:
               exit 1
             fi
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/policies-diff
           destination: policies-diff
 
@@ -2359,7 +2360,7 @@ jobs:
               cat /tmp/mitre-diff
               exit 1
             fi
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/mitre-diff
           destination: mitre-diff
 
@@ -2794,11 +2795,11 @@ jobs:
 
       - *saveGoModCache
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: bin/linux/roxctl
           destination: roxctl/roxctl-linux
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: bin/darwin/roxctl
           destination: roxctl/roxctl-darwin
 
@@ -3105,7 +3106,7 @@ jobs:
             sudo chown "$USER" $PWD/eks/data/eks-kube.yaml
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: eks
           destination: eks
 
@@ -3142,7 +3143,7 @@ jobs:
             wget https://storage.googleapis.com/kubernetes-release/release/v1.13.3/bin/linux/amd64/kubectl
             sudo install kubectl /usr/bin
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: kops
           destination: kops
 
@@ -3169,7 +3170,7 @@ jobs:
             sudo chown "$USER" $PWD/kops/kube.yaml
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: kops
           destination: kops
 
@@ -3225,7 +3226,7 @@ jobs:
             sudo chown "$USER" $PWD/aks/data/kubeconfig
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: aks
           destination: aks
 
@@ -3272,7 +3273,7 @@ jobs:
             export KUBECONFIG=$PWD/openshift-4/data/auth/kubeconfig
             ./scripts/ci/complianceoperator/create.sh
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift-4
           destination: openshift-4
 
@@ -3314,7 +3315,7 @@ jobs:
           sudo chown "$USER" $PWD/operator-oc4/data/auth/kubeconfig
           oc get nodes
 
-    - store_artifacts:
+    - ci-artifacts/store:
         path: operator-oc4
         destination: operator-oc4
 
@@ -3358,7 +3359,7 @@ jobs:
           sudo chown "$USER" $PWD/operator-oc4-6/data/auth/kubeconfig
           oc get nodes
 
-    - store_artifacts:
+    - ci-artifacts/store:
         path: operator-oc4-6
         destination: operator-oc4-6
 
@@ -3531,7 +3532,7 @@ jobs:
             ./scripts/ci/collect-service-logs.sh stackrox /tmp/final-stackrox-logs
           when: always
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/final-stackrox-logs
           destination: final-stackrox-logs
 
@@ -3696,7 +3697,7 @@ jobs:
             ROX_LICENSE_KEY="${LONGTERM_LICENSE}" \
             ./tests/upgrade/run.sh
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/upgrade-test-logs
           destination: upgrade-test-logs
 
