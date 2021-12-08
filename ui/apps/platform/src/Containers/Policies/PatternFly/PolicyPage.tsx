@@ -134,7 +134,6 @@ function PolicyPage({
             });
         });
     }
-    console.log('PolicyPage: policy', policy);
 
     return (
         <PageSection variant="light" isFilled id="policy-page">

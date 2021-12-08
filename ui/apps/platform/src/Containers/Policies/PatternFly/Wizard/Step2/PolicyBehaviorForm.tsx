@@ -16,17 +16,12 @@ import {
     Switch,
     Grid,
     GridItem,
-    Dropdown,
-    DropdownToggle,
-    DropdownItem,
-    Spinner,
-    Bullseye,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 import intersection from 'lodash/intersection';
 
 import { Policy, EnforcementAction, LifecycleStage } from 'types/policy.proto';
-import downloadCLI from 'services/CLIService';
+import DownloadCLIDropdown from './DownloadCLIDropdown';
 
 const lifecycleToEnforcementsMap: Record<LifecycleStage, EnforcementAction[]> = {
     BUILD: ['FAIL_BUILD_ENFORCEMENT'],
@@ -40,8 +35,6 @@ function PolicyBehaviorForm() {
         values.enforcementActions?.length > 0 &&
         !values.enforcementActions?.includes('UNSET_ENFORCEMENT');
     const [showEnforcement, setShowEnforcement] = React.useState(hasEnforcementActions);
-    const [isCLIDropdownOpen, setIsCLIDropdownOpen] = React.useState(false);
-    const [isCLIDownloading, setIsCLIDownloading] = React.useState(false);
 
     function onLifecycleStageChangeHandler(lifecycleStage: LifecycleStage) {
         return (isChecked) => {
@@ -80,21 +73,6 @@ function PolicyBehaviorForm() {
             intersection(values.enforcementActions, lifecycleToEnforcementsMap[lifecycleStage])
                 .length > 0
         );
-    }
-
-    function handleDownloadCLI(event) {
-        setIsCLIDownloading(true);
-        setIsCLIDropdownOpen(false);
-        downloadCLI(event.target.value)
-            .then(() => {
-                // TODO: Show a success message
-            })
-            .catch(() => {
-                // TODO: Show an error message
-            })
-            .finally(() => {
-                setIsCLIDownloading(false);
-            });
     }
 
     const responseMethodHelperText = showEnforcement
@@ -236,37 +214,7 @@ function PolicyBehaviorForm() {
                                         justifyContent={{ default: 'justifyContentCenter' }}
                                         className="pf-u-pt-md"
                                     >
-                                        <Dropdown
-                                            toggle={
-                                                <DropdownToggle
-                                                    isDisabled={!hasBuild || isCLIDownloading}
-                                                    onToggle={() =>
-                                                        setIsCLIDropdownOpen(!isCLIDropdownOpen)
-                                                    }
-                                                >
-                                                    {isCLIDownloading ? (
-                                                        <Bullseye>
-                                                            <Spinner size="md" />
-                                                        </Bullseye>
-                                                    ) : (
-                                                        'Download CLI'
-                                                    )}
-                                                </DropdownToggle>
-                                            }
-                                            isOpen={isCLIDropdownOpen}
-                                            onSelect={handleDownloadCLI}
-                                            dropdownItems={[
-                                                <DropdownItem value="darwin" component="button">
-                                                    Mac 64-bit
-                                                </DropdownItem>,
-                                                <DropdownItem value="linux" component="button">
-                                                    Linux 64-bit
-                                                </DropdownItem>,
-                                                <DropdownItem value="windows" component="button">
-                                                    Windows 64-bit
-                                                </DropdownItem>,
-                                            ]}
-                                        />
+                                        <DownloadCLIDropdown hasBuild={hasBuild} />
                                     </Flex>
                                 </CardBody>
                             </Card>

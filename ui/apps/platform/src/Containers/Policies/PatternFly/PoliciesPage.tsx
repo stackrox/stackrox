@@ -40,7 +40,6 @@ function PoliciesPage() {
 
     function handleChangeSearchFilter(changedSearchFilter: SearchFilter) {
         // Browser history has only the most recent search filter.
-        console.log('handleChangeSearchFilter', changedSearchFilter);
         history.replace({
             pathname: policiesBasePathPatternFly,
             search: getSearchStringForFilter(changedSearchFilter),
