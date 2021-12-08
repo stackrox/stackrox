@@ -228,30 +228,9 @@ test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: validate
-CRDS := SecuredCluster Central
+CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
 validate:
-	@set +e; \
-	FAILED=0; \
-	CRS=$$( \
-		for crd in $(CRDS); do \
-			find tests -type f -name "*.yaml" \! -name "*-assert.yaml" \! -name "*-errors.yaml" \! -name "*.envsubst.yaml" -exec grep -q "^kind: $$crd" {} \; -print; \
-		done); \
-	for cr in $$CRS; do \
-		/bin/echo -n "Validating custom resource $$cr with kubectl... "; \
-		output=$$(kubectl apply --dry-run=client --validate=true -f "$$cr" 2>&1); \
-		if [ $$? -eq 0 ]; then \
-			echo PASSED; \
-		else \
-			FAILED=1; \
-			echo FAILED; \
-			echo "kubectl: $$output"; \
-		fi; \
-		echo; \
-	done; \
-	if [ $$FAILED -ne 0 ]; then \
-		/bin/echo "ERROR: Some custom resources did not pass validation (see above)."; \
-		exit 1; \
-	fi;
+	./tests/scripts/validate-crs.sh ./tests $(CRDS)
 
 test-e2e: build install validate kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
