@@ -58,7 +58,17 @@ func (s *embedTestSuite) TestChartTemplatesAvailable() {
 	s.Require().NoError(err, "failed to load secured cluster services chart")
 }
 
-func (s *embedTestSuite) TestLoadChart() {
+func (s *embedTestSuite) TestLoadChartDefaultValues() {
+	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.DefaultMetaValues())
+	s.Require().NoError(err)
+	s.Equal("stackrox-central-services", chart.Name())
+
+	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.DefaultMetaValues())
+	s.Require().NoError(err)
+	s.Equal("stackrox-secured-cluster-services", chart.Name())
+}
+
+func (s *embedTestSuite) TestLoadChartRHACSValues() {
 	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.RHACSMetaValues())
 	s.Require().NoError(err)
 	s.Equal("stackrox-central-services", chart.Name())
