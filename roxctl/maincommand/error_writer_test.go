@@ -15,15 +15,15 @@ func TestErrorWriter(t *testing.T) {
 	}{
 		{
 			in:  "\nError: rpc error: code = Unauthenticated desc =\n credentials not found\n",
-			out: "\nError: rpc error: code = Unauthenticated desc =\n credentials not found\n",
+			out: "ERROR:\t\nError: rpc error: code = Unauthenticated desc =\n credentials not found\n",
 		},
 		{
 			in:  "rpc error: code = Unauthenticated desc = credentials not found",
-			out: "rpc error: code = Unauthenticated desc = credentials not found\n",
+			out: "ERROR:\trpc error: code = Unauthenticated desc = credentials not found\n",
 		},
 		{
 			in:  "rpc error: code = Unauthenticated desc = credentials not found\n",
-			out: "rpc error: code = Unauthenticated desc = credentials not found\n",
+			out: "ERROR:\trpc error: code = Unauthenticated desc = credentials not found\n",
 		},
 		{
 			in:  "Error: rpc error: code = Unauthenticated desc = credentials not found",
@@ -39,6 +39,7 @@ func TestErrorWriter(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.in, func(t *testing.T) {
 			t.Parallel()
 			io, _, out, errorOut := environment.TestIO()
