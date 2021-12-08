@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/defaultimages"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -14,18 +15,18 @@ import (
 )
 
 const (
-	imageRegistryKey         = "ImageRegistry"
-	collectorRegistryKey     = "CollectorRegistry"
-	collectorImageRemoteKey  = "CollectorImageRemote"
-	collectorFullImageTagKey = "CollectorFullImageTag"
-	collectorSlimImageTagKey = "CollectorSlimImageTag"
+	imageRegistryKey         charts.MetaValuesKey = "ImageRegistry"
+	collectorRegistryKey     charts.MetaValuesKey = "CollectorRegistry"
+	collectorImageRemoteKey  charts.MetaValuesKey = "CollectorImageRemote"
+	collectorFullImageTagKey charts.MetaValuesKey = "CollectorFullImageTag"
+	collectorSlimImageTagKey charts.MetaValuesKey = "CollectorSlimImageTag"
 )
 
-func getCollectorFull(fields map[string]interface{}) string {
+func getCollectorFull(fields charts.MetaValues) string {
 	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorFullImageTagKey])
 }
 
-func getCollectorSlim(fields map[string]interface{}) string {
+func getCollectorSlim(fields charts.MetaValues) string {
 	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorSlimImageTagKey])
 }
 
