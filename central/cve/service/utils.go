@@ -9,7 +9,7 @@ import (
 func suppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt *types.Timestamp) *storage.VulnerabilityRequest {
 	d, err := types.DurationFromProto(request.GetDuration())
 	if err != nil {
-		log.Error("could not create vulnerability request for CVE(s) %v", request.GetIds())
+		log.Errorf("could not create vulnerability request for CVE(s) %v", request.GetIds())
 		return nil
 	}
 

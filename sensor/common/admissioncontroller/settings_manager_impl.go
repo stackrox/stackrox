@@ -69,7 +69,6 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	p.hasPolicies = true
 
 	newSettings := p.newSettingsNoLock()
-	newSettings.CacheVersion = uuid.NewV4().String()
 	newSettings.EnforcedDeployTimePolicies = &storage.PolicyList{Policies: deploytimePolicies}
 	newSettings.RuntimePolicies = &storage.PolicyList{Policies: runtimePolicies}
 
@@ -103,6 +102,7 @@ func (p *settingsManager) FlushCache() {
 
 	newSettings := p.newSettingsNoLock()
 	newSettings.CacheVersion = uuid.NewV4().String()
+
 	if p.hasClusterConfig && p.hasPolicies {
 		p.settingsStream.Push(newSettings)
 	}
