@@ -161,10 +161,11 @@ class AdmissionControllerTest extends BaseSpecification {
     @Category([BAT])
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
-        // Skip test for now until ROX-8739 is fixed to determine why first deploment create is not blocked.
-        // Scheduled for 68.0
-        Assume.assumeTrue(false)
+        // Skip test for now until ROX-8739 is fixed to determine why first deployment create is not blocked.
+        // Scheduled for 68.0.
+        Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_VULN_RISK_MANAGEMENT"))
 
+        and:
          "Create policy looking for a specific CVE"
         // We don't want to block on SEVERITY
         Services.updatePolicyEnforcement(
