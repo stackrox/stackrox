@@ -39,4 +39,5 @@ message TestClone {
     map<string, bytes> bytes_map    = 12;
     repeated bytes     bytes_slice  = 13;
     bytes              bytes        = 14;
+    TestCloneSubMessage sub_message = 15;
 }
