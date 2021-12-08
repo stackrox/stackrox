@@ -5,9 +5,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/store"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Handler handles request to reprocess deployment (sent by Central).
@@ -16,17 +20,16 @@ type Handler interface {
 }
 
 // NewHandler returns a new instance of a deployment reprocessor.
-func NewHandler(deploymentStore store.DeploymentStore, detector detector.Detector) Handler {
+func NewHandler(detector detector.Detector) Handler {
 	return &handlerImpl{
-		deploymentStore: deploymentStore,
-		detector:        detector,
+		detector: detector,
+		stopSig:  concurrency.NewErrorSignal(),
 	}
 }
 
 type handlerImpl struct {
-	deploymentStore store.DeploymentStore
-	detector        detector.Detector
-	stopSig         concurrency.ErrorSignal
+	detector detector.Detector
+	stopSig  concurrency.ErrorSignal
 }
 
 func (h *handlerImpl) Start() error {
@@ -44,23 +47,19 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	request := msg.GetReprocessDeployment()
-	if request == nil {
+	req := msg.GetReprocessDeployment()
+	if req == nil {
 		return nil
 	}
-	deploymentID := request.GetDeploymentId()
+	log.Debug("Received request to reprocess deployments from Central")
+
 	select {
 	case <-h.stopSig.Done():
-		return errors.Wrapf(h.stopSig.Err(), "could not fulfill re-process deployment %q request", request.GetDeploymentId())
+		return errors.Wrap(h.stopSig.Err(), "could not fulfill re-process deployment(s) request")
 	default:
-		deployment := h.deploymentStore.Get(deploymentID)
-		// The deployment affected by the vulnerability request may have been removed.
-		if deployment == nil {
-			return nil
-		}
-		go h.detector.ReprocessDeployment(deployment)
-		return nil
+		go h.detector.ReprocessDeployments(req.GetDeploymentIds()...)
 	}
+	return nil
 }
 
 func (h *handlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
