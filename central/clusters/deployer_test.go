@@ -121,10 +121,7 @@ func getBaseConfig() *storage.Cluster {
 
 func TestImagePaths(t *testing.T) {
 	testbuildinfo.SetForTest(t)
-	testutils.SetVersion(t, version.Versions{
-		CollectorVersion: "1.2.3",
-		MainVersion:      "3.2.1",
-	})
+	testutils.SetExampleVersion(t)
 	collectorVersion := version.GetCollectorVersion()
 	var cases = []struct {
 		name                      string
@@ -183,12 +180,33 @@ func TestImagePaths(t *testing.T) {
 
 			fields, err := FieldsFromClusterAndRenderOpts(config, RenderOptions{})
 			assert.NoError(t, err)
-			assert.Contains(t, fields, imageRegistryKey)
+
 			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistryKey])
-			assert.Contains(t, fields, collectorRegistryKey)
 			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistryKey])
 			assert.Equal(t, c.expectedCollectorFullRef, getCollectorFull(fields))
 			assert.Equal(t, c.expectedCollectorSlimRef, getCollectorSlim(fields))
 		})
 	}
+}
+
+func TestRequiredFieldsArePresent(t *testing.T) {
+	testbuildinfo.SetForTest(t)
+	testutils.SetExampleVersion(t)
+
+	fields, err := FieldsFromClusterAndRenderOpts(getBaseConfig(), RenderOptions{})
+	assert.NoError(t, err)
+
+	assert.NotEmpty(t, fields["MainRegistry"])
+	assert.NotEmpty(t, fields[collectorRegistryKey])
+	assert.NotEmpty(t, fields[collectorSlimImageTagKey])
+	assert.NotEmpty(t, fields[collectorFullImageTagKey])
+
+	versions := fields["Versions"].(version.Versions)
+	assert.NotEmpty(t, versions.ChartVersion)
+	assert.NotEmpty(t, versions.MainVersion)
+	assert.NotEmpty(t, versions.CollectorVersion)
+	assert.NotEmpty(t, versions.ScannerVersion)
+
+	chartRepo := fields["ChartRepo"].(charts.ChartRepo)
+	assert.NotEmpty(t, chartRepo.URL)
 }
