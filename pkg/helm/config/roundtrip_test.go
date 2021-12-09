@@ -45,7 +45,6 @@ var (
 			URL: "https://charts.stackrox.io",
 		},
 	}
-
 	installOpts = helmUtil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      "stackrox-secured-cluster-services",
@@ -96,7 +95,7 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving chart template")
 	}
-	ch, err := tpl.InstantiateAndLoad(metaValues)
+	ch, err := tpl.InstantiateAndLoad(charts.DefaultMetaValues())
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating chart")
 	}
