@@ -337,8 +337,19 @@ function* watchLocationForAuthProviders() {
 }
 
 function* fetchAvailableProviderTypes() {
-    const result = yield call(AuthService.fetchAvailableProviderTypes);
-    yield put(actions.setAvailableProviderTypes(result?.response || []));
+    try {
+        const result = yield call(AuthService.fetchAvailableProviderTypes);
+        yield put(actions.setAvailableProviderTypes(result?.response || []));
+    } catch (error) {
+        yield put(
+            notificationActions.addNotification(
+                (error.response && error.response.data && error.response.data.error) ||
+                    'AuthProvider Types request timed out'
+            )
+        );
+        yield put(notificationActions.removeOldestNotification());
+        Raven.captureException(error);
+    }
 }
 
 export default function* auth() {
