@@ -2,11 +2,9 @@ package errors
 
 import (
 	"context"
-	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -36,33 +34,9 @@ func ErrToGrpcStatus(err error) *status.Status {
 		// `err` is either nil or status.Status.
 		return s
 	}
-	code := errorTypeToGrpcCode(err)
-	return status.New(code, err.Error())
-}
-
-func errorTypeToGrpcCode(err error) codes.Code {
-	switch {
-	case errors.Is(err, errorhelpers.ErrNotFound):
-		return codes.NotFound
-	case errors.Is(err, errorhelpers.ErrInvalidArgs):
-		return codes.InvalidArgument
-	case errors.Is(err, errorhelpers.ErrAlreadyExists):
-		return codes.AlreadyExists
-	case errors.Is(err, errorhelpers.ErrReferencedByAnotherObject):
-		return codes.FailedPrecondition
-	case errors.Is(err, errorhelpers.ErrInvariantViolation):
-		return codes.Internal
-	case errors.Is(err, errorhelpers.ErrNoCredentials):
-		return codes.Unauthenticated
-	case errors.Is(err, errorhelpers.ErrNoValidRole):
-		return codes.Unauthenticated
-	case errors.Is(err, errorhelpers.ErrNoAuthzConfigured):
-		return codes.Unimplemented
-	case errors.Is(err, errorhelpers.ErrNotAuthorized):
-		return codes.PermissionDenied
-	case errors.Is(err, sac.ErrResourceAccessDenied):
-		return codes.PermissionDenied
-	default:
-		return codes.Internal
+	code := codes.Internal
+	if re, ok := errorhelpers.IsRoxError(err); ok {
+		code = re.GRPCCode()
 	}
+	return status.New(code, err.Error())
 }
