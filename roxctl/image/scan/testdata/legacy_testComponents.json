@@ -1,0 +1,199 @@
+{
+  "metadata": {
+    "v1": {
+      "layers": [
+        {
+          "instruction": "layer1",
+          "value": "1"
+        },
+        {
+          "instruction": "layer2",
+          "value": "2"
+        },
+        {
+          "instruction": "layer3",
+          "value": "3"
+        }
+      ]
+    }
+  },
+  "scan": {
+    "components": [
+      {
+        "name": "apt",
+        "version": "1.0",
+        "vulns": [
+          {
+            "cve": "CVE-123-LOW",
+            "cvss": 2,
+            "summary": "This is a low CVE 1",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.1",
+            "severity": "LOW_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-789-LOW",
+            "cvss": 2.5,
+            "summary": "This is a low CVE 3",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.3",
+            "severity": "LOW_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-789-CRIT",
+            "cvss": 9.5,
+            "summary": "This is a crit CVE 3",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.3",
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
+          }
+        ],
+        "layerIndex": 0,
+        "fixedBy": "1.4"
+      },
+      {
+        "name": "systemd",
+        "version": "1.3-debu49",
+        "vulns": [
+          {
+            "cve": "CVE-123-MED",
+            "cvss": 4.5,
+            "summary": "This is a mod CVE 1",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.1",
+            "severity": "MODERATE_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-456-MED",
+            "cvss": 4.9,
+            "summary": "This is a mod CVE 2",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.2",
+            "severity": "MODERATE_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-789-MED",
+            "cvss": 5.2,
+            "summary": "This is a mod CVE 3",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.3",
+            "severity": "MODERATE_VULNERABILITY_SEVERITY"
+          }
+        ],
+        "layerIndex": 1,
+        "fixedBy": "1.3-debu102"
+      },
+      {
+        "name": "curl",
+        "version": "7.0-rc1",
+        "vulns": [
+          {
+            "cve": "CVE-123-IMP",
+            "cvss": 7,
+            "summary": "This is a imp CVE 1",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.1",
+            "severity": "IMPORTANT_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-456-IMP",
+            "cvss": 6.8,
+            "summary": "This is a imp CVE 2",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.2",
+            "severity": "IMPORTANT_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-789-IMP",
+            "cvss": 7,
+            "summary": "This is a imp CVE 3",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.3",
+            "severity": "IMPORTANT_VULNERABILITY_SEVERITY"
+          }
+        ],
+        "layerIndex": 1,
+        "fixedBy": "7.1-rc2"
+      },
+      {
+        "name": "bash",
+        "version": "4.2",
+        "vulns": [
+          {
+            "cve": "CVE-123-CRIT",
+            "cvss": 8.5,
+            "summary": "This is a crit CVE 1",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.1",
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-456-CRIT",
+            "cvss": 9,
+            "summary": "This is a crit CVE 2",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.2",
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-789-CRIT",
+            "cvss": 9.5,
+            "summary": "This is a crit CVE 3",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.3",
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
+          }
+        ],
+        "layerIndex": 2,
+        "fixedBy": "4.3"
+      },
+      {
+        "name": "openssl",
+        "version": "1.1.1k",
+        "vulns": [
+          {
+            "cve": "CVE-123-LOW",
+            "cvss": 2,
+            "summary": "This is a low CVE 1",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.1",
+            "severity": "LOW_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-123-MED",
+            "cvss": 4.5,
+            "summary": "This is a mod CVE 1",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.1",
+            "severity": "MODERATE_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-456-MED",
+            "cvss": 4.9,
+            "summary": "This is a mod CVE 2",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.2",
+            "severity": "MODERATE_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-123-IMP",
+            "cvss": 7,
+            "summary": "This is a imp CVE 1",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.1",
+            "severity": "IMPORTANT_VULNERABILITY_SEVERITY"
+          },
+          {
+            "cve": "CVE-789-CRIT",
+            "cvss": 9.5,
+            "summary": "This is a crit CVE 3",
+            "link": "\u003csome-link-to-nvd\u003e",
+            "fixedBy": "1.3",
+            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
+          }
+        ],
+        "layerIndex": 2
+      }
+    ]
+  }
+}

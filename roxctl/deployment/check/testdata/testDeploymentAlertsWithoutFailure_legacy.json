@@ -1,0 +1,163 @@
+{
+  "alerts": [
+    {
+      "policy": {
+        "id": "policy7",
+        "name": "policy 7",
+        "description": "policy 7 for testing",
+        "rationale": "policy 7 for testing",
+        "remediation": "policy 7 for testing",
+        "severity": "LOW_SEVERITY"
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing alert violation message"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy2",
+        "name": "policy 2",
+        "description": "policy 2 for testing",
+        "rationale": "policy 2 for testing",
+        "remediation": "policy 2 for testing",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing multiple alert violation messages 1"
+        },
+        {
+          "message": "testing multiple alert violation messages 2"
+        },
+        {
+          "message": "testing multiple alert violation messages 3"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy5",
+        "name": "policy 5",
+        "description": "policy 5 for testing",
+        "rationale": "policy 5 for testing",
+        "remediation": "policy 5 for testing",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing alert violation message"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy5",
+        "name": "policy 5",
+        "description": "policy 5 for testing",
+        "rationale": "policy 5 for testing",
+        "remediation": "policy 5 for testing",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing multiple alert violation messages 1"
+        },
+        {
+          "message": "testing multiple alert violation messages 2"
+        },
+        {
+          "message": "testing multiple alert violation messages 3"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy6",
+        "name": "policy 6",
+        "description": "policy 6 for testing",
+        "rationale": "policy 6 for testing",
+        "remediation": "policy 6 for testing",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing alert violation message"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy1",
+        "name": "policy 1",
+        "description": "policy 1 for testing",
+        "rationale": "policy 1 for testing",
+        "remediation": "policy 1 for testing",
+        "severity": "CRITICAL_SEVERITY",
+        "enforcementActions": [
+          "FAIL_BUILD_ENFORCEMENT"
+        ]
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing multiple alert violation messages 1"
+        },
+        {
+          "message": "testing multiple alert violation messages 2"
+        },
+        {
+          "message": "testing multiple alert violation messages 3"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy8",
+        "name": "policy 8",
+        "rationale": "policy 8 for testing",
+        "remediation": "policy 8 for testing",
+        "severity": "HIGH_SEVERITY"
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing multiple alert violation messages 1"
+        },
+        {
+          "message": "testing multiple alert violation messages 2"
+        },
+        {
+          "message": "testing multiple alert violation messages 3"
+        }
+      ]
+    }
+  ]
+}

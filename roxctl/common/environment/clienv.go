@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"io"
 	"time"
 
 	"github.com/stackrox/rox/roxctl/common"
@@ -21,4 +22,7 @@ type Environment interface {
 
 	// Logger returns Logger which handle all output
 	Logger() Logger
+
+	// ColorWriter returns io.Writer that colorize bytes and writes them to InputOutput().Out
+	ColorWriter() io.Writer
 }

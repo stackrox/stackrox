@@ -5,10 +5,13 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
+	"path"
+	"runtime"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -249,15 +252,7 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 }
 
 func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
-	envMock := mocks.NewMockEnvironment(gomock.NewController(s.T()))
-
-	testIO, _, testStdOut, _ := environment.TestIO()
-	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
-
-	envMock.EXPECT().Logger().AnyTimes().Return(logger)
-	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
-	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	return envMock, testStdOut
+	return mocks.NewEnvWithConn(conn, s.T())
 }
 
 func (s *imageScanTestSuite) SetupTest() {
@@ -444,59 +439,12 @@ type outputFormatTest struct {
 func (s *imageScanTestSuite) TestScan_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should render default output with merged cells and additional verbose output": {
-			components: testComponents,
-			expectedOutput: `Scan results for image: nginx:test
-(TOTAL-COMPONENTS: 5, TOTAL-VULNERABILITIES: 17, LOW: 3, MODERATE: 0, IMPORTANT: 4, CRITICAL: 5)
-
-+-----------+------------+--------------+-----------+--------------------+
-| COMPONENT |  VERSION   |     CVE      | SEVERITY  |        LINK        |
-+-----------+------------+--------------+-----------+--------------------+
-|    apt    |    1.0     | CVE-789-CRIT | CRITICAL  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-LOW  |    LOW    | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-LOW  |    LOW    | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-|   bash    |    4.2     | CVE-123-CRIT | CRITICAL  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-CRIT | CRITICAL  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-CRIT | CRITICAL  | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-|   curl    |  7.0-rc1   | CVE-123-IMP  | IMPORTANT | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-IMP  | IMPORTANT | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-IMP  | IMPORTANT | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-|  openssl  |   1.1.1k   | CVE-789-CRIT | CRITICAL  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-IMP  | IMPORTANT | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-MED  | MODERATE  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-MED  | MODERATE  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-LOW  |    LOW    | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-|  systemd  | 1.3-debu49 | CVE-123-MED  | MODERATE  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-MED  | MODERATE  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-MED  | MODERATE  | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-`,
+			components:          testComponents,
+			expectedOutput:      "testComponents.txt",
 			expectedErrorOutput: "WARN: A total of 17 vulnerabilities were found in 5 components\n",
 		},
 		"should print only headers with empty components in image scan": {
-			expectedOutput: `Scan results for image: nginx:test
-(TOTAL-COMPONENTS: 0, TOTAL-VULNERABILITIES: 0, LOW: 0, MODERATE: 0, IMPORTANT: 0, CRITICAL: 0)
-
-+-----------+---------+-----+----------+------+
-| COMPONENT | VERSION | CVE | SEVERITY | LINK |
-+-----------+---------+-----+----------+------+
-+-----------+---------+-----+----------+------+
-`,
+			expectedOutput: "empty.txt",
 		},
 	}
 
@@ -511,174 +459,12 @@ func (s *imageScanTestSuite) TestScan_TableOutput() {
 func (s *imageScanTestSuite) TestScan_JSONOutput() {
 	cases := map[string]outputFormatTest{
 		"should render default output non compact without additional verbose output": {
-			components: testComponents,
-			expectedOutput: `{
-  "result": {
-    "summary": {
-      "CRITICAL": 5,
-      "IMPORTANT": 4,
-      "LOW": 3,
-      "MODERATE": 5,
-      "TOTAL-COMPONENTS": 5,
-      "TOTAL-VULNERABILITIES": 17
-    },
-    "vulnerabilities": [
-      {
-        "cveId": "CVE-789-CRIT",
-        "cveSeverity": "CRITICAL",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "apt",
-        "componentVersion": "1.0",
-        "componentFixedVersion": "1.3"
-      },
-      {
-        "cveId": "CVE-123-LOW",
-        "cveSeverity": "LOW",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "apt",
-        "componentVersion": "1.0",
-        "componentFixedVersion": "1.1"
-      },
-      {
-        "cveId": "CVE-789-LOW",
-        "cveSeverity": "LOW",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "apt",
-        "componentVersion": "1.0",
-        "componentFixedVersion": "1.3"
-      },
-      {
-        "cveId": "CVE-123-CRIT",
-        "cveSeverity": "CRITICAL",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "bash",
-        "componentVersion": "4.2",
-        "componentFixedVersion": "1.1"
-      },
-      {
-        "cveId": "CVE-456-CRIT",
-        "cveSeverity": "CRITICAL",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "bash",
-        "componentVersion": "4.2",
-        "componentFixedVersion": "1.2"
-      },
-      {
-        "cveId": "CVE-789-CRIT",
-        "cveSeverity": "CRITICAL",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "bash",
-        "componentVersion": "4.2",
-        "componentFixedVersion": "1.3"
-      },
-      {
-        "cveId": "CVE-123-IMP",
-        "cveSeverity": "IMPORTANT",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "curl",
-        "componentVersion": "7.0-rc1",
-        "componentFixedVersion": "1.1"
-      },
-      {
-        "cveId": "CVE-456-IMP",
-        "cveSeverity": "IMPORTANT",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "curl",
-        "componentVersion": "7.0-rc1",
-        "componentFixedVersion": "1.2"
-      },
-      {
-        "cveId": "CVE-789-IMP",
-        "cveSeverity": "IMPORTANT",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "curl",
-        "componentVersion": "7.0-rc1",
-        "componentFixedVersion": "1.3"
-      },
-      {
-        "cveId": "CVE-789-CRIT",
-        "cveSeverity": "CRITICAL",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "openssl",
-        "componentVersion": "1.1.1k",
-        "componentFixedVersion": "1.3"
-      },
-      {
-        "cveId": "CVE-123-IMP",
-        "cveSeverity": "IMPORTANT",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "openssl",
-        "componentVersion": "1.1.1k",
-        "componentFixedVersion": "1.1"
-      },
-      {
-        "cveId": "CVE-123-MED",
-        "cveSeverity": "MODERATE",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "openssl",
-        "componentVersion": "1.1.1k",
-        "componentFixedVersion": "1.1"
-      },
-      {
-        "cveId": "CVE-456-MED",
-        "cveSeverity": "MODERATE",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "openssl",
-        "componentVersion": "1.1.1k",
-        "componentFixedVersion": "1.2"
-      },
-      {
-        "cveId": "CVE-123-LOW",
-        "cveSeverity": "LOW",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "openssl",
-        "componentVersion": "1.1.1k",
-        "componentFixedVersion": "1.1"
-      },
-      {
-        "cveId": "CVE-123-MED",
-        "cveSeverity": "MODERATE",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "systemd",
-        "componentVersion": "1.3-debu49",
-        "componentFixedVersion": "1.1"
-      },
-      {
-        "cveId": "CVE-456-MED",
-        "cveSeverity": "MODERATE",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "systemd",
-        "componentVersion": "1.3-debu49",
-        "componentFixedVersion": "1.2"
-      },
-      {
-        "cveId": "CVE-789-MED",
-        "cveSeverity": "MODERATE",
-        "cveInfo": "<some-link-to-nvd>",
-        "componentName": "systemd",
-        "componentVersion": "1.3-debu49",
-        "componentFixedVersion": "1.3"
-      }
-    ]
-  }
-}
-`,
+			components:     testComponents,
+			expectedOutput: "testComponents.json",
 		},
 		"should print nothing with empty components in image scan": {
-			components: nil,
-			expectedOutput: `{
-  "result": {
-    "summary": {
-      "CRITICAL": 0,
-      "IMPORTANT": 0,
-      "LOW": 0,
-      "MODERATE": 0,
-      "TOTAL-COMPONENTS": 0,
-      "TOTAL-VULNERABILITIES": 0
-    }
-  }
-}
-`,
+			components:     nil,
+			expectedOutput: "empty.json",
 		},
 	}
 
@@ -693,31 +479,12 @@ func (s *imageScanTestSuite) TestScan_JSONOutput() {
 func (s *imageScanTestSuite) TestScan_CSVOutput() {
 	cases := map[string]outputFormatTest{
 		"should render default output without additional verbose output": {
-			components: testComponents,
-			expectedOutput: `COMPONENT,VERSION,CVE,SEVERITY,LINK
-apt,1.0,CVE-789-CRIT,CRITICAL,<some-link-to-nvd>
-apt,1.0,CVE-123-LOW,LOW,<some-link-to-nvd>
-apt,1.0,CVE-789-LOW,LOW,<some-link-to-nvd>
-bash,4.2,CVE-123-CRIT,CRITICAL,<some-link-to-nvd>
-bash,4.2,CVE-456-CRIT,CRITICAL,<some-link-to-nvd>
-bash,4.2,CVE-789-CRIT,CRITICAL,<some-link-to-nvd>
-curl,7.0-rc1,CVE-123-IMP,IMPORTANT,<some-link-to-nvd>
-curl,7.0-rc1,CVE-456-IMP,IMPORTANT,<some-link-to-nvd>
-curl,7.0-rc1,CVE-789-IMP,IMPORTANT,<some-link-to-nvd>
-openssl,1.1.1k,CVE-789-CRIT,CRITICAL,<some-link-to-nvd>
-openssl,1.1.1k,CVE-123-IMP,IMPORTANT,<some-link-to-nvd>
-openssl,1.1.1k,CVE-123-MED,MODERATE,<some-link-to-nvd>
-openssl,1.1.1k,CVE-456-MED,MODERATE,<some-link-to-nvd>
-openssl,1.1.1k,CVE-123-LOW,LOW,<some-link-to-nvd>
-systemd,1.3-debu49,CVE-123-MED,MODERATE,<some-link-to-nvd>
-systemd,1.3-debu49,CVE-456-MED,MODERATE,<some-link-to-nvd>
-systemd,1.3-debu49,CVE-789-MED,MODERATE,<some-link-to-nvd>
-`,
+			components:     testComponents,
+			expectedOutput: "testComponents.csv",
 		},
 		"should print only headers with empty components in image scan": {
-			components: nil,
-			expectedOutput: `COMPONENT,VERSION,CVE,SEVERITY,LINK
-`,
+			components:     nil,
+			expectedOutput: "empty.csv",
 		},
 	}
 
@@ -733,7 +500,7 @@ func (s *imageScanTestSuite) TestScan_LegacyCSVOutput() {
 	cases := map[string]outputFormatTest{
 		"should print legacy CSV output if format is set": {
 			components:     testComponents,
-			expectedOutput: "CVE,CVSS Score,Severity Rating,Summary,Component,Version,Fixed By,Layer Instruction\r\nCVE-789-CRIT,9.5,Critical,This is a crit CVE 3,apt,1.0,1.3,layer1 1\r\nCVE-123-LOW,2,Low,This is a low CVE 1,apt,1.0,1.1,layer1 1\r\nCVE-789-LOW,2.5,Low,This is a low CVE 3,apt,1.0,1.3,layer1 1\r\nCVE-123-IMP,7,Important,This is a imp CVE 1,curl,7.0-rc1,1.1,layer2 2\r\nCVE-456-IMP,6.8,Important,This is a imp CVE 2,curl,7.0-rc1,1.2,layer2 2\r\nCVE-789-IMP,7,Important,This is a imp CVE 3,curl,7.0-rc1,1.3,layer2 2\r\nCVE-123-MED,4.5,Moderate,This is a mod CVE 1,systemd,1.3-debu49,1.1,layer2 2\r\nCVE-456-MED,4.9,Moderate,This is a mod CVE 2,systemd,1.3-debu49,1.2,layer2 2\r\nCVE-789-MED,5.2,Moderate,This is a mod CVE 3,systemd,1.3-debu49,1.3,layer2 2\r\nCVE-123-CRIT,8.5,Critical,This is a crit CVE 1,bash,4.2,1.1,layer3 3\r\nCVE-456-CRIT,9,Critical,This is a crit CVE 2,bash,4.2,1.2,layer3 3\r\nCVE-789-CRIT,9.5,Critical,This is a crit CVE 3,bash,4.2,1.3,layer3 3\r\nCVE-789-CRIT,9.5,Critical,This is a crit CVE 3,openssl,1.1.1k,1.3,layer3 3\r\nCVE-123-IMP,7,Important,This is a imp CVE 1,openssl,1.1.1k,1.1,layer3 3\r\nCVE-123-MED,4.5,Moderate,This is a mod CVE 1,openssl,1.1.1k,1.1,layer3 3\r\nCVE-456-MED,4.9,Moderate,This is a mod CVE 2,openssl,1.1.1k,1.2,layer3 3\r\nCVE-123-LOW,2,Low,This is a low CVE 1,openssl,1.1.1k,1.1,layer3 3\r\n",
+			expectedOutput: "legacy_testComponents.csv",
 		},
 	}
 
@@ -743,207 +510,8 @@ func (s *imageScanTestSuite) TestScan_LegacyCSVOutput() {
 func (s *imageScanTestSuite) TestScan_LegacyJSONOutput() {
 	cases := map[string]outputFormatTest{
 		"should print legacy JSON output if format is set": {
-			components: testComponents,
-			expectedOutput: `{
-  "metadata": {
-    "v1": {
-      "layers": [
-        {
-          "instruction": "layer1",
-          "value": "1"
-        },
-        {
-          "instruction": "layer2",
-          "value": "2"
-        },
-        {
-          "instruction": "layer3",
-          "value": "3"
-        }
-      ]
-    }
-  },
-  "scan": {
-    "components": [
-      {
-        "name": "apt",
-        "version": "1.0",
-        "vulns": [
-          {
-            "cve": "CVE-123-LOW",
-            "cvss": 2,
-            "summary": "This is a low CVE 1",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.1",
-            "severity": "LOW_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-789-LOW",
-            "cvss": 2.5,
-            "summary": "This is a low CVE 3",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.3",
-            "severity": "LOW_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-789-CRIT",
-            "cvss": 9.5,
-            "summary": "This is a crit CVE 3",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.3",
-            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
-          }
-        ],
-        "layerIndex": 0,
-        "fixedBy": "1.4"
-      },
-      {
-        "name": "systemd",
-        "version": "1.3-debu49",
-        "vulns": [
-          {
-            "cve": "CVE-123-MED",
-            "cvss": 4.5,
-            "summary": "This is a mod CVE 1",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.1",
-            "severity": "MODERATE_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-456-MED",
-            "cvss": 4.9,
-            "summary": "This is a mod CVE 2",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.2",
-            "severity": "MODERATE_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-789-MED",
-            "cvss": 5.2,
-            "summary": "This is a mod CVE 3",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.3",
-            "severity": "MODERATE_VULNERABILITY_SEVERITY"
-          }
-        ],
-        "layerIndex": 1,
-        "fixedBy": "1.3-debu102"
-      },
-      {
-        "name": "curl",
-        "version": "7.0-rc1",
-        "vulns": [
-          {
-            "cve": "CVE-123-IMP",
-            "cvss": 7,
-            "summary": "This is a imp CVE 1",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.1",
-            "severity": "IMPORTANT_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-456-IMP",
-            "cvss": 6.8,
-            "summary": "This is a imp CVE 2",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.2",
-            "severity": "IMPORTANT_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-789-IMP",
-            "cvss": 7,
-            "summary": "This is a imp CVE 3",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.3",
-            "severity": "IMPORTANT_VULNERABILITY_SEVERITY"
-          }
-        ],
-        "layerIndex": 1,
-        "fixedBy": "7.1-rc2"
-      },
-      {
-        "name": "bash",
-        "version": "4.2",
-        "vulns": [
-          {
-            "cve": "CVE-123-CRIT",
-            "cvss": 8.5,
-            "summary": "This is a crit CVE 1",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.1",
-            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-456-CRIT",
-            "cvss": 9,
-            "summary": "This is a crit CVE 2",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.2",
-            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-789-CRIT",
-            "cvss": 9.5,
-            "summary": "This is a crit CVE 3",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.3",
-            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
-          }
-        ],
-        "layerIndex": 2,
-        "fixedBy": "4.3"
-      },
-      {
-        "name": "openssl",
-        "version": "1.1.1k",
-        "vulns": [
-          {
-            "cve": "CVE-123-LOW",
-            "cvss": 2,
-            "summary": "This is a low CVE 1",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.1",
-            "severity": "LOW_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-123-MED",
-            "cvss": 4.5,
-            "summary": "This is a mod CVE 1",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.1",
-            "severity": "MODERATE_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-456-MED",
-            "cvss": 4.9,
-            "summary": "This is a mod CVE 2",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.2",
-            "severity": "MODERATE_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-123-IMP",
-            "cvss": 7,
-            "summary": "This is a imp CVE 1",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.1",
-            "severity": "IMPORTANT_VULNERABILITY_SEVERITY"
-          },
-          {
-            "cve": "CVE-789-CRIT",
-            "cvss": 9.5,
-            "summary": "This is a crit CVE 3",
-            "link": "\u003csome-link-to-nvd\u003e",
-            "fixedBy": "1.3",
-            "severity": "CRITICAL_VULNERABILITY_SEVERITY"
-          }
-        ],
-        "layerIndex": 2
-      }
-    ]
-  }
-}
-`,
+			components:     testComponents,
+			expectedOutput: "legacy_testComponents.json",
 		},
 	}
 
@@ -954,22 +522,45 @@ func (s *imageScanTestSuite) TestScan_LegacyJSONOutput() {
 
 func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
 	standardizedFormat bool) {
+	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		s.Run(name, func() {
-			var out *bytes.Buffer
-			conn, closeF := s.createGRPCMockImageService(c.components)
+			out, closeF, imgScanCmd := s.createImgScanCmd(c, printer, standardizedFormat)
 			defer closeF()
-
-			imgScanCmd := s.defaultImageScanCommand
-			imgScanCmd.printer = printer
-			imgScanCmd.standardizedFormat = standardizedFormat
-			imgScanCmd.env, out = s.newTestMockEnvironmentWithConn(conn)
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
-			s.Assert().Equal(c.expectedOutput, out.String())
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
+			s.Require().NoError(err)
+			s.Assert().Equal(string(expectedOutput), out.String())
+		})
+		s.Run(colorTestPrefix+name, func() {
+			if runtime.GOOS == "windows" {
+				s.T().Skip("Windows has different color sequences than Linux/Mac.")
+			}
+			color.NoColor = false
+			defer func() { color.NoColor = true }()
+			out, closeF, imgScanCmd := s.createImgScanCmd(c, printer, standardizedFormat)
+			defer closeF()
+
+			err := imgScanCmd.Scan()
+			s.Require().NoError(err)
+			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
+			s.Require().NoError(err)
+			s.Assert().Equal(string(expectedOutput), out.String())
 		})
 	}
+}
+
+func (s *imageScanTestSuite) createImgScanCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, closeFunction, imageScanCommand) {
+	var out *bytes.Buffer
+	conn, closeF := s.createGRPCMockImageService(c.components)
+
+	imgScanCmd := s.defaultImageScanCommand
+	imgScanCmd.printer = printer
+	imgScanCmd.standardizedFormat = standardizedFormat
+	imgScanCmd.env, out = s.newTestMockEnvironmentWithConn(conn)
+	return out, closeF, imgScanCmd
 }
 
 func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatTest, format string) {
@@ -985,7 +576,9 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
-			s.Assert().Equal(c.expectedOutput, out.String())
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
+			s.Require().NoError(err)
+			s.Assert().Equal(string(expectedOutput), out.String())
 		})
 	}
 }
