@@ -1,0 +1,12 @@
+{
+  "result": {
+    "summary": {
+      "CRITICAL": 0,
+      "IMPORTANT": 0,
+      "LOW": 0,
+      "MODERATE": 0,
+      "TOTAL-COMPONENTS": 0,
+      "TOTAL-VULNERABILITIES": 0
+    }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "alerts": [
+    {
+      "policy": {
+        "id": "policy7",
+        "name": "policy 7",
+        "description": "policy 7 for testing",
+        "remediation": "policy 7 for testing",
+        "severity": "LOW_SEVERITY"
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy2",
+        "name": "policy 2",
+        "description": "policy 2 for testing",
+        "remediation": "policy 2 for testing",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        },
+        {
+          "message": "test violation 2"
+        },
+        {
+          "message": "test violation 3"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy5",
+        "name": "policy 5",
+        "description": "policy 5 for testing",
+        "remediation": "policy 5 for testing",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        },
+        {
+          "message": "test violation 2"
+        },
+        {
+          "message": "test violation 3"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy5",
+        "name": "policy 5",
+        "description": "policy 5 for testing",
+        "remediation": "policy 5 for testing",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy6",
+        "name": "policy 6",
+        "description": "policy 6 for testing",
+        "remediation": "policy 6 for testing",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy4",
+        "name": "policy 4",
+        "description": "policy 4 for testing",
+        "remediation": "policy 4 for testing",
+        "severity": "HIGH_SEVERITY",
+        "enforcementActions": [
+          "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT"
+        ]
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy8",
+        "name": "policy 8",
+        "rationale": "policy 8 for testing",
+        "remediation": "policy 8 for testing",
+        "severity": "HIGH_SEVERITY"
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        },
+        {
+          "message": "test violation 2"
+        },
+        {
+          "message": "test violation 3"
+        }
+      ]
+    }
+  ]
+}

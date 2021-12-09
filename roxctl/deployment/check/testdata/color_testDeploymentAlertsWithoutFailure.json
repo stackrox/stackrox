@@ -1,0 +1,99 @@
+{
+  "results": [
+    {
+      "metadata": {
+        "id": "",
+        "additionalInfo": {
+          "name": "wordpress",
+          "namespace": "",
+          "type": "Deployment"
+        }
+      },
+      "summary": {
+        "[31;1mCRITICAL[0m": 1,
+        "[95mHIGH[0m": 1,
+        "[34;2mLOW[0m": 1,
+        "[33mMEDIUM[0m": 3,
+        "TOTAL": 6
+      },
+      "violatedPolicies": [
+        {
+          "name": "policy 1",
+          "severity": "[31;1mCRITICAL[0m",
+          "description": "policy 1 for testing",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 1 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 8",
+          "severity": "[95mHIGH[0m",
+          "description": "",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 8 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 2",
+          "severity": "[33mMEDIUM[0m",
+          "description": "policy 2 for testing",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 2 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 5",
+          "severity": "[33mMEDIUM[0m",
+          "description": "policy 5 for testing",
+          "violation": [
+            "testing alert violation message",
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 5 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 6",
+          "severity": "[33mMEDIUM[0m",
+          "description": "policy 6 for testing",
+          "violation": [
+            "testing alert violation message"
+          ],
+          "remediation": "policy 6 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 7",
+          "severity": "[34;2mLOW[0m",
+          "description": "policy 7 for testing",
+          "violation": [
+            "testing alert violation message"
+          ],
+          "remediation": "policy 7 for testing",
+          "failingCheck": false
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "[31;1mCRITICAL[0m": 1,
+    "[95mHIGH[0m": 1,
+    "[34;2mLOW[0m": 1,
+    "[33mMEDIUM[0m": 3,
+    "TOTAL": 6
+  }
+}
