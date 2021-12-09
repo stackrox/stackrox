@@ -9,10 +9,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -82,14 +82,16 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	c.AddCommand(hostPathVolume())
 	c.AddCommand(noVolume())
 
+	flavor := images.GetFlavorByBuildType()
+
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
 	// Adds k8s specific flags
-	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", defaults.MainImage(), "main image to use", "central")
+	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", flavor.MainImage(), "main image to use", "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
 
-	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", defaults.ScannerImage(), "Scanner image to use", "scanner")
-	flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", defaults.ScannerDBImage(), "Scanner DB image to use", "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", flavor.ScannerImage(), "Scanner image to use", "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", flavor.ScannerDBImage(), "Scanner DB image to use", "scanner")
 
 	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
 

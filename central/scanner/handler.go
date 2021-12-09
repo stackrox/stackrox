@@ -12,9 +12,9 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
@@ -74,12 +74,13 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 	}
 	dbPassword := []byte(renderer.CreatePassword())
 
+	flavor := images.GetFlavorByBuildType()
 	config := renderer.Config{
 		ClusterType: clusterType,
 		K8sConfig: &renderer.K8sConfig{
 			CommonConfig: renderer.CommonConfig{
-				ScannerImage:   stringutils.OrDefault(params.ScannerImage, defaults.ScannerImage()),
-				ScannerDBImage: stringutils.OrDefault(params.ScannerDBImage, defaults.ScannerDBImage()),
+				ScannerImage:   stringutils.OrDefault(params.ScannerImage, flavor.ScannerImage()),
+				ScannerDBImage: stringutils.OrDefault(params.ScannerDBImage, flavor.ScannerDBImage()),
 			},
 			OfflineMode:  params.OfflineMode,
 			IstioVersion: params.IstioVersion,

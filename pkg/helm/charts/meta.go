@@ -1,12 +1,9 @@
 package charts
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/images"
 )
 
 // MetaValuesKey exists exclusively to protect MetaValues from losing typing and becoming exchangeable with
@@ -30,14 +27,15 @@ type ImagePullSecrets struct {
 
 // DefaultMetaValues are the default meta values for rendering the StackRox charts in production.
 func DefaultMetaValues() MetaValues {
+	flavor := images.GetFlavorByBuildType()
 	metaValues := MetaValues{
-		"Versions":              version.GetAllVersions(),
-		"MainRegistry":          defaults.MainImageRegistry(),
-		"ImageRemote":           "main",
-		"CollectorRegistry":     defaults.CollectorImageRegistry(),
-		"CollectorImageRemote":  "collector",
-		"CollectorFullImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
-		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
+		"Versions":              flavor.Versions,
+		"MainRegistry":          flavor.MainRegistry,
+		"ImageRemote":           flavor.MainImageName,
+		"CollectorRegistry":     flavor.CollectorRegistry,
+		"CollectorImageRemote":  flavor.CollectorImageName,
+		"CollectorFullImageTag": flavor.CollectorImageTag,
+		"CollectorSlimImageTag": flavor.CollectorSlimImageTag,
 		"RenderMode":            "",
 		"ChartRepo": ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -57,14 +55,17 @@ func DefaultMetaValues() MetaValues {
 
 // RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
 func RHACSMetaValues() MetaValues {
+
+	flavor := images.GetFlavorByBuildType()
 	metaValues := MetaValues{
-		"Versions":              version.GetAllVersions(),
+		"Versions": flavor.Versions,
+		// TODO: these registries will change once we have the RHACS flavor. For now they will remain hardcoded here.
 		"MainRegistry":          "registry.redhat.io/rh-acs",
 		"ImageRemote":           "main",
 		"CollectorRegistry":     "registry.redhat.io/rh-acs",
 		"CollectorImageRemote":  "collector",
-		"CollectorFullImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
-		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
+		"CollectorFullImageTag": flavor.CollectorImageTag,
+		"CollectorSlimImageTag": flavor.CollectorSlimImageTag,
 		"RenderMode":            "",
 		"ChartRepo": ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",

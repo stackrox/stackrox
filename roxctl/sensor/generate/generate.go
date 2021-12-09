@@ -12,8 +12,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/istioutils"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
@@ -163,11 +163,13 @@ func Command() *cobra.Command {
 		},
 	}
 
+	flavor := images.GetFlavorByBuildType()
+
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
 	c.PersistentFlags().BoolVar(&continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")
 	c.PersistentFlags().StringVar(&cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&cluster.MainImage, "main-image-repository", defaults.MainImageRepo(), "image repository sensor should be deployed with")
+	c.PersistentFlags().StringVar(&cluster.MainImage, "main-image-repository", flavor.MainImageRepo(), "image repository sensor should be deployed with")
 	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (leave blank to use default)")
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
