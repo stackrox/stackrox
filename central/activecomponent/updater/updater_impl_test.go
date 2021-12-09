@@ -85,9 +85,9 @@ var (
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component1_match_file1"},
-						{Path: "/root/bin/image1_component1_nonmatch_file2"},
-						{Path: "/root/bin/image1_component1_nonmatch_file3"},
+						{Path: "/root/bin/image1_component1_match_file1", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
+						{Path: "/root/bin/image1_component1_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
+						{Path: "/root/bin/image1_component1_nonmatch_file3", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
 					},
 				},
 				{
@@ -95,9 +95,9 @@ var (
 					Version: "2",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component2_nonmatch_file1"},
-						{Path: "/root/bin/image1_component2_nonmatch_file2"},
-						{Path: "/root/bin/image1_component2_match_file3"},
+						{Path: "/root/bin/image1_component2_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
+						{Path: "/root/bin/image1_component2_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
+						{Path: "/root/bin/image1_component2_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
 					},
 				},
 				{
@@ -110,9 +110,9 @@ var (
 					Version: "2",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component4_nonmatch_file1"},
-						{Path: "/root/bin/image1_component4_nonmatch_file2"},
-						{Path: "/root/bin/image1_component4_match_file3"},
+						{Path: "/root/bin/image1_component4_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
+						{Path: "/root/bin/image1_component4_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
+						{Path: "/root/bin/image1_component4_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
 					},
 				},
 			},
@@ -354,9 +354,13 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/usr/bin/component1_file1"},
-						{Path: "/usr/bin/component1_file2"},
-						{Path: "/usr/bin/component1and2_file3"},
+						{Path: "/usr/bin/component1_file1", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
+						{Path: "/usr/bin/component1_file2", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
+						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
+						{Path: "/usr/bin/component1_file4", Dependencies: []string{
+							scancomponent.ComponentID("component1", "1"),
+							scancomponent.ComponentID("component2", "1"),
+						}},
 					},
 				},
 				{
@@ -364,9 +368,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/usr/bin/component2_file1"},
-						{Path: "/usr/bin/component2_file2"},
-						{Path: "/usr/bin/component1and2_file3"},
+						{Path: "/usr/bin/component2_file1", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
+						{Path: "/usr/bin/component2_file2", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
+						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
 					},
 				},
 			},

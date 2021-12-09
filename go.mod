@@ -4,7 +4,8 @@ go 1.16
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20211030133935-e0a9b47f81de
+// TODO(cdu): Adjust this once #541 merged in scanner
+require github.com/stackrox/scanner v0.0.0-20211201172013-8e211b1521ee
 
 require (
 	cloud.google.com/go v0.94.1
