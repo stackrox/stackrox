@@ -1,14 +1,15 @@
 import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Formik } from 'formik';
-import { Wizard, Breadcrumb, Title, BreadcrumbItem, Divider, Form } from '@patternfly/react-core';
+import { Wizard, Breadcrumb, Title, BreadcrumbItem, Divider } from '@patternfly/react-core';
 
 import { Policy } from 'types/policy.proto';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 
 import { PageAction } from '../policies.utils';
-import PolicyDetailsForm from './PolicyDetailsForm';
+import PolicyDetailsForm from './Step1/PolicyDetailsForm';
+import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
 
 type PolicyWizardProps = {
     pageAction: PageAction;
@@ -40,49 +41,45 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
             </div>
             <Divider component="div" />
             <Formik initialValues={policy} onSubmit={() => {}}>
-                {({ handleChange }) => (
-                    <Form>
-                        <Wizard
-                            navAriaLabel={`${pageAction} policy steps`}
-                            mainAriaLabel={`${pageAction} policy content`}
-                            onClose={closeWizard}
-                            steps={[
-                                {
-                                    id: 1,
-                                    name: 'Policy details',
-                                    component: <PolicyDetailsForm handleChange={handleChange} />,
-                                    canJumpTo: stepIdReached >= 1,
-                                },
-                                {
-                                    id: 2,
-                                    name: 'Policy behavior',
-                                    component: <div>PolicyBehaviorForm</div>,
-                                    canJumpTo: stepIdReached >= 2,
-                                },
-                                {
-                                    id: 3,
-                                    name: 'Policy criteria',
-                                    component: <div>PolicyCriteriaForm</div>,
-                                    canJumpTo: stepIdReached >= 3,
-                                },
-                                {
-                                    id: 4,
-                                    name: 'Policy scope',
-                                    component: <div>PolicyScopeForm</div>,
-                                    canJumpTo: stepIdReached >= 4,
-                                },
-                                {
-                                    id: 5,
-                                    name: 'Review policy',
-                                    component: <div>ReviewPolicyForm</div>,
-                                    nextButtonText: 'Finish',
-                                    canJumpTo: stepIdReached >= 5,
-                                },
-                            ]}
-                            onNext={onNext}
-                        />
-                    </Form>
-                )}
+                <Wizard
+                    navAriaLabel={`${pageAction} policy steps`}
+                    mainAriaLabel={`${pageAction} policy content`}
+                    onClose={closeWizard}
+                    steps={[
+                        {
+                            id: 1,
+                            name: 'Policy details',
+                            component: <PolicyDetailsForm />,
+                            canJumpTo: stepIdReached >= 1,
+                        },
+                        {
+                            id: 2,
+                            name: 'Policy behavior',
+                            component: <PolicyBehaviorForm />,
+                            canJumpTo: stepIdReached >= 2,
+                        },
+                        {
+                            id: 3,
+                            name: 'Policy criteria',
+                            component: <div>PolicyCriteriaForm</div>,
+                            canJumpTo: stepIdReached >= 3,
+                        },
+                        {
+                            id: 4,
+                            name: 'Policy scope',
+                            component: <div>PolicyScopeForm</div>,
+                            canJumpTo: stepIdReached >= 4,
+                        },
+                        {
+                            id: 5,
+                            name: 'Review policy',
+                            component: <div>ReviewPolicyForm</div>,
+                            nextButtonText: 'Finish',
+                            canJumpTo: stepIdReached >= 5,
+                        },
+                    ]}
+                    onNext={onNext}
+                />
             </Formik>
         </>
     );

@@ -35,8 +35,8 @@ import {
     formatLifecycleStages,
     formatNotifierCountsWithLabelStrings,
     getLabelAndNotifierIdsForTypes,
-} from './policies.utils';
-import PolicySeverityLabel from './PolicySeverityLabel';
+} from '../policies.utils';
+import PolicySeverityLabel from '../PolicySeverityLabel';
 
 const columns = [
     {

@@ -27,8 +27,8 @@ import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { getRequestQueryStringForSearchFilter } from './policies.utils';
-import ImportPolicyJSONModal from './Modal/ImportPolicyJSONModal';
+import { getRequestQueryStringForSearchFilter } from '../policies.utils';
+import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
 
 type PoliciesTablePageProps = {

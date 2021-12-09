@@ -1,19 +1,17 @@
 import React, { ReactElement } from 'react';
-import { Flex, TextInput, FormGroup, Radio, TextArea } from '@patternfly/react-core';
-import { Field } from 'formik';
+import { Flex, TextInput, FormGroup, Radio, TextArea, Form } from '@patternfly/react-core';
+import { Field, useFormikContext } from 'formik';
 
 import PolicyCategoriesSelectField from './PolicyCategoriesSelectField';
 
-type PolicyMetadataFormSectionProps = {
-    handleChange: (e) => void;
-};
+function PolicyMetadataFormSection(): ReactElement {
+    const { handleChange } = useFormikContext();
 
-function PolicyMetadataFormSection({ handleChange }: PolicyMetadataFormSectionProps): ReactElement {
     function onChange(_value, event) {
         handleChange(event);
     }
     return (
-        <>
+        <Form>
             <Field name="name">
                 {({ field }) => (
                     <FormGroup
@@ -149,7 +147,7 @@ function PolicyMetadataFormSection({ handleChange }: PolicyMetadataFormSectionPr
                     </FormGroup>
                 )}
             </Field>
-        </>
+        </Form>
     );
 }
 
