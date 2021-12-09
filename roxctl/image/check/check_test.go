@@ -504,7 +504,7 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 		})
 		suite.Run(colorTestPrefix+name, func() {
 			if runtime.GOOS == "windows" {
-				suite.T().Skip()
+				suite.T().Skip("Windows has different color sequences than Linux/Mac.")
 			}
 			color.NoColor = false
 			defer func() { color.NoColor = true }()

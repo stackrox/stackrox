@@ -499,7 +499,7 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 		})
 		d.Run(colorTestPrefix+name, func() {
 			if runtime.GOOS == "windows" {
-				d.T().Skip()
+				d.T().Skip("Windows has different color sequences than Linux/Mac.")
 			}
 			color.NoColor = false
 			defer func() { color.NoColor = true }()
