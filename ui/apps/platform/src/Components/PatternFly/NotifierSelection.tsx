@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import { SelectOption, Text, TextInput, TextVariants, Title } from '@patternfly/react-core';
+import { SelectOption, TextInput } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
@@ -53,13 +53,6 @@ function NotifierSelection({
 
     return (
         <>
-            <Title headingLevel="h2" className="pf-u-mb-xs">
-                Notification method and distribution
-            </Title>
-            <Text component={TextVariants.p} className="pf-u-mb-md">
-                Schedule reports across the organization by defining a notification method and
-                distribution list for the report
-            </Text>
             <FormLabelGroup
                 className="pf-u-mb-md"
                 isRequired
