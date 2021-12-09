@@ -29,11 +29,11 @@ import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMess
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import NotifierSelection from 'Components/PatternFly/NotifierSelection';
 import useMultiSelect from 'hooks/useMultiSelect';
 import { saveReport } from 'services/ReportsService';
 import { ReportConfigurationMappedValues } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import NotifierSelection from './Form/NotifierSelection';
 import ResourceScopeSelection from './Form/ResourceScopeSelection';
 
 export type VulnMgmtReportFormProps = {
