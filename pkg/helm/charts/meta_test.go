@@ -4,7 +4,10 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/templates"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,4 +60,35 @@ func TestMetaValuesInTemplating(t *testing.T) {
 	res, err = templates.ExecuteToString(tpl, dataConvertedToRaw)
 	assert.NoError(t, err)
 	assert.Equal(t, "value is: 500", res)
+}
+
+// TestRequiredMetaValuesArePresent validates that MetaValues attributes that are consumed and required by .htpl files
+// are actually present.
+func TestRequiredMetaValuesArePresent(t *testing.T) {
+	testutils.SetExampleVersion(t)
+	restorer := testbuildinfo.SetForTest(t)
+	defer func() {
+		restorer.Restore()
+	}()
+
+	cases := map[string]MetaValues{
+		"default": DefaultMetaValues(),
+		"rhacs":   RHACSMetaValues(),
+	}
+	for n, c := range cases {
+		t.Run(n, func(t *testing.T) {
+			assert.NotEmpty(t, c["MainRegistry"])
+			assert.NotEmpty(t, c["CollectorRegistry"])
+			assert.NotEmpty(t, c["CollectorFullImageTag"])
+			assert.NotEmpty(t, c["CollectorSlimImageTag"])
+			assert.NotEmpty(t, (c["ChartRepo"].(ChartRepo)).URL)
+			assert.NotNil(t, c["ImagePullSecrets"])
+
+			versions := c["Versions"].(version.Versions)
+			assert.NotEmpty(t, versions.ChartVersion)
+			assert.NotEmpty(t, versions.MainVersion)
+			// TODO: replace this with the check of the scanner tag once we migrate to it instead of version.
+			assert.NotEmpty(t, versions.ScannerVersion)
+		})
+	}
 }
