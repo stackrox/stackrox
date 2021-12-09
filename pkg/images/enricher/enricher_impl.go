@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -27,6 +28,7 @@ const (
 
 type enricherImpl struct {
 	cves         cveSuppressor
+	cvesV2       cveSuppressor
 	integrations integration.Set
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
@@ -76,6 +78,9 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	}
 
 	e.cves.EnrichImageWithSuppressedCVEs(image)
+	if features.VulnRiskManagement.Enabled() {
+		e.cvesV2.EnrichImageWithSuppressedCVEs(image)
+	}
 
 	return EnrichmentResult{
 		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone),
