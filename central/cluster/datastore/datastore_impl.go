@@ -848,24 +848,29 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 func isClusterUpdateRequired(cluster *storage.Cluster, bundleID string, helmConfig *central.HelmManagedConfigInit) bool {
 	manager := helmConfig.GetManagedBy()
 	clusterUpdateRequired := false
+
 	if cluster.GetInitBundleId() != bundleID {
 		log.Info("Cluster update is required, init bundle id has changed")
 		clusterUpdateRequired = true
 	}
+
 	if cluster.GetHelmConfig().GetConfigFingerprint() != helmConfig.GetClusterConfig().GetConfigFingerprint() {
 		log.Info("Cluster update is required, helm configuration fingerprint has changed")
 		clusterUpdateRequired = true
 	}
+
 	if cluster.GetManagedBy() != manager {
 		log.Info("Cluster update is required, manager type has changed")
 		clusterUpdateRequired = true
 	}
+
 	if cluster.GetHelmConfig().GetHelmReleaseRevision() != helmConfig.GetClusterConfig().GetHelmReleaseRevision() {
 		// We check != to cover both a Helm upgrade (<) and a rollback (>)
 		// TODO(do-not-merge): add unit tests both > and <
 		log.Info("Cluster update is required, helm release revision has changed")
 		clusterUpdateRequired = true
 	}
+
 	return clusterUpdateRequired
 }
 
