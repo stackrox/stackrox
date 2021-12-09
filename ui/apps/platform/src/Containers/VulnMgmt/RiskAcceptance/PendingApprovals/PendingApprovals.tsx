@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useEffect } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { useQuery, useApolloClient } from '@apollo/client';
 
@@ -27,6 +27,7 @@ function PendingApprovals(): ReactElement {
                 },
             },
         },
+        fetchPolicy: 'network-only',
     });
 
     async function updateTable() {
