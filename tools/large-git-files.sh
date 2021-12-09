@@ -2,7 +2,8 @@
 # Finds large files that have been checked in to Git.
 set -euo pipefail
 
-DEFAULT_ALLOWLIST_PATH=".allowed-largefiles"
+GIT_REPO_TOP="$(git rev-parse --show-toplevel)"
+DEFAULT_ALLOWLIST_PATH="$GIT_REPO_TOP/.allowed-largefiles"
 
 allowlist_path=""
 if [[ -f "$DEFAULT_ALLOWLIST_PATH" ]]
@@ -18,10 +19,10 @@ fi
 allowed_files=""
 if [[ -n "$allowlist_path" ]]
 then
-  allowed_files=$(egrep -v '^\s*(#.*)$' "${allowlist_path}" | xargs git ls-files --)
+  allowed_files=$(cd "$GIT_REPO_TOP" && egrep -v '^\s*(#.*)$' "${allowlist_path}" | xargs git ls-files --)
 fi
 
-large_files=$(git ls-tree --full-tree -l -r HEAD "$(git rev-parse --show-toplevel)" | awk '$4 > 50*1024 {print$5}')
+large_files=$(git ls-tree --full-tree -l -r HEAD "$GIT_REPO_TOP" | awk '$4 > 50*1024 {print$5}')
 
 
 IFS=$'\n' read -d '' -r -a non_allowed_files < <(
