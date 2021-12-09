@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 FAILED=0
 CRS_VALIDATED=0
 
