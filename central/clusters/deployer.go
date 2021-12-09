@@ -92,6 +92,12 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
 		"CollectionMethod":      c.CollectionMethod.String(),
 
+		// Hardcoding RHACS charts repo for now.
+		// TODO: fill ChartRepo based on the current image flavor.
+		"ChartRepo": charts.ChartRepo{
+			URL: "http://mirror.openshift.com/pub/rhacs/charts",
+		},
+
 		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
 		"CreateUpgraderSA":   opts.CreateUpgraderSA,
 

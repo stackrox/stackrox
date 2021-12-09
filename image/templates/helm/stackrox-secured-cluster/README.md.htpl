@@ -13,7 +13,7 @@ directory for instructions on how to upgrade.
 
 To deploy the secured cluster services for the StackRox Kubernetes Security Platform, you must:
 - Have at least version 3.1 of the Helm tool installed on your machine
-- Have credentials for the `[< .MainRegistry >]` registry or the other image registry
+- Have credentials for the `[< required "" .MainRegistry >]` registry or the other image registry
   you use.
 
 > **IMPORTANT**
@@ -24,10 +24,10 @@ To deploy the secured cluster services for the StackRox Kubernetes Security Plat
 
 ## Add the canonical chart location as a Helm repository
 
-The canonical repository for StackRox Helm charts is [< .ChartRepo.URL >].
+The canonical repository for StackRox Helm charts is [< required "" .ChartRepo.URL >].
 To use StackRox Helm charts, run the following command:
 ```sh
-helm repo add stackrox [< .ChartRepo.URL >]
+helm repo add stackrox [< required "" .ChartRepo.URL >]
 ```
 Only run this command once per machine on which you want to use StackRox Helm
 charts.
@@ -93,7 +93,7 @@ following ways:
 #### Specify username and password
 
 Pass the following arguments to the `helm install` command if you are using the
-images from the default registry (`[< .MainRegistry >]`) or a registry that supports
+images from the default registry (`[< required "" .MainRegistry >]`) or a registry that supports
 authentication by using username and password:
 
 ```sh
@@ -269,8 +269,8 @@ chart and their default values:
 |`imagePullSecrets.allowNone`| Enabling this setting indicates that no image pull secrets are required to be configured upon initial deployment. Use this setting if you are using a cluster-private registry that does not require authentication. |`false`|
 |`image.main.name`|Repository from which to download the main image. |`main` |
 |`image.collector.name`|Repository from which to download the collector image.  |`collector` |
-|`image.main.registry`| Address of the registry you are using for main image.|`[< .MainRegistry >]` |
-|`image.collector.registry`| Address of the registry you are using for collector image.|`[< if eq .MainRegistry "stackrox.io" >]collector.stackrox.io[< else >][< .MainRegistry >][< end >]` |
+|`image.main.registry`| Address of the registry you are using for main image.|`[< required "" .MainRegistry >]` |
+|`image.collector.registry`| Address of the registry you are using for collector image.|`[< required "" .CollectorRegistry >]` |
 |`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox.svc:443` |
 |`collector.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. |`KERNEL_MODULE` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
