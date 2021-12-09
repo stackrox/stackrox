@@ -16,7 +16,7 @@ function ResourceScopeSelection({
 }: ResourceScopeSelectionProps): ReactElement {
     const [resourceScopes, setResourceScopes] = useState<AccessScope[]>([]);
 
-    function fetchNotifiers(): void {
+    function getScopes(): void {
         fetchAccessScopes()
             .then((response) => {
                 const resourceScopesList = response || [];
@@ -31,7 +31,7 @@ function ResourceScopeSelection({
     }
 
     useEffect(() => {
-        fetchNotifiers();
+        getScopes();
     }, []);
 
     function onScopeChange(_id, selection) {
