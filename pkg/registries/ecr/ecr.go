@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/pkg/errors"
@@ -148,7 +149,28 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 	if err != nil {
 		return nil, err
 	}
-	service := awsECR.New(sess)
+
+	var service *awsECR.ECR
+
+	if conf.GetUseAssumeRole() {
+		if conf.GetAssumeRoleId() == "" {
+			return nil, errorhelpers.NewErrInvalidArgs("AssumeRole ID is required to use AssumeRole")
+		}
+
+		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.RegistryId, conf.AssumeRoleId)
+		stsCred := stscreds.NewCredentials(sess, roleToAssumeArn, func(p *stscreds.AssumeRoleProvider) {
+			assumeRoleExternalId := conf.GetAssumeRoleExternalId()
+			if assumeRoleExternalId != "" {
+				p.ExternalID = &assumeRoleExternalId
+			}
+			//p.Duration = 900 (15min) default
+		})
+
+		service = awsECR.New(sess, &aws.Config{Credentials: stsCred})
+	} else {
+		service = awsECR.New(sess)
+	}
+
 	reg := &ecr{
 		config:      conf,
 		integration: integration,
