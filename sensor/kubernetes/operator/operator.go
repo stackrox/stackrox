@@ -1,4 +1,4 @@
-// Package operator contains "operational logic" that provide Sensor with some self-operation capabilities
+// Package operator contains "operational logic" that provides Sensor with some self-operation capabilities
 // irrespective of the way it was deployed.
 package operator
 
@@ -18,10 +18,9 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Operator performs some operator logic on deployments types that are not managed by our operator,
-// like Helm or YAML bundle deployments
+// Operator performs some operational logic that provides Sensor with some self-operation capabilities
+// irrespective of the way it was deployed.
 type Operator interface {
-	Initialize(ctx context.Context) error
 	Start(ctx context.Context) error
 	Stopped() concurrency.ReadOnlyErrorSignal
 	GetHelmReleaseRevision() uint64
@@ -47,7 +46,7 @@ func New(k8sClient kubernetes.Interface, appNamespace string) Operator {
 	}
 }
 
-func (o *operatorImpl) Initialize(ctx context.Context) error {
+func (o *operatorImpl) initialize(ctx context.Context) error {
 	log.Infof("Initializing embedded operator for namespace %s", o.appNamespace)
 
 	if err := o.initializeHelmActionConfig(); err != nil {
@@ -90,6 +89,10 @@ func (o *operatorImpl) stop(err error) {
 // Start launches the processes that implement the "operational logic" of Sensor.
 // Precondition: Initialize was previously invoked.
 func (o *operatorImpl) Start(ctx context.Context) error {
+	if err := o.initialize(ctx); err != nil {
+		return err
+	}
+
 	log.Info("Starting embedded operator.")
 
 	if !o.isSensorHelmManaged() {

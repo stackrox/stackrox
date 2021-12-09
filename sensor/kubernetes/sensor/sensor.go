@@ -90,12 +90,11 @@ func loadHelmConfig() (*central.HelmManagedConfigInit, error) {
 
 func setupEmbeddedOperator(client client.Interface, deploymentIdentification *storage.SensorDeploymentIdentification) (operator.Operator, error) {
 	sensorOperator := operator.New(client.Kubernetes(), deploymentIdentification.GetAppNamespace())
-	if err := sensorOperator.Initialize(context.Background()); err != nil {
-		return nil, errors.Wrap(err, "Error initializing sensor embedded operator, self-operating features will not be available")
-	}
+
 	if err := sensorOperator.Start(context.Background()); err != nil {
 		return nil, errors.Wrap(err, "Error starting sensor embedded operator, self-operating features will not be available")
 	}
+
 	return sensorOperator, nil
 }
 
