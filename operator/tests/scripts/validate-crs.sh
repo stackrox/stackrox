@@ -62,5 +62,3 @@ fi
 if [ $CRS_VALIDATED -eq 0 ]; then
     die "ERROR: No CRs validated, this does not seem correct. CRs were expected in directory \"$TESTDIR\"."
 fi
-
-exit 0
