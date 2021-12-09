@@ -4167,6 +4167,7 @@ jobs:
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
     - IMAGE_REPO: "quay.io/rhacs-eng"
     - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
+    - INSTALL_OPERATOR_THROUGH_OLM: "true"
 
     steps:
     - checkout
@@ -4237,6 +4238,7 @@ jobs:
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
     - IMAGE_REPO: "quay.io/rhacs-eng"
     - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
+    - INSTALL_OPERATOR_THROUGH_OLM: "true"
 
     steps:
     - checkout
