@@ -229,14 +229,14 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: validate
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
-validate: install
+validate-crs: install
 	./tests/scripts/validate-crs.sh ./tests $(CRDS)
 
-test-e2e: build install validate kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
+test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
 
-test-e2e-deployed: build install validate kuttl ## Run e2e tests with manager deployed on cluster.
+test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	SKIP_MANAGER_START=1 $(KUTTL) test
 

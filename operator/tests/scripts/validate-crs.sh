@@ -4,12 +4,8 @@ set -euo pipefail
 FAILED=0
 CRS_VALIDATED=0
 
-eecho() {
-  echo "$@" >&2
-}
-
 die() {
-    eecho "$@"
+    echo "$@" >&2
     exit 1
 }
 
