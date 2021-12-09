@@ -809,7 +809,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			}
 		}
 
-		if !isClusterUpdateRequired(cluster, bundleID, hello) {
+		if !isClusterUpdateRequired(cluster, bundleID, helmConfig) {
 			// There is no need to update the cluster, return immediately.
 			//
 			// Note: this also is the case if the cluster was newly added.
@@ -845,8 +845,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 // * in init bundle ID
 // * manager type
 // * Helm release revision
-func isClusterUpdateRequired(cluster *storage.Cluster, bundleID string, hello *central.SensorHello) bool {
-	helmConfig := hello.GetHelmManagedConfigInit()
+func isClusterUpdateRequired(cluster *storage.Cluster, bundleID string, helmConfig *central.HelmManagedConfigInit) bool {
 	manager := helmConfig.GetManagedBy()
 	clusterUpdateRequired := false
 	if cluster.GetInitBundleId() != bundleID {
@@ -861,7 +860,9 @@ func isClusterUpdateRequired(cluster *storage.Cluster, bundleID string, hello *c
 		log.Info("Cluster update is required, manager type has changed")
 		clusterUpdateRequired = true
 	}
-	if cluster.GetHelmConfig().GetHelmReleaseRevision() != hello.GetHelmManagedConfigInit().GetClusterConfig().GetHelmReleaseRevision() {
+	if cluster.GetHelmConfig().GetHelmReleaseRevision() != helmConfig.GetClusterConfig().GetHelmReleaseRevision() {
+		// We check != to cover both a Helm upgrade (<) and a rollback (>)
+		// TODO(do-not-merge): add unit tests both > and <
 		log.Info("Cluster update is required, helm release revision has changed")
 		clusterUpdateRequired = true
 	}
