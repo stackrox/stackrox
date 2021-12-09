@@ -37,7 +37,7 @@ CRD_KINDS=$(
 # Locate CRs for the kinds extract above.
 CRS=$(
 	for kind in $CRD_KINDS; do
-        find "$TESTDIR" -type f -name "*.yaml" \! -name "*-assert.yaml" \! -name "*-errors.yaml" \! -name "*.envsubst.yaml" -exec grep -q "^kind: $kind" {} \; -print
+        find "$TESTDIR" -type f -name "*.yaml" \! -name "*-assert.yaml" \! -name "*-errors.yaml" \! -name "*.envsubst.yaml" -exec grep -Eiq "^kind: *${kind} *$" {} \; -print
     done
     )
 
