@@ -12,6 +12,7 @@ import objects.GCRImageIntegration
 import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ClusterService
+import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.PolicyService
 import spock.lang.Retry
