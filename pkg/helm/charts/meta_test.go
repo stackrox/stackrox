@@ -78,7 +78,9 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 	for n, c := range cases {
 		t.Run(n, func(t *testing.T) {
 			assert.NotEmpty(t, c["MainRegistry"])
+			assert.NotEmpty(t, c["ImageRemote"])
 			assert.NotEmpty(t, c["CollectorRegistry"])
+			assert.NotEmpty(t, c["CollectorImageRemote"])
 			assert.NotEmpty(t, c["CollectorFullImageTag"])
 			assert.NotEmpty(t, c["CollectorSlimImageTag"])
 			assert.NotEmpty(t, (c["ChartRepo"].(ChartRepo)).URL)

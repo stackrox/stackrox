@@ -197,7 +197,9 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotEmpty(t, fields["MainRegistry"])
+	assert.NotEmpty(t, fields["ImageRemote"])
 	assert.NotEmpty(t, fields[collectorRegistryKey])
+	assert.NotEmpty(t, fields[collectorImageRemoteKey])
 	assert.NotEmpty(t, fields[collectorSlimImageTagKey])
 	assert.NotEmpty(t, fields[collectorFullImageTagKey])
 

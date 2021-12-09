@@ -13,7 +13,9 @@ func DefaultTestMetaValues(t *testing.T) charts.MetaValues {
 	testutils.MustBeInTest(t)
 	return charts.MetaValues{
 		"MainRegistry":          "stackrox.io",
+		"ImageRemote":           "main",
 		"CollectorRegistry":     "collector.stackrox.io",
+		"CollectorImageRemote":  "collector",
 		"CollectorFullImageTag": "3.4.0-latest",
 		"CollectorSlimImageTag": "3.4.0-slim",
 		"ChartRepo": charts.ChartRepo{
