@@ -67,14 +67,14 @@ message CVE {
     google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = "search:\"CVE Snooze Expiry,store,hidden\""];
 
     message DistroSpecific {
-        VulnerabilitySeverity     severity              = 1;
+        VulnerabilitySeverity     severity              = 1 [(gogoproto.moretags) = "search:\"Severity\""];
         float                     cvss                  = 2;
         ScoreVersion              score_version         = 3;
         CVSSV2                    cvss_v2               = 4;
         CVSSV3                    cvss_v3               = 5;
     }
     map<string, DistroSpecific> distro_specifics    = 19;
-    VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = "search:\"Severity\""];
+    VulnerabilitySeverity       severity            = 20;
 }
 
 message CVSSV2 {
