@@ -3,8 +3,8 @@ package check
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"net"
+	"os"
 	"path"
 	"runtime"
 	"testing"
@@ -477,7 +477,7 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 			} else {
 				d.Require().NoError(err)
 			}
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			d.Require().NoError(err)
 			d.Assert().Equal(string(expectedOutput), out.String())
 		})
@@ -493,7 +493,7 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 			defer closeF()
 
 			d.assertError(deployCheckCmd, c)
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			d.Require().NoError(err)
 			d.Assert().Equal(string(expectedOutput), out.String())
 		})
@@ -508,7 +508,7 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 			defer closeF()
 
 			d.assertError(deployCheckCmd, c)
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
 			d.Require().NoError(err)
 			d.Assert().Equal(string(expectedOutput), out.String())
 		})

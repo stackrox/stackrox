@@ -3,8 +3,8 @@ package check
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"net"
+	"os"
 	"path"
 	"runtime"
 	"testing"
@@ -482,7 +482,7 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 			imgCheckCmd.printAllViolations = c.printAllViolations
 			// Errors will be tested within TestLegacyPrint_Error
 			_ = imgCheckCmd.printResults(c.alerts)
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			suite.Require().NoError(err)
 			suite.Assert().Equal(string(expectedOutput), out.String())
 		})
@@ -498,7 +498,7 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 			out, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
 			defer closeF()
 			suite.assertError(imgCheckCmd, c)
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			suite.Require().NoError(err)
 			suite.Assert().Equal(string(expectedOutput), out.String())
 		})
@@ -512,7 +512,7 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 			out, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
 			defer closeF()
 			suite.assertError(imgCheckCmd, c)
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
 			suite.Require().NoError(err)
 			suite.Assert().Equal(string(expectedOutput), out.String())
 		})

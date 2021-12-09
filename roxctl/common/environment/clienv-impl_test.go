@@ -32,16 +32,17 @@ func Test_colorWriter_Write(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.given, func(t *testing.T) {
+		c := tt
+		t.Run(c.given, func(t *testing.T) {
 			testIO, _, testStdOut, _ := TestIO()
 			env := NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
 			w := env.ColorWriter()
-			n, err := fmt.Fprint(w, tt.given)
+			n, err := fmt.Fprint(w, c.given)
 
 			assert.NoError(t, err)
-			assert.Len(t, tt.expected, n)
-			assert.Equal(t, tt.expected, testStdOut.String())
+			assert.Len(t, c.given, n)
+			assert.Equal(t, c.expected, testStdOut.String())
 		})
 	}
 }

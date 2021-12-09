@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"path"
 	"runtime"
 	"testing"
@@ -530,7 +530,7 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			s.Require().NoError(err)
 			s.Assert().Equal(string(expectedOutput), out.String())
 		})
@@ -545,7 +545,7 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
 			s.Require().NoError(err)
 			s.Assert().Equal(string(expectedOutput), out.String())
 		})
@@ -576,7 +576,7 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
-			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", c.expectedOutput))
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			s.Require().NoError(err)
 			s.Assert().Equal(string(expectedOutput), out.String())
 		})
