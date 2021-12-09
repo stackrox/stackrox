@@ -76,7 +76,7 @@ function PolicyBehaviorForm() {
     }
 
     const responseMethodHelperText = showEnforcement
-        ? 'Inform & enforce will execute enforcement behavior at the stages you select.'
+        ? 'Inform and enforce will execute enforcement behavior at the stages you select.'
         : 'Inform will always include violations for this policy in the violations list.';
 
     const hasBuild = values.lifecycleStages.includes('BUILD');
@@ -183,7 +183,7 @@ function PolicyBehaviorForm() {
                             }}
                         />
                         <Radio
-                            label="Inform & enforce"
+                            label="Inform and enforce"
                             isChecked={showEnforcement}
                             id="policy-response-inform-enforce"
                             name="enforce"
