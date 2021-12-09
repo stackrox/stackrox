@@ -73,8 +73,8 @@ func TestDockerSecurityChecks(t *testing.T) {
 		},
 	}
 
-	for _, cIt := range cases {
-		c := cIt
+	for _, c := range cases {
+		c := c
 		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 

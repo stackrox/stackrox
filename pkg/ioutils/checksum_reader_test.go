@@ -197,12 +197,12 @@ func TestChecksumReader(t *testing.T) {
 	}
 
 	for algoName, algo := range algos {
-		a := algo
+		algo := algo
 		t.Run(algoName, func(t *testing.T) {
 			t.Parallel()
 
 			suite.Run(t, &checksumReaderSuite{
-				algo: a,
+				algo: algo,
 			})
 		})
 	}

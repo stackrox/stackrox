@@ -111,6 +111,7 @@ func TestCreateCentralTLS(t *testing.T) {
 	}
 
 	for name, c := range cases {
+		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
