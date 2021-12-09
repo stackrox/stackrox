@@ -106,7 +106,6 @@ func StackRoxIOReleaseImageFlavor() Flavor {
 func GetFlavorByBuildType() Flavor {
 	if buildinfo.ReleaseBuild {
 		return StackRoxIOReleaseImageFlavor()
-	} else {
-		return DevelopmentBuildImageFlavor()
 	}
+	return DevelopmentBuildImageFlavor()
 }
