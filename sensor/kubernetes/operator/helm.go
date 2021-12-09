@@ -168,16 +168,7 @@ func (o *operatorImpl) processSecret(ctx context.Context, secret *corev1.Secret,
 	return nil
 }
 
-// GetHelmSecretTypes returns all secret types that Helm uses to store
-// release information.
-func getHelmSecretTypes() map[corev1.SecretType]bool {
-	return map[corev1.SecretType]bool{
-		secretTypeHelmReleaseV1: true,
-	}
-}
-
 // isHelmSecret returns whether the secret is used by Helm to store release information.
 func isHelmSecret(secret *corev1.Secret) bool {
-	_, ok := getHelmSecretTypes()[secret.Type]
-	return ok
+	return secret.Type == secretTypeHelmReleaseV1
 }
