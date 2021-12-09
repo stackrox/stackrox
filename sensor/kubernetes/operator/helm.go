@@ -27,10 +27,10 @@ const (
 	sensorPodAppLabelValue = "sensor"
 
 	helmDriverEnvVar = "HELM_DRIVER"
-	// SecretTypeHelmReleaseV1 is where Helm stores the metadata for each
-	// release starting with Helm 3.
-	// See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
-	secretTypeHelmReleaseV1 corev1.SecretType = "helm.sh/release.v1"
+	// Metadata key and value that identify Helm release secrets as documented
+	// in https://helm.sh/docs/topics/advanced/#storage-backends.
+	helmSecretMetadataLabelKey   = "owner"
+	helmSecretMetadataLabelValue = "helm"
 )
 
 func (o *operatorImpl) initializeHelmActionConfig() error {
@@ -170,5 +170,5 @@ func (o *operatorImpl) processSecret(ctx context.Context, secret *corev1.Secret,
 
 // isHelmSecret returns whether the secret is used by Helm to store release information.
 func isHelmSecret(secret *corev1.Secret) bool {
-	return secret.Type == secretTypeHelmReleaseV1
+	return secret.GetLabels()[helmSecretMetadataLabelKey] == helmSecretMetadataLabelValue
 }
