@@ -14,12 +14,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
@@ -33,10 +34,10 @@ var (
 			MainVersion:      "3.0.50.x-60-gac5d043be8",
 			ScannerVersion:   "2.5.0",
 		},
-		"MainRegistry":          defaults.MainImageRegistry(),
 		"ImageRemote":           "main",
-		"CollectorRegistry":     defaults.CollectorImageRegistry(),
 		"CollectorImageRemote":  "collector",
+		"MainRegistry":          "docker.io/stackrox",
+		"CollectorRegistry":     "docker.io/stackrox",
 		"CollectorFullImageTag": "1.2.3-latest",
 		"CollectorSlimImageTag": "1.2.3-slim",
 		"RenderMode":            "",
@@ -62,6 +63,15 @@ type helmConfigSuite struct {
 
 func TestBase(t *testing.T) {
 	suite.Run(t, new(helmConfigSuite))
+}
+
+func (h *helmConfigSuite) SetupTest() {
+	testbuildinfo.SetForTest(h.T())
+	testutils.SetVersion(h.T(), version.Versions{
+		CollectorVersion: "1.2.3",
+		MainVersion:      "3.2.1",
+		ScannerVersion:   "2.1.3",
+	})
 }
 
 func (h *helmConfigSuite) TestHelmConfigRoundTrip() {
