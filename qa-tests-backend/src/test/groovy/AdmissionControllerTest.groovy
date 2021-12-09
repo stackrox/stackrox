@@ -12,6 +12,7 @@ import objects.GCRImageIntegration
 import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ClusterService
+import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.PolicyService
 import spock.lang.Retry
@@ -20,6 +21,8 @@ import spock.lang.Timeout
 import spock.lang.Unroll
 import util.Helpers
 import util.Timer
+
+import org.junit.Assume
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
