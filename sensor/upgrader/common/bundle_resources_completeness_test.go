@@ -45,10 +45,15 @@ func TestBundleResourcesComplete(t *testing.T) {
 			MainVersion:      "3.0.49.0",
 			CollectorVersion: "1.2.3",
 		},
-		"MainRegistry":      "stackrox.io", // TODO: custom?
-		"CollectorRegistry": "collector.stackrox.io",
-		"KubectlOutput":     true,
-		"FeatureFlags":      featureFlags,
+		"MainRegistry":          "stackrox.io", // TODO: custom?
+		"CollectorRegistry":     "collector.stackrox.io",
+		"CollectorSlimImageTag": "1.2.3-slim",
+		"CollectorFullImageTag": "1.2.3",
+		"ChartRepo": charts.ChartRepo{
+			URL: "http://mirror.openshift.com/pub/rhacs/charts",
+		},
+		"KubectlOutput": true,
+		"FeatureFlags":  featureFlags,
 	}
 
 	helmImage := image.GetDefaultImage()
