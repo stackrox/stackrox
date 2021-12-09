@@ -1,5 +1,5 @@
-// Package operator contains "operational logic" so Sensor is able to operate itself when it is
-// not deployed by our operator
+// Package operator contains "operational logic" that provide Sensor with some self-operation capabilities
+// irrespective of the way it was deployed.
 package operator
 
 import (
@@ -48,7 +48,7 @@ func New(k8sClient kubernetes.Interface, appNamespace string) Operator {
 }
 
 func (o *operatorImpl) Initialize(ctx context.Context) error {
-	log.Infof("Initializing operator for namespace %s", o.appNamespace)
+	log.Infof("Initializing embedded operator for namespace %s", o.appNamespace)
 
 	if err := o.initializeHelmActionConfig(); err != nil {
 		return o.failInitialization(err)
@@ -72,7 +72,7 @@ func (o *operatorImpl) failInitialization(err error) error {
 	// Reset release name and revision so Start is a noop
 	o.helmReleaseName = ""
 	o.helmReleaseRevision = 0
-	return errors.Wrap(err, "Operator initialization error")
+	return errors.Wrap(err, "Embedded operator initialization error")
 }
 
 func (o *operatorImpl) GetHelmReleaseRevision() uint64 {
@@ -104,6 +104,6 @@ func (o *operatorImpl) Start(ctx context.Context) error {
 	sif := informers.NewSharedInformerFactoryWithOptions(o.k8sClient, noResyncPeriod, informers.WithNamespace(o.appNamespace))
 	o.watchSecrets(ctx, sif)
 
-	log.Info("Embedded operator started correctly.")
+	log.Info("Embedded operator started.")
 	return nil
 }
