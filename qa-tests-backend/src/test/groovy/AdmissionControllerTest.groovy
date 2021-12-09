@@ -164,12 +164,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Category([BAT])
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
-        // Skip test for now until ROX-8739 is fixed to determine why first deployment create is not blocked.
-        // Scheduled for 68.0.
-        Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_VULN_RISK_MANAGEMENT"))
-
-        and:
-         "Create policy looking for a specific CVE"
+        "Create policy looking for a specific CVE"
         // We don't want to block on SEVERITY
         Services.updatePolicyEnforcement(
                 SEVERITY,
@@ -216,14 +211,14 @@ class AdmissionControllerTest extends BaseSpecification {
         assert !created
 
         // CVE needs to be saved into the DB
-        Helpers.sleepWithRetryBackoff(1000)
+        Helpers.sleepWithRetryBackoff(2000)
 
         when:
         "Suppress CVE and check that the deployment can now launch"
         CVEService.suppressCVE("CVE-2019-3462")
         printlnDated "Suppressing CVE-2019-3462"
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         printlnDated "Expect that the suppression has propagated"
 
         created = orchestrator.createDeploymentNoWait(deployment)
