@@ -44,11 +44,7 @@ CRS=$(
 # Validate CRs.
 for cr in $CRS; do
     echo -n "Validating custom resource $cr with kubectl... "
-    set +e
-    output=$(kubectl apply --dry-run=client --validate=true -f "$cr" 2>&1)
-    ret=$?
-    set -e
-    if [ $ret -eq 0 ]; then
+    if output=$(kubectl apply --dry-run=client --validate=true -f "$cr" 2>&1); then
         echo PASSED
     else
         FAILED=1
