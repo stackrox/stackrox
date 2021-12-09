@@ -44,9 +44,6 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
 
-	idWithNoRoles := mocks.NewMockIdentity(gomock.NewController(t))
-	idWithNoRoles.EXPECT().Roles().Return([]permissions.ResolvedRole{}).AnyTimes()
-
 	contextWithPermissionCheck, _ := permissioncheck.ContextWithPermissionCheck()
 
 	err := errors.New("some error")
