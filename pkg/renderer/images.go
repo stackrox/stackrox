@@ -77,11 +77,11 @@ func configureImageOverrides(c *Config) {
 	imageOverrides := make(map[string]interface{})
 
 	flavor := images.GetFlavorByBuildType()
-	mainOverrides := ComputeImageOverrides(c.K8sConfig.MainImage, flavor.MainImageRegistry(), flavor.MainImageName,
+	mainOverrides := ComputeImageOverrides(c.K8sConfig.MainImage, flavor.MainRegistry, flavor.MainImageName,
 		flavor.MainImageTag)
 	registry := mainOverrides["Registry"]
 	if registry == "" {
-		registry = flavor.MainImageRegistry()
+		registry = flavor.MainRegistry
 	} else {
 		imageOverrides["MainRegistry"] = registry
 		delete(mainOverrides, "Registry")
