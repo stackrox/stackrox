@@ -230,6 +230,7 @@ func (suite *imageCheckTestSuite) SetupTest() {
 	suite.imageCheckCommand = imageCheckCommand{
 		image:      "nginx:test",
 		retryDelay: 3,
+		retryCount: 3,
 		timeout:    1 * time.Minute,
 	}
 }
