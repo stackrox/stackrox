@@ -1083,9 +1083,7 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 
 			}
 			suite.Assert().Equal(c.expectedOutput, out.String())
-			if c.expectedErrOutput != "" {
-				suite.Assert().Equal(c.expectedErrOutput, errOut.String())
-			}
+			suite.Assert().Equal(c.expectedErrOutput, errOut.String())
 		})
 	}
 }

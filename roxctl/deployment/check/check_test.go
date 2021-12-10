@@ -1159,9 +1159,7 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 				d.Require().NoError(err)
 			}
 			d.Assert().Equal(c.expectedOutput, out.String())
-			if c.expectedErrOutput != "" {
-				d.Assert().Equal(c.expectedErrOutput, errOut.String())
-			}
+			d.Assert().Equal(c.expectedErrOutput, errOut.String())
 		})
 	}
 }
