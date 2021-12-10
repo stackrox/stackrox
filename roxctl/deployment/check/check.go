@@ -132,6 +132,7 @@ func (d *deploymentCheckCommand) Check() error {
 		return d.checkDeployment()
 	},
 		retry.Tries(d.retryCount+1),
+		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
 			d.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %d seconds...",
 				err, d.retryDelay)
@@ -151,7 +152,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 
 	alerts, err := d.getAlerts(string(deploymentFileContents))
 	if err != nil {
-		return err
+		return retry.MakeRetryable(err)
 	}
 
 	return d.printResults(alerts)
