@@ -58,8 +58,6 @@ func TestRenderSensorHelm(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			fields := charts.MetaValues{
-				"ImageRegistry": "stackrox.io",
-				// TODO: we should probably get rid of ImageRegistry eventually.
 				"MainRegistry": "stackrox.io",
 				"ImageRemote":  "main",
 				"ImageTag":     "3.0.41.x-92-g9e8a347ffe",

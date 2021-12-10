@@ -79,9 +79,9 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 		"ClusterName": c.Name,
 		"ClusterType": c.Type.String(),
 
-		"ImageRegistry": urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"ImageRemote":   mainImageName.GetRemote(),
-		"ImageTag":      mainImageName.GetTag(),
+		"MainRegistry": urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
+		"ImageRemote":  mainImageName.GetRemote(),
+		"ImageTag":     mainImageName.GetTag(),
 
 		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
@@ -124,7 +124,5 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 		"AdmissionControllerEnabled":       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		"AdmissionControlEnforceOnUpdates": c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 	}
-	// `MainRegistry` is a newer field name.
-	fields["MainRegistry"] = fields["ImageRegistry"]
 	return fields, nil
 }

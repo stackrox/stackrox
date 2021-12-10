@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	imageRegistryKey         charts.MetaValuesKey = "ImageRegistry"
+	mainRegistryKey          charts.MetaValuesKey = "MainRegistry"
 	collectorRegistryKey     charts.MetaValuesKey = "CollectorRegistry"
 	collectorImageRemoteKey  charts.MetaValuesKey = "CollectorImageRemote"
 	collectorFullImageTagKey charts.MetaValuesKey = "CollectorFullImageTag"
@@ -181,7 +181,7 @@ func TestImagePaths(t *testing.T) {
 			fields, err := FieldsFromClusterAndRenderOpts(config, RenderOptions{})
 			assert.NoError(t, err)
 
-			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistryKey])
+			assert.Equal(t, c.expectedMainRegistry, fields[mainRegistryKey])
 			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistryKey])
 			assert.Equal(t, c.expectedCollectorFullRef, getCollectorFull(fields))
 			assert.Equal(t, c.expectedCollectorSlimRef, getCollectorSlim(fields))
@@ -196,7 +196,7 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	fields, err := FieldsFromClusterAndRenderOpts(getBaseConfig(), RenderOptions{})
 	assert.NoError(t, err)
 
-	assert.NotEmpty(t, fields["MainRegistry"])
+	assert.NotEmpty(t, fields[mainRegistryKey])
 	assert.NotEmpty(t, fields["ImageRemote"])
 	assert.NotEmpty(t, fields[collectorRegistryKey])
 	assert.NotEmpty(t, fields[collectorImageRemoteKey])
