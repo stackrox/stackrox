@@ -2,7 +2,6 @@ package images
 
 import (
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -39,10 +38,6 @@ type Flavor struct {
 	ImagePullSecrets ImagePullSecrets
 	Versions         version.Versions
 }
-
-var (
-	log = logging.LoggerForModule()
-)
 
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
 // Assumption: development_build flavor is never a release.
