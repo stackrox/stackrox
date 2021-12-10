@@ -88,7 +88,7 @@ all: deps style test image
 GOLANGCILINT_BIN := $(GOBIN)/golangci-lint
 $(GOLANGCILINT_BIN): deps
 	@echo "+ $@"
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	@cd tools/linters/ && go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 EASYJSON_BIN := $(GOBIN)/easyjson
 $(EASYJSON_BIN): deps
@@ -98,12 +98,12 @@ $(EASYJSON_BIN): deps
 STATICCHECK_BIN := $(GOBIN)/staticcheck
 $(STATICCHECK_BIN): deps
 	@echo "+ $@"
-	@go install honnef.co/go/tools/cmd/staticcheck
+	@cd tools/linters/ && go install honnef.co/go/tools/cmd/staticcheck
 
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
 	@echo "+ $@"
-	go install github.com/mattn/goveralls
+	@cd tools/test/ && go install github.com/mattn/goveralls
 
 ROXVET_BIN := $(GOBIN)/roxvet
 .PHONY: $(ROXVET_BIN)
@@ -129,12 +129,12 @@ $(GENNY_BIN): deps
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
-	go install github.com/jstemmer/go-junit-report
+	@cd tools/test/ && go install github.com/jstemmer/go-junit-report
 
 PROTOLOCK_BIN := $(GOBIN)/protolock
 $(PROTOLOCK_BIN): deps
 	@echo "+ $@"
-	@go install github.com/nilslice/protolock/cmd/protolock
+	@cd tools/linters/ && go install github.com/nilslice/protolock/cmd/protolock
 
 ###########
 ## Style ##

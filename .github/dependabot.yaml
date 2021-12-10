@@ -48,6 +48,24 @@ updates:
     reviewers:
       - "stackrox/backend-dep-updaters"
 
+  - package-ecosystem: 'gomod'
+    directory: '/tools/lint/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+      - "stackrox/backend-dep-updaters"
+
+  - package-ecosystem: 'gomod'
+    directory: '/tools/test/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+      - "stackrox/backend-dep-updaters"
+
   - package-ecosystem: 'docker'
     directory: 'operator/'
     schedule:
