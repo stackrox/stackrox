@@ -27,6 +27,10 @@
 {{ $values := deepCopy $.Values }}
 {{ include "srox.applyCompatibilityTranslation" (list $ $values) }}
 
+{{/* Global state (accessed from sub-templates) */}}
+{{ $state := dict "generated" nil }}
+{{ $_ = set $._rox "_state" }}
+
 {{/*
     $rox / ._rox is the dictionary in which _all_ data that is modified by the init logic
     is stored.
