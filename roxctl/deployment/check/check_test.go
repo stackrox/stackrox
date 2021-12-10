@@ -6,10 +6,11 @@ import (
 	"net"
 	"os"
 	"path"
+	"runtime"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -252,17 +253,7 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 }
 
 func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
-	mockEnv := mocks.NewMockEnvironment(gomock.NewController(d.T()))
-
-	testIO, _, testStdOut, testErrOut := environment.TestIO()
-	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
-
-	mockEnv.EXPECT().InputOutput().AnyTimes().Return(env.InputOutput())
-	mockEnv.EXPECT().Logger().AnyTimes().Return(env.Logger())
-	mockEnv.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	mockEnv.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
-
-	return mockEnv, testStdOut, testErrOut
+	return mocks.NewEnvWithConn(conn, d.T())
 }
 
 func (d *deployCheckTestSuite) SetupTest() {
@@ -370,6 +361,7 @@ type outputFormatTest struct {
 	alerts            []*storage.Alert
 	expectedOutput    string
 	expectedErrOutput string
+	expectedErrOutputColorized string
 	shouldFail        bool
 	error             error
 }
@@ -378,117 +370,19 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non failing enforcement actions": {
 			alerts: testDeploymentAlertsWithoutFailure,
-			expectedOutput: `Policy check results for deployments: [wordpress]
-(TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 1, CRITICAL: 1)
-
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-|  POLICY  | SEVERITY | BREAKS DEPLOY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 1 | CRITICAL |       -       | wordpress  | policy 1 for testing |    - testing multiple alert    | policy 1 for testing |
-|          |          |               |            |                      |      violation messages 1      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 2      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 3      |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 8 |   HIGH   |       -       | wordpress  |          -           |    - testing multiple alert    | policy 8 for testing |
-|          |          |               |            |                      |      violation messages 1      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 2      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 3      |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 2 |  MEDIUM  |       -       | wordpress  | policy 2 for testing |    - testing multiple alert    | policy 2 for testing |
-|          |          |               |            |                      |      violation messages 1      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 2      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 3      |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 5 |  MEDIUM  |       -       | wordpress  | policy 5 for testing |   - testing alert violation    | policy 5 for testing |
-|          |          |               |            |                      |            message             |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 1      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 2      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 3      |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 6 |  MEDIUM  |       -       | wordpress  | policy 6 for testing |   - testing alert violation    | policy 6 for testing |
-|          |          |               |            |                      |            message             |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 7 |   LOW    |       -       | wordpress  | policy 7 for testing |   - testing alert violation    | policy 7 for testing |
-|          |          |               |            |                      |            message             |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-`,
+			expectedOutput: "testDeploymentAlertsWithoutFailure.txt",
 			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n\x1b[0m",
 		},
 		"should fail with failing enforcement actions": {
 			alerts: testDeploymentAlertsWithFailure,
-			expectedOutput: `Policy check results for deployments: [wordpress]
-(TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 0)
-
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-|  POLICY  | SEVERITY | BREAKS DEPLOY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 4 |   HIGH   |       X       | wordpress  | policy 4 for testing |    - testing multiple alert    | policy 4 for testing |
-|          |          |               |            |                      |      violation messages 1      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 2      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 3      |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 8 |   HIGH   |       -       | wordpress  |          -           |    - testing multiple alert    | policy 8 for testing |
-|          |          |               |            |                      |      violation messages 1      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 2      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 3      |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 2 |  MEDIUM  |       -       | wordpress  | policy 2 for testing |    - testing multiple alert    | policy 2 for testing |
-|          |          |               |            |                      |      violation messages 1      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 2      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 3      |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 5 |  MEDIUM  |       -       | wordpress  | policy 5 for testing |   - testing alert violation    | policy 5 for testing |
-|          |          |               |            |                      |            message             |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 1      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 2      |                      |
-|          |          |               |            |                      |                                |                      |
-|          |          |               |            |                      |    - testing multiple alert    |                      |
-|          |          |               |            |                      |      violation messages 3      |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 6 |  MEDIUM  |       -       | wordpress  | policy 6 for testing |   - testing alert violation    | policy 6 for testing |
-|          |          |               |            |                      |            message             |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 7 |   LOW    |       -       | wordpress  | policy 7 for testing |   - testing alert violation    | policy 7 for testing |
-|          |          |               |            |                      |            message             |                      |
-+----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-`,
+			expectedOutput: "testDeploymentAlertsWithFailure.txt",
 			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n" +
 				"ERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
 				"ERROR:\tPolicy \"policy 4\" within Deployment \"wordpress\" - Possible remediation: \"policy 4 for testing\"\n",
+				expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n" +
+				"\x1b[0m\x1b[31;1mERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"\x1b[0m\x1b[31;1mERROR:\tPolicy \"policy 4\" within Deployment \"wordpress\" - Possible remediation: \"policy 4 for testing\"\n\x1b[0m",
 			error:      policy.ErrBreakingPolicies,
 			shouldFail: true,
 		},
@@ -588,25 +482,30 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		d.Run(name, func() {
-			var out *bytes.Buffer
-			var errOut *bytes.Buffer
-			conn, closeF := d.createGRPCMockDetectionService(c.alerts)
+			deployCheckCmd, out, errOut, closeF := d.createDeployCheckCmd(c, printer, standardizedFormat)
 			defer closeF()
 
-			deployCheckCmd := d.defaultDeploymentCheckCommand
-			deployCheckCmd.printer = printer
-			deployCheckCmd.standardizedFormat = standardizedFormat
-
-			deployCheckCmd.env, out, errOut = d.createMockEnvironmentWithConn(conn)
-			err := deployCheckCmd.Check()
-			if c.shouldFail {
-				d.Require().Error(err)
-				d.Assert().ErrorIs(err, c.error)
-			} else {
-				d.Require().NoError(err)
-			}
-			d.Assert().Equal(c.expectedOutput, out.String())
+			d.assertError(deployCheckCmd, c)
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
+			d.Require().NoError(err)
+			d.Assert().Equal(string(expectedOutput), out.String())
 			d.Assert().Equal(c.expectedErrOutput, errOut.String())
+		})
+		d.Run(colorTestPrefix+name, func() {
+			if runtime.GOOS == "windows" {
+				d.T().Skip("Windows has different color sequences than Linux/Mac.")
+			}
+			color.NoColor = false
+			defer func() { color.NoColor = true }()
+
+			deployCheckCmd, out, errOut, closeF := d.createDeployCheckCmd(c, printer, standardizedFormat)
+			defer closeF()
+
+			d.assertError(deployCheckCmd, c)
+			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
+			d.Require().NoError(err)
+			d.Assert().Equal(string(expectedOutput), out.String())
+			d.Assert().Equal(c.expectedErrOutputColorized, errOut.String())
 		})
 	}
 }
@@ -621,14 +520,14 @@ func (d *deployCheckTestSuite) assertError(deployCheckCmd deploymentCheckCommand
 	}
 }
 
-func (d *deployCheckTestSuite) createDeployCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (deploymentCheckCommand, *bytes.Buffer, func()) {
+func (d *deployCheckTestSuite) createDeployCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (deploymentCheckCommand, *bytes.Buffer, *bytes.Buffer, func()) {
 	conn, closeF := d.createGRPCMockDetectionService(c.alerts)
 
 	deployCheckCmd := d.defaultDeploymentCheckCommand
 	deployCheckCmd.printer = printer
 	deployCheckCmd.standardizedFormat = standardizedFormat
 
-	var out *bytes.Buffer
-	deployCheckCmd.env, out, _ = d.createMockEnvironmentWithConn(conn)
-	return deployCheckCmd, out, closeF
+	var out, errOut *bytes.Buffer
+	deployCheckCmd.env, out, errOut = d.createMockEnvironmentWithConn(conn)
+	return deployCheckCmd, out, errOut, closeF
 }

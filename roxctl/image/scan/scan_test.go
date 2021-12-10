@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/golang/mock/gomock"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -254,15 +253,7 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 
 
 func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
-	envMock := mocks.NewMockEnvironment(gomock.NewController(s.T()))
-
-	testIO, _, testStdOut, testErrOut := environment.TestIO()
-	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
-
-	envMock.EXPECT().Logger().AnyTimes().Return(logger)
-	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
-	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	return envMock, testStdOut, testErrOut
+	return mocks.NewEnvWithConn(conn, s.T())
 }
 
 func (s *imageScanTestSuite) SetupTest() {
@@ -445,54 +436,16 @@ type outputFormatTest struct {
 	components          []*storage.EmbeddedImageScanComponent
 	expectedOutput      string
 	expectedErrorOutput string
+	expectedErrorOutputColorized string
 }
 
 func (s *imageScanTestSuite) TestScan_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should render default output with merged cells and additional verbose output": {
 			components: testComponents,
-			expectedOutput: `Scan results for image: nginx:test
-(TOTAL-COMPONENTS: 5, TOTAL-VULNERABILITIES: 17, LOW: 3, MODERATE: 0, IMPORTANT: 4, CRITICAL: 5)
-
-+-----------+------------+--------------+-----------+--------------------+
-| COMPONENT |  VERSION   |     CVE      | SEVERITY  |        LINK        |
-+-----------+------------+--------------+-----------+--------------------+
-|    apt    |    1.0     | CVE-789-CRIT | CRITICAL  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-LOW  |    LOW    | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-LOW  |    LOW    | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-|   bash    |    4.2     | CVE-123-CRIT | CRITICAL  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-CRIT | CRITICAL  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-CRIT | CRITICAL  | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-|   curl    |  7.0-rc1   | CVE-123-IMP  | IMPORTANT | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-IMP  | IMPORTANT | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-IMP  | IMPORTANT | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-|  openssl  |   1.1.1k   | CVE-789-CRIT | CRITICAL  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-IMP  | IMPORTANT | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-MED  | MODERATE  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-MED  | MODERATE  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-LOW  |    LOW    | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-|  systemd  | 1.3-debu49 | CVE-123-MED  | MODERATE  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-MED  | MODERATE  | <some-link-to-nvd> |
-+           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-MED  | MODERATE  | <some-link-to-nvd> |
-+-----------+------------+--------------+-----------+--------------------+
-`,
+			expectedOutput: "testComponents.txt",
 			expectedErrorOutput: "WARN:\tA total of 17 vulnerabilities were found in 5 components\n",
+			expectedErrorOutputColorized: "\x1b[95mWARN:\tA total of 17 vulnerabilities were found in 5 components\n\x1b[0m",
 		},
 		"should print only headers with empty components in image scan": {
 			expectedOutput: "empty.txt",
@@ -576,33 +529,44 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		s.Run(name, func() {
-			var out *bytes.Buffer
-			var errOut *bytes.Buffer
-			conn, closeF := s.createGRPCMockImageService(c.components)
+			out, errOut, closeF, imgScanCmd := s.createImgScanCmd(c, printer, standardizedFormat)
 			defer closeF()
-
-			imgScanCmd := s.defaultImageScanCommand
-			imgScanCmd.printer = printer
-			imgScanCmd.standardizedFormat = standardizedFormat
-			imgScanCmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
-			s.Assert().Equal(c.expectedOutput, out.String())
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
+			s.Require().NoError(err)
+			s.Assert().Equal(string(expectedOutput), out.String())
 			s.Assert().Equal(c.expectedErrorOutput, errOut.String())
+		})
+		s.Run(colorTestPrefix+name, func() {
+			if runtime.GOOS == "windows" {
+				s.T().Skip("Windows has different color sequences than Linux/Mac.")
+			}
+			color.NoColor = false
+			defer func() { color.NoColor = true }()
+			out, errOut, closeF, imgScanCmd := s.createImgScanCmd(c, printer, standardizedFormat)
+			defer closeF()
+
+			err := imgScanCmd.Scan()
+			s.Require().NoError(err)
+			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
+			s.Require().NoError(err)
+			s.Assert().Equal(string(expectedOutput), out.String())
+			s.Assert().Equal(c.expectedErrorOutputColorized, errOut.String())
 		})
 	}
 }
 
-func (s *imageScanTestSuite) createImgScanCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, closeFunction, imageScanCommand) {
-	var out *bytes.Buffer
+func (s *imageScanTestSuite) createImgScanCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, *bytes.Buffer, closeFunction, imageScanCommand) {
+	var out, errOut *bytes.Buffer
 	conn, closeF := s.createGRPCMockImageService(c.components)
 
 	imgScanCmd := s.defaultImageScanCommand
 	imgScanCmd.printer = printer
 	imgScanCmd.standardizedFormat = standardizedFormat
-	imgScanCmd.env, out, _ = s.newTestMockEnvironmentWithConn(conn)
-	return out, closeF, imgScanCmd
+	imgScanCmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
+	return out, errOut, closeF, imgScanCmd
 }
 
 func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatTest, format string) {
