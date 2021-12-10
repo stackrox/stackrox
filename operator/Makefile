@@ -227,7 +227,7 @@ ENVTEST_K8S_VERSION = 1.22
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
-.PHONY: validate
+.PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
 validate-crs:
 	./tests/scripts/validate-crs.sh ./tests $(CRDS)
