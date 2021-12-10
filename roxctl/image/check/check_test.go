@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/golang/mock/gomock"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -221,8 +222,16 @@ func (suite *imageCheckTestSuite) createGRPCServerWithDetectionService(alerts []
 	return conn, closeF
 }
 
-func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
-	return mocks.NewEnvWithConn(conn, suite.T())
+func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
+	envMock := mocks.NewMockEnvironment(gomock.NewController(suite.T()))
+
+	testIO, _, out, errOut := environment.TestIO()
+	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
+
+	envMock.EXPECT().Logger().AnyTimes().Return(logger)
+	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
+	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
+	return envMock, out, errOut
 }
 
 func (suite *imageCheckTestSuite) SetupTest() {
@@ -245,17 +254,86 @@ type outputFormatTest struct {
 func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non build failing enforcement actions": {
-			alerts:            testAlertsWithoutFailure,
-			expectedOutput:    "testAlertsWithoutFailure.txt",
-			expectedErrOutput: "WARN: A total of 6 policies have been violated\n",
+			alerts: testAlertsWithoutFailure,
+			expectedOutput: `Policy check results for image: nginx:test
+(TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 0)
+
++----------+----------+--------------+----------------------+--------------------+----------------------+
+|  POLICY  | SEVERITY | BREAKS BUILD |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 4 |   HIGH   |      -       | policy 4 for testing | - test violation 1 | policy 4 for testing |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 8 |   HIGH   |      -       |          -           | - test violation 1 | policy 8 for testing |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 2 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 3 |                      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 2 |  MEDIUM  |      -       | policy 2 for testing | - test violation 1 | policy 2 for testing |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 2 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 3 |                      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 5 |  MEDIUM  |      -       | policy 5 for testing | - test violation 1 | policy 5 for testing |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 2 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 3 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 1 |                      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 6 |  MEDIUM  |      -       | policy 6 for testing | - test violation 1 | policy 6 for testing |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 7 |   LOW    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+`,
+			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n",
 		},
 		"should fail with build failing enforcement actions": {
-			alerts:         testAlertsWithFailure,
-			expectedOutput: "testAlertsWithFailure.txt",
-			expectedErrOutput: `WARN: A total of 7 policies have been violated
-ERROR: failed policies found: 1 policies violated that are failing the check
-ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
+			alerts: testAlertsWithFailure,
+			expectedOutput: `Policy check results for image: nginx:test
+(TOTAL: 7, LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 1)
+
++----------+----------+--------------+----------------------+--------------------+----------------------+
+|  POLICY  | SEVERITY | BREAKS BUILD |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 1 | CRITICAL |      X       | policy 1 for testing | - test violation 1 | policy 1 for testing |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 2 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 3 |                      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 4 |   HIGH   |      -       | policy 4 for testing | - test violation 1 | policy 4 for testing |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 8 |   HIGH   |      -       |          -           | - test violation 1 | policy 8 for testing |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 2 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 3 |                      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 2 |  MEDIUM  |      -       | policy 2 for testing | - test violation 1 | policy 2 for testing |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 5 |  MEDIUM  |      -       | policy 5 for testing | - test violation 1 | policy 5 for testing |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 2 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 3 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 1 |                      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 6 |  MEDIUM  |      -       | policy 6 for testing | - test violation 1 | policy 6 for testing |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 2 |                      |
+|          |          |              |                      |                    |                      |
+|          |          |              |                      | - test violation 3 |                      |
++----------+----------+--------------+----------------------+--------------------+----------------------+
+| policy 7 |   LOW    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
++----------+----------+--------------+----------------------+--------------------+----------------------+
 `,
+			expectedErrOutput: "WARN:\tA total of 7 policies have been violated\n" +
+				"ERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"ERROR:\tPolicy \"policy 1\" - Possible remediation: \"policy 1 for testing\"\n",
 			shouldFail: true,
 			error:      policy.ErrBreakingPolicies,
 		},
@@ -496,26 +574,28 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		suite.Run(name, func() {
-			out, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
+			var out *bytes.Buffer
+			var errOut *bytes.Buffer
+			conn, closeF := suite.createGRPCServerWithDetectionService(c.alerts)
 			defer closeF()
-			suite.assertError(imgCheckCmd, c)
-			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
-			suite.Require().NoError(err)
-			suite.Assert().Equal(string(expectedOutput), out.String())
-		})
-		suite.Run(colorTestPrefix+name, func() {
-			if runtime.GOOS == "windows" {
-				suite.T().Skip("Windows has different color sequences than Linux/Mac.")
-			}
-			color.NoColor = false
-			defer func() { color.NoColor = true }()
 
-			out, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
-			defer closeF()
-			suite.assertError(imgCheckCmd, c)
-			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
-			suite.Require().NoError(err)
-			suite.Assert().Equal(string(expectedOutput), out.String())
+			imgCheckCmd := suite.imageCheckCommand
+			imgCheckCmd.objectPrinter = printer
+			imgCheckCmd.standardizedOutputFormat = standardizedFormat
+
+			imgCheckCmd.env, out, errOut = suite.newTestMockEnvironment(conn)
+			err := imgCheckCmd.CheckImage()
+			if c.shouldFail {
+				suite.Require().Error(err)
+				suite.Assert().ErrorIs(err, c.error)
+			} else {
+				suite.Require().NoError(err)
+
+			}
+			suite.Assert().Equal(c.expectedOutput, out.String())
+			if c.expectedErrOutput != "" {
+				suite.Assert().Equal(c.expectedErrOutput, errOut.String())
+			}
 		})
 	}
 }
