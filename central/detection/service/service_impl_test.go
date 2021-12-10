@@ -513,7 +513,8 @@ func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {
 	objs, err := getObjectsFromYAML(openshiftDeployConfMultiYaml)
 	require.NoError(t, err)
 
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		assert.IsType(t, (*openshiftAppsV1.DeploymentConfig)(nil), obj)
 	}
 }

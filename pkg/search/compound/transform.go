@@ -14,7 +14,8 @@ func TransformResults(ctx context.Context, results []search.Result, transformer 
 	transformedIndices := make(map[string]int)
 
 	// For each untransformed result...
-	for _, result := range results {
+	for i := range results {
+		result := results[i]
 		// Generated the list of transformed results the original result corresponds to.
 		newKeys := transformer(ctx, []byte(result.ID))
 		for _, newKey := range newKeys {

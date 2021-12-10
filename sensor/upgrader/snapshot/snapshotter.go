@@ -121,7 +121,8 @@ func (s *snapshotter) createStateSnapshot() ([]k8sutil.Object, *v1.Secret, error
 
 	byteSlices := make([][]byte, 0, len(objs))
 	jsonSerializer := json.NewSerializer(json.DefaultMetaFactory, nil, nil, false)
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		var buf bytes.Buffer
 		if err := jsonSerializer.Encode(obj, &buf); err != nil {
 			return nil, nil, errors.Wrapf(err, "marshaling object of kind %v to JSON", obj.GetObjectKind().GroupVersionKind())
