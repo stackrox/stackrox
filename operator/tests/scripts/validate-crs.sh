@@ -23,7 +23,9 @@ echo
 # Extract kind names for the CRDs.
 CRD_KINDS=$(
     for crd in "${CRDS[@]}"; do
-        if kubectl get crd "$crd" -o jsonpath='{.spec.names.kind}' && echo; then
+        if kubectl get crd "$crd" -o jsonpath='{.spec.names.kind}'; then
+            echo
+        else
             die "Failed to lookup kind name for CRD $crd. Make sure CRDs are applied (make install) before validation is attempted."
         fi
     done
