@@ -240,7 +240,7 @@ func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies 
 	for _, res := range results {
 		for _, breakingPolicy := range res.GetBreakingPolicies() {
 			out.ErrfLn("Policy %q within Deployment %q - Possible remediation: %q",
-				breakingPolicy.Name, res.Metadata.GetName(), breakingPolicy.Name)
+				breakingPolicy.Name, res.Metadata.GetName(), breakingPolicy.Remediation)
 		}
 	}
 }
