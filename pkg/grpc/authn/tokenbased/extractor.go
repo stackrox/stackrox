@@ -89,7 +89,8 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read roles")
 	}
-	if len(resolvedRoles) == 0 {
+	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
+	if len(filteredRoles) == 0 {
 		return nil, errorhelpers.GenericNoValidRole()
 	}
 
@@ -104,7 +105,7 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 		username:      email,
 		friendlyName:  token.Subject,
 		fullName:      token.Name,
-		resolvedRoles: authn.FilterOutNoneRole(resolvedRoles),
+		resolvedRoles: filteredRoles,
 		expiry:        token.Expiry(),
 		attributes:    attributes,
 		authProvider:  authProvider,
@@ -134,13 +135,14 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
 	}
-	if len(resolvedRoles) == 0 {
+	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
+	if len(filteredRoles) == 0 {
 		return nil, errorhelpers.GenericNoValidRole()
 	}
 	if err := authProvider.MarkAsActive(); err != nil {
 		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())
 	}
-	id := createRoleBasedIdentity(resolvedRoles, token, authProvider)
+	id := createRoleBasedIdentity(filteredRoles, token, authProvider)
 	return id, nil
 }
 
