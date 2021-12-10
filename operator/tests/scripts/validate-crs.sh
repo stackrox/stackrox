@@ -48,7 +48,7 @@ for cr in $CRS; do
         echo "kubectl: $output"
     fi
     echo
-    CRS_VALIDATED=$(($CRS_VALIDATED + 1))
+    CRS_VALIDATED=$((CRS_VALIDATED + 1))
 done
 
 if [ $FAILED -ne 0 ]; then
