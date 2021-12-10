@@ -589,9 +589,7 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
 			s.Assert().Equal(c.expectedOutput, out.String())
-			if c.expectedErrorOutput != "" {
-				s.Assert().Equal(c.expectedErrorOutput, errOut.String())
-			}
+			s.Assert().Equal(c.expectedErrorOutput, errOut.String())
 		})
 	}
 }
