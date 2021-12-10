@@ -142,7 +142,40 @@ const memoryResource = (label) => ({
     reverse: will reverse boolean value on store 
  */
 
-export const policyConfigurationDescriptor = [
+type SubComponent = {
+    type: string;
+    options?: {
+        label: string;
+        value: string;
+    }[];
+    subpath: string;
+    placeholder?: string;
+    label?: string;
+    min?: number;
+    max?: number;
+    step?: number;
+};
+
+export type Descriptor = {
+    label: string;
+    name: string;
+    longName?: string;
+    shortName?: string;
+    negatedName?: string;
+    category: string;
+    type: string;
+    subComponents?: SubComponent[];
+    radioButtons?: { text: string; value: string | boolean }[];
+    options?: { label: string; value: string }[];
+    placeholder?: string;
+    canBooleanLogic?: boolean;
+    default?: boolean;
+    defaultValue?: string | boolean;
+    disabled?: boolean;
+    reverse?: boolean;
+};
+
+export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Image Registry',
         name: 'Image Registry',
@@ -227,7 +260,6 @@ export const policyConfigurationDescriptor = [
                 subpath: 'key',
             },
             {
-                name: 'value',
                 type: 'text',
                 label: 'Arguments',
                 placeholder: 'Any',
@@ -901,7 +933,7 @@ export const policyConfigurationDescriptor = [
     },
 ];
 
-export const auditLogDescriptor = [
+export const auditLogDescriptor: Descriptor[] = [
     {
         label: 'Kubernetes Resource',
         name: 'Kubernetes Resource',
@@ -979,7 +1011,7 @@ export const auditLogDescriptor = [
     },
 ];
 
-export const networkDetectionDescriptor = [
+export const networkDetectionDescriptor: Descriptor[] = [
     {
         label: 'Network Baselining Enabled',
         name: 'Unexpected Network Flow Detected',

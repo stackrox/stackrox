@@ -10,6 +10,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { PageAction } from '../policies.utils';
 import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
+import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
 
 type PolicyWizardProps = {
     pageAction: PageAction;
@@ -61,7 +62,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                         {
                             id: 3,
                             name: 'Policy criteria',
-                            component: <div>PolicyCriteriaForm</div>,
+                            component: <PolicyCriteriaForm />,
                             canJumpTo: stepIdReached >= 3,
                         },
                         {
