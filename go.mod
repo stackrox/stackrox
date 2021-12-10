@@ -52,7 +52,6 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
-	github.com/golangci/golangci-lint v1.42.1
 	github.com/google/certificate-transparency-go v1.1.2
 	github.com/google/go-cmp v0.5.6
 	github.com/googleapis/gnostic v0.5.5
@@ -68,17 +67,14 @@ require (
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/joelanford/helm-operator v0.0.7
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
-	github.com/jstemmer/go-junit-report v0.9.1
 	github.com/kisielk/sqlstruct v0.0.0-20210630145711-dae28ed37023 // indirect
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.5
 	github.com/mailru/easyjson v0.7.7
 	github.com/matryer/is v1.4.0 // indirect
-	github.com/mattn/goveralls v0.0.2
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/nilslice/protolock v0.0.0
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.4
@@ -129,7 +125,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
-	honnef.co/go/tools v0.2.1
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
 	k8s.io/apiserver v0.22.2
@@ -159,8 +154,6 @@ replace (
 	// Therefore we point all to our fork of `go-yaml` - github.com/stackrox/yaml/v2|v3
 	// where we provide the actual `go.sum`.
 	github.com/mikefarah/yaml/v2 => gopkg.in/yaml.v2 v2.4.0
-
-	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
 
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9

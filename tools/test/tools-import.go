@@ -9,9 +9,6 @@ package tools
 
 import (
 	// Tool dependencies, not used anywhere in the code.
-	_ "github.com/ckaznocha/protoc-gen-lint"
-	_ "github.com/golang/mock/mockgen"
-	_ "github.com/mailru/easyjson/easyjson"
-	_ "github.com/mauricelam/genny"
-	_ "golang.org/x/tools/cmd/stringer"
+	_ "github.com/jstemmer/go-junit-report"
+	_ "github.com/mattn/goveralls"
 )

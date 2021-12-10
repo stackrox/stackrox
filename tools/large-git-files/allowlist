@@ -8,6 +8,7 @@ generated/**/*.pb.go
 generated/**/*.pb.gw.go
 generated/**/*.swagger.json
 go.sum
+**/go.sum
 qa-tests-backend/gradle/wrapper/gradle-wrapper.jar
 operator/securedcluster/bundle/manifests/**/*.yaml
 proto/storage/proto.lock
