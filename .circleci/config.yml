@@ -2335,9 +2335,11 @@ jobs:
     executor: custom
     resource_class: small
     steps:
-      - checkout
-      - *restoreGoModCache
-      - setup-go-build-env
+      - run:
+          name: Skipping until ROX-8486 is resolved
+          command: |
+            echo "Skipping until ROX-8486 is resolved"
+            circleci step halt
 
       - run:
           name: Determine whether to skip MITRE ATT&CK bundle check
@@ -2346,6 +2348,10 @@ jobs:
               echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
               circleci step halt
             fi
+
+      - checkout
+      - *restoreGoModCache
+      - setup-go-build-env
 
       - run:
           name: Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)
