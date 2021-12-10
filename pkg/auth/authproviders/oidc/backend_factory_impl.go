@@ -93,3 +93,8 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 	}
 	return mergedCfg
 }
+
+func (f *factory) DisplayNames() []string {
+	// Auth0 is legacy display name.
+	return []string{"Auth0", "OpenID Connect"}
+}

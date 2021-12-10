@@ -68,6 +68,10 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 	return newCfg
 }
 
+func (f *factory) DisplayNames() []string {
+	return []string{"User Certificates"}
+}
+
 // NewFactoryFactory is a method to return an authproviders.BackendFactory that contains a reference to the
 // callback interface
 func NewFactoryFactory(callbacks ProviderCallbacks) func(string) authproviders.BackendFactory {

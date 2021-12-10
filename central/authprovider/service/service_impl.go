@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -109,33 +108,15 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 
 // ListAvailableProviderTypes returns auth provider types which can be created.
 func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty) (*v1.AvailableProviderTypesResponse, error) {
-	supportedTypes := []*v1.AvailableProviderTypesResponse_AuthProviderInfo{
-		{
-			Label: "Auth0",
-			Value: "auth0",
-		},
-		{
-			Label: "OpenID Connect",
-			Value: "oidc",
-		},
-		{
-			Label: "SAML 2.0",
-			Value: "saml",
-		},
-		{
-			Label: "User Certificates",
-			Value: "userpki",
-		},
-		{
-			Label: "Google IAP",
-			Value: "iap",
-		},
-	}
-	if env.EnableOpenShiftAuth.BooleanSetting() {
-		supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderInfo{
-			Label: "OpenShift Auth",
-			Value: "openshift",
-		})
+	supportedTypes := make([]*v1.AvailableProviderTypesResponse_AuthProviderInfo, 0)
+	factories := s.registry.GetAvailableBackendFactories()
+	for typ, factory := range factories {
+		for _, displayName := range factory.DisplayNames() {
+			supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderInfo{
+				Value: typ,
+				Label: displayName,
+			})
+		}
 	}
 	return &v1.AvailableProviderTypesResponse{
 		AuthProviderTypes: supportedTypes,

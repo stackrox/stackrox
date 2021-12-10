@@ -27,6 +27,9 @@ type BackendFactory interface {
 	// MergeConfig un-does the effects of RedactConfig. It is called on newCfg submitted by a user.
 	// It should restore secrets missing from newCfg (if any) by copying them back from oldCfg (loaded from storage).
 	MergeConfig(newCfg, oldCfg map[string]string) map[string]string
+
+	// DisplayNames are user-friendly names for auth provider this factory produces.
+	DisplayNames() []string
 }
 
 // BackendFactoryCreator is a function for creating a BackendFactory, given a base URL (excluding trailing slashes) for

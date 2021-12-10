@@ -64,3 +64,7 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 func (f *factory) MergeConfig(newConfig, _ map[string]string) map[string]string {
 	return newConfig
 }
+
+func (f *factory) DisplayNames() []string {
+	return []string{"OpenShift Auth"}
+}
