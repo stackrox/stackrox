@@ -251,7 +251,7 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 	return conn, closeF
 }
 
-func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
+func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
 	return mocks.NewEnvWithConn(conn, s.T())
 }
 
@@ -312,7 +312,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
-			imgScanCmd.env, _ = s.newTestMockEnvironmentWithConn(nil)
+			imgScanCmd.env, _, _ = s.newTestMockEnvironmentWithConn(nil)
 			imgScanCmd.format = c.legacyFormat
 
 			err := imgScanCmd.Construct(nil, cmd, c.printerFactory)
@@ -432,17 +432,19 @@ func (s *imageScanTestSuite) TestValidate() {
 }
 
 type outputFormatTest struct {
-	components          []*storage.EmbeddedImageScanComponent
-	expectedOutput      string
-	expectedErrorOutput string
+	components                   []*storage.EmbeddedImageScanComponent
+	expectedOutput               string
+	expectedErrorOutput          string
+	expectedErrorOutputColorized string
 }
 
 func (s *imageScanTestSuite) TestScan_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should render default output with merged cells and additional verbose output": {
-			components:          testComponents,
-			expectedOutput:      "testComponents.txt",
-			expectedErrorOutput: "WARN: A total of 17 vulnerabilities were found in 5 components\n",
+			components:                   testComponents,
+			expectedOutput:               "testComponents.txt",
+			expectedErrorOutput:          "WARN:\tA total of 17 vulnerabilities were found in 5 components\n",
+			expectedErrorOutputColorized: "\x1b[95mWARN:\tA total of 17 vulnerabilities were found in 5 components\n\x1b[0m",
 		},
 		"should print only headers with empty components in image scan": {
 			expectedOutput: "empty.txt",
@@ -526,7 +528,7 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		s.Run(name, func() {
-			out, closeF, imgScanCmd := s.createImgScanCmd(c, printer, standardizedFormat)
+			out, errOut, closeF, imgScanCmd := s.createImgScanCmd(c, printer, standardizedFormat)
 			defer closeF()
 
 			err := imgScanCmd.Scan()
@@ -534,6 +536,7 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			s.Require().NoError(err)
 			s.Assert().Equal(string(expectedOutput), out.String())
+			s.Assert().Equal(c.expectedErrorOutput, errOut.String())
 		})
 		s.Run(colorTestPrefix+name, func() {
 			if runtime.GOOS == "windows" {
@@ -541,7 +544,7 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 			}
 			color.NoColor = false
 			defer func() { color.NoColor = true }()
-			out, closeF, imgScanCmd := s.createImgScanCmd(c, printer, standardizedFormat)
+			out, errOut, closeF, imgScanCmd := s.createImgScanCmd(c, printer, standardizedFormat)
 			defer closeF()
 
 			err := imgScanCmd.Scan()
@@ -549,19 +552,20 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
 			s.Require().NoError(err)
 			s.Assert().Equal(string(expectedOutput), out.String())
+			s.Assert().Equal(c.expectedErrorOutputColorized, errOut.String())
 		})
 	}
 }
 
-func (s *imageScanTestSuite) createImgScanCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, closeFunction, imageScanCommand) {
-	var out *bytes.Buffer
+func (s *imageScanTestSuite) createImgScanCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, *bytes.Buffer, closeFunction, imageScanCommand) {
+	var out, errOut *bytes.Buffer
 	conn, closeF := s.createGRPCMockImageService(c.components)
 
 	imgScanCmd := s.defaultImageScanCommand
 	imgScanCmd.printer = printer
 	imgScanCmd.standardizedFormat = standardizedFormat
-	imgScanCmd.env, out = s.newTestMockEnvironmentWithConn(conn)
-	return out, closeF, imgScanCmd
+	imgScanCmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
+	return out, errOut, closeF, imgScanCmd
 }
 
 func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatTest, format string) {
@@ -573,7 +577,7 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 
 			imgScanCmd := s.defaultImageScanCommand
 			imgScanCmd.format = format
-			imgScanCmd.env, out = s.newTestMockEnvironmentWithConn(conn)
+			imgScanCmd.env, out, _ = s.newTestMockEnvironmentWithConn(conn)
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
