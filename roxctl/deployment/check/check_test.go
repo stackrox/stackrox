@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/golang/mock/gomock"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -253,18 +252,8 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 	return conn, closeFunction
 }
 
-func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
-	envMock := mocks.NewMockEnvironment(gomock.NewController(d.T()))
-
-	testIO, _, out, _ := environment.TestIO()
-	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
-
-	envMock.EXPECT().InputOutput().AnyTimes().Return(env.InputOutput())
-	envMock.EXPECT().Logger().AnyTimes().Return(env.Logger())
-	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	envMock.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
-
-	return envMock, out
+func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
+	return mocks.NewEnvWithConn(conn, d.T())
 }
 
 func (d *deployCheckTestSuite) SetupTest() {
@@ -369,27 +358,31 @@ func (d *deployCheckTestSuite) TestValidate() {
 }
 
 type outputFormatTest struct {
-	alerts            []*storage.Alert
-	expectedOutput    string
-	expectedErrOutput string
-	shouldFail        bool
-	error             error
+	alerts                     []*storage.Alert
+	expectedOutput             string
+	expectedErrOutput          string
+	expectedErrOutputColorized string
+	shouldFail                 bool
+	error                      error
 }
 
 func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non failing enforcement actions": {
-			alerts:            testDeploymentAlertsWithoutFailure,
-			expectedOutput:    "testDeploymentAlertsWithoutFailure.txt",
-			expectedErrOutput: "WARN: A total of 6 policies have been violated\n",
+			alerts:                     testDeploymentAlertsWithoutFailure,
+			expectedOutput:             "testDeploymentAlertsWithoutFailure.txt",
+			expectedErrOutput:          "WARN:\tA total of 6 policies have been violated\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n\x1b[0m",
 		},
 		"should fail with failing enforcement actions": {
 			alerts:         testDeploymentAlertsWithFailure,
 			expectedOutput: "testDeploymentAlertsWithFailure.txt",
-			expectedErrOutput: `WARN: A total of 6 policies have been violated
-ERROR: failed policies found: 1 policies violated that are failing the check
-ERROR: Policy "policy 4" within Deployment "wordpress" - Possible remediation: "policy 4"
-`,
+			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n" +
+				"ERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"ERROR:\tPolicy \"policy 4\" within Deployment \"wordpress\" - Possible remediation: \"policy 4 for testing\"\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n" +
+				"\x1b[0m\x1b[31;1mERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"\x1b[0m\x1b[31;1mERROR:\tPolicy \"policy 4\" within Deployment \"wordpress\" - Possible remediation: \"policy 4 for testing\"\n\x1b[0m",
 			error:      policy.ErrBreakingPolicies,
 			shouldFail: true,
 		},
@@ -468,7 +461,7 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 			defer closeFunction()
 
 			deployCheckCmd := d.defaultDeploymentCheckCommand
-			deployCheckCmd.env, out = d.createMockEnvironmentWithConn(conn)
+			deployCheckCmd.env, out, _ = d.createMockEnvironmentWithConn(conn)
 			deployCheckCmd.json = json
 
 			err := deployCheckCmd.Check()
@@ -489,13 +482,14 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		d.Run(name, func() {
-			deployCheckCmd, out, closeF := d.createDeployCheckCmd(c, printer, standardizedFormat)
+			deployCheckCmd, out, errOut, closeF := d.createDeployCheckCmd(c, printer, standardizedFormat)
 			defer closeF()
 
 			d.assertError(deployCheckCmd, c)
 			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			d.Require().NoError(err)
 			d.Assert().Equal(string(expectedOutput), out.String())
+			d.Assert().Equal(c.expectedErrOutput, errOut.String())
 		})
 		d.Run(colorTestPrefix+name, func() {
 			if runtime.GOOS == "windows" {
@@ -504,13 +498,14 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 			color.NoColor = false
 			defer func() { color.NoColor = true }()
 
-			deployCheckCmd, out, closeF := d.createDeployCheckCmd(c, printer, standardizedFormat)
+			deployCheckCmd, out, errOut, closeF := d.createDeployCheckCmd(c, printer, standardizedFormat)
 			defer closeF()
 
 			d.assertError(deployCheckCmd, c)
 			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
 			d.Require().NoError(err)
 			d.Assert().Equal(string(expectedOutput), out.String())
+			d.Assert().Equal(c.expectedErrOutputColorized, errOut.String())
 		})
 	}
 }
@@ -525,14 +520,14 @@ func (d *deployCheckTestSuite) assertError(deployCheckCmd deploymentCheckCommand
 	}
 }
 
-func (d *deployCheckTestSuite) createDeployCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (deploymentCheckCommand, *bytes.Buffer, func()) {
+func (d *deployCheckTestSuite) createDeployCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (deploymentCheckCommand, *bytes.Buffer, *bytes.Buffer, func()) {
 	conn, closeF := d.createGRPCMockDetectionService(c.alerts)
 
 	deployCheckCmd := d.defaultDeploymentCheckCommand
 	deployCheckCmd.printer = printer
 	deployCheckCmd.standardizedFormat = standardizedFormat
 
-	var out *bytes.Buffer
-	deployCheckCmd.env, out = d.createMockEnvironmentWithConn(conn)
-	return deployCheckCmd, out, closeF
+	var out, errOut *bytes.Buffer
+	deployCheckCmd.env, out, errOut = d.createMockEnvironmentWithConn(conn)
+	return deployCheckCmd, out, errOut, closeF
 }

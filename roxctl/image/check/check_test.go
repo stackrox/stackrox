@@ -221,7 +221,7 @@ func (suite *imageCheckTestSuite) createGRPCServerWithDetectionService(alerts []
 	return conn, closeF
 }
 
-func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
+func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
 	return mocks.NewEnvWithConn(conn, suite.T())
 }
 
@@ -235,27 +235,31 @@ func (suite *imageCheckTestSuite) SetupTest() {
 }
 
 type outputFormatTest struct {
-	shouldFail        bool
-	alerts            []*storage.Alert
-	expectedOutput    string
-	expectedErrOutput string
-	error             error
+	shouldFail                 bool
+	alerts                     []*storage.Alert
+	expectedOutput             string
+	expectedErrOutput          string
+	expectedErrOutputColorized string
+	error                      error
 }
 
 func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non build failing enforcement actions": {
-			alerts:            testAlertsWithoutFailure,
-			expectedOutput:    "testAlertsWithoutFailure.txt",
-			expectedErrOutput: "WARN: A total of 6 policies have been violated\n",
+			alerts:                     testAlertsWithoutFailure,
+			expectedOutput:             "testAlertsWithoutFailure.txt",
+			expectedErrOutput:          "WARN:\tA total of 6 policies have been violated\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n\x1b[0m",
 		},
 		"should fail with build failing enforcement actions": {
 			alerts:         testAlertsWithFailure,
 			expectedOutput: "testAlertsWithFailure.txt",
-			expectedErrOutput: `WARN: A total of 7 policies have been violated
-ERROR: failed policies found: 1 policies violated that are failing the check
-ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
-`,
+			expectedErrOutput: "WARN:\tA total of 7 policies have been violated\n" +
+				"ERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"ERROR:\tPolicy \"policy 1\" - Possible remediation: \"policy 1 for testing\"\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 7 policies have been violated\n" +
+				"\x1b[0m\x1b[31;1mERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"\x1b[0m\x1b[31;1mERROR:\tPolicy \"policy 1\" - Possible remediation: \"policy 1 for testing\"\n\x1b[0m",
 			shouldFail: true,
 			error:      policy.ErrBreakingPolicies,
 		},
@@ -496,12 +500,13 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		suite.Run(name, func() {
-			out, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
+			out, errOut, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
 			defer closeF()
 			suite.assertError(imgCheckCmd, c)
 			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			suite.Require().NoError(err)
 			suite.Assert().Equal(string(expectedOutput), out.String())
+			suite.Assert().Equal(c.expectedErrOutput, errOut.String())
 		})
 		suite.Run(colorTestPrefix+name, func() {
 			if runtime.GOOS == "windows" {
@@ -510,12 +515,13 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 			color.NoColor = false
 			defer func() { color.NoColor = true }()
 
-			out, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
+			out, errOut, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
 			defer closeF()
 			suite.assertError(imgCheckCmd, c)
 			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
 			suite.Require().NoError(err)
 			suite.Assert().Equal(string(expectedOutput), out.String())
+			suite.Assert().Equal(c.expectedErrOutputColorized, errOut.String())
 		})
 	}
 }
@@ -530,14 +536,15 @@ func (suite *imageCheckTestSuite) assertError(imgCheckCmd imageCheckCommand, c o
 	}
 }
 
-func (suite *imageCheckTestSuite) createNewImgCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, func(), imageCheckCommand) {
+func (suite *imageCheckTestSuite) createNewImgCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, *bytes.Buffer, func(), imageCheckCommand) {
 	var out *bytes.Buffer
+	var errOut *bytes.Buffer
 	conn, closeF := suite.createGRPCServerWithDetectionService(c.alerts)
 
 	imgCheckCmd := suite.imageCheckCommand
 	imgCheckCmd.objectPrinter = printer
 	imgCheckCmd.standardizedOutputFormat = standardizedFormat
 
-	imgCheckCmd.env, out = suite.newTestMockEnvironment(conn)
-	return out, closeF, imgCheckCmd
+	imgCheckCmd.env, out, errOut = suite.newTestMockEnvironment(conn)
+	return out, errOut, closeF, imgCheckCmd
 }

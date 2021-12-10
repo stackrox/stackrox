@@ -10,12 +10,12 @@ import (
 	"google.golang.org/grpc"
 )
 
-// NewEnvWithConn creates new environment with given connection. It returns environment and out buffer.
+// NewEnvWithConn creates new environment with given connection. It returns environment and out / errOut buffer.
 // It's meant to use in tests only.
-func NewEnvWithConn(conn *grpc.ClientConn, t *testing.T) (environment.Environment, *bytes.Buffer) {
+func NewEnvWithConn(conn *grpc.ClientConn, t *testing.T) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
 	envMock := NewMockEnvironment(gomock.NewController(t))
 
-	testIO, _, out, _ := environment.TestIO()
+	testIO, _, out, errOut := environment.TestIO()
 	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
 	envMock.EXPECT().InputOutput().AnyTimes().Return(env.InputOutput())
@@ -23,5 +23,5 @@ func NewEnvWithConn(conn *grpc.ClientConn, t *testing.T) (environment.Environmen
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
 	envMock.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
 
-	return envMock, out
+	return envMock, out, errOut
 }
