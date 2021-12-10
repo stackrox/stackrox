@@ -271,7 +271,7 @@ func (d *deployCheckTestSuite) SetupTest() {
 	d.defaultDeploymentCheckCommand = deploymentCheckCommand{
 		file:               "testdata/deployment.yaml",
 		retryDelay:         3,
-		retryCount:         0,
+		retryCount:         3,
 		timeout:            1 * time.Minute,
 		printAllViolations: true,
 	}
