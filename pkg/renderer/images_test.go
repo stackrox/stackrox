@@ -167,8 +167,8 @@ func TestComputeOverrides(t *testing.T) {
 func TestConfigureImageOverrides(t *testing.T) {
 	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, version.Versions{
-		MainVersion:      "1.2.3",
-		ScannerVersion:   "3.2.1",
+		MainVersion:    "1.2.3",
+		ScannerVersion: "3.2.1",
 	})
 	flavor := images.GetFlavorByBuildType()
 	cases := map[string]struct {
@@ -185,11 +185,11 @@ func TestConfigureImageOverrides(t *testing.T) {
 		},
 		"Don't override main registry": {
 			configValues: CommonConfig{
-				MainImage: flavor.MainImage(),
-				ScannerImage: flavor.ScannerImage(),
+				MainImage:      flavor.MainImage(),
+				ScannerImage:   flavor.ScannerImage(),
 				ScannerDBImage: flavor.ScannerDBImage(),
 			},
-			override:     false,
+			override: false,
 		},
 	}
 
