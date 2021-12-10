@@ -312,7 +312,8 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 	// Note: In such cases, the loops in following block will not be entered anyways since len(parts.children) and len(parts.imageCVEEdges) is 0.
 	// This is more for good readability amidst the complex code.
 	if scanUpdated {
-		for _, componentData := range parts.children {
+		for i := range parts.children {
+			componentData := parts.children[i]
 			componentKey, err := b.writeComponentParts(dackTxn, &componentData, iTime)
 			if err != nil {
 				return err
@@ -369,7 +370,8 @@ func (b *storeImpl) writeImageCVEEdges(txn *dackbox.Transaction, edges map[strin
 
 func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
 	var cveKeys [][]byte
-	for _, cveData := range parts.children {
+	for i := range parts.children {
+		cveData := parts.children[i]
 		cveKey, err := b.writeCVEParts(txn, &cveData, iTime)
 		if err != nil {
 			return nil, err

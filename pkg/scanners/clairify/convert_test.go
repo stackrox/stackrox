@@ -205,7 +205,7 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 
 func TestConvertNodeVulnerabilities(t *testing.T) {
 	scannerVulns, protoVulns := mock.GetTestScannerVulns()
-	for i, vuln := range scannerVulns {
-		assert.Equal(t, protoVulns[i], convertVulnerability(&vuln, storage.EmbeddedVulnerability_NODE_VULNERABILITY))
+	for i := range scannerVulns {
+		assert.Equal(t, protoVulns[i], convertVulnerability(&scannerVulns[i], storage.EmbeddedVulnerability_NODE_VULNERABILITY))
 	}
 }

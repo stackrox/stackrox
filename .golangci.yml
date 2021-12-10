@@ -28,6 +28,9 @@ issues:
 
 
 linters-settings:
+  gosec:
+    includes:
+    - G601
   revive:
     min-confidence: 0
   govet:
@@ -100,7 +103,7 @@ linters:
     - revive # replaces golint
     # - gomnd
     # - goprintffuncname
-    # - gosec
+    - gosec
     - gosimple
     - govet
     - ineffassign
