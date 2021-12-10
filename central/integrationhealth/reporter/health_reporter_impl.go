@@ -44,7 +44,7 @@ func New(datastore datastore.DataStore) *DatastoreBasedIntegrationHealthReporter
 	return d
 }
 
-//Register registers the integration health for an integration, if it doesn't exist
+// Register registers the integration health for an integration, if it doesn't exist
 func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ storage.IntegrationHealth_Type) error {
 	_, exists, err := d.integrationDS.GetIntegrationHealth(allAccessCtx, id)
 	if err != nil {

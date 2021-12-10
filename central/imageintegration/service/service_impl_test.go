@@ -176,7 +176,7 @@ func TestValidateIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
 
-	//Test case: config request with a different endpoint
+	// Test case: config request with a different endpoint
 	dockerConfigDiffEndpoint := dockerConfig.Clone()
 	dockerConfigDiffEndpoint.Endpoint = "endpointDiff"
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffEndpoint, secrets.ScrubReplacementStr)
@@ -194,7 +194,7 @@ func TestValidateIntegration(t *testing.T) {
 	assert.Error(t, err)
 	assert.EqualError(t, err, "credentials required to update field 'ImageIntegration.ImageIntegration_Docker.DockerConfig.Endpoint'")
 
-	//Test case: config request with a different username
+	// Test case: config request with a different username
 	dockerConfigDiffUsername := dockerConfig.Clone()
 	dockerConfigDiffUsername.Username = "usernameDiff"
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffUsername, secrets.ScrubReplacementStr)

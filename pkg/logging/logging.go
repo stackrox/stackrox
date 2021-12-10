@@ -158,7 +158,7 @@ var (
 		return severities
 	}()
 
-	//rootLogger is the convenience logger used when module specific loggers are not specified
+	// rootLogger is the convenience logger used when module specific loggers are not specified
 	rootLogger *Logger
 
 	// thisModuleLogger is the logger for logging in this module.
@@ -276,7 +276,7 @@ func LoggerForModule() *Logger {
 	return currentModule(3).Logger()
 }
 
-//convenience methods log apply to root logger
+// convenience methods log apply to root logger
 
 // Log implements logging.Logger interface.
 func Log(level zapcore.Level, args ...interface{}) { rootLogger.Log(level, args...) }

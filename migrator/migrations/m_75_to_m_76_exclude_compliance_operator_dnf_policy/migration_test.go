@@ -128,7 +128,7 @@ func (suite *policyUpdatesTestSuite) TestModifiedPoliciesAreNotUpdated() {
 		policy, ok := comparisonPolicies[policyID]
 		suite.True(ok)
 
-		//Modify the policy slightly
+		// Modify the policy slightly
 		modifiedPolicy := policy.Clone()
 		modifiedPolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "assfasdf"
 

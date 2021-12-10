@@ -112,7 +112,7 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	suite.validateCommentsEqual(comment1, outputComments[0], justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
 	suite.validateCommentsEqual(comment2, outputComments[1], justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
 
-	//Test GetComment
+	// Test GetComment
 	gotComment, err := suite.store.GetComment(alertID, firstCommentID)
 	suite.NoError(err)
 	suite.validateCommentsEqual(comment1, gotComment, justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
@@ -170,7 +170,7 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	outputCommentsAfterRemove, err := suite.store.GetCommentsForAlert(alertID)
 	suite.NoError(err)
 	suite.Len(outputCommentsAfterRemove, 1)
-	//check created time
+	// check created time
 	suite.validateCommentsEqual(updatedComment, outputCommentsAfterRemove[0], justBeforeAdd, justAfterAdd, justBeforeUpdate, justAfterUpdate)
 
 	// Test removeComment for a last comment of an alert
@@ -180,7 +180,7 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	suite.NoError(err)
 	suite.Nil(outputComments)
 
-	//Test removeAlertComments
+	// Test removeAlertComments
 	comments := []*storage.Comment{comment1, comment2}
 	for _, comment := range comments {
 		_, err := suite.store.AddAlertComment(comment)

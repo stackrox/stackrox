@@ -202,8 +202,8 @@ func dockerConfigToImageIntegration(registry string, dce dockerConfigEntry) *sto
 
 	username, password := dce.Username, dce.Password
 	// TODO(ROX-8465): Determine which Service Account's token to use to replace the credentials.
-	//if features.LocalImageScanning.Enabled() {
-	//}
+	// if features.LocalImageScanning.Enabled() {
+	// }
 
 	return &storage.ImageIntegration{
 		Id:         uuid.NewV4().String(),
