@@ -10,10 +10,24 @@ import {
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
+import PolicySection from './PolicySection';
+
+const MAX_POLICY_SECTIONS = 16;
 
 function PolicyCriteriaForm() {
     const [descriptor, setDescriptor] = React.useState<Descriptor[]>([]);
-    const { values } = useFormikContext<Policy>();
+    const { values, setFieldValue } = useFormikContext<Policy>();
+
+    function addNewPolicySection() {
+        if (values.policySections.length < MAX_POLICY_SECTIONS) {
+            const newPolicySection = {
+                sectionName: `Policy Section ${values.policySections.length + 1}`,
+                policyGroups: [],
+            };
+            const newPolicySections = [...values.policySections, newPolicySection];
+            setFieldValue('policySections', newPolicySections);
+        }
+    }
 
     React.useEffect(() => {
         if (values.eventSource === 'AUDIT_LOG_EVENT') {
@@ -36,10 +50,17 @@ function PolicyCriteriaForm() {
                             </div>
                         </FlexItem>
                         <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
-                            <Button variant="secondary">Add a new condition</Button>
+                            <Button variant="secondary" onClick={addNewPolicySection}>
+                                Add a new condition
+                            </Button>
                         </FlexItem>
                     </Flex>
                     <Divider component="div" className="pf-u-mt-md" />
+                    <Flex direction={{ default: 'row' }}>
+                        {values.policySections.map((_, sectionIndex) => (
+                            <PolicySection sectionIndex={sectionIndex} />
+                        ))}
+                    </Flex>
                 </FlexItem>
                 <Divider component="div" isVertical />
                 <FlexItem>
