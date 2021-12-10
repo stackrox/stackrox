@@ -51,7 +51,7 @@ for cr in $CRS; do
     CRS_VALIDATED=$((CRS_VALIDATED + 1))
 done
 
-if [ $FAILED -ne 0 ]; then
+if (( FAILED )); then
     die "ERROR: Some custom resources did not pass validation (see above)."
 fi
 
