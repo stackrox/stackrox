@@ -251,7 +251,6 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 	return conn, closeF
 }
 
-
 func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
 	return mocks.NewEnvWithConn(conn, s.T())
 }
@@ -433,18 +432,18 @@ func (s *imageScanTestSuite) TestValidate() {
 }
 
 type outputFormatTest struct {
-	components          []*storage.EmbeddedImageScanComponent
-	expectedOutput      string
-	expectedErrorOutput string
+	components                   []*storage.EmbeddedImageScanComponent
+	expectedOutput               string
+	expectedErrorOutput          string
 	expectedErrorOutputColorized string
 }
 
 func (s *imageScanTestSuite) TestScan_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should render default output with merged cells and additional verbose output": {
-			components: testComponents,
-			expectedOutput: "testComponents.txt",
-			expectedErrorOutput: "WARN:\tA total of 17 vulnerabilities were found in 5 components\n",
+			components:                   testComponents,
+			expectedOutput:               "testComponents.txt",
+			expectedErrorOutput:          "WARN:\tA total of 17 vulnerabilities were found in 5 components\n",
 			expectedErrorOutputColorized: "\x1b[95mWARN:\tA total of 17 vulnerabilities were found in 5 components\n\x1b[0m",
 		},
 		"should print only headers with empty components in image scan": {

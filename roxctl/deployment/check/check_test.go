@@ -358,29 +358,29 @@ func (d *deployCheckTestSuite) TestValidate() {
 }
 
 type outputFormatTest struct {
-	alerts            []*storage.Alert
-	expectedOutput    string
-	expectedErrOutput string
+	alerts                     []*storage.Alert
+	expectedOutput             string
+	expectedErrOutput          string
 	expectedErrOutputColorized string
-	shouldFail        bool
-	error             error
+	shouldFail                 bool
+	error                      error
 }
 
 func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non failing enforcement actions": {
-			alerts: testDeploymentAlertsWithoutFailure,
-			expectedOutput: "testDeploymentAlertsWithoutFailure.txt",
-			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n",
+			alerts:                     testDeploymentAlertsWithoutFailure,
+			expectedOutput:             "testDeploymentAlertsWithoutFailure.txt",
+			expectedErrOutput:          "WARN:\tA total of 6 policies have been violated\n",
 			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n\x1b[0m",
 		},
 		"should fail with failing enforcement actions": {
-			alerts: testDeploymentAlertsWithFailure,
+			alerts:         testDeploymentAlertsWithFailure,
 			expectedOutput: "testDeploymentAlertsWithFailure.txt",
 			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n" +
 				"ERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
 				"ERROR:\tPolicy \"policy 4\" within Deployment \"wordpress\" - Possible remediation: \"policy 4 for testing\"\n",
-				expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n" +
+			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n" +
 				"\x1b[0m\x1b[31;1mERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
 				"\x1b[0m\x1b[31;1mERROR:\tPolicy \"policy 4\" within Deployment \"wordpress\" - Possible remediation: \"policy 4 for testing\"\n\x1b[0m",
 			error:      policy.ErrBreakingPolicies,
