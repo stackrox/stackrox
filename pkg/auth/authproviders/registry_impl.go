@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -272,14 +271,8 @@ func (r *registryImpl) IssueToken(ctx context.Context, provider Provider, authRe
 	return token.Token, refreshCookie, nil
 }
 
-func (r *registryImpl) GetAvailableBackendFactories() map[string]BackendFactory {
-	result := make(map[string]BackendFactory)
-	for typ, factory := range r.backendFactories {
-		if typ != basic.TypeName {
-			result[typ] = factory
-		}
-	}
-	return result
+func (r *registryImpl) GetBackendFactories() map[string]BackendFactory {
+	return r.backendFactories
 }
 
 func (r *registryImpl) addProvider(provider Provider) {

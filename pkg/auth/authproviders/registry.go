@@ -34,6 +34,6 @@ type Registry interface {
 
 	GetExternalUserClaim(ctx context.Context, externalToken, typ, state string) (*AuthResponse, string, error)
 	IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, *http.Cookie, error)
-	// GetAvailableBackendFactories returns factories user can use to create Backend.
-	GetAvailableBackendFactories() map[string]BackendFactory
+	// GetBackendFactories returns all backend factories present.
+	GetBackendFactories() map[string]BackendFactory
 }
