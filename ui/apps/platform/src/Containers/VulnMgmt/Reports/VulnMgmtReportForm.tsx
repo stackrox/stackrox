@@ -33,6 +33,7 @@ import useMultiSelect from 'hooks/useMultiSelect';
 import { saveReport } from 'services/ReportsService';
 import { ReportConfigurationMappedValues } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import NotifierSelection from './Form/NotifierSelection';
 import ResourceScopeSelection from './Form/ResourceScopeSelection';
 
 export type VulnMgmtReportFormProps = {
@@ -288,13 +289,21 @@ function VulnMgmtReportForm({
                             </Grid>
                         </GridItem>
                         <GridItem span={4}>
-                            <Title headingLevel="h2">
-                                TODO: Notification method and distribution
-                            </Title>
-                            <Text component={TextVariants.p}>
-                                Schedule reports across the organization by defining a notification
-                                method and distribution list for the report
-                            </Text>
+                            <div>
+                                <Title headingLevel="h2" className="pf-u-mb-xs">
+                                    Notification method and distribution
+                                </Title>
+                                <Text component={TextVariants.p} className="pf-u-mb-md">
+                                    Schedule reports across the organization by defining a
+                                    notification method and distribution list for the report
+                                </Text>
+                                <NotifierSelection
+                                    notifierId={values.notifierConfig.emailConfig.notifierId}
+                                    mailingLists={values.notifierConfig.emailConfig.mailingLists}
+                                    setFieldValue={setFieldValue}
+                                    handleBlur={handleBlur}
+                                />
+                            </div>
                         </GridItem>
                     </Grid>
                 </Form>
