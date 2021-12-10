@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExpandableSection, Draggable, Droppable, Divider } from '@patternfly/react-core';
+import { ExpandableSection, Draggable, Droppable } from '@patternfly/react-core';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import './PolicyCriteriaCategory.css';
