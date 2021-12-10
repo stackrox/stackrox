@@ -163,3 +163,24 @@ func (t *ChartTemplate) InstantiateAndLoad(metaVals charts.MetaValues) (*chart.C
 
 	return ch, nil
 }
+
+func (t *ChartTemplate) InstantiateAndLoadWithAdditionalFiles(metaVals charts.MetaValues, additionalFiles map[string][]byte) (*chart.Chart, error) {
+	instantiatedFiles, err := t.InstantiateRaw(metaVals)
+	if err != nil {
+		return nil, errors.Wrap(err, "instantiating chart template files")
+	}
+
+	for path, data := range additionalFiles {
+		instantiatedFiles = append(instantiatedFiles, &loader.BufferedFile{
+			Name: path,
+			Data: data,
+		})
+	}
+
+	ch, err := loader.LoadFiles(instantiatedFiles)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading instantiated chart files")
+	}
+
+	return ch, nil
+}
