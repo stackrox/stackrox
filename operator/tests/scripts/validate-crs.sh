@@ -55,6 +55,6 @@ if (( FAILED )); then
     die "ERROR: Some custom resources did not pass validation (see above)."
 fi
 
-if [ $CRS_VALIDATED -eq 0 ]; then
+if (( CRS_VALIDATED == 0 )); then
     die "ERROR: No CRs validated, this does not seem correct. CRs were expected in directory \"$TESTDIR\"."
 fi
