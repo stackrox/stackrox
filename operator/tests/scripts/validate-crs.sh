@@ -16,7 +16,7 @@ fi
 TESTDIR="$1"
 shift
 
-CRDS="$@"
+CRDS=("$@")
 echo "INFO: Validating all Kubernetes object definitions for the following CRDs: $CRDS"
 echo
 
