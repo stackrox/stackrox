@@ -17,7 +17,7 @@ TESTDIR="$1"
 shift
 
 CRDS=("$@")
-echo "INFO: Validating all Kubernetes object definitions for the following CRDs: $CRDS"
+echo "INFO: Validating all Kubernetes object definitions for the following CRDs: ${CRDS[*]}"
 echo
 
 # Extract kind names for the CRDs.
