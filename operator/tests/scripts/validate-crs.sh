@@ -9,7 +9,7 @@ die() {
     exit 1
 }
 
-if [ $# -lt 2 ]; then
+if (( $# < 2 )); then
     die "Usage: $0 <directory with kuttl tests> <CR 1> <CR 2> ..."
 fi
 
