@@ -3,6 +3,10 @@ package renderer
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -156,6 +160,54 @@ func TestComputeOverrides(t *testing.T) {
 		t.Run(c.ref, func(t *testing.T) {
 			overrides := ComputeImageOverrides(c.ref, "stackrox.io", "main", "1.2.3")
 			assert.Equal(t, c.expected, overrides)
+		})
+	}
+}
+
+func TestConfigureImageOverrides(t *testing.T) {
+	testbuildinfo.SetForTest(t)
+	testutils.SetVersion(t, version.Versions{
+		MainVersion:      "1.2.3",
+		ScannerVersion:   "3.2.1",
+	})
+	flavor := images.GetFlavorByBuildType()
+	cases := map[string]struct {
+		configValues         CommonConfig
+		override             bool
+		expectedMainRegistry string
+	}{
+		"Override Main Registry": {
+			configValues: CommonConfig{
+				MainImage: "quay.io/rhacs/main",
+			},
+			override:             true,
+			expectedMainRegistry: "quay.io/rhacs",
+		},
+		"Don't override main registry": {
+			configValues: CommonConfig{
+				MainImage: flavor.MainImage(),
+				ScannerImage: flavor.ScannerImage(),
+				ScannerDBImage: flavor.ScannerDBImage(),
+			},
+			override:     false,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(tt *testing.T) {
+			config := Config{K8sConfig: &K8sConfig{
+				CommonConfig: c.configValues,
+			}}
+			configureImageOverrides(&config)
+			assert.NotNil(tt, config.K8sConfig.ImageOverrides)
+			if c.override {
+				assert.Equal(tt, config.K8sConfig.ImageOverrides["MainRegistry"], c.expectedMainRegistry)
+			} else {
+				assert.Len(tt, config.K8sConfig.ImageOverrides["Main"], 0, "should have no keys in Main map")
+				assert.Len(tt, config.K8sConfig.ImageOverrides["Scanner"], 0, "should have no keys in Scanner map")
+				assert.Len(tt, config.K8sConfig.ImageOverrides["ScannerDB"], 0, "should have no keys in ScannerDB map")
+			}
+
 		})
 	}
 }
