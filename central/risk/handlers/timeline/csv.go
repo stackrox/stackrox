@@ -272,8 +272,8 @@ func CSVHandler() http.HandlerFunc {
 			return dataRows[i].processArgs < dataRows[j].processArgs
 		})
 		output := newCSVResults(headers)
-		for _, e := range dataRows {
-			output.addRow(&e)
+		for i := range dataRows {
+			output.addRow(&dataRows[i])
 		}
 		output.Write(w, "events_export")
 	}

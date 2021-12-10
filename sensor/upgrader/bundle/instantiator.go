@@ -121,7 +121,8 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 
 func validateMetadata(objs []k8sutil.Object) error {
 	errs := errorhelpers.NewErrorList("object metadata validation failed")
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		if labelVal := obj.GetLabels()[common.UpgradeResourceLabelKey]; labelVal != common.UpgradeResourceLabelValue {
 			errs.AddStringf("upgrade label %s of object %s has invalid value %q, expected: %q", common.UpgradeResourceLabelKey, k8sobjects.RefOf(obj), labelVal, common.UpgradeResourceLabelValue)
 		}

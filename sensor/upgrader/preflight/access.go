@@ -79,7 +79,8 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 		return err
 	}
 
-	for _, ra := range resourceAttribs {
+	for i := range resourceAttribs {
+		ra := resourceAttribs[i]
 		sar := &v1.SelfSubjectAccessReview{
 			Spec: v1.SelfSubjectAccessReviewSpec{
 				ResourceAttributes: &ra,

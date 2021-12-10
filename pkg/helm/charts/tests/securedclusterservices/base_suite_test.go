@@ -193,7 +193,8 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	}
 
 	objs := s.ParseObjects(rendered)
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		if obj.GetKind() != "Deployment" && obj.GetKind() != "DaemonSet" {
 			continue
 		}
