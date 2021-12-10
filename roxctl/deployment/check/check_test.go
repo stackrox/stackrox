@@ -249,17 +249,17 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 	return conn, closeFunction
 }
 
-func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
+func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
 	mockEnv := mocks.NewMockEnvironment(gomock.NewController(d.T()))
 
-	testIO, _, testStdOut, _ := environment.TestIO()
+	testIO, _, testStdOut, testErrOut := environment.TestIO()
 	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
 
 	mockEnv.EXPECT().InputOutput().AnyTimes().Return(testIO)
 	mockEnv.EXPECT().Logger().AnyTimes().Return(logger)
 	mockEnv.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
 
-	return mockEnv, testStdOut
+	return mockEnv, testStdOut, testErrOut
 }
 
 func (d *deployCheckTestSuite) SetupTest() {
@@ -427,7 +427,7 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 |          |          |               |            |                      |            message             |                      |
 +----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
 `,
-			expectedErrOutput: "WARN: A total of 6 policies have been violated\n",
+			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n",
 		},
 		"should fail with failing enforcement actions": {
 			alerts: testDeploymentAlertsWithFailure,
@@ -483,10 +483,9 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 |          |          |               |            |                      |            message             |                      |
 +----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
 `,
-			expectedErrOutput: `WARN: A total of 6 policies have been violated
-ERROR: failed policies found: 1 policies violated that are failing the check
-ERROR: Policy "policy 4" within Deployment "wordpress" - Possible remediation: "policy 4"
-`,
+			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n" +
+				"ERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"ERROR:\tPolicy \"policy 4\" within Deployment \"wordpress\" - Possible remediation: \"policy 4 for testing\"\n",
 			error:      policy.ErrBreakingPolicies,
 			shouldFail: true,
 		},
@@ -1124,7 +1123,7 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 			defer closeFunction()
 
 			deployCheckCmd := d.defaultDeploymentCheckCommand
-			deployCheckCmd.env, out = d.createMockEnvironmentWithConn(conn)
+			deployCheckCmd.env, out, _ = d.createMockEnvironmentWithConn(conn)
 			deployCheckCmd.json = json
 
 			err := deployCheckCmd.Check()
@@ -1143,6 +1142,7 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 	for name, c := range cases {
 		d.Run(name, func() {
 			var out *bytes.Buffer
+			var errOut *bytes.Buffer
 			conn, closeF := d.createGRPCMockDetectionService(c.alerts)
 			defer closeF()
 
@@ -1150,16 +1150,18 @@ func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest,
 			deployCheckCmd.printer = printer
 			deployCheckCmd.standardizedFormat = standardizedFormat
 
-			deployCheckCmd.env, out = d.createMockEnvironmentWithConn(conn)
+			deployCheckCmd.env, out, errOut = d.createMockEnvironmentWithConn(conn)
 			err := deployCheckCmd.Check()
 			if c.shouldFail {
 				d.Require().Error(err)
 				d.Assert().ErrorIs(err, c.error)
 			} else {
 				d.Require().NoError(err)
-
 			}
 			d.Assert().Equal(c.expectedOutput, out.String())
+			if c.expectedErrOutput != "" {
+				d.Assert().Equal(c.expectedErrOutput, errOut.String())
+			}
 		})
 	}
 }

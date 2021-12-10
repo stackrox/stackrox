@@ -248,16 +248,16 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 	return conn, closeF
 }
 
-func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
+func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
 	envMock := mocks.NewMockEnvironment(gomock.NewController(s.T()))
 
-	testIO, _, testStdOut, _ := environment.TestIO()
+	testIO, _, testStdOut, testErrOut := environment.TestIO()
 	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
 
 	envMock.EXPECT().Logger().AnyTimes().Return(logger)
 	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	return envMock, testStdOut
+	return envMock, testStdOut, testErrOut
 }
 
 func (s *imageScanTestSuite) SetupTest() {
@@ -316,7 +316,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
-			imgScanCmd.env, _ = s.newTestMockEnvironmentWithConn(nil)
+			imgScanCmd.env, _, _ = s.newTestMockEnvironmentWithConn(nil)
 			imgScanCmd.format = c.legacyFormat
 
 			err := imgScanCmd.Construct(nil, cmd, c.printerFactory)
@@ -486,7 +486,7 @@ func (s *imageScanTestSuite) TestScan_TableOutput() {
 |           |            | CVE-789-MED  | MODERATE  | <some-link-to-nvd> |
 +-----------+------------+--------------+-----------+--------------------+
 `,
-			expectedErrorOutput: "WARN: A total of 17 vulnerabilities were found in 5 components\n",
+			expectedErrorOutput: "WARN:\tA total of 17 vulnerabilities were found in 5 components\n",
 		},
 		"should print only headers with empty components in image scan": {
 			expectedOutput: `Scan results for image: nginx:test
@@ -957,17 +957,21 @@ func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, p
 	for name, c := range cases {
 		s.Run(name, func() {
 			var out *bytes.Buffer
+			var errOut *bytes.Buffer
 			conn, closeF := s.createGRPCMockImageService(c.components)
 			defer closeF()
 
 			imgScanCmd := s.defaultImageScanCommand
 			imgScanCmd.printer = printer
 			imgScanCmd.standardizedFormat = standardizedFormat
-			imgScanCmd.env, out = s.newTestMockEnvironmentWithConn(conn)
+			imgScanCmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)
 			s.Assert().Equal(c.expectedOutput, out.String())
+			if c.expectedErrorOutput != "" {
+				s.Assert().Equal(c.expectedErrorOutput, errOut.String())
+			}
 		})
 	}
 }
@@ -981,7 +985,7 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 
 			imgScanCmd := s.defaultImageScanCommand
 			imgScanCmd.format = format
-			imgScanCmd.env, out = s.newTestMockEnvironmentWithConn(conn)
+			imgScanCmd.env, out, _ = s.newTestMockEnvironmentWithConn(conn)
 
 			err := imgScanCmd.Scan()
 			s.Require().NoError(err)

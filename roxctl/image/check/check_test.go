@@ -218,16 +218,16 @@ func (suite *imageCheckTestSuite) createGRPCServerWithDetectionService(alerts []
 	return conn, closeF
 }
 
-func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
+func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
 	envMock := mocks.NewMockEnvironment(gomock.NewController(suite.T()))
 
-	testIO, _, out, _ := environment.TestIO()
+	testIO, _, out, errOut := environment.TestIO()
 	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
 
 	envMock.EXPECT().Logger().AnyTimes().Return(logger)
 	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	return envMock, out
+	return envMock, out, errOut
 }
 
 func (suite *imageCheckTestSuite) SetupTest() {
@@ -283,7 +283,7 @@ func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 | policy 7 |   LOW    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
 +----------+----------+--------------+----------------------+--------------------+----------------------+
 `,
-			expectedErrOutput: "WARN: A total of 6 policies have been violated\n",
+			expectedErrOutput: "WARN:\tA total of 6 policies have been violated\n",
 		},
 		"should fail with build failing enforcement actions": {
 			alerts: testAlertsWithFailure,
@@ -326,10 +326,9 @@ func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 | policy 7 |   LOW    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
 +----------+----------+--------------+----------------------+--------------------+----------------------+
 `,
-			expectedErrOutput: `WARN: A total of 7 policies have been violated
-ERROR: failed policies found: 1 policies violated that are failing the check
-ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
-`,
+			expectedErrOutput: "WARN:\tA total of 7 policies have been violated\n" +
+				"ERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"ERROR:\tPolicy \"policy 1\" - Possible remediation: \"policy 1 for testing\"\n",
 			shouldFail: true,
 			error:      policy.ErrBreakingPolicies,
 		},
@@ -1066,6 +1065,7 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 	for name, c := range cases {
 		suite.Run(name, func() {
 			var out *bytes.Buffer
+			var errOut *bytes.Buffer
 			conn, closeF := suite.createGRPCServerWithDetectionService(c.alerts)
 			defer closeF()
 
@@ -1073,7 +1073,7 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 			imgCheckCmd.objectPrinter = printer
 			imgCheckCmd.standardizedOutputFormat = standardizedFormat
 
-			imgCheckCmd.env, out = suite.newTestMockEnvironment(conn)
+			imgCheckCmd.env, out, errOut = suite.newTestMockEnvironment(conn)
 			err := imgCheckCmd.CheckImage()
 			if c.shouldFail {
 				suite.Require().Error(err)
@@ -1083,6 +1083,9 @@ func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTe
 
 			}
 			suite.Assert().Equal(c.expectedOutput, out.String())
+			if c.expectedErrOutput != "" {
+				suite.Assert().Equal(c.expectedErrOutput, errOut.String())
+			}
 		})
 	}
 }
