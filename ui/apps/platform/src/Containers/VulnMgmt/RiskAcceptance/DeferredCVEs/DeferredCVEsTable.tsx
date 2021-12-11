@@ -22,7 +22,7 @@ import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import CancelDeferralModal from './CancelDeferralModal';
 import VulnerabilityCommentsButton from '../RequestComments/RequestCommentsButton';
-import { EmbeddedImageScanComponent } from '../ObservedCVEs/observedCVEs.graphql';
+import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 export type DeferredCVERow = {
     id: string;

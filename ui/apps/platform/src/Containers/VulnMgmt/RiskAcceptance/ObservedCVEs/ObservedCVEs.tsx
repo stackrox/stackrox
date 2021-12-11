@@ -4,11 +4,12 @@ import React, { ReactElement } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 
 import { useQuery } from '@apollo/client';
+import usePagination from 'hooks/patternfly/usePagination';
 import {
-    GetObservedCVEsData,
-    GetObservedCVEsVars,
-    GET_OBSERVED_CVES,
-} from './observedCVEs.graphql';
+    GetImageVulnerabilitiesData,
+    GetImageVulnerabilitiesVars,
+    GET_IMAGE_VULNERABILITIES,
+} from '../imageVulnerabilities.graphql';
 
 import ObservedCVEsTable from './ObservedCVEsTable';
 
@@ -17,17 +18,26 @@ type ObservedCVEsProps = {
 };
 
 function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
-    const { loading: isLoading, data } = useQuery<GetObservedCVEsData, GetObservedCVEsVars>(
-        GET_OBSERVED_CVES,
-        {
-            variables: {
-                imageId,
-                vulnsQuery: '',
+    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { loading: isLoading, data } = useQuery<
+        GetImageVulnerabilitiesData,
+        GetImageVulnerabilitiesVars
+    >(GET_IMAGE_VULNERABILITIES, {
+        variables: {
+            imageId,
+            vulnsQuery: 'Vulnerability State:OBSERVED',
+            pagination: {
+                limit: perPage,
+                offset: (page - 1) * perPage,
+                sortOption: {
+                    field: 'cve',
+                    reversed: false,
+                },
             },
-        }
-    );
+        },
+    });
 
-    if (isLoading) {
+    if (isLoading || !data) {
         return (
             <Bullseye>
                 <Spinner size="sm" />
@@ -35,10 +45,11 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
         );
     }
 
-    const rows = data?.result?.vulns || [];
-    const registry = data?.result?.name?.registry || '';
-    const remote = data?.result?.name?.remote || '';
-    const tag = data?.result?.name?.tag || '';
+    const itemCount = data.vulnerabilityCount;
+    const rows = data.vulnerabilities;
+    const { registry } = data.image.name;
+    const { remote } = data.image.name;
+    const { tag } = data.image.name;
 
     return (
         <ObservedCVEsTable
@@ -47,6 +58,11 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             remote={remote}
             tag={tag}
             isLoading={isLoading}
+            itemCount={itemCount}
+            page={page}
+            perPage={perPage}
+            onSetPage={onSetPage}
+            onPerPageSelect={onPerPageSelect}
         />
     );
 }

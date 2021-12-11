@@ -1,13 +1,14 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { TableComposable, Thead, Tbody, Tr, Th } from '@patternfly/react-table';
 import {
     Button,
     ButtonVariant,
     Divider,
     DropdownItem,
     InputGroup,
+    Pagination,
     TextInput,
     Toolbar,
     ToolbarContent,
@@ -17,16 +18,14 @@ import { SearchIcon } from '@patternfly/react-icons';
 
 import useTableSelection from 'hooks/useTableSelection';
 
-import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
-import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
-import { Vulnerability } from './observedCVEs.graphql';
-import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
+import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
+import ObservedCVEsTableRows from './ObservedCVEsTableRows';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
@@ -41,9 +40,20 @@ export type ObservedCVEsTableProps = {
     registry: string;
     remote: string;
     tag: string;
-};
+    itemCount: number;
+} & UsePaginationResult;
 
-function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTableProps): ReactElement {
+function ObservedCVEsTable({
+    rows,
+    registry,
+    remote,
+    tag,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+}: ObservedCVEsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -126,6 +136,15 @@ function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTablePro
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
+                    </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
             <Divider component="div" />
@@ -144,6 +163,7 @@ function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTablePro
                         <Th>CVSS score</Th>
                         <Th>Affected components</Th>
                         <Th>Discovered</Th>
+                        <Th>Request State</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -164,40 +184,16 @@ function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTablePro
                                 },
                             },
                         ];
-
                         return (
-                            <Tr key={rowIndex}>
-                                <Td
-                                    select={{
-                                        rowIndex,
-                                        onSelect,
-                                        isSelected: selected[rowIndex],
-                                    }}
-                                />
-                                <Td dataLabel="Cell">{row.cve}</Td>
-                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
-                                <Td dataLabel="Severity">
-                                    <VulnerabilitySeverityLabel severity={row.severity} />
-                                </Td>
-                                <Td dataLabel="CVSS score">
-                                    <CVSSScoreLabel
-                                        cvss={row.cvss}
-                                        scoreVersion={row.scoreVersion}
-                                    />
-                                </Td>
-                                <Td dataLabel="Affected components">
-                                    <AffectedComponentsButton components={row.components} />
-                                </Td>
-                                <Td dataLabel="Discovered">
-                                    <DateTimeFormat time={row.discoveredAtImage} />
-                                </Td>
-                                <Td
-                                    className="pf-u-text-align-right"
-                                    actions={{
-                                        items: actions,
-                                    }}
-                                />
-                            </Tr>
+                            <ObservedCVEsTableRows
+                                row={row}
+                                rowIndex={rowIndex}
+                                onSelect={onSelect}
+                                selected={selected}
+                                actions={actions}
+                                page={page}
+                                perPage={perPage}
+                            />
                         );
                     })}
                 </Tbody>

@@ -24,7 +24,7 @@ import { RequestComment } from 'types/vuln_request.proto';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import VulnerabilityCommentsButton from '../RequestComments/RequestCommentsButton';
 import ReobserveCVEModal from './ReobserveCVEModal';
-import { EmbeddedImageScanComponent } from '../ObservedCVEs/observedCVEs.graphql';
+import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 export type FalsePositiveCVERow = {
     id: string;
