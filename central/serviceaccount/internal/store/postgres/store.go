@@ -5,36 +5,30 @@ package postgres
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
-		countStmt = "select count(*) from ServiceAccount"
-		existsStmt = "select exists(select 1 from ServiceAccount where id = $1)"
-		getIDsStmt = "select id from ServiceAccount"
-		getStmt = "select serialized from ServiceAccount where id = $1"
-		getManyStmt = "select serialized from ServiceAccount where id = ANY($1::text[])"
-		upsertStmt = "insert into ServiceAccount (id, value, Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
-		deleteStmt = "delete from ServiceAccount where id = $1"
-		deleteManyStmt = "delete from ServiceAccount where id = ANY($1::text[])"
-		walkStmt = "select serialized from ServiceAccount"
-		walkWithIDStmt = "select id, serialized from ServiceAccount"
+	countStmt  = "SELECT COUNT(*) FROM ServiceAccount"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM ServiceAccount WHERE Id = $1)"
+
+	getStmt        = "SELECT serialized FROM ServiceAccount WHERE Id = $1"
+	deleteStmt     = "DELETE FROM ServiceAccount WHERE Id = $1"
+	walkStmt       = "SELECT serialized FROM ServiceAccount"
+	getIDsStmt     = "SELECT Id FROM ServiceAccount"
+	getManyStmt    = "SELECT serialized FROM ServiceAccount WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM ServiceAccount WHERE Id = ANY($1::text[])"
 )
 
 var (
@@ -48,13 +42,14 @@ var (
 type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
-	GetIDs() ([]string, error)
 	Get(id string) (*storage.ServiceAccount, bool, error)
-	GetMany(ids []string) ([]*storage.ServiceAccount, []int, error)
 	Upsert(obj *storage.ServiceAccount) error
 	UpsertMany(objs []*storage.ServiceAccount) error
 	Delete(id string) error
+	GetIDs() ([]string, error)
+	GetMany(ids []string) ([]*storage.ServiceAccount, []int, error)
 	DeleteMany(ids []string) error
+
 	Walk(fn func(obj *storage.ServiceAccount) error) error
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
@@ -64,28 +59,16 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func alloc() proto.Message {
-	return &storage.ServiceAccount{}
-}
-
-func keyFunc(msg proto.Message) string {
-	return msg.(*storage.ServiceAccount).GetId()
-}
-
 const (
-	createTableQuery = "create table if not exists ServiceAccount (id varchar primary key, value jsonb, Id varchar, Name varchar, Namespace varchar, ClusterName varchar, ClusterId varchar, Labels jsonb, Annotations jsonb)"
-	createIDIndexQuery = "create index if not exists ServiceAccount_id on ServiceAccount using hash ((id))"
-
-	batchInsertTemplate = "insert into ServiceAccount (id, value, Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+	batchInsertTemplate = "<no value>"
 )
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "ServiceAccount")
 
-	for _, table := range []string {
+	for _, table := range []string{
 		"create table if not exists ServiceAccount(serialized jsonb not null, Id varchar, Name varchar, Namespace varchar, ClusterName varchar, ClusterId varchar, Labels jsonb, Annotations jsonb, PRIMARY KEY (Id));",
-		
 	} {
 		_, err := db.Exec(context.Background(), table)
 		if err != nil {
@@ -93,17 +76,11 @@ func New(db *pgxpool.Pool) Store {
 		}
 	}
 
-	// Will also autogen the indexes in the future
-	//_, err := db.Exec(context.Background(), createIDIndexQuery)
-	//if err != nil {
-	//	panic("error creating index")
-	//}
-
-//
+	//
 	return &storeImpl{
 		db: db,
 	}
-//
+	//
 }
 
 // Count returns the number of objects in the store
@@ -130,26 +107,6 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ServiceAccountIDs")
-
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
-	if err != nil {
-		return nil, nilNoRows(err)
-	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
-}
-
 func nilNoRows(err error) error {
 	if err == pgx.ErrNoRows {
 		return nil
@@ -170,16 +127,142 @@ func (s *storeImpl) Get(id string) (*storage.ServiceAccount, bool, error) {
 		return nil, false, nilNoRows(err)
 	}
 
-	msg := alloc()
+	var msg storage.ServiceAccount
 	buf := bytes.NewBuffer(data)
 	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "ServiceAccount")
-	if err := jsonpb.Unmarshal(buf, msg); err != nil {
+	if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 		return nil, false, err
 	}
-	return msg.(*storage.ServiceAccount), true, nil
+	return &msg, true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.String()
+	return &s
+}
+
+// Upsert inserts the object into the DB
+func (s *storeImpl) Upsert(obj0 *storage.ServiceAccount) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "ServiceAccount")
+
+	t := time.Now()
+	serialized, err := marshaler.MarshalToString(obj0)
+	if err != nil {
+		return err
+	}
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ServiceAccount")
+	conn, release := s.acquireConn(ops.Add, "ServiceAccount")
+	defer release()
+
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	doRollback := true
+	defer func() {
+		if doRollback {
+			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
+				log.Errorf("error rolling backing: %v", err)
+			}
+		}
+	}()
+
+	localQuery := "insert into ServiceAccount(serialized, Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+	_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetNamespace(), obj0.GetClusterName(), obj0.GetClusterId(), obj0.GetLabels(), obj0.GetAnnotations())
+	if err != nil {
+		return err
+	}
+
+	doRollback = false
+	return tx.Commit(context.Background())
+}
+
+func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+	defer metrics.SetAcquireDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	return conn, conn.Release
+}
+
+// UpsertMany batches objects into the DB
+func (s *storeImpl) UpsertMany(objs []*storage.ServiceAccount) error {
+	if len(objs) == 0 {
+		return nil
+	}
+
+	batch := &pgx.Batch{}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ServiceAccount")
+	for _, obj0 := range objs {
+		t := time.Now()
+		serialized, err := marshaler.MarshalToString(obj0)
+		if err != nil {
+			return err
+		}
+		metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ServiceAccount")
+		localQuery := "insert into ServiceAccount(serialized, Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+		batch.Queue(localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetNamespace(), obj0.GetClusterName(), obj0.GetClusterId(), obj0.GetLabels(), obj0.GetAnnotations())
+
+	}
+
+	conn, release := s.acquireConn(ops.AddMany, "ServiceAccount")
+	defer release()
+
+	results := conn.SendBatch(context.Background(), batch)
+	if err := results.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete removes the specified ID from the store
+func (s *storeImpl) Delete(id string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ServiceAccount")
+
+	conn, release := s.acquireConn(ops.Remove, "ServiceAccount")
+	defer release()
+
+	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs() ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ServiceAccountIDs")
+
+	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	if err != nil {
+		return nil, nilNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ids []string) ([]*storage.ServiceAccount, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ServiceAccount")
 
@@ -199,149 +282,29 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ServiceAccount, []int, err
 	}
 	defer rows.Close()
 	elems := make([]*storage.ServiceAccount, 0, len(ids))
-	foundSet := set.NewStringSet()
+	foundSet := make(map[string]struct{})
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		msg := alloc()
+		var msg storage.ServiceAccount
 		buf := bytes.NewBuffer(data)
 		t := time.Now()
-		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 			return nil, nil, err
 		}
 		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "ServiceAccount")
-		elem := msg.(*storage.ServiceAccount)
-		foundSet.Add(elem.GetId())
-		elems = append(elems, elem)
+		foundSet[msg.GetId()] = struct{}{}
+		elems = append(elems, &msg)
 	}
 	missingIndices := make([]int, 0, len(ids)-len(foundSet))
 	for i, id := range ids {
-		if !foundSet.Contains(id) {
+		if _, ok := foundSet[id]; !ok {
 			missingIndices = append(missingIndices, i)
 		}
 	}
 	return elems, missingIndices, nil
-}
-
-func convertEnumSliceToIntArray(i interface{}) []int32 {
-	enumSlice := reflect.ValueOf(i)
-	enumSliceLen := enumSlice.Len()
-	resultSlice := make([]int32, 0, enumSliceLen)
-	for i := 0; i < enumSlice.Len(); i++ {
-		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
-	}
-	return resultSlice
-}
-
-func nilOrStringTimestamp(t *types.Timestamp) *string {
-  if t == nil {
-    return nil
-  }
-  s := t.String()
-  return &s
-}
-
-func (s *storeImpl) upsert(id string, obj0 *storage.ServiceAccount) error {
-	t := time.Now()
-	serialized, err := marshaler.MarshalToString(obj0)
-	if err != nil {
-		return err
-	}
-	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ServiceAccount")
-	conn, release := s.acquireConn(ops.Add, "ServiceAccount")
-	defer release()
-
-	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err == nil {
-			err = tx.Commit(context.Background())
-		}
-//else {
-//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
-//				// multi error?
-//				err = rollBackErr
-//			}
-//		}
-	}()
-
-	localQuery := "insert into ServiceAccount(serialized, Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
-_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetNamespace(), obj0.GetClusterName(), obj0.GetClusterId(), obj0.GetLabels(), obj0.GetAnnotations())
-if err != nil {
-    return err
-  }
-
-
-	return err
-}
-
-// Upsert inserts the object into the DB
-func (s *storeImpl) Upsert(obj *storage.ServiceAccount) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "ServiceAccount")
-	return s.upsert(keyFunc(obj), obj)
-}
-
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
-	defer metrics.SetAcquireDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
-	if err != nil {
-		panic(err)
-	}
-	return conn, conn.Release
-}
-
-// UpsertMany batches objects into the DB
-func (s *storeImpl) UpsertMany(objs []*storage.ServiceAccount) error {
-	if len(objs) == 0 {
-		return nil
-	}
-
-	conn, release := s.acquireConn(ops.AddMany, "ServiceAccount")
-	defer release()
-
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ServiceAccount")
-	numElems := 9
-	batch := batcher.New(len(objs), 60000/numElems)
-	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
-		var placeholderStr string
-		data := make([]interface{}, 0, numElems * len(objs))
-		for i, obj := range objs[start:end] {
-			if i != 0 {
-				placeholderStr += ", "
-			}
-			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
-
-			t := time.Now()
-			value, err := marshaler.MarshalToString(obj)
-			if err != nil {
-				return err
-			}
-			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ServiceAccount")
-			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetId(), obj.GetName(), obj.GetNamespace(), obj.GetClusterName(), obj.GetClusterId(), obj.GetLabels(), obj.GetAnnotations())
-		}
-		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ServiceAccount")
-
-	conn, release := s.acquireConn(ops.Remove, "ServiceAccount")
-	defer release()
-
-	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
-		return err
-	}
-	return nil
 }
 
 // Delete removes the specified IDs from the store
@@ -368,12 +331,12 @@ func (s *storeImpl) Walk(fn func(obj *storage.ServiceAccount) error) error {
 		if err := rows.Scan(&data); err != nil {
 			return err
 		}
-		msg := alloc()
+		var msg storage.ServiceAccount
 		buf := bytes.NewReader(data)
-		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 			return err
 		}
-		return fn(msg.(*storage.ServiceAccount))
+		return fn(&msg)
 	}
 	return nil
 }

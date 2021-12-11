@@ -4,118 +4,84 @@ package postgres
 
 import (
 	"bytes"
+	"context"
+	"reflect"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/gogo/protobuf/types"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"database/sql"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/lib/pq"
-	"github.com/stackrox/rox/pkg/set"
+)
+
+const (
+	countStmt  = "SELECT COUNT(*) FROM SimpleAccessScope"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM SimpleAccessScope WHERE )"
+
+	getStmt    = "SELECT serialized FROM SimpleAccessScope WHERE "
+	deleteStmt = "DELETE FROM SimpleAccessScope WHERE "
+	walkStmt   = "SELECT serialized FROM SimpleAccessScope"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "simple_access_scopes"
+	table = "SimpleAccessScope"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
 	Count() (int, error)
-	Exists(id string) (bool, error)
-	GetIDs() ([]string, error)
-	Get(id string) (*storage.SimpleAccessScope, bool, error)
-	GetMany(ids []string) ([]*storage.SimpleAccessScope, []int, error)
+	Exists() (bool, error)
+	Get() (*storage.SimpleAccessScope, bool, error)
 	Upsert(obj *storage.SimpleAccessScope) error
 	UpsertMany(objs []*storage.SimpleAccessScope) error
-	Delete(id string) error
-	DeleteMany(ids []string) error
+	Delete() error
+
 	Walk(fn func(obj *storage.SimpleAccessScope) error) error
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
 }
 
 type storeImpl struct {
-	db *sql.DB
-
-	countStmt *sql.Stmt
-	existsStmt *sql.Stmt
-	getIDsStmt *sql.Stmt
-	getStmt *sql.Stmt
-	getManyStmt *sql.Stmt
-	upsertWithIDStmt *sql.Stmt
-	upsertStmt *sql.Stmt
-	deleteStmt *sql.Stmt
-	deleteManyStmt *sql.Stmt
-	walkStmt *sql.Stmt
-	walkWithIDStmt *sql.Stmt
-}
-
-func alloc() proto.Message {
-	return &storage.SimpleAccessScope{}
-}
-
-func keyFunc(msg proto.Message) string {
-	return msg.(*storage.SimpleAccessScope).GetId()
-}
-
-func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
-	vulnStmt, err := db.Prepare(query)
-	if err != nil {
-		panic(err)
-	}
-	return vulnStmt
+	db *pgxpool.Pool
 }
 
 const (
-	createTableQuery = "create table if not exists simple_access_scopes (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index if not exists simple_access_scopes_id on simple_access_scopes using hash ((id))"
+	batchInsertTemplate = "<no value>"
 )
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *sql.DB) Store {
+func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "SimpleAccessScope")
 
-	_, err := db.Exec(createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string{
+		"create table if not exists SimpleAccessScope(serialized jsonb not null, PRIMARY KEY ());",
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
-
-//
+	//
 	return &storeImpl{
 		db: db,
-
-		countStmt: compileStmtOrPanic(db, "select count(*) from simple_access_scopes"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from simple_access_scopes where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from simple_access_scopes"),
-		getStmt: compileStmtOrPanic(db, "select value from simple_access_scopes where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from simple_access_scopes where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into simple_access_scopes(id, value) values($1, $2) on conflict(id) do update set value=$2"),
-		deleteStmt: compileStmtOrPanic(db, "delete from simple_access_scopes where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from simple_access_scopes where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from simple_access_scopes"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from simple_access_scopes"),
 	}
-//
+	//
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count() (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "SimpleAccessScope")
 
-	row := s.countStmt.QueryRow()
-	if err := row.Err(); err != nil {
-		return 0, err
-	}
+	row := s.db.QueryRow(context.Background(), countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -124,13 +90,10 @@ func (s *storeImpl) Count() (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(id string) (bool, error) {
+func (s *storeImpl) Exists() (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "SimpleAccessScope")
 
-	row := s.existsStmt.QueryRow(id)
-	if err := row.Err(); err != nil {
-		return false, nilNoRows(err)
-	}
+	row := s.db.QueryRow(context.Background(), existsStmt)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, nilNoRows(err)
@@ -138,143 +101,136 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "SimpleAccessScopeIDs")
-
-	rows, err := s.getIDsStmt.Query()
-	if err != nil {
-		return nil, nilNoRows(err)
-	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
-}
-
 func nilNoRows(err error) error {
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil
 	}
 	return err
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(id string) (*storage.SimpleAccessScope, bool, error) {
+func (s *storeImpl) Get() (*storage.SimpleAccessScope, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "SimpleAccessScope")
 
-	row := s.getStmt.QueryRow(id)
-	if err := row.Err(); err != nil {
-		return nil, false, nilNoRows(err)
-	}
+	conn, release := s.acquireConn(ops.Get, "SimpleAccessScope")
+	defer release()
 
+	row := conn.QueryRow(context.Background(), getStmt)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
 	}
 
-	msg := alloc()
+	var msg storage.SimpleAccessScope
 	buf := bytes.NewBuffer(data)
-	if err := jsonpb.Unmarshal(buf, msg); err != nil {
+	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "SimpleAccessScope")
+	if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 		return nil, false, err
 	}
-	return msg.(*storage.SimpleAccessScope), true, nil
+	return &msg, true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice 
-func (s *storeImpl) GetMany(ids []string) ([]*storage.SimpleAccessScope, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "SimpleAccessScope")
-
-	rows, err := s.getManyStmt.Query(pq.Array(ids))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
 	}
-	defer rows.Close()
-	elems := make([]*storage.SimpleAccessScope, 0, len(ids))
-	foundSet := set.NewStringSet()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
-		msg := alloc()
-		buf := bytes.NewBuffer(data)
-		if err := jsonpb.Unmarshal(buf, msg); err != nil {
-			return nil, nil, err
-		}
-		elem := msg.(*storage.SimpleAccessScope)
-		foundSet.Add(elem.GetId())
-		elems = append(elems, elem)
-	}
-	missingIndices := make([]int, 0, len(ids)-len(foundSet))
-	for i, id := range ids {
-		if !foundSet.Contains(id) {
-			missingIndices = append(missingIndices, i)
-		}
-	}
-	return elems, missingIndices, nil
+	return resultSlice
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.SimpleAccessScope) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.String()
+	return &s
+}
+
+// Upsert inserts the object into the DB
+func (s *storeImpl) Upsert(obj0 *storage.SimpleAccessScope) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "SimpleAccessScope")
+
+	t := time.Now()
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
-	return err
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "SimpleAccessScope")
+	conn, release := s.acquireConn(ops.Add, "SimpleAccessScope")
+	defer release()
+
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	doRollback := true
+	defer func() {
+		if doRollback {
+			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
+				log.Errorf("error rolling backing: %v", err)
+			}
+		}
+	}()
+
+	localQuery := "insert into SimpleAccessScope(serialized) values($1) on conflict() do update set serialized = EXCLUDED.serialized"
+	_, err = tx.Exec(context.Background(), localQuery, serialized)
+	if err != nil {
+		return err
+	}
+
+	doRollback = false
+	return tx.Commit(context.Background())
 }
 
-
-// Upsert inserts the object into the DB
-func (s *storeImpl) Upsert(obj *storage.SimpleAccessScope) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "SimpleAccessScope")
-	return s.upsert(keyFunc(obj), obj)
+func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+	defer metrics.SetAcquireDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	return conn, conn.Release
 }
 
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.SimpleAccessScope) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "SimpleAccessScope")
+	if len(objs) == 0 {
+		return nil
+	}
 
-	// Txn? or all errors to be passed through?
-	for _, obj := range objs {
-		if err := s.upsert(keyFunc(obj), obj); err != nil {
+	batch := &pgx.Batch{}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "SimpleAccessScope")
+	for _, obj0 := range objs {
+		t := time.Now()
+		serialized, err := marshaler.MarshalToString(obj0)
+		if err != nil {
 			return err
 		}
+		metrics.SetJSONPBOperationDurationTime(t, "Marshal", "SimpleAccessScope")
+		localQuery := "insert into SimpleAccessScope(serialized) values($1) on conflict() do update set serialized = EXCLUDED.serialized"
+		batch.Queue(localQuery, serialized)
+
+	}
+
+	conn, release := s.acquireConn(ops.AddMany, "SimpleAccessScope")
+	defer release()
+
+	results := conn.SendBatch(context.Background(), batch)
+	if err := results.Close(); err != nil {
+		return err
 	}
 	return nil
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(id string) error {
+func (s *storeImpl) Delete() error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "SimpleAccessScope")
 
-	if _, err := s.deleteStmt.Exec(id); err != nil {
-		return err
-	}
-	return nil
-}
+	conn, release := s.acquireConn(ops.Remove, "SimpleAccessScope")
+	defer release()
 
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "SimpleAccessScope")
-
-	if _, err := s.deleteManyStmt.Exec(pq.Array(ids)); err != nil {
+	if _, err := conn.Exec(context.Background(), deleteStmt); err != nil {
 		return err
 	}
 	return nil
@@ -282,7 +238,7 @@ func (s *storeImpl) DeleteMany(ids []string) error {
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(fn func(obj *storage.SimpleAccessScope) error) error {
-	rows, err := s.walkStmt.Query()
+	rows, err := s.db.Query(context.Background(), walkStmt)
 	if err != nil {
 		return nilNoRows(err)
 	}
@@ -292,12 +248,12 @@ func (s *storeImpl) Walk(fn func(obj *storage.SimpleAccessScope) error) error {
 		if err := rows.Scan(&data); err != nil {
 			return err
 		}
-		msg := alloc()
-		buf := bytes.NewBuffer(data)
-		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+		var msg storage.SimpleAccessScope
+		buf := bytes.NewReader(data)
+		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 			return err
 		}
-		return fn(msg.(*storage.SimpleAccessScope))
+		return fn(&msg)
 	}
 	return nil
 }
