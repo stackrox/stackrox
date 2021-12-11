@@ -5,36 +5,30 @@ package postgres
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
-		countStmt = "select count(*) from Deployment"
-		existsStmt = "select exists(select 1 from Deployment where id = $1)"
-		getIDsStmt = "select id from Deployment"
-		getStmt = "select serialized from Deployment where id = $1"
-		getManyStmt = "select serialized from Deployment where id = ANY($1::text[])"
-		upsertStmt = "insert into Deployment (id, value, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
-		deleteStmt = "delete from Deployment where id = $1"
-		deleteManyStmt = "delete from Deployment where id = ANY($1::text[])"
-		walkStmt = "select serialized from Deployment"
-		walkWithIDStmt = "select id, serialized from Deployment"
+	countStmt  = "SELECT COUNT(*) FROM Deployment"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM Deployment WHERE Id = $1)"
+
+	getStmt        = "SELECT serialized FROM Deployment WHERE Id = $1"
+	deleteStmt     = "DELETE FROM Deployment WHERE Id = $1"
+	walkStmt       = "SELECT serialized FROM Deployment"
+	getIDsStmt     = "SELECT Id FROM Deployment"
+	getManyStmt    = "SELECT serialized FROM Deployment WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM Deployment WHERE Id = ANY($1::text[])"
 )
 
 var (
@@ -48,13 +42,14 @@ var (
 type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
-	GetIDs() ([]string, error)
 	Get(id string) (*storage.Deployment, bool, error)
-	GetMany(ids []string) ([]*storage.Deployment, []int, error)
 	Upsert(obj *storage.Deployment) error
 	UpsertMany(objs []*storage.Deployment) error
 	Delete(id string) error
+	GetIDs() ([]string, error)
+	GetMany(ids []string) ([]*storage.Deployment, []int, error)
 	DeleteMany(ids []string) error
+
 	Walk(fn func(obj *storage.Deployment) error) error
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
@@ -64,26 +59,15 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func alloc() proto.Message {
-	return &storage.Deployment{}
-}
-
-func keyFunc(msg proto.Message) string {
-	return msg.(*storage.Deployment).GetId()
-}
-
 const (
-	createTableQuery = "create table if not exists Deployment (id varchar primary key, value jsonb, Id varchar, Name varchar, Type varchar, Namespace varchar, NamespaceId varchar, OrchestratorComponent bool, Labels jsonb, PodLabels jsonb, Created timestamp, ClusterId varchar, ClusterName varchar, Annotations jsonb, Priority numeric, ImagePullSecrets text[], ServiceAccount varchar, ServiceAccountPermissionLevel integer, RiskScore numeric, ProcessTags text[])"
-	createIDIndexQuery = "create index if not exists Deployment_id on Deployment using hash ((id))"
-
-	batchInsertTemplate = "insert into Deployment (id, value, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
+	batchInsertTemplate = "<no value>"
 )
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Deployment")
 
-	for _, table := range []string {
+	for _, table := range []string{
 		"create table if not exists Deployment(serialized jsonb not null, Id varchar, Name varchar, Type varchar, Namespace varchar, NamespaceId varchar, OrchestratorComponent bool, Labels jsonb, PodLabels jsonb, Created timestamp, ClusterId varchar, ClusterName varchar, Annotations jsonb, Priority numeric, ImagePullSecrets text[], ServiceAccount varchar, ServiceAccountPermissionLevel integer, RiskScore numeric, ProcessTags text[], PRIMARY KEY (Id));",
 		"create index if not exists Deployment_Id on Deployment using hash(Id)",
 		"create table if not exists Deployment_Containers(parent_Id varchar not null, idx integer not null, Image_Id varchar, Image_Name_Registry varchar, Image_Name_Remote varchar, Image_Name_Tag varchar, Image_Name_FullName varchar, SecurityContext_Privileged bool, SecurityContext_DropCapabilities text[], SecurityContext_AddCapabilities text[], SecurityContext_ReadOnlyRootFilesystem bool, Resources_CpuCoresRequest numeric, Resources_CpuCoresLimit numeric, Resources_MemoryMbRequest numeric, Resources_MemoryMbLimit numeric, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
@@ -92,7 +76,6 @@ func New(db *pgxpool.Pool) Store {
 		"create table if not exists Deployment_Containers_Env(parent_parent_Id varchar not null, parent_idx integer not null, idx integer not null, Key varchar, Value varchar, EnvVarSource integer, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Ports(parent_Id varchar not null, idx integer not null, ContainerPort numeric, Protocol varchar, Exposure integer, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Ports_ExposureInfos(parent_parent_Id varchar not null, parent_idx integer not null, idx integer not null, Level integer, ServiceName varchar, ServicePort numeric, NodePort numeric, ExternalIps text[], ExternalHostnames text[], PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Ports(parent_Id, idx) ON DELETE CASCADE);",
-		
 	} {
 		_, err := db.Exec(context.Background(), table)
 		if err != nil {
@@ -100,17 +83,11 @@ func New(db *pgxpool.Pool) Store {
 		}
 	}
 
-	// Will also autogen the indexes in the future
-	//_, err := db.Exec(context.Background(), createIDIndexQuery)
-	//if err != nil {
-	//	panic("error creating index")
-	//}
-
-//
+	//
 	return &storeImpl{
 		db: db,
 	}
-//
+	//
 }
 
 // Count returns the number of objects in the store
@@ -137,26 +114,6 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "DeploymentIDs")
-
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
-	if err != nil {
-		return nil, nilNoRows(err)
-	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
-}
-
 func nilNoRows(err error) error {
 	if err == pgx.ErrNoRows {
 		return nil
@@ -177,16 +134,238 @@ func (s *storeImpl) Get(id string) (*storage.Deployment, bool, error) {
 		return nil, false, nilNoRows(err)
 	}
 
-	msg := alloc()
+	var msg storage.Deployment
 	buf := bytes.NewBuffer(data)
 	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "Deployment")
-	if err := jsonpb.Unmarshal(buf, msg); err != nil {
+	if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 		return nil, false, err
 	}
-	return msg.(*storage.Deployment), true, nil
+	return &msg, true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.String()
+	return &s
+}
+
+// Upsert inserts the object into the DB
+func (s *storeImpl) Upsert(obj0 *storage.Deployment) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "Deployment")
+
+	t := time.Now()
+	serialized, err := marshaler.MarshalToString(obj0)
+	if err != nil {
+		return err
+	}
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Deployment")
+	conn, release := s.acquireConn(ops.Add, "Deployment")
+	defer release()
+
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	doRollback := true
+	defer func() {
+		if doRollback {
+			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
+				log.Errorf("error rolling backing: %v", err)
+			}
+		}
+	}()
+
+	localQuery := "insert into Deployment(serialized, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
+	_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetType(), obj0.GetNamespace(), obj0.GetNamespaceId(), obj0.GetOrchestratorComponent(), obj0.GetLabels(), obj0.GetPodLabels(), nilOrStringTimestamp(obj0.GetCreated()), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetAnnotations(), obj0.GetPriority(), obj0.GetImagePullSecrets(), obj0.GetServiceAccount(), obj0.GetServiceAccountPermissionLevel(), obj0.GetRiskScore(), obj0.GetProcessTags())
+	if err != nil {
+		return err
+	}
+	for idx1, obj1 := range obj0.GetContainers() {
+		localQuery := "insert into Deployment_Containers(parent_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
+		_, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetImage().GetId(), obj1.GetImage().GetName().GetRegistry(), obj1.GetImage().GetName().GetRemote(), obj1.GetImage().GetName().GetTag(), obj1.GetImage().GetName().GetFullName(), obj1.GetSecurityContext().GetPrivileged(), obj1.GetSecurityContext().GetDropCapabilities(), obj1.GetSecurityContext().GetAddCapabilities(), obj1.GetSecurityContext().GetReadOnlyRootFilesystem(), obj1.GetResources().GetCpuCoresRequest(), obj1.GetResources().GetCpuCoresLimit(), obj1.GetResources().GetMemoryMbRequest(), obj1.GetResources().GetMemoryMbLimit())
+		if err != nil {
+			return err
+		}
+		for idx2, obj2 := range obj1.GetVolumes() {
+			localQuery := "insert into Deployment_Containers_Volumes(parent_parent_Id, parent_idx, idx, Name, Source, Destination, ReadOnly, Type) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type"
+			_, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetName(), obj2.GetSource(), obj2.GetDestination(), obj2.GetReadOnly(), obj2.GetType())
+			if err != nil {
+				return err
+			}
+		}
+		_, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Volumes where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetVolumes()))
+		if err != nil {
+			return err
+		}
+		for idx2, obj2 := range obj1.GetSecrets() {
+			localQuery := "insert into Deployment_Containers_Secrets(parent_parent_Id, parent_idx, idx, Name, Path) values($1, $2, $3, $4, $5) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
+			_, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetName(), obj2.GetPath())
+			if err != nil {
+				return err
+			}
+		}
+		_, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Secrets where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetSecrets()))
+		if err != nil {
+			return err
+		}
+		for idx2, obj2 := range obj1.GetConfig().GetEnv() {
+			localQuery := "insert into Deployment_Containers_Env(parent_parent_Id, parent_idx, idx, Key, Value, EnvVarSource) values($1, $2, $3, $4, $5, $6) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
+			_, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetKey(), obj2.GetValue(), obj2.GetEnvVarSource())
+			if err != nil {
+				return err
+			}
+		}
+		_, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Env where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetConfig().GetEnv()))
+		if err != nil {
+			return err
+		}
+	}
+	_, err = tx.Exec(context.Background(), "delete from Deployment_Containers where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetContainers()))
+	if err != nil {
+		return err
+	}
+	for idx1, obj1 := range obj0.GetPorts() {
+		localQuery := "insert into Deployment_Ports(parent_Id, idx, ContainerPort, Protocol, Exposure) values($1, $2, $3, $4, $5) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure"
+		_, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetContainerPort(), obj1.GetProtocol(), obj1.GetExposure())
+		if err != nil {
+			return err
+		}
+		for idx2, obj2 := range obj1.GetExposureInfos() {
+			localQuery := "insert into Deployment_Ports_ExposureInfos(parent_parent_Id, parent_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
+			_, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetLevel(), obj2.GetServiceName(), obj2.GetServicePort(), obj2.GetNodePort(), obj2.GetExternalIps(), obj2.GetExternalHostnames())
+			if err != nil {
+				return err
+			}
+		}
+		_, err = tx.Exec(context.Background(), "delete from Deployment_Ports_ExposureInfos where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetExposureInfos()))
+		if err != nil {
+			return err
+		}
+	}
+	_, err = tx.Exec(context.Background(), "delete from Deployment_Ports where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetPorts()))
+	if err != nil {
+		return err
+	}
+
+	doRollback = false
+	return tx.Commit(context.Background())
+}
+
+func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+	defer metrics.SetAcquireDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	return conn, conn.Release
+}
+
+// UpsertMany batches objects into the DB
+func (s *storeImpl) UpsertMany(objs []*storage.Deployment) error {
+	if len(objs) == 0 {
+		return nil
+	}
+
+	batch := &pgx.Batch{}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Deployment")
+	for _, obj0 := range objs {
+		t := time.Now()
+		serialized, err := marshaler.MarshalToString(obj0)
+		if err != nil {
+			return err
+		}
+		metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Deployment")
+		localQuery := "insert into Deployment(serialized, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
+		batch.Queue(localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetType(), obj0.GetNamespace(), obj0.GetNamespaceId(), obj0.GetOrchestratorComponent(), obj0.GetLabels(), obj0.GetPodLabels(), nilOrStringTimestamp(obj0.GetCreated()), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetAnnotations(), obj0.GetPriority(), obj0.GetImagePullSecrets(), obj0.GetServiceAccount(), obj0.GetServiceAccountPermissionLevel(), obj0.GetRiskScore(), obj0.GetProcessTags())
+		for idx1, obj1 := range obj0.GetContainers() {
+			localQuery := "insert into Deployment_Containers(parent_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
+			batch.Queue(localQuery, obj0.GetId(), idx1, obj1.GetImage().GetId(), obj1.GetImage().GetName().GetRegistry(), obj1.GetImage().GetName().GetRemote(), obj1.GetImage().GetName().GetTag(), obj1.GetImage().GetName().GetFullName(), obj1.GetSecurityContext().GetPrivileged(), obj1.GetSecurityContext().GetDropCapabilities(), obj1.GetSecurityContext().GetAddCapabilities(), obj1.GetSecurityContext().GetReadOnlyRootFilesystem(), obj1.GetResources().GetCpuCoresRequest(), obj1.GetResources().GetCpuCoresLimit(), obj1.GetResources().GetMemoryMbRequest(), obj1.GetResources().GetMemoryMbLimit())
+			for idx2, obj2 := range obj1.GetVolumes() {
+				localQuery := "insert into Deployment_Containers_Volumes(parent_parent_Id, parent_idx, idx, Name, Source, Destination, ReadOnly, Type) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type"
+				batch.Queue(localQuery, obj0.GetId(), idx1, idx2, obj2.GetName(), obj2.GetSource(), obj2.GetDestination(), obj2.GetReadOnly(), obj2.GetType())
+			}
+			batch.Queue("delete from Deployment_Containers_Volumes where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetVolumes()))
+			for idx2, obj2 := range obj1.GetSecrets() {
+				localQuery := "insert into Deployment_Containers_Secrets(parent_parent_Id, parent_idx, idx, Name, Path) values($1, $2, $3, $4, $5) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
+				batch.Queue(localQuery, obj0.GetId(), idx1, idx2, obj2.GetName(), obj2.GetPath())
+			}
+			batch.Queue("delete from Deployment_Containers_Secrets where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetSecrets()))
+			for idx2, obj2 := range obj1.GetConfig().GetEnv() {
+				localQuery := "insert into Deployment_Containers_Env(parent_parent_Id, parent_idx, idx, Key, Value, EnvVarSource) values($1, $2, $3, $4, $5, $6) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
+				batch.Queue(localQuery, obj0.GetId(), idx1, idx2, obj2.GetKey(), obj2.GetValue(), obj2.GetEnvVarSource())
+			}
+			batch.Queue("delete from Deployment_Containers_Env where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetConfig().GetEnv()))
+		}
+		batch.Queue("delete from Deployment_Containers where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetContainers()))
+		for idx1, obj1 := range obj0.GetPorts() {
+			localQuery := "insert into Deployment_Ports(parent_Id, idx, ContainerPort, Protocol, Exposure) values($1, $2, $3, $4, $5) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure"
+			batch.Queue(localQuery, obj0.GetId(), idx1, obj1.GetContainerPort(), obj1.GetProtocol(), obj1.GetExposure())
+			for idx2, obj2 := range obj1.GetExposureInfos() {
+				localQuery := "insert into Deployment_Ports_ExposureInfos(parent_parent_Id, parent_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
+				batch.Queue(localQuery, obj0.GetId(), idx1, idx2, obj2.GetLevel(), obj2.GetServiceName(), obj2.GetServicePort(), obj2.GetNodePort(), obj2.GetExternalIps(), obj2.GetExternalHostnames())
+			}
+			batch.Queue("delete from Deployment_Ports_ExposureInfos where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetExposureInfos()))
+		}
+		batch.Queue("delete from Deployment_Ports where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetPorts()))
+
+	}
+
+	conn, release := s.acquireConn(ops.AddMany, "Deployment")
+	defer release()
+
+	results := conn.SendBatch(context.Background(), batch)
+	if err := results.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete removes the specified ID from the store
+func (s *storeImpl) Delete(id string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Deployment")
+
+	conn, release := s.acquireConn(ops.Remove, "Deployment")
+	defer release()
+
+	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs() ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "DeploymentIDs")
+
+	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	if err != nil {
+		return nil, nilNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ids []string) ([]*storage.Deployment, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
@@ -206,215 +385,29 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Deployment, []int, error) 
 	}
 	defer rows.Close()
 	elems := make([]*storage.Deployment, 0, len(ids))
-	foundSet := set.NewStringSet()
+	foundSet := make(map[string]struct{})
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		msg := alloc()
+		var msg storage.Deployment
 		buf := bytes.NewBuffer(data)
 		t := time.Now()
-		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 			return nil, nil, err
 		}
 		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "Deployment")
-		elem := msg.(*storage.Deployment)
-		foundSet.Add(elem.GetId())
-		elems = append(elems, elem)
+		foundSet[msg.GetId()] = struct{}{}
+		elems = append(elems, &msg)
 	}
 	missingIndices := make([]int, 0, len(ids)-len(foundSet))
 	for i, id := range ids {
-		if !foundSet.Contains(id) {
+		if _, ok := foundSet[id]; !ok {
 			missingIndices = append(missingIndices, i)
 		}
 	}
 	return elems, missingIndices, nil
-}
-
-func convertEnumSliceToIntArray(i interface{}) []int32 {
-	enumSlice := reflect.ValueOf(i)
-	enumSliceLen := enumSlice.Len()
-	resultSlice := make([]int32, 0, enumSliceLen)
-	for i := 0; i < enumSlice.Len(); i++ {
-		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
-	}
-	return resultSlice
-}
-
-func nilOrStringTimestamp(t *types.Timestamp) *string {
-  if t == nil {
-    return nil
-  }
-  s := t.String()
-  return &s
-}
-
-func (s *storeImpl) upsert(id string, obj0 *storage.Deployment) error {
-	t := time.Now()
-	serialized, err := marshaler.MarshalToString(obj0)
-	if err != nil {
-		return err
-	}
-	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Deployment")
-	conn, release := s.acquireConn(ops.Add, "Deployment")
-	defer release()
-
-	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err == nil {
-			err = tx.Commit(context.Background())
-		}
-//else {
-//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
-//				// multi error?
-//				err = rollBackErr
-//			}
-//		}
-	}()
-
-	localQuery := "insert into Deployment(serialized, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
-_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetType(), obj0.GetNamespace(), obj0.GetNamespaceId(), obj0.GetOrchestratorComponent(), obj0.GetLabels(), obj0.GetPodLabels(), nilOrStringTimestamp(obj0.GetCreated()), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetAnnotations(), obj0.GetPriority(), obj0.GetImagePullSecrets(), obj0.GetServiceAccount(), obj0.GetServiceAccountPermissionLevel(), obj0.GetRiskScore(), obj0.GetProcessTags())
-if err != nil {
-    return err
-  }
-  for idx1, obj1 := range obj0.GetContainers() {
-    localQuery := "insert into Deployment_Containers(parent_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
-    _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetImage().GetId(), obj1.GetImage().GetName().GetRegistry(), obj1.GetImage().GetName().GetRemote(), obj1.GetImage().GetName().GetTag(), obj1.GetImage().GetName().GetFullName(), obj1.GetSecurityContext().GetPrivileged(), obj1.GetSecurityContext().GetDropCapabilities(), obj1.GetSecurityContext().GetAddCapabilities(), obj1.GetSecurityContext().GetReadOnlyRootFilesystem(), obj1.GetResources().GetCpuCoresRequest(), obj1.GetResources().GetCpuCoresLimit(), obj1.GetResources().GetMemoryMbRequest(), obj1.GetResources().GetMemoryMbLimit())
-    if err != nil {
-      return err
-    }
-    for idx2, obj2 := range obj1.GetVolumes() {
-      localQuery := "insert into Deployment_Containers_Volumes(parent_parent_Id, parent_idx, idx, Name, Source, Destination, ReadOnly, Type) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type"
-      _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetName(), obj2.GetSource(), obj2.GetDestination(), obj2.GetReadOnly(), obj2.GetType())
-      if err != nil {
-        return err
-      }
-    }
-      _, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Volumes where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetVolumes()))
-      if err != nil {
-        return err
-      }
-    for idx2, obj2 := range obj1.GetSecrets() {
-      localQuery := "insert into Deployment_Containers_Secrets(parent_parent_Id, parent_idx, idx, Name, Path) values($1, $2, $3, $4, $5) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
-      _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetName(), obj2.GetPath())
-      if err != nil {
-        return err
-      }
-    }
-      _, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Secrets where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetSecrets()))
-      if err != nil {
-        return err
-      }
-    for idx2, obj2 := range obj1.GetConfig().GetEnv() {
-      localQuery := "insert into Deployment_Containers_Env(parent_parent_Id, parent_idx, idx, Key, Value, EnvVarSource) values($1, $2, $3, $4, $5, $6) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
-      _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetKey(), obj2.GetValue(), obj2.GetEnvVarSource())
-      if err != nil {
-        return err
-      }
-    }
-      _, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Env where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetConfig().GetEnv()))
-      if err != nil {
-        return err
-      }
-  }
-    _, err = tx.Exec(context.Background(), "delete from Deployment_Containers where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetContainers()))
-    if err != nil {
-      return err
-    }
-  for idx1, obj1 := range obj0.GetPorts() {
-    localQuery := "insert into Deployment_Ports(parent_Id, idx, ContainerPort, Protocol, Exposure) values($1, $2, $3, $4, $5) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure"
-    _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetContainerPort(), obj1.GetProtocol(), obj1.GetExposure())
-    if err != nil {
-      return err
-    }
-    for idx2, obj2 := range obj1.GetExposureInfos() {
-      localQuery := "insert into Deployment_Ports_ExposureInfos(parent_parent_Id, parent_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
-      _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetLevel(), obj2.GetServiceName(), obj2.GetServicePort(), obj2.GetNodePort(), obj2.GetExternalIps(), obj2.GetExternalHostnames())
-      if err != nil {
-        return err
-      }
-    }
-      _, err = tx.Exec(context.Background(), "delete from Deployment_Ports_ExposureInfos where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetExposureInfos()))
-      if err != nil {
-        return err
-      }
-  }
-    _, err = tx.Exec(context.Background(), "delete from Deployment_Ports where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetPorts()))
-    if err != nil {
-      return err
-    }
-
-
-	return err
-}
-
-// Upsert inserts the object into the DB
-func (s *storeImpl) Upsert(obj *storage.Deployment) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "Deployment")
-	return s.upsert(keyFunc(obj), obj)
-}
-
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
-	defer metrics.SetAcquireDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
-	if err != nil {
-		panic(err)
-	}
-	return conn, conn.Release
-}
-
-// UpsertMany batches objects into the DB
-func (s *storeImpl) UpsertMany(objs []*storage.Deployment) error {
-	if len(objs) == 0 {
-		return nil
-	}
-
-	conn, release := s.acquireConn(ops.AddMany, "Deployment")
-	defer release()
-
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Deployment")
-	numElems := 20
-	batch := batcher.New(len(objs), 60000/numElems)
-	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
-		var placeholderStr string
-		data := make([]interface{}, 0, numElems * len(objs))
-		for i, obj := range objs[start:end] {
-			if i != 0 {
-				placeholderStr += ", "
-			}
-			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
-
-			t := time.Now()
-			value, err := marshaler.MarshalToString(obj)
-			if err != nil {
-				return err
-			}
-			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Deployment")
-			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetId(), obj.GetName(), obj.GetType(), obj.GetNamespace(), obj.GetNamespaceId(), obj.GetOrchestratorComponent(), obj.GetLabels(), obj.GetPodLabels(), obj.GetCreated(), obj.GetClusterId(), obj.GetClusterName(), obj.GetAnnotations(), obj.GetPriority(), obj.GetImagePullSecrets(), obj.GetServiceAccount(), obj.GetServiceAccountPermissionLevel(), obj.GetRiskScore(), obj.GetProcessTags())
-		}
-		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Deployment")
-
-	conn, release := s.acquireConn(ops.Remove, "Deployment")
-	defer release()
-
-	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
-		return err
-	}
-	return nil
 }
 
 // Delete removes the specified IDs from the store
@@ -441,12 +434,12 @@ func (s *storeImpl) Walk(fn func(obj *storage.Deployment) error) error {
 		if err := rows.Scan(&data); err != nil {
 			return err
 		}
-		msg := alloc()
+		var msg storage.Deployment
 		buf := bytes.NewReader(data)
-		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 			return err
 		}
-		return fn(msg.(*storage.Deployment))
+		return fn(&msg)
 	}
 	return nil
 }

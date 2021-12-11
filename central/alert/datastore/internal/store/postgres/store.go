@@ -5,36 +5,30 @@ package postgres
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
-		countStmt = "select count(*) from Alert"
-		existsStmt = "select exists(select 1 from Alert where id = $1)"
-		getIDsStmt = "select id from Alert"
-		getStmt = "select serialized from Alert where id = $1"
-		getManyStmt = "select serialized from Alert where id = ANY($1::text[])"
-		upsertStmt = "insert into Alert (id, value, Id, LifecycleStage, Time, State, Tags, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_Severity, Policy_EnforcementActions, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, Entity_Deployment_Id, Entity_Deployment_Name, Entity_Deployment_Namespace, Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId, Entity_Deployment_ClusterName, Entity_Image_Id, Entity_Image_Name_Registry, Entity_Image_Name_Remote, Entity_Image_Name_Tag, Entity_Image_Name_FullName, Entity_Resource_ResourceType, Entity_Resource_Name) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, LifecycleStage = EXCLUDED.LifecycleStage, Time = EXCLUDED.Time, State = EXCLUDED.State, Tags = EXCLUDED.Tags, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, Entity_Deployment_Id = EXCLUDED.Entity_Deployment_Id, Entity_Deployment_Name = EXCLUDED.Entity_Deployment_Name, Entity_Deployment_Namespace = EXCLUDED.Entity_Deployment_Namespace, Entity_Deployment_NamespaceId = EXCLUDED.Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId = EXCLUDED.Entity_Deployment_ClusterId, Entity_Deployment_ClusterName = EXCLUDED.Entity_Deployment_ClusterName, Entity_Image_Id = EXCLUDED.Entity_Image_Id, Entity_Image_Name_Registry = EXCLUDED.Entity_Image_Name_Registry, Entity_Image_Name_Remote = EXCLUDED.Entity_Image_Name_Remote, Entity_Image_Name_Tag = EXCLUDED.Entity_Image_Name_Tag, Entity_Image_Name_FullName = EXCLUDED.Entity_Image_Name_FullName, Entity_Resource_ResourceType = EXCLUDED.Entity_Resource_ResourceType, Entity_Resource_Name = EXCLUDED.Entity_Resource_Name"
-		deleteStmt = "delete from Alert where id = $1"
-		deleteManyStmt = "delete from Alert where id = ANY($1::text[])"
-		walkStmt = "select serialized from Alert"
-		walkWithIDStmt = "select id, serialized from Alert"
+	countStmt  = "SELECT COUNT(*) FROM Alert"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM Alert WHERE Id = $1)"
+
+	getStmt        = "SELECT serialized FROM Alert WHERE Id = $1"
+	deleteStmt     = "DELETE FROM Alert WHERE Id = $1"
+	walkStmt       = "SELECT serialized FROM Alert"
+	getIDsStmt     = "SELECT Id FROM Alert"
+	getManyStmt    = "SELECT serialized FROM Alert WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM Alert WHERE Id = ANY($1::text[])"
 )
 
 var (
@@ -48,13 +42,14 @@ var (
 type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
-	GetIDs() ([]string, error)
 	Get(id string) (*storage.Alert, bool, error)
-	GetMany(ids []string) ([]*storage.Alert, []int, error)
 	Upsert(obj *storage.Alert) error
 	UpsertMany(objs []*storage.Alert) error
 	Delete(id string) error
+	GetIDs() ([]string, error)
+	GetMany(ids []string) ([]*storage.Alert, []int, error)
 	DeleteMany(ids []string) error
+
 	Walk(fn func(obj *storage.Alert) error) error
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
@@ -64,29 +59,17 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func alloc() proto.Message {
-	return &storage.Alert{}
-}
-
-func keyFunc(msg proto.Message) string {
-	return msg.(*storage.Alert).GetId()
-}
-
 const (
-	createTableQuery = "create table if not exists Alert (id varchar primary key, value jsonb, Id varchar, LifecycleStage integer, Time timestamp, State integer, Tags text[], Policy_Id varchar, Policy_Name varchar, Policy_Description varchar, Policy_Disabled bool, Policy_Categories text[], Policy_LifecycleStages int[], Policy_Severity integer, Policy_EnforcementActions int[], Policy_SORTName varchar, Policy_SORTLifecycleStage varchar, Policy_SORTEnforcement bool, Entity_Deployment_Id varchar, Entity_Deployment_Name varchar, Entity_Deployment_Namespace varchar, Entity_Deployment_NamespaceId varchar, Entity_Deployment_ClusterId varchar, Entity_Deployment_ClusterName varchar, Entity_Image_Id varchar, Entity_Image_Name_Registry varchar, Entity_Image_Name_Remote varchar, Entity_Image_Name_Tag varchar, Entity_Image_Name_FullName varchar, Entity_Resource_ResourceType integer, Entity_Resource_Name varchar)"
-	createIDIndexQuery = "create index if not exists Alert_id on Alert using hash ((id))"
-
-	batchInsertTemplate = "insert into Alert (id, value, Id, LifecycleStage, Time, State, Tags, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_Severity, Policy_EnforcementActions, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, Entity_Deployment_Id, Entity_Deployment_Name, Entity_Deployment_Namespace, Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId, Entity_Deployment_ClusterName, Entity_Image_Id, Entity_Image_Name_Registry, Entity_Image_Name_Remote, Entity_Image_Name_Tag, Entity_Image_Name_FullName, Entity_Resource_ResourceType, Entity_Resource_Name) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, LifecycleStage = EXCLUDED.LifecycleStage, Time = EXCLUDED.Time, State = EXCLUDED.State, Tags = EXCLUDED.Tags, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, Entity_Deployment_Id = EXCLUDED.Entity_Deployment_Id, Entity_Deployment_Name = EXCLUDED.Entity_Deployment_Name, Entity_Deployment_Namespace = EXCLUDED.Entity_Deployment_Namespace, Entity_Deployment_NamespaceId = EXCLUDED.Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId = EXCLUDED.Entity_Deployment_ClusterId, Entity_Deployment_ClusterName = EXCLUDED.Entity_Deployment_ClusterName, Entity_Image_Id = EXCLUDED.Entity_Image_Id, Entity_Image_Name_Registry = EXCLUDED.Entity_Image_Name_Registry, Entity_Image_Name_Remote = EXCLUDED.Entity_Image_Name_Remote, Entity_Image_Name_Tag = EXCLUDED.Entity_Image_Name_Tag, Entity_Image_Name_FullName = EXCLUDED.Entity_Image_Name_FullName, Entity_Resource_ResourceType = EXCLUDED.Entity_Resource_ResourceType, Entity_Resource_Name = EXCLUDED.Entity_Resource_Name"
+	batchInsertTemplate = "<no value>"
 )
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Alert")
 
-	for _, table := range []string {
+	for _, table := range []string{
 		"create table if not exists Alert(serialized jsonb not null, Id varchar, LifecycleStage integer, Time timestamp, State integer, Tags text[], Policy_Id varchar, Policy_Name varchar, Policy_Description varchar, Policy_Disabled bool, Policy_Categories text[], Policy_LifecycleStages int[], Policy_Severity integer, Policy_EnforcementActions int[], Policy_SORTName varchar, Policy_SORTLifecycleStage varchar, Policy_SORTEnforcement bool, Entity_Deployment_Id varchar, Entity_Deployment_Name varchar, Entity_Deployment_Namespace varchar, Entity_Deployment_NamespaceId varchar, Entity_Deployment_ClusterId varchar, Entity_Deployment_ClusterName varchar, Entity_Image_Id varchar, Entity_Image_Name_Registry varchar, Entity_Image_Name_Remote varchar, Entity_Image_Name_Tag varchar, Entity_Image_Name_FullName varchar, Entity_Resource_ResourceType integer, Entity_Resource_Name varchar, PRIMARY KEY (Id));",
 		"create index if not exists Alert_Entity_Deployment_Id on Alert using hash(Entity_Deployment_Id)",
-		
 	} {
 		_, err := db.Exec(context.Background(), table)
 		if err != nil {
@@ -94,17 +77,11 @@ func New(db *pgxpool.Pool) Store {
 		}
 	}
 
-	// Will also autogen the indexes in the future
-	//_, err := db.Exec(context.Background(), createIDIndexQuery)
-	//if err != nil {
-	//	panic("error creating index")
-	//}
-
-//
+	//
 	return &storeImpl{
 		db: db,
 	}
-//
+	//
 }
 
 // Count returns the number of objects in the store
@@ -131,26 +108,6 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "AlertIDs")
-
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
-	if err != nil {
-		return nil, nilNoRows(err)
-	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
-}
-
 func nilNoRows(err error) error {
 	if err == pgx.ErrNoRows {
 		return nil
@@ -171,16 +128,142 @@ func (s *storeImpl) Get(id string) (*storage.Alert, bool, error) {
 		return nil, false, nilNoRows(err)
 	}
 
-	msg := alloc()
+	var msg storage.Alert
 	buf := bytes.NewBuffer(data)
 	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "Alert")
-	if err := jsonpb.Unmarshal(buf, msg); err != nil {
+	if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 		return nil, false, err
 	}
-	return msg.(*storage.Alert), true, nil
+	return &msg, true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.String()
+	return &s
+}
+
+// Upsert inserts the object into the DB
+func (s *storeImpl) Upsert(obj0 *storage.Alert) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "Alert")
+
+	t := time.Now()
+	serialized, err := marshaler.MarshalToString(obj0)
+	if err != nil {
+		return err
+	}
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Alert")
+	conn, release := s.acquireConn(ops.Add, "Alert")
+	defer release()
+
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	doRollback := true
+	defer func() {
+		if doRollback {
+			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
+				log.Errorf("error rolling backing: %v", err)
+			}
+		}
+	}()
+
+	localQuery := "insert into Alert(serialized, Id, LifecycleStage, Time, State, Tags, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_Severity, Policy_EnforcementActions, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, Entity_Deployment_Id, Entity_Deployment_Name, Entity_Deployment_Namespace, Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId, Entity_Deployment_ClusterName, Entity_Image_Id, Entity_Image_Name_Registry, Entity_Image_Name_Remote, Entity_Image_Name_Tag, Entity_Image_Name_FullName, Entity_Resource_ResourceType, Entity_Resource_Name) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, LifecycleStage = EXCLUDED.LifecycleStage, Time = EXCLUDED.Time, State = EXCLUDED.State, Tags = EXCLUDED.Tags, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, Entity_Deployment_Id = EXCLUDED.Entity_Deployment_Id, Entity_Deployment_Name = EXCLUDED.Entity_Deployment_Name, Entity_Deployment_Namespace = EXCLUDED.Entity_Deployment_Namespace, Entity_Deployment_NamespaceId = EXCLUDED.Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId = EXCLUDED.Entity_Deployment_ClusterId, Entity_Deployment_ClusterName = EXCLUDED.Entity_Deployment_ClusterName, Entity_Image_Id = EXCLUDED.Entity_Image_Id, Entity_Image_Name_Registry = EXCLUDED.Entity_Image_Name_Registry, Entity_Image_Name_Remote = EXCLUDED.Entity_Image_Name_Remote, Entity_Image_Name_Tag = EXCLUDED.Entity_Image_Name_Tag, Entity_Image_Name_FullName = EXCLUDED.Entity_Image_Name_FullName, Entity_Resource_ResourceType = EXCLUDED.Entity_Resource_ResourceType, Entity_Resource_Name = EXCLUDED.Entity_Resource_Name"
+	_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetLifecycleStage(), nilOrStringTimestamp(obj0.GetTime()), obj0.GetState(), obj0.GetTags(), obj0.GetPolicy().GetId(), obj0.GetPolicy().GetName(), obj0.GetPolicy().GetDescription(), obj0.GetPolicy().GetDisabled(), obj0.GetPolicy().GetCategories(), convertEnumSliceToIntArray(obj0.GetPolicy().GetLifecycleStages()), obj0.GetPolicy().GetSeverity(), convertEnumSliceToIntArray(obj0.GetPolicy().GetEnforcementActions()), obj0.GetPolicy().GetSORTName(), obj0.GetPolicy().GetSORTLifecycleStage(), obj0.GetPolicy().GetSORTEnforcement(), obj0.GetDeployment().GetId(), obj0.GetDeployment().GetName(), obj0.GetDeployment().GetNamespace(), obj0.GetDeployment().GetNamespaceId(), obj0.GetDeployment().GetClusterId(), obj0.GetDeployment().GetClusterName(), obj0.GetImage().GetId(), obj0.GetImage().GetName().GetRegistry(), obj0.GetImage().GetName().GetRemote(), obj0.GetImage().GetName().GetTag(), obj0.GetImage().GetName().GetFullName(), obj0.GetResource().GetResourceType(), obj0.GetResource().GetName())
+	if err != nil {
+		return err
+	}
+
+	doRollback = false
+	return tx.Commit(context.Background())
+}
+
+func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+	defer metrics.SetAcquireDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	return conn, conn.Release
+}
+
+// UpsertMany batches objects into the DB
+func (s *storeImpl) UpsertMany(objs []*storage.Alert) error {
+	if len(objs) == 0 {
+		return nil
+	}
+
+	batch := &pgx.Batch{}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Alert")
+	for _, obj0 := range objs {
+		t := time.Now()
+		serialized, err := marshaler.MarshalToString(obj0)
+		if err != nil {
+			return err
+		}
+		metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Alert")
+		localQuery := "insert into Alert(serialized, Id, LifecycleStage, Time, State, Tags, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_Severity, Policy_EnforcementActions, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, Entity_Deployment_Id, Entity_Deployment_Name, Entity_Deployment_Namespace, Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId, Entity_Deployment_ClusterName, Entity_Image_Id, Entity_Image_Name_Registry, Entity_Image_Name_Remote, Entity_Image_Name_Tag, Entity_Image_Name_FullName, Entity_Resource_ResourceType, Entity_Resource_Name) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, LifecycleStage = EXCLUDED.LifecycleStage, Time = EXCLUDED.Time, State = EXCLUDED.State, Tags = EXCLUDED.Tags, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, Entity_Deployment_Id = EXCLUDED.Entity_Deployment_Id, Entity_Deployment_Name = EXCLUDED.Entity_Deployment_Name, Entity_Deployment_Namespace = EXCLUDED.Entity_Deployment_Namespace, Entity_Deployment_NamespaceId = EXCLUDED.Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId = EXCLUDED.Entity_Deployment_ClusterId, Entity_Deployment_ClusterName = EXCLUDED.Entity_Deployment_ClusterName, Entity_Image_Id = EXCLUDED.Entity_Image_Id, Entity_Image_Name_Registry = EXCLUDED.Entity_Image_Name_Registry, Entity_Image_Name_Remote = EXCLUDED.Entity_Image_Name_Remote, Entity_Image_Name_Tag = EXCLUDED.Entity_Image_Name_Tag, Entity_Image_Name_FullName = EXCLUDED.Entity_Image_Name_FullName, Entity_Resource_ResourceType = EXCLUDED.Entity_Resource_ResourceType, Entity_Resource_Name = EXCLUDED.Entity_Resource_Name"
+		batch.Queue(localQuery, serialized, obj0.GetId(), obj0.GetLifecycleStage(), nilOrStringTimestamp(obj0.GetTime()), obj0.GetState(), obj0.GetTags(), obj0.GetPolicy().GetId(), obj0.GetPolicy().GetName(), obj0.GetPolicy().GetDescription(), obj0.GetPolicy().GetDisabled(), obj0.GetPolicy().GetCategories(), convertEnumSliceToIntArray(obj0.GetPolicy().GetLifecycleStages()), obj0.GetPolicy().GetSeverity(), convertEnumSliceToIntArray(obj0.GetPolicy().GetEnforcementActions()), obj0.GetPolicy().GetSORTName(), obj0.GetPolicy().GetSORTLifecycleStage(), obj0.GetPolicy().GetSORTEnforcement(), obj0.GetDeployment().GetId(), obj0.GetDeployment().GetName(), obj0.GetDeployment().GetNamespace(), obj0.GetDeployment().GetNamespaceId(), obj0.GetDeployment().GetClusterId(), obj0.GetDeployment().GetClusterName(), obj0.GetImage().GetId(), obj0.GetImage().GetName().GetRegistry(), obj0.GetImage().GetName().GetRemote(), obj0.GetImage().GetName().GetTag(), obj0.GetImage().GetName().GetFullName(), obj0.GetResource().GetResourceType(), obj0.GetResource().GetName())
+
+	}
+
+	conn, release := s.acquireConn(ops.AddMany, "Alert")
+	defer release()
+
+	results := conn.SendBatch(context.Background(), batch)
+	if err := results.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete removes the specified ID from the store
+func (s *storeImpl) Delete(id string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Alert")
+
+	conn, release := s.acquireConn(ops.Remove, "Alert")
+	defer release()
+
+	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs() ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "AlertIDs")
+
+	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	if err != nil {
+		return nil, nilNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Alert")
 
@@ -200,149 +283,29 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
 	}
 	defer rows.Close()
 	elems := make([]*storage.Alert, 0, len(ids))
-	foundSet := set.NewStringSet()
+	foundSet := make(map[string]struct{})
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		msg := alloc()
+		var msg storage.Alert
 		buf := bytes.NewBuffer(data)
 		t := time.Now()
-		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 			return nil, nil, err
 		}
 		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "Alert")
-		elem := msg.(*storage.Alert)
-		foundSet.Add(elem.GetId())
-		elems = append(elems, elem)
+		foundSet[msg.GetId()] = struct{}{}
+		elems = append(elems, &msg)
 	}
 	missingIndices := make([]int, 0, len(ids)-len(foundSet))
 	for i, id := range ids {
-		if !foundSet.Contains(id) {
+		if _, ok := foundSet[id]; !ok {
 			missingIndices = append(missingIndices, i)
 		}
 	}
 	return elems, missingIndices, nil
-}
-
-func convertEnumSliceToIntArray(i interface{}) []int32 {
-	enumSlice := reflect.ValueOf(i)
-	enumSliceLen := enumSlice.Len()
-	resultSlice := make([]int32, 0, enumSliceLen)
-	for i := 0; i < enumSlice.Len(); i++ {
-		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
-	}
-	return resultSlice
-}
-
-func nilOrStringTimestamp(t *types.Timestamp) *string {
-  if t == nil {
-    return nil
-  }
-  s := t.String()
-  return &s
-}
-
-func (s *storeImpl) upsert(id string, obj0 *storage.Alert) error {
-	t := time.Now()
-	serialized, err := marshaler.MarshalToString(obj0)
-	if err != nil {
-		return err
-	}
-	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Alert")
-	conn, release := s.acquireConn(ops.Add, "Alert")
-	defer release()
-
-	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err == nil {
-			err = tx.Commit(context.Background())
-		}
-//else {
-//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
-//				// multi error?
-//				err = rollBackErr
-//			}
-//		}
-	}()
-
-	localQuery := "insert into Alert(serialized, Id, LifecycleStage, Time, State, Tags, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_Severity, Policy_EnforcementActions, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, Entity_Deployment_Id, Entity_Deployment_Name, Entity_Deployment_Namespace, Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId, Entity_Deployment_ClusterName, Entity_Image_Id, Entity_Image_Name_Registry, Entity_Image_Name_Remote, Entity_Image_Name_Tag, Entity_Image_Name_FullName, Entity_Resource_ResourceType, Entity_Resource_Name) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, LifecycleStage = EXCLUDED.LifecycleStage, Time = EXCLUDED.Time, State = EXCLUDED.State, Tags = EXCLUDED.Tags, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, Entity_Deployment_Id = EXCLUDED.Entity_Deployment_Id, Entity_Deployment_Name = EXCLUDED.Entity_Deployment_Name, Entity_Deployment_Namespace = EXCLUDED.Entity_Deployment_Namespace, Entity_Deployment_NamespaceId = EXCLUDED.Entity_Deployment_NamespaceId, Entity_Deployment_ClusterId = EXCLUDED.Entity_Deployment_ClusterId, Entity_Deployment_ClusterName = EXCLUDED.Entity_Deployment_ClusterName, Entity_Image_Id = EXCLUDED.Entity_Image_Id, Entity_Image_Name_Registry = EXCLUDED.Entity_Image_Name_Registry, Entity_Image_Name_Remote = EXCLUDED.Entity_Image_Name_Remote, Entity_Image_Name_Tag = EXCLUDED.Entity_Image_Name_Tag, Entity_Image_Name_FullName = EXCLUDED.Entity_Image_Name_FullName, Entity_Resource_ResourceType = EXCLUDED.Entity_Resource_ResourceType, Entity_Resource_Name = EXCLUDED.Entity_Resource_Name"
-_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetLifecycleStage(), nilOrStringTimestamp(obj0.GetTime()), obj0.GetState(), obj0.GetTags(), obj0.GetPolicy().GetId(), obj0.GetPolicy().GetName(), obj0.GetPolicy().GetDescription(), obj0.GetPolicy().GetDisabled(), obj0.GetPolicy().GetCategories(), convertEnumSliceToIntArray(obj0.GetPolicy().GetLifecycleStages()), obj0.GetPolicy().GetSeverity(), convertEnumSliceToIntArray(obj0.GetPolicy().GetEnforcementActions()), obj0.GetPolicy().GetSORTName(), obj0.GetPolicy().GetSORTLifecycleStage(), obj0.GetPolicy().GetSORTEnforcement(), obj0.GetDeployment().GetId(), obj0.GetDeployment().GetName(), obj0.GetDeployment().GetNamespace(), obj0.GetDeployment().GetNamespaceId(), obj0.GetDeployment().GetClusterId(), obj0.GetDeployment().GetClusterName(), obj0.GetImage().GetId(), obj0.GetImage().GetName().GetRegistry(), obj0.GetImage().GetName().GetRemote(), obj0.GetImage().GetName().GetTag(), obj0.GetImage().GetName().GetFullName(), obj0.GetResource().GetResourceType(), obj0.GetResource().GetName())
-if err != nil {
-    return err
-  }
-
-
-	return err
-}
-
-// Upsert inserts the object into the DB
-func (s *storeImpl) Upsert(obj *storage.Alert) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "Alert")
-	return s.upsert(keyFunc(obj), obj)
-}
-
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
-	defer metrics.SetAcquireDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
-	if err != nil {
-		panic(err)
-	}
-	return conn, conn.Release
-}
-
-// UpsertMany batches objects into the DB
-func (s *storeImpl) UpsertMany(objs []*storage.Alert) error {
-	if len(objs) == 0 {
-		return nil
-	}
-
-	conn, release := s.acquireConn(ops.AddMany, "Alert")
-	defer release()
-
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Alert")
-	numElems := 31
-	batch := batcher.New(len(objs), 60000/numElems)
-	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
-		var placeholderStr string
-		data := make([]interface{}, 0, numElems * len(objs))
-		for i, obj := range objs[start:end] {
-			if i != 0 {
-				placeholderStr += ", "
-			}
-			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
-
-			t := time.Now()
-			value, err := marshaler.MarshalToString(obj)
-			if err != nil {
-				return err
-			}
-			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Alert")
-			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetId(), obj.GetLifecycleStage(), obj.GetTime(), obj.GetState(), obj.GetTags(), obj.GetPolicy().GetId(), obj.GetPolicy().GetName(), obj.GetPolicy().GetDescription(), obj.GetPolicy().GetDisabled(), obj.GetPolicy().GetCategories(), obj.GetPolicy().GetLifecycleStages(), obj.GetPolicy().GetSeverity(), obj.GetPolicy().GetEnforcementActions(), obj.GetPolicy().GetSORTName(), obj.GetPolicy().GetSORTLifecycleStage(), obj.GetPolicy().GetSORTEnforcement(), obj.GetDeployment().GetId(), obj.GetDeployment().GetName(), obj.GetDeployment().GetNamespace(), obj.GetDeployment().GetNamespaceId(), obj.GetDeployment().GetClusterId(), obj.GetDeployment().GetClusterName(), obj.GetImage().GetId(), obj.GetImage().GetName().GetRegistry(), obj.GetImage().GetName().GetRemote(), obj.GetImage().GetName().GetTag(), obj.GetImage().GetName().GetFullName(), obj.GetResource().GetResourceType(), obj.GetResource().GetName())
-		}
-		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Alert")
-
-	conn, release := s.acquireConn(ops.Remove, "Alert")
-	defer release()
-
-	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
-		return err
-	}
-	return nil
 }
 
 // Delete removes the specified IDs from the store
@@ -369,12 +332,12 @@ func (s *storeImpl) Walk(fn func(obj *storage.Alert) error) error {
 		if err := rows.Scan(&data); err != nil {
 			return err
 		}
-		msg := alloc()
+		var msg storage.Alert
 		buf := bytes.NewReader(data)
-		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 			return err
 		}
-		return fn(msg.(*storage.Alert))
+		return fn(&msg)
 	}
 	return nil
 }

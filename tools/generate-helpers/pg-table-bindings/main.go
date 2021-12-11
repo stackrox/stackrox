@@ -26,7 +26,6 @@ type properties struct {
 	Table          string
 	RegisteredType string
 	NoKeyField     bool
-	KeyFunc        string
 	UniqKeyFunc    string
 	Cache          bool
 	TrackIndex     bool
@@ -47,7 +46,6 @@ func main() {
 	utils.Must(c.MarkFlagRequired("table"))
 
 	c.Flags().BoolVar(&props.NoKeyField, "no-key-field", false, "whether or not object contains key field. If no, then to key function is not applied on object")
-	c.Flags().StringVar(&props.KeyFunc, "key-func", "GetId()", "the function on the object to retrieve the key")
 	c.Flags().StringVar(&props.UniqKeyFunc, "uniq-key-func", "", "when set, unique key constraint is added on the object field retrieved by the function")
 
 	c.RunE = func(*cobra.Command, []string) error {
@@ -89,7 +87,6 @@ func main() {
 			"Type":       props.Type,
 			"Bucket":     props.Table,
 			"NoKeyField": props.NoKeyField,
-			"KeyFunc":    props.KeyFunc,
 			//"UniqKeyFunc": props.UniqKeyFunc,
 			"Table": props.Table,
 
