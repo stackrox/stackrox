@@ -101,7 +101,7 @@ $ go env -w GOPRIVATE=github.com/stackrox
 $ cd $GOPATH
 $ mkdir -p src/github.com/stackrox
 $ cd src/github.com/stackrox
-$ git clone git@github.com:stackrox/rox.git
+$ git clone git@github.com:stackrox/stackrox.git
 ```
 
 #### Local development
@@ -110,7 +110,7 @@ To sweeten your experience, install [the workflow scripts](#productivity) before
 
 First install RocksDB using the guide in Confluence. For [Mac](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/227344410/Tools+languages+XCode+Docker+Brew+Java+Go#Tools%2Flanguages%3AXCode%2CDocker%2CBrew%2CJava%2CGo-InstallRocksDB) or [Linux](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/2404155411/Tools+languages#Tools%2Flanguages-InstallRocksDBdependencies)
 ```bash
-$ cd $GOPATH/src/github.com/stackrox/rox
+$ cd $GOPATH/src/github.com/stackrox/stackrox
 $ make install-dev-tools
 $ make image
 ```
@@ -141,7 +141,7 @@ $ logmein
 ```
 
 See the [deployment guide](#how-to-deploy) for further reading. To read more about the environment variables see the
-[deploy/README.md](https://github.com/stackrox/rox/blob/master/deploy/README.md#env-variables).
+[deploy/README.md](https://github.com/stackrox/stackrox/blob/master/deploy/README.md#env-variables).
 
 #### Common Makefile Targets
 

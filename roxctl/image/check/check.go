@@ -159,6 +159,7 @@ func (i *imageCheckCommand) CheckImage() error {
 		return i.checkImage()
 	},
 		retry.Tries(i.retryCount+1),
+		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
 			i.env.Logger().ErrfLn("Checking image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
@@ -177,7 +178,7 @@ func (i *imageCheckCommand) checkImage() error {
 	}
 	alerts, err := i.getAlerts(req)
 	if err != nil {
-		return err
+		return retry.MakeRetryable(err)
 	}
 	return i.printResults(alerts)
 }
@@ -200,7 +201,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 	}
 
 	// print the JSON object in the dedicated format via a printer.ObjectPrinter
-	if err := i.objectPrinter.Print(policySummary, i.env.InputOutput().Out); err != nil {
+	if err := i.objectPrinter.Print(policySummary, i.env.ColorWriter()); err != nil {
 		return err
 	}
 

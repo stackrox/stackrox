@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/version"
@@ -56,7 +57,7 @@ func TestRenderSensorHelm(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			fields := map[string]interface{}{
+			fields := charts.MetaValues{
 				"ImageRegistry": "stackrox.io",
 				// TODO: we should probably get rid of ImageRegistry eventually.
 				"MainRegistry": "stackrox.io",
@@ -69,9 +70,10 @@ func TestRenderSensorHelm(t *testing.T) {
 
 				"AdvertisedEndpoint": "sensor.stackrox:443",
 
-				"CollectorRegistry":    "collector.stackrox.io",
-				"CollectorImageRemote": "collector",
-				"CollectorImageTag":    "3.0.11-latest",
+				"CollectorRegistry":     "collector.stackrox.io",
+				"CollectorImageRemote":  "collector",
+				"CollectorFullImageTag": "3.0.11-latest",
+				"CollectorSlimImageTag": "3.0.11-slim",
 
 				"CollectionMethod": "EBPF",
 

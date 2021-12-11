@@ -56,7 +56,8 @@ func (s *customizeSuite) TestCustomizeMetadata() {
 
 		seenKinds := set.NewStringSet()
 
-		for _, obj := range objs {
+		for i := range objs {
+			obj := objs[i]
 			typeSig := fmt.Sprintf("%s-%s", globalSig, obj.GetKind())
 			objSig := fmt.Sprintf("%s-%s", typeSig, obj.GetName())
 
@@ -104,7 +105,8 @@ func (s *customizeSuite) TestCustomizeMetadata() {
 	_, rendered = s.LoadAndRender(allValuesExplicit, customizeValsStrBuilder.String())
 	objs = s.ParseObjects(rendered)
 
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		for _, mdType := range []string{"labels", "annotations"} {
 			objRef := k8sobjects.RefOf(&obj)
 			expectedMD := maputil.CloneStringStringMap(expectedMDs[mdType][objRef])
@@ -161,7 +163,8 @@ func (s *customizeSuite) TestCustomizePodMetadata() {
 
 		seenKinds := set.NewStringSet()
 
-		for _, obj := range objs {
+		for i := range objs {
+			obj := objs[i]
 			if obj.GetKind() != "Deployment" && obj.GetKind() != "DaemonSet" {
 				continue
 			}
@@ -215,7 +218,8 @@ func (s *customizeSuite) TestCustomizePodMetadata() {
 	objs = s.ParseObjects(rendered)
 	s.Require().NotEmpty(objs)
 
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		if obj.GetKind() != "Deployment" && obj.GetKind() != "DaemonSet" {
 			continue
 		}

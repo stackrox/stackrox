@@ -247,8 +247,12 @@ stackrox-image-pull-secret: ## Create default image pull secret for StackRox ima
 # Create stackrox image pull secret in stackrox namespace.
 	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox docker.io | kubectl -n stackrox apply -f -
 
+.PHONY: check-ci-setup
+check-ci-setup: ## Make sure this target is not started in CI environment.
+	@if [ -n "$$CI" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
+
 .PHONY: run
-run: manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
+run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
 	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) ../scripts/go-run.sh ./main.go
 
 .PHONY: ensure-rox-main-image-exists
@@ -286,15 +290,15 @@ docker-build: test ## Build docker image with the operator.
 ##@ Deployment
 
 .PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+uninstall: check-ci-setup manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
+deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
 	rm -rf config/local-deploy-versioned && \
 		mkdir config/local-deploy-versioned && \
 		cd config/local-deploy-versioned && \
@@ -303,7 +307,7 @@ deploy: manifests kustomize ## Deploy operator image to the K8s cluster specifie
 	$(KUSTOMIZE) build config/local-deploy-versioned | kubectl create -f -
 
 .PHONY: undeploy
-undeploy: kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
+undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
 
 .PHONY: deploy-via-olm

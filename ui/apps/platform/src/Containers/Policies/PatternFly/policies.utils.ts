@@ -1,9 +1,11 @@
 import isPlainObject from 'lodash/isPlainObject';
+import pluralize from 'pluralize';
 import qs, { ParsedQs } from 'qs';
 
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
 import { Cluster } from 'types/cluster.proto';
+import { NotifierIntegration } from 'types/notifier.proto';
 import {
     EnforcementAction,
     LifecycleStage,
@@ -164,6 +166,63 @@ export function formatLifecycleStages(lifecycleStages: LifecycleStage[]): string
 
 export function getNotifierTypeLabel(type: string): string {
     return integrationsList.notifiers.find((notifier) => notifier.type === type)?.label ?? '';
+}
+
+/*
+ * Given array of label-with-ids tuples for notifier and array of notifier ids for a policy,
+ * return an array of count-with-label strings:
+ * [] if policy does not have notifier ids
+ * ['N notifiers'] if policy has notifier ids, but notifiers request does not (yet) have a response
+ * ['N Slack'] for example, if notifier ids have the same type
+ * ['N Slack', 'N Webhook'] for example, if notifier ids have different types
+ */
+export function formatNotifierCountsWithLabelStrings(
+    labelAndNotifierIdsForTypes: LabelAndNotifierIdsForType[],
+    notifierIds: string[]
+): string[] {
+    const notifierCountsWithLabelStrings: string[] = [];
+    let countWithLabel = 0;
+
+    labelAndNotifierIdsForTypes.forEach(([labelForType, notifierIdsForType]) => {
+        let countForType = 0;
+
+        notifierIds.forEach((notifierId) => {
+            if (notifierIdsForType.includes(notifierId)) {
+                countForType += 1;
+            }
+        });
+
+        if (countForType !== 0) {
+            notifierCountsWithLabelStrings.push(`${countForType} ${labelForType}`);
+            countWithLabel += countForType;
+        }
+    });
+
+    const countWithoutLabel = notifierIds.length - countWithLabel;
+    if (countWithoutLabel !== 0) {
+        notifierCountsWithLabelStrings.push(
+            `${countWithoutLabel} ${pluralize('notifier', countWithoutLabel)}`
+        );
+    }
+
+    return notifierCountsWithLabelStrings;
+}
+
+export type LabelAndNotifierIdsForType = [string, string[]];
+
+/*
+ * Given notifier integrations, return array of tuples:
+ * label for type (for example, 'Slack' for 'slack')
+ * notifier ids for type
+ */
+
+export function getLabelAndNotifierIdsForTypes(
+    notifiers: NotifierIntegration[]
+): LabelAndNotifierIdsForType[] {
+    return integrationsList.notifiers.map(({ label, type }) => [
+        label,
+        notifiers.filter((notifier) => notifier.type === type).map(({ id }) => id),
+    ]);
 }
 
 // scope

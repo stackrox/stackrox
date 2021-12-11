@@ -138,7 +138,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	if features.VulnRiskManagement.Enabled() {
-		components = append(components, reprocessor.NewHandler(resources.DeploymentStoreSingleton()))
+		components = append(components, reprocessor.NewHandler(policyDetector))
 	}
 
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()

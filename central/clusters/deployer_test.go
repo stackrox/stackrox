@@ -5,11 +5,30 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/defaultimages"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
+
+const (
+	imageRegistryKey         charts.MetaValuesKey = "ImageRegistry"
+	collectorRegistryKey     charts.MetaValuesKey = "CollectorRegistry"
+	collectorImageRemoteKey  charts.MetaValuesKey = "CollectorImageRemote"
+	collectorFullImageTagKey charts.MetaValuesKey = "CollectorFullImageTag"
+	collectorSlimImageTagKey charts.MetaValuesKey = "CollectorSlimImageTag"
+)
+
+func getCollectorFull(fields charts.MetaValues) string {
+	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorFullImageTagKey])
+}
+
+func getCollectorSlim(fields charts.MetaValues) string {
+	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorSlimImageTagKey])
+}
 
 func TestGenerateCollectorImage(t *testing.T) {
 	var cases = []struct {
@@ -101,32 +120,35 @@ func getBaseConfig() *storage.Cluster {
 }
 
 func TestImagePaths(t *testing.T) {
-	imageRegistry := "ImageRegistry"
-	collectorRegistry := "CollectorRegistry"
+	testbuildinfo.SetForTest(t)
+	testutils.SetVersion(t, version.Versions{
+		CollectorVersion: "1.2.3",
+		MainVersion:      "3.2.1",
+	})
 	collectorVersion := version.GetCollectorVersion()
-	if collectorVersion != "" {
-		collectorVersion = "1.2.3" // not necessary for functionality, but test output looks weird o/w.
-	}
 	var cases = []struct {
 		name                      string
 		mainImage                 string
 		expectedMainRegistry      string
 		collectorImage            string
-		expectedCollectorImage    string
+		expectedCollectorFullRef  string
+		expectedCollectorSlimRef  string
 		expectedCollectorRegistry string
 	}{
 		{
 			name:                      "defaults",
 			mainImage:                 "stackrox.io/main",
 			expectedMainRegistry:      "stackrox.io",
-			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
+			expectedCollectorFullRef:  fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
+			expectedCollectorSlimRef:  fmt.Sprintf("collector.stackrox.io/collector:%s-slim", collectorVersion),
 			expectedCollectorRegistry: "collector.stackrox.io",
 		},
 		{
 			name:                      "airgap with generated collector image",
 			mainImage:                 "some.other.registry/main",
 			expectedMainRegistry:      "some.other.registry",
-			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
+			expectedCollectorFullRef:  fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
+			expectedCollectorSlimRef:  fmt.Sprintf("some.other.registry/collector:%s-slim", collectorVersion),
 			expectedCollectorRegistry: "some.other.registry",
 		},
 		{
@@ -134,7 +156,8 @@ func TestImagePaths(t *testing.T) {
 			mainImage:                 "some.other.registry/main",
 			expectedMainRegistry:      "some.other.registry",
 			collectorImage:            "some.other.registry/collector",
-			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
+			expectedCollectorFullRef:  fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
+			expectedCollectorSlimRef:  fmt.Sprintf("some.other.registry/collector:%s-slim", collectorVersion),
 			expectedCollectorRegistry: "some.other.registry",
 		},
 		{
@@ -142,7 +165,8 @@ func TestImagePaths(t *testing.T) {
 			mainImage:                 "some.rhel.registry.stackrox/main",
 			expectedMainRegistry:      "some.rhel.registry.stackrox",
 			collectorImage:            "collector.stackrox.io/collector",
-			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
+			expectedCollectorFullRef:  fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
+			expectedCollectorSlimRef:  fmt.Sprintf("collector.stackrox.io/collector:%s-slim", collectorVersion),
 			expectedCollectorRegistry: "collector.stackrox.io",
 		},
 	}
@@ -159,10 +183,12 @@ func TestImagePaths(t *testing.T) {
 
 			fields, err := FieldsFromClusterAndRenderOpts(config, RenderOptions{})
 			assert.NoError(t, err)
-			assert.Contains(t, fields, imageRegistry)
-			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistry])
-			assert.Contains(t, fields, collectorRegistry)
-			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistry])
+			assert.Contains(t, fields, imageRegistryKey)
+			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistryKey])
+			assert.Contains(t, fields, collectorRegistryKey)
+			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistryKey])
+			assert.Equal(t, c.expectedCollectorFullRef, getCollectorFull(fields))
+			assert.Equal(t, c.expectedCollectorSlimRef, getCollectorSlim(fields))
 		})
 	}
 }

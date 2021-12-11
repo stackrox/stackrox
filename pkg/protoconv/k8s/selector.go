@@ -73,7 +73,8 @@ func ToRoxLabelSelector(sel *v1.LabelSelector) (*storage.LabelSelector, error) {
 	var roxReqs []*storage.LabelSelector_Requirement
 	if sel.MatchExpressions != nil {
 		roxReqs = make([]*storage.LabelSelector_Requirement, len(sel.MatchExpressions))
-		for i, k8sReq := range sel.MatchExpressions {
+		for i := range sel.MatchExpressions {
+			k8sReq := sel.MatchExpressions[i]
 			roxReq, err := ToRoxLabelSelectorRequirement(&k8sReq)
 			if err != nil {
 				return nil, errors.Wrap(err, "converting requirement")

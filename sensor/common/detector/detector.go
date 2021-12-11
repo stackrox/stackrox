@@ -43,7 +43,7 @@ type Detector interface {
 	common.CentralGRPCConnAware
 
 	ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction)
-	ReprocessDeployment(deployment *storage.Deployment)
+	ReprocessDeployments(deploymentIDs ...string)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(flow *storage.NetworkFlow)
 }
@@ -360,11 +360,33 @@ func (d *detectorImpl) ProcessDeployment(deployment *storage.Deployment, action 
 	d.processDeploymentNoLock(deployment, action)
 }
 
-func (d *detectorImpl) ReprocessDeployment(deployment *storage.Deployment) {
+func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
+	d.admCtrlSettingsMgr.FlushCache()
+
+	invalidatedImages := make(map[imageCacheKey]struct{})
+	for _, deploymentID := range deploymentIDs {
+		d.reprocessDeployment(deploymentID, invalidatedImages)
+	}
+}
+
+func (d *detectorImpl) reprocessDeployment(deploymentID string, invalidatedImages map[imageCacheKey]struct{}) {
 	d.deploymentDetectionLock.Lock()
 	defer d.deploymentDetectionLock.Unlock()
 
-	d.markDeploymentForProcessing(deployment.GetId())
+	deployment := d.deploymentStore.Get(deploymentID)
+	if deployment == nil {
+		return
+	}
+
+	for _, container := range deployment.GetContainers() {
+		key := getImageCacheKey(container.GetImage())
+		if _, invalidated := invalidatedImages[key]; invalidated {
+			continue
+		}
+		d.enricher.imageCache.Remove(key)
+		invalidatedImages[key] = struct{}{}
+	}
+	d.markDeploymentForProcessing(deploymentID)
 	go d.enricher.blockingScan(deployment, central.ResourceAction_UPDATE_RESOURCE)
 }
 

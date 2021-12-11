@@ -15,7 +15,7 @@ import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedDeferralRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
-import UndoVulnRequestModal from './UndoVulnRequestModal';
+import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import UpdateDeferralModal from './UpdateDeferralModal';
 import DeferralExpiration from './DeferralExpiration';
 import ApprovedDeferralActionsColumn from './ApprovedDeferralActionsColumn';

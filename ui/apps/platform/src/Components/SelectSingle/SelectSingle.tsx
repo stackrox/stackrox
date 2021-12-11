@@ -5,7 +5,7 @@ export type SelectSingleProps = {
     id: string;
     value: string;
     handleSelect: (name: string, value: string) => void;
-    isDisabled: boolean;
+    isDisabled?: boolean;
     children: ReactElement[];
     direction?: 'up' | 'down';
     isCreatable?: boolean;
@@ -17,7 +17,7 @@ function SelectSingle({
     id,
     value,
     handleSelect,
-    isDisabled,
+    isDisabled = false,
     children,
     direction = 'down',
     isCreatable = false,

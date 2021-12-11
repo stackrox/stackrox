@@ -362,8 +362,8 @@ func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRe
 	}
 
 	podStates := make([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, 0, len(pods.Items))
-	for _, pod := range pods.Items {
-		podStates = append(podStates, p.checkPodStatus(&pod))
+	for i := range pods.Items {
+		podStates = append(podStates, p.checkPodStatus(&pods.Items[i]))
 	}
 	return podStates, false, nil
 }

@@ -202,7 +202,8 @@ func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClai
 	}
 
 	var ownedPVCs []*corev1.PersistentVolumeClaim
-	for _, item := range pvcList.Items {
+	for i := range pvcList.Items {
+		item := pvcList.Items[i]
 		if metav1.IsControlledBy(&item, r.centralObj) {
 			tmp := item
 			ownedPVCs = append(ownedPVCs, &tmp)

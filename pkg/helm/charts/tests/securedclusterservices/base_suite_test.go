@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/suite"
@@ -17,16 +18,18 @@ import (
 )
 
 var (
-	metaValues = map[string]interface{}{
+	metaValues = charts.MetaValues{
 		"Versions": version.Versions{
 			ChartVersion:     "1.0.0",
 			MainVersion:      "3.0.49.0",
 			CollectorVersion: "1.2.3",
 		},
-		"MainRegistry":      "stackrox.io", // TODO: custom?
-		"CollectorRegistry": "collector.stackrox.io",
-		"RenderMode":        "",
-		"FeatureFlags":      map[string]interface{}{},
+		"MainRegistry":          "stackrox.io", // TODO: custom?
+		"CollectorRegistry":     "collector.stackrox.io",
+		"CollectorSlimImageTag": "1.2.3-slim",
+		"CollectorFullImageTag": "1.2.3-latest",
+		"RenderMode":            "",
+		"FeatureFlags":          map[string]interface{}{},
 	}
 
 	installOpts = helmUtil.Options{
@@ -190,7 +193,8 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	}
 
 	objs := s.ParseObjects(rendered)
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		if obj.GetKind() != "Deployment" && obj.GetKind() != "DaemonSet" {
 			continue
 		}

@@ -37,7 +37,8 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 	// are by short names and not IDs :(
 	tacticShortNameMap := make(map[string]string)
 	// Collect all the tactics.
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		if obj.Type != tactic {
 			continue
 		}
@@ -64,7 +65,8 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 	techniquesMatrixMap := make(map[Platform]map[string]struct{})
 	tacticTechniquesMap := make(map[string]map[string]struct{})
 	// Collect all the techniques applicable to the platform.
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		// "attackPattern" represents techniques.
 		if obj.Type != attackPattern {
 			continue
@@ -136,7 +138,8 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 	}
 
 	var version string
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		if obj.Type != metadata {
 			continue
 		}

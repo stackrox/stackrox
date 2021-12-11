@@ -49,7 +49,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 		templateImage = image.NewImage(os.DirFS(debugChartPath))
 	}
 
-	var metaVals map[string]interface{}
+	var metaVals charts.MetaValues
 	if rhacs {
 		metaVals = charts.RHACSMetaValues()
 	} else {
@@ -99,7 +99,7 @@ func Command() *cobra.Command {
 	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false, "render RHACS chart flavor")
 
 	if !buildinfo.ReleaseBuild {
-		defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/rox/image/")
+		defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/stackrox/image/")
 		c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
 		c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
 	}

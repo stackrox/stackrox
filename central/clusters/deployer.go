@@ -1,6 +1,7 @@
 package clusters
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -8,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -50,7 +52,7 @@ func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage
 }
 
 // FieldsFromClusterAndRenderOpts gets the template values for values.yaml
-func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map[string]interface{}, error) {
+func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (charts.MetaValues, error) {
 	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, version.GetMainVersion())
 	if err != nil {
 		return nil, err
@@ -73,7 +75,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER || c.Type == storage.ClusterType_OPENSHIFT4_CLUSTER {
 		command = "oc"
 	}
-	fields := map[string]interface{}{
+	fields := charts.MetaValues{
 		"ClusterName": c.Name,
 		"ClusterType": c.Type.String(),
 
@@ -84,10 +86,11 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		"CollectorRegistry":    urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"CollectorImageRemote": collectorImageName.GetRemote(),
-		"CollectorImageTag":    collectorImageName.GetTag(),
-		"CollectionMethod":     c.CollectionMethod.String(),
+		"CollectorRegistry":     urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
+		"CollectorImageRemote":  collectorImageName.GetRemote(),
+		"CollectorFullImageTag": fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
+		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
+		"CollectionMethod":      c.CollectionMethod.String(),
 
 		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
 		"CreateUpgraderSA":   opts.CreateUpgraderSA,

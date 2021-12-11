@@ -160,6 +160,7 @@ func (i *imageScanCommand) Scan() error {
 		return i.scanImage()
 	},
 		retry.Tries(i.retryCount+1),
+		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
 			i.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
@@ -176,7 +177,7 @@ func (i *imageScanCommand) scanImage() error {
 	imageResult, err := i.getImageResultFromService()
 
 	if err != nil {
-		return err
+		return retry.MakeRetryable(err)
 	}
 
 	return i.printImageResult(imageResult)
@@ -216,7 +217,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 		printCVESummary(i.image, cveSummary.Result.Summary, i.env.Logger())
 	}
 
-	if err := i.printer.Print(cveSummary, i.env.InputOutput().Out); err != nil {
+	if err := i.printer.Print(cveSummary, i.env.ColorWriter()); err != nil {
 		return err
 	}
 

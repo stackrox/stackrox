@@ -297,7 +297,8 @@ func executeAndVerify(t *testing.T, testCase pvcReconciliationTestCase, r reconc
 	require.NoError(t, err)
 
 	// check pvcs which should exist in cluster
-	for _, pvc := range pvcList.Items {
+	for i := range pvcList.Items {
+		pvc := pvcList.Items[i]
 		pvf := pvcsToVerify[pvc.GetName()]
 		require.NotNilf(t, pvf, "unexpected PVC %s", pvc.GetName())
 		pvf(t, &pvc)

@@ -132,6 +132,7 @@ func (d *deploymentCheckCommand) Check() error {
 		return d.checkDeployment()
 	},
 		retry.Tries(d.retryCount+1),
+		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
 			d.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %d seconds...",
 				err, d.retryDelay)
@@ -151,7 +152,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 
 	alerts, err := d.getAlerts(string(deploymentFileContents))
 	if err != nil {
-		return err
+		return retry.MakeRetryable(err)
 	}
 
 	return d.printResults(alerts)
@@ -196,7 +197,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 		printDeploymentPolicySummary(policySummary.Summary, d.env.Logger(), policySummary.GetResultNames()...)
 	}
 
-	if err := d.printer.Print(policySummary, d.env.InputOutput().Out); err != nil {
+	if err := d.printer.Print(policySummary, d.env.ColorWriter()); err != nil {
 		return err
 	}
 
@@ -240,7 +241,7 @@ func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies 
 	for _, res := range results {
 		for _, breakingPolicy := range res.GetBreakingPolicies() {
 			out.ErrfLn("Policy %q within Deployment %q - Possible remediation: %q",
-				breakingPolicy.Name, res.Metadata.GetName(), breakingPolicy.Name)
+				breakingPolicy.Name, res.Metadata.GetName(), breakingPolicy.Remediation)
 		}
 	}
 }

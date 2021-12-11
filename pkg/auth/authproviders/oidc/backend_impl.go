@@ -158,7 +158,7 @@ func (p *backendImpl) RevokeRefreshToken(ctx context.Context, refreshTokenData a
 	return errors.New(errMsg)
 }
 
-func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
+func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
 	return p.loginURL(clientState, ri)
 }
 
@@ -358,7 +358,7 @@ func (p *backendImpl) oauthCfgForRequest(ri *requestinfo.RequestInfo) *oauth2.Co
 	return &oauthCfg
 }
 
-func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) string {
+func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
 	state := idputil.MakeState(p.id, clientState)
 	options := make([]oauth2.AuthCodeOption, len(p.baseOptions), len(p.baseOptions)+1)
 	copy(options, p.baseOptions)
@@ -369,13 +369,13 @@ func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) 
 		nonce, err := p.noncePool.IssueNonce()
 		if err != nil {
 			log.Error("UNEXPECTED: could not issue nonce")
-			return ""
+			return "", err
 		}
 
 		options = append(options, oidc.Nonce(nonce))
 	}
 
-	return p.oauthCfgForRequest(ri).AuthCodeURL(state, options...)
+	return p.oauthCfgForRequest(ri).AuthCodeURL(state, options...), nil
 }
 
 func (p *backendImpl) processIDPResponseForImplicitFlowWithIDToken(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
