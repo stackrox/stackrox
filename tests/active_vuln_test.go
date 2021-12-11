@@ -30,17 +30,17 @@ var (
 		{
 			version:          "1.14.0",
 			SHA:              "sha256:8b600a4d029481cc5b459f1380b30ff6cb98e27544fc02370de836e397e34030",
-			activeComponents: 1,
+			activeComponents: 5,
 		},
 		{
 			version:          "1.18.0",
 			SHA:              "sha256:e90ac5331fe095cea01b121a3627174b2e33e06e83720e9a934c7b8ccc9c55a0",
-			activeComponents: 6,
+			activeComponents: 13,
 		},
 		{
 			version:          "1.20.0",
 			SHA:              "sha256:ea4560b87ff03479670d15df426f7d02e30cb6340dcd3004cdfc048d6a1d54b4",
-			activeComponents: 6,
+			activeComponents: 13,
 		},
 	}
 	once sync.Once
