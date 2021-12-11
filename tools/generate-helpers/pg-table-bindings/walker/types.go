@@ -16,6 +16,10 @@ const (
 	INTEGER      DataType = 9
 )
 
+func (i DataType) ToSQLType() string {
+	return DataTypeToSQLType(i)
+}
+
 func DataTypeToSQLType(dataType DataType) string {
 	var sqlType string
 	switch dataType {

@@ -24,8 +24,8 @@ func generateTopLevelTable(w io.Writer, table *walker.Table) {
 	ic.Combine(table.GetInsertComposer(0))
 
 	fmt.Fprintf(w, "localQuery := \"%s\"\n", ic.Query())
-	fmt.Fprintf(w, "_, err = {{.ExecutePrefix}}localQuery, %s)\n", ic.ExecGetters())
-	fmt.Fprint(w, "if err != nil {\n    return err\n  }\n")
+	fmt.Fprintf(w, "{{if not .ExecuteUnchecked}}_, err = {{end}}{{.ExecutePrefix}}localQuery, %s)\n", ic.ExecGetters())
+	fmt.Fprint(w, "{{if not .ExecuteUnchecked}}if err != nil {\n    return err\n  }\n{{end}}")
 }
 
 func generateInsertFunctions(table *walker.Table) string {
