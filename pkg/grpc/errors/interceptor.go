@@ -2,6 +2,7 @@ package errors
 
 import (
 	"context"
+	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -35,7 +36,8 @@ func ErrToGrpcStatus(err error) *status.Status {
 		return s
 	}
 	code := codes.Internal
-	if re, ok := errorhelpers.IsRoxError(err); ok {
+	var re errorhelpers.RoxError
+	if errors.As(err, &re) {
 		code = re.GRPCCode()
 	}
 	return status.New(code, err.Error())

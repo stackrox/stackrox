@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestIsRoxError(t *testing.T) {
-	testError := NewRoxError("test", "test error")
+func TestAsIs(t *testing.T) {
+	testError := New("test error")
 	tests := []struct {
 		name string
 		err  error
@@ -26,55 +26,49 @@ func TestIsRoxError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			re, ok := IsRoxError(tt.err)
+			var re RoxError
+			ok := errors.As(tt.err, &re)
 			if ok != tt.ok {
 				t.Errorf("IsRoxError() ok = %v, want %v", ok, tt.ok)
 			}
 			if errors.Is(re, tt.err) != ok && re != nil {
-				t.Errorf("IsRoxError() re = %v, want %v", re, tt.re)
+				t.Errorf("IsRoxError() re = %v (%T), want %v (%T)", re, re, tt.re, tt.re)
 			}
 		})
 	}
 
-	t.Run("As wrapped ok", func(t *testing.T) {
-		target := ErrRox{}
-		if !errors.As(fmt.Errorf("wrapped %w", testError), &target) {
-			t.Errorf("Expected to get wrapped error as testError")
-		} else if target.Error() != "test error" {
-			t.Errorf("Expected to get %v, got %v", testError, target)
+	t.Run("Equals by value", func(t *testing.T) {
+		e1 := NewWithGRPCCode(codes.Canceled, "err cancelled")
+		e2 := NewWithGRPCCode(codes.Canceled, "err cancelled")
+		e3 := NewWithGRPCCode(codes.Canceled, "err conciled")
+		if !errors.Is(e1, e2) {
+			t.Errorf("Expected equal errors to be equal")
 		}
-	})
-	t.Run("As wrapped ko", func(t *testing.T) {
-		target := ErrRox{}
-		if errors.As(fmt.Errorf("wrapper %w", errors.New("some error")), &target) {
-			t.Errorf("Expected to not get wrapped error as testError")
+		if errors.Is(e1, e3) {
+			t.Errorf("Expected not equal errors to be not equal")
 		}
 	})
 }
 
-func TestNewRoxError(t *testing.T) {
-	e := NewRoxError("test", "test message")
-	if re, ok := IsRoxError(e); !ok {
-		t.Errorf("NewRoxError() = %v, want %v", re, e)
+func TestNewWithGRPCCode(t *testing.T) {
+	e := New("test message")
+	var re RoxError
+	if !errors.As(e, &re) {
+		t.Errorf("New() = %v, want %v", re, e)
 	}
 	if c := e.GRPCCode(); c != codes.Internal {
 		t.Errorf("Expected Internal GRPC code, got: %d", c)
-	}
-	if ns := e.Namespace(); ns != "test" {
-		t.Errorf("Expected test namespace, got: %s", ns)
 	}
 }
 
-func TestNewGRPCRoxError(t *testing.T) {
-	e := NewRoxError("test", "test message")
-	if re, ok := IsRoxError(e); !ok {
-		t.Errorf("NewRoxError() = %v, want %v", re, e)
+func TestNew(t *testing.T) {
+	e := New("test message")
+	var re RoxError
+	if !errors.As(e, &re) {
+		t.Errorf("New() = %v, want %v", re, e)
 	}
 	if c := e.GRPCCode(); c != codes.Internal {
 		t.Errorf("Expected Internal GRPC code, got: %d", c)
-	}
-	if ns := e.Namespace(); ns != "test" {
-		t.Errorf("Expected test namespace, got: %s", ns)
 	}
 }
 

@@ -13,35 +13,35 @@ import (
 // thus changing them might break error matching for some clients, e.g., the UI.
 var (
 	// ErrAlreadyExists indicates that the object already exists.
-	ErrAlreadyExists = NewRoxGRPCError("global", codes.AlreadyExists, "already exists")
+	ErrAlreadyExists = NewWithGRPCCode(codes.AlreadyExists, "already exists")
 
 	// ErrInvalidArgs indicates that a request has invalid arguments.
-	ErrInvalidArgs = NewRoxGRPCError("global", codes.InvalidArgument, "invalid arguments")
+	ErrInvalidArgs = NewWithGRPCCode(codes.InvalidArgument, "invalid arguments")
 
 	// ErrNotFound indicates that the requested object was not found.
-	ErrNotFound = NewRoxGRPCError("global", codes.NotFound, "not found")
+	ErrNotFound = NewWithGRPCCode(codes.NotFound, "not found")
 
 	// ErrReferencedByAnotherObject indicates that the requested object cannot
 	// be removed because it is referred to / in use by another object.
-	ErrReferencedByAnotherObject = NewRoxGRPCError("global", codes.FailedPrecondition, "referenced by another object")
+	ErrReferencedByAnotherObject = NewWithGRPCCode(codes.FailedPrecondition, "referenced by another object")
 
 	// ErrInvariantViolation indicates that some internal invariant has been
 	// violated and the underlying component is in an inconsistent state.
-	ErrInvariantViolation = NewRoxGRPCError("global", codes.Internal, "invariant violation")
+	ErrInvariantViolation = NewWithGRPCCode(codes.Internal, "invariant violation")
 
 	// ErrNoCredentials occurs if no credentials can be found.
-	ErrNoCredentials = NewRoxGRPCError("global", codes.Unauthenticated, "credentials not found")
+	ErrNoCredentials = NewWithGRPCCode(codes.Unauthenticated, "credentials not found")
 
 	// ErrNoValidRole occurs if no valid role can be found for user.
-	ErrNoValidRole = NewRoxGRPCError("global", codes.Unauthenticated, "no valid role")
+	ErrNoValidRole = NewWithGRPCCode(codes.Unauthenticated, "no valid role")
 
 	// ErrNotAuthorized occurs if credentials are found, but they are
 	// insufficiently authorized.
-	ErrNotAuthorized = NewRoxGRPCError("global", codes.PermissionDenied, "not authorized")
+	ErrNotAuthorized = NewWithGRPCCode(codes.PermissionDenied, "not authorized")
 
 	// ErrNoAuthzConfigured occurs if authorization is not implemented for a
 	// service. This is a programming error.
-	ErrNoAuthzConfigured = NewRoxGRPCError("global", codes.Unimplemented, "service authorization is misconfigured")
+	ErrNoAuthzConfigured = NewWithGRPCCode(codes.Unimplemented, "service authorization is misconfigured")
 )
 
 // GenericNoValidRole wraps ErrNoValidRole with a generic error message.
