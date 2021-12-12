@@ -243,6 +243,7 @@
 {{/*
    Scanner setup
   */}}
+{{ $_ = set $._rox.scanner "disableCertGeneration" true }}
 {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
 [<- end ->]
 
