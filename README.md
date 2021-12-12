@@ -361,5 +361,5 @@ bash openshift/central.sh
 </details>
 
 
-[circleci-badge]: https://circleci.com/gh/stackrox/rox.svg?&style=shield&circle-token=140f88ea9dfd594ff68b71eaf1d4407c4331833d
-[circleci-link]:  https://circleci.com/gh/stackrox/workflows/rox/tree/master
+[circleci-badge]: https://circleci.com/gh/stackrox/stackrox.svg?&style=shield&circle-token=eb5a0b87a6253b4c060d011bbfed4a2f1f516746
+[circleci-link]:  https://circleci.com/gh/stackrox/workflows/stackrox/tree/master
