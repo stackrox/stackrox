@@ -47,6 +47,7 @@ var (
 			imageComponentEdgeMappings.OptionsMap,
 			componentOptionsMap,
 			componentCVEEdgeMappings.OptionsMap,
+			imageCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
 		),
 	).Remove(search.RiskScore)

@@ -6,6 +6,7 @@ import (
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	imageCVEEdgeMappings "github.com/stackrox/rox/central/imagecveedge/mappings"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	"github.com/stackrox/rox/pkg/search"
@@ -28,6 +29,7 @@ var (
 			imageComponentEdgeMappings.OptionsMap,
 			componentMappings.OptionsMap,
 			componentCVEEdgeMappings.OptionsMap,
+			imageCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
 		),
 	)
