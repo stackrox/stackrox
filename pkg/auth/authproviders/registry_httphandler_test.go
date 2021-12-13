@@ -456,10 +456,6 @@ func (*tstAuthProviderBackendFactory) MergeConfig(newCfg, oldCfg map[string]stri
 	return mergedCfg
 }
 
-func (*tstAuthProviderBackendFactory) DisplayNames() []string {
-	return []string{"test"}
-}
-
 var testAuthProviderBackendFactory = &tstAuthProviderBackendFactory{}
 
 func newTestAuthProviderBackendFactory(_ string) BackendFactory {
