@@ -18,8 +18,8 @@ type errRox struct {
 	message  string
 }
 
-// NewWithGRPCCode returns a RoxError with the supplied GRPC error code and message.
-func NewWithGRPCCode(grpcCode codes.Code, message string) RoxError {
+// NewWithCode returns a RoxError with the supplied GRPC error code and message.
+func NewWithCode(grpcCode codes.Code, message string) RoxError {
 	return &errRox{
 		grpcCode: grpcCode,
 		message:  message,
@@ -28,7 +28,7 @@ func NewWithGRPCCode(grpcCode codes.Code, message string) RoxError {
 
 // New returns a RoxError with the Internal GRPC code and supplied message.
 func New(message string) RoxError {
-	return NewWithGRPCCode(codes.Internal, message)
+	return NewWithCode(codes.Internal, message)
 }
 
 // Error returns the error message. Implements error interface.

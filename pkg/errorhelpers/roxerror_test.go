@@ -38,9 +38,9 @@ func TestAsIs(t *testing.T) {
 	}
 
 	t.Run("Equals by value", func(t *testing.T) {
-		e1 := NewWithGRPCCode(codes.Canceled, "err cancelled")
-		e2 := NewWithGRPCCode(codes.Canceled, "err cancelled")
-		e3 := NewWithGRPCCode(codes.Canceled, "err conciled")
+		e1 := NewWithCode(codes.Canceled, "err cancelled")
+		e2 := NewWithCode(codes.Canceled, "err cancelled")
+		e3 := NewWithCode(codes.Canceled, "err conciled")
 		if !errors.Is(e1, e2) {
 			t.Errorf("Expected equal errors to be equal")
 		}

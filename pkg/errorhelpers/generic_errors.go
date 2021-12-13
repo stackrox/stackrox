@@ -13,35 +13,35 @@ import (
 // thus changing them might break error matching for some clients, e.g., the UI.
 var (
 	// ErrAlreadyExists indicates that the object already exists.
-	ErrAlreadyExists = NewWithGRPCCode(codes.AlreadyExists, "already exists")
+	ErrAlreadyExists = NewWithCode(codes.AlreadyExists, "already exists")
 
 	// ErrInvalidArgs indicates that a request has invalid arguments.
-	ErrInvalidArgs = NewWithGRPCCode(codes.InvalidArgument, "invalid arguments")
+	ErrInvalidArgs = NewWithCode(codes.InvalidArgument, "invalid arguments")
 
 	// ErrNotFound indicates that the requested object was not found.
-	ErrNotFound = NewWithGRPCCode(codes.NotFound, "not found")
+	ErrNotFound = NewWithCode(codes.NotFound, "not found")
 
 	// ErrReferencedByAnotherObject indicates that the requested object cannot
 	// be removed because it is referred to / in use by another object.
-	ErrReferencedByAnotherObject = NewWithGRPCCode(codes.FailedPrecondition, "referenced by another object")
+	ErrReferencedByAnotherObject = NewWithCode(codes.FailedPrecondition, "referenced by another object")
 
 	// ErrInvariantViolation indicates that some internal invariant has been
 	// violated and the underlying component is in an inconsistent state.
-	ErrInvariantViolation = NewWithGRPCCode(codes.Internal, "invariant violation")
+	ErrInvariantViolation = NewWithCode(codes.Internal, "invariant violation")
 
 	// ErrNoCredentials occurs if no credentials can be found.
-	ErrNoCredentials = NewWithGRPCCode(codes.Unauthenticated, "credentials not found")
+	ErrNoCredentials = NewWithCode(codes.Unauthenticated, "credentials not found")
 
 	// ErrNoValidRole occurs if no valid role can be found for user.
-	ErrNoValidRole = NewWithGRPCCode(codes.Unauthenticated, "no valid role")
+	ErrNoValidRole = NewWithCode(codes.Unauthenticated, "no valid role")
 
 	// ErrNotAuthorized occurs if credentials are found, but they are
 	// insufficiently authorized.
-	ErrNotAuthorized = NewWithGRPCCode(codes.PermissionDenied, "not authorized")
+	ErrNotAuthorized = NewWithCode(codes.PermissionDenied, "not authorized")
 
 	// ErrNoAuthzConfigured occurs if authorization is not implemented for a
 	// service. This is a programming error.
-	ErrNoAuthzConfigured = NewWithGRPCCode(codes.Unimplemented, "service authorization is misconfigured")
+	ErrNoAuthzConfigured = NewWithCode(codes.Unimplemented, "service authorization is misconfigured")
 )
 
 // GenericNoValidRole wraps ErrNoValidRole with a generic error message.
