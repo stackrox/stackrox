@@ -182,8 +182,8 @@ func (s *deployerTestSuite) TestImagePaths() {
 			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
 		},
 		"custom main image / custom collector image": {
-			cluster:                  makeTestCluster("stackrox.io/main", "quay.io/rhacs/collector"),
-			expectedMain:             "stackrox.io/main:3.0.99.0",
+			cluster:                  makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
+			expectedMain:             "quay.io/rhacs/main:3.0.99.0",
 			expectedCollectorFullRef: "quay.io/rhacs/collector:99.9.9-latest",
 			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
 		},
@@ -198,6 +198,18 @@ func (s *deployerTestSuite) TestImagePaths() {
 			expectedMain:             "quay.io/rhacs/main:custom",
 			expectedCollectorFullRef: "collector.stackrox.io/collector:99.9.9-latest",
 			expectedCollectorSlimRef: "collector.stackrox.io/collector:99.9.9-slim",
+		},
+		"custom main image / custom collector image: same registry with different namespaces": {
+			cluster:                  makeTestCluster("quay.io/namespace-a/main", "quay.io/namespace-b/collector"),
+			expectedMain:             "quay.io/namespace-a/main:3.0.99.0",
+			expectedCollectorFullRef: "quay.io/namespace-b/collector:99.9.9-latest",
+			expectedCollectorSlimRef: "quay.io/namespace-b/collector:99.9.9-slim",
+		},
+		"custom main image with non-default name": {
+			cluster:                  makeTestCluster("quay.io/rhacs/customname", ""),
+			expectedMain:             "quay.io/rhacs/customname:3.0.99.0",
+			expectedCollectorFullRef: "quay.io/rhacs/collector:99.9.9-latest",
+			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
 		},
 		"expectedError: invalid main image": {
 			cluster:       makeTestCluster("this is not an image #@!", ""),
