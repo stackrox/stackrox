@@ -9,7 +9,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images"
+	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +34,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	flavor := images.DevelopmentBuildImageFlavor()
+	flavor := flavorUtils.TestFlavor(t)
 	config := renderer.Config{
 		Version:     version.GetMainVersion(),
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
