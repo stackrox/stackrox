@@ -4,19 +4,21 @@ import { VulnerabilityState } from 'types/cve.proto';
 import { DeferralRequest, RequestStatus } from 'types/vuln_request.proto';
 import { getDistanceStrict } from 'utils/dateUtils';
 
-export type RequestedActionProps = {
+export type VulnRequestedActionProps = {
     targetState: VulnerabilityState;
     requestStatus: RequestStatus;
     deferralReq: DeferralRequest;
     updatedDeferralReq?: DeferralRequest;
+    currentDate: Date;
 };
 
-function RequestedAction({
+function VulnRequestedAction({
     targetState,
     requestStatus,
     deferralReq,
     updatedDeferralReq,
-}: RequestedActionProps): ReactElement {
+    currentDate,
+}: VulnRequestedActionProps): ReactElement {
     let type = '';
     let action = '';
 
@@ -40,7 +42,11 @@ function RequestedAction({
     if (expiresWhenFixed) {
         action = '(until fixed)';
     } else if (expiresOn) {
-        action = `(${getDistanceStrict(expiresOn, new Date())})`;
+        const expiresOnDistance = getDistanceStrict(expiresOn, currentDate, {
+            partialMethod: 'ceil',
+            unit: 'd',
+        });
+        action = `(${expiresOnDistance})`;
     }
 
     return (
@@ -50,4 +56,4 @@ function RequestedAction({
     );
 }
 
-export default RequestedAction;
+export default VulnRequestedAction;

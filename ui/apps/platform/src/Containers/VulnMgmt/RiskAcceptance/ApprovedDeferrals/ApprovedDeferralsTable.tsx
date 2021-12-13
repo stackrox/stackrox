@@ -19,7 +19,7 @@ import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import UpdateDeferralModal from './UpdateDeferralModal';
 import ApprovedDeferralActionsColumn from './ApprovedDeferralActionsColumn';
 import ImpactedEntities from '../ImpactedEntities';
-import RequestedAction from '../RequestedAction';
+import VulnRequestedAction from '../VulnRequestedAction';
 import DeferralExpirationDate from '../DeferralExpirationDate';
 
 export type ApprovedDeferralsTableProps = {
@@ -129,10 +129,11 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
                                 <Td dataLabel="Requested Action">
-                                    <RequestedAction
+                                    <VulnRequestedAction
                                         targetState={row.targetState}
                                         requestStatus={row.status}
                                         deferralReq={row.deferralReq}
+                                        currentDate={new Date()}
                                     />
                                 </Td>
                                 <Td dataLabel="Expires">

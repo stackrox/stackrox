@@ -12,7 +12,7 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
-import RequestedAction from '../RequestedAction';
+import VulnRequestedAction from '../VulnRequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
 import ApproveDeferralModal from './ApproveDeferralModal';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -193,11 +193,12 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
                                 <Td dataLabel="Requested Action">
-                                    <RequestedAction
+                                    <VulnRequestedAction
                                         targetState={row.targetState}
                                         requestStatus={row.status}
                                         deferralReq={row.deferralReq}
                                         updatedDeferralReq={row.updatedDeferralReq}
+                                        currentDate={new Date()}
                                     />
                                 </Td>
                                 <Td dataLabel="Expires">

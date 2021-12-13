@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from 'react';
+import React, { ReactElement } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { useQuery, useApolloClient } from '@apollo/client';
 

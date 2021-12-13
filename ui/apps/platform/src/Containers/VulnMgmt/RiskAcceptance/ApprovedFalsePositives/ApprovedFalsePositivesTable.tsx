@@ -18,7 +18,7 @@ import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestS
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import ApprovedFalsePositiveActionsColumn from './ApprovedFalsePositiveActionsColumn';
 import ImpactedEntities from '../ImpactedEntities';
-import RequestedAction from '../RequestedAction';
+import VulnRequestedAction from '../VulnRequestedAction';
 
 export type ApprovedFalsePositivesTableProps = {
     rows: VulnerabilityRequest[];
@@ -115,11 +115,12 @@ function ApprovedFalsePositivesTable({
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
                                 <Td dataLabel="Requested Action">
-                                    <RequestedAction
+                                    <VulnRequestedAction
                                         targetState={row.targetState}
                                         requestStatus={row.status}
                                         deferralReq={row.deferralReq}
                                         updatedDeferralReq={row.updatedDeferralReq}
+                                        currentDate={new Date()}
                                     />
                                 </Td>
                                 <Td dataLabel="Scope">
