@@ -227,11 +227,16 @@ ENVTEST_K8S_VERSION = 1.22
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
-test-e2e: build install kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
+.PHONY: validate-crs
+CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
+validate-crs:
+	./tests/scripts/validate-crs.sh ./tests $(CRDS)
+
+test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
 
-test-e2e-deployed: kuttl ## Run e2e tests with manager deployed on cluster.
+test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	SKIP_MANAGER_START=1 $(KUTTL) test
 
