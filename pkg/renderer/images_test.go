@@ -4,9 +4,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/images"
-	"github.com/stretchr/testify/assert"
-
 	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestComputeOverrides(t *testing.T) {

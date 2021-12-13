@@ -6,10 +6,10 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 )
 
 func getBaseConfig(t *testing.T) Config {
