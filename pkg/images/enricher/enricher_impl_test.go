@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -93,6 +94,18 @@ func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) 
 		for _, v := range c.GetVulns() {
 			if v.Cve == "CVE-2020-1234" {
 				v.Suppressed = true
+			}
+		}
+	}
+}
+
+type fakeCVESuppressorV2 struct{}
+
+func (f *fakeCVESuppressorV2) EnrichImageWithSuppressedCVEs(image *storage.Image) {
+	for _, c := range image.GetScan().GetComponents() {
+		for _, v := range c.GetVulns() {
+			if v.Cve == "CVE-2020-1234" {
+				v.State = storage.VulnerabilityState_DEFERRED
 			}
 		}
 	}
@@ -304,7 +317,8 @@ func TestEnricherFlow(t *testing.T) {
 			mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
 			enricherImpl := &enricherImpl{
-				cves:                      &fakeCVESuppressor{},
+				cvesSuppressor:            &fakeCVESuppressor{},
+				cvesSuppressorV2:          &fakeCVESuppressorV2{},
 				integrations:              set,
 				errorsPerScanner:          map[scannertypes.ImageScanner]int32{fsr: 0},
 				errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},
@@ -353,7 +367,8 @@ func TestCVESuppression(t *testing.T) {
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
 	enricherImpl := &enricherImpl{
-		cves:                      &fakeCVESuppressor{},
+		cvesSuppressor:            &fakeCVESuppressor{},
+		cvesSuppressorV2:          &fakeCVESuppressorV2{},
 		integrations:              set,
 		errorsPerScanner:          map[scannertypes.ImageScanner]int32{fsr: 0},
 		errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},
@@ -369,6 +384,9 @@ func TestCVESuppression(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
 	assert.True(t, img.Scan.Components[0].Vulns[0].Suppressed)
+	if features.VulnRiskManagement.Enabled() {
+		assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.Scan.Components[0].Vulns[0].State)
+	}
 }
 
 func TestZeroIntegrations(t *testing.T) {
@@ -389,7 +407,7 @@ func TestZeroIntegrations(t *testing.T) {
 
 	mockReporter := reporterMocks.NewMockReporter(ctrl)
 
-	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
@@ -419,7 +437,7 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 
 	mockReporter := reporterMocks.NewMockReporter(ctrl)
 
-	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
@@ -450,7 +468,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	mockReporter := reporterMocks.NewMockReporter(ctrl)
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
-	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
@@ -484,7 +502,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 	mockReporter := reporterMocks.NewMockReporter(ctrl)
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
-	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
@@ -519,7 +537,7 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 
 	mockReporter := reporterMocks.NewMockReporter(ctrl)
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
-	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
@@ -552,7 +570,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 
 	mockReporter := reporterMocks.NewMockReporter(ctrl)
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
-	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
