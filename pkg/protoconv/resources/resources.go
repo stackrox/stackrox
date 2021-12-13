@@ -259,6 +259,7 @@ func (w *DeploymentWrap) PopulateDeploymentFromPodSpec(podSpec v1.PodSpec) {
 	w.RuntimeClass = stringutils.PointerOrDefault(podSpec.RuntimeClassName, "")
 	w.populateTolerations(podSpec)
 	w.populateServiceAccount(podSpec)
+	w.populateAutomountServiceAccountToken(podSpec)
 	w.populateImagePullSecrets(podSpec)
 
 	w.populateContainers(podSpec)
@@ -298,6 +299,14 @@ func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
 		w.ServiceAccount = "default"
 	} else {
 		w.ServiceAccount = podSpec.ServiceAccountName
+	}
+}
+
+func (w *DeploymentWrap) populateAutomountServiceAccountToken(podSpec v1.PodSpec) {
+	if podSpec.AutomountServiceAccountToken == nil {
+		w.AutomountServiceAccountToken = true
+	} else {
+		w.AutomountServiceAccountToken = *podSpec.AutomountServiceAccountToken
 	}
 }
 
