@@ -3,6 +3,7 @@ package extensions
 import (
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/assert"
@@ -14,18 +15,18 @@ import (
 func verifyCentralCert(t *testing.T, data secretDataMap) {
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
-	assert.NoError(t, certgen.VerifyServiceCert(data, ca, mtls.CentralSubject, ""))
+	assert.NoError(t, certgen.VerifyServiceCert(data, ca, storage.ServiceType_CENTRAL_SERVICE, ""))
 
 	_, err = certgen.LoadJWTSigningKeyFromFileMap(data)
 	assert.NoError(t, err)
 }
 
-func verifyServiceCert(subj mtls.Subject) secretVerifyFunc {
+func verifyServiceCert(serviceType storage.ServiceType) secretVerifyFunc {
 	return func(t *testing.T, data secretDataMap) {
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
 
-		assert.NoError(t, certgen.VerifyServiceCert(data, validatingCA, subj, ""))
+		assert.NoError(t, certgen.VerifyServiceCert(data, validatingCA, serviceType, ""))
 	}
 }
 
@@ -83,8 +84,8 @@ func TestCreateCentralTLS(t *testing.T) {
 			Spec: basicSpecWithScanner(true),
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
-				"scanner-tls":    verifyServiceCert(mtls.ScannerSubject),
-				"scanner-db-tls": verifyServiceCert(mtls.ScannerDBSubject),
+				"scanner-tls":    verifyServiceCert(storage.ServiceType_SCANNER_SERVICE),
+				"scanner-db-tls": verifyServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 			},
 		},
 		"When a valid unmanaged central-tls secret exists and scanner is disabled, no further secrets should be created": {
@@ -95,8 +96,8 @@ func TestCreateCentralTLS(t *testing.T) {
 			Spec:     basicSpecWithScanner(true),
 			Existing: []*v1.Secret{existingCentral},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"scanner-tls":    verifyServiceCert(mtls.ScannerSubject),
-				"scanner-db-tls": verifyServiceCert(mtls.ScannerDBSubject),
+				"scanner-tls":    verifyServiceCert(storage.ServiceType_SCANNER_SERVICE),
+				"scanner-db-tls": verifyServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 			},
 		},
 		"When valid unmanaged secrets exist for everything and scanner is disabled, no secrets should be created or deleted": {
