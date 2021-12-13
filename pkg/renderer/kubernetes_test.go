@@ -7,10 +7,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 )
 
 func getBaseConfig(t *testing.T) Config {

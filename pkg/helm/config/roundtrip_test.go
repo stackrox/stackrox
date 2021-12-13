@@ -17,14 +17,13 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chartutil"
-
-	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 )
 
 var (

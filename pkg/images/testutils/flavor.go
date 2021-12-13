@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
+// TestFlavor is to be used in tests where flavor is passed as a parameter. This makes it easier to test and expect
+// values in the tests without having to inject values and rely on flavor determination in the production code.
 func TestFlavor(t *testing.T) images.Flavor {
 	testutils.MustBeInTest(t)
 	return images.Flavor{
@@ -24,13 +26,13 @@ func TestFlavor(t *testing.T) images.Flavor {
 		ScannerImageTag:        "2.2.2",
 		ScannerDBImageName:     "scanner-db-test",
 		ScannerDBImageTag:      "2.2.2",
-		ChartRepo:              images.ChartRepo{
+		ChartRepo: images.ChartRepo{
 			URL: "some.url/path/to/chart",
 		},
-		ImagePullSecrets:       images.ImagePullSecrets{
+		ImagePullSecrets: images.ImagePullSecrets{
 			AllowNone: false,
 		},
-		Versions:               version.Versions{
+		Versions: version.Versions{
 			BuildDate:        time.Now(),
 			CollectorVersion: "3.2.1",
 			MainVersion:      "1.2.3",
@@ -39,5 +41,3 @@ func TestFlavor(t *testing.T) images.Flavor {
 		},
 	}
 }
-
-
