@@ -237,7 +237,7 @@ check-service-protos:
 
 .PHONY: no-large-files
 no-large-files:
-	$(BASE_DIR)/tools/large-git-files.sh "$(BASE_DIR)/tools/allowed-large-files"
+	$(BASE_DIR)/tools/detect-large-files.sh "$(BASE_DIR)/tools/allowed-large-files"
 
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
