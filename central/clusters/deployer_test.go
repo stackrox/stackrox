@@ -15,11 +15,14 @@ import (
 )
 
 const (
-	imageRegistryKey         charts.MetaValuesKey = "ImageRegistry"
+	mainRegistryKey          charts.MetaValuesKey = "MainRegistry"
+	imageRemoteKey           charts.MetaValuesKey = "ImageRemote"
 	collectorRegistryKey     charts.MetaValuesKey = "CollectorRegistry"
 	collectorImageRemoteKey  charts.MetaValuesKey = "CollectorImageRemote"
 	collectorFullImageTagKey charts.MetaValuesKey = "CollectorFullImageTag"
 	collectorSlimImageTagKey charts.MetaValuesKey = "CollectorSlimImageTag"
+	versionsKey              charts.MetaValuesKey = "Versions"
+	chartRepoKey             charts.MetaValuesKey = "ChartRepo"
 )
 
 func getCollectorFull(fields charts.MetaValues) string {
@@ -121,10 +124,7 @@ func getBaseConfig() *storage.Cluster {
 
 func TestImagePaths(t *testing.T) {
 	testbuildinfo.SetForTest(t)
-	testutils.SetVersion(t, version.Versions{
-		CollectorVersion: "1.2.3",
-		MainVersion:      "3.2.1",
-	})
+	testutils.SetExampleVersion(t)
 	collectorVersion := version.GetCollectorVersion()
 	var cases = []struct {
 		name                      string
@@ -183,12 +183,35 @@ func TestImagePaths(t *testing.T) {
 
 			fields, err := FieldsFromClusterAndRenderOpts(config, RenderOptions{})
 			assert.NoError(t, err)
-			assert.Contains(t, fields, imageRegistryKey)
-			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistryKey])
-			assert.Contains(t, fields, collectorRegistryKey)
+
+			assert.Equal(t, c.expectedMainRegistry, fields[mainRegistryKey])
 			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistryKey])
 			assert.Equal(t, c.expectedCollectorFullRef, getCollectorFull(fields))
 			assert.Equal(t, c.expectedCollectorSlimRef, getCollectorSlim(fields))
 		})
 	}
+}
+
+func TestRequiredFieldsArePresent(t *testing.T) {
+	testbuildinfo.SetForTest(t)
+	testutils.SetExampleVersion(t)
+
+	fields, err := FieldsFromClusterAndRenderOpts(getBaseConfig(), RenderOptions{})
+	assert.NoError(t, err)
+
+	assert.NotEmpty(t, fields[mainRegistryKey])
+	assert.NotEmpty(t, fields[imageRemoteKey])
+	assert.NotEmpty(t, fields[collectorRegistryKey])
+	assert.NotEmpty(t, fields[collectorImageRemoteKey])
+	assert.NotEmpty(t, fields[collectorSlimImageTagKey])
+	assert.NotEmpty(t, fields[collectorFullImageTagKey])
+
+	versions := fields[versionsKey].(version.Versions)
+	assert.NotEmpty(t, versions.ChartVersion)
+	assert.NotEmpty(t, versions.MainVersion)
+	assert.NotEmpty(t, versions.CollectorVersion)
+	assert.NotEmpty(t, versions.ScannerVersion)
+
+	chartRepo := fields[chartRepoKey].(charts.ChartRepo)
+	assert.NotEmpty(t, chartRepo.URL)
 }

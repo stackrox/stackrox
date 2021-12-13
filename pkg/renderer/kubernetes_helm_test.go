@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/istioutils"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -58,8 +58,6 @@ func TestRenderSensorHelm(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			fields := charts.MetaValues{
-				"ImageRegistry": "stackrox.io",
-				// TODO: we should probably get rid of ImageRegistry eventually.
 				"MainRegistry": "stackrox.io",
 				"ImageRemote":  "main",
 				"ImageTag":     "3.0.41.x-92-g9e8a347ffe",
@@ -95,9 +93,9 @@ func TestRenderSensorHelm(t *testing.T) {
 				"EnvVars":      envVars,
 				"FeatureFlags": make(map[string]string),
 
-				"Versions": version.Versions{
-					ChartVersion: "1.0.0",
-				},
+				"Versions": testutils.GetExampleVersion(t),
+
+				"ChartRepo": charts.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
 
 				"KubectlOutput": true,
 			}

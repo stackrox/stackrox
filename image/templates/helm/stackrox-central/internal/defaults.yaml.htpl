@@ -6,7 +6,7 @@ defaults:
     useFromDefaultServiceAccount: true
 
   image:
-    registry: [< .MainRegistry >]
+    registry: [< required "" .MainRegistry >]
 
   env:
     offlineMode: false
@@ -19,7 +19,7 @@ defaults:
 
     image:
       name: main
-      tag: [< .Versions.MainVersion >]
+      tag: [< required "" .Versions.MainVersion >]
 
     resources:
       requests:
@@ -59,7 +59,7 @@ defaults:
 
     image:
       name: scanner
-      tag: [< .Versions.ScannerVersion >]
+      tag: [< required "" .Versions.ScannerVersion >]
 
     dbResources:
       limits:
@@ -71,7 +71,7 @@ defaults:
 
     dbImage:
       name: scanner-db
-      tag: [< .Versions.ScannerVersion >]
+      tag: [< required "" .Versions.ScannerVersion >]
 
   system:
     createSCCs: [< not .Operator >]

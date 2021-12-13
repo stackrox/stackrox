@@ -33,7 +33,9 @@ func DefaultMetaValues() MetaValues {
 	metaValues := MetaValues{
 		"Versions":              version.GetAllVersions(),
 		"MainRegistry":          defaults.MainImageRegistry(),
+		"ImageRemote":           "main",
 		"CollectorRegistry":     defaults.CollectorImageRegistry(),
+		"CollectorImageRemote":  "collector",
 		"CollectorFullImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
 		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
 		"RenderMode":            "",
@@ -58,7 +60,9 @@ func RHACSMetaValues() MetaValues {
 	metaValues := MetaValues{
 		"Versions":              version.GetAllVersions(),
 		"MainRegistry":          "registry.redhat.io/rh-acs",
+		"ImageRemote":           "main",
 		"CollectorRegistry":     "registry.redhat.io/rh-acs",
+		"CollectorImageRemote":  "collector",
 		"CollectorFullImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
 		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
 		"RenderMode":            "",
