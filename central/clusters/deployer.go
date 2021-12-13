@@ -79,9 +79,9 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 		"ClusterName": c.Name,
 		"ClusterType": c.Type.String(),
 
-		"ImageRegistry": urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"ImageRemote":   mainImageName.GetRemote(),
-		"ImageTag":      mainImageName.GetTag(),
+		"MainRegistry": urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
+		"ImageRemote":  mainImageName.GetRemote(),
+		"ImageTag":     mainImageName.GetTag(),
 
 		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
@@ -91,6 +91,12 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 		"CollectorFullImageTag": fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
 		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
 		"CollectionMethod":      c.CollectionMethod.String(),
+
+		// Hardcoding RHACS charts repo for now.
+		// TODO: fill ChartRepo based on the current image flavor.
+		"ChartRepo": charts.ChartRepo{
+			URL: "http://mirror.openshift.com/pub/rhacs/charts",
+		},
 
 		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
 		"CreateUpgraderSA":   opts.CreateUpgraderSA,
@@ -118,7 +124,5 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 		"AdmissionControllerEnabled":       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		"AdmissionControlEnforceOnUpdates": c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 	}
-	// `MainRegistry` is a newer field name.
-	fields["MainRegistry"] = fields["ImageRegistry"]
 	return fields, nil
 }

@@ -2,12 +2,12 @@
 # Services.
 
 image:
-  registry: [< required "Main registry must be explicitly specified" .MainRegistry >]
+  registry: [< required "" .MainRegistry >]
   main:
-    name: [< default "main" .ImageRemote >]
+    name: [< required "" .ImageRemote >]
     pullPolicy: IfNotPresent
   collector:
-    name: [< default "collector" .CollectorImageRemote >]
+    name: [< required "" .CollectorImageRemote >]
 ---
 image:
   main:
@@ -22,7 +22,7 @@ image:
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
 ---
 collector:
-  slimMode: {{ eq ._rox.image.collector.registry "[< .CollectorRegistry >]" }}
+  slimMode: {{ eq ._rox.image.collector.registry "[< required "" .CollectorRegistry >]" }}
 ---
 image:
   collector:
@@ -53,10 +53,10 @@ image:
 image:
   collector:
     {{- if ._rox.collector.slimMode }}
-    tag: "[< .CollectorSlimImageTag >]"
+    tag: "[< required "" .CollectorSlimImageTag >]"
     pullPolicy: IfNotPresent
     {{- else }}
-    tag: "[< .CollectorFullImageTag >]"
+    tag: "[< required "" .CollectorFullImageTag >]"
     pullPolicy: Always
     {{- end }}
 ---

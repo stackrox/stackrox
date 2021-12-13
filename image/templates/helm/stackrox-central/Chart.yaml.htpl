@@ -3,5 +3,5 @@ name: stackrox-central-services
 icon: https://www.stackrox.com/img/logo.svg
 description: Helm Chart for StackRox Central Clusters
 type: application
-version: [< .Versions.ChartVersion >]
-appVersion: [< .Versions.MainVersion >]
+version: [< required "" .Versions.ChartVersion >]
+appVersion: [< required "" .Versions.MainVersion >]
