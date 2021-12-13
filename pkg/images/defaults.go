@@ -21,8 +21,8 @@ func (flavor *Flavor) MainImage() string {
 	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.MainImageName, flavor.MainImageTag)
 }
 
-// MainImageRepo is the Docker image repo for the "main" image. It
+// MainImageUntagged is the Docker image repo for the "main" image. It
 // changes depending on whether this is a release build.
-func (flavor *Flavor) MainImageRepo() string {
+func (flavor *Flavor) MainImageUntagged() string {
 	return fmt.Sprintf("%s/%s", flavor.MainRegistry, flavor.MainImageName)
 }
