@@ -181,12 +181,6 @@ func (s *deployerTestSuite) TestImagePaths() {
 			expectedCollectorFullRef: "quay.io/rhacs/collector:99.9.9-latest",
 			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
 		},
-		"custom main image / custom collector image": {
-			cluster:                  makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
-			expectedMain:             "quay.io/rhacs/main:3.0.99.0",
-			expectedCollectorFullRef: "quay.io/rhacs/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
-		},
 		"default main image with custom tag / no collector": {
 			cluster:                  makeTestCluster("stackrox.io/main:custom", ""),
 			expectedMain:             "stackrox.io/main:custom",
