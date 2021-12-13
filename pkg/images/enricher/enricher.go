@@ -92,12 +92,12 @@ type cveSuppressor interface {
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cves cveSuppressor, cvesV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache,
+func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache,
 	scanCache expiringcache.Cache, healthReporter integrationhealth.Reporter) ImageEnricher {
 	enricher := &enricherImpl{
-		cves:         cves,
-		cvesV2:       cvesV2,
-		integrations: is,
+		cvesSuppressor:   cvesSuppressor,
+		cvesSuppressorV2: cvesSuppressorV2,
+		integrations:     is,
 
 		// number of consecutive errors per registry or scanner to ascertain health of the integration
 		errorsPerRegistry:         make(map[registryTypes.ImageRegistry]int32, len(is.RegistrySet().GetAll())),

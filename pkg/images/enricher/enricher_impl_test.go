@@ -317,8 +317,8 @@ func TestEnricherFlow(t *testing.T) {
 			mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
 			enricherImpl := &enricherImpl{
-				cves:                      &fakeCVESuppressor{},
-				cvesV2:                    &fakeCVESuppressorV2{},
+				cvesSuppressor:            &fakeCVESuppressor{},
+				cvesSuppressorV2:          &fakeCVESuppressorV2{},
 				integrations:              set,
 				errorsPerScanner:          map[scannertypes.ImageScanner]int32{fsr: 0},
 				errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},
@@ -367,8 +367,8 @@ func TestCVESuppression(t *testing.T) {
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
 	enricherImpl := &enricherImpl{
-		cves:                      &fakeCVESuppressor{},
-		cvesV2:                    &fakeCVESuppressorV2{},
+		cvesSuppressor:            &fakeCVESuppressor{},
+		cvesSuppressorV2:          &fakeCVESuppressorV2{},
 		integrations:              set,
 		errorsPerScanner:          map[scannertypes.ImageScanner]int32{fsr: 0},
 		errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},

@@ -27,9 +27,9 @@ const (
 )
 
 type enricherImpl struct {
-	cves         cveSuppressor
-	cvesV2       cveSuppressor
-	integrations integration.Set
+	cvesSuppressor   cveSuppressor
+	cvesSuppressorV2 cveSuppressor
+	integrations     integration.Set
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
 	registryErrorsLock sync.RWMutex
@@ -77,9 +77,9 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 		image.Notes = append(image.Notes, note)
 	}
 
-	e.cves.EnrichImageWithSuppressedCVEs(image)
+	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	if features.VulnRiskManagement.Enabled() {
-		e.cvesV2.EnrichImageWithSuppressedCVEs(image)
+		e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 	}
 
 	return EnrichmentResult{
