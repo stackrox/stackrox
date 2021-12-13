@@ -16,10 +16,13 @@ import (
 
 const (
 	mainRegistryKey          charts.MetaValuesKey = "MainRegistry"
+	imageRemoteKey           charts.MetaValuesKey = "ImageRemote"
 	collectorRegistryKey     charts.MetaValuesKey = "CollectorRegistry"
 	collectorImageRemoteKey  charts.MetaValuesKey = "CollectorImageRemote"
 	collectorFullImageTagKey charts.MetaValuesKey = "CollectorFullImageTag"
 	collectorSlimImageTagKey charts.MetaValuesKey = "CollectorSlimImageTag"
+	versionsKey              charts.MetaValuesKey = "Versions"
+	chartRepoKey             charts.MetaValuesKey = "ChartRepo"
 )
 
 func getCollectorFull(fields charts.MetaValues) string {
@@ -197,18 +200,18 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotEmpty(t, fields[mainRegistryKey])
-	assert.NotEmpty(t, fields["ImageRemote"])
+	assert.NotEmpty(t, fields[imageRemoteKey])
 	assert.NotEmpty(t, fields[collectorRegistryKey])
 	assert.NotEmpty(t, fields[collectorImageRemoteKey])
 	assert.NotEmpty(t, fields[collectorSlimImageTagKey])
 	assert.NotEmpty(t, fields[collectorFullImageTagKey])
 
-	versions := fields["Versions"].(version.Versions)
+	versions := fields[versionsKey].(version.Versions)
 	assert.NotEmpty(t, versions.ChartVersion)
 	assert.NotEmpty(t, versions.MainVersion)
 	assert.NotEmpty(t, versions.CollectorVersion)
 	assert.NotEmpty(t, versions.ScannerVersion)
 
-	chartRepo := fields["ChartRepo"].(charts.ChartRepo)
+	chartRepo := fields[chartRepoKey].(charts.ChartRepo)
 	assert.NotEmpty(t, chartRepo.URL)
 }
