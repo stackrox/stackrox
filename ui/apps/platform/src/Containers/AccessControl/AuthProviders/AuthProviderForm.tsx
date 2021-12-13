@@ -275,7 +275,7 @@ function AuthProviderForm({
                                                 <Button
                                                     variant="secondary"
                                                     onClick={handleTest}
-                                                    isDisabled={action === 'update'}
+                                                    isDisabled={action === 'edit'}
                                                     isSmall
                                                 >
                                                     Test login
@@ -286,7 +286,7 @@ function AuthProviderForm({
                                         <Button
                                             variant="primary"
                                             onClick={onClickEdit}
-                                            isDisabled={action === 'update'}
+                                            isDisabled={action === 'edit'}
                                             isSmall
                                         >
                                             {selectedAuthProvider.active

@@ -6,7 +6,7 @@ const getLabelColor = (key) => {
     let color = '';
     switch (key) {
         case 'create':
-        case 'update':
+        case 'edit':
             color = 'success';
             break;
         case 'delete':

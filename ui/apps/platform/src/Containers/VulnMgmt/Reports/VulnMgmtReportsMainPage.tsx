@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { ReactElement } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 
-import {
-    AccessControlQueryAction,
-    getQueryObject,
-} from 'Containers/AccessControl/accessControlPaths';
+import { getQueryObject, ExtendedPageAction } from 'utils/queryStringUtils';
 import VulnMgmtCreateReportPage from './VulnMgmtCreateReportPage';
 import VulnMgmtReportTablePage from './VulnMgmtReportTablePage';
 
+export type VulnMgmtReportQueryObject = {
+    action: ExtendedPageAction;
+};
+
 function VulnMgmtReportsMainPage(): ReactElement {
     const { search } = useLocation();
-    const queryObject = getQueryObject(search);
+    const queryObject = getQueryObject<VulnMgmtReportQueryObject>(search);
     const { action } = queryObject;
 
     if (action === 'create') {

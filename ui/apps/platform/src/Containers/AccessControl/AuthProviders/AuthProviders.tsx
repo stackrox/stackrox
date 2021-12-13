@@ -103,7 +103,7 @@ function AuthProviders(): ReactElement {
     }
 
     function onClickEdit() {
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: 'update' }));
+        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: 'edit' }));
     }
 
     function onClickCancel() {

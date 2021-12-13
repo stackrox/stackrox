@@ -1,115 +1,70 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { ReactElement, useEffect, useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { Alert, Bullseye, PageSection, Spinner } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
-import { fetchClustersAsArray } from 'services/ClustersService';
-import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
-import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
-import { Cluster } from 'types/cluster.proto';
-import { NotifierIntegration } from 'types/notifier.proto';
-import { Policy } from 'types/policy.proto';
+import { fetchReportById } from 'services/ReportsService';
+import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getQueryObject, ExtendedPageAction } from 'utils/queryStringUtils';
+import { VulnMgmtReportQueryObject } from './VulnMgmtReportsMainPage';
+import VulnMgmtReportDetail from './Detail/VulnMgmtReportDetail';
 
-import { PageAction } from './policies.utils';
-import PolicyDetail from './Detail/PolicyDetail';
-import PolicyWizard from './Wizard/PolicyWizard';
-
-function clonePolicy(policy: Policy) {
-    /*
-     * Default policies will have the "criteriaLocked" and "mitreVectorsLocked" fields set to true.
-     * When we clone these policies, we'll need to set them to false to allow users to edit
-     * both the policy criteria and mitre attack vectors
-     */
-    return {
-        ...policy,
-        criteriaLocked: false,
-        id: '',
-        isDefault: false,
-        mitreVectorsLocked: false,
-        name: `${policy.name} (COPY)`,
-    };
-}
-
-const initialPolicy: Policy = {
+const emptyReportValues: ReportConfiguration = {
     id: '',
     name: '',
     description: '',
-    severity: 'LOW_SEVERITY',
-    disabled: false,
-    lifecycleStages: [],
-    notifiers: [],
-    lastUpdated: null,
-    eventSource: 'NOT_APPLICABLE',
-    isDefault: false,
-    rationale: '',
-    remediation: '',
-    categories: [],
-    fields: null,
-    exclusions: [],
-    scope: [],
-    enforcementActions: [],
-    SORT_name: '', // For internal use only.
-    SORT_lifecycleStage: '', // For internal use only.
-    SORT_enforcement: false, // For internal use only.
-    policyVersion: '',
-    policySections: [],
-    mitreAttackVectors: [],
-    criteriaLocked: false,
-    mitreVectorsLocked: false,
+    type: 'VULNERABILITY',
+    vulnReportFilters: {
+        fixability: 'BOTH',
+        sinceLastReport: false,
+        severities: [],
+    },
+    scopeId: '',
+    notifierConfig: {
+        emailConfig: {
+            notifierId: '',
+            mailingLists: [],
+        },
+    },
+    schedule: {
+        intervalType: 'WEEKLY',
+        hour: 0,
+        minute: 0,
+        interval: {
+            days: [],
+        },
+    },
 };
 
-type PolicyPageProps = {
-    hasWriteAccessForPolicy: boolean;
-    pageAction?: PageAction;
-    policyId?: string;
+type VulnMgmtReportPageProps = {
+    pageAction?: ExtendedPageAction;
+    reportId?: string;
 };
 
-function PolicyPage({
-    hasWriteAccessForPolicy,
-    pageAction,
-    policyId,
-}: PolicyPageProps): ReactElement {
-    const [clusters, setClusters] = useState<Cluster[]>([]);
-
-    const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
-
-    const [policy, setPolicy] = useState<Policy>(initialPolicy);
-    const [policyError, setPolicyError] = useState<ReactElement | null>(null);
+function VulnMgmtReportPage(): ReactElement {
+    const [report, setReport] = useState<ReportConfiguration>(emptyReportValues);
+    const [reportError, setReportError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        fetchClustersAsArray()
-            .then((data) => {
-                setClusters(data as Cluster[]);
-            })
-            .catch(() => {
-                // TODO
-            });
-    }, []);
+    const { search } = useLocation();
+    const queryObject = getQueryObject<VulnMgmtReportQueryObject>(search);
+    const { action } = queryObject;
+    const { reportId } = useParams();
 
     useEffect(() => {
-        fetchNotifierIntegrations()
-            .then((data) => {
-                setNotifiers(data as NotifierIntegration[]);
-            })
-            .catch(() => {
-                // TODO
-            });
-    }, []);
-
-    useEffect(() => {
-        setPolicyError(null);
-        if (policyId) {
-            // action is 'clone' or 'edit' or undefined
+        setReportError(null);
+        if (reportId) {
             setIsLoading(true);
-            getPolicy(policyId)
+            fetchReportById(reportId)
                 .then((data) => {
-                    setPolicy(pageAction === 'clone' ? clonePolicy(data) : data);
+                    setReport(data);
                 })
                 .catch((error) => {
-                    setPolicy(initialPolicy);
-                    setPolicyError(
-                        <Alert title="Request failure for policy" variant="danger" isInline>
+                    setReport(emptyReportValues);
+                    setReportError(
+                        <Alert title="Request failure for report" variant="danger" isInline>
                             {getAxiosErrorMessage(error)}
                         </Alert>
                     );
@@ -117,47 +72,21 @@ function PolicyPage({
                 .finally(() => {
                     setIsLoading(false);
                 });
-        } else {
-            // action is 'create'
-            setPolicy(initialPolicy);
         }
-    }, [pageAction, policyId]);
-
-    function handleUpdateDisabledState(id: string, disabled: boolean) {
-        return updatePolicyDisabledState(id, disabled).then(() => {
-            /*
-             * If success, render PolicyDetail element with updated policy.
-             * If failure, PolicyDetail element has catch block to display error.
-             */
-            return getPolicy(id).then((data) => {
-                setPolicy(data);
-            });
-        });
-    }
+    }, [action, reportId]);
 
     return (
-        <PageSection variant="light" isFilled id="policy-page">
-            <PageTitle title="Policies - Policy" />
+        <PageSection variant="light" isFilled id="report-page">
+            <PageTitle title={`Reports - ${report?.name}`} />
             {isLoading ? (
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
             ) : (
-                policyError || // TODO ROX-8487: Improve PolicyPage when request fails
-                (pageAction ? (
-                    <PolicyWizard pageAction={pageAction} policy={policy} />
-                ) : (
-                    <PolicyDetail
-                        clusters={clusters}
-                        handleUpdateDisabledState={handleUpdateDisabledState}
-                        hasWriteAccessForPolicy={hasWriteAccessForPolicy}
-                        notifiers={notifiers}
-                        policy={policy}
-                    />
-                ))
+                <VulnMgmtReportDetail report={report} />
             )}
         </PageSection>
     );
 }
 
-export default PolicyPage;
+export default VulnMgmtReportPage;

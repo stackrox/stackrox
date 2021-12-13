@@ -120,7 +120,7 @@ function RoleForm({
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'update'}
+                                        isDisabled={action === 'edit'}
                                         isSmall
                                     >
                                         Edit role
@@ -148,7 +148,7 @@ function RoleForm({
                     value={values.name}
                     validated={nameValidatedState}
                     onChange={onChange}
-                    isDisabled={isViewing || action === 'update'}
+                    isDisabled={isViewing || action === 'edit'}
                     isRequired
                     className="pf-m-limit-width"
                 />

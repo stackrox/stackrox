@@ -64,6 +64,15 @@ export function fetchReports(): Promise<ReportConfigurationMappedValues[]> {
         });
 }
 
+export function fetchReportById(reportId: string): Promise<ReportConfiguration> {
+    return axios
+        .get<{ reportConfig: ReportConfiguration }>(`${reportConfigurationsUrl}/${reportId}`)
+        .then((response) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+            return response?.data?.reportConfig;
+        });
+}
+
 export function saveReport(
     report: ReportConfigurationMappedValues
 ): Promise<ReportConfigurationMappedValues> {

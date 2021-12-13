@@ -182,7 +182,7 @@ function Roles(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityName, { action: 'update' }));
+        history.push(getEntityPath(entityType, entityName, { action: 'edit' }));
     }
 
     function handleCancel() {
