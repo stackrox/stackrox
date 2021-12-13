@@ -81,12 +81,12 @@ func (s *deployerTestSuite) TestGenerateCollectorImage() {
 	}
 
 	for _, c := range cases {
-		s.T().Run(c.mainImage, func(t *testing.T) {
+		s.Run(c.mainImage, func() {
 			inputImg, err := utils.GenerateImageFromString(c.mainImage)
-			assert.NoError(t, err)
+			s.NoError(err)
 			outputImg, err := utils.GenerateImageFromString(c.expectedImage)
-			assert.NoError(t, err, "You wrote a bad test and your expected image string didn't parse")
-			assert.Equal(t, outputImg.GetName(), defaultimages.GenerateNamedImageFromMainImage(inputImg.GetName(), c.collectorTag, defaultimages.Collector))
+			s.NoError(err, "You wrote a bad test and your expected image string didn't parse")
+			s.Equal(outputImg.GetName(), defaultimages.GenerateNamedImageFromMainImage(inputImg.GetName(), c.collectorTag, defaultimages.Collector))
 		})
 	}
 }
@@ -115,12 +115,12 @@ func (s *deployerTestSuite) TestGenerateCollectorImageFromString() {
 	}
 
 	for _, c := range cases {
-		s.T().Run(c.collectorImage, func(t *testing.T) {
+		s.Run(c.collectorImage, func() {
 			outputImg, err := utils.GenerateImageFromString(c.expectedImage)
-			assert.NoError(t, err, "You wrote a bad test and your expected image string didn't parse")
+			s.NoError(err, "You wrote a bad test and your expected image string didn't parse")
 			collectorName, err := generateCollectorImageNameFromString(c.collectorImage, c.collectorTag)
-			assert.NoError(t, err)
-			assert.Equal(t, outputImg.GetName(), collectorName)
+			s.NoError(err)
+			s.Equal(outputImg.GetName(), collectorName)
 		})
 	}
 }
@@ -210,17 +210,17 @@ func (s *deployerTestSuite) TestImagePaths() {
 	}
 
 	for name, c := range cases {
-		s.T().Run(name, func(t *testing.T) {
+		s.Run(name, func() {
 			fields, err := FieldsFromClusterAndRenderOpts(c.cluster, RenderOptions{})
 			if c.error {
-				assert.Error(t, err)
+				s.Error(err)
 			} else {
-				assert.NoError(t, err)
-				assert.Contains(t, fields, mainRegistryKey)
-				assert.Contains(t, fields, collectorRegistryKey)
-				assert.Equal(t, c.expectedMain, getMain(fields))
-				assert.Equal(t, c.expectedCollectorFullRef, getCollectorFull(fields))
-				assert.Equal(t, c.expectedCollectorSlimRef, getCollectorSlim(fields))
+				s.NoError(err)
+				s.Contains(fields, mainRegistryKey)
+				s.Contains(fields, collectorRegistryKey)
+				s.Equal(c.expectedMain, getMain(fields))
+				s.Equal(c.expectedCollectorFullRef, getCollectorFull(fields))
+				s.Equal(c.expectedCollectorSlimRef, getCollectorSlim(fields))
 			}
 		})
 	}
