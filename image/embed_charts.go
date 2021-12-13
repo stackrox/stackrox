@@ -312,7 +312,9 @@ func (i *Image) scripts(values charts.MetaValues, filenameMap map[string]string)
 		if err != nil {
 			return nil, err
 		}
-		t, err := template.New("temp").Funcs(rendererUtils.BuiltinFuncs).Parse(string(fileData))
+		// TODO(RS-385): unify the way how scripts are instantiated with the way how .htpl files are instantiated,
+		// and get rid of `jsonquote` function that does not seem to be used anywhere anymore.
+		t, err := template.New(srcFile).Funcs(rendererUtils.BuiltinFuncs).Funcs(helmTemplate.ExtraFuncMap).Parse(string(fileData))
 		if err != nil {
 			return nil, err
 		}

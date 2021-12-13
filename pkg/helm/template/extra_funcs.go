@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	extraFuncMap = template.FuncMap{
+	ExtraFuncMap = template.FuncMap{
 		"required": required,
 	}
 )
