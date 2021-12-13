@@ -3743,6 +3743,7 @@ jobs:
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
+      - store-k8s-logs
       - *storeQALogs
       - teardown-gke
 
