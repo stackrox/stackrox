@@ -146,7 +146,7 @@ func (s *deployerTestSuite) TestImagePaths() {
 
 	var cases = map[string]struct {
 		cluster                  *storage.Cluster
-		error                    bool
+		expectedError            bool
 		expectedMain             string
 		expectedCollectorFullRef string
 		expectedCollectorSlimRef string
@@ -199,20 +199,20 @@ func (s *deployerTestSuite) TestImagePaths() {
 			expectedCollectorFullRef: "collector.stackrox.io/collector:99.9.9-latest",
 			expectedCollectorSlimRef: "collector.stackrox.io/collector:99.9.9-slim",
 		},
-		"error: invalid main image": {
-			cluster: makeTestCluster("this is not an image #@!", ""),
-			error:   true,
+		"expectedError: invalid main image": {
+			cluster:       makeTestCluster("this is not an image #@!", ""),
+			expectedError: true,
 		},
-		"error: invalid collector image": {
-			cluster: makeTestCluster("stackrox.io/main", "this is not an image #@!"),
-			error:   true,
+		"expectedError: invalid collector image": {
+			cluster:       makeTestCluster("stackrox.io/main", "this is not an image #@!"),
+			expectedError: true,
 		},
 	}
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			fields, err := FieldsFromClusterAndRenderOpts(c.cluster, RenderOptions{})
-			if c.error {
+			if c.expectedError {
 				s.Error(err)
 			} else {
 				s.NoError(err)
