@@ -158,7 +158,7 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 }
 
 // Vulns resolves the vulnerabilities contained in the image component.
-func (eicr *imageComponentResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+func (eicr *imageComponentResolver) Vulns(_ context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -169,7 +169,7 @@ func (eicr *imageComponentResolver) Vulns(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	ctx, err = eicr.root.AddDistroContext(ctx, query, scopeQuery)
+	ctx, err := eicr.root.AddDistroContext(eicr.ctx, query, scopeQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (eicr *imageComponentResolver) Vulns(ctx context.Context, args PaginatedQue
 }
 
 // VulnCount resolves the number of vulnerabilities contained in the image component.
-func (eicr *imageComponentResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
+func (eicr *imageComponentResolver) VulnCount(_ context.Context, args RawQuery) (int32, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
@@ -196,7 +196,7 @@ func (eicr *imageComponentResolver) VulnCount(ctx context.Context, args RawQuery
 	if err != nil {
 		return 0, err
 	}
-	ctx, err = eicr.root.AddDistroContext(ctx, query, scopeQuery)
+	ctx, err := eicr.root.AddDistroContext(eicr.ctx, query, scopeQuery)
 	if err != nil {
 		return 0, err
 	}
