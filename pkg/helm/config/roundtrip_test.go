@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/version"
@@ -182,7 +181,7 @@ func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 	cluster.Name = clusterName
 
 	// Derive a new Helm config from the `Cluster` proto.
-	derivedHelmCfg, err := FromCluster(cluster, images.DevelopmentBuildImageFlavor())
+	derivedHelmCfg, err := FromCluster(cluster, flavorUtils.TestFlavor(h.T()))
 	h.Require().NoError(err, "deriving Helm config for cluster")
 
 	diff := maputil.DiffGenericMap(helmCfg, derivedHelmCfg)
