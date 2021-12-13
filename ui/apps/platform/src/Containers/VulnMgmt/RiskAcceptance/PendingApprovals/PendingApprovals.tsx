@@ -27,6 +27,7 @@ function PendingApprovals(): ReactElement {
                 },
             },
         },
+        fetchPolicy: 'network-only',
     });
 
     async function updateTable() {

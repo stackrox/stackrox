@@ -17,9 +17,10 @@ import useRiskAcceptance from '../useRiskAcceptance';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import UpdateDeferralModal from './UpdateDeferralModal';
-import DeferralExpiration from './DeferralExpiration';
 import ApprovedDeferralActionsColumn from './ApprovedDeferralActionsColumn';
-import VulnRequestType from '../VulnRequestType';
+import ImpactedEntities from '../ImpactedEntities';
+import VulnRequestedAction from '../VulnRequestedAction';
+import DeferralExpirationDate from '../DeferralExpirationDate';
 
 export type ApprovedDeferralsTableProps = {
     rows: VulnerabilityRequest[];
@@ -106,10 +107,10 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                             }}
                         />
                         <Th>Requested Entity</Th>
-                        <Th>Type</Th>
+                        <Th>Requested Action</Th>
+                        <Th>Expires</Th>
                         <Th>Scope</Th>
                         <Th>Impacted Entities</Th>
-                        <Th>Expiration</Th>
                         <Th>Apply to</Th>
                         <Th>Comments</Th>
                         <Th>Requestor</Th>
@@ -127,18 +128,29 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                     }}
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
-                                <Td dataLabel="Type">
-                                    <VulnRequestType
+                                <Td dataLabel="Requested Action">
+                                    <VulnRequestedAction
                                         targetState={row.targetState}
                                         requestStatus={row.status}
+                                        deferralReq={row.deferralReq}
+                                        currentDate={new Date()}
+                                    />
+                                </Td>
+                                <Td dataLabel="Expires">
+                                    <DeferralExpirationDate
+                                        targetState={row.targetState}
+                                        requestStatus={row.status}
+                                        deferralReq={row.deferralReq}
                                     />
                                 </Td>
                                 <Td dataLabel="Scope">
                                     {row.scope.imageScope ? 'image' : 'global'}
                                 </Td>
-                                <Td dataLabel="Impacted entities">-</Td>
-                                <Td dataLabel="Expiration">
-                                    <DeferralExpiration deferralReq={row.deferralReq} />
+                                <Td dataLabel="Impacted entities">
+                                    <ImpactedEntities
+                                        deploymentCount={row.deploymentCount}
+                                        imageCount={row.imageCount}
+                                    />
                                 </Td>
                                 <Td dataLabel="Apply to">
                                     <VulnerabilityRequestScope scope={row.scope} />

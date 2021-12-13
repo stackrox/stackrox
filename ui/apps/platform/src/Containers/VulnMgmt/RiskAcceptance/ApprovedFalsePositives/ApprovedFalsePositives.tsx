@@ -27,6 +27,7 @@ function ApprovedFalsePositives(): ReactElement {
                 },
             },
         },
+        fetchPolicy: 'network-only',
     });
 
     async function updateTable() {

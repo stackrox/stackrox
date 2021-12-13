@@ -11,6 +11,7 @@ import {
 } from '@patternfly/react-core';
 
 import { RequestComment } from 'types/vuln_request.proto';
+import { getDateTime } from 'utils/dateUtils';
 
 export type RequestCommentsModalProps = {
     isOpen: boolean;
@@ -38,7 +39,7 @@ function RequestCommentsModal({
                                 </HintTitle>
                                 <HintBody className="pf-u-font-size-sm">{comment.message}</HintBody>
                                 <HintFooter className="pf-u-font-size-xs">
-                                    {comment.createdAt}
+                                    {getDateTime(comment.createdAt)}
                                 </HintFooter>
                             </Hint>
                         </FlexItem>

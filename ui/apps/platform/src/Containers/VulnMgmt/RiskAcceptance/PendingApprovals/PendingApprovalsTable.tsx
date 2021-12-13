@@ -12,7 +12,7 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
-import RequestedAction from './RequestedAction';
+import VulnRequestedAction from '../VulnRequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
 import ApproveDeferralModal from './ApproveDeferralModal';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -23,7 +23,8 @@ import ApproveFalsePositiveModal from './ApproveFalsePositiveModal';
 import DenyDeferralModal from './DenyDeferralModal';
 import DenyFalsePositiveModal from './DenyFalsePositiveModal';
 import CancelVulnRequestModal from './CancelVulnRequestModal';
-import VulnRequestType from '../VulnRequestType';
+import DeferralExpirationDate from '../DeferralExpirationDate';
+import ImpactedEntities from '../ImpactedEntities';
 
 export type PendingApprovalsTableProps = {
     rows: VulnerabilityRequest[];
@@ -170,10 +171,10 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                             }}
                         />
                         <Th>Requested Entity</Th>
-                        <Th>Type</Th>
+                        <Th>Requested Action</Th>
+                        <Th>Expires</Th>
                         <Th>Scope</Th>
                         <Th>Impacted Entities</Th>
-                        <Th>Requested Action</Th>
                         <Th>Apply to</Th>
                         <Th>Comments</Th>
                         <Th>Requestor</Th>
@@ -191,22 +192,30 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                                     }}
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
-                                <Td dataLabel="Type">
-                                    <VulnRequestType
+                                <Td dataLabel="Requested Action">
+                                    <VulnRequestedAction
                                         targetState={row.targetState}
                                         requestStatus={row.status}
+                                        deferralReq={row.deferralReq}
+                                        updatedDeferralReq={row.updatedDeferralReq}
+                                        currentDate={new Date()}
+                                    />
+                                </Td>
+                                <Td dataLabel="Expires">
+                                    <DeferralExpirationDate
+                                        targetState={row.targetState}
+                                        requestStatus={row.status}
+                                        deferralReq={row.deferralReq}
+                                        updatedDeferralReq={row.updatedDeferralReq}
                                     />
                                 </Td>
                                 <Td dataLabel="Scope">
                                     {row.scope.imageScope ? 'image' : 'global'}
                                 </Td>
-                                <Td dataLabel="Impacted entities">-</Td>
-                                <Td dataLabel="Requested Action">
-                                    <RequestedAction
-                                        targetState={row.targetState}
-                                        requestStatus={row.status}
-                                        deferralReq={row.deferralReq}
-                                        updatedDeferralReq={row.updatedDeferralReq}
+                                <Td dataLabel="Impacted entities">
+                                    <ImpactedEntities
+                                        deploymentCount={row.deploymentCount}
+                                        imageCount={row.imageCount}
                                     />
                                 </Td>
                                 <Td dataLabel="Apply to">
@@ -244,9 +253,7 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                     requestsToBeAssessed?.type === 'DEFERRAL' &&
                     requestsToBeAssessed.action === 'APPROVE'
                 }
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
-                numImpactedDeployments={0} // Add this when the data is available from backend
-                numImpactedImages={0} // Add this when the data is available from backend
+                vulnerabilityRequests={requestsToBeAssessed?.requests || []}
                 onSendRequest={approveVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}
@@ -256,9 +263,7 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                     requestsToBeAssessed?.type === 'FALSE_POSITIVE' &&
                     requestsToBeAssessed.action === 'APPROVE'
                 }
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
-                numImpactedDeployments={0} // Add this when the data is available from backend
-                numImpactedImages={0} // Add this when the data is available from backend
+                vulnerabilityRequests={requestsToBeAssessed?.requests || []}
                 onSendRequest={approveVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}

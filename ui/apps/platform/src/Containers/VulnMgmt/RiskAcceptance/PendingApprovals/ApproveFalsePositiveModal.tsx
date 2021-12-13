@@ -6,6 +6,8 @@ import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMess
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { useFormik } from 'formik';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
+import pluralize from 'pluralize';
+import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 
 export type ApproveFalsePositiveFormValues = {
     comment: string;
@@ -13,9 +15,7 @@ export type ApproveFalsePositiveFormValues = {
 
 export type ApproveFalsePositiveModalProps = {
     isOpen: boolean;
-    numRequestsToBeAssessed: number;
-    numImpactedDeployments: number;
-    numImpactedImages: number;
+    vulnerabilityRequests: VulnerabilityRequest[];
     onSendRequest: (values: ApproveFalsePositiveFormValues) => Promise<FormResponseMessage>;
     onCompleteRequest: () => void;
     onCancel: () => void;
@@ -27,9 +27,7 @@ const validationSchema = yup.object().shape({
 
 function ApproveFalsePositiveModal({
     isOpen,
-    numRequestsToBeAssessed,
-    numImpactedDeployments,
-    numImpactedImages,
+    vulnerabilityRequests,
     onSendRequest,
     onCompleteRequest,
     onCancel,
@@ -72,6 +70,14 @@ function ApproveFalsePositiveModal({
         onCancel();
     }
 
+    const numRequestsToBeAssessed = vulnerabilityRequests.length;
+    const numImpactedDeployments = vulnerabilityRequests.reduce((acc, curr) => {
+        return acc + curr.deploymentCount;
+    }, 0);
+    const numImpactedImages = vulnerabilityRequests.reduce((acc, curr) => {
+        return acc + curr.imageCount;
+    }, 0);
+
     const title = `Approve false positives (${numRequestsToBeAssessed})`;
 
     return (
@@ -107,8 +113,9 @@ function ApproveFalsePositiveModal({
                 image using it.
             </div>
             <div className="pf-u-pb-md pf-u-danger-color-200">
-                This active will impact {numImpactedDeployments} deployments and {numImpactedImages}{' '}
-                images
+                This active will impact {numImpactedDeployments}{' '}
+                {pluralize('deployment', numImpactedDeployments)} and {numImpactedImages}{' '}
+                {pluralize('image', numImpactedImages)}
             </div>
             <Form>
                 <FormLabelGroup
