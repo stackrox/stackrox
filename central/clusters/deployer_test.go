@@ -222,8 +222,6 @@ func (s *deployerTestSuite) TestImagePaths() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Contains(fields, mainRegistryKey)
-				s.Contains(fields, collectorRegistryKey)
 				s.Equal(c.expectedMain, getMain(fields))
 				s.Equal(c.expectedCollectorFullRef, getCollectorFull(fields))
 				s.Equal(c.expectedCollectorSlimRef, getCollectorSlim(fields))
