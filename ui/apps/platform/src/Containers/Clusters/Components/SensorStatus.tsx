@@ -30,7 +30,9 @@ function SensorStatus({ healthStatus, isList = false }: SensorStatusProps): Reac
     const currentDatetime = new Date();
 
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
-    const delayedText = `for ${getDistanceStrict(lastContact, currentDatetime)}`;
+    const delayedText = `for ${getDistanceStrict(lastContact, currentDatetime, {
+        partialMethod: 'floor',
+    })}`;
     const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
     const sensorStatus = (
         <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
