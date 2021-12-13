@@ -4,12 +4,11 @@ import store from 'store';
 import axios from 'services/instance';
 import queryString from 'qs';
 
-import { Role } from 'services/RolesService';
+import {Role} from 'services/RolesService';
 
 import AccessTokenManager from './AccessTokenManager';
-import addTokenRefreshInterceptors, {
-    doNotStallRequestConfig,
-} from './addTokenRefreshInterceptors';
+import addTokenRefreshInterceptors, {doNotStallRequestConfig,} from './addTokenRefreshInterceptors';
+import {authProviderLabels} from "../../constants/accessControl";
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
@@ -100,7 +99,10 @@ export function fetchLoginAuthProviders(): Promise<{ response: AuthProviderLogin
 
 export function fetchAvailableProviderTypes(): Promise<{ response: AuthProviderInfo[] }> {
     return axios.get(`${availableProviderTypesUrl}`).then((response) => ({
-        response: response?.data?.authProviderTypes || [],
+        response:
+            response?.data?.authProviderTypes.map((curr) => {
+                return { value: curr, label: authProviderLabels[curr] };
+            }) || [],
     }));
 }
 

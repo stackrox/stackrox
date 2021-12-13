@@ -73,8 +73,3 @@ func (f *factory) ResolveProviderAndClientState(state string) (string, string, e
 	}
 	return providerID, clientState, nil
 }
-
-func (f *factory) DisplayNames() []string {
-	// User shouldn't be able to create basic auth provider.
-	return []string{}
-}

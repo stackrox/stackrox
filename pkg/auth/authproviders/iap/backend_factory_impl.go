@@ -60,10 +60,6 @@ func (f *factory) ResolveProviderAndClientState(state string) (providerID string
 	return state, "", nil
 }
 
-func (f *factory) DisplayNames() []string {
-	return []string{"Google IAP"}
-}
-
 // NewFactory is a method to return an authproviders.BackendFactory that contains a reference to the
 // callback interface
 func NewFactory(callbackURLPath string) authproviders.BackendFactory {

@@ -21,6 +21,15 @@ export function getIsDefaultRoleName(name: string): boolean {
     return Boolean(defaultRoles[name]);
 }
 
+export const authProviderLabels = {
+    auth0: 'Auth0',
+    oidc: 'OpenID Connect',
+    saml: 'SAML 2.0',
+    userpki: 'User Certificates',
+    iap: 'Google IAP',
+    openshift: 'OpenShift Auth',
+};
+
 export const oidcCallbackModes = [
     {
         label: 'Auto-select (recommended)',

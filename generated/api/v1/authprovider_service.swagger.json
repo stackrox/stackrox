@@ -285,17 +285,6 @@
     }
   },
   "definitions": {
-    "AvailableProviderTypesResponseAuthProviderInfo": {
-      "type": "object",
-      "properties": {
-        "label": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      }
-    },
     "GetLoginAuthProvidersResponseLoginAuthProvider": {
       "type": "object",
       "properties": {
@@ -524,7 +513,7 @@
         "authProviderTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AvailableProviderTypesResponseAuthProviderInfo"
+            "type": "string"
           }
         }
       }

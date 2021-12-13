@@ -173,10 +173,6 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 	return newCfg
 }
 
-func (f *factory) DisplayNames() []string {
-	return []string{"SAML 2.0"}
-}
-
 func filterBackendsByOrigin(req *http.Request, backends []*backendImpl) []*backendImpl {
 	var baseURLs []string
 
