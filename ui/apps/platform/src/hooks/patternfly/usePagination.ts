@@ -1,10 +1,5 @@
 import { useState } from 'react';
 
-type Pagination = {
-    page: number;
-    perPage: number;
-};
-
 export type UsePaginationResult = {
     page: number;
     perPage: number;
@@ -13,30 +8,18 @@ export type UsePaginationResult = {
 };
 
 function usePagination(): UsePaginationResult {
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        perPage: 20,
-    });
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(20);
 
-    function onSetPage(_, page) {
-        setPagination((prevResult) => {
-            return {
-                ...prevResult,
-                page,
-            };
-        });
+    function onSetPage(_, newPage) {
+        setPage(newPage);
     }
 
-    function onPerPageSelect(_, perPage) {
-        setPagination((prevResult) => {
-            return {
-                ...prevResult,
-                perPage,
-            };
-        });
+    function onPerPageSelect(_, newPerPage) {
+        setPerPage(newPerPage);
     }
 
-    return { ...pagination, onSetPage, onPerPageSelect };
+    return { page, perPage, onSetPage, onPerPageSelect };
 }
 
 export default usePagination;

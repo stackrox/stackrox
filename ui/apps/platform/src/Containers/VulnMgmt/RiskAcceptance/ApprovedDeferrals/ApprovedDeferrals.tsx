@@ -22,7 +22,7 @@ function ApprovedDeferrals(): ReactElement {
             query: 'Request Status:APPROVED+Requested Vulnerability State:DEFERRED+Expired Request:false',
             pagination: {
                 limit: perPage,
-                offset: page * perPage,
+                offset: (page - 1) * perPage,
                 sortOption: {
                     field: 'id',
                     reversed: false,

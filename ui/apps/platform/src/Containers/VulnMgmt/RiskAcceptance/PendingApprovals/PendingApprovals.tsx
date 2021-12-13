@@ -22,7 +22,7 @@ function PendingApprovals(): ReactElement {
             query: 'Request Status:PENDING,APPROVED_PENDING_UPDATE+Expired Request:false',
             pagination: {
                 limit: perPage,
-                offset: page * perPage,
+                offset: (page - 1) * perPage,
                 sortOption: {
                     field: 'id',
                     reversed: false,

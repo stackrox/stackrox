@@ -22,7 +22,7 @@ function ApprovedFalsePositives(): ReactElement {
             query: 'Request Status:APPROVED+Requested Vulnerability State:FALSE_POSITIVE+Expired Request:false',
             pagination: {
                 limit: perPage,
-                offset: page * perPage,
+                offset: (page - 1) * perPage,
                 sortOption: {
                     field: 'id',
                     reversed: false,
