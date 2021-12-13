@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -43,7 +43,7 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 }
 
 func TestRenderScannerOnly(t *testing.T) {
-	flavor := images.GetFlavorByBuildType()
+	flavor := testutils.TestFlavor(t)
 	config := Config{
 		SecretsByteMap: map[string][]byte{
 			"ca.pem":              []byte("CA"),
@@ -64,6 +64,7 @@ func TestRenderScannerOnly(t *testing.T) {
 			},
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 		},
+		Flavor: flavor,
 	}
 
 	files, err := render(config, scannerOnly, nil)

@@ -34,7 +34,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	flavor := images.GetFlavorByBuildType()
+	flavor := images.DevelopmentBuildImageFlavor()
 	config := renderer.Config{
 		Version:     version.GetMainVersion(),
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
@@ -48,6 +48,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			OfflineMode:      false,
 		},
+		Flavor: flavor,
 	}
 
 	testCases := []struct {

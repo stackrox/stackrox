@@ -25,9 +25,8 @@ type ImagePullSecrets struct {
 	AllowNone bool
 }
 
-// DefaultMetaValues are the default meta values for rendering the StackRox charts in production.
-func DefaultMetaValues() MetaValues {
-	flavor := images.GetFlavorByBuildType()
+// GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
+func GetMetaValuesForFlavor(flavor images.Flavor) MetaValues {
 	metaValues := MetaValues{
 		"Versions":              flavor.Versions,
 		"MainRegistry":          flavor.MainRegistry,
@@ -55,7 +54,7 @@ func DefaultMetaValues() MetaValues {
 
 // RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
 func RHACSMetaValues() MetaValues {
-
+	// TODO: remove once RHACS flavor is added to `images` package
 	flavor := images.GetFlavorByBuildType()
 	metaValues := MetaValues{
 		"Versions": flavor.Versions,

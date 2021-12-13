@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
+
+	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 )
 
 func init() {
@@ -79,7 +81,7 @@ func (s *embedTestSuite) TestLoadChartRHACSValues() {
 }
 
 func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
-	metaVals := charts.DefaultMetaValues()
+	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.TestFlavor(s.T()))
 	delete(metaVals, "FeatureFlags")
 
 	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
