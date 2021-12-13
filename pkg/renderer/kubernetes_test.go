@@ -21,7 +21,7 @@ func getBaseConfig(t *testing.T) Config {
 				ScannerImage: "stackrox.io/scanner:0.4.2",
 			},
 		},
-		Flavor: flavorUtils.TestFlavor(t),
+		Flavor: flavorUtils.MakeImageFlavorForTest(t),
 	}
 }
 

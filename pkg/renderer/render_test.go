@@ -27,7 +27,7 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 		},
-		Flavor: testutils.TestFlavor(t),
+		Flavor: testutils.MakeImageFlavorForTest(t),
 	}
 
 	for _, renderMode := range []mode{centralTLSOnly, scannerTLSOnly} {
@@ -44,7 +44,7 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 }
 
 func TestRenderScannerOnly(t *testing.T) {
-	flavor := testutils.TestFlavor(t)
+	flavor := testutils.MakeImageFlavorForTest(t)
 	config := Config{
 		SecretsByteMap: map[string][]byte{
 			"ca.pem":              []byte("CA"),

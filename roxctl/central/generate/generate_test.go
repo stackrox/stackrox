@@ -34,7 +34,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	flavor := flavorUtils.TestFlavor(t)
+	flavor := flavorUtils.MakeImageFlavorForTest(t)
 	config := renderer.Config{
 		Version:     version.GetMainVersion(),
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,

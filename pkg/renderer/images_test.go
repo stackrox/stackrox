@@ -163,7 +163,7 @@ func TestComputeOverrides(t *testing.T) {
 }
 
 func TestConfigureImageOverrides(t *testing.T) {
-	testFlavor := flavorUtils.TestFlavor(t)
+	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
 	cases := map[string]struct {
 		configValues         CommonConfig
 		flavor               images.Flavor

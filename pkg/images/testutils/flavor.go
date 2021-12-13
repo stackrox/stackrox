@@ -9,9 +9,9 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-// TestFlavor is to be used in tests where flavor is passed as a parameter. This makes it easier to test and expect
+// MakeImageFlavorForTest is to be used in tests where flavor is passed as a parameter. This makes it easier to test and expect
 // values in the tests without having to inject values and rely on flavor determination in the production code.
-func TestFlavor(t *testing.T) images.Flavor {
+func MakeImageFlavorForTest(t *testing.T) images.Flavor {
 	testutils.MustBeInTest(t)
 	// TODO: change this values to something different than default.
 	// For these values to be determined as anything (e.g. `my-image-name`) we require the changes in PR #64.

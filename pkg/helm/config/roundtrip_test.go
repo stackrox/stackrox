@@ -96,7 +96,7 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving chart template")
 	}
-	ch, err := tpl.InstantiateAndLoad(charts.GetMetaValuesForFlavor(flavorUtils.TestFlavor(h.T())))
+	ch, err := tpl.InstantiateAndLoad(charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(h.T())))
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating chart")
 	}
@@ -180,7 +180,7 @@ func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 	cluster.Name = clusterName
 
 	// Derive a new Helm config from the `Cluster` proto.
-	derivedHelmCfg, err := FromCluster(cluster, flavorUtils.TestFlavor(h.T()))
+	derivedHelmCfg, err := FromCluster(cluster, flavorUtils.MakeImageFlavorForTest(h.T()))
 	h.Require().NoError(err, "deriving Helm config for cluster")
 
 	diff := maputil.DiffGenericMap(helmCfg, derivedHelmCfg)
