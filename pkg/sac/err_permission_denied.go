@@ -7,5 +7,5 @@ import (
 
 var (
 	// ErrResourceAccessDenied is the error when permission is denied for a SAC reason.
-	ErrResourceAccessDenied = errorhelpers.NewWithCode(codes.PermissionDenied, "access to resource denied")
+	ErrResourceAccessDenied = errorhelpers.New(codes.PermissionDenied, "access to resource denied")
 )

@@ -9,8 +9,9 @@ import (
 )
 
 func TestErrNotFound(t *testing.T) {
-	err := ErrNotFound{Type: "foo", ID: "bar"}
+	err := New("foo", "bar")
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, codes.NotFound, s.Code())
+	assert.Equal(t, err.Error(), "foo 'bar' not found")
 }

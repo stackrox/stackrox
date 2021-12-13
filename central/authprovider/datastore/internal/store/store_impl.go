@@ -92,7 +92,7 @@ func (s *storeImpl) RemoveAuthProvider(id string) error {
 		ab := tx.Bucket(authProviderBucket)
 		key := []byte(id)
 		if exists := ab.Get(key) != nil; !exists {
-			return dberrors.ErrNotFound{Type: "Auth Provider", ID: id}
+			return dberrors.New("Auth Provider", id)
 		}
 		if err := secondarykey.RemoveUniqueKey(tx, authProviderBucket, id); err != nil {
 			return err

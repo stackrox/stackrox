@@ -10,7 +10,7 @@ import (
 )
 
 func TestAsIs(t *testing.T) {
-	testError := New("test error")
+	testError := ErrAlreadyExists.Wrap(errors.New("test error"))
 	tests := []struct {
 		name string
 		err  error
@@ -38,37 +38,34 @@ func TestAsIs(t *testing.T) {
 	}
 
 	t.Run("Equals by value", func(t *testing.T) {
-		e1 := NewWithCode(codes.Canceled, "err cancelled")
-		e2 := NewWithCode(codes.Canceled, "err cancelled")
-		e3 := NewWithCode(codes.Canceled, "err conciled")
-		if !errors.Is(e1, e2) {
-			t.Errorf("Expected equal errors to be equal")
+		if errors.Is(ErrNotFound, ErrNotAuthorized) {
+			t.Errorf("Expected different code to be not equal")
 		}
-		if errors.Is(e1, e3) {
-			t.Errorf("Expected not equal errors to be not equal")
+		if !errors.Is(ErrNotFound, ErrNotFound.Wraps("err conciled")) {
+			t.Errorf("Expected errors with equal code to be equal")
 		}
 	})
 }
 
-func TestNewWithGRPCCode(t *testing.T) {
-	e := New("test message")
+func TestWrapsCode(t *testing.T) {
+	e := ErrNotFound.Wraps("test message")
 	var re RoxError
 	if !errors.As(e, &re) {
-		t.Errorf("New() = %v, want %v", re, e)
+		t.Errorf("Wraps() = %v, want %v", re, e)
 	}
-	if c := e.GRPCCode(); c != codes.Internal {
-		t.Errorf("Expected Internal GRPC code, got: %d", c)
+	if c := e.Code(); c != codes.NotFound {
+		t.Errorf("Expected NotFound GRPC code, got: %d", c)
 	}
 }
 
-func TestNew(t *testing.T) {
-	e := New("test message")
-	var re RoxError
-	if !errors.As(e, &re) {
-		t.Errorf("New() = %v, want %v", re, e)
+func TestWrapf(t *testing.T) {
+	e := ErrNotFound.Wrapf("test message")
+	if e.Error() != "not found: test message" {
+		t.Errorf("Expected \"not found: test message\", got %s", e.Error())
 	}
-	if c := e.GRPCCode(); c != codes.Internal {
-		t.Errorf("Expected Internal GRPC code, got: %d", c)
+	e1 := errors.Wrap(ErrNotFound, "test message")
+	if e1.Error() != "test message: not found" {
+		t.Errorf("Expected \"test message: not found\", got %s", e1.Error())
 	}
 }
 
@@ -77,7 +74,7 @@ func TestErrRox_GRPCStatus(t *testing.T) {
 	if !ok {
 		t.Error("Expected successful FromError")
 	}
-	if s.Code() != ErrAlreadyExists.GRPCCode() || s.Message() != ErrAlreadyExists.Error() {
+	if s.Code() != ErrAlreadyExists.Code() || s.Message() != ErrAlreadyExists.Error() {
 		t.Errorf("Expected ErrAlreadyExists, got: %v", s)
 	}
 }

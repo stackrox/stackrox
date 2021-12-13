@@ -38,7 +38,7 @@ func ErrToGrpcStatus(err error) *status.Status {
 	code := codes.Internal
 	var re errorhelpers.RoxError
 	if errors.As(err, &re) {
-		code = re.GRPCCode()
+		code = re.Code()
 	}
 	return status.New(code, err.Error())
 }
