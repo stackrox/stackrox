@@ -237,8 +237,7 @@ check-service-protos:
 
 .PHONY: no-large-files
 no-large-files:
-	@echo "+ $@"
-	@$(BASE_DIR)/tools/large-git-files/find.sh
+	$(BASE_DIR)/tools/detect-large-files.sh "$(BASE_DIR)/tools/allowed-large-files"
 
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
@@ -266,7 +265,7 @@ endif
 .PHONY: init-githooks
 init-githooks:
 	@echo "+ $@"
-	./tools/githooks/install-hooks.sh
+	./tools/githooks/install-hooks.sh tools/githooks/pre-commit
 
 .PHONY: dev
 dev: install-dev-tools
