@@ -13,18 +13,20 @@ import (
 // values in the tests without having to inject values and rely on flavor determination in the production code.
 func TestFlavor(t *testing.T) images.Flavor {
 	testutils.MustBeInTest(t)
+	// TODO: change this values to something different than default.
+	// For these values to be determined as anything (e.g. `my-image-name`) we require the changes in PR #64.
 	return images.Flavor{
 		MainRegistry:           "test.registry",
-		MainImageName:          "main-test",
+		MainImageName:          "main",
 		MainImageTag:           "1.2.3",
-		CollectorRegistry:      "collector.test.registry",
-		CollectorImageName:     "collector-test-full",
+		CollectorRegistry:      "test.registry",
+		CollectorImageName:     "collector",
 		CollectorImageTag:      "3.2.1-full",
-		CollectorSlimImageName: "collector-test-slim",
+		CollectorSlimImageName: "collector",
 		CollectorSlimImageTag:  "3.2.1-slim",
-		ScannerImageName:       "scanner-test",
+		ScannerImageName:       "scanner",
 		ScannerImageTag:        "2.2.2",
-		ScannerDBImageName:     "scanner-db-test",
+		ScannerDBImageName:     "scanner-db",
 		ScannerDBImageTag:      "2.2.2",
 		ChartRepo: images.ChartRepo{
 			URL: "some.url/path/to/chart",
@@ -37,7 +39,7 @@ func TestFlavor(t *testing.T) images.Flavor {
 			CollectorVersion: "3.2.1",
 			MainVersion:      "1.2.3",
 			ScannerVersion:   "2.2.2",
-			ChartVersion:     "1.0",
+			ChartVersion:     "1.23.4",
 		},
 	}
 }
