@@ -27,6 +27,7 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 		},
+		Flavor: testutils.TestFlavor(t),
 	}
 
 	for _, renderMode := range []mode{centralTLSOnly, scannerTLSOnly} {
