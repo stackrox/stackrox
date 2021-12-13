@@ -60,11 +60,12 @@ func (s *embedTestSuite) TestChartTemplatesAvailable() {
 }
 
 func (s *embedTestSuite) TestLoadChartDefaultValues() {
-	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.DefaultMetaValues())
+	testFlavor := flavorUtils.MakeImageFlavorForTest(s.T())
+	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.GetMetaValuesForFlavor(testFlavor))
 	s.Require().NoError(err)
 	s.Equal("stackrox-central-services", chart.Name())
 
-	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.DefaultMetaValues())
+	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.GetMetaValuesForFlavor(testFlavor))
 	s.Require().NoError(err)
 	s.Equal("stackrox-secured-cluster-services", chart.Name())
 }
