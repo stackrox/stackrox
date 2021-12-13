@@ -88,7 +88,7 @@ func renderNewBasicFiles(c Config, mode mode) ([]*zip.File, error) {
 		return nil, errors.Wrap(err, "failed to obtain central services chart template")
 	}
 
-	metaVals := charts.DefaultMetaValues()
+	metaVals := charts.GetMetaValuesForFlavor(c.Flavor)
 	metaVals["RenderMode"] = mode.String()
 	// Modify metaVals depending on deployment format:
 	metaVals["KubectlOutput"] = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL

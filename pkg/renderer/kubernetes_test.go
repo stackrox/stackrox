@@ -10,9 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 )
 
-func getBaseConfig() Config {
+func getBaseConfig(t *testing.T) Config {
 	return Config{
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &K8sConfig{
@@ -21,6 +22,7 @@ func getBaseConfig() Config {
 				ScannerImage: "stackrox.io/scanner:0.4.2",
 			},
 		},
+		Flavor: flavorUtils.TestFlavor(t),
 	}
 }
 
@@ -87,7 +89,7 @@ func (suite *renderSuite) TestRenderMultiple() {
 	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		for _, format := range []v1.DeploymentFormat{v1.DeploymentFormat_KUBECTL, v1.DeploymentFormat_HELM} {
 			suite.T().Run(fmt.Sprintf("%s-%s", orch, format), func(t *testing.T) {
-				conf := getBaseConfig()
+				conf := getBaseConfig(t)
 				conf.ClusterType = orch
 				conf.K8sConfig.DeploymentFormat = format
 
@@ -100,7 +102,7 @@ func (suite *renderSuite) TestRenderMultiple() {
 }
 
 func (suite *renderSuite) TestRenderWithBadImage() {
-	conf := getBaseConfig()
+	conf := getBaseConfig(suite.T())
 	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
 	_, err := Render(conf)
 	suite.Error(err)
