@@ -349,7 +349,7 @@ func sendAdmissionControllerRequests(ctx context.Context, clusterClient v1.Clust
 			Id:                  "",
 			Name:                "prod cluster",
 			Type:                1,
-			MainImage:           flavor.MainImageRepo(),
+			MainImage:           flavor.MainImageUntagged(),
 			CollectorImage:      "",
 			CentralApiEndpoint:  "central.stackrox:443",
 			CollectionMethod:    0,
