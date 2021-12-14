@@ -85,13 +85,6 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-{{- if .UniqKeyFunc}}
-
-func uniqKeyFunc(msg proto.Message) string {
-	return msg.(*storage.{{.Type}}).{{.UniqKeyFunc}}
-}
-{{- end}}
-
 const (
 	batchInsertTemplate = "{{.BatchInsertionTemplate}}"
 )
@@ -110,15 +103,9 @@ func New(db *pgxpool.Pool) Store {
 		}
 	}
 
-//	{{- if .UniqKeyFunc}}
-//	return &storeImpl{
-//		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, allocCluster, uniqKeyFunc, {{.TrackIndex}}),
-//	}
-//	{{- else}}
 	return &storeImpl{
 		db: db,
 	}
-//	{{- end}}
 }
 
 // Count returns the number of objects in the store
