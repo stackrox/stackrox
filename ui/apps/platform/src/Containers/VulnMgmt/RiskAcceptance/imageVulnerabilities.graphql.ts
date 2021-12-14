@@ -18,45 +18,54 @@ export type Vulnerability = {
 // This type is specific to the way we query using GraphQL
 export type EmbeddedImageScanComponent = { id: string; name: string; fixedIn: string };
 
-export type GetObservedCVEsData = {
-    result: {
+export type GetImageVulnerabilitiesData = {
+    image: {
         name: {
             registry: string;
             remote: string;
             tag: string;
         };
-        vulnCount: number;
-        vulns: Vulnerability[];
+    };
+    vulnerabilityCount: number;
+    vulnerabilities: Vulnerability[];
+};
+
+export type GetImageVulnerabilitiesVars = {
+    imageId: string;
+    vulnsQuery: string;
+    // @TODO: vulnerabilityRequests.graphql also uses this pagination structure. We should refactor this
+    pagination: {
+        limit: number;
+        offset: number;
+        sortOption: {
+            field: string;
+            reversed: boolean;
+        };
     };
 };
 
-export type GetObservedCVEsVars = {
-    imageId: string;
-    vulnsQuery: string;
-};
-
-export const GET_OBSERVED_CVES = gql`
-    query getObservedCVEs($imageId: ID!, $vulnsQuery: String) {
-        result: image(id: $imageId) {
+export const GET_IMAGE_VULNERABILITIES = gql`
+    query getImageVulnerabilities($imageId: ID!, $vulnsQuery: String, $pagination: Pagination) {
+        image(id: $imageId) {
             name {
                 registry
                 remote
                 tag
             }
-            vulnCount(query: $vulnsQuery)
-            vulns(query: $vulnsQuery) {
-                id: cve
-                cve
-                isFixable
-                severity
-                scoreVersion
-                cvss
-                discoveredAtImage
-                components {
-                    id
-                    name
-                    fixedIn
-                }
+        }
+        vulnerabilityCount(query: $vulnsQuery)
+        vulnerabilities(query: $vulnsQuery, pagination: $pagination) {
+            id: cve
+            cve
+            isFixable
+            severity
+            scoreVersion
+            cvss
+            discoveredAtImage
+            components {
+                id
+                name
+                fixedIn
             }
         }
     }
