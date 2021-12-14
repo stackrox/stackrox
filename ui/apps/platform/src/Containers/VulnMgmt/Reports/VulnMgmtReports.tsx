@@ -2,14 +2,14 @@ import React, { ReactElement } from 'react';
 import { Route, Switch } from 'react-router-dom';
 
 import { vulnManagementReportsPath, vulnManagementReportsPathWithParam } from 'routePaths';
-import VulnMgmtReportsMainPage from './VulnMgmtReportsMainPage';
-import VulnMgmtReportPage from './VulnMgmtReportPage';
+import VulnMgmtReportsBasePage from './VulnMgmtReportsBasePage';
+import VulnMgmtReportSinglePage from './VulnMgmtReportSinglePage';
 
 function VulnMgmtReports(): ReactElement {
     return (
         <Switch>
-            <Route exact path={vulnManagementReportsPath} component={VulnMgmtReportsMainPage} />
-            <Route path={vulnManagementReportsPathWithParam} component={VulnMgmtReportPage} />
+            <Route exact path={vulnManagementReportsPath} component={VulnMgmtReportsBasePage} />
+            <Route path={vulnManagementReportsPathWithParam} component={VulnMgmtReportSinglePage} />
         </Switch>
     );
 }

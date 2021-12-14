@@ -48,7 +48,9 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
     return (
         <>
             <Breadcrumb className="pf-u-mb-md">
-                <BreadcrumbItemLink to={vulnManagementReportsPath}>Policies</BreadcrumbItemLink>
+                <BreadcrumbItemLink to={vulnManagementReportsPath}>
+                    Vulnerability reporting
+                </BreadcrumbItemLink>
                 <BreadcrumbItem isActive>{name}</BreadcrumbItem>
             </Breadcrumb>
             <Toolbar inset={{ default: 'insetNone' }}>

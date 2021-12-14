@@ -8,35 +8,8 @@ import { fetchReportById } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getQueryObject, ExtendedPageAction } from 'utils/queryStringUtils';
-import { VulnMgmtReportQueryObject } from './VulnMgmtReportsMainPage';
+import { emptyReportValues, VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
 import VulnMgmtReportDetail from './Detail/VulnMgmtReportDetail';
-
-const emptyReportValues: ReportConfiguration = {
-    id: '',
-    name: '',
-    description: '',
-    type: 'VULNERABILITY',
-    vulnReportFilters: {
-        fixability: 'BOTH',
-        sinceLastReport: false,
-        severities: [],
-    },
-    scopeId: '',
-    notifierConfig: {
-        emailConfig: {
-            notifierId: '',
-            mailingLists: [],
-        },
-    },
-    schedule: {
-        intervalType: 'WEEKLY',
-        hour: 0,
-        minute: 0,
-        interval: {
-            days: [],
-        },
-    },
-};
 
 type VulnMgmtReportPageProps = {
     pageAction?: ExtendedPageAction;

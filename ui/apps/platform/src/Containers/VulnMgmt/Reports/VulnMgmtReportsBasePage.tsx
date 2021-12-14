@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { ReactElement } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
-import { getQueryObject, ExtendedPageAction } from 'utils/queryStringUtils';
+import { getQueryObject } from 'utils/queryStringUtils';
 import VulnMgmtCreateReportPage from './VulnMgmtCreateReportPage';
 import VulnMgmtReportTablePage from './VulnMgmtReportTablePage';
-
-export type VulnMgmtReportQueryObject = {
-    action: ExtendedPageAction;
-};
+import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
 
 function VulnMgmtReportsMainPage(): ReactElement {
     const { search } = useLocation();
