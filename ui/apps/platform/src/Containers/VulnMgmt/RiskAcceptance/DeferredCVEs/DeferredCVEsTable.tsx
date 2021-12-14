@@ -6,6 +6,7 @@ import {
     Divider,
     DropdownItem,
     InputGroup,
+    Pagination,
     TextInput,
     Toolbar,
     ToolbarContent,
@@ -13,33 +14,33 @@ import {
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
 import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import { RequestComment } from 'types/vuln_request.proto';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import CancelDeferralModal from './CancelDeferralModal';
-import VulnerabilityCommentsButton from '../RequestComments/RequestCommentsButton';
-import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
+import { Vulnerability } from '../imageVulnerabilities.graphql';
 
-export type DeferredCVERow = {
-    id: string;
-    cve: string;
-    severity: VulnerabilitySeverity;
-    components: EmbeddedImageScanComponent[];
-    comments: RequestComment[];
-    expiresAt: string;
-    applyTo: string;
-    approver: string;
-};
+export type DeferredCVERow = Vulnerability;
 
 export type DeferredCVEsTableProps = {
     rows: DeferredCVERow[];
-};
+    isLoading: boolean;
+    itemCount: number;
+    updateTable: () => void;
+} & UsePaginationResult;
 
-function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
+function DeferredCVEsTable({
+    rows,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+    updateTable,
+}: DeferredCVEsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -63,6 +64,7 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
     function completeCancelDeferral() {
         onClearAll();
         setCVEDeferralsToBeCancelled([]);
+        updateTable();
     }
 
     // @TODO: Convert the form values to the proper values used in the API for cancelling a request
@@ -118,6 +120,15 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
+                    </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
             <Divider component="div" />
@@ -167,15 +178,10 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
-                                <Td dataLabel="Comments">
-                                    <VulnerabilityCommentsButton
-                                        cve={row.cve}
-                                        comments={row.comments}
-                                    />
-                                </Td>
-                                <Td dataLabel="Expiration">{row.expiresAt}</Td>
-                                <Td dataLabel="Apply to">{row.applyTo}</Td>
-                                <Td dataLabel="Approver">{row.approver}</Td>
+                                <Td dataLabel="Comments">-</Td>
+                                <Td dataLabel="Expiration">-</Td>
+                                <Td dataLabel="Apply to">-</Td>
+                                <Td dataLabel="Approver">-</Td>
                                 <Td
                                     className="pf-u-text-align-right"
                                     actions={{
