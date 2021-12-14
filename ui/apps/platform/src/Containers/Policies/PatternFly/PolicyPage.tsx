@@ -9,8 +9,8 @@ import { Cluster } from 'types/cluster.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ExtendedPageAction } from 'utils/queryStringUtils';
 
-import { PageAction } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
 
@@ -60,7 +60,7 @@ const initialPolicy: Policy = {
 
 type PolicyPageProps = {
     hasWriteAccessForPolicy: boolean;
-    pageAction?: PageAction;
+    pageAction?: ExtendedPageAction;
     policyId?: string;
 };
 

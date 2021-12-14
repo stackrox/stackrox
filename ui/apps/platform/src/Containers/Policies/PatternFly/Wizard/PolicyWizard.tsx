@@ -6,14 +6,14 @@ import { Wizard, Breadcrumb, Title, BreadcrumbItem, Divider } from '@patternfly/
 import { Policy } from 'types/policy.proto';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import { ExtendedPageAction } from 'utils/queryStringUtils';
 
-import { PageAction } from '../policies.utils';
 import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
 import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
 
 type PolicyWizardProps = {
-    pageAction: PageAction;
+    pageAction: ExtendedPageAction;
     policy: Policy;
 };
 
