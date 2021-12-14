@@ -709,7 +709,7 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 
 	id, err := authn.IdentityFromContextOrError(ctx)
 	if err != nil {
-		return status.Error(codes.Unauthenticated, err.Error())
+		return err
 	}
 	if identityUID != id.UID() {
 		return errorhelpers.ErrNotAuthorized
