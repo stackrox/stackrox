@@ -115,9 +115,26 @@ prepare_for_endpoints_test() {
     start_port_forwards_for_test
 }
 
+install_yq() {
+  # Intstall yq to allow more precise test cases
+  if is_CI; then
+    if ! command -v yq >/dev/null 2>&1; then
+        sudo wget https://github.com/mikefarah/yq/releases/download/v4.15.1/yq_linux_amd64 -O /usr/bin/yq
+        sudo chmod 0755 /usr/bin/yq
+    fi
+  else
+      require_executable yq
+  fi
+}
+
 run_roxctl_tests() {
     info "Run roxctl tests"
 
+    # TODO(PR): Move this to the bottom after finishing the experiments
+    info "Running roxctl BATS tests"
+    "$TEST_ROOT/tests/roxctl/bats-wrapper.sh" "$TEST_ROOT/tests/roxctl/bats-tests"
+
+    info "Running the regular roxctl tests"
     "$TEST_ROOT/tests/roxctl/token-file.sh"
     "$TEST_ROOT/tests/roxctl/slim-collector.sh"
     "$TEST_ROOT/tests/roxctl/authz-trace.sh"
