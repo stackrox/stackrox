@@ -37,7 +37,7 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
         },
     });
 
-    if (isLoading || !data) {
+    if (isLoading) {
         return (
             <Bullseye>
                 <Spinner size="sm" />
@@ -45,11 +45,11 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
         );
     }
 
-    const itemCount = data.vulnerabilityCount;
-    const rows = data.vulnerabilities;
-    const { registry } = data.image.name;
-    const { remote } = data.image.name;
-    const { tag } = data.image.name;
+    const itemCount = data?.vulnerabilityCount || 0;
+    const rows = data?.vulnerabilities || [];
+    const registry = data?.image.name.registry || '';
+    const remote = data?.image.name.remote || '';
+    const tag = data?.image.name.tag || '';
 
     return (
         <ObservedCVEsTable

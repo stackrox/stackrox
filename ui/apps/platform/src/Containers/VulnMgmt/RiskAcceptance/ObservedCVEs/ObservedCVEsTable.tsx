@@ -25,7 +25,7 @@ import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
-import ObservedCVEsTableRows from './ObservedCVEsTableRows';
+import ObservedCVEsTableRow from './ObservedCVEsTableRow';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
@@ -185,7 +185,7 @@ function ObservedCVEsTable({
                             },
                         ];
                         return (
-                            <ObservedCVEsTableRows
+                            <ObservedCVEsTableRow
                                 row={row}
                                 rowIndex={rowIndex}
                                 onSelect={onSelect}

@@ -1,10 +1,10 @@
+import React from 'react';
 import { Spinner } from '@patternfly/react-core';
 import { IActions, Td, Tr } from '@patternfly/react-table';
 import { TdSelectType } from '@patternfly/react-table/dist/esm/components/Table/base';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
-import React from 'react';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
@@ -20,12 +20,10 @@ export type ObservedCVEsTableRowsProps = {
 };
 
 /*
- * Backend mentioned that we need to fetch vuln requests for each vulnerability (row), so we need
- * to have this component in order to use the `useVulnerabilityRequests` hook. For now, we'll
- * have to do things this way until we get a better understanding of the performance implications
- * of adding a resolver under vulnerabilities to get the vulnerability requests
+ * @TODO: Once backend adds a resolver for the `image -> vulns -> vulnRequests`, we don't need
+ * to have this separate component to fetch the vuln requests for each vuln
  */
-function ObservedCVEsTableRows({
+function ObservedCVEsTableRow({
     row,
     rowIndex,
     onSelect,
@@ -91,4 +89,4 @@ function ObservedCVEsTableRows({
     );
 }
 
-export default ObservedCVEsTableRows;
+export default ObservedCVEsTableRow;
