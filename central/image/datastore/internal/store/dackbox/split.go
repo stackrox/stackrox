@@ -109,10 +109,19 @@ func generateImageToCVEEdges(parts ImageParts) map[string]*storage.ImageCVEEdge 
 		for _, cveParts := range componentParts.children {
 			if _, ok := imageCVEEdges[cveParts.cve.GetId()]; !ok {
 				imageCVEEdges[cveParts.cve.GetId()] = &storage.ImageCVEEdge{
-					Id: edges.EdgeID{ParentID: parts.image.GetId(), ChildID: cveParts.cve.GetId()}.ToString(),
+					Id:    edges.EdgeID{ParentID: parts.image.GetId(), ChildID: cveParts.cve.GetId()}.ToString(),
+					State: getVulnState(cveParts.cve),
 				}
+
 			}
 		}
 	}
 	return imageCVEEdges
+}
+
+func getVulnState(cve *storage.CVE) storage.VulnerabilityState {
+	if cve.GetSuppressed() {
+		return storage.VulnerabilityState_DEFERRED
+	}
+	return storage.VulnerabilityState_OBSERVED
 }
