@@ -3,6 +3,7 @@ import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-tab
 import {
     Divider,
     DropdownItem,
+    Pagination,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -11,6 +12,7 @@ import {
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedDeferralRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -26,9 +28,18 @@ export type ApprovedDeferralsTableProps = {
     rows: VulnerabilityRequest[];
     updateTable: () => void;
     isLoading: boolean;
-};
+    itemCount: number;
+} & UsePaginationResult;
 
-function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTableProps): ReactElement {
+function ApprovedDeferralsTable({
+    rows,
+    updateTable,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+}: ApprovedDeferralsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -93,6 +104,15 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                 Reobserve CVEs ({selectedDeferralRequests.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>

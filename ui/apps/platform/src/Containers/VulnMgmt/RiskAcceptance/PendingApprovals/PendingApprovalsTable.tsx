@@ -3,6 +3,7 @@ import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-tab
 import {
     Divider,
     DropdownItem,
+    Pagination,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -11,6 +12,7 @@ import {
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import VulnRequestedAction from '../VulnRequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
@@ -30,9 +32,18 @@ export type PendingApprovalsTableProps = {
     rows: VulnerabilityRequest[];
     updateTable: () => void;
     isLoading: boolean;
-};
+    itemCount: number;
+} & UsePaginationResult;
 
-function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps): ReactElement {
+function PendingApprovalsTable({
+    rows,
+    updateTable,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+}: PendingApprovalsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -157,6 +168,15 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                                 Cancel false positives ({selectedFalsePositiveRequests.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>

@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { useQuery, useApolloClient } from '@apollo/client';
 
+import usePagination from 'hooks/patternfly/usePagination';
 import {
     GetVulnerabilityRequestsData,
     GetVulnerabilityRequestsVars,
@@ -12,6 +13,7 @@ import PendingApprovalsTable from './PendingApprovalsTable';
 
 function PendingApprovals(): ReactElement {
     const client = useApolloClient();
+    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { loading: isLoading, data } = useQuery<
         GetVulnerabilityRequestsData,
         GetVulnerabilityRequestsVars
@@ -19,8 +21,8 @@ function PendingApprovals(): ReactElement {
         variables: {
             query: 'Request Status:PENDING,APPROVED_PENDING_UPDATE+Expired Request:false',
             pagination: {
-                limit: 20,
-                offset: 0,
+                limit: perPage,
+                offset: (page - 1) * perPage,
                 sortOption: {
                     field: 'id',
                     reversed: false,
@@ -46,7 +48,19 @@ function PendingApprovals(): ReactElement {
 
     const rows = data?.results || [];
 
-    return <PendingApprovalsTable rows={rows} updateTable={updateTable} isLoading={isLoading} />;
+    return (
+        <PendingApprovalsTable
+            rows={rows}
+            updateTable={updateTable}
+            isLoading={isLoading}
+            // @TODO: When backend puts "vulnerabilityRequestsCount" into GraphQL, use that
+            itemCount={rows.length}
+            page={page}
+            perPage={perPage}
+            onSetPage={onSetPage}
+            onPerPageSelect={onPerPageSelect}
+        />
+    );
 }
 
 export default PendingApprovals;

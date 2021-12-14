@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { useQuery, useApolloClient } from '@apollo/client';
 
+import usePagination from 'hooks/patternfly/usePagination';
 import {
     GetVulnerabilityRequestsData,
     GetVulnerabilityRequestsVars,
@@ -12,6 +13,7 @@ import ApprovedFalsePositivesTable from './ApprovedFalsePositivesTable';
 
 function ApprovedFalsePositives(): ReactElement {
     const client = useApolloClient();
+    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { loading: isLoading, data } = useQuery<
         GetVulnerabilityRequestsData,
         GetVulnerabilityRequestsVars
@@ -19,8 +21,8 @@ function ApprovedFalsePositives(): ReactElement {
         variables: {
             query: 'Request Status:APPROVED+Requested Vulnerability State:FALSE_POSITIVE+Expired Request:false',
             pagination: {
-                limit: 20,
-                offset: 0,
+                limit: perPage,
+                offset: (page - 1) * perPage,
                 sortOption: {
                     field: 'id',
                     reversed: false,
@@ -47,7 +49,16 @@ function ApprovedFalsePositives(): ReactElement {
     const rows = data?.results || [];
 
     return (
-        <ApprovedFalsePositivesTable rows={rows} updateTable={updateTable} isLoading={isLoading} />
+        <ApprovedFalsePositivesTable
+            rows={rows}
+            updateTable={updateTable}
+            isLoading={isLoading} // @TODO: When backend puts "vulnerabilityRequestsCount" into GraphQL, use that
+            itemCount={rows.length}
+            page={page}
+            perPage={perPage}
+            onSetPage={onSetPage}
+            onPerPageSelect={onPerPageSelect}
+        />
     );
 }
 

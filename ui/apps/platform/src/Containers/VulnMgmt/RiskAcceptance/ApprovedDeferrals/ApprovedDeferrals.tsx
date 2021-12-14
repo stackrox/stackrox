@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { useQuery, useApolloClient } from '@apollo/client';
 
+import usePagination from 'hooks/patternfly/usePagination';
 import {
     GetVulnerabilityRequestsData,
     GetVulnerabilityRequestsVars,
@@ -12,6 +13,7 @@ import ApprovedDeferralsTable from './ApprovedDeferralsTable';
 
 function ApprovedDeferrals(): ReactElement {
     const client = useApolloClient();
+    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { loading: isLoading, data } = useQuery<
         GetVulnerabilityRequestsData,
         GetVulnerabilityRequestsVars
@@ -19,8 +21,8 @@ function ApprovedDeferrals(): ReactElement {
         variables: {
             query: 'Request Status:APPROVED+Requested Vulnerability State:DEFERRED+Expired Request:false',
             pagination: {
-                limit: 20,
-                offset: 0,
+                limit: perPage,
+                offset: (page - 1) * perPage,
                 sortOption: {
                     field: 'id',
                     reversed: false,
@@ -46,7 +48,18 @@ function ApprovedDeferrals(): ReactElement {
 
     const rows = data?.results || [];
 
-    return <ApprovedDeferralsTable rows={rows} updateTable={updateTable} isLoading={isLoading} />;
+    return (
+        <ApprovedDeferralsTable
+            rows={rows}
+            updateTable={updateTable}
+            isLoading={isLoading} // @TODO: When backend puts "vulnerabilityRequestsCount" into GraphQL, use that
+            itemCount={rows.length}
+            page={page}
+            perPage={perPage}
+            onSetPage={onSetPage}
+            onPerPageSelect={onPerPageSelect}
+        />
+    );
 }
 
 export default ApprovedDeferrals;
