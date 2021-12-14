@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 )
 
 const (
@@ -20,10 +21,6 @@ type scanResult struct {
 	action     central.ResourceAction
 	deployment *storage.Deployment
 	images     []*storage.Image
-}
-
-type imageCacheKey struct {
-	id, name string
 }
 
 type imageChanResult struct {
@@ -73,19 +70,7 @@ func newEnricher(cache expiringcache.Cache) *enricher {
 	}
 }
 
-type cacheKeyProvider interface {
-	GetId() string
-	GetName() *storage.ImageName
-}
-
-func getImageCacheKey(provider cacheKeyProvider) imageCacheKey {
-	return imageCacheKey{
-		id:   provider.GetId(),
-		name: provider.GetName().GetFullName(),
-	}
-}
-
-func (e *enricher) getImageFromCache(key imageCacheKey) (*storage.Image, bool) {
+func (e *enricher) getImageFromCache(key imagecacheutils.ImageCacheKey) (*storage.Image, bool) {
 	value, _ := e.imageCache.Get(key).(*cacheValue)
 	if value == nil {
 		return nil, false
@@ -94,7 +79,7 @@ func (e *enricher) getImageFromCache(key imageCacheKey) (*storage.Image, bool) {
 }
 
 func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageChanResult {
-	key := getImageCacheKey(ci)
+	key := imagecacheutils.GetImageCacheKey(ci)
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if ci.GetNotPullable() {
@@ -142,13 +127,13 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	for i := 0; i < len(deployment.GetContainers()); i++ {
 		imgResult := <-imageChan
 
-		// This will ensure that when we change the name of the image
+		// This will ensure that when we change the Name of the image
 		// that it will not cause a potential race condition
 		// cloning the full object is too expensive and also unnecessary
 		image := *imgResult.image
-		// Overwrite the image name as a workaround to the fact that we fetch the image by ID
+		// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
 		// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
-		// exact same id
+		// exact same ID
 		image.Name = deployment.Containers[imgResult.containerIdx].GetImage().GetName()
 		images[imgResult.containerIdx] = &image
 	}
