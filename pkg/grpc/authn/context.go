@@ -12,16 +12,15 @@ type identityErrorContextKey struct{}
 
 // IdentityFromContextOrError retrieves the identity from the context or returns error otherwise.
 func IdentityFromContextOrError(ctx context.Context) (Identity, error) {
-	id, _ := ctx.Value(identityContextKey{}).(Identity)
 	err, _ := ctx.Value(identityErrorContextKey{}).(error)
-	switch {
-	case err != nil:
-		return nil, errorhelpers.NewErrNoCredentials(err.Error())
-	case id == nil && err == nil:
-		return nil, errorhelpers.ErrNoCredentials
-	default:
+	if err != nil {
+		return nil, err
+	}
+	id, _ := ctx.Value(identityContextKey{}).(Identity)
+	if id != nil {
 		return id, nil
 	}
+	return nil, errorhelpers.ErrNoCredentials
 }
 
 // IdentityFromContextOrNil retrieves the identity from the context, if any.
