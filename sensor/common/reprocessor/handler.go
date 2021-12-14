@@ -47,10 +47,16 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	req := msg.GetReprocessDeployment()
-	if req == nil {
-		return nil
+	if req := msg.GetReprocessDeployment(); req == nil {
+		return h.reprocessDeployments(req)
 	}
+	if req := msg.GetInvalidateImageCache(); req == nil {
+		return h.invalidateImageCache(req)
+	}
+	return nil
+}
+
+func (h *handlerImpl) reprocessDeployments(req *central.ReprocessDeployment) error {
 	log.Debug("Received request to reprocess deployments from Central")
 
 	select {
@@ -58,6 +64,18 @@ func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill re-process deployment(s) request")
 	default:
 		go h.detector.ReprocessDeployments(req.GetDeploymentIds()...)
+	}
+	return nil
+}
+
+func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) error {
+	log.Debug("Received request to invalidate image caches from Central")
+
+	select {
+	case <-h.stopSig.Done():
+		return errors.Wrap(h.stopSig.Err(), "could not fulfill invalidate image cache request")
+	default:
+		go h.detector.RemoveCachesImageScans(req.GetImageIds()...)
 	}
 	return nil
 }

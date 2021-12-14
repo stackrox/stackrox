@@ -101,6 +101,22 @@ func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(flow interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkFlow", reflect.TypeOf((*MockDetector)(nil).ProcessNetworkFlow), flow)
 }
 
+// RemoveCachesImageScans mocks base method.
+func (m *MockDetector) RemoveCachesImageScans(images ...*central.InvalidateImageCache_ImageID) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range images {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "RemoveCachesImageScans", varargs...)
+}
+
+// RemoveCachesImageScans indicates an expected call of RemoveCachesImageScans.
+func (mr *MockDetectorMockRecorder) RemoveCachesImageScans(images ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveCachesImageScans", reflect.TypeOf((*MockDetector)(nil).RemoveCachesImageScans), images...)
+}
+
 // ReprocessDeployments mocks base method.
 func (m *MockDetector) ReprocessDeployments(deploymentIDs ...string) {
 	m.ctrl.T.Helper()

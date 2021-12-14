@@ -45,6 +45,7 @@ type Detector interface {
 
 	ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction)
 	ReprocessDeployments(deploymentIDs ...string)
+	RemoveCachesImageScans(images ...*central.InvalidateImageCache_ImageID)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(flow *storage.NetworkFlow)
 }
@@ -389,6 +390,17 @@ func (d *detectorImpl) reprocessDeployment(deploymentID string, invalidatedImage
 	}
 	d.markDeploymentForProcessing(deploymentID)
 	go d.enricher.blockingScan(deployment, central.ResourceAction_UPDATE_RESOURCE)
+}
+
+func (d *detectorImpl) RemoveCachesImageScans(images ...*central.InvalidateImageCache_ImageID) {
+	d.admCtrlSettingsMgr.FlushCache()
+
+	for _, image := range images {
+		d.enricher.imageCache.Remove(imagecacheutils.ImageCacheKey{
+			ID:   image.GetImageSha(),
+			Name: image.GetImageFullName(),
+		})
+	}
 }
 
 func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, action central.ResourceAction) {

@@ -51,6 +51,7 @@ message MsgToSensor {
         NetworkBaselineSync            network_baseline_sync              = 13;
         AuditLogSync                   audit_log_sync                     = 14;
         ReprocessDeployment            reprocess_deployment               = 15;
+        InvalidateImageCache           invalidate_image_cache             = 16;
     }
 }
 
@@ -67,6 +68,15 @@ message ReprocessDeployment {
     // invalidated by this message.
 
     repeated string  deployment_ids = 1;
+}
+
+message InvalidateImageCache {
+    message ImageID {
+        string image_sha       = 1;
+        string image_full_name = 2;
+    }
+
+    repeated ImageID image_ids = 1;
 }
 
 service SensorService {
