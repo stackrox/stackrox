@@ -159,9 +159,9 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 
 		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.RegistryId, conf.AssumeRoleId)
 		stsCred := stscreds.NewCredentials(sess, roleToAssumeArn, func(p *stscreds.AssumeRoleProvider) {
-			assumeRoleExternalId := conf.GetAssumeRoleExternalId()
-			if assumeRoleExternalId != "" {
-				p.ExternalID = &assumeRoleExternalId
+			assumeRoleExternalID := conf.GetAssumeRoleExternalId()
+			if assumeRoleExternalID != "" {
+				p.ExternalID = &assumeRoleExternalID
 			}
 			//p.Duration = 900 (15min) default
 		})
