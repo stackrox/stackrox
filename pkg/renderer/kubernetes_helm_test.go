@@ -163,6 +163,7 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 	fields := getDefaultMetaValues(t)
 	fields["CertOnly"] = true
 
+	//TODO: Assert rendered manifests
 	_, err := RenderSensorTLSSecretsOnly(fields, certs)
 	require.NoError(t, err)
 }
