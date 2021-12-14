@@ -6,6 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -69,7 +70,7 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	if err := r.ca.CheckProperties(); err != nil {
 		return errors.Wrap(err, "loaded service CA certificate is invalid")
 	}
-	if err := certgen.VerifyServiceCert(fileMap, r.ca, mtls.CentralSubject, ""); err != nil {
+	if err := certgen.VerifyServiceCert(fileMap, r.ca, storage.ServiceType_CENTRAL_SERVICE, ""); err != nil {
 		return errors.Wrap(err, "verifying existing central CA")
 	}
 	return nil
@@ -98,8 +99,8 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData() (secretDataMap, 
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) validateServiceTLSData(subj mtls.Subject, fileMap secretDataMap) error {
-	if err := certgen.VerifyServiceCert(fileMap, r.ca, subj, ""); err != nil {
+func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storage.ServiceType, fileMap secretDataMap) error {
+	if err := certgen.VerifyServiceCert(fileMap, r.ca, serviceType, ""); err != nil {
 		return err
 	}
 	if err := certgen.VerifyCACertInFileMap(fileMap, r.ca); err != nil {
@@ -117,7 +118,7 @@ func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject,
 }
 
 func (r *createCentralTLSExtensionRun) validateScannerTLSData(fileMap secretDataMap, _ bool) error {
-	return r.validateServiceTLSData(mtls.ScannerSubject, fileMap)
+	return r.validateServiceTLSData(storage.ServiceType_SCANNER_SERVICE, fileMap)
 }
 
 func (r *createCentralTLSExtensionRun) generateScannerTLSData() (secretDataMap, error) {
@@ -129,7 +130,7 @@ func (r *createCentralTLSExtensionRun) generateScannerTLSData() (secretDataMap, 
 }
 
 func (r *createCentralTLSExtensionRun) validateScannerDBTLSData(fileMap secretDataMap, _ bool) error {
-	return r.validateServiceTLSData(mtls.ScannerDBSubject, fileMap)
+	return r.validateServiceTLSData(storage.ServiceType_SCANNER_DB_SERVICE, fileMap)
 }
 
 func (r *createCentralTLSExtensionRun) generateScannerDBTLSData() (secretDataMap, error) {
