@@ -568,13 +568,17 @@ class ImageScanningTest extends BaseSpecification {
         }
 
         where:
-        testName              | integration | deleteAutoRegistry | source                     | imageIntegrationConfig
-        "ecr-iam"             | "ecr"       | false              | /^ecr$/                    |
+        testName                      | integration | deleteAutoRegistry | source                     | imageIntegrationConfig
+        "ecr-iam"                     | "ecr"       | false              | /^ecr$/                    |
                 { -> ECRRegistryIntegration.createCustomIntegration(useIam: true) }
-        "ecr-auto"            | "ecr"       | false              | source(".*.amazonaws.com") | null
-        "ecr-auto-and-config" | "ecr"       | false              | /^ecr$/                    |
+        "ecr-assume-role"             | "ecr"       | false              | /^ecr$/                    |
+                { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRole: true) }
+        "ecr-assume-role-external-id" | "ecr"       | false              | /^ecr$/                    |
+                { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRoleExternalId: true) }
+        "ecr-auto"                    | "ecr"       | false              | source(".*.amazonaws.com") | null
+        "ecr-auto-and-config"         | "ecr"       | false              | /^ecr$/                    |
                 { -> ECRRegistryIntegration.createDefaultIntegration() }
-        "ecr-config-only"     | "ecr"       | true               | /^ecr$/                    |
+        "ecr-config-only"             | "ecr"       | true               | /^ecr$/                    |
                 { -> ECRRegistryIntegration.createDefaultIntegration() }
         // ROX-8306 - Disabled due to Azure account issue
         // "acr-auto"            | "acr"       | false              | source("*.azurecr.io") |

@@ -136,12 +136,29 @@ class ECRRegistryIntegration implements ImageIntegration {
                 accessKeyId: Env.mustGetAWSAccessKeyID(),
                 secretAccessKey: Env.mustGetAWSSecretAccessKey(),
                 useIam: false,
+                assumeRoleRoleId: Env.mustGetAWSAssumeRoleRoleID(),
+                assumeRoleExternalId: Env.mustGetAWSAssumeRoleExternalID(),
+                assumeRoleTestConditionId: Env.mustGetAWSAssumeRoleTestConditionID(),
+                useAssumeRole: false,
+                useAssumeRoleExternalId: false,
         ]
         Map args = defaultArgs + customArgs
 
         if (args.useIam) {
             args.accessKeyId = ""
             args.secretAccessKey = ""
+        }
+
+        if (args.useAssumeRole) {
+            args.accessKeyId = Env.mustGetAWSAssumeRoleAccessKeyID()
+            args.secretAccessKey = Env.mustGetAWSAssumeRoleSecretKeyID()
+        }
+
+        if (args.useAssumeRoleExternalId) {
+            args.useAssumeRole = args.useAssumeRoleExternalId()
+            args.accessKeyId = Env.mustGetAWSAssumeRoleAccessKeyID()
+            args.secretAccessKey = Env.mustGetAWSAssumeRoleSecretKeyID()
+            args.assumeRoleRoleId = Env.mustGetAWSAssumeRoleExternalID()
         }
 
         ImageIntegrationOuterClass.ECRConfig.Builder config =
@@ -152,6 +169,9 @@ class ECRRegistryIntegration implements ImageIntegration {
                         .setAccessKeyId(args.accessKeyId as String)
                         .setSecretAccessKey(args.secretAccessKey as String)
                         .setUseIam(args.useIam as Boolean)
+                        .setUseAssumeRole(args.useAssumeRole as Boolean)
+                        .setAssumeRoleId(args.assumeRoleRoleId as String)
+                        .setAssumeRoleTestConditionId(args.assumeRoleTestConditionId as String)
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)
