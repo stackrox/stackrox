@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"google.golang.org/grpc"
@@ -363,13 +364,13 @@ func (d *detectorImpl) ProcessDeployment(deployment *storage.Deployment, action 
 func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
 	d.admCtrlSettingsMgr.FlushCache()
 
-	invalidatedImages := make(map[imageCacheKey]struct{})
+	invalidatedImages := make(map[imagecacheutils.ImageCacheKey]struct{})
 	for _, deploymentID := range deploymentIDs {
 		d.reprocessDeployment(deploymentID, invalidatedImages)
 	}
 }
 
-func (d *detectorImpl) reprocessDeployment(deploymentID string, invalidatedImages map[imageCacheKey]struct{}) {
+func (d *detectorImpl) reprocessDeployment(deploymentID string, invalidatedImages map[imagecacheutils.ImageCacheKey]struct{}) {
 	d.deploymentDetectionLock.Lock()
 	defer d.deploymentDetectionLock.Unlock()
 
@@ -379,7 +380,7 @@ func (d *detectorImpl) reprocessDeployment(deploymentID string, invalidatedImage
 	}
 
 	for _, container := range deployment.GetContainers() {
-		key := getImageCacheKey(container.GetImage())
+		key := imagecacheutils.GetImageCacheKey(container.GetImage())
 		if _, invalidated := invalidatedImages[key]; invalidated {
 			continue
 		}
