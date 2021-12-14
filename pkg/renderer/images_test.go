@@ -166,7 +166,7 @@ func TestConfigureImageOverrides(t *testing.T) {
 	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
 	cases := map[string]struct {
 		configValues         CommonConfig
-		flavor               images.Flavor
+		flavor               images.ImageFlavor
 		override             bool
 		expectedMainRegistry string
 	}{

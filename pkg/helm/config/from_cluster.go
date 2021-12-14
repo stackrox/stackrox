@@ -26,7 +26,7 @@ func imageSpecFromOverrides(overrides map[string]string) map[string]interface{} 
 }
 
 // FromCluster returns the cluster's Helm chart configuration based on cluster and image flavor.
-func FromCluster(cluster *storage.Cluster, flavor images.Flavor) (map[string]interface{}, error) {
+func FromCluster(cluster *storage.Cluster, flavor images.ImageFlavor) (map[string]interface{}, error) {
 	mainImageOverrides := renderer.ComputeImageOverrides(cluster.GetMainImage(), flavor.MainRegistry, flavor.MainImageName, "")
 	mainImage := imageSpecFromOverrides(mainImageOverrides)
 	collectorImageOverrides := renderer.ComputeImageOverrides(cluster.GetCollectorImage(), flavor.CollectorRegistry, flavor.CollectorImageName, "")

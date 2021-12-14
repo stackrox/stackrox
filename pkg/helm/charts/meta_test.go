@@ -5,6 +5,8 @@ import (
 	"text/template"
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/images"
+	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -71,8 +73,9 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 		restorer.Restore()
 	}()
 
+	flavor := flavorUtils.MakeImageFlavorForTest(t)
 	cases := map[string]MetaValues{
-		"default": DefaultMetaValues(),
+		"default": GetMetaValuesForFlavor(flavor),
 		"rhacs":   RHACSMetaValues(),
 	}
 	for n, c := range cases {
@@ -83,7 +86,7 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 			assert.NotEmpty(t, c["CollectorImageRemote"])
 			assert.NotEmpty(t, c["CollectorFullImageTag"])
 			assert.NotEmpty(t, c["CollectorSlimImageTag"])
-			assert.NotEmpty(t, (c["ChartRepo"].(ChartRepo)).URL)
+			assert.NotEmpty(t, (c["ChartRepo"].(images.ChartRepo)).URL)
 			assert.NotNil(t, c["ImagePullSecrets"])
 
 			versions := c["Versions"].(version.Versions)

@@ -15,18 +15,8 @@ type MetaValuesKey string
 // MetaValues are the values to be passed to the StackRox chart templates.
 type MetaValues map[MetaValuesKey]interface{}
 
-// ChartRepo contains information about where the Helm charts are published.
-type ChartRepo struct {
-	URL string
-}
-
-// ImagePullSecrets represents the image pull secret defaults.
-type ImagePullSecrets struct {
-	AllowNone bool
-}
-
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
-func GetMetaValuesForFlavor(flavor images.Flavor) MetaValues {
+func GetMetaValuesForFlavor(flavor images.ImageFlavor) MetaValues {
 	metaValues := MetaValues{
 		"Versions":              flavor.Versions,
 		"MainRegistry":          flavor.MainRegistry,
@@ -36,13 +26,9 @@ func GetMetaValuesForFlavor(flavor images.Flavor) MetaValues {
 		"CollectorFullImageTag": flavor.CollectorImageTag,
 		"CollectorSlimImageTag": flavor.CollectorSlimImageTag,
 		"RenderMode":            "",
-		"ChartRepo": ChartRepo{
-			URL: "https://charts.stackrox.io",
-		},
-		"ImagePullSecrets": ImagePullSecrets{
-			AllowNone: false,
-		},
-		"Operator": false,
+		"ChartRepo":             flavor.ChartRepo,
+		"ImagePullSecrets":      flavor.ImagePullSecrets,
+		"Operator":              false,
 	}
 
 	if !buildinfo.ReleaseBuild {
@@ -66,10 +52,10 @@ func RHACSMetaValues() MetaValues {
 		"CollectorFullImageTag": flavor.CollectorImageTag,
 		"CollectorSlimImageTag": flavor.CollectorSlimImageTag,
 		"RenderMode":            "",
-		"ChartRepo": ChartRepo{
+		"ChartRepo": images.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
-		"ImagePullSecrets": ImagePullSecrets{
+		"ImagePullSecrets": images.ImagePullSecrets{
 			AllowNone: true,
 		},
 		"Operator": false,

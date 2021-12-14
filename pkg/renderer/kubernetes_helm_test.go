@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -74,7 +75,7 @@ func getDefaultMetaValues(t *testing.T) charts.MetaValues {
 
 		"Versions": testutils.GetExampleVersion(t),
 
-		"ChartRepo": charts.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
+		"ChartRepo": images.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
 
 		"KubectlOutput": true,
 	}
@@ -118,7 +119,6 @@ func TestRenderSensorHelm(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-
 			fields := getDefaultMetaValues(t)
 			fields["AdmissionController"] = c.admissionController
 			fields["AdmissionControllerEnabled"] = c.admissionController

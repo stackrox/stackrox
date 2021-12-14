@@ -27,25 +27,6 @@ import (
 )
 
 var (
-	// TODO(RS-381): reuse common test MetaValues in this test.
-	metaValues = charts.MetaValues{
-		"Versions": version.Versions{
-			ChartVersion:     "50.0.60-gac5d043be8",
-			CollectorVersion: "1.2.3",
-			MainVersion:      "3.0.50.x-60-gac5d043be8",
-			ScannerVersion:   "2.5.0",
-		},
-		"ImageRemote":           "main",
-		"CollectorImageRemote":  "collector",
-		"MainRegistry":          "docker.io/stackrox",
-		"CollectorRegistry":     "docker.io/stackrox",
-		"CollectorFullImageTag": "1.2.3-latest",
-		"CollectorSlimImageTag": "1.2.3-slim",
-		"RenderMode":            "",
-		"ChartRepo": charts.ChartRepo{
-			URL: "https://charts.stackrox.io",
-		},
-	}
 	installOpts = helmUtil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      "stackrox-secured-cluster-services",

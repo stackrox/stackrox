@@ -17,8 +17,8 @@ type ImagePullSecrets struct {
 	AllowNone bool
 }
 
-// Flavor represents default settings for pulling images.
-type Flavor struct {
+// ImageFlavor represents default settings for pulling images.
+type ImageFlavor struct {
 	// MainRegistry is a registry for all images except of collector.
 	MainRegistry  string
 	MainImageName string
@@ -43,8 +43,8 @@ type Flavor struct {
 
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
 // Assumption: development_build flavor is never a release.
-func DevelopmentBuildImageFlavor() Flavor {
-	return Flavor{
+func DevelopmentBuildImageFlavor() ImageFlavor {
+	return ImageFlavor{
 		MainRegistry:  "docker.io/stackrox",
 		MainImageName: "main",
 		MainImageTag:  version.GetMainVersion(),
@@ -71,8 +71,8 @@ func DevelopmentBuildImageFlavor() Flavor {
 }
 
 // StackRoxIOReleaseImageFlavor returns image values for `stackrox_io_release` flavor.
-func StackRoxIOReleaseImageFlavor() Flavor {
-	return Flavor{
+func StackRoxIOReleaseImageFlavor() ImageFlavor {
+	return ImageFlavor{
 		MainRegistry:  "stackrox.io",
 		MainImageName: "main",
 		MainImageTag:  version.GetMainVersion(),
@@ -100,7 +100,7 @@ func StackRoxIOReleaseImageFlavor() Flavor {
 
 // GetFlavorByBuildType returns the flavor based on build type (development or release). Release builds use StackroxIO
 // flavor and development builds use development flavor.
-func GetFlavorByBuildType() Flavor {
+func GetFlavorByBuildType() ImageFlavor {
 	if buildinfo.ReleaseBuild {
 		return StackRoxIOReleaseImageFlavor()
 	}
@@ -109,23 +109,23 @@ func GetFlavorByBuildType() Flavor {
 
 // ScannerImage is the Docker image name for the scanner image. Image
 // repo changes depending on whether this is a release build.
-func (flavor *Flavor) ScannerImage() string {
+func (flavor *ImageFlavor) ScannerImage() string {
 	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.ScannerImageName, flavor.ScannerImageTag)
 }
 
 // ScannerDBImage is the Docker image name for the scanner db image
-func (flavor *Flavor) ScannerDBImage() string {
+func (flavor *ImageFlavor) ScannerDBImage() string {
 	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.ScannerDBImageName, flavor.ScannerDBImageTag)
 }
 
 // MainImage is the Docker image name for the "main" image. Image repo
 // changes depending on whether this is a release build.
-func (flavor *Flavor) MainImage() string {
+func (flavor *ImageFlavor) MainImage() string {
 	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.MainImageName, flavor.MainImageTag)
 }
 
-// MainImageUntagged is the Docker image repo for the "main" image. It
+// MainImageNoTag is the Docker image repo for the "main" image. It
 // changes depending on whether this is a release build.
-func (flavor *Flavor) MainImageUntagged() string {
+func (flavor *ImageFlavor) MainImageNoTag() string {
 	return fmt.Sprintf("%s/%s", flavor.MainRegistry, flavor.MainImageName)
 }
