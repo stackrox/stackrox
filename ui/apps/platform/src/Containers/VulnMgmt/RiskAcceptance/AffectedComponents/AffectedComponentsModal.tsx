@@ -3,7 +3,7 @@ import { Card, InputGroup, Modal, ModalVariant, TextInput } from '@patternfly/re
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { EmbeddedImageScanComponent } from '../ObservedCVEs/observedCVEs.graphql';
+import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 export type AffectedComponentsModalProps = {
     isOpen: boolean;
