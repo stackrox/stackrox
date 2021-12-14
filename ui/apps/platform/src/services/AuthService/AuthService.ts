@@ -10,9 +10,11 @@ import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
+import { authProviderLabels } from '../../constants/accessControl';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
+const availableProviderTypesUrl = '/v1/availableAuthProviders';
 const tokenRefreshUrl = '/sso/session/tokenrefresh';
 const logoutUrl = '/sso/session/logout';
 
@@ -67,6 +69,11 @@ export type AuthProvider = {
     defaultRole?: string;
 };
 
+export type AuthProviderInfo = {
+    label: string;
+    value: AuthProviderType;
+};
+
 /**
  * Fetch authentication providers.
  */
@@ -89,6 +96,15 @@ export type AuthProviderLogin = {
 export function fetchLoginAuthProviders(): Promise<{ response: AuthProviderLogin[] }> {
     return axios.get(`${authLoginProvidersUrl}`).then((response) => ({
         response: response.data.authProviders,
+    }));
+}
+
+export function fetchAvailableProviderTypes(): Promise<{ response: AuthProviderInfo[] }> {
+    return axios.get(`${availableProviderTypesUrl}`).then((response) => ({
+        response:
+            response?.data?.authProviderTypes.map((curr) => {
+                return { value: curr, label: authProviderLabels[curr] };
+            }) || [],
     }));
 }
 
