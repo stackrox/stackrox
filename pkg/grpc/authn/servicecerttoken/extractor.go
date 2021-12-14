@@ -31,7 +31,7 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 
 	cert, err := parseToken(token, e.maxLeeway)
 	if err != nil {
-		log.Warnf("could not parse service cert token: %s", err.Error())
+		log.Warnf("Could not parse service cert token: %v", err)
 		return nil, errors.New("could not parse service cert token")
 	}
 
