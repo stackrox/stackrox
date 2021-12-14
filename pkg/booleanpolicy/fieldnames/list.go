@@ -8,6 +8,7 @@ var (
 var (
 	AddCaps                       = newFieldName("Add Capabilities")
 	AppArmorProfile               = newFieldName("AppArmor Profile")
+	AutomountServiceAccountToken  = newFieldName("Automount Service Account Token")
 	CVE                           = newFieldName("CVE")
 	CVSS                          = newFieldName("CVSS")
 	ContainerCPULimit             = newFieldName("Container CPU Limit")

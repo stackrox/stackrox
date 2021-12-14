@@ -181,6 +181,17 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
 
+	f.registerFieldMetadata(fieldnames.AutomountServiceAccountToken,
+		querybuilders.ForFieldLabel(search.AutomountServiceAccountToken),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+		negationForbidden,
+		operatorsForbidden)
+
 	f.registerFieldMetadata(fieldnames.CVE,
 		querybuilders.ForCVE(),
 		violationmessages.VulnContextFields,
