@@ -712,7 +712,7 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 		return status.Error(codes.Unauthenticated, err.Error())
 	}
 	if identityUID != id.UID() {
-		return status.Error(codes.PermissionDenied, "Unauthorized access.")
+		return errorhelpers.ErrNotAuthorized
 	}
 
 	return nil
