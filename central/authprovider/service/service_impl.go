@@ -29,6 +29,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
+			"/v1.AuthProviderService/ListAvailableProviderTypes",
 			"/v1.AuthProviderService/GetLoginAuthProviders",
 			"/v1.AuthProviderService/ExchangeToken",
 		},
@@ -103,6 +104,21 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 		return result[i].GetName() < result[j].GetName()
 	})
 	return &v1.GetLoginAuthProvidersResponse{AuthProviders: result}, nil
+}
+
+// ListAvailableProviderTypes returns auth provider types which can be created.
+func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty) (*v1.AvailableProviderTypesResponse, error) {
+	factories := s.registry.GetBackendFactories()
+	supportedTypes := make([]string, 0, len(factories))
+	for typ := range factories {
+		if typ == basic.TypeName {
+			continue
+		}
+		supportedTypes = append(supportedTypes, typ)
+	}
+	return &v1.AvailableProviderTypesResponse{
+		AuthProviderTypes: supportedTypes,
+	}, nil
 }
 
 // GetAuthProviders retrieves all authProviders that matches the request filters
