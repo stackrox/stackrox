@@ -6,6 +6,7 @@ sensor-chart-upgrade.md
 scripts/
 /README.md
 /.helmignore
+templates/*scanner*
 [<- if .CertsOnly >]
 scripts/
 !/*.yaml

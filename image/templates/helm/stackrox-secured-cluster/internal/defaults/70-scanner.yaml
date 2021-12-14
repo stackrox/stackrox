@@ -1,8 +1,9 @@
 
 scanner:
-  disable: false
+  disable: true
   replicas: 3
   logLevel: INFO
+  mode: lite
 
   autoscaling:
     disable: false
