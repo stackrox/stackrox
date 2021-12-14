@@ -348,7 +348,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 
 	identity, err := authn.IdentityFromContextOrError(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+		return nil, err
 	}
 	metadata := map[string]interface{}{identityUIDKey: identity.UID()}
 	id, err := s.dryRunPolicyJobManager.AddTask(metadata, t)
