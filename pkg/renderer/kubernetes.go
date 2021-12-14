@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/utils"
@@ -35,7 +36,7 @@ const (
 	scannerTLSOnly
 )
 
-func postProcessConfig(c *Config, mode mode) error {
+func postProcessConfig(c *Config, mode mode, imageFlavor images.ImageFlavor) error {
 	// Make all items in SecretsByteMap base64 encoded
 	c.SecretsBase64Map = make(map[string]string)
 	for k, v := range c.SecretsByteMap {
@@ -50,7 +51,7 @@ func postProcessConfig(c *Config, mode mode) error {
 		c.K8sConfig.Command = "oc"
 	}
 
-	configureImageOverrides(c)
+	configureImageOverrides(c, imageFlavor)
 
 	var err error
 	if mode == renderAll {
@@ -80,23 +81,23 @@ func postProcessConfig(c *Config, mode mode) error {
 }
 
 // Render renders a bunch of zip files based on the given config.
-func Render(c Config) ([]*zip.File, error) {
-	return render(c, renderAll, nil)
+func Render(c Config, imageFlavor images.ImageFlavor) ([]*zip.File, error) {
+	return render(c, renderAll, nil, imageFlavor)
 }
 
 // RenderWithOverrides renders a bunch of zip files based on the given config, allowing to selectively override some of
 // the bundled files.
-func RenderWithOverrides(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
-	return render(c, renderAll, centralOverrides)
+func RenderWithOverrides(c Config, centralOverrides map[string]func() io.ReadCloser, imageFlavor images.ImageFlavor) ([]*zip.File, error) {
+	return render(c, renderAll, centralOverrides, imageFlavor)
 }
 
 // RenderScannerOnly renders the zip files for the scanner based on the given config.
-func RenderScannerOnly(c Config) ([]*zip.File, error) {
-	return render(c, scannerOnly, nil)
+func RenderScannerOnly(c Config, imageFlavor images.ImageFlavor) ([]*zip.File, error) {
+	return render(c, scannerOnly, nil, imageFlavor)
 }
 
-func renderAndExtractSingleFileContents(c Config, mode mode) ([]byte, error) {
-	files, err := render(c, mode, nil)
+func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor images.ImageFlavor) ([]byte, error) {
+	files, err := render(c, mode, nil, imageFlavor)
 	if err != nil {
 		return nil, err
 	}
@@ -108,22 +109,22 @@ func renderAndExtractSingleFileContents(c Config, mode mode) ([]byte, error) {
 }
 
 // RenderCentralTLSSecretOnly renders just the file that contains the central-tls secret.
-func RenderCentralTLSSecretOnly(c Config) ([]byte, error) {
-	return renderAndExtractSingleFileContents(c, centralTLSOnly)
+func RenderCentralTLSSecretOnly(c Config, imageFlavor images.ImageFlavor) ([]byte, error) {
+	return renderAndExtractSingleFileContents(c, centralTLSOnly, imageFlavor)
 }
 
 // RenderScannerTLSSecretOnly renders just the file that contains the scanner-tls secret.
-func RenderScannerTLSSecretOnly(c Config) ([]byte, error) {
-	return renderAndExtractSingleFileContents(c, scannerTLSOnly)
+func RenderScannerTLSSecretOnly(c Config, imageFlavor images.ImageFlavor) ([]byte, error) {
+	return renderAndExtractSingleFileContents(c, scannerTLSOnly, imageFlavor)
 }
 
-func render(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
-	err := postProcessConfig(&c, mode)
+func render(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser, imageFlavor images.ImageFlavor) ([]*zip.File, error) {
+	err := postProcessConfig(&c, mode, imageFlavor)
 	if err != nil {
 		return nil, err
 	}
 
-	return renderNew(c, mode)
+	return renderNew(c, mode, imageFlavor)
 }
 
 func getTag(imageStr string) (string, error) {

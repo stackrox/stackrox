@@ -27,12 +27,11 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 		K8sConfig: &K8sConfig{
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 		},
-		Flavor: testutils.MakeImageFlavorForTest(t),
 	}
 
 	for _, renderMode := range []mode{centralTLSOnly, scannerTLSOnly} {
 		t.Run(fmt.Sprintf("mode=%s", renderMode), func(t *testing.T) {
-			contents, err := renderAndExtractSingleFileContents(config, renderMode)
+			contents, err := renderAndExtractSingleFileContents(config, renderMode, testutils.MakeImageFlavorForTest(t))
 			assert.NoError(t, err)
 
 			objs, err := k8sutil.UnstructuredFromYAMLMulti(string(contents))
@@ -65,10 +64,9 @@ func TestRenderScannerOnly(t *testing.T) {
 			},
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 		},
-		Flavor: flavor,
 	}
 
-	files, err := render(config, scannerOnly, nil)
+	files, err := render(config, scannerOnly, nil, flavor)
 	assert.NoError(t, err)
 
 	for _, f := range files {
