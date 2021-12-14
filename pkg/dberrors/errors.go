@@ -4,17 +4,30 @@ import (
 	"fmt"
 	"strings"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // An ErrNotFound indicates that the desired object could not be located.
-type ErrNotFound struct {
+type errNotFound struct {
 	Type string
 	ID   string
 }
 
-func (e ErrNotFound) Error() string {
+// New returns a new error associated with the provided type and id.
+//
+// TODO: Consider to replace with:
+//   return errors.WithMessage(errorhelpers.ErrNotFound, fmt.Sprintf("%s '%s'", t, id))
+func New(t, id string) errorhelpers.RoxError {
+	return &errNotFound{t, id}
+}
+
+// Code returns Rox error code. Implements RoxError interface.
+func (e *errNotFound) Code() errorhelpers.Code {
+	return errorhelpers.CodeNotFound
+}
+
+// Error returns error message. Implements error interface.
+func (e *errNotFound) Error() string {
 	sb := strings.Builder{}
 	if e.Type != "" {
 		_, _ = sb.WriteString(fmt.Sprintf("%s ", e.Type))
@@ -26,14 +39,8 @@ func (e ErrNotFound) Error() string {
 	return sb.String()
 }
 
-// GRPCStatus returns the error as a `status.Status` object. It is required to ensure interoperability with
-// `status.FromError()`.
-func (e ErrNotFound) GRPCStatus() *status.Status {
-	return status.New(codes.NotFound, e.Error())
-}
-
-// IsNotFound returns whether a given error is an instance of ErrNotFound.
+// IsNotFound returns whether a given error is an instance of errNotFound.
 func IsNotFound(err error) bool {
-	_, ok := err.(ErrNotFound)
+	_, ok := err.(*errNotFound)
 	return ok
 }

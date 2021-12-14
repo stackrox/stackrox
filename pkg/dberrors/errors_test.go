@@ -3,14 +3,14 @@ package dberrors
 import (
 	"testing"
 
+	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func TestErrNotFound(t *testing.T) {
-	err := ErrNotFound{Type: "foo", ID: "bar"}
-	s, ok := status.FromError(err)
-	assert.True(t, ok)
+	err := New("foo", "bar")
+	s := grpc_errors.ErrToGrpcStatus(err)
+	assert.NotNil(t, s)
 	assert.Equal(t, codes.NotFound, s.Code())
 }
