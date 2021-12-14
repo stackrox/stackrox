@@ -40,7 +40,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		log.Warnf("token validation failed: %s", err.Error())
+		log.Warnf("Token validation failed: %v", err)
 		return nil, errors.New("token validation failed")
 	}
 
