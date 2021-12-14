@@ -45,6 +45,7 @@ class Deployment {
     Boolean exposeAsService = false
     Boolean createLoadBalancer = false
     Boolean createRoute = false
+    Boolean automountServiceAccountToken = true
     String serviceName
     String serviceAccountName
 
@@ -256,6 +257,11 @@ class Deployment {
 
     Deployment setCreateRoute(Boolean create) {
         this.createRoute = create
+        return this
+    }
+
+    Deployment setAutomountServiceAccountToken(Boolean automount) {
+        this.automountServiceAccountToken = automount
         return this
     }
 
