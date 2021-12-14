@@ -52,7 +52,7 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	if e.validator != nil {
 		if err := e.validator.ValidateClientCertificate(ctx, chain[0]); err != nil {
 			log.Errorf("Validating client certificate from service cert token: %v", err)
-			return nil, errors.New("Validating client certificate from service cert token")
+			return nil, errors.New("could not validate client certificate from service cert token")
 		}
 	}
 
