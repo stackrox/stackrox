@@ -11,11 +11,11 @@ import (
 
 // MakeImageFlavorForTest is to be used in tests where flavor is passed as a parameter. This makes it easier to test and expect
 // values in the tests without having to inject values and rely on flavor determination in the production code.
-func MakeImageFlavorForTest(t *testing.T) images.Flavor {
+func MakeImageFlavorForTest(t *testing.T) images.ImageFlavor {
 	testutils.MustBeInTest(t)
 	// TODO: change this values to something different than default.
 	// For these values to be determined as anything (e.g. `my-image-name`) we require the changes in PR #64.
-	return images.Flavor{
+	return images.ImageFlavor{
 		MainRegistry:           "test.registry",
 		MainImageName:          "main",
 		MainImageTag:           "1.2.3",

@@ -141,7 +141,7 @@ type Config struct {
 
 	ConfigFileOverrides map[string]string
 
-	Flavor images.Flavor
+	Flavor images.ImageFlavor
 
 	RenderOpts *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
 }

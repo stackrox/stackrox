@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/testutils"
 	versionTestutils "github.com/stackrox/rox/pkg/version/testutils"
 )
@@ -21,10 +22,10 @@ func DefaultTestMetaValues(t *testing.T) charts.MetaValues {
 		"CollectorImageRemote":  "collector",
 		"CollectorFullImageTag": "3.4.0-latest",
 		"CollectorSlimImageTag": "3.4.0-slim",
-		"ChartRepo": charts.ChartRepo{
+		"ChartRepo": images.ChartRepo{
 			URL: "https://charts.stackrox.io",
 		},
-		"ImagePullSecrets": charts.ImagePullSecrets{
+		"ImagePullSecrets": images.ImagePullSecrets{
 			AllowNone: true,
 		},
 		"Versions":     versionTestutils.GetExampleVersion(t),

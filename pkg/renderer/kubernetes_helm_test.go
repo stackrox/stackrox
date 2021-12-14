@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -95,7 +96,7 @@ func TestRenderSensorHelm(t *testing.T) {
 
 				"Versions": testutils.GetExampleVersion(t),
 
-				"ChartRepo": charts.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
+				"ChartRepo": images.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
 
 				"KubectlOutput": true,
 			}
