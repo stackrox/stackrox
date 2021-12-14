@@ -17,6 +17,61 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
+var certs = &sensor.Certs{
+	Files: map[string][]byte{
+		"secrets/ca.pem":                     []byte("abc"),
+		"secrets/sensor-cert.pem":            []byte("def"),
+		"secrets/sensor-key.pem":             []byte("ghi"),
+		"secrets/collector-cert.pem":         []byte("jkl"),
+		"secrets/collector-key.pem":          []byte("mno"),
+		"secrets/admission-control-cert.pem": []byte("pqr"),
+		"secrets/admission-control-key.pem":  []byte("stu"),
+	},
+}
+
+func getDefaultMetaValues(t *testing.T) charts.MetaValues {
+	return charts.MetaValues{				"MainRegistry": "stackrox.io",
+		"ImageRemote":  "main",
+		"ImageTag":     "3.0.41.x-92-g9e8a347ffe",
+
+		"PublicEndpoint": "central.stackrox:443",
+
+		"ClusterName": "remote",
+
+		"AdvertisedEndpoint": "sensor.stackrox:443",
+
+		"CollectorRegistry":     "collector.stackrox.io",
+		"CollectorImageRemote":  "collector",
+		"CollectorFullImageTag": "3.0.11-latest",
+		"CollectorSlimImageTag": "3.0.11-slim",
+
+		"CollectionMethod": "EBPF",
+
+		"ClusterType": "KUBERNETES_CLUSTER",
+
+		"TolerationsEnabled": false,
+
+		"CreateUpgraderSA": true,
+
+		"AdmissionController":              c.admissionController,
+		"AdmissionControlListenOnUpdates":  false,
+		"AdmissionControlListenOnEvents":   true,
+		"DisableBypass":                    false,
+		"TimeoutSeconds":                   3,
+		"ScanInline":                       true,
+		"AdmissionControllerEnabled":       c.admissionController,
+		"AdmissionControlEnforceOnUpdates": c.admissionController,
+
+		"EnvVars":      envVars,
+		"FeatureFlags": make(map[string]string),
+
+		"Versions": testutils.GetExampleVersion(t),
+
+		"ChartRepo": charts.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
+
+		"KubectlOutput": true,
+	}
+}
 func TestRenderSensorHelm(t *testing.T) {
 	// Verify at runtime that this won't panic
 	envVars := make(map[string]string)
@@ -57,58 +112,11 @@ func TestRenderSensorHelm(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			fields := charts.MetaValues{
-				"MainRegistry": "stackrox.io",
-				"ImageRemote":  "main",
-				"ImageTag":     "3.0.41.x-92-g9e8a347ffe",
-
-				"PublicEndpoint": "central.stackrox:443",
-
-				"ClusterName": "remote",
-
-				"AdvertisedEndpoint": "sensor.stackrox:443",
-
-				"CollectorRegistry":     "collector.stackrox.io",
-				"CollectorImageRemote":  "collector",
-				"CollectorFullImageTag": "3.0.11-latest",
-				"CollectorSlimImageTag": "3.0.11-slim",
-
-				"CollectionMethod": "EBPF",
-
-				"ClusterType": "KUBERNETES_CLUSTER",
-
-				"TolerationsEnabled": false,
-
-				"CreateUpgraderSA": true,
-
-				"AdmissionController":              c.admissionController,
-				"AdmissionControlListenOnUpdates":  false,
-				"AdmissionControlListenOnEvents":   true,
-				"DisableBypass":                    false,
-				"TimeoutSeconds":                   3,
-				"ScanInline":                       true,
-				"AdmissionControllerEnabled":       c.admissionController,
-				"AdmissionControlEnforceOnUpdates": c.admissionController,
-
-				"EnvVars":      envVars,
-				"FeatureFlags": make(map[string]string),
-
-				"Versions": testutils.GetExampleVersion(t),
-
-				"ChartRepo": charts.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
-
-				"KubectlOutput": true,
-			}
-
-			certs := &sensor.Certs{Files: map[string][]byte{
-				"secrets/ca.pem":                     []byte("abc"),
-				"secrets/sensor-cert.pem":            []byte("def"),
-				"secrets/sensor-key.pem":             []byte("ghi"),
-				"secrets/collector-cert.pem":         []byte("jkl"),
-				"secrets/collector-key.pem":          []byte("mno"),
-				"secrets/admission-control-cert.pem": []byte("pqr"),
-				"secrets/admission-control-key.pem":  []byte("stu"),
-			}}
+			fields := getDefaultMetaValues(t)
+			fields["AdmissionController"] = c.admissionController
+			fields["AdmissionControllerEnabled"] = c.admissionController
+			fields["AdmissionControlEnforceOnUpdates"] = c.admissionController
+			fields["EnvVars"] = envVars
 
 			opts := helmUtil.Options{
 				ReleaseOptions: chartutil.ReleaseOptions{
@@ -149,4 +157,12 @@ func TestRenderSensorHelm(t *testing.T) {
 			assert.Equal(t, c.expectedHasDestinationRule, hasDestinationRule, "unexpected presence/absence of destination rule")
 		})
 	}
+}
+
+func TestRenderSensorTLSSecretsOnly(t *testing.T) {
+	fields := getDefaultMetaValues(t)
+	fields["CertOnly"] = true
+
+	_, err := RenderSensorTLSSecretsOnly(fields, certs)
+	require.NoError(t, err)
 }

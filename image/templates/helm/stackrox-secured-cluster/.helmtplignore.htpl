@@ -9,7 +9,9 @@ scripts/
 [<- if .CertsOnly >]
 scripts/
 !/*.yaml
-!templates/*-secret.yaml
+!templates/admission-controller-secret.yaml
+!templates/admission-secret.yaml
+!templates/collector-secret.yaml
 !templates/_*.tpl
 templates/*
 [<- end >]
