@@ -80,6 +80,7 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 	suite.envIsolator.Setenv(features.VulnRiskManagement.EnvVar(), "true")
+	suite.envIsolator.Setenv(features.OPABasedEvaluator.EnvVar(), "true")
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownSuite() {

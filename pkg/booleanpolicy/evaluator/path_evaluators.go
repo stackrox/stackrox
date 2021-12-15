@@ -24,7 +24,7 @@ func wrapBaseEvaluator(baseEvaluator baseEvaluator) fieldEvaluator {
 	})
 }
 
-func (f *Factory) wrapBaseEvaluatorWithPathTraversal(pathToBase pathutil.MetaPath, baseEvaluator baseEvaluator) (fieldEvaluator, error) {
+func (f *factoryImpl) wrapBaseEvaluatorWithPathTraversal(pathToBase pathutil.MetaPath, baseEvaluator baseEvaluator) (fieldEvaluator, error) {
 	return wrapEvaluatorWithTraversal(f.rootType, pathToBase, wrapBaseEvaluator(baseEvaluator))
 }
 

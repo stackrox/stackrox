@@ -15,7 +15,13 @@ type Evaluator interface {
 }
 
 // A Factory knows how to create evaluators.
-type Factory struct {
+type Factory interface {
+	// GenerateEvaluator generates an Evaluator that will evaluate the given query
+	// on objects of the factory's type.
+	GenerateEvaluator(q *query.Query) (Evaluator, error)
+}
+
+type factoryImpl struct {
 	fieldToMetaPaths *pathutil.FieldToMetaPathMap
 	rootType         reflect.Type
 }
@@ -31,17 +37,15 @@ func MustCreateNewFactory(objMeta *pathutil.AugmentedObjMeta) Factory {
 func NewFactory(objMeta *pathutil.AugmentedObjMeta) (Factory, error) {
 	fieldToMetaPaths, err := objMeta.MapSearchTagsToPaths()
 	if err != nil {
-		return Factory{}, errors.Wrap(err, "mapping search tags to paths")
+		return nil, errors.Wrap(err, "mapping search tags to paths")
 	}
-	return Factory{
+	return &factoryImpl{
 		fieldToMetaPaths: fieldToMetaPaths,
 		rootType:         objMeta.RootType(),
 	}, nil
 }
 
-// GenerateEvaluator generates an Evaluator that will evaluate the given query
-// on objects of the factory's type.
-func (f *Factory) GenerateEvaluator(q *query.Query) (Evaluator, error) {
+func (f *factoryImpl) GenerateEvaluator(q *query.Query) (Evaluator, error) {
 	internal, err := f.generateInternalEvaluator(q)
 	if err != nil {
 		return nil, err
@@ -78,7 +82,7 @@ func (e *panicCatchingEvaluator) Evaluate(obj pathutil.AugmentedValue) (res *Res
 	return res, matched
 }
 
-func (f *Factory) generateInternalEvaluator(q *query.Query) (Evaluator, error) {
+func (f *factoryImpl) generateInternalEvaluator(q *query.Query) (Evaluator, error) {
 	// The field queries are implicitly a linked conjunction. This means that all field queries must match,
 	// AND that their matches must be in the same object.
 	// The notion of linking is a bit complicated -- the easiest way to get a sense of what it entails is to look
@@ -125,7 +129,7 @@ func (f *Factory) generateInternalEvaluator(q *query.Query) (Evaluator, error) {
 }
 
 // generateInternalEvaluatorForFieldQuery generates an internal fieldEvaluator for a specific field query.
-func (f *Factory) generateInternalEvaluatorForFieldQuery(q *query.FieldQuery) (fieldEvaluator, error) {
+func (f *factoryImpl) generateInternalEvaluatorForFieldQuery(q *query.FieldQuery) (fieldEvaluator, error) {
 	fieldPath, found := f.fieldToMetaPaths.Get(q.Field)
 	if !found {
 		return nil, errors.Errorf("invalid query: field %v unknown", q.Field)

@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	deploymentEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentMeta)
-	processEvalFactory    = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
-	imageEvalFactory      = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
-	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
-	networkFlowFactory    = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
+	deploymentEvalFactory = MustCreateFactoryWrapper(augmentedobjs.DeploymentMeta)
+	processEvalFactory    = MustCreateFactoryWrapper(augmentedobjs.ProcessMeta)
+	imageEvalFactory      = MustCreateFactoryWrapper(augmentedobjs.ImageMeta)
+	kubeEventFactory      = MustCreateFactoryWrapper(augmentedobjs.KubeEventMeta)
+	networkFlowFactory    = MustCreateFactoryWrapper(augmentedobjs.NetworkFlowMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -79,7 +79,7 @@ type sectionAndEvaluator struct {
 
 // BuildKubeEventMatcher builds a KubeEventMatcher.
 func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEventMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 
 // BuildAuditLogEventMatcher builds a AuditLogEventMatcher.
 func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (AuditLogEventMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&kubeEventFactory, p, storage.LifecycleStage_RUNTIME, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(kubeEventFactory, p, storage.LifecycleStage_RUNTIME, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (Au
 
 // BuildDeploymentWithProcessMatcher builds a DeploymentWithProcessMatcher.
 func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithProcessMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 
 // BuildDeploymentWithNetworkFlowMatcher builds a DeploymentWithNetworkFlowMatcher
 func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithNetworkFlowMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 // BuildDeploymentMatcher builds a matcher for deployments against the given policy,
 // which must be a boolean policy.
 func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (Deplo
 // BuildImageMatcher builds a matcher for images against the given policy,
 // which must be a boolean policy.
 func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&imageEvalFactory, p, storage.LifecycleStage_BUILD, options...)
+	sectionsAndEvals, err := getSectionsAndEvals(imageEvalFactory, p, storage.LifecycleStage_BUILD, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 	}, nil
 }
 
-func getSectionsAndEvals(factory *evaluator.Factory, p *storage.Policy, stage storage.LifecycleStage, options ...ValidateOption) ([]sectionAndEvaluator, error) {
+func getSectionsAndEvals(factory evaluator.Factory, p *storage.Policy, stage storage.LifecycleStage, options ...ValidateOption) ([]sectionAndEvaluator, error) {
 	if err := Validate(p, options...); err != nil {
 		return nil, err
 	}

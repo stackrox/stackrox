@@ -12,11 +12,25 @@ func TestAugmentedObj(t *testing.T) {
 	intObj := &objWithInt{AugmentedVal: 3}
 	stringObj := &objWithString{AugmentedVal: "AUGMENT"}
 	nestedStringObj := &objWithString{AugmentedVal: "NESTEDAUGMENT"}
+	mapObj := &objWithMap{AugmentedMap: map[string]string{"mapKey": "augment"}}
 	o := NewAugmentedObj(topLevelObj)
+
+	fullValue, err := o.Value().GetFullValue()
+	require.NoError(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"A": 1,
+		"Nested": []interface{}{
+			map[string]interface{}{"B": "B0"},
+			map[string]interface{}{"B": "B1"},
+		},
+		"NestedIgnored": map[string]interface{}{"D": ""},
+	}, fullValue)
+
 	augmentedIntObj := NewAugmentedObj(intObj)
 	require.NoError(t, augmentedIntObj.AddAugmentedObjAt(NewAugmentedObj(nestedStringObj), FieldStep("StringObjWithinIntObj")))
 	require.NoError(t, o.AddAugmentedObjAt(augmentedIntObj, FieldStep("IntObj")))
 	require.NoError(t, o.AddPlainObjAt(stringObj, FieldStep("Nested"), IndexStep(1), FieldStep("StringObj")))
+	require.NoError(t, o.AddPlainObjAt(mapObj, FieldStep("MapObj")))
 
 	value := o.Value()
 	assert.Equal(t, topLevelObj, value.Underlying().Interface())
@@ -29,4 +43,27 @@ func TestAugmentedObj(t *testing.T) {
 
 	// Test the error case.
 	assert.Error(t, o.AddPlainObjAt(stringObj, FieldStep("IntObj")))
+
+	fullValue, err = o.Value().GetFullValue()
+	require.NoError(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"A": 1,
+		"Nested": []interface{}{
+			map[string]interface{}{"B": "B0"},
+			map[string]interface{}{
+				"B":         "B1",
+				"StringObj": map[string]interface{}{"AugmentedVal": "AUGMENT"},
+			},
+		},
+		"IntObj": map[string]interface{}{
+			"AugmentedVal": 3,
+			"StringObjWithinIntObj": map[string]interface{}{
+				"AugmentedVal": "NESTEDAUGMENT",
+			},
+		},
+		"NestedIgnored": map[string]interface{}{"D": ""},
+		"MapObj": map[string]interface{}{
+			"AugmentedMap": map[string]interface{}{"mapKey": "augment"},
+		},
+	}, fullValue)
 }

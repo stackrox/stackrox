@@ -32,6 +32,10 @@ type objWithString struct {
 	AugmentedVal string `search:"AugmentedStr"`
 }
 
+type objWithMap struct {
+	AugmentedMap map[string]string
+}
+
 func TestAugmentedObjMeta(t *testing.T) {
 	for _, testCase := range []struct {
 		desc             string

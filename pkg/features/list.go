@@ -41,4 +41,7 @@ var (
 
 	// LocalImageScanning enables OpenShift local-image scanning.
 	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", false)
+
+	// OPABasedEvaluator enables the OPA-based policy evaluator.
+	OPABasedEvaluator = registerFeature("Use OPA-based evaluator", "ROX_OPA_BASED_EVALUATOR", false)
 )
