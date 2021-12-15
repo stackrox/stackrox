@@ -9,8 +9,10 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -171,6 +173,11 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []req
 	// check if leaf cert is part of an init bundle
 	if len(bundleID) == 0 {
 		log.Debugf("Init bundle ID was not found in certificate %q", leaf.Subject.OrganizationalUnit)
+		return nil
+	}
+	subject := mtls.SubjectFromCommonName(leaf.Subject.CommonName)
+	if subject.Identifier == centralsensor.OperatorIssuedInitCertClusterID {
+		log.Debugf("Not checking revocation for operator-issued init cert.")
 		return nil
 	}
 
