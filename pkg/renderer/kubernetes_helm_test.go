@@ -35,7 +35,8 @@ var certs = &sensor.Certs{
 }
 
 func getDefaultMetaValues(t *testing.T) charts.MetaValues {
-	return charts.MetaValues{				"MainRegistry": "stackrox.io",
+	return charts.MetaValues{
+		"MainRegistry": "stackrox.io",
 		"ImageRemote":  "main",
 		"ImageTag":     "3.0.41.x-92-g9e8a347ffe",
 
