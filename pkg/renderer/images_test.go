@@ -191,6 +191,7 @@ func TestConfigureImageOverrides(t *testing.T) {
 					CommonConfig: c.configValues,
 				},
 			}
+
 			// (Act) compute overrides
 			configureImageOverrides(&config, testFlavor)
 
