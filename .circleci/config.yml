@@ -1089,7 +1089,7 @@ commands:
       - run:
           name: Destroy OpenShift 4 cluster
           environment:
-            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
           command: |
             if [ ! -d "$PWD/<< parameters.cluster-name >>" ]; then
               echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
@@ -1122,7 +1122,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.16-4-g21c15ac03f-snapshot \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.17 \
               destroy
 
   destroy-aro-cluster:
@@ -1144,7 +1144,7 @@ commands:
               -e CIRCLECI="$CIRCLECI" \
               -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.16-4-g21c15ac03f-snapshot \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
               destroy
 
   # ROSA and ARO teardown steps are not being run at the end of 'run-qa-tests'
@@ -2125,7 +2125,7 @@ commands:
       - run:
           name: Create OpenShift 4 cluster
           environment:
-          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
+          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
           - GCP_PROJECT: stackrox-ci
           command: |
             mkdir $PWD/<< parameters.cluster-name >>
@@ -4656,7 +4656,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.16-4-g21c15ac03f-snapshot \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.17 \
               create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
@@ -4687,7 +4687,7 @@ jobs:
               -e CIRCLECI="$CIRCLECI" \
               -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.16-4-g21c15ac03f-snapshot \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
               create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
