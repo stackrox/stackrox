@@ -2556,7 +2556,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
     steps:
       - checkout
       - attach_workspace:
@@ -2608,7 +2608,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
     steps:
       - checkout
       - attach_workspace:
@@ -2661,7 +2661,7 @@ jobs:
     environment:
       - GOPATH: /home/circleci/go
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
     resource_class: large
     steps:
       - checkout
@@ -2725,7 +2725,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
     steps:
       - checkout-with-submodules
       - check-docs-step:
@@ -3026,7 +3026,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
     steps:
       - checkout
       - setup_remote_docker
@@ -3102,7 +3102,7 @@ jobs:
   provision-eks-api-e2e-tests:
     executor: custom
     environment:
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -3888,7 +3888,7 @@ jobs:
   eks-api-e2e-tests:
     executor: custom
     environment:
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.16-4-g21c15ac03f-snapshot
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
