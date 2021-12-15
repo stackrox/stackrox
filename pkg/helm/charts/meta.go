@@ -44,7 +44,7 @@ func RHACSMetaValues() MetaValues {
 	flavor := images.GetFlavorByBuildType()
 	metaValues := MetaValues{
 		"Versions": flavor.Versions,
-		// TODO: these registries will change once we have the RHACS flavor. For now they will remain hardcoded here.
+		// TODO(RS-380): these registries will change once we have the RHACS flavor. For now they will remain hardcoded here.
 		"MainRegistry":          "registry.redhat.io/rh-acs",
 		"ImageRemote":           "main",
 		"CollectorRegistry":     "registry.redhat.io/rh-acs",

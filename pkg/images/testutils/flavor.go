@@ -13,8 +13,6 @@ import (
 // values in the tests without having to inject values and rely on flavor determination in the production code.
 func MakeImageFlavorForTest(t *testing.T) images.ImageFlavor {
 	testutils.MustBeInTest(t)
-	// TODO: change this values to something different than default.
-	// For these values to be determined as anything (e.g. `my-image-name`) we require the changes in PR #64.
 	return images.ImageFlavor{
 		MainRegistry:           "test.registry",
 		MainImageName:          "main",
