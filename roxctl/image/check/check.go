@@ -40,6 +40,7 @@ var (
 	defaultJunitJsonPathExpressions = map[string]string{
 		printer.JUnitTestCasesExpressionKey:            "results.#.violatedPolicies.#.name",
 		printer.JUnitFailedTestCasesExpressionKey:      "results.#.violatedPolicies.#(failingCheck==~true)#.name",
+		printer.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
 		printer.JUnitFailedTestCaseErrMsgExpressionKey: "results.#.violatedPolicies.#(failingCheck==~true)#.violation.@list",
 	}
 	// supported output formats with default values
