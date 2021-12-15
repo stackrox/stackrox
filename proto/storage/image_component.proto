@@ -9,7 +9,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message ImageComponent {
-    string                         id           = 1 [(gogoproto.moretags) = "search:\"Component ID,store\""];
+    string                         id           = 1 [(gogoproto.moretags) = 'search:"Component ID,store" sql:"pk"'];
     string                         name         = 2 [(gogoproto.moretags) = "search:\"Component,store\""];
     string                         version      = 3 [(gogoproto.moretags) = "search:\"Component Version,store\""];
     License                        license      = 4;
@@ -33,4 +33,11 @@ message ComponentCVEEdge {
     oneof has_fixed_by {
         string fixed_by   = 3 [(gogoproto.moretags) = "search:\"Fixed By,store,hidden\""];
     }
+}
+
+message ComponentCVEEdgeEntry {
+    string component_id = 1 [(gogoproto.moretags) = 'search:"Component ID" sql:"pk"'];
+    string cve_id       = 2 [(gogoproto.moretags) = 'search:"CVE" sql:"pk"'];
+
+    ComponentCVEEdge edge = 3;
 }
