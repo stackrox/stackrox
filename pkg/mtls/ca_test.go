@@ -18,13 +18,13 @@ func Test_ca_IssueCertForSubject(t *testing.T) {
 	}{
 		"regular cert": {
 			opts:        nil,
-			minNotAfter: 364*24*time.Hour,
-			maxNotAfter: 366*24*time.Hour,
+			minNotAfter: 364 * 24 * time.Hour,
+			maxNotAfter: 366 * 24 * time.Hour,
 		},
 		"ephemeral cert": {
 			opts:        []IssueCertOption{WithEphemeralValidity()},
-			minNotAfter: 2*time.Hour,
-			maxNotAfter: 4*time.Hour,
+			minNotAfter: 2 * time.Hour,
+			maxNotAfter: 4 * time.Hour,
 		},
 	}
 	cert, _, key, err := initca.New(&csr.CertificateRequest{

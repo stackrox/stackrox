@@ -55,7 +55,7 @@ const (
 
 	certLifetime = 365 * 24 * time.Hour
 
-	ephemeralProfile = "ephemeral"
+	ephemeralProfile                = "ephemeral"
 	ephemeralInitBundleCertLifetime = 3 * time.Hour
 )
 
@@ -252,7 +252,7 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 			Names:        []cfcsr.Name{subj.Name()},
 			SerialNumber: serial.String(),
 		},
-		Serial: serial,
+		Serial:  serial,
 		Profile: issueOpts.profile,
 	}
 	certBytes, err := signer.Sign(req)
