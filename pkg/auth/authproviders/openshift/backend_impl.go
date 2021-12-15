@@ -145,9 +145,6 @@ func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthRe
 		"name":   {id.Username},
 		"groups": id.Groups,
 	}
-	if id.Email != "" {
-		attributes["email"] = []string{id.Email}
-	}
 
 	return &authproviders.AuthResponse{
 		Claims: &tokens.ExternalUserClaim{
