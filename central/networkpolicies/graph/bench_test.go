@@ -58,7 +58,7 @@ func getPeer(podSelector string) []*storage.NetworkPolicyPeer {
 	}
 }
 
-//shuffle and take the first N is equivalent to choosing without replacement.  Has non-impactful side-effects.
+// shuffle and take the first N is equivalent to choosing without replacement.  Has non-impactful side-effects.
 func chooseN(n int, deployments []*storage.Deployment) []*storage.Deployment {
 	shuffle(deployments)
 	return deployments[:n]

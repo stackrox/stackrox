@@ -30,7 +30,7 @@ type istioCVEManager struct {
 }
 
 func (m *istioCVEManager) initialize() {
-	//Load the istio CVEs in mem
+	// Load the istio CVEs in mem
 	newIstioCVEs, err := getLocalCVEs(persistentIstioCVEsFilePath)
 	if err != nil {
 		log.Errorf("failed to get local istio cves: %v", err)

@@ -235,7 +235,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return nil, err
 	}
 
-	//Confirm that network policies in restricted namespaces are not changed
+	// Confirm that network policies in restricted namespaces are not changed
 	err = validateNoForbiddenModification(networkPoliciesInSimulation)
 	if err != nil {
 		return nil, err

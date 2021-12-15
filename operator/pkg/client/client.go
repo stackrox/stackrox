@@ -29,7 +29,7 @@ func (s stackRoxClientset) SecuredClusterV1Alpha1(namespace string) typedClients
 	return s.stackroxClientset.PlatformV1alpha1().SecuredClusters(namespace)
 }
 
-//CentralV1Alpha1 returns a client to access Central resources
+// CentralV1Alpha1 returns a client to access Central resources
 func (s stackRoxClientset) CentralV1Alpha1(namespace string) typedClientset.CentralInterface {
 	return s.stackroxClientset.PlatformV1alpha1().Centrals(namespace)
 }

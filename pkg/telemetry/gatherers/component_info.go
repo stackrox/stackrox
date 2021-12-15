@@ -21,7 +21,7 @@ func (c *ComponentInfoGatherer) Gather() *data.RoxComponentInfo {
 	return &data.RoxComponentInfo{
 		Version:  version.GetMainVersion(),
 		Process:  getProcessInfo(),
-		Restarts: 0, //TODO: Figure out how to get number of restarts
+		Restarts: 0, // TODO: Figure out how to get number of restarts
 	}
 }
 
