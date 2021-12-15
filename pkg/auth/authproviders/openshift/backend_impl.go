@@ -109,7 +109,7 @@ func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) (str
 	// baseRedirectURL does not include the hostname, take it from the request.
 	// Allow HTTP only if the client did not use TLS and the host is localhost.
 	redirectURL := b.baseRedirectURL
-	redirectURL.Host = "central-stackrox.apps.rox-8702-demo-email-display-openshift.openshift.infra.rox.systems"
+	redirectURL.Host = ri.Hostname
 	if !ri.ClientUsedTLS && netutil.IsLocalEndpoint(redirectURL.Host) {
 		redirectURL.Scheme = "http"
 	}
