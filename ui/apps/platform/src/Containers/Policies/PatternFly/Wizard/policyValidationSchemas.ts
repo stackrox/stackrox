@@ -24,7 +24,6 @@ const validationSchema4 = yup.object().shape({}); // TODO
 const validationSchemaDefault = yup.object().shape({});
 
 export function getValidationSchema(stepId: number | string | undefined): yup.BaseSchema {
-    console.log('getValidationSchema', stepId); // eslint-disable-line
     switch (stepId) {
         case 1:
             return validationSchema1;
