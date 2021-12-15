@@ -158,6 +158,8 @@ var (
 				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 		),
 
+		v1.SearchCategory_IMAGE_VULN_EDGE: getImageCVEEdgeTransformationForVulns(),
+
 		// CVE
 		v1.SearchCategory_VULNERABILITIES: DoNothing,
 
@@ -194,17 +196,13 @@ var (
 	)
 )
 
-func init() {
-	setImageCVEEdgeTransformation()
-}
-
-func setImageCVEEdgeTransformation() {
+func getImageCVEEdgeTransformationForVulns() transformation.OneToMany {
 	if features.VulnRiskManagement.Enabled() {
 		// CombineReversed ( { k1, k2 }
 		//          CVEs,
 		//          CVE (backwards) Image,
 		//          )
-		CVETransformations[v1.SearchCategory_IMAGE_VULN_EDGE] = transformation.ReverseEdgeKeys(
+		return transformation.ReverseEdgeKeys(
 			DoNothing,
 			transformation.AddPrefix(cveDackBox.Bucket).
 				ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
@@ -217,7 +215,7 @@ func setImageCVEEdgeTransformation() {
 	//          CVEs,
 	//          CVE (backwards) Components (backwards) Image,
 	//          )
-	CVETransformations[v1.SearchCategory_IMAGE_VULN_EDGE] = transformation.ReverseEdgeKeys(
+	return transformation.ReverseEdgeKeys(
 		DoNothing,
 		transformation.AddPrefix(cveDackBox.Bucket).
 			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).

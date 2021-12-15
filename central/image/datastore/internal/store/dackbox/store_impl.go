@@ -337,8 +337,8 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 	if scanUpdated {
 		if features.VulnRiskManagement.Enabled() {
 			childKeys := make([][]byte, 0, len(parts.imageCVEEdges))
-			for _, cve := range parts.imageCVEEdges {
-				childKeys = append(childKeys, cveDackBox.KeyFunc(cve))
+			for cve := range parts.imageCVEEdges {
+				childKeys = append(childKeys, cveDackBox.BucketHandler.GetKey(cve))
 			}
 			childKeys = append(childKeys, componentKeys...)
 			dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), childKeys)

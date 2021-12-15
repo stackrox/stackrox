@@ -198,10 +198,12 @@ func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
 		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok && mfQ.MatchFieldQuery.GetField() == search.CVESuppressed.String() && mfQ.MatchFieldQuery.GetValue() == "true" {
 			isSearchBySuppressed = true
+			return
 		}
 		if features.VulnRiskManagement.Enabled() {
 			if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
 				isSearchByVulnState = true
+				return
 			}
 		}
 	})

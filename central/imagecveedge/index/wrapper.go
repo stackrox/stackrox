@@ -2,7 +2,7 @@ package index
 
 import (
 	"github.com/gogo/protobuf/proto"
-	edgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
+	edgeDackBox "github.com/stackrox/rox/central/imagecveedge/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
