@@ -23,10 +23,8 @@ import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsBu
 import CancelDeferralModal from './CancelDeferralModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 
-export type DeferredCVERow = Vulnerability;
-
 export type DeferredCVEsTableProps = {
-    rows: DeferredCVERow[];
+    rows: Vulnerability[];
     isLoading: boolean;
     itemCount: number;
     updateTable: () => void;
@@ -49,7 +47,7 @@ function DeferredCVEsTable({
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<DeferredCVERow>(rows);
+    } = useTableSelection<Vulnerability>(rows);
     const [cveDeferralsToBeCancelled, setCVEDeferralsToBeCancelled] = useState<string[]>([]);
 
     function setSelectedCVEDeferralsToBeCancelled() {

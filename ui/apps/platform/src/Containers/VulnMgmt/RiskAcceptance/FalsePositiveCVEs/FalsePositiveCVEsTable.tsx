@@ -6,6 +6,7 @@ import {
     Divider,
     DropdownItem,
     InputGroup,
+    Pagination,
     TextInput,
     Toolbar,
     ToolbarContent,
@@ -13,34 +14,31 @@ import {
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
-
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
-import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
-import { RequestComment } from 'types/vuln_request.proto';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import VulnerabilityCommentsButton from '../RequestComments/RequestCommentsButton';
 import ReobserveCVEModal from './ReobserveCVEModal';
-import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
-
-export type FalsePositiveCVERow = {
-    id: string;
-    cve: string;
-    cvssScore: string;
-    severity: VulnerabilitySeverity;
-    components: EmbeddedImageScanComponent[];
-    comments: RequestComment[];
-    applyTo: string;
-};
+import { Vulnerability } from '../imageVulnerabilities.graphql';
 
 export type FalsePositiveCVEsTableProps = {
-    rows: FalsePositiveCVERow[];
-};
+    rows: Vulnerability[];
+    isLoading: boolean;
+    itemCount: number;
+    updateTable: () => void;
+} & UsePaginationResult;
 
-function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactElement {
+function FalsePositiveCVEsTable({
+    rows,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+    updateTable,
+}: FalsePositiveCVEsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -49,7 +47,7 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<FalsePositiveCVERow>(rows);
+    } = useTableSelection<Vulnerability>(rows);
     const [falsePositiveCVEsToBeReobserved, setFalsePositiveCVEsToBeReobserved] = useState<
         string[]
     >([]);
@@ -66,6 +64,7 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
     function completeReobserveCVE() {
         onClearAll();
         setFalsePositiveCVEsToBeReobserved([]);
+        updateTable();
     }
 
     function requestReobserveCVE(values) {
@@ -119,6 +118,15 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
+                    </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
             <Divider component="div" />
@@ -133,10 +141,11 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
                         />
                         <Th>CVE</Th>
                         <Th>Severity</Th>
-                        <Th>CVSS score</Th>
                         <Th>Affected Components</Th>
-                        <Th>Apply to</Th>
                         <Th>Comments</Th>
+                        <Th>Expiration</Th>
+                        <Th>Apply to</Th>
+                        <Th>Approver</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -164,19 +173,13 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
-                                <Td dataLabel="CVSS score">
-                                    <CVSSScoreLabel cvss={row.cvssScore} />
-                                </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
-                                <Td dataLabel="Apply to">{row.applyTo}</Td>
-                                <Td dataLabel="Comments">
-                                    <VulnerabilityCommentsButton
-                                        cve={row.cve}
-                                        comments={row.comments}
-                                    />
-                                </Td>
+                                <Td dataLabel="Comments">-</Td>
+                                <Td dataLabel="Expiration">-</Td>
+                                <Td dataLabel="Apply to">-</Td>
+                                <Td dataLabel="Approver">-</Td>
                                 <Td
                                     className="pf-u-text-align-right"
                                     actions={{
