@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func getBaseConfig(t *testing.T) Config {
+func getBaseConfig() Config {
 	return Config{
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &K8sConfig{
@@ -93,7 +93,7 @@ func (suite *renderSuite) TestRenderMultiple() {
 	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		for _, format := range []v1.DeploymentFormat{v1.DeploymentFormat_KUBECTL, v1.DeploymentFormat_HELM} {
 			suite.T().Run(fmt.Sprintf("%s-%s", orch, format), func(t *testing.T) {
-				conf := getBaseConfig(t)
+				conf := getBaseConfig()
 				conf.ClusterType = orch
 				conf.K8sConfig.DeploymentFormat = format
 
@@ -106,7 +106,7 @@ func (suite *renderSuite) TestRenderMultiple() {
 }
 
 func (suite *renderSuite) TestRenderWithBadImage() {
-	conf := getBaseConfig(suite.T())
+	conf := getBaseConfig()
 	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
 	_, err := Render(conf, suite.testFlavor)
 	suite.Error(err)
