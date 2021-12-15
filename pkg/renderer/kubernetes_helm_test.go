@@ -2,7 +2,9 @@ package renderer
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"testing"
 
@@ -14,7 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/chartutil"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var certs = &sensor.Certs{
@@ -53,16 +58,16 @@ func getDefaultMetaValues(t *testing.T) charts.MetaValues {
 
 		"CreateUpgraderSA": true,
 
-		"AdmissionController":              c.admissionController,
+		"AdmissionController":              false,
 		"AdmissionControlListenOnUpdates":  false,
 		"AdmissionControlListenOnEvents":   true,
 		"DisableBypass":                    false,
 		"TimeoutSeconds":                   3,
 		"ScanInline":                       true,
-		"AdmissionControllerEnabled":       c.admissionController,
-		"AdmissionControlEnforceOnUpdates": c.admissionController,
+		"AdmissionControllerEnabled":       false,
+		"AdmissionControlEnforceOnUpdates": false,
 
-		"EnvVars":      envVars,
+		"EnvVars":      nil,
 		"FeatureFlags": make(map[string]string),
 
 		"Versions": testutils.GetExampleVersion(t),
@@ -160,10 +165,31 @@ func TestRenderSensorHelm(t *testing.T) {
 }
 
 func TestRenderSensorTLSSecretsOnly(t *testing.T) {
+	const expectedSecretsCount = 3
 	fields := getDefaultMetaValues(t)
 	fields["CertOnly"] = true
 
-	//TODO: Assert rendered manifests
-	_, err := RenderSensorTLSSecretsOnly(fields, certs)
+	manifestsBytes, err := RenderSensorTLSSecretsOnly(fields, certs)
 	require.NoError(t, err)
+	d := yaml.NewDecoder(bytes.NewReader(manifestsBytes))
+
+	expectedSecrets := []string{"admission-control-tls", "collector-tls", "sensor-tls"}
+	counter := 0
+	for {
+		spec := make(map[string]interface{})
+		err := d.Decode(spec)
+		if errors.Is(err, io.EOF) {
+			break
+		} else {
+			require.NoError(t, err)
+		}
+
+		secret := &corev1.Secret{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(spec, secret)
+		require.NoError(t, err)
+
+		counter++
+		assert.Contains(t, expectedSecrets, secret.Name)
+	}
+	assert.Equal(t, expectedSecretsCount, counter, "Expected %s secrets, but found more or less secrets")
 }
