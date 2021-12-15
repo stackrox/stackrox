@@ -37,7 +37,7 @@ message CVE {
         repeated string tags = 2;
     }
 
-    string                    id                    = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE,store" sql:"pk"'];
     float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score,store\""];
     // For internal purposes only. This will only be populated prior to upsert into datastore.

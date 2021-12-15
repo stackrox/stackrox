@@ -12,7 +12,7 @@ package storage;
 
 // Next Tag: 15
 message Image {
-    string                    id           = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
+    string                    id           = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk"'];
     ImageName                 name         = 1;
 
     ImageMetadata             metadata     = 2;
@@ -198,6 +198,13 @@ message ImageCVEEdge {
     // base 64 encoded Image:CVE ids.
     string                    id                     = 1;
     google.protobuf.Timestamp first_image_occurrence = 2;
+}
+
+message ImageCVEEdgeEntry {
+    string image_id  = 1 [(gogoproto.moretags) = 'search:"Image Sha" sql:"pk"'];
+    string cve_id    = 2 [(gogoproto.moretags) = 'search:"CVE" sql:"pk"'];
+
+    ImageCVEEdge edge = 3;
 }
 
 message WatchedImage {
