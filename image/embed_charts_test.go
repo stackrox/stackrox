@@ -96,7 +96,9 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 	}
 }
 
-func (s *embedTestSuite) TestLoadSecuredCluster_DisabledFeatureFlagShouldDisableScanner() {
+//This test will be removed after the scanner integration is finished. It is critical to check that no scanner manifests are contained within
+//secured cluster.
+func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() {
 	s.envIsolator.Setenv(features.LocalImageScanning.Name(), "false")
 
 	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.DefaultMetaValues())
@@ -112,5 +114,5 @@ func (s *embedTestSuite) TestLoadSecuredCluster_DisabledFeatureFlagShouldDisable
 		}
 	}
 
-	s.Empty(foundScannerTpls, "Found scanner manifests but feature flag %q is disabled", features.LocalImageScanning.Name())
+	s.Empty(foundScannerTpls, "Found scanner manifests found in SecuredCluster chart, please remove")
 }
