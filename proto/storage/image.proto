@@ -187,6 +187,13 @@ message ImageComponentEdge {
     string    location    = 3 [(gogoproto.moretags) = "search:\"Component Location,store,hidden\""];
 }
 
+message ImageComponentEdgeEntry {
+    string image_id     = 1 [(gogoproto.moretags) = 'search:"Image Sha" sql:"pk"'];
+    string component_id = 2 [(gogoproto.moretags) = 'search:"Component Id" sql:"pk"'];
+
+    ImageCVEEdge edge = 3;
+}
+
 message ImageCVEEdge {
     // base 64 encoded Image:CVE ids.
     string                    id                     = 1;
