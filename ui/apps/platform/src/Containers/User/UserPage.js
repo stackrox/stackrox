@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Route, Switch } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
+import { createStructuredSelector, createSelector } from 'reselect';
 import {
     DescriptionListDescription,
     DescriptionListGroup,
