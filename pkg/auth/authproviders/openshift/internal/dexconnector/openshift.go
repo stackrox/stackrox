@@ -254,6 +254,7 @@ func (c *openshiftConnector) identity(ctx context.Context, s connector.Scopes, t
 		UserID:            user.UID,
 		Username:          user.Name,
 		PreferredUsername: user.Name,
+		Email:             user.Name,
 		Groups:            user.Groups,
 	}
 
