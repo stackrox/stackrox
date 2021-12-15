@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/helm/charts"
-	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/testutils"
 )
 

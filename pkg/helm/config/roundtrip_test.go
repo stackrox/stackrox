@@ -14,10 +14,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stretchr/testify/suite"
@@ -42,10 +41,6 @@ type helmConfigSuite struct {
 
 func TestBase(t *testing.T) {
 	suite.Run(t, new(helmConfigSuite))
-}
-
-func (h *helmConfigSuite) SetupTest() {
-	testbuildinfo.SetForTest(h.T())
 }
 
 func (h *helmConfigSuite) TestHelmConfigRoundTrip() {

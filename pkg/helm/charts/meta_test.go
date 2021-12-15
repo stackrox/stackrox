@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"

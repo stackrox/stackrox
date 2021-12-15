@@ -3,7 +3,7 @@ package renderer
 import (
 	"testing"
 
-	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -180,7 +180,7 @@ func TestConfigureImageOverrides(t *testing.T) {
 				ScannerDBImage: testFlavor.ScannerDBImage(),
 			},
 		},
-		// TODO(RS-381): Cover other overrides in this test cases (e.g. scanner and scanner-db overrides
+		// TODO(RS-397): Cover other overrides in this test cases (e.g. scanner and scanner-db overrides
 	}
 
 	for name, c := range cases {

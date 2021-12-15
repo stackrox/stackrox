@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/images/testutils"
+	"github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 )

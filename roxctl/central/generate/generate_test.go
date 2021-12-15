@@ -9,7 +9,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
