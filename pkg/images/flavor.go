@@ -122,8 +122,7 @@ func (flavor *ImageFlavor) MainImage() string {
 	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.MainImageName, flavor.MainImageTag)
 }
 
-// MainImageNoTag is the Docker image repo for the "main" image. It
-// changes depending on whether this is a release build.
+// MainImageNoTag is the container image repository (image name including registry, excluding tag) for the "main" image.
 func (flavor *ImageFlavor) MainImageNoTag() string {
 	return fmt.Sprintf("%s/%s", flavor.MainRegistry, flavor.MainImageName)
 }
