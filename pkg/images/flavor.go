@@ -112,7 +112,7 @@ func (flavor *ImageFlavor) ScannerImage() string {
 	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.ScannerImageName, flavor.ScannerImageTag)
 }
 
-// ScannerDBImage is the Docker image name for the scanner db image
+// ScannerDBImage is the container image reference (full name) for the scanner-db image.
 func (flavor *ImageFlavor) ScannerDBImage() string {
 	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.ScannerDBImageName, flavor.ScannerDBImageTag)
 }
