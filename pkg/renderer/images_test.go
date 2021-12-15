@@ -3,7 +3,6 @@ package renderer
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -166,16 +165,12 @@ func TestConfigureImageOverrides(t *testing.T) {
 	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
 	cases := map[string]struct {
 		configValues         CommonConfig
-		flavor               defaults.ImageFlavor
-		override             bool
 		expectedMainRegistry string
 	}{
 		"Override Main Registry": {
 			configValues: CommonConfig{
 				MainImage: "quay.io/rhacs/main",
 			},
-			override:             true,
-			flavor:               testFlavor,
 			expectedMainRegistry: "quay.io/rhacs",
 		},
 		"Don't override main registry": {
@@ -184,26 +179,29 @@ func TestConfigureImageOverrides(t *testing.T) {
 				ScannerImage:   testFlavor.ScannerImage(),
 				ScannerDBImage: testFlavor.ScannerDBImage(),
 			},
-			flavor:   testFlavor,
-			override: false,
 		},
+		// TODO(RS-381): Cover other overrides in this test cases (e.g. scanner and scanner-db overrides
 	}
 
 	for name, c := range cases {
-		t.Run(name, func(tt *testing.T) {
+		t.Run(name, func(t *testing.T) {
+			// (Arrange) configuration parameters
 			config := Config{
 				K8sConfig: &K8sConfig{
 					CommonConfig: c.configValues,
 				},
 			}
-			configureImageOverrides(&config, c.flavor)
-			assert.NotNil(tt, config.K8sConfig.ImageOverrides)
-			if c.override {
-				assert.Equal(tt, config.K8sConfig.ImageOverrides["MainRegistry"], c.expectedMainRegistry)
+			// (Act) compute overrides
+			configureImageOverrides(&config, testFlavor)
+
+			// (Assert) overrides are mapped (if any)
+			assert.NotNil(t, config.K8sConfig.ImageOverrides)
+			if c.expectedMainRegistry != "" {
+				assert.Equal(t, c.expectedMainRegistry, config.K8sConfig.ImageOverrides["MainRegistry"])
 			} else {
-				assert.Len(tt, config.K8sConfig.ImageOverrides["Main"], 0, "should have no keys in Main map")
-				assert.Len(tt, config.K8sConfig.ImageOverrides["Scanner"], 0, "should have no keys in Scanner map")
-				assert.Len(tt, config.K8sConfig.ImageOverrides["ScannerDB"], 0, "should have no keys in ScannerDB map")
+				assert.Len(t, config.K8sConfig.ImageOverrides["Main"], 0, "should have no keys in Main map")
+				assert.Len(t, config.K8sConfig.ImageOverrides["Scanner"], 0, "should have no keys in Scanner map")
+				assert.Len(t, config.K8sConfig.ImageOverrides["ScannerDB"], 0, "should have no keys in ScannerDB map")
 			}
 
 		})
