@@ -150,7 +150,6 @@ func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthRe
 		Claims: &tokens.ExternalUserClaim{
 			UserID:     id.Username,
 			FullName:   id.Username,
-			Email:      id.Email,
 			Attributes: attributes,
 		},
 		Expiration: time.Now().Add(roxTokenExpiration),
