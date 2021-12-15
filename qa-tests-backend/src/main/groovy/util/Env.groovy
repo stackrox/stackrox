@@ -205,7 +205,7 @@ class Env {
     }
 
     static String mustGetAWSAssumeRoleSecretKeyID() {
-        return mustGet("AWS_ASSUME_ROLE_SECRET_KEY_ID")
+        return mustGet("AWS_ASSUME_ROLE_SECRET_ACCESS_KEY")
     }
 
     static String mustGetAWSAssumeRoleRoleID() {

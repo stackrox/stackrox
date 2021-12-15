@@ -145,7 +145,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // Step 2, check valid from and save
+        // Step 2, check valid form and save
         getInputByLabel('Integration name').clear().type(generateNameWithDate('ECR Test'));
         getInputByLabel('Registry ID').clear().type('12345');
         getInputByLabel('Region').clear().type('us-west-1');

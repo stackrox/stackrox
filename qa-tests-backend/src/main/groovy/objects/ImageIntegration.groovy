@@ -171,7 +171,7 @@ class ECRRegistryIntegration implements ImageIntegration {
                         .setUseIam(args.useIam as Boolean)
                         .setUseAssumeRole(args.useAssumeRole as Boolean)
                         .setAssumeRoleId(args.assumeRoleRoleId as String)
-                        .setAssumeRoleTestConditionId(args.assumeRoleTestConditionId as String)
+                        .setAssumeRoleExternalId(args.assumeRoleTestConditionId as String)
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)
