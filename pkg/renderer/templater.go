@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
@@ -140,8 +139,6 @@ type Config struct {
 	Version string
 
 	ConfigFileOverrides map[string]string
-
-	Flavor images.ImageFlavor
 
 	RenderOpts *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
 }

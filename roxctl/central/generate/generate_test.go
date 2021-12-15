@@ -48,7 +48,6 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			OfflineMode:      false,
 		},
-		Flavor: flavor,
 	}
 
 	testCases := []struct {

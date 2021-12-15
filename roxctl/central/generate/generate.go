@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images"
-	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -178,8 +177,8 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 	}
 
 	// TODO: roxctl should depend on its own mechanism to determine flavor (e.g. command line argument)
-	config.Flavor = images.GetFlavorByBuildType()
-	files, err := renderer.Render(config)
+	flavor := images.GetFlavorByBuildType()
+	files, err := renderer.Render(config, flavor)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not render files")
 	}

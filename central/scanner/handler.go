@@ -94,10 +94,9 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 			"scanner-db-key.pem":  scannerDBCert.KeyPEM,
 			"scanner-db-password": dbPassword,
 		},
-		Flavor: images.GetFlavorByBuildType(),
 	}
 
-	return renderer.RenderScannerOnly(config)
+	return renderer.RenderScannerOnly(config, images.GetFlavorByBuildType())
 }
 
 func serveHTTP(w http.ResponseWriter, r *http.Request) {

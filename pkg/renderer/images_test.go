@@ -195,9 +195,8 @@ func TestConfigureImageOverrides(t *testing.T) {
 				K8sConfig: &K8sConfig{
 					CommonConfig: c.configValues,
 				},
-				Flavor: c.flavor,
 			}
-			configureImageOverrides(&config)
+			configureImageOverrides(&config, c.flavor)
 			assert.NotNil(tt, config.K8sConfig.ImageOverrides)
 			if c.override {
 				assert.Equal(tt, config.K8sConfig.ImageOverrides["MainRegistry"], c.expectedMainRegistry)
