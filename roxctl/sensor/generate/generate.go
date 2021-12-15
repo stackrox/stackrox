@@ -163,7 +163,7 @@ func Command() *cobra.Command {
 		},
 	}
 
-	// TODO: set empty defaults on `sensor generate`. Defaults should be derived from a running central
+	// TODO(RS-352): set empty defaults on `sensor generate`. Defaults should be derived from a running central
 	flavor := defaults.GetImageFlavorByBuildType()
 
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
