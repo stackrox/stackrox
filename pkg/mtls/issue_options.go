@@ -2,6 +2,7 @@ package mtls
 
 type issueOptions struct {
 	namespace string
+	profile   string
 }
 
 func (o *issueOptions) apply(opts []IssueCertOption) {
@@ -17,5 +18,13 @@ type IssueCertOption func(o *issueOptions)
 func WithNamespace(namespace string) IssueCertOption {
 	return func(o *issueOptions) {
 		o.namespace = namespace
+	}
+}
+
+// WithEphemeralValidity requests certificates with short validity.
+// This option is suitable for issuing init bundles which cannot be revoked.
+func WithEphemeralValidity() IssueCertOption {
+	return func(o *issueOptions) {
+		o.profile = ephemeralProfile
 	}
 }

@@ -54,6 +54,9 @@ const (
 	beforeGracePeriod = 1 * time.Hour
 
 	certLifetime = 365 * 24 * time.Hour
+
+	ephemeralProfile = "ephemeral"
+	ephemeralInitBundleCertLifetime = 3 * time.Hour
 )
 
 var (
@@ -180,17 +183,24 @@ func signer() (cfsigner.Signer, error) {
 
 func signingPolicy() *config.Signing {
 	return &config.Signing{
-		Default: &config.SigningProfile{
-			Usage:    []string{"signing", "key encipherment", "server auth", "client auth"},
-			Expiry:   certLifetime + beforeGracePeriod,
-			Backdate: beforeGracePeriod,
-			CSRWhitelist: &config.CSRWhitelist{
-				PublicKey:          true,
-				PublicKeyAlgorithm: true,
-				SignatureAlgorithm: true,
-			},
-			ClientProvidesSerialNumbers: true,
+		Default: profile(certLifetime, beforeGracePeriod),
+		Profiles: map[string]*config.SigningProfile{
+			ephemeralProfile: profile(ephemeralInitBundleCertLifetime, 0),
 		},
+	}
+}
+
+func profile(lifetime time.Duration, gracePeriod time.Duration) *config.SigningProfile {
+	return &config.SigningProfile{
+		Usage:    []string{"signing", "key encipherment", "server auth", "client auth"},
+		Expiry:   lifetime + gracePeriod,
+		Backdate: gracePeriod,
+		CSRWhitelist: &config.CSRWhitelist{
+			PublicKey:          true,
+			PublicKeyAlgorithm: true,
+			SignatureAlgorithm: true,
+		},
+		ClientProvidesSerialNumbers: true,
 	}
 }
 
@@ -243,6 +253,7 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 			SerialNumber: serial.String(),
 		},
 		Serial: serial,
+		Profile: issueOpts.profile,
 	}
 	certBytes, err := signer.Sign(req)
 	if err != nil {
