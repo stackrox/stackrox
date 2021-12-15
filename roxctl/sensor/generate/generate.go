@@ -164,7 +164,7 @@ func Command() *cobra.Command {
 	}
 
 	// TODO: set empty defaults on `sensor generate`. Defaults should be derived from a running central
-	flavor := images.GetFlavorByBuildType()
+	flavor := images.GetImageFlavorByBuildType()
 
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
 	c.PersistentFlags().BoolVar(&continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")

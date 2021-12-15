@@ -83,7 +83,7 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	c.AddCommand(noVolume())
 
 	// TODO: set empty defaults on `central generate`. Defaults are determined based on --rhacs and release tag.
-	flavor := images.GetFlavorByBuildType()
+	flavor := images.GetImageFlavorByBuildType()
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 

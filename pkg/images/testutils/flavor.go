@@ -19,7 +19,7 @@ func MakeImageFlavorForTest(t *testing.T) images.ImageFlavor {
 		MainImageTag:           "1.2.3",
 		CollectorRegistry:      "test.registry",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      "3.2.1-full",
+		CollectorImageTag:      "3.2.1-latest",
 		CollectorSlimImageName: "collector",
 		CollectorSlimImageTag:  "3.2.1-slim",
 		ScannerImageName:       "scanner",

@@ -177,7 +177,7 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 	}
 
 	// TODO: roxctl should depend on its own mechanism to determine flavor (e.g. command line argument)
-	flavor := images.GetFlavorByBuildType()
+	flavor := images.GetImageFlavorByBuildType()
 	files, err := renderer.Render(config, flavor)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not render files")

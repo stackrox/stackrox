@@ -74,7 +74,7 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 	}
 	dbPassword := []byte(renderer.CreatePassword())
 
-	flavor := images.GetFlavorByBuildType()
+	flavor := images.GetImageFlavorByBuildType()
 	config := renderer.Config{
 		ClusterType: clusterType,
 		K8sConfig: &renderer.K8sConfig{
@@ -96,7 +96,7 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 		},
 	}
 
-	return renderer.RenderScannerOnly(config, images.GetFlavorByBuildType())
+	return renderer.RenderScannerOnly(config, images.GetImageFlavorByBuildType())
 }
 
 func serveHTTP(w http.ResponseWriter, r *http.Request) {
