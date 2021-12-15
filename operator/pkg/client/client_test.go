@@ -14,8 +14,8 @@ import (
 const namespace = "stackrox-test"
 
 func TestClientSet(t *testing.T) {
-	//Skip test as the client-gen currently has a bug for generating groups, see: https://github.com/kubernetes/kubernetes/pull/100738
-	//TODO(ROX-7628): upgrade to client-gen 1.22 after the PR above was merged
+	// Skip test as the client-gen currently has a bug for generating groups, see: https://github.com/kubernetes/kubernetes/pull/100738
+	// TODO(ROX-7628): upgrade to client-gen 1.22 after the PR above was merged
 	t.Skip()
 	fake := fakeStackrox.NewSimpleClientset(
 		&platform.Central{

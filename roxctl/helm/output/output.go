@@ -43,7 +43,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 		return errors.Wrapf(err, "failed to check if directory %q exists", outputDir)
 	}
 
-	//load image with templates
+	// load image with templates
 	templateImage := image.GetDefaultImage()
 	if debug {
 		templateImage = image.NewImage(os.DirFS(debugChartPath))

@@ -62,7 +62,7 @@ func verifyRiskEventTimelineCSV(t testutils.T, deploymentID string, eventNamesEx
 	rows = rows[1:]
 
 	// Check event names match
-	//Index 0 of a row is the timestamp and 2 is the event name
+	// Index 0 of a row is the timestamp and 2 is the event name
 	eventNamesInCSV := sliceutils.Map(rows, func(row []string) string { return row[2] }).([]string)
 	assert.ElementsMatch(t, eventNamesExpected, eventNamesInCSV)
 

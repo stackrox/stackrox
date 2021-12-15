@@ -170,14 +170,14 @@ func main() {
 	c.Flags().StringVar(&props.BucketName, "bucket", "", "the name of the bucket")
 	utils.Must(c.MarkFlagRequired("bucket"))
 
-	//props.GetExists determines whether get methods will return an "exists" boolean
+	// props.GetExists determines whether get methods will return an "exists" boolean
 	c.Flags().BoolVar(&props.GetExists, "get-return-exists", false, "return 'exists' boolean from get calls")
 
 	c.Flags().BoolVar(&props.Cache, "cache", false, "generate an LRU expiring cache")
 
-	//props.DeleteExists determines whether delete methods will return an "exists" boolean
-	//commented out as this hasn't been implemented yet
-	//c.Flags().BoolVar(&props.DeleteExists, "delete-return-exists", false, "return 'exists' boolean from delete calls")
+	// props.DeleteExists determines whether delete methods will return an "exists" boolean
+	// commented out as this hasn't been implemented yet
+	// c.Flags().BoolVar(&props.DeleteExists, "delete-return-exists", false, "return 'exists' boolean from delete calls")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.Plural == "" {

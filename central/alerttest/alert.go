@@ -85,17 +85,17 @@ func NewFakeAlertComment() *storage.Comment {
 	}
 }
 
-//NewFakeTwoTags constructs and returns a new slice with two fake tags
+// NewFakeTwoTags constructs and returns a new slice with two fake tags
 func NewFakeTwoTags() []string {
 	return []string{FakeTag1, FakeTag2}
 }
 
-//NewFakeTwoTagsHasOverlap constructs and returns a new slice with two fake tags has overlap with slice constructed by NewFakeTwoTags()
+// NewFakeTwoTagsHasOverlap constructs and returns a new slice with two fake tags has overlap with slice constructed by NewFakeTwoTags()
 func NewFakeTwoTagsHasOverlap() []string {
 	return []string{FakeTag2, FakeTag3}
 }
 
-//NewFakeThreeTags constructs and returns a new slice with three fake tags
+// NewFakeThreeTags constructs and returns a new slice with three fake tags
 func NewFakeThreeTags() []string {
 	return []string{FakeTag1, FakeTag2, FakeTag3}
 }
