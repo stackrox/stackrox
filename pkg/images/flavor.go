@@ -107,8 +107,7 @@ func GetFlavorByBuildType() ImageFlavor {
 	return DevelopmentBuildImageFlavor()
 }
 
-// ScannerImage is the Docker image name for the scanner image. Image
-// repo changes depending on whether this is a release build.
+// ScannerImage is the container image reference (full name) for the scanner image.
 func (flavor *ImageFlavor) ScannerImage() string {
 	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.ScannerImageName, flavor.ScannerImageTag)
 }
