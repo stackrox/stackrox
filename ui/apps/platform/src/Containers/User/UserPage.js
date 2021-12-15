@@ -1,8 +1,8 @@
 import React from 'react';
-import {NavLink, Route, Switch} from 'react-router-dom';
+import { NavLink, Route, Switch } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import {connect} from 'react-redux';
-import {createSelector, createStructuredSelector} from 'reselect';
+import { connect } from 'react-redux';
+import { createSelector, createStructuredSelector } from 'reselect';
 import {
     DescriptionListDescription,
     DescriptionListGroup,
@@ -20,8 +20,8 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
-import {selectors} from 'reducers';
-import {userBasePath, userRolePath} from 'routePaths';
+import { selectors } from 'reducers';
+import { userBasePath, userRolePath } from 'routePaths';
 import User from 'utils/User';
 
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
@@ -37,18 +37,6 @@ const stylePageSection = {
 };
 
 const getUserRolePath = (roleName) => `${userBasePath}/roles/${roleName}`;
-
-function displayEmail(email) {
-    if (email === '') {
-        return '';
-    }
-    return (
-        <DescriptionListGroup>
-            <DescriptionListTerm>User email</DescriptionListTerm>
-            <DescriptionListDescription>{email}</DescriptionListDescription>
-        </DescriptionListGroup>
-    );
-}
 
 function UserPage({ resourceToAccessByRole, userData }) {
     const { email, name, roles, usedAuthProvider } = new User(userData);
