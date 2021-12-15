@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
@@ -89,11 +88,6 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read roles")
 	}
-	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
-	if len(filteredRoles) == 0 {
-		return nil, errorhelpers.GenericNoValidRole()
-	}
-
 	var email string
 	if token.ExternalUser != nil {
 		email = token.ExternalUser.Email
@@ -105,7 +99,7 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 		username:      email,
 		friendlyName:  token.Subject,
 		fullName:      token.Name,
-		resolvedRoles: filteredRoles,
+		resolvedRoles: authn.FilterOutNoneRole(resolvedRoles),
 		expiry:        token.Expiry(),
 		attributes:    attributes,
 		authProvider:  authProvider,
@@ -135,14 +129,10 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
 	}
-	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
-	if len(filteredRoles) == 0 {
-		return nil, errorhelpers.GenericNoValidRole()
-	}
 	if err := authProvider.MarkAsActive(); err != nil {
 		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())
 	}
-	id := createRoleBasedIdentity(filteredRoles, token, authProvider)
+	id := createRoleBasedIdentity(authn.FilterOutNoneRole(resolvedRoles), token, authProvider)
 	return id, nil
 }
 

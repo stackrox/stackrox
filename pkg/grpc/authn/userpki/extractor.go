@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
@@ -74,9 +73,6 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 			if err != nil {
 				return nil, err
-			}
-			if len(resolvedRoles) == 0 {
-				return nil, errorhelpers.GenericNoValidRole()
 			}
 			identity.resolvedRoles = resolvedRoles
 			return identity, nil

@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // Manager manages basic auth user identities.
@@ -39,9 +38,6 @@ func (m *Manager) IdentityForCreds(ctx context.Context, username, password strin
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to load roles for user %q", username)
-	}
-	if len(resolvedRoles) == 0 {
-		return nil, errorhelpers.GenericNoValidRole()
 	}
 	return identity{
 		username:      username,
