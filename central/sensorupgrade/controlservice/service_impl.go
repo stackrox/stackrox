@@ -29,7 +29,7 @@ type service struct {
 }
 
 func clusterIDFromCtx(ctx context.Context) (string, error) {
-	id, err := authn.IdentityFromContextOrError(ctx)
+	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return "", err
 	}

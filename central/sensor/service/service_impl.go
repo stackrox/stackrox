@@ -62,7 +62,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer) error {
 	// Get the source cluster's ID.
-	identity, err := authn.IdentityFromContextOrError(server.Context())
+	identity, err := authn.IdentityFromContext(server.Context())
 	if err != nil {
 		return errorhelpers.NewErrNotAuthorized(err.Error())
 	}

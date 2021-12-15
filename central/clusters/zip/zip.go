@@ -88,7 +88,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	identity, err := authn.IdentityFromContextOrError(r.Context())
+	identity, err := authn.IdentityFromContext(r.Context())
 	if err != nil {
 		httputil.WriteError(w, err)
 		return

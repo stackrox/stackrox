@@ -10,8 +10,8 @@ import (
 type identityContextKey struct{}
 type identityErrorContextKey struct{}
 
-// IdentityFromContextOrError retrieves the identity from the context or returns error otherwise.
-func IdentityFromContextOrError(ctx context.Context) (Identity, error) {
+// IdentityFromContext retrieves the identity from the context or returns error otherwise.
+func IdentityFromContext(ctx context.Context) (Identity, error) {
 	err, _ := ctx.Value(identityErrorContextKey{}).(error)
 	if err != nil {
 		return nil, err
