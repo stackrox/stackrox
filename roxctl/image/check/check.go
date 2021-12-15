@@ -37,7 +37,7 @@ var (
 	defaultImageCheckHeaders = []string{
 		"POLICY", "SEVERITY", "BREAKS BUILD", "DESCRIPTION", "VIOLATION", "REMEDIATION",
 	}
-	defaultJunitJsonPathExpressions = map[string]string{
+	defaultJunitJSONPathExpressions = map[string]string{
 		printer.JUnitTestCasesExpressionKey:            "results.#.violatedPolicies.#.name",
 		printer.JUnitFailedTestCasesExpressionKey:      "results.#.violatedPolicies.#(failingCheck==~true)#.name",
 		printer.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
@@ -47,7 +47,7 @@ var (
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(defaultImageCheckHeaders, defaultImageCheckJSONPathExpression),
 		printer.NewJSONPrinterFactory(false, false),
-		printer.NewJUnitPrinterFactory("image-check", defaultJunitJsonPathExpressions),
+		printer.NewJUnitPrinterFactory("image-check", defaultJunitJSONPathExpressions),
 	}
 )
 

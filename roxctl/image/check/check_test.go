@@ -327,7 +327,7 @@ func (suite *imageCheckTestSuite) TestCheckImage_JUnitOutput() {
 	}
 
 	// setup CSV printer with default options
-	junitPrinter, err := printer.NewJUnitPrinterFactory("image-check", defaultJunitJsonPathExpressions).CreatePrinter("junit")
+	junitPrinter, err := printer.NewJUnitPrinterFactory("image-check", defaultJunitJSONPathExpressions).CreatePrinter("junit")
 	suite.Require().NoError(err)
 	suite.runOutputTests(cases, junitPrinter, true)
 }

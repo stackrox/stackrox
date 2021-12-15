@@ -448,7 +448,7 @@ func (d *deployCheckTestSuite) TestCheck_JunitOutput() {
 	}
 
 	csvPrinter, err := printer.NewJUnitPrinterFactory(
-		"deployment-check", defaultJunitJsonPathExpressions).CreatePrinter("junit")
+		"deployment-check", defaultJunitJSONPathExpressions).CreatePrinter("junit")
 	d.Require().NoError(err)
 	d.runOutputTests(cases, csvPrinter, true)
 }
