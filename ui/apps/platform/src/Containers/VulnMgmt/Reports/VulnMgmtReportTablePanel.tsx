@@ -14,7 +14,7 @@ import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import TableCell from 'Components/PatternFly/TableCell';
-import { ReportConfigurationMappedValues } from 'types/report.proto';
+import { ReportConfiguration } from 'types/report.proto';
 import DeleteConfirmation from './Modals/DeleteConfirmation';
 
 export type ActionItem = {
@@ -25,7 +25,7 @@ export type ActionItem = {
 type ModalType = 'delete' | null;
 
 type ReportingTablePanelProps = {
-    reports: ReportConfigurationMappedValues[];
+    reports: ReportConfiguration[];
     reportCount: number;
     currentPage: number;
     setCurrentPage: (page) => void;

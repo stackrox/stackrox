@@ -14,14 +14,15 @@ import {
 } from '@patternfly/react-core';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
+import PageTitle from 'Components/PageTitle';
 import { vulnManagementReportsPath } from 'routePaths';
 import { fetchReports } from 'services/ReportsService';
-import { ReportConfigurationMappedValues } from 'types/report.proto';
+import { ReportConfiguration } from 'types/report.proto';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
 
 function ReportTablePage(): ReactElement {
-    const [reports, setReports] = useState<ReportConfigurationMappedValues[]>([]);
+    const [reports, setReports] = useState<ReportConfiguration[]>([]);
     const columns = VulnMgmtReportTableColumnDescriptor;
 
     useEffect(() => {
@@ -37,6 +38,7 @@ function ReportTablePage(): ReactElement {
     return (
         <>
             <PageSection variant={PageSectionVariants.light}>
+                <PageTitle title="Report configurations" />
                 <Flex
                     alignItems={{
                         default: 'alignItemsFlexStart',

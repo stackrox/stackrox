@@ -1,4 +1,4 @@
-import { ReportConfiguration } from 'types/report.proto';
+import { ReportConfiguration, Fixability } from 'types/report.proto';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
 export type VulnMgmtReportQueryObject = {
@@ -16,18 +16,42 @@ export const emptyReportValues: ReportConfiguration = {
         severities: [],
     },
     scopeId: '',
-    notifierConfig: {
-        emailConfig: {
-            notifierId: '',
-            mailingLists: [],
-        },
+    emailConfig: {
+        notifierId: '',
+        mailingLists: [],
     },
     schedule: {
         intervalType: 'WEEKLY',
         hour: 0,
         minute: 0,
-        interval: {
+        daysOfWeek: {
             days: [],
         },
     },
 };
+
+export function getMappedFixability(fixability: Fixability): string[] {
+    if (fixability === 'BOTH') {
+        return ['FIXABLE', 'NOT_FIXABLE'];
+    }
+    if (fixability === 'FIXABLE') {
+        return ['FIXABLE'];
+    }
+    if (fixability === 'NOT_FIXABLE') {
+        return ['NOT_FIXABLE'];
+    }
+    return [];
+}
+
+export function getFixabilityConstantFromMap(fixabilityMap: string[]): Fixability {
+    if (fixabilityMap.includes('FIXABLE') && fixabilityMap.includes('NOT_FIXABLE')) {
+        return 'BOTH';
+    }
+    if (fixabilityMap.includes('FIXABLE')) {
+        return 'FIXABLE';
+    }
+    if (fixabilityMap.includes('NOT_FIXABLE')) {
+        return 'NOT_FIXABLE';
+    }
+    return 'UNSET';
+}

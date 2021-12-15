@@ -11,40 +11,15 @@ import {
 
 import { vulnManagementReportsPath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { ReportConfigurationMappedValues } from 'types/report.proto';
+import PageTitle from 'Components/PageTitle';
 import VulnMgmtReportForm from './VulnMgmtReportForm';
+import { emptyReportValues } from './VulnMgmtReport.utils';
 
 function VulnMgmtCreateReportPage(): ReactElement {
-    const emptyReportValues: ReportConfigurationMappedValues = {
-        id: '',
-        name: '',
-        description: '',
-        type: 'VULNERABILITY',
-        vulnReportFiltersMappedValues: {
-            fixabilityMappedValues: [],
-            sinceLastReport: false,
-            severities: [],
-        },
-        scopeId: '',
-        notifierConfig: {
-            emailConfig: {
-                notifierId: '',
-                mailingLists: [],
-            },
-        },
-        schedule: {
-            intervalType: 'WEEKLY',
-            hour: 0,
-            minute: 0,
-            interval: {
-                days: [],
-            },
-        },
-    };
-
     return (
         <>
             <PageSection variant="light">
+                <PageTitle title="Create report configuration" />
                 <Breadcrumb className="pf-u-mb-md">
                     <BreadcrumbItemLink to={vulnManagementReportsPath}>
                         Vulnerability reporting
