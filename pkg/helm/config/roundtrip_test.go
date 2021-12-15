@@ -20,8 +20,6 @@ import (
 	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
-	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
@@ -48,11 +46,6 @@ func TestBase(t *testing.T) {
 
 func (h *helmConfigSuite) SetupTest() {
 	testbuildinfo.SetForTest(h.T())
-	testutils.SetVersion(h.T(), version.Versions{
-		CollectorVersion: "1.2.3",
-		MainVersion:      "3.2.1",
-		ScannerVersion:   "2.1.3",
-	})
 }
 
 func (h *helmConfigSuite) TestHelmConfigRoundTrip() {
