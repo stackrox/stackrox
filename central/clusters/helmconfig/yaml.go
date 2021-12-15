@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	helmConfig "github.com/stackrox/rox/pkg/helm/config"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
@@ -56,7 +56,7 @@ func (h helmConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flavor := images.GetImageFlavorByBuildType()
+	flavor := defaults.GetImageFlavorByBuildType()
 	config, err := helmConfig.FromCluster(cluster, flavor)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "deriving Helm configuration for cluster"))

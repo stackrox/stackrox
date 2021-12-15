@@ -3,7 +3,7 @@ package renderer
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -166,7 +166,7 @@ func TestConfigureImageOverrides(t *testing.T) {
 	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
 	cases := map[string]struct {
 		configValues         CommonConfig
-		flavor               images.ImageFlavor
+		flavor               defaults.ImageFlavor
 		override             bool
 		expectedMainRegistry string
 	}{

@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,7 +52,7 @@ func TestBundleResourcesComplete(t *testing.T) {
 		"CollectorImageRemote":  "collector",
 		"CollectorSlimImageTag": "1.2.3-slim",
 		"CollectorFullImageTag": "1.2.3",
-		"ChartRepo": images.ChartRepo{
+		"ChartRepo": defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
 		"KubectlOutput": true,

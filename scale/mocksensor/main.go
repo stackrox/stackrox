@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -344,7 +344,7 @@ func sendAdmissionControllerRequests(ctx context.Context, clusterClient v1.Clust
 		admissionControllerConfig := &storage.AdmissionControllerConfig{}
 		admissionControllerConfig.Enabled = true
 		admissionControllerConfig.TimeoutSeconds = 999
-		flavor := images.GetImageFlavorByBuildType()
+		flavor := defaults.GetImageFlavorByBuildType()
 		cluster := &storage.Cluster{
 			Id:                  "",
 			Name:                "prod cluster",

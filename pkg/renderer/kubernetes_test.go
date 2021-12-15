@@ -7,7 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +34,7 @@ type renderSuite struct {
 	suite.Suite
 	restorer *testbuildinfo.TestBuildTimestampRestorer
 	envIsolator *envisolator.EnvIsolator
-	testFlavor  images.ImageFlavor
+	testFlavor  defaults.ImageFlavor
 }
 
 

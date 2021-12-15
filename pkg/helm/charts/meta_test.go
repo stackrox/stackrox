@@ -5,7 +5,7 @@ import (
 	"text/template"
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/testutils"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/version"
@@ -86,7 +86,7 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 			assert.NotEmpty(t, c["CollectorImageRemote"])
 			assert.NotEmpty(t, c["CollectorFullImageTag"])
 			assert.NotEmpty(t, c["CollectorSlimImageTag"])
-			assert.NotEmpty(t, (c["ChartRepo"].(images.ChartRepo)).URL)
+			assert.NotEmpty(t, (c["ChartRepo"].(defaults.ChartRepo)).URL)
 			assert.NotNil(t, c["ImagePullSecrets"])
 
 			versions := c["Versions"].(version.Versions)

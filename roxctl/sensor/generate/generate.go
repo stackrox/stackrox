@@ -12,7 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -164,7 +164,7 @@ func Command() *cobra.Command {
 	}
 
 	// TODO: set empty defaults on `sensor generate`. Defaults should be derived from a running central
-	flavor := images.GetImageFlavorByBuildType()
+	flavor := defaults.GetImageFlavorByBuildType()
 
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
 	c.PersistentFlags().BoolVar(&continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")

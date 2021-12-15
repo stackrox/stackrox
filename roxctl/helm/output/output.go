@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
@@ -20,9 +20,9 @@ func getMetaValues(rhacs, release bool) charts.MetaValues {
 	if rhacs {
 		return charts.RHACSMetaValues()
 	} else if release {
-		return charts.GetMetaValuesForFlavor(images.StackRoxIOReleaseImageFlavor())
+		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
 	} else {
-		return charts.GetMetaValuesForFlavor(images.DevelopmentBuildImageFlavor())
+		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
 	}
 }
 

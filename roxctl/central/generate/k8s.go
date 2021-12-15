@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -83,7 +83,7 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	c.AddCommand(noVolume())
 
 	// TODO: set empty defaults on `central generate`. Defaults are determined based on --rhacs and release tag.
-	flavor := images.GetImageFlavorByBuildType()
+	flavor := defaults.GetImageFlavorByBuildType()
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 

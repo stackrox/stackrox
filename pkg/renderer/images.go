@@ -3,7 +3,7 @@ package renderer
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -73,7 +73,7 @@ func ComputeImageOverrides(fullImageRef, defRegistry, defName, defTag string) ma
 // `us.gcr.io/stackrox-main/main` and `us.gcr.io/stackrox-scanner/scanner`, no name overrides are
 // inferred, and instead the inferred central and scanner "registries" are
 // `us.gcr.io/stackrox-main` and `us.gcr.io/stackrox-scanner`.
-func configureImageOverrides(c *Config, imageFlavor images.ImageFlavor) {
+func configureImageOverrides(c *Config, imageFlavor defaults.ImageFlavor) {
 	imageOverrides := make(map[string]interface{})
 
 	mainOverrides := ComputeImageOverrides(c.K8sConfig.MainImage, imageFlavor.MainRegistry, imageFlavor.MainImageName,

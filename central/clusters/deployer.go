@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -95,7 +95,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 
 		// Hardcoding RHACS charts repo for now.
 		// TODO: fill ChartRepo based on the current image flavor.
-		"ChartRepo": images.ChartRepo{
+		"ChartRepo": defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
 

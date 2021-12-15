@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -74,7 +74,7 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 	}
 	dbPassword := []byte(renderer.CreatePassword())
 
-	flavor := images.GetImageFlavorByBuildType()
+	flavor := defaults.GetImageFlavorByBuildType()
 	config := renderer.Config{
 		ClusterType: clusterType,
 		K8sConfig: &renderer.K8sConfig{
@@ -96,7 +96,7 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 		},
 	}
 
-	return renderer.RenderScannerOnly(config, images.GetImageFlavorByBuildType())
+	return renderer.RenderScannerOnly(config, defaults.GetImageFlavorByBuildType())
 }
 
 func serveHTTP(w http.ResponseWriter, r *http.Request) {

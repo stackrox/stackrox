@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/images"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -75,7 +75,7 @@ func getDefaultMetaValues(t *testing.T) charts.MetaValues {
 
 		"Versions": testutils.GetExampleVersion(t),
 
-		"ChartRepo": images.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
+		"ChartRepo": defaults.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
 
 		"KubectlOutput": true,
 	}
@@ -124,7 +124,6 @@ func TestRenderSensorHelm(t *testing.T) {
 			fields["AdmissionControllerEnabled"] = c.admissionController
 			fields["AdmissionControlEnforceOnUpdates"] = c.admissionController
 			fields["EnvVars"] = envVars
-
 			opts := helmUtil.Options{
 				ReleaseOptions: chartutil.ReleaseOptions{
 					Name:      "stackrox-secured-cluster-services",
