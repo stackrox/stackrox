@@ -6,6 +6,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+
+## [67.2]
+
+- A new default policy to detect Log4Shell vulnerability (CVE-2021-44228) has been added.
+
 ## [67.0]
 
 - When the environment variable `ROX_NETWORK_ACCESS_LOG` for Central is enabled, the logs will now contain the request URI and `X-Forwarded-For` header values.
