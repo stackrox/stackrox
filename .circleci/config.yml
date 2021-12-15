@@ -2672,7 +2672,6 @@ jobs:
           command: |
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
-            sudo cp .circleci/bash.env /etc/bash.env
       - run:
           name: Install Go
           command: |
