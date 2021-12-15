@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -25,6 +27,7 @@ type secretReconciliationTestCase struct {
 	Spec     platform.CentralSpec
 	Deleted  bool
 	Existing []*v1.Secret
+	Other    []ctrlClient.Object
 
 	ExpectedCreatedSecrets     map[string]secretVerifyFunc
 	ExpectedError              string
@@ -72,8 +75,14 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	for _, existingSecret := range c.Existing {
 		allExisting = append(allExisting, existingSecret.DeepCopy())
 	}
+	for _, existingObj := range c.Other {
+		allExisting = append(allExisting, existingObj.DeepCopyObject().(ctrlClient.Object))
+	}
 
-	client := fake.NewClientBuilder().WithObjects(allExisting...).Build()
+	sch := runtime.NewScheme()
+	require.NoError(t, platform.AddToScheme(sch))
+	require.NoError(t, scheme.AddToScheme(sch))
+	client := fake.NewClientBuilder().WithScheme(sch).WithObjects(allExisting...).Build()
 
 	// Verify that an initial invocation does not touch any of the existing secrets, and creates
 	// the expected ones.

@@ -13,8 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-var allSecuredClusterServices = []storage.ServiceType{storage.ServiceType_COLLECTOR_SERVICE, storage.ServiceType_SENSOR_SERVICE, storage.ServiceType_ADMISSION_CONTROL_SERVICE}
-
 // CertBundle contains a bundle of generated certificates for each service type
 type CertBundle map[storage.ServiceType]*mtls.IssuedCert
 
@@ -61,7 +59,7 @@ func IssueSecuredClusterInitCertificates() (CertBundle, uuid.UUID, error) {
 	initID := centralsensor.RegisteredInitCertClusterID
 	certs := make(CertBundle)
 	bundleID := uuid.NewV4()
-	for _, serviceType := range allSecuredClusterServices {
+	for _, serviceType := range centralsensor.AllSecuredClusterServices {
 		issuedCert, err := mtls.IssueNewCert(mtls.NewInitSubject(initID, serviceType, bundleID))
 
 		if err != nil {
