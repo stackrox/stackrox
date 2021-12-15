@@ -14,6 +14,10 @@ type junitTestData struct {
 	Data junitTestStructure `json:"data"`
 }
 
+type jaggedJunitTestData struct {
+	Data []junitTestStructure `json:"data"`
+}
+
 type junitTestStructure struct {
 	Tests       []test       `json:"tests"`
 	FailedTests []failedTest `json:"failedTests"`
@@ -28,10 +32,68 @@ type test struct {
 	Name string `json:"name"`
 }
 
-var jsonExpr = map[string]string{
-	JUnitTestCasesExpressionKey:            "data.tests.#.name",
-	JUnitFailedTestCasesExpressionKey:      "data.failedTests.#.name",
-	JUnitFailedTestCaseErrMsgExpressionKey: "data.failedTests.#.error",
+func TestJunitPrinter_Print_JaggedArray(t *testing.T) {
+	expectedOutput := `<testsuite name="testsuite" tests="4" failures="2" errors="0">
+  <testcase name="test1" classname=""></testcase>
+  <testcase name="test2" classname="">
+    <failure>err msg 2</failure>
+  </testcase>
+  <testcase name="test3" classname=""></testcase>
+  <testcase name="test4" classname="">
+    <failure>err msg 4</failure>
+  </testcase>
+</testsuite>`
+	jsonExpr := map[string]string{
+		JUnitTestCasesExpressionKey:            "data.#.tests.#.name",
+		JUnitFailedTestCasesExpressionKey:      "data.#.failedTests.#.name",
+		JUnitFailedTestCaseErrMsgExpressionKey: "data.#.failedTests.#.error",
+	}
+	p := newJUnitPrinter("testsuite", jsonExpr)
+	testObj := &jaggedJunitTestData{
+		Data: []junitTestStructure{{
+			Tests: []test{
+				{Name: "test1"},
+				{Name: "test2"},
+			},
+			FailedTests: []failedTest{
+				{Name: "test2", ErrMessage: "err msg 2"},
+			},
+		}, {
+			Tests: []test{
+				{Name: "test3"},
+				{Name: "test4"},
+			},
+			FailedTests: []failedTest{
+				{Name: "test4", ErrMessage: "err msg 4"},
+			},
+		},
+		}}
+	out := bytes.Buffer{}
+	err := p.Print(testObj, &out)
+	require.NoError(t, err)
+	assert.Equal(t, expectedOutput, out.String())
+
+	// check that we can ingest the JUnit report and evaluate its content
+	suites, err := junit.Ingest(out.Bytes())
+
+	assert.Len(t, suites, 1)
+	suite := suites[0]
+	assert.Equal(t, 4, suite.Totals.Tests)
+	assert.Equal(t, 2, suite.Totals.Failed)
+	assert.Equal(t, 0, suite.Totals.Error)
+	assert.Equal(t, "testsuite", suite.Name)
+	for i, test := range suite.Tests {
+		testData := testObj.Data[i/len(testObj.Data)]
+		assert.Equal(t, testData.Tests[i%len(testData.Tests)].Name, test.Name)
+		for _, failedTest := range testData.FailedTests {
+			if test.Name == failedTest.Name {
+				require.Error(t, test.Error)
+				assert.Equal(t, failedTest.ErrMessage, test.Error.Error())
+				assert.Equal(t, junit.StatusFailed, test.Status)
+			}
+		}
+	}
+	require.NoError(t, err)
 }
 
 func TestJunitPrinter_Print(t *testing.T) {
@@ -45,34 +107,23 @@ func TestJunitPrinter_Print(t *testing.T) {
     <failure>err msg 4</failure>
   </testcase>
 </testsuite>`
+	jsonExpr := map[string]string{
+		JUnitTestCasesExpressionKey:            "data.tests.#.name",
+		JUnitFailedTestCasesExpressionKey:      "data.failedTests.#.name",
+		JUnitFailedTestCaseErrMsgExpressionKey: "data.failedTests.#.error",
+	}
 	p := newJUnitPrinter("testsuite", jsonExpr)
 	testObj := &junitTestData{
 		Data: junitTestStructure{
 			Tests: []test{
-				{
-					Name: "test1",
-				},
-				{
-					Name: "test2",
-				},
-
-				{
-					Name: "test3",
-				},
-
-				{
-					Name: "test4",
-				},
+				{Name: "test1"},
+				{Name: "test2"},
+				{Name: "test3"},
+				{Name: "test4"},
 			},
 			FailedTests: []failedTest{
-				{
-					Name:       "test2",
-					ErrMessage: "err msg 2",
-				},
-				{
-					Name:       "test4",
-					ErrMessage: "err msg 4",
-				},
+				{Name: "test2", ErrMessage: "err msg 2"},
+				{Name: "test4", ErrMessage: "err msg 4"},
 			},
 		},
 	}
