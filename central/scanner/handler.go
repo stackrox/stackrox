@@ -96,7 +96,7 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 		},
 	}
 
-	return renderer.RenderScannerOnly(config, defaults.GetImageFlavorByBuildType())
+	return renderer.RenderScannerOnly(config, flavor)
 }
 
 func serveHTTP(w http.ResponseWriter, r *http.Request) {
