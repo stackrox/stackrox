@@ -16,18 +16,18 @@ type MetaValuesKey string
 type MetaValues map[MetaValuesKey]interface{}
 
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
-func GetMetaValuesForFlavor(flavor defaults.ImageFlavor) MetaValues {
+func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 	metaValues := MetaValues{
-		"Versions":              flavor.Versions,
-		"MainRegistry":          flavor.MainRegistry,
-		"ImageRemote":           flavor.MainImageName,
-		"CollectorRegistry":     flavor.CollectorRegistry,
-		"CollectorImageRemote":  flavor.CollectorImageName,
-		"CollectorFullImageTag": flavor.CollectorImageTag,
-		"CollectorSlimImageTag": flavor.CollectorSlimImageTag,
+		"Versions":              imageFlavor.Versions,
+		"MainRegistry":          imageFlavor.MainRegistry,
+		"ImageRemote":           imageFlavor.MainImageName,
+		"CollectorRegistry":     imageFlavor.CollectorRegistry,
+		"CollectorImageRemote":  imageFlavor.CollectorImageName,
+		"CollectorFullImageTag": imageFlavor.CollectorImageTag,
+		"CollectorSlimImageTag": imageFlavor.CollectorSlimImageTag,
 		"RenderMode":            "",
-		"ChartRepo":             flavor.ChartRepo,
-		"ImagePullSecrets":      flavor.ImagePullSecrets,
+		"ChartRepo":             imageFlavor.ChartRepo,
+		"ImagePullSecrets":      imageFlavor.ImagePullSecrets,
 		"Operator":              false,
 	}
 
