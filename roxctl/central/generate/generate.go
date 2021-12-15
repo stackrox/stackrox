@@ -176,7 +176,7 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 		return nil, err
 	}
 
-	// TODO: roxctl should depend on its own mechanism to determine flavor (e.g. command line argument)
+	// TODO(RS-396): roxctl should depend on its own mechanism to determine flavor (e.g. command line argument)
 	flavor := defaults.GetImageFlavorByBuildType()
 	files, err := renderer.Render(config, flavor)
 	if err != nil {
