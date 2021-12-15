@@ -22,7 +22,7 @@ function ApprovedFalsePositiveActionsColumn({
                 setRequestsToBeAssessed({
                     type: 'FALSE_POSITIVE',
                     action: 'UNDO',
-                    requests: [row],
+                    requestIDs: [row.id],
                 });
             },
         },

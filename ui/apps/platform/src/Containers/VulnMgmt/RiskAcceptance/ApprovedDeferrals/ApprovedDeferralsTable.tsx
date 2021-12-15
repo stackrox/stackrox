@@ -52,7 +52,7 @@ function ApprovedDeferralsTable({
     const [requestsToBeAssessed, setRequestsToBeAssessed] =
         useState<ApprovedDeferralRequestsToBeAssessed>(null);
     const { updateVulnRequests, undoVulnRequests } = useRiskAcceptance({
-        requests: requestsToBeAssessed?.requests || [],
+        requestIDs: requestsToBeAssessed?.requestIDs || [],
     });
 
     function cancelAssessment() {
@@ -66,7 +66,6 @@ function ApprovedDeferralsTable({
     }
 
     const selectedIds = getSelectedIds();
-    const selectedDeferralRequests = rows.filter((row) => selectedIds.includes(row.id));
 
     return (
         <>
@@ -82,12 +81,12 @@ function ApprovedDeferralsTable({
                                     setRequestsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'UPDATE',
-                                        requests: selectedDeferralRequests,
+                                        requestIDs: selectedIds,
                                     })
                                 }
-                                isDisabled={selectedDeferralRequests.length === 0}
+                                isDisabled={selectedIds.length === 0}
                             >
-                                Update deferrals ({selectedDeferralRequests.length})
+                                Update deferrals ({selectedIds.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="undo deferrals"
@@ -96,12 +95,12 @@ function ApprovedDeferralsTable({
                                     setRequestsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'UNDO',
-                                        requests: selectedDeferralRequests,
+                                        requestIDs: selectedIds,
                                     })
                                 }
-                                isDisabled={selectedDeferralRequests.length === 0}
+                                isDisabled={selectedIds.length === 0}
                             >
-                                Reobserve CVEs ({selectedDeferralRequests.length})
+                                Reobserve CVEs ({selectedIds.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -196,14 +195,14 @@ function ApprovedDeferralsTable({
             <UndoVulnRequestModal
                 type="DEFERRAL"
                 isOpen={requestsToBeAssessed?.action === 'UNDO'}
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
+                numRequestsToBeAssessed={requestsToBeAssessed?.requestIDs.length || 0}
                 onSendRequest={undoVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}
             />
             <UpdateDeferralModal
                 isOpen={requestsToBeAssessed?.action === 'UPDATE'}
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
+                numRequestsToBeAssessed={requestsToBeAssessed?.requestIDs.length || 0}
                 onSendRequest={updateVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}
