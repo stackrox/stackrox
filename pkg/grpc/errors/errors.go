@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -44,30 +44,30 @@ func ErrToHTTPStatus(err error) int {
 }
 
 func grpcCode(err error) codes.Code {
-	var re errorhelpers.RoxError
+	var re errox.RoxError
 	if errors.As(err, &re) {
 		switch re.Code() {
-		case errorhelpers.CodeOK:
+		case errox.CodeOK:
 			return codes.OK
-		case errorhelpers.CodeAlreadyExists:
+		case errox.CodeAlreadyExists:
 			return codes.AlreadyExists
-		case errorhelpers.CodeInvalidArgs:
+		case errox.CodeInvalidArgs:
 			return codes.InvalidArgument
-		case errorhelpers.CodeNotFound:
+		case errox.CodeNotFound:
 			return codes.NotFound
-		case errorhelpers.CodeReferencedByAnotherObject:
+		case errox.CodeReferencedByAnotherObject:
 			return codes.FailedPrecondition
-		case errorhelpers.CodeInvariantViolation:
+		case errox.CodeInvariantViolation:
 			return codes.Internal
-		case errorhelpers.CodeNoCredentials:
+		case errox.CodeNoCredentials:
 			return codes.Unauthenticated
-		case errorhelpers.CodeNoValidRole:
+		case errox.CodeNoValidRole:
 			return codes.Unauthenticated
-		case errorhelpers.CodeNotAuthorized:
+		case errox.CodeNotAuthorized:
 			return codes.PermissionDenied
-		case errorhelpers.CodeNoAuthzConfigured:
+		case errox.CodeNoAuthzConfigured:
 			return codes.Unimplemented
-		case errorhelpers.CodeResourceAccessDenied:
+		case errox.CodeResourceAccessDenied:
 			return codes.PermissionDenied
 		}
 	}

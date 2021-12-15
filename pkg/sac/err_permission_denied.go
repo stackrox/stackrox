@@ -1,10 +1,8 @@
 package sac
 
-import (
-	"github.com/stackrox/rox/pkg/errorhelpers"
-)
+import "github.com/stackrox/rox/pkg/errox"
 
 var (
 	// ErrResourceAccessDenied is the error when permission is denied for a SAC reason.
-	ErrResourceAccessDenied = errorhelpers.New(errorhelpers.CodeResourceAccessDenied, "access to resource denied")
+	ErrResourceAccessDenied = errox.New(errox.CodeResourceAccessDenied, "sac", "access to resource denied")
 )

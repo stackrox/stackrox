@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +20,7 @@ func TestNewObjectPrinterFactory(t *testing.T) {
 		"should fail when no CustomPrinterFactory is added": {
 			defaultFormat:  "table",
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvariantViolation,
+			error:          errox.InvariantViolation,
 			printerFactory: []CustomPrinterFactory{nil},
 		},
 		"should not fail if format is supported by registered CustomPrinterFactory": {
@@ -34,13 +34,13 @@ func TestNewObjectPrinterFactory(t *testing.T) {
 		"should fail if default output format is not supported by registered CustomPrinterFactory": {
 			defaultFormat:  "table",
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvalidArgs,
+			error:          errox.InvalidArgs,
 			printerFactory: []CustomPrinterFactory{NewJSONPrinterFactory(false, false)},
 		},
 		"should fail if duplicate CustomPrinterFactory is being registered": {
 			defaultFormat:  "json",
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvariantViolation,
+			error:          errox.InvariantViolation,
 			printerFactory: []CustomPrinterFactory{NewJSONPrinterFactory(false, false), NewJSONPrinterFactory(false, false)},
 		},
 	}
@@ -104,7 +104,7 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 				},
 			},
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 
@@ -160,7 +160,7 @@ func TestObjectPrinterFactory_CreatePrinter(t *testing.T) {
 					"json": NewJSONPrinterFactory(false, false),
 				},
 			},
-			error: errorhelpers.ErrInvalidArgs,
+			error: errox.InvalidArgs,
 		},
 	}
 
@@ -201,7 +201,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 				OutputFormat: "table",
 			},
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 		"should fail with unsupported OutputFormat": {
 			o: ObjectPrinterFactory{
@@ -211,7 +211,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 				OutputFormat: "table",
 			},
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 

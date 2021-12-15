@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	perm "github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
@@ -239,7 +239,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationRejectsUserWithout
 	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user without role "+
 		"should redirect to the registry redirect URL")
 	callbackError := fmt.Errorf("access for this user is not authorized: %w, please contact your system administrator",
-		errorhelpers.ErrNoValidRole)
+		errox.NoValidRole)
 	s.assert.Equal(callbackError.Error(), redirectURLFragments.Get("error"),
 		"callback activated for user without role should issue an explicit message")
 }
