@@ -13,8 +13,8 @@ const (
 	otherClusterID = "d2842760-c0f5-4574-80a1-58c300c36375"
 )
 
-func TestInitCertClusterIDIsNilUUID(t *testing.T) {
-	parsed, err := uuid.FromString(InitCertClusterID)
+func TestUserIssuedInitCertClusterIDIsNilUUID(t *testing.T) {
+	parsed, err := uuid.FromString(UserIssuedInitCertClusterID)
 	require.NoError(t, err, "could not parse init cert cluster ID as UUID")
 	assert.Equal(t, uuid.Nil, parsed, "expected init cert cluster ID to be the nil UUID")
 }
@@ -43,21 +43,38 @@ func TestGetClusterID(t *testing.T) {
 			idFromCert:  testClusterID,
 			expectError: true,
 		},
-		// Feature flag enabled: explicit ID and wildcard cert
-		"explicit-id-and-wildcard-cert": {
+		// Feature flag enabled: explicit ID and user-issued wildcard cert
+		"explicit-id-and-user-issued-wildcard-cert": {
 			explicitID: testClusterID,
-			idFromCert: InitCertClusterID,
+			idFromCert: UserIssuedInitCertClusterID,
 			expectedID: testClusterID,
 		},
-		// Feature flag enabled: explicit nil ID and wildcard cert
-		"explicit-nil-id-and-wildcard-cert": {
-			explicitID:  InitCertClusterID,
-			idFromCert:  InitCertClusterID,
+		// Feature flag enabled: explicit nil ID and user-issued wildcard cert
+		"explicit-nil-id-and-user-issued-wildcard-cert": {
+			explicitID:  UserIssuedInitCertClusterID,
+			idFromCert:  UserIssuedInitCertClusterID,
 			expectError: true,
 		},
-		"no-explicit-id-and-wildcard-cert": {
+		"no-explicit-id-and-user-issued-wildcard-cert": {
 			explicitID:  "",
-			idFromCert:  InitCertClusterID,
+			idFromCert:  UserIssuedInitCertClusterID,
+			expectError: true,
+		},
+		// Feature flag enabled: explicit ID and operator-issued wildcard cert
+		"explicit-id-and-operator-issued-wildcard-cert": {
+			explicitID: testClusterID,
+			idFromCert: OperatorIssuedInitCertClusterID,
+			expectedID: testClusterID,
+		},
+		// Feature flag enabled: explicit nil ID and operator-issued wildcard cert
+		"explicit-nil-id-and-operator-issued-wildcard-cert": {
+			explicitID:  UserIssuedInitCertClusterID,
+			idFromCert:  OperatorIssuedInitCertClusterID,
+			expectError: true,
+		},
+		"no-explicit-id-and-operator-issued-wildcard-cert": {
+			explicitID:  "",
+			idFromCert:  OperatorIssuedInitCertClusterID,
 			expectError: true,
 		},
 	}

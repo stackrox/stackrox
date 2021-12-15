@@ -58,7 +58,7 @@ func IssueSecuredClusterCertificates(cluster *storage.Cluster, appNamespace stri
 // These certificates are used to register new clusters at central.
 // All certificates share the same init bundle UUID written in the OU subject field.
 func IssueSecuredClusterInitCertificates() (CertBundle, uuid.UUID, error) {
-	initID := centralsensor.InitCertClusterID
+	initID := centralsensor.UserIssuedInitCertClusterID
 	certs := make(CertBundle)
 	bundleID := uuid.NewV4()
 	for _, serviceType := range allSecuredClusterServices {
