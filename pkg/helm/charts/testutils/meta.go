@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 )
 
-// DefaultTestMetaValues creates pre-populated charts.MetaValues for use in tests.
-func DefaultTestMetaValues(t *testing.T) charts.MetaValues {
+// MakeMetaValuesForTest creates pre-populated charts.MetaValues for use in tests.
+func MakeMetaValuesForTest(t *testing.T) charts.MetaValues {
 	testutils.MustBeInTest(t)
 	return charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(t))
 }

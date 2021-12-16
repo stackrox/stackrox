@@ -115,7 +115,7 @@ func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...stri
 	// Retrieve template files from box.
 	tpl, err := helmImage.GetCentralServicesChartTemplate()
 	s.Require().NoError(err, "error retrieving chart template")
-	ch, err := tpl.InstantiateAndLoad(metaUtil.DefaultTestMetaValues(s.T()))
+	ch, err := tpl.InstantiateAndLoad(metaUtil.MakeMetaValuesForTest(s.T()))
 	s.Require().NoError(err, "error instantiating chart")
 
 	effectiveInstallOpts := installOpts

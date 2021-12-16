@@ -14,7 +14,7 @@ func TestWithHelmtest(t *testing.T) {
 	helmImage := image.GetDefaultImage()
 	tpl, err := helmImage.GetCentralServicesChartTemplate()
 	require.NoError(t, err, "error retrieving chart template")
-	ch, err := tpl.InstantiateAndLoad(metaUtil.DefaultTestMetaValues(t))
+	ch, err := tpl.InstantiateAndLoad(metaUtil.MakeMetaValuesForTest(t))
 	require.NoError(t, err, "error instantiating chart")
 
 	suite, err := helmTest.NewLoader("testdata/helmtest").LoadSuite()
