@@ -8,33 +8,98 @@ import {
     CardBody,
     Button,
     Divider,
+    Flex,
+    FlexItem,
+    TextInput,
 } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
+import { PencilAltIcon, TrashIcon, CheckIcon } from '@patternfly/react-icons';
 
 import { Policy } from 'types/policy.proto';
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 
-function PolicySection({ sectionIndex }) {
-    const { values, setFieldValue } = useFormikContext<Policy>();
+import PolicyGroupCard from './PolicyGroupCard';
+import PolicySectionDropTarget from './PolicySectionDropTarget';
+
+type PolicySectionProps = {
+    sectionIndex: number;
+    descriptor: Descriptor[];
+};
+
+function PolicySection({ sectionIndex, descriptor }: PolicySectionProps) {
+    const [isEditingName, setIsEditingName] = React.useState(false);
+    const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
+
+    function onEditSectionName(_, e) {
+        handleChange(e);
+    }
+
+    function onDeleteSection() {
+        setFieldValue(
+            'policySections',
+            values.policySections.filter((_, i) => i !== sectionIndex)
+        );
+    }
+
     return (
-        <div>
-            PolicySection {sectionIndex}
-            <Card isFlat>
-                <CardHeader>
-                    <CardTitle>{sectionName}</CardTitle>
-                    <CardActions>
-                        <Button variant="plain">
-                            <PencilAltIcon />
-                        </Button>
+        <Card isFlat isCompact className="pf-u-w-66">
+            <CardHeader className="pf-u-p-0">
+                <CardTitle className="pf-u-display-flex pf-u-align-self-stretch">
+                    <Flex
+                        alignItems={{ default: 'alignItemsCenter' }}
+                        flexWrap={{ default: 'nowrap' }}
+                    >
+                        <FlexItem className="pf-u-pl-md">{sectionIndex + 1}</FlexItem>
                         <Divider component="div" isVertical />
-                        <Button variant="plain">
-                            <TrashIcon />
-                        </Button>
-                    </CardActions>
-                </CardHeader>
-                <CardBody>hello</CardBody>
-            </Card>
-        </div>
+                        <FlexItem>
+                            {isEditingName ? (
+                                <TextInput
+                                    id={`policySections[${sectionIndex}].sectionName`}
+                                    name={`policySections[${sectionIndex}].sectionName`}
+                                    value={values.policySections[sectionIndex].sectionName}
+                                    onChange={onEditSectionName}
+                                />
+                            ) : (
+                                <>{sectionName || 'New Section'}</>
+                            )}
+                        </FlexItem>
+                    </Flex>
+                </CardTitle>
+                <CardActions hasNoOffset>
+                    <Button
+                        variant="plain"
+                        className="pf-u-px-sm"
+                        onClick={() => setIsEditingName(!isEditingName)}
+                    >
+                        {isEditingName ? <CheckIcon /> : <PencilAltIcon />}
+                    </Button>
+                    <Divider component="div" isVertical />
+                    <Button
+                        variant="plain"
+                        className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
+                        onClick={onDeleteSection}
+                    >
+                        <TrashIcon />
+                    </Button>
+                </CardActions>
+            </CardHeader>
+            <Divider component="div" />
+            <CardBody>
+                {policyGroups.map((group, groupIndex) => {
+                    const descriptorField = descriptor.find(
+                        (field) => group.fieldName === field.name || group.fieldName === field.label
+                    );
+                    return (
+                        <PolicyGroupCard
+                            field={descriptorField}
+                            groupIndex={groupIndex}
+                            sectionIndex={sectionIndex}
+                        />
+                    );
+                })}
+                <PolicySectionDropTarget sectionIndex={sectionIndex} descriptor={descriptor} />
+            </CardBody>
+        </Card>
     );
 }
 

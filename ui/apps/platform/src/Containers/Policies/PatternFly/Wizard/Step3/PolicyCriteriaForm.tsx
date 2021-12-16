@@ -1,5 +1,7 @@
 import React from 'react';
-import { Title, Flex, FlexItem, Divider, DragDrop, Button } from '@patternfly/react-core';
+import { Title, Flex, FlexItem, Divider, Button } from '@patternfly/react-core';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
 
 import {
@@ -11,6 +13,8 @@ import {
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import PolicySection from './PolicySection';
+
+import './PolicyCriteriaForm.css';
 
 const MAX_POLICY_SECTIONS = 16;
 
@@ -26,6 +30,7 @@ function PolicyCriteriaForm() {
             };
             const newPolicySections = [...values.policySections, newPolicySection];
             setFieldValue('policySections', newPolicySections);
+            // document.getElementById('policy-sections').scrollLeft += 20;
         }
     }
 
@@ -38,9 +43,9 @@ function PolicyCriteriaForm() {
     }, [values.eventSource]);
 
     return (
-        <DragDrop>
+        <DndProvider backend={HTML5Backend}>
             <Flex>
-                <FlexItem flex={{ default: 'flex_1' }}>
+                <FlexItem flex={{ default: 'flex_1' }} className="pf-u-w-66">
                     <Flex direction={{ default: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <Title headingLevel="h2">Policy criteria</Title>
@@ -55,10 +60,29 @@ function PolicyCriteriaForm() {
                             </Button>
                         </FlexItem>
                     </Flex>
-                    <Divider component="div" className="pf-u-mt-md" />
-                    <Flex direction={{ default: 'row' }}>
+                    <Divider component="div" className="pf-u-mt-md pf-u-mb-lg" />
+                    <Flex
+                        direction={{ default: 'row' }}
+                        flexWrap={{ default: 'nowrap' }}
+                        id="policy-sections"
+                    >
                         {values.policySections.map((_, sectionIndex) => (
-                            <PolicySection sectionIndex={sectionIndex} />
+                            <>
+                                <PolicySection
+                                    sectionIndex={sectionIndex}
+                                    descriptor={descriptor}
+                                />
+                                {sectionIndex !== values.policySections.length && (
+                                    <Flex
+                                        direction={{ default: 'column' }}
+                                        alignSelf={{ default: 'alignSelfCenter' }}
+                                    >
+                                        <Divider component="div" />
+                                        <FlexItem>or</FlexItem>
+                                        <Divider component="div" />
+                                    </Flex>
+                                )}
+                            </>
                         ))}
                     </Flex>
                 </FlexItem>
@@ -67,7 +91,7 @@ function PolicyCriteriaForm() {
                     <PolicyCriteriaKeys keys={descriptor} />
                 </FlexItem>
             </Flex>
-        </DragDrop>
+        </DndProvider>
     );
 }
 
