@@ -241,7 +241,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 
 	// If query was modified, it means the result was not paginated since the filtering removes pagination.
-	// If post sorting was needed, which means pagination was not performed because it was it was removed above.
+	// If post sorting was needed, which means pagination was not performed because it was removed above.
 	if queryModified || postSortingNeeded {
 		paginatedVulns, err := paginationWrapper{
 			pv: originalQuery.GetPagination(),
@@ -819,6 +819,45 @@ func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*a
 		state = Active
 	}
 	return &activeStateResolver{root: resolver.root, state: state, activeComponentIDs: ids, imageScope: imageID}, nil
+}
+
+// VulnerabilityState return the effective state of this vulnerability (observed, deferred or marked as false positive).
+func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
+	if resolver.data.GetSuppressed() {
+		return storage.VulnerabilityState_DEFERRED.String()
+	}
+
+	var imageID string
+	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
+	if hasScope {
+		imageID = scope.ID
+	}
+
+	if imageID == "" {
+		return ""
+	}
+
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		log.Error(errors.Wrap(err, "getting image loader"))
+		return ""
+	}
+	img, err := imageLoader.FromID(ctx, imageID)
+	if err != nil {
+		log.Error(errors.Wrapf(err, "fetching image with id %s", imageID))
+		return ""
+	}
+
+	states, err := resolver.root.vulnReqMgr.VulnsWithState(resolver.ctx, img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag())
+	if err != nil {
+		log.Error(errors.Wrapf(err, "fetching vuln requests for image %s/%s:%s", img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag()))
+		return ""
+	}
+	if s, ok := states[resolver.data.GetId()]; ok {
+		return s.String()
+	}
+
+	return storage.VulnerabilityState_OBSERVED.String()
 }
 
 func (resolver *cVEResolver) addScopeContext(query *v1.Query) (context.Context, *v1.Query) {
