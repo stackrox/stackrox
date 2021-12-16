@@ -2259,7 +2259,7 @@ jobs:
 
   check-generated-files-up-to-date:
     executor: custom
-    resource_class: small
+    resource_class: medium
     steps:
       - checkout
 
