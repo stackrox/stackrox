@@ -828,8 +828,8 @@ func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
 	}
 
 	var imageID string
-	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if hasScope && scope.Level == v1.SearchCategory_IMAGES {
+	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
+	if hasScope {
 		imageID = scope.ID
 	}
 
@@ -837,14 +837,17 @@ func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
 		return ""
 	}
 
-	img, exists, err := resolver.root.ImageDataStore.GetImage(ctx, imageID)
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		log.Error(errors.Wrapf(err, "getting image loader"))
+		return ""
+	}
+	img, err := imageLoader.FromID(ctx, imageID)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "fetching image with id %s", imageID))
 		return ""
 	}
-	if !exists {
-		return ""
-	}
+
 	states, err := resolver.root.vulnReqMgr.VulnsWithState(resolver.ctx, img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag())
 	if err != nil {
 		log.Error(errors.Wrapf(err, "fetching vuln requests for image %s/%s:%s", img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag()))
