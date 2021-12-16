@@ -367,7 +367,7 @@ func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
 	for _, deploymentID := range deploymentIDs {
 		deployment := d.deploymentStore.Get(deploymentID)
 		if deployment == nil {
-			return
+			continue
 		}
 
 		d.markDeploymentForProcessing(deploymentID)
