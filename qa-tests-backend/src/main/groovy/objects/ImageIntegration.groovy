@@ -155,7 +155,7 @@ class ECRRegistryIntegration implements ImageIntegration {
         }
 
         if (args.useAssumeRoleExternalId) {
-            args.useAssumeRole = args.useAssumeRoleExternalId()
+            args.useAssumeRole = true
             args.accessKeyId = Env.mustGetAWSAssumeRoleAccessKeyID()
             args.secretAccessKey = Env.mustGetAWSAssumeRoleSecretKeyID()
             args.assumeRoleRoleId = Env.mustGetAWSAssumeRoleExternalID()
