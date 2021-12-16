@@ -6,7 +6,6 @@ import {
     CardActions,
     CardBody,
     Divider,
-    FlexItem,
     Flex,
     Button,
     Checkbox,
