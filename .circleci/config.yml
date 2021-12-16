@@ -2803,7 +2803,7 @@ jobs:
     executor: custom
     resource_class: large
     steps:
-      - checkout
+      - checkout-with-submodules
       - *checkToRunSeparateRaceConditionTestPipe
 
       - run:
