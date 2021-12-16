@@ -103,7 +103,11 @@ export function fetchAvailableProviderTypes(): Promise<{ response: AuthProviderI
     return axios.get(`${availableProviderTypesUrl}`).then((response) => ({
         response:
             response?.data?.authProviderTypes.map((curr) => {
-                return { value: curr, label: authProviderLabels[curr] };
+                return {
+                    value: curr.type,
+                    ruleAttributes: curr.availableAttributes,
+                    label: authProviderLabels[curr.type],
+                };
             }) || [],
     }));
 }

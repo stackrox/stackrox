@@ -8,6 +8,17 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 )
 
+const (
+	// GroupRuleAttribute attribute.
+	GroupRuleAttribute = "group"
+	// EmailRuleAttribute attribute.
+	EmailRuleAttribute = "email"
+	// UseridRuleAttribute attribute.
+	UseridRuleAttribute = "userid"
+	// NameRuleAttribute attribute.
+	NameRuleAttribute = "name"
+)
+
 // AllUIEndpoints returns all UI endpoints for a given auth provider, with the default UI endpoint first.
 func AllUIEndpoints(providerProto *storage.AuthProvider) []string {
 	if providerProto.GetUiEndpoint() == "" {

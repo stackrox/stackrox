@@ -421,6 +421,10 @@ type tstAuthProviderBackendFactory struct {
 	err         error
 }
 
+func (f *tstAuthProviderBackendFactory) GetAvailableAttributes() []string {
+	return []string{}
+}
+
 func (f *tstAuthProviderBackendFactory) registerProcessResponse(providerID string, clientState string, err error) {
 	f.providerID = providerID
 	f.clientState = clientState

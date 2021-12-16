@@ -18,6 +18,8 @@ const (
 	AudienceConfigKey = "audience"
 )
 
+var _ authproviders.BackendFactory = (*factory)(nil)
+
 type factory struct {
 	callbackURL string
 }
@@ -58,6 +60,12 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 
 func (f *factory) ResolveProviderAndClientState(state string) (providerID string, clientState string, err error) {
 	return state, "", nil
+}
+
+func (f *factory) GetAvailableAttributes() []string {
+	return []string{authproviders.UseridRuleAttribute,
+		authproviders.NameRuleAttribute,
+		authproviders.EmailRuleAttribute}
 }
 
 // NewFactory is a method to return an authproviders.BackendFactory that contains a reference to the

@@ -17,6 +17,8 @@ const (
 	TypeName = "userpki"
 )
 
+var _ authproviders.BackendFactory = (*factory)(nil)
+
 type factory struct {
 	callbackURLPath string
 	callbacks       ProviderCallbacks
@@ -66,6 +68,13 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 
 func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
 	return newCfg
+}
+
+func (f *factory) GetAvailableAttributes() []string {
+	return []string{authproviders.UseridRuleAttribute,
+		authproviders.NameRuleAttribute,
+		authproviders.GroupRuleAttribute,
+		authproviders.EmailRuleAttribute}
 }
 
 // NewFactoryFactory is a method to return an authproviders.BackendFactory that contains a reference to the

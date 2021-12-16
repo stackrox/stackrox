@@ -18,7 +18,8 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                              = logging.LoggerForModule()
+	_   authproviders.BackendFactory = (*factory)(nil)
 )
 
 type factory struct {
@@ -72,4 +73,8 @@ func (f *factory) ResolveProviderAndClientState(state string) (string, string, e
 		return "", clientState, errors.New("empty state")
 	}
 	return providerID, clientState, nil
+}
+
+func (f *factory) GetAvailableAttributes() []string {
+	panic("shouldn't be in the list of available providers")
 }

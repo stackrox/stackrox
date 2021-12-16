@@ -109,12 +109,15 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 // ListAvailableProviderTypes returns auth provider types which can be created.
 func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty) (*v1.AvailableProviderTypesResponse, error) {
 	factories := s.registry.GetBackendFactories()
-	supportedTypes := make([]string, 0, len(factories))
-	for typ := range factories {
+	supportedTypes := make([]*v1.AvailableProviderTypesResponse_AuthProviderType, 0, len(factories))
+	for typ, factory := range factories {
 		if typ == basic.TypeName {
 			continue
 		}
-		supportedTypes = append(supportedTypes, typ)
+		supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderType{
+			Type:                typ,
+			AvailableAttributes: factory.GetAvailableAttributes(),
+		})
 	}
 	return &v1.AvailableProviderTypesResponse{
 		AuthProviderTypes: supportedTypes,

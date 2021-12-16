@@ -27,7 +27,8 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                              = logging.LoggerForModule()
+	_   authproviders.BackendFactory = (*factory)(nil)
 )
 
 type factory struct {
@@ -92,4 +93,11 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 		mergedCfg[clientSecretConfigKey] = oldCfg[clientSecretConfigKey]
 	}
 	return mergedCfg
+}
+
+func (f *factory) GetAvailableAttributes() []string {
+	return []string{authproviders.UseridRuleAttribute,
+		authproviders.NameRuleAttribute,
+		authproviders.GroupRuleAttribute,
+		authproviders.EmailRuleAttribute}
 }
