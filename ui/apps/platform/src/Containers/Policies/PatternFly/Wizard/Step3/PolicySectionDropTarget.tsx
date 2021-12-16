@@ -76,7 +76,7 @@ function PolicySectionDropTarget({ sectionIndex, descriptor }) {
     }
 
     return (
-        <div ref={drop} className="pf-u-mt-md">
+        <div ref={drop}>
             <Flex
                 data-testid="policy-section-drop-target"
                 justifyContent={{ default: 'justifyContentCenter' }}

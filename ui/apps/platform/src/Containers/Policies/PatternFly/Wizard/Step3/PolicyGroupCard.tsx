@@ -82,20 +82,18 @@ function PolicyGroupCard({ field, groupIndex, sectionIndex }) {
                 <Divider component="div" />
                 <CardBody>sigh</CardBody>
             </Card>
-            {groupIndex < policyGroups.length - 1 && (
-                <Flex
-                    direction={{ default: 'row' }}
-                    className="pf-u-my-sm"
-                    justifyContent={{ default: 'justifyContentCenter' }}
-                >
-                    {/* <Button
+            <Flex
+                direction={{ default: 'row' }}
+                className="pf-u-my-sm"
+                justifyContent={{ default: 'justifyContentCenter' }}
+            >
+                {/* <Button
                         variant="plain"
                         onClick={handleBooleanOperator}
                         isDisabled={field?.canBooleanLogic}
                     > */}
-                    — and —{/* </Button> */}
-                </Flex>
-            )}
+                — and —{/* </Button> */}
+            </Flex>
         </>
     );
 }
