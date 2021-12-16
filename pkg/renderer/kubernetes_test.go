@@ -32,11 +32,10 @@ func TestRender(t *testing.T) {
 
 type renderSuite struct {
 	suite.Suite
-	restorer *testbuildinfo.TestBuildTimestampRestorer
+	restorer    *testbuildinfo.TestBuildTimestampRestorer
 	envIsolator *envisolator.EnvIsolator
 	testFlavor  defaults.ImageFlavor
 }
-
 
 func (suite *renderSuite) SetupSuite() {
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
