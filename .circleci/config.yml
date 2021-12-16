@@ -506,7 +506,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.20
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.21
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -2672,7 +2672,6 @@ jobs:
           command: |
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
-            sudo cp .circleci/bash.env /etc/bash.env
       - run:
           name: Install Go
           command: |
