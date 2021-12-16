@@ -839,7 +839,7 @@ func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
 
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
-		log.Error(errors.Wrapf(err, "getting image loader"))
+		log.Error(errors.Wrap(err, "getting image loader"))
 		return ""
 	}
 	img, err := imageLoader.FromID(ctx, imageID)
