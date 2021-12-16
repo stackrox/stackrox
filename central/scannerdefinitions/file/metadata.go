@@ -84,6 +84,10 @@ func (m *Metadata) runForever() {
 // the modified time to the given modified time.
 // This method is thread-safe.
 func (m *Metadata) Write(r io.Reader, modifiedTime time.Time) error {
+	if m.isClosed() {
+		return utils.Should(errClosed)
+	}
+
 	m.opC <- operationValue{
 		write: writeValue{
 			r:            r,
@@ -98,10 +102,6 @@ func (m *Metadata) Write(r io.Reader, modifiedTime time.Time) error {
 // The file's modified time is set to the given modifiedTime.
 // write is not thread-safe.
 func (m *Metadata) write(r io.Reader, modifiedTime time.Time) error {
-	if m.isClosed() {
-		return errClosed
-	}
-
 	dir := filepath.Dir(m.GetPath())
 
 	err := os.MkdirAll(dir, 0755)
