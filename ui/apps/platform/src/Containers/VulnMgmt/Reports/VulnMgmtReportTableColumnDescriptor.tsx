@@ -39,7 +39,7 @@ const VulnMgmtReportTableColumnDescriptor = [
             const mappedFixabilityValues = getMappedFixability(value);
 
             const fixabilityStrings = mappedFixabilityValues.map(
-                (fixValue) => fixabilityLabels[fixValue] as string
+                (fixValue) => fixabilityLabels[fixValue]
             );
 
             return <span>{fixabilityStrings.join(', ') || 'Issue: Fixabiltiy unset'}</span>;
