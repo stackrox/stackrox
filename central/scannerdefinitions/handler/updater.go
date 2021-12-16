@@ -100,5 +100,5 @@ func (u *updater) doUpdate() error {
 		return errors.Errorf("unable to determine upstream definitions file's modified time: %v", err)
 	}
 
-	return file.Write(u.file, resp.Body, lastModified)
+	return u.file.Write(resp.Body, lastModified)
 }

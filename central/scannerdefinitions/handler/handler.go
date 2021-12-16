@@ -217,6 +217,7 @@ func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
 	defer utils.IgnoreError(r.Close)
 
 	// POST requests only update the offline feed.
+	// TODO: lock this
 	if err := file.Write(h.offlineFile, r, zipF.Modified); err != nil {
 		return errors.Wrap(err, "writing scanner definitions")
 	}
