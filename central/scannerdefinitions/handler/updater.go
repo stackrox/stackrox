@@ -41,6 +41,7 @@ func newUpdater(file *file.Metadata, client *http.Client, downloadURL string, in
 // Stop stops the updater.
 func (u *updater) Stop() {
 	u.stopSig.Signal()
+	u.file.Close()
 }
 
 // Start starts the updater.

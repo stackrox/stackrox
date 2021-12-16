@@ -2,11 +2,18 @@ package file
 
 import (
 	"io"
+	"os"
+	"path/filepath"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
+var errClosed = errors.New("File closed")
+
 // Metadata represents file metadata required to read/write a file.
-// It implements the sync.RWMutex interface so users may lock the file.
 type Metadata struct {
 	path             string
 	lastModifiedTime time.Time
@@ -18,15 +25,18 @@ type Metadata struct {
 	// response body. Reading from a network streamed reader
 	// can take an unpredictable amount of time,
 	// so we opt to use a locking mechanism we have control over
-	// (for example, mutexes cannot be cancelled, which might be useful
+	// (mutexes cannot be cancelled, which might be useful
 	// in the future).
-	// Also, we opt to just implement this with Mutex semantics instead of
-	// RWMutex semantics, as it is not completely necessary at this time.
 	opC chan operationValue
-	// opResC contains the return value of a performed lock or write operation.
-	opResC chan error
+	// writeResC contains the return value of a write operation.
+	writeResC chan error
 	// unlockC signals the end of a lock operation.
 	unlockC chan struct{}
+
+	// closeLock locks access to the closed field.
+	closeLock sync.RWMutex
+	// closed indicates the file represented by this Metadata is closed.
+	closed bool
 }
 
 type operationValue struct {
@@ -51,8 +61,8 @@ func NewMetadata(path string, lastModifiedTime *time.Time) *Metadata {
 		path:             path,
 		lastModifiedTime: t,
 
-		opC:    make(chan operationValue),
-		opResC: make(chan error),
+		opC:       make(chan operationValue),
+		writeResC: make(chan error),
 	}
 
 	go m.runForever()
@@ -61,15 +71,11 @@ func NewMetadata(path string, lastModifiedTime *time.Time) *Metadata {
 }
 
 func (m *Metadata) runForever() {
-	for {
-		select {
-		case op := <-m.opC:
-			if op.lock {
-				<-m.unlockC
-				m.opResC <- nil
-			} else {
-				m.opResC <- Write(m, op.write.r, op.write.modifiedTime)
-			}
+	for op := range m.opC {
+		if op.lock {
+			<-m.unlockC
+		} else {
+			m.writeResC <- m.write(op.write.r, op.write.modifiedTime)
 		}
 	}
 }
@@ -85,23 +91,70 @@ func (m *Metadata) Write(r io.Reader, modifiedTime time.Time) error {
 		},
 	}
 
-	return <-m.opResC
+	return <-m.writeResC
+}
+
+// write the contents of r into the path represented by the given file.
+// The file's modified time is set to the given modifiedTime.
+// write is not thread-safe.
+func (m *Metadata) write(r io.Reader, modifiedTime time.Time) error {
+	if m.isClosed() {
+		return errClosed
+	}
+
+	dir := filepath.Dir(m.GetPath())
+
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		return errors.Wrap(err, "creating subdirectory for scanner defs")
+	}
+	scannerDefsFile, err := os.Create(m.GetPath())
+	if err != nil {
+		return errors.Wrap(err, "creating scanner defs file")
+	}
+	_, err = io.Copy(scannerDefsFile, r)
+	if err != nil {
+		return errors.Wrap(err, "copying scanner defs zip out")
+	}
+	err = os.Chtimes(m.GetPath(), time.Now(), modifiedTime)
+	if err != nil {
+		return errors.Wrap(err, "changing modified time of scanner defs")
+	}
+
+	m.SetLastModifiedTime(modifiedTime)
+
+	return nil
 }
 
 // RLock locks the file for reading purposes.
 // Note: RLock indicates this lock is meant for read access only.
 // It does not necessarily imply RWMutex semantics.
 func (m *Metadata) RLock() {
+	if m.isClosed() {
+		_ = utils.Should(errClosed)
+		return
+	}
+
 	m.opC <- operationValue{
 		lock: true,
 	}
 }
 
-// RUnlock unlocks the file.
+// RUnlock unlocks a single RLock.
 func (m *Metadata) RUnlock() {
+	if m.isClosed() {
+		_ = utils.Should(errClosed)
+		return
+	}
+
 	m.unlockC <- struct{}{}
-	// Need to ensure we do not block any future operations.
-	<-m.opResC
+}
+
+func (m *Metadata) isClosed() bool {
+	m.closeLock.RLock()
+	defer m.closeLock.RUnlock()
+
+	return m.closed
 }
 
 // GetPath returns the path for the file.
@@ -117,4 +170,13 @@ func (m *Metadata) GetLastModifiedTime() time.Time {
 // SetLastModifiedTime sets the last modified time of the file.
 func (m *Metadata) SetLastModifiedTime(lastModifiedTime time.Time) {
 	m.lastModifiedTime = lastModifiedTime
+}
+
+// Close closes the file.
+func (m *Metadata) Close() {
+	m.closeLock.Lock()
+	m.closed = true
+	m.closeLock.Unlock()
+
+	close(m.opC)
 }
