@@ -88,6 +88,10 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         setPollingDelay(null);
     }
 
+    function managerType(cluster) {
+        return (cluster?.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN') ? 'MANAGER_TYPE_HELM_CHART' : cluster.managedBy;
+    }
+
     useEffect(
         () => {
             const clusterIdToRetrieve = selectedClusterId;
@@ -147,7 +151,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             }
                         }
 
-                        if (cluster.managedBy === 'MANAGER_TYPE_KUBERNETES_OPERATOR') {
+                        if (managerType(cluster) === 'MANAGER_TYPE_KUBERNETES_OPERATOR') {
                             if (wizardStep === wizardSteps.FORM) {
                                 setMessageState({
                                     type: 'warn',
@@ -161,6 +165,27 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                                 operator-managed clusters cannot be changed here and
                                                 must instead be changed by updating its custom
                                                 resource definition (CRD).
+                                            </p>
+                                        </>
+                                    ),
+                                });
+                            }
+                        }
+
+                        if (managerType(cluster) === 'MANAGER_TYPE_HELM_CHART') {
+                            if (wizardStep === wizardSteps.FORM) {
+                                setMessageState({
+                                    type: 'warn',
+                                    message: (
+                                        <>
+                                            <h3 className="font-700 mb-2">
+                                                Helm-managed cluster
+                                            </h3>
+                                            <p>
+                                                This is an Helm-managed cluster. The settings of 
+                                                Helm-managed clusters cannot be changed here, 
+                                                please ask your DevOps team to change the settings
+                                                by updating the Helm values.
                                             </p>
                                         </>
                                     ),
@@ -239,29 +264,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                     setSelectedCluster(clusterWithId);
 
                     setWizardStep(wizardSteps.DEPLOYMENT);
-                    if (
-                        (clusterWithId.helmConfig &&
-                            clusterWithId.managedBy === 'MANAGER_TYPE_UNKNOWN') ||
-                        clusterWithId.managedBy === 'MANAGER_TYPE_HELM_CHART'
-                    ) {
-                        setMessageState({
-                            type: 'error',
-                            message: (
-                                <>
-                                    <h3 className="font-700 mb-2">Helm-managed cluster</h3>
-                                    <p className="mb-2">
-                                        Warning: This is a Helm-managed cluster. If you edit the
-                                        cluster using the form below, please ask your DevOps team to
-                                        update the Helm values in source control to ensure those
-                                        changes are not overwritten.
-                                    </p>
-                                    <pre className="bg-base-700 inline-block p-2 rounded text-base-200">
-                                        $ helm upgrade -f myvalues.yaml
-                                    </pre>
-                                </>
-                            ),
-                        });
-                    }
 
                     if (!selectedCluster?.healthStatus?.lastContact) {
                         setPollingDelay(clusterDetailPollingInterval);
@@ -364,6 +366,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             centralEnv={centralEnv}
                             centralVersion={metadata.version}
                             selectedCluster={selectedCluster}
+                            managerType={managerType(selectedCluster)}
                             handleChange={onChange}
                             handleChangeLabels={handleChangeLabels}
                             isLoading={loadingCounter > 0}
@@ -378,7 +381,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                 onFileDownload={onDownload}
                                 isDownloadingBundle={isDownloadingBundle}
                                 clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
-                                managerType={selectedCluster.managedBy}
+                                managerType={managerType(selectedCluster)}
                             />
                             {!!selectedCluster.id && (
                                 <DownloadHelmValues

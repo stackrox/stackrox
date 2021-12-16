@@ -20,12 +20,11 @@ const DynamicConfigurationSection = ({
     dynamicConfig,
     helmConfig,
     clusterType,
-    managerType,
+    isManagerTypeNonConfigurable,
 }) => {
     const { registryOverride, admissionControllerConfig } = dynamicConfig;
 
     const isLoggingSupported = clusterType === clusterTypes.OPENSHIFT_4;
-    const isOperatorManaged = managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR';
 
     // @TODO, replace open prop with dynamic logic, based on clusterType
     return (
@@ -50,7 +49,7 @@ const DynamicConfigurationSection = ({
                             value={registryOverride}
                             className={inputTextClassName}
                             placeholder="image-mirror.example.com"
-                            disabled={isOperatorManaged}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -71,7 +70,7 @@ const DynamicConfigurationSection = ({
                             name="dynamicConfig.admissionControllerConfig.enabled"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.enabled}
-                            disabled={isOperatorManaged}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     {helmConfig &&
@@ -98,7 +97,7 @@ const DynamicConfigurationSection = ({
                             name="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.enforceOnUpdates}
-                            disabled={isOperatorManaged}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -123,7 +122,7 @@ const DynamicConfigurationSection = ({
                             name="dynamicConfig.admissionControllerConfig.timeoutSeconds"
                             onChange={handleChange}
                             value={admissionControllerConfig.timeoutSeconds}
-                            disabled={isOperatorManaged}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -146,7 +145,7 @@ const DynamicConfigurationSection = ({
                             name="dynamicConfig.admissionControllerConfig.scanInline"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.scanInline}
-                            disabled={isOperatorManaged}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -167,7 +166,7 @@ const DynamicConfigurationSection = ({
                             name="dynamicConfig.admissionControllerConfig.disableBypass"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.disableBypass}
-                            disabled={isOperatorManaged}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -185,7 +184,7 @@ const DynamicConfigurationSection = ({
                         <ToggleSwitch
                             id="dynamicConfig.disableAuditLogs"
                             name="dynamicConfig.disableAuditLogs"
-                            disabled={!isLoggingSupported || isOperatorManaged}
+                            disabled={!isLoggingSupported || isManagerTypeNonConfigurable}
                             toggleHandler={handleChange}
                             enabled={dynamicConfig.disableAuditLogs}
                             flipped

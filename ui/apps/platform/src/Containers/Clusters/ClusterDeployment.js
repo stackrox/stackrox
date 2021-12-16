@@ -26,6 +26,8 @@ const ClusterDeploymentPage = ({
                     <Message>
                         {managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR'
                             ? 'Cluster labels have been saved. (All other cluster settings are managed by the Kubernetes operator.)'
+                            : managerType === 'MANAGER_TYPE_HELM_CHART'
+                            ? 'Cluster labels have been saved. (All other cluster settings are managed by the Helm chart.)'
                             : 'Dynamic configurations are automatically applied. If you edited static configurations or you need to redeploy, download a new bundle.'}
                     </Message>
                 </div>
