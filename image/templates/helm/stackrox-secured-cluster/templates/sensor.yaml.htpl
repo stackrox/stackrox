@@ -144,6 +144,11 @@ spec:
           mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
           readOnly: true
         [<- end >]
+        {{- if ._rox.env.openshift }}
+        - name: trusted-ca-volume
+          mountPath: /etc/pki/injected-ca-trust/
+          readOnly: true
+        {{- end }}
       volumes:
       - name: certs
         secret:
@@ -177,6 +182,14 @@ spec:
           secretName: helm-effective-cluster-name
           optional: true
       [<- end >]
+      {{- if ._rox.env.openshift }}
+      - name: trusted-ca-volume
+        configMap:
+          name: trusted-ca-sensor
+          items:
+            - key: ca-bundle.crt
+              path: tls-ca-bundle.pem
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

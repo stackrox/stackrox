@@ -143,6 +143,11 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
+        {{- if ._rox.env.openshift }}
+        - name: trusted-ca-volume
+          mountPath: /etc/pki/injected-ca-trust/
+          readOnly: true
+        {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
@@ -194,6 +199,14 @@ spec:
           name: central-endpoints
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
+      {{- if ._rox.env.openshift }}
+      - name: trusted-ca-volume
+        configMap:
+          name: trusted-ca
+          items:
+            - key: ca-bundle.crt
+              path: tls-ca-bundle.pem
+      {{- end }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}
