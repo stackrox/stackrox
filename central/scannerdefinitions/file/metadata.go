@@ -63,6 +63,7 @@ func NewMetadata(path string, lastModifiedTime *time.Time) *Metadata {
 
 		opC:       make(chan operationValue),
 		writeResC: make(chan error),
+		unlockC:   make(chan struct{}),
 	}
 
 	go m.runForever()
@@ -79,7 +80,6 @@ func (m *Metadata) runForever() {
 		}
 	}
 
-	close(m.unlockC)
 	close(m.writeResC)
 }
 
@@ -182,4 +182,5 @@ func (m *Metadata) Close() {
 	m.closeLock.Unlock()
 
 	close(m.opC)
+	close(m.unlockC)
 }
