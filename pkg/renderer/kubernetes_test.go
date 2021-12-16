@@ -6,7 +6,8 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,16 +30,16 @@ func TestRender(t *testing.T) {
 
 type renderSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
+	restorer *testbuildinfo.TestBuildTimestampRestorer
 }
 
 func (suite *renderSuite) SetupSuite() {
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv("TEST_VERSIONS", "true")
+	suite.restorer = testbuildinfo.SetForTest(suite.T())
+	testutils.SetExampleVersion(suite.T())
 }
 
 func (suite *renderSuite) TeardownSuite() {
-	suite.envIsolator.RestoreAll()
+	suite.restorer.Restore()
 }
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
