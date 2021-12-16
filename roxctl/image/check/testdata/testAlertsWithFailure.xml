@@ -1,0 +1,23 @@
+<testsuite name="image-check" tests="7" failures="1" skipped="6" errors="0">
+  <testcase name="policy 1" classname="">
+    <failure>- test violation 1&#xA;- test violation 2&#xA;- test violation 3</failure>
+  </testcase>
+  <testcase name="policy 4" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 8" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 2" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 5" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 6" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 7" classname="">
+    <skipped></skipped>
+  </testcase>
+</testsuite>
