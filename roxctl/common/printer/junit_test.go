@@ -21,6 +21,7 @@ type jaggedJunitTestData struct {
 type junitTestStructure struct {
 	Tests       []test       `json:"tests"`
 	FailedTests []failedTest `json:"failedTests"`
+	SkippedTest []test       `json:"skippedTests"`
 }
 
 type failedTest struct {
@@ -33,7 +34,7 @@ type test struct {
 }
 
 func TestJunitPrinter_Print_JaggedArray(t *testing.T) {
-	expectedOutput := `<testsuite name="testsuite" tests="4" failures="2" errors="0">
+	expectedOutput := `<testsuite name="testsuite" tests="4" failures="2" skipped="0" errors="0">
   <testcase name="test1" classname=""></testcase>
   <testcase name="test2" classname="">
     <failure>err msg 2</failure>
@@ -47,6 +48,7 @@ func TestJunitPrinter_Print_JaggedArray(t *testing.T) {
 		JUnitTestCasesExpressionKey:            "data.#.tests.#.name",
 		JUnitFailedTestCasesExpressionKey:      "data.#.failedTests.#.name",
 		JUnitFailedTestCaseErrMsgExpressionKey: "data.#.failedTests.#.error",
+		JUnitSkippedTestCasesExpressionKey:     "data.#.skippedTests.#.name",
 	}
 	p := newJUnitPrinter("testsuite", jsonExpr)
 	testObj := &jaggedJunitTestData{
@@ -80,6 +82,7 @@ func TestJunitPrinter_Print_JaggedArray(t *testing.T) {
 	suite := suites[0]
 	assert.Equal(t, 4, suite.Totals.Tests)
 	assert.Equal(t, 2, suite.Totals.Failed)
+	assert.Equal(t, 0, suite.Totals.Skipped)
 	assert.Equal(t, 0, suite.Totals.Error)
 	assert.Equal(t, "testsuite", suite.Name)
 	for i, test := range suite.Tests {
@@ -97,7 +100,7 @@ func TestJunitPrinter_Print_JaggedArray(t *testing.T) {
 }
 
 func TestJunitPrinter_Print(t *testing.T) {
-	expectedOutput := `<testsuite name="testsuite" tests="4" failures="2" errors="0">
+	expectedOutput := `<testsuite name="testsuite" tests="6" failures="2" skipped="2" errors="0">
   <testcase name="test1" classname=""></testcase>
   <testcase name="test2" classname="">
     <failure>err msg 2</failure>
@@ -106,11 +109,18 @@ func TestJunitPrinter_Print(t *testing.T) {
   <testcase name="test4" classname="">
     <failure>err msg 4</failure>
   </testcase>
+  <testcase name="test5" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="test6" classname="">
+    <skipped></skipped>
+  </testcase>
 </testsuite>`
 	jsonExpr := map[string]string{
 		JUnitTestCasesExpressionKey:            "data.tests.#.name",
 		JUnitFailedTestCasesExpressionKey:      "data.failedTests.#.name",
 		JUnitFailedTestCaseErrMsgExpressionKey: "data.failedTests.#.error",
+		JUnitSkippedTestCasesExpressionKey:     "data.skippedTests.#.name",
 	}
 	p := newJUnitPrinter("testsuite", jsonExpr)
 	testObj := &junitTestData{
@@ -120,10 +130,16 @@ func TestJunitPrinter_Print(t *testing.T) {
 				{Name: "test2"},
 				{Name: "test3"},
 				{Name: "test4"},
+				{Name: "test5"},
+				{Name: "test6"},
 			},
 			FailedTests: []failedTest{
 				{Name: "test2", ErrMessage: "err msg 2"},
 				{Name: "test4", ErrMessage: "err msg 4"},
+			},
+			SkippedTest: []test{
+				{Name: "test5"},
+				{Name: "test6"},
 			},
 		},
 	}
@@ -137,8 +153,9 @@ func TestJunitPrinter_Print(t *testing.T) {
 
 	assert.Len(t, suites, 1)
 	suite := suites[0]
-	assert.Equal(t, 4, suite.Totals.Tests)
+	assert.Equal(t, 6, suite.Totals.Tests)
 	assert.Equal(t, 2, suite.Totals.Failed)
+	assert.Equal(t, 2, suite.Totals.Skipped)
 	assert.Equal(t, 0, suite.Totals.Error)
 	assert.Equal(t, "testsuite", suite.Name)
 	for i, test := range suite.Tests {
@@ -150,6 +167,12 @@ func TestJunitPrinter_Print(t *testing.T) {
 				assert.Equal(t, junit.StatusFailed, test.Status)
 			}
 		}
+		for _, skippedTest := range testObj.Data.SkippedTest {
+			if test.Name == skippedTest.Name {
+				assert.NoError(t, test.Error)
+				assert.Equal(t, junit.StatusSkipped, test.Status)
+			}
+		}
 	}
 	require.NoError(t, err)
 }
@@ -159,6 +182,7 @@ func TestValidateJUnitSuiteData(t *testing.T) {
 		tcNames        []string
 		failedTcNames  []string
 		failedTcErrMsg []string
+		skippedTcNames []string
 		shouldFail     bool
 		error          error
 	}{
@@ -166,8 +190,9 @@ func TestValidateJUnitSuiteData(t *testing.T) {
 			tcNames:        []string{"a", "b", "c"},
 			failedTcNames:  []string{"a"},
 			failedTcErrMsg: []string{"a"},
+			skippedTcNames: []string{"b"},
 		},
-		"should not fail if no failed test cases and error messages are given": {
+		"should not fail if no skipped test cases and no failed test cases and error messages are given": {
 			tcNames:        []string{"a", "b", "c"},
 			failedTcNames:  nil,
 			failedTcErrMsg: nil,
@@ -176,6 +201,12 @@ func TestValidateJUnitSuiteData(t *testing.T) {
 			tcNames:        []string{"a"},
 			failedTcNames:  []string{"a", "b"},
 			failedTcErrMsg: []string{"a", "b"},
+			shouldFail:     true,
+			error:          errorhelpers.ErrInvariantViolation,
+		},
+		"should fail if overall test cases < skipped test cases": {
+			tcNames:        []string{"a"},
+			skippedTcNames: []string{"a", "b"},
 			shouldFail:     true,
 			error:          errorhelpers.ErrInvariantViolation,
 		},
@@ -190,7 +221,7 @@ func TestValidateJUnitSuiteData(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			err := validateJUnitSuiteData(c.tcNames, c.failedTcNames, c.failedTcErrMsg)
+			err := validateJUnitSuiteData(c.tcNames, c.failedTcNames, c.failedTcErrMsg, c.skippedTcNames)
 			if c.shouldFail {
 				require.Error(t, err)
 				assert.ErrorIs(t, err, c.error)

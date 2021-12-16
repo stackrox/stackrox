@@ -312,6 +312,26 @@ func (suite *imageCheckTestSuite) TestCheckImage_CSVOutput() {
 	suite.runOutputTests(cases, csvPrinter, true)
 }
 
+func (suite *imageCheckTestSuite) TestCheckImage_JUnitOutput() {
+	cases := map[string]outputFormatTest{
+		"should not fail with non build failing enforcement actions": {
+			alerts:         testAlertsWithoutFailure,
+			expectedOutput: "testAlertsWithoutFailure.xml",
+		},
+		"should fail with build failing enforcement actions": {
+			alerts:         testAlertsWithFailure,
+			shouldFail:     true,
+			error:          policy.ErrBreakingPolicies,
+			expectedOutput: "testAlertsWithFailure.xml",
+		},
+	}
+
+	// setup CSV printer with default options
+	junitPrinter, err := printer.NewJUnitPrinterFactory("image-check", defaultJunitJSONPathExpressions).CreatePrinter("junit")
+	suite.Require().NoError(err)
+	suite.runOutputTests(cases, junitPrinter, true)
+}
+
 func (suite *imageCheckTestSuite) TestConstruct() {
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
 	suite.Require().NoError(err)

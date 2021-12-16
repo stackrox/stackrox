@@ -6,10 +6,13 @@ import (
 	"io"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/roxctl/common/printer/mapper"
 )
 
 const (
+	// JUnitSkippedTestCasesExpressionKey represents the key for the JSON Path expression which yields all failed test case names
+	JUnitSkippedTestCasesExpressionKey = "skipped-testcases"
 	// JUnitFailedTestCasesExpressionKey represents the key for the JSON Path expression which yields all failed test case names
 	JUnitFailedTestCasesExpressionKey = "failed-testcases"
 	// JUnitFailedTestCaseErrMsgExpressionKey represents the key for the JSON Path expression which yields all failed test case error messages
@@ -28,12 +31,17 @@ func newJUnitPrinter(suiteName string, jsonPathExpressions map[string]string) *j
 }
 
 func (j *junitPrinter) Print(object interface{}, out io.Writer) error {
-	testCaseNames, failedTestCaseNames, failedTestCaseErrorMessages, err := retrieveJUnitSuiteData(object, j.jsonPathExpressions)
+	data, err := retrieveJUnitSuiteData(object, j.jsonPathExpressions)
 	if err != nil {
 		return err
 	}
 
-	if err := validateJUnitSuiteData(testCaseNames, failedTestCaseNames, failedTestCaseErrorMessages); err != nil {
+	testCaseNames := data[JUnitTestCasesExpressionKey]
+	skippedTestCaseNames := data[JUnitSkippedTestCasesExpressionKey]
+	failedTestCaseNames := data[JUnitFailedTestCasesExpressionKey]
+	failedTestCaseErrorMessages := data[JUnitFailedTestCaseErrMsgExpressionKey]
+
+	if err := validateJUnitSuiteData(testCaseNames, failedTestCaseNames, failedTestCaseErrorMessages, skippedTestCaseNames); err != nil {
 		return err
 	}
 
@@ -42,7 +50,7 @@ func (j *junitPrinter) Print(object interface{}, out io.Writer) error {
 		return err
 	}
 
-	suite := createJUnitTestSuite(j.suiteName, testCaseNames, failedTestCases)
+	suite := createJUnitTestSuite(j.suiteName, testCaseNames, skippedTestCaseNames, failedTestCases)
 
 	enc := xml.NewEncoder(out)
 	enc.Indent("", "  ")
@@ -51,27 +59,25 @@ func (j *junitPrinter) Print(object interface{}, out io.Writer) error {
 
 // retrieveJUnitSuiteData retrieves all required data from the JSON object to create a JUnit test suite.
 // It returns the test case names, failed test case names and the failed test case error messages.
-func retrieveJUnitSuiteData(jsonObj interface{}, junitJSONPathExpressions map[string]string) ([]string, []string, []string, error) {
+func retrieveJUnitSuiteData(jsonObj interface{}, junitJSONPathExpressions map[string]string) (map[string][]string, error) {
 	sliceMapper, err := mapper.NewSliceMapper(jsonObj, junitJSONPathExpressions)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
-	slices := sliceMapper.CreateSlices()
-
-	return slices[JUnitTestCasesExpressionKey], slices[JUnitFailedTestCasesExpressionKey],
-		slices[JUnitFailedTestCaseErrMsgExpressionKey], nil
+	return sliceMapper.CreateSlices(), nil
 }
 
 // validateJUnitSuiteData validates the data to create a JUnit test suite for conformity. It checks whether the
 // amount of failed test cases and error messages is equal and also ensures that the total amount of test cases is
 // not less than the failed test cases.
-func validateJUnitSuiteData(testCaseNames []string, failedTestCaseNames []string, failedTestCaseErrorMessages []string) error {
+func validateJUnitSuiteData(testCaseNames, failedTestCaseNames, failedTestCaseErrorMessages, skippedTestCaseNames []string) error {
 	amountTestCases := len(testCaseNames)
 	amountFailedTestCases := len(failedTestCaseNames)
 	amountFailedTestCaseErrorMessages := len(failedTestCaseErrorMessages)
+	amountSkippedTestCases := len(skippedTestCaseNames)
 
-	if amountTestCases < amountFailedTestCases {
+	if amountTestCases < amountFailedTestCases+amountSkippedTestCases {
 		return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases are greater "+
 			"than %d overall test cases", amountTestCases, amountFailedTestCases))
 	}
@@ -85,11 +91,13 @@ func validateJUnitSuiteData(testCaseNames []string, failedTestCaseNames []string
 
 // createJUnitTestSuite creates a JUnit suite with the given name and test cases. The returned junitTestSuite CAN be
 // passed to xml.Marshal
-func createJUnitTestSuite(suiteName string, testCaseNames []string, failedTestCases map[string]string) *junitTestSuite {
+func createJUnitTestSuite(suiteName string, testCaseNames, skippedTestCasesNames []string, failedTestCases map[string]string) *junitTestSuite {
+	skippedTests := set.NewStringSet(skippedTestCasesNames...)
 	suite := &junitTestSuite{
 		Name:     suiteName,
 		Tests:    len(testCaseNames),
 		Failures: len(failedTestCases),
+		Skipped:  skippedTests.Cardinality(),
 		Errors:   0,
 	}
 	testCases := make([]junitTestCase, 0, len(testCaseNames))
@@ -97,6 +105,10 @@ func createJUnitTestSuite(suiteName string, testCaseNames []string, failedTestCa
 		tc := junitTestCase{
 			Name:    testCase,
 			Failure: nil,
+			Skipped: nil,
+		}
+		if skippedTests.Contains(testCase) {
+			tc.Skipped = &struct{}{}
 		}
 		if errMsg, exists := failedTestCases[testCase]; exists {
 			tc.Failure = &junitFailureMessage{Message: errMsg}
@@ -128,6 +140,7 @@ type junitTestSuite struct {
 	Name      string          `xml:"name,attr"`
 	Tests     int             `xml:"tests,attr"`
 	Failures  int             `xml:"failures,attr"`
+	Skipped   int             `xml:"skipped,attr"`
 	Errors    int             `xml:"errors,attr"`
 }
 
@@ -136,6 +149,7 @@ type junitTestCase struct {
 	Name      string               `xml:"name,attr"`
 	ClassName string               `xml:"classname,attr"`
 	Failure   *junitFailureMessage `xml:"failure,omitempty"`
+	Skipped   *struct{}            `xml:"skipped,omitempty"`
 }
 
 type junitFailureMessage struct {
