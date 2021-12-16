@@ -54,10 +54,10 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	if req := msg.GetReprocessDeployment(); req == nil {
+	if req := msg.GetReprocessDeployment(); req != nil {
 		return h.reprocessDeployments(req)
 	}
-	if req := msg.GetInvalidateImageCache(); req == nil {
+	if req := msg.GetInvalidateImageCache(); req != nil {
 		return h.invalidateImageCache(req)
 	}
 	return nil
