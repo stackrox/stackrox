@@ -178,19 +178,19 @@ func CACert() (*x509.Certificate, []byte, error) {
 }
 
 func signer() (cfsigner.Signer, error) {
-	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), signingPolicy())
+	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
 }
 
-func signingPolicy() *config.Signing {
+func createSigningPolicy() *config.Signing {
 	return &config.Signing{
-		Default: profile(certLifetime, beforeGracePeriod),
+		Default: createSigningProfile(certLifetime, beforeGracePeriod),
 		Profiles: map[string]*config.SigningProfile{
-			ephemeralProfile: profile(ephemeralInitBundleCertLifetime, 0),
+			ephemeralProfile: createSigningProfile(ephemeralInitBundleCertLifetime, 0),
 		},
 	}
 }
 
-func profile(lifetime time.Duration, gracePeriod time.Duration) *config.SigningProfile {
+func createSigningProfile(lifetime time.Duration, gracePeriod time.Duration) *config.SigningProfile {
 	return &config.SigningProfile{
 		Usage:    []string{"signing", "key encipherment", "server auth", "client auth"},
 		Expiry:   lifetime + gracePeriod,
@@ -253,7 +253,7 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 			SerialNumber: serial.String(),
 		},
 		Serial:  serial,
-		Profile: issueOpts.profile,
+		Profile: issueOpts.signerProfile,
 	}
 	certBytes, err := signer.Sign(req)
 	if err != nil {

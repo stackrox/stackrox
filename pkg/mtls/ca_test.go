@@ -27,16 +27,20 @@ func Test_ca_IssueCertForSubject(t *testing.T) {
 			maxNotAfter: 4 * time.Hour,
 		},
 	}
+
 	cert, _, key, err := initca.New(&csr.CertificateRequest{
 		CN: "Fake CA",
 	})
 	require.NoError(t, err)
+
 	ca, err := LoadCAForSigning(cert, key)
 	require.NoError(t, err)
+
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			got, err := ca.IssueCertForSubject(CentralSubject, tt.opts...)
 			require.NoError(t, err)
+
 			notAfter := got.X509Cert.NotAfter
 			assert.True(t, notAfter.After(time.Now().Add(tt.minNotAfter)), "expected notAfter=%q to be after %q from now", notAfter, tt.minNotAfter)
 			assert.True(t, notAfter.Before(time.Now().Add(tt.maxNotAfter)), "expected notAfter=%q to be before %q from now", notAfter, tt.maxNotAfter)

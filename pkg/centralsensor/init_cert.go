@@ -9,15 +9,15 @@ const (
 	// Use this only when you care about the difference between the user- and operator-issued init bundles.
 	// Otherwise, use IsInitCertClusterID().
 	UserIssuedInitCertClusterID = "00000000-0000-0000-0000-000000000000"
-	// OperatorIssuedInitCertClusterID is the cluster ID used for operator-issued init certs that allow dynamic creation of clusters.
+	// EphemeralInitCertClusterID is the cluster ID used for operator-issued init certs that allow dynamic creation of clusters.
 	// Use this only when you care about the difference between the user- and operator-issued init bundles.
 	// Otherwise, use IsInitCertClusterID().
-	OperatorIssuedInitCertClusterID = "00000000-0000-0000-0000-000000000001"
+	EphemeralInitCertClusterID = "00000000-0000-0000-0000-000000000001"
 )
 
 // IsInitCertClusterID returns true if the passed cluster id is for an init cert that allows dynamic creation of clusters.
 func IsInitCertClusterID(clusterID string) bool {
-	return clusterID == UserIssuedInitCertClusterID || clusterID == OperatorIssuedInitCertClusterID
+	return clusterID == UserIssuedInitCertClusterID || clusterID == EphemeralInitCertClusterID
 }
 
 // GetClusterID allows joining

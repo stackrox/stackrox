@@ -79,7 +79,7 @@ func loadCA(certPEM, keyPEM []byte, forSigning bool) (CA, error) {
 			return nil, err
 		}
 
-		ca.signer, err = local.NewSigner(priv, ca.tlsCert.Leaf, cfsslSigner.DefaultSigAlgo(priv), signingPolicy())
+		ca.signer, err = local.NewSigner(priv, ca.tlsCert.Leaf, cfsslSigner.DefaultSigAlgo(priv), createSigningPolicy())
 		if err != nil {
 			return nil, err
 		}

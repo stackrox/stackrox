@@ -63,18 +63,18 @@ func TestGetClusterID(t *testing.T) {
 		// Feature flag enabled: explicit ID and operator-issued wildcard cert
 		"explicit-id-and-operator-issued-wildcard-cert": {
 			explicitID: testClusterID,
-			idFromCert: OperatorIssuedInitCertClusterID,
+			idFromCert: EphemeralInitCertClusterID,
 			expectedID: testClusterID,
 		},
 		// Feature flag enabled: explicit nil ID and operator-issued wildcard cert
 		"explicit-nil-id-and-operator-issued-wildcard-cert": {
 			explicitID:  UserIssuedInitCertClusterID,
-			idFromCert:  OperatorIssuedInitCertClusterID,
+			idFromCert:  EphemeralInitCertClusterID,
 			expectError: true,
 		},
 		"no-explicit-id-and-operator-issued-wildcard-cert": {
 			explicitID:  "",
-			idFromCert:  OperatorIssuedInitCertClusterID,
+			idFromCert:  EphemeralInitCertClusterID,
 			expectError: true,
 		},
 	}
