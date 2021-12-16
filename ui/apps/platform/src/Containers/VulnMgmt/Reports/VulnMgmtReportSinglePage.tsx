@@ -50,7 +50,7 @@ function VulnMgmtReportPage(): ReactElement {
 
     return (
         <PageSection variant="light" isFilled id="report-page">
-            <PageTitle title={`Reports - ${report?.name}`} />
+            <PageTitle title={`Vulnerability Management - Report: ${report?.name}`} />
             {isLoading ? (
                 <Bullseye>
                     <Spinner />

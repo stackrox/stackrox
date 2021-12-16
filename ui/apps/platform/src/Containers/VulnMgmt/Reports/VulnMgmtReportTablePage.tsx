@@ -38,7 +38,7 @@ function ReportTablePage(): ReactElement {
     return (
         <>
             <PageSection variant={PageSectionVariants.light}>
-                <PageTitle title="Report configurations" />
+                <PageTitle title="Vulnerability Management - Reports" />
                 <Flex
                     alignItems={{
                         default: 'alignItemsFlexStart',

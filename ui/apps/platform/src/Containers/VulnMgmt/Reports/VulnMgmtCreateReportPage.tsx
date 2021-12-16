@@ -19,7 +19,7 @@ function VulnMgmtCreateReportPage(): ReactElement {
     return (
         <>
             <PageSection variant="light">
-                <PageTitle title="Create report configuration" />
+                <PageTitle title="Vulnerability Management - Create report" />
                 <Breadcrumb className="pf-u-mb-md">
                     <BreadcrumbItemLink to={vulnManagementReportsPath}>
                         Vulnerability reporting

@@ -1,3 +1,4 @@
+import { FixabilityLabelKey } from 'constants/reportConstants';
 import { ReportConfiguration, Fixability } from 'types/report.proto';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
@@ -30,7 +31,7 @@ export const emptyReportValues: ReportConfiguration = {
     },
 };
 
-export function getMappedFixability(fixability: Fixability): string[] {
+export function getMappedFixability(fixability: Fixability): FixabilityLabelKey[] {
     if (fixability === 'BOTH') {
         return ['FIXABLE', 'NOT_FIXABLE'];
     }
@@ -43,7 +44,7 @@ export function getMappedFixability(fixability: Fixability): string[] {
     return [];
 }
 
-export function getFixabilityConstantFromMap(fixabilityMap: string[]): Fixability {
+export function getFixabilityConstantFromMap(fixabilityMap: FixabilityLabelKey[]): Fixability {
     if (fixabilityMap.includes('FIXABLE') && fixabilityMap.includes('NOT_FIXABLE')) {
         return 'BOTH';
     }

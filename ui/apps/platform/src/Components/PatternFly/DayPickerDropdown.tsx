@@ -78,7 +78,7 @@ function DayPickerDropdown({
                 selections={value}
                 isOpen={isDaySelectOpen}
                 isDisabled={!isEditable}
-                placeholderText={value.length ? 'Selected Days' : 'Select Days'}
+                placeholderText={value.length ? 'Selected days' : 'Select days'}
             >
                 {selectOptions}
             </Select>

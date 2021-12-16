@@ -6,6 +6,7 @@ import entityTypes from 'constants/entityTypes';
 import { createOptions } from 'utils/workflowUtils';
 import DashboardLayout from 'Components/DashboardLayout';
 import ExportButton from 'Components/ExportButton';
+import PageTitle from 'Components/PageTitle';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
@@ -67,6 +68,7 @@ const VulnDashboardPage = ({ history }) => {
 
     const headerComponents = (
         <>
+            <PageTitle title="Vulnerability Management - Dashboard" />
             <div className="flex items-center">
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
                     <PoliciesCountTile />
