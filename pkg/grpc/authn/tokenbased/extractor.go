@@ -88,18 +88,20 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read roles")
 	}
+	// Ensure there are no invalid roles listed in the token.
+	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
 	var email string
 	if token.ExternalUser != nil {
 		email = token.ExternalUser.Email
 	}
 
-	attributes := map[string][]string{"role": permissionsUtils.RoleNames(resolvedRoles), "name": {token.Name}}
+	attributes := map[string][]string{"role": permissionsUtils.RoleNames(filteredRoles), "name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("auth-token:%s", token.ID),
 		username:      email,
 		friendlyName:  token.Subject,
 		fullName:      token.Name,
-		resolvedRoles: authn.FilterOutNoneRole(resolvedRoles),
+		resolvedRoles: filteredRoles,
 		expiry:        token.Expiry(),
 		attributes:    attributes,
 		authProvider:  authProvider,
@@ -125,6 +127,7 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		Attributes: token.Claims.ExternalUser.Attributes,
 	}
 
+	// We expect `FromUserDescriptor()` to filter out invalid roles.
 	resolvedRoles, err := roleMapper.FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
@@ -132,7 +135,7 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	if err := authProvider.MarkAsActive(); err != nil {
 		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())
 	}
-	id := createRoleBasedIdentity(authn.FilterOutNoneRole(resolvedRoles), token, authProvider)
+	id := createRoleBasedIdentity(resolvedRoles, token, authProvider)
 	return id, nil
 }
 

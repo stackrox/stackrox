@@ -28,7 +28,7 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 			log.Warnf("Cannot extract identity: %v", err)
 		}
 		// Ignore id value if error is not nil.
-		return context.WithValue(ctx, identityErrorContextKey{}, err), nil
+		return context.WithValue(ctx, identityErrorContextKey{}, errorhelpers.NewErrNoCredentials(err.Error())), nil
 	}
 	if id != nil {
 		// Only service identities can have no roles assigned.
