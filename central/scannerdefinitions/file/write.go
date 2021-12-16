@@ -11,12 +11,9 @@ import (
 
 // Write writes the contents of r into the path represented by the given file.
 // The file's modified time is set to the given modifiedTime.
-// Write is thread-safe.
+// Write is not thread-safe.
 func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	dir := filepath.Dir(file.GetPath())
-
-	file.Lock()
-	defer file.Unlock()
 
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
