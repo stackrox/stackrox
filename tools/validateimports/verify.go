@@ -17,7 +17,10 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-const roxPrefix = "github.com/stackrox/rox/"
+const (
+	roxPrefix      = "github.com/stackrox/rox/"
+	stackroxPrefix = "github.com/stackrox/stackrox/"
+)
 
 var (
 	validRoots = []string{
@@ -155,8 +158,7 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 	return fmt.Errorf("import %s is illegal", spec.Path.Value)
 }
 
-// TODO: update "whitelist" to inclusive language when updating actual code
-// checkForbidden returns an error if an import has been forbidden and the importing package isn't on the whitelist
+// checkForbidden returns an error if an import has been forbidden and the importing package isn't in the allowlist
 func checkForbidden(impPath, packageName string) error {
 	forbiddenDetails, ok := forbiddenImports[impPath]
 	for !ok {
@@ -275,10 +277,12 @@ func main() {
 
 	if !goPathSet || !strings.HasPrefix(cwd, goPath) {
 		dirForPackageName = func(packageName string) string {
+			packageName = strings.TrimPrefix(strings.TrimPrefix(packageName, roxPrefix), stackroxPrefix)
 			return path.Join(cwd, strings.TrimPrefix(packageName, roxPrefix))
 		}
 	} else {
 		dirForPackageName = func(packageName string) string {
+			packageName = strings.Replace(packageName, roxPrefix, stackroxPrefix, 1)
 			return path.Join(goPath, "src", packageName)
 		}
 	}
