@@ -78,6 +78,9 @@ func (m *Metadata) runForever() {
 			m.writeResC <- m.write(op.write.r, op.write.modifiedTime)
 		}
 	}
+
+	close(m.unlockC)
+	close(m.writeResC)
 }
 
 // Write writes the contents of the given reader into the file and sets
