@@ -54,11 +54,11 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	if req := msg.GetReprocessDeployment(); req != nil {
-		return h.reprocessDeployments(req)
-	}
-	if req := msg.GetInvalidateImageCache(); req != nil {
-		return h.invalidateImageCache(req)
+	switch {
+	case msg.GetReprocessDeployment() != nil:
+		return h.reprocessDeployments(msg.GetReprocessDeployment())
+	case msg.GetInvalidateImageCache() != nil:
+		return h.invalidateImageCache(msg.GetInvalidateImageCache())
 	}
 	return nil
 }
@@ -83,9 +83,9 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill invalidate image cache request")
 	default:
 		h.admCtrlSettingsMgr.FlushCache()
-		for _, image := range req.GetImageIds() {
+		for _, image := range req.GetImageKeys() {
 			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
-				ID:   image.GetImageSha(),
+				ID:   image.GetImageId(),
 				Name: image.GetImageFullName(),
 			})
 		}

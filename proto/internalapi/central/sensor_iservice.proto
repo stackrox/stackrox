@@ -71,12 +71,12 @@ message ReprocessDeployment {
 }
 
 message InvalidateImageCache {
-    message ImageID {
-        string image_sha       = 1;
+    message ImageKey {
+        string image_id        = 1;
         string image_full_name = 2;
     }
 
-    repeated ImageID image_ids = 1;
+    repeated ImageKey image_keys = 1;
 }
 
 service SensorService {
