@@ -71,7 +71,7 @@ function PolicyCriteriaForm() {
                             <React.Fragment key={sectionIndex}>
                                 <PolicySection
                                     sectionIndex={sectionIndex}
-                                    descriptor={descriptor}
+                                    descriptors={descriptor}
                                 />
                                 {sectionIndex !== values.policySections.length && (
                                     <Flex

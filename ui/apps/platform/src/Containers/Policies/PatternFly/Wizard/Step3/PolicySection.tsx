@@ -90,11 +90,13 @@ function PolicySection({ sectionIndex, descriptors }: PolicySectionProps) {
                         (field) => group.fieldName === field.name || group.fieldName === field.label
                     );
                     return (
-                        <PolicyGroupCard
-                            field={descriptorField}
-                            groupIndex={groupIndex}
-                            sectionIndex={sectionIndex}
-                        />
+                        descriptorField && (
+                            <PolicyGroupCard
+                                field={descriptorField}
+                                groupIndex={groupIndex}
+                                sectionIndex={sectionIndex}
+                            />
+                        )
                     );
                 })}
                 <PolicySectionDropTarget sectionIndex={sectionIndex} descriptors={descriptors} />
