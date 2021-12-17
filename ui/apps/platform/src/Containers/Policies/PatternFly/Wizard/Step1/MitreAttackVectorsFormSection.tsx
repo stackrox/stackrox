@@ -43,8 +43,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
     useEffect(() => {
         fetchMitreAttackVectors()
             .then((data) => {
-                sortMitreAttackVectors(data);
-                setMitreAttackVectors(data);
+                setMitreAttackVectors(sortMitreAttackVectors(data));
             })
             .catch((error) => {
                 setMitreAttackVectorsError(getAxiosErrorMessage(error));

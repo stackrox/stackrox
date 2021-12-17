@@ -34,7 +34,12 @@ export function getMitreTechnique(
     );
 }
 
-export function sortMitreAttackVectors(mitreAttackVectors) {
+/*
+ * Impure function sorts MITRE ATT&CK vectors and returns its argument.
+ */
+export function sortMitreAttackVectors(
+    mitreAttackVectors: MitreAttackVector[]
+): MitreAttackVector[] {
     // Sort tactics by id property.
     mitreAttackVectors.sort(({ tactic: { id: tacticIdA } }, { tactic: { id: tacticIdB } }) => {
         if (tacticIdA < tacticIdB) {
@@ -58,6 +63,8 @@ export function sortMitreAttackVectors(mitreAttackVectors) {
             return 0;
         });
     });
+
+    return mitreAttackVectors;
 }
 
 // PolicyMitreAttackVector
