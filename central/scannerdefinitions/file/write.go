@@ -41,6 +41,8 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	file.Lock()
 	defer file.Unlock()
 
+	// Note: os.Rename does not alter the file's modified time,
+	// so there is no need to call os.Chtimes here.
 	err = os.Rename(scannerDefsFile.Name(), file.GetPath())
 	if err != nil {
 		return errors.Wrap(err, "renaming scanner defs file")
