@@ -128,9 +128,9 @@ function AuthProviders(): ReactElement {
         dispatch(authActions.setSaveAuthProviderStatus(null));
     }
 
-    const dropdownItems = availableProviderTypes.map((curr) => (
-        <DropdownItem key={curr.value} value={curr.value} component="button">
-            {curr.label}
+    const dropdownItems = availableProviderTypes.map(({ value, label }) => (
+        <DropdownItem key={value} value={value} component="button">
+            {label}
         </DropdownItem>
     ));
 

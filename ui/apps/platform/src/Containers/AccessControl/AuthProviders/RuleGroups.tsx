@@ -41,7 +41,7 @@ function getAugmentedRuleKeys(ruleKeys, groups) {
         }
     });
 
-    return newRuleKeys;
+    return newRuleKeys as string[];
 }
 
 function RuleGroups({
