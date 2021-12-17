@@ -19,6 +19,9 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	if err != nil {
 		return errors.Wrap(err, "creating subdirectory for scanner defs")
 	}
+	// Write the contents of r into a temporary destination to prevent us from holding the lock
+	// while reading from r. The reader may be dependent on the network, and we do not want to
+	// lock while depending on something as unpredictable as the network.
 	scannerDefsFile, err := os.CreateTemp("", file.GetPath())
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
@@ -32,10 +35,13 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 		return errors.Wrap(err, "changing modified time of scanner defs")
 	}
 
+	// Atomically rename the temporary file to the permanent name
+	// and set the modified time.
 	file.Lock()
 	defer file.Unlock()
 
-	if err := os.Rename(scannerDefsFile.Name(), file.GetPath()); err != nil {
+	err = os.Rename(scannerDefsFile.Name(), file.GetPath())
+	if err != nil {
 		return errors.Wrap(err, "renaming scanner defs file")
 	}
 
