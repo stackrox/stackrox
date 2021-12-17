@@ -4,7 +4,7 @@ import (
 	"context"
 
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	"github.com/stackrox/rox/central/cve/cveedge"
+	"github.com/stackrox/rox/central/cve/edgefields"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/dackbox"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
@@ -145,7 +145,7 @@ func formatSearcher(cveIndexer blevesearch.UnsafeSearcher,
 		nodeComponentEdgeSearcher,
 		nodeSearcher,
 	)
-	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), nodeSAC.GetSACFilter())
+	filteredSearcher := filtered.Searcher(edgefields.HandleCVEEdgeSearchQuery(compoundSearcher), nodeSAC.GetSACFilter())
 	// To transform Component sort field to Component+Component Version.
 	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher, componentMappings.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortSearcher)
