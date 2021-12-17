@@ -67,7 +67,8 @@ function PolicyCriteriaForm() {
                         id="policy-sections"
                     >
                         {values.policySections.map((_, sectionIndex) => (
-                            <>
+                            // eslint-disable-next-line react/no-array-index-key
+                            <React.Fragment key={sectionIndex}>
                                 <PolicySection
                                     sectionIndex={sectionIndex}
                                     descriptor={descriptor}
@@ -82,7 +83,7 @@ function PolicyCriteriaForm() {
                                         <Divider component="div" />
                                     </Flex>
                                 )}
-                            </>
+                            </React.Fragment>
                         ))}
                     </Flex>
                 </FlexItem>

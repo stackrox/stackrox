@@ -23,10 +23,10 @@ function getEmptyPolicyFieldCard(fieldKey) {
     };
 }
 
-function getPolicyCriteriaFieldKeys(policyGroups, descriptor) {
+function getPolicyCriteriaFieldKeys(policyGroups, descriptors) {
     const fieldNameMap = keyBy(policyGroups, (field) => field.fieldName as string);
     const availableFieldKeys: string[] = [];
-    descriptor.forEach((field) => {
+    descriptors.forEach((field) => {
         if (!fieldNameMap[field.name]) {
             availableFieldKeys.push(field.name);
         }
@@ -40,10 +40,10 @@ interface DragItem {
     fieldKey: Descriptor;
 }
 
-function PolicySectionDropTarget({ sectionIndex, descriptor }) {
+function PolicySectionDropTarget({ sectionIndex, descriptors }) {
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { policyGroups } = values.policySections[sectionIndex];
-    const acceptedFields = getPolicyCriteriaFieldKeys(policyGroups, descriptor);
+    const acceptedFields = getPolicyCriteriaFieldKeys(policyGroups, descriptors);
 
     function addPolicyFieldCardHandler(fieldCard) {
         setFieldValue(`policySections[${sectionIndex as string}].policyGroups`, [

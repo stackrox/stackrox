@@ -11,11 +11,7 @@ function PolicyCriteriaKey({ fieldKey }) {
     });
 
     return (
-        <div
-            key={name}
-            ref={drag}
-            className="pf-u-p-sm pf-u-mb-md pf-u-display-flex policy-criteria-key"
-        >
+        <div ref={drag} className="pf-u-p-sm pf-u-mb-md pf-u-display-flex policy-criteria-key">
             <span className="draggable-grip" />
             {shortName || name}
         </div>

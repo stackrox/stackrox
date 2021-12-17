@@ -28,14 +28,10 @@ function PolicyCriteriaKeys({ keys }) {
             <Title headingLevel="h2">Drag out policy fields</Title>
             <Divider component="div" className="pf-u-mb-sm pf-u-mt-md" />
             {Object.keys(categories).map((category) => (
-                <>
-                    <PolicyCriteriaCategory
-                        key={category}
-                        category={category}
-                        keys={categories[category]}
-                    />
+                <div key={category}>
+                    <PolicyCriteriaCategory category={category} keys={categories[category]} />
                     <Divider component="div" className="pf-u-mb-sm pf-u-mt-sm" />
-                </>
+                </div>
             ))}
         </>
     );

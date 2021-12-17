@@ -22,10 +22,10 @@ import PolicySectionDropTarget from './PolicySectionDropTarget';
 
 type PolicySectionProps = {
     sectionIndex: number;
-    descriptor: Descriptor[];
+    descriptors: Descriptor[];
 };
 
-function PolicySection({ sectionIndex, descriptor }: PolicySectionProps) {
+function PolicySection({ sectionIndex, descriptors }: PolicySectionProps) {
     const [isEditingName, setIsEditingName] = React.useState(false);
     const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
@@ -86,7 +86,7 @@ function PolicySection({ sectionIndex, descriptor }: PolicySectionProps) {
             <Divider component="div" />
             <CardBody>
                 {policyGroups.map((group, groupIndex) => {
-                    const descriptorField = descriptor.find(
+                    const descriptorField = descriptors.find(
                         (field) => group.fieldName === field.name || group.fieldName === field.label
                     );
                     return (
@@ -97,7 +97,7 @@ function PolicySection({ sectionIndex, descriptor }: PolicySectionProps) {
                         />
                     );
                 })}
-                <PolicySectionDropTarget sectionIndex={sectionIndex} descriptor={descriptor} />
+                <PolicySectionDropTarget sectionIndex={sectionIndex} descriptors={descriptors} />
             </CardBody>
         </Card>
     );

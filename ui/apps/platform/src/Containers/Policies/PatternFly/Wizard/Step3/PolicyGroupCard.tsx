@@ -13,28 +13,32 @@ import {
 import { TrashIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
 
-function PolicyGroupCard({ field, groupIndex, sectionIndex }) {
+type PolicyGroupCardProps = {
+    field: Descriptor;
+    groupIndex: number;
+    sectionIndex: number;
+};
+
+function PolicyGroupCard({ field, groupIndex, sectionIndex }: PolicyGroupCardProps) {
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { policyGroups } = values.policySections[sectionIndex];
     const group = policyGroups[groupIndex];
 
     function onDeleteGroup() {
         setFieldValue(
-            `policySections[${sectionIndex as string}].policyGroups`,
+            `policySections[${sectionIndex}].policyGroups`,
             policyGroups.filter((_, idx) => idx !== groupIndex)
         );
     }
 
     function handleNegate() {
-        setFieldValue(
-            `policySections[${sectionIndex as string}].policyGroups[${groupIndex as string}]`,
-            {
-                ...group,
-                negate: !group.negate,
-            }
-        );
+        setFieldValue(`policySections[${sectionIndex}].policyGroups[${groupIndex}]`, {
+            ...group,
+            negate: !group.negate,
+        });
     }
 
     // function handleBooleanOperator() {
