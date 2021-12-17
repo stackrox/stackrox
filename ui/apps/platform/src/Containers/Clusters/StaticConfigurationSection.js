@@ -38,7 +38,12 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
     };
 }
 
-const StaticConfigurationSection = ({ centralEnv, selectedCluster, isManagerTypeNonConfigurable, handleChange }) => {
+const StaticConfigurationSection = ({
+    centralEnv,
+    selectedCluster,
+    isManagerTypeNonConfigurable,
+    handleChange,
+}) => {
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
         runtimeOptions,

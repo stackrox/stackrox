@@ -341,32 +341,37 @@ describe('Cluster configuration', () => {
 
     const assertConfigurationReadOnly = () => {
         const form = cy.get('[data-testid="cluster-form"]').children();
-        ['name', 'mainImage', 'centralApiEndpoint', 'collectorImage',
-         'admissionControllerEvents', 'admissionController',
-         'admissionControllerUpdates', 'tolerationsConfig.disabled', 
-         'slimCollector',
-         'dynamicConfig.registryOverride', 
-         'dynamicConfig.admissionControllerConfig.enabled', 
-         'dynamicConfig.admissionControllerConfig.enforceOnUpdates',
-         'dynamicConfig.admissionControllerConfig.timeoutSeconds',
-         'dynamicConfig.admissionControllerConfig.scanInline',
-         'dynamicConfig.admissionControllerConfig.disableBypass',
-         'dynamicConfig.disableAuditLogs'].forEach(id => 
-            form.get(`input[id="${id}"]`).should('be.disabled')
-        );
-        ['Select a cluster type', 'Select a runtime option'].forEach(label => 
+        [
+            'name',
+            'mainImage',
+            'centralApiEndpoint',
+            'collectorImage',
+            'admissionControllerEvents',
+            'admissionController',
+            'admissionControllerUpdates',
+            'tolerationsConfig.disabled',
+            'slimCollector',
+            'dynamicConfig.registryOverride',
+            'dynamicConfig.admissionControllerConfig.enabled',
+            'dynamicConfig.admissionControllerConfig.enforceOnUpdates',
+            'dynamicConfig.admissionControllerConfig.timeoutSeconds',
+            'dynamicConfig.admissionControllerConfig.scanInline',
+            'dynamicConfig.admissionControllerConfig.disableBypass',
+            'dynamicConfig.disableAuditLogs',
+        ].forEach((id) => form.get(`input[id="${id}"]`).should('be.disabled'));
+        ['Select a cluster type', 'Select a runtime option'].forEach((label) =>
             form.get(`select[aria-label="${label}"]`).should('be.disabled')
         );
     };
 
     it('should be read-only for Helm-based installations', () => {
         getCluster('alpha-amsterdam-1');
-        assertConfigurationReadOnly();        
+        assertConfigurationReadOnly();
     });
 
     it('should be read-only for unknown manager installations that have a defined Helm config', () => {
         getCluster('kappa-kilogramme-10');
-        assertConfigurationReadOnly();        
+        assertConfigurationReadOnly();
     });
 });
 

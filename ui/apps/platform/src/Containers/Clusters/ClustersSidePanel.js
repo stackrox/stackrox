@@ -89,7 +89,9 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     }
 
     function managerType(cluster) {
-        return (cluster?.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN') ? 'MANAGER_TYPE_HELM_CHART' : cluster.managedBy;
+        return cluster?.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN'
+            ? 'MANAGER_TYPE_HELM_CHART'
+            : cluster.managedBy;
     }
 
     useEffect(
@@ -129,28 +131,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             setPollingDelay(null);
                         }
 
-                        if (
-                            (cluster.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN') ||
-                            cluster.managedBy === 'MANAGER_TYPE_HELM_CHART'
-                        ) {
-                            if (wizardStep === wizardSteps.FORM) {
-                                setMessageState({
-                                    type: 'warn',
-                                    message: (
-                                        <>
-                                            <h3 className="font-700 mb-2">Helm-managed cluster</h3>
-                                            <p>
-                                                Warning: This is a Helm-managed cluster. If you edit
-                                                the cluster using the form below, please ask your
-                                                DevOps team to update the Helm values in source
-                                                control to ensure those changes are not overwritten.
-                                            </p>
-                                        </>
-                                    ),
-                                });
-                            }
-                        }
-
                         if (managerType(cluster) === 'MANAGER_TYPE_KUBERNETES_OPERATOR') {
                             if (wizardStep === wizardSteps.FORM) {
                                 setMessageState({
@@ -178,14 +158,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                     type: 'warn',
                                     message: (
                                         <>
-                                            <h3 className="font-700 mb-2">
-                                                Helm-managed cluster
-                                            </h3>
+                                            <h3 className="font-700 mb-2">Helm-managed cluster</h3>
                                             <p>
-                                                This is an Helm-managed cluster. The settings of 
-                                                Helm-managed clusters cannot be changed here, 
-                                                please ask your DevOps team to change the settings
-                                                by updating the Helm values.
+                                                This is an Helm-managed cluster. The settings of
+                                                Helm-managed clusters cannot be changed here, please
+                                                ask your DevOps team to change the settings by
+                                                updating the Helm values.
                                             </p>
                                         </>
                                     ),

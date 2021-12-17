@@ -30,7 +30,9 @@ function ClusterEditForm({
     if (isLoading) {
         return <Loader />;
     }
-    const isManagerTypeNonConfigurable = managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' || managerType === 'MANAGER_TYPE_HELM_CHART';
+    const isManagerTypeNonConfigurable =
+        managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' ||
+        managerType === 'MANAGER_TYPE_HELM_CHART';
     return (
         <div className="bg-base-200 px-4 w-full">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
