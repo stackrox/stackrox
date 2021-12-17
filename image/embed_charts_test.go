@@ -102,7 +102,8 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() {
 	s.envIsolator.Setenv(features.LocalImageScanning.Name(), "false")
 
-	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.DefaultMetaValues())
+	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
+	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
 	s.Require().NoError(err)
 	s.Equal("stackrox-secured-cluster-services", chart.Name())
 	s.NotEmpty(chart.Templates)
