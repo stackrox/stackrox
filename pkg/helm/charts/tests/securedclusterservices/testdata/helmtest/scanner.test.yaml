@@ -4,7 +4,6 @@ values:
 tests:
 - name: "scanner with default settings in slim mode"
   expect: |
-    .deployments["scanner"] | toyaml | print
     .podsecuritypolicys["stackrox-scanner"] | assertThat(. != null)
     .rolebindings["stackrox-scanner-psp"] | assertThat(. != null)
     .clusterroles["stackrox-scanner-psp"] | assertThat(. != null)
