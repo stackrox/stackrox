@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import { Flex, Select, SelectOption } from '@patternfly/react-core';
 
 import { MitreTechnique } from 'types/mitre.proto';
 
@@ -54,14 +54,17 @@ function MitreTechniqueSelect({
                         isDisabled={getIsDisabledOption(id)}
                         className={optionClassName}
                     >
-                        <div className="pf-u-display-flex pf-u-flex-nowrap pf-u-justify-content-space-between">
+                        <Flex
+                            flexWrap={{ default: 'nowrap' }}
+                            justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                        >
                             <span className="name">
                                 {indexOfColonSpace === -1
                                     ? name
                                     : name.slice(indexOfColonSpace + 2)}
                             </span>
                             <span className="id">{id}</span>
-                        </div>
+                        </Flex>
                     </SelectOption>
                 );
             })}

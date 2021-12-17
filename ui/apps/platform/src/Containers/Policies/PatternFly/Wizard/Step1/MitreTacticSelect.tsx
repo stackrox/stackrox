@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import { Flex, Select, SelectOption } from '@patternfly/react-core';
 
 import { MitreAttackVector } from 'types/mitre.proto';
 
@@ -52,10 +52,13 @@ function MitreTacticSelect({
                         isDisabled={getIsDisabledOption(id)}
                         className="mitre-tactic-option"
                     >
-                        <div className="pf-u-display-flex pf-u-flex-nowrap pf-u-justify-content-space-between">
+                        <Flex
+                            flexWrap={{ default: 'nowrap' }}
+                            justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                        >
                             <span className="name">{name}</span>
                             <span className="id">{id}</span>
-                        </div>
+                        </Flex>
                     </SelectOption>
                 );
             })}
