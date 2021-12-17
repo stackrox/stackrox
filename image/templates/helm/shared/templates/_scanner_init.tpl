@@ -1,5 +1,15 @@
 {{/*
   srox.scannerInit . $scannerConfig
+
+  Initializes the scanner configuration. The scanner chart has two modes "full" and
+  "slim".
+  The "full" mode is used for stand-alone deployments, mostly along with StackRox's Central service. In this
+  mode the image contains vulnerability data and can create it's own certificates.
+
+  The "slim" mode is used to deploy Scanner with a smaller image and does not generate TLS certificates.
+
+  $scannerConfig contains all values which are configured by the user. The structure can be viewed in the according
+  config-shape.
    */}}
 
 {{ define "srox.scannerInit" }}
