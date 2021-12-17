@@ -1,7 +1,6 @@
 package image
 
 import (
-	"fmt"
 	"io/fs"
 	"path"
 	"path/filepath"
@@ -108,11 +107,10 @@ func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() 
 
 	var foundScannerTpls []string
 	for _, tpl := range chart.Templates {
-		fmt.Println(tpl.Name)
 		if strings.Contains(tpl.Name, "scanner") {
 			foundScannerTpls = append(foundScannerTpls, tpl.Name)
 		}
 	}
 
-	s.Empty(foundScannerTpls, "Found scanner manifests found in SecuredCluster chart, please remove")
+	s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster chart", foundScannerTpls)
 }
