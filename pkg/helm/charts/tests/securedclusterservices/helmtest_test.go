@@ -13,6 +13,9 @@ func TestWithHelmtest(t *testing.T) {
 	helmImage := image.GetDefaultImage()
 	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 	require.NoError(t, err, "error retrieving chart template")
+	metaValues["FeatureFlags"] = map[string]interface{}{
+		"ROX_LOCAL_IMAGE_SCANNING": true,
+	}
 	ch, err := tpl.InstantiateAndLoad(metaValues)
 	require.NoError(t, err, "error instantiating chart")
 
