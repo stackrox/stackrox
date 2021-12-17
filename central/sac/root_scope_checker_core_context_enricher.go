@@ -64,7 +64,7 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 	ctx = sac.SetContextSACEnabled(ctx)
 
 	// Check the id of the context and decide scope checker to use.
-	id := authn.IdentityFromContext(ctx)
+	id := authn.IdentityFromContextOrNil(ctx)
 	if id == nil {
 		// 1a. User identity not found => deny all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil

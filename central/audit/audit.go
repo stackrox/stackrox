@@ -89,7 +89,7 @@ func newAuditMessage(ctx context.Context, req interface{}, grpcFullMethod string
 		Time: types.TimestampNow(),
 	}
 
-	identity := authn.IdentityFromContext(ctx)
+	identity := authn.IdentityFromContextOrNil(ctx)
 	// Ignore requests from services
 	if identity != nil {
 		if identity.Service() != nil {

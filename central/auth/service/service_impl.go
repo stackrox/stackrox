@@ -11,8 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -35,9 +33,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.
 func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1.AuthStatus, error) {
-	id := authn.IdentityFromContext(ctx)
-	if id == nil {
-		return nil, status.Error(codes.Unauthenticated, "not authenticated")
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return authStatusForID(id)
