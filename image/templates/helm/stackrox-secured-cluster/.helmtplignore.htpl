@@ -9,7 +9,9 @@ scripts/
 [<- if .CertsOnly >]
 scripts/
 !/*.yaml
-!templates/*-secret.yaml
+!templates/admission-controller-secret.yaml
+!templates/sensor-secret.yaml
+!templates/collector-secret.yaml
 !templates/_*.tpl
 templates/*
 [<- end >]
@@ -19,3 +21,4 @@ feature-flag-values.yaml
 [< end >]
 *.swp
 templates/keep.yaml
+templates/*scanner*
