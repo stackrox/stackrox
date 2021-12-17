@@ -3022,7 +3022,7 @@ jobs:
 
   build-scale-monitoring-and-mock-server:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
