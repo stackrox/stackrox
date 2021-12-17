@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"testing"
 
@@ -166,7 +167,6 @@ func TestRenderSensorHelm(t *testing.T) {
 }
 
 func TestRenderSensorTLSSecretsOnly(t *testing.T) {
-	const expectedSecretsCount = 3
 	fields := getDefaultMetaValues(t)
 	fields["CertOnly"] = true
 
@@ -175,7 +175,7 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 	d := yaml.NewDecoder(bytes.NewReader(manifestsBytes))
 
 	expectedSecrets := []string{"admission-control-tls", "collector-tls", "sensor-tls"}
-	counter := 0
+	var encounteredSecretNames []string
 	for {
 		spec := make(map[string]interface{})
 		err := d.Decode(spec)
@@ -189,8 +189,9 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(spec, secret)
 		require.NoError(t, err)
 
-		counter++
-		assert.Contains(t, expectedSecrets, secret.Name)
+		encounteredSecretNames = append(encounteredSecretNames, secret.Name)
 	}
-	assert.Equal(t, expectedSecretsCount, counter, "Expected %s secrets, but found more or less secrets")
+
+	sort.Strings(encounteredSecretNames)
+	assert.Equal(t, expectedSecrets, encounteredSecretNames)
 }
