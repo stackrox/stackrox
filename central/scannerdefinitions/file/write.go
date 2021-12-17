@@ -15,14 +15,11 @@ import (
 func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	dir := filepath.Dir(file.GetPath())
 
-	file.Lock()
-	defer file.Unlock()
-
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
 		return errors.Wrap(err, "creating subdirectory for scanner defs")
 	}
-	scannerDefsFile, err := os.Create(file.GetPath())
+	scannerDefsFile, err := os.CreateTemp("", file.GetPath())
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
 	}
@@ -33,6 +30,13 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	err = os.Chtimes(file.GetPath(), time.Now(), modifiedTime)
 	if err != nil {
 		return errors.Wrap(err, "changing modified time of scanner defs")
+	}
+
+	file.Lock()
+	defer file.Unlock()
+
+	if err := os.Rename(scannerDefsFile.Name(), file.GetPath()); err != nil {
+		return errors.Wrap(err, "renaming scanner defs file")
 	}
 
 	file.SetLastModifiedTime(modifiedTime)
