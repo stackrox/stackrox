@@ -79,6 +79,7 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 	return nil
 }
 
+// Render renders a bunch of zip files based on the given config.
 func Render(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
 	return render(c, renderAll, imageFlavor)
 }
