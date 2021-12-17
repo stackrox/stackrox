@@ -146,3 +146,8 @@ task checkSensorCollectorHealth(dependsOn: 'classes', type: JavaExec) {
     main = 'checkSensorCollectorHealth'
     classpath = sourceSets.main.runtimeClasspath
 }
+
+task testCreateECRIntegration(dependsOn: 'classes', type: JavaExec) {
+    main = 'testCreateECRIntegration'
+    classpath = sourceSets.main.runtimeClasspath
+}
