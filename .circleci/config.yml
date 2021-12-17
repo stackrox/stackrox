@@ -4169,6 +4169,7 @@ jobs:
 
   openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
     - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
@@ -4239,6 +4240,7 @@ jobs:
 
   openshift-4-6-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
     - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
