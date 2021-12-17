@@ -52,7 +52,7 @@ func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	username, password, err := parseBasicAuthToken(basicAuthToken)
 	if err != nil {
-		log.Warnf("failed to parse basic auth token: %s", err.Error())
+		log.Warnf("failed to parse basic auth token: %s", err)
 		return nil, errors.New("failed to parse basic auth token")
 	}
 
