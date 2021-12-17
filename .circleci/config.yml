@@ -2229,7 +2229,7 @@ jobs:
 
   style-checks:
     executor: custom
-    resource_class: large
+    resource_class: xlarge
     steps:
       - checkout
 
