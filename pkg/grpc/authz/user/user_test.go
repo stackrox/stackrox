@@ -44,10 +44,6 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
 
-	idWithNoRoles := mocks.NewMockIdentity(gomock.NewController(t))
-	ctxWithNoRoles := authn.ContextWithIdentity(context.Background(), idWithNoRoles, t)
-	idWithNoRoles.EXPECT().Roles().Return([]permissions.ResolvedRole{}).AnyTimes()
-
 	contextWithPermissionCheck, _ := permissioncheck.ContextWithPermissionCheck()
 
 	err := errors.New("some error")
@@ -90,14 +86,6 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
-		},
-		{
-			name: "built-in scoped authz check permissions but no roles in ID",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}},
-			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctxWithNoRoles)),
-			err: errorhelpers.ErrNoValidRole,
 		},
 		{
 			name: "built-in scoped authz check permissions but nil permissions in ID",

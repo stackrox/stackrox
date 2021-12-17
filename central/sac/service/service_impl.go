@@ -115,7 +115,7 @@ func (s *serviceImpl) AddAuthzPluginConfig(ctx context.Context, req *v1.UpsertAu
 	}
 
 	// Allow modifying enabled plugin only for basic auth user.
-	if userpass.IsLocalAdmin(authn.IdentityFromContext(ctx)) {
+	if userpass.IsLocalAdmin(authn.IdentityFromContextOrNil(ctx)) {
 		ctx = datastore.WithModifyEnabledPluginCap(ctx)
 	}
 
@@ -148,7 +148,7 @@ func (s *serviceImpl) UpdateAuthzPluginConfig(ctx context.Context, req *v1.Upser
 	}
 
 	// Allow modifying enabled plugin only for basic auth user.
-	if userpass.IsLocalAdmin(authn.IdentityFromContext(ctx)) {
+	if userpass.IsLocalAdmin(authn.IdentityFromContextOrNil(ctx)) {
 		ctx = datastore.WithModifyEnabledPluginCap(ctx)
 	}
 
@@ -164,7 +164,7 @@ func (s *serviceImpl) UpdateAuthzPluginConfig(ctx context.Context, req *v1.Upser
 
 func (s *serviceImpl) DeleteAuthzPluginConfig(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	// Allow modifying enabled plugin only for basic auth user.
-	if userpass.IsLocalAdmin(authn.IdentityFromContext(ctx)) {
+	if userpass.IsLocalAdmin(authn.IdentityFromContextOrNil(ctx)) {
 		ctx = datastore.WithModifyEnabledPluginCap(ctx)
 	}
 
