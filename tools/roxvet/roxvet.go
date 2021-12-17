@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/invalidoutputroxctl"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/needlessformat"
-	"github.com/stackrox/rox/tools/roxvet/analyzers/storedprotos/storeinterface"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckederrors"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
