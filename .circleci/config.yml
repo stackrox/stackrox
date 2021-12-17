@@ -5085,9 +5085,8 @@ workflows:
       - provision-openshift-rosa-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           context:
-            - com-redhat-cloud
+            - osd-cluster-manager
             - quay-rhacs-eng-readonly
-            - aws-setup
 
       - openshift-rosa-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5097,9 +5096,8 @@ workflows:
             - build-stackrox
             - build-rhacs
           context:
-            - com-redhat-cloud
+            - osd-cluster-manager
             - quay-rhacs-eng-readonly
-            - aws-setup
 
       - check-docs-job:
           <<: *runOnlyOnReleaseCandidateBuilds
@@ -5117,6 +5115,7 @@ workflows:
             - quay-rhacs-eng-readonly
             - azure-ci
             - aro-cluster-manager
+            - osd-cluster-manager
 
       - openshift-aro-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5129,6 +5128,7 @@ workflows:
             - quay-rhacs-eng-readonly
             - azure-ci
             - aro-cluster-manager
+            - osd-cluster-manager
 
       - provision-osd-aws-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
