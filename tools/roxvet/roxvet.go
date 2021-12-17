@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckederrors"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
-	"github.com/stackrox/rox/tools/validateimports"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/validateimports"
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
