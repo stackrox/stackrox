@@ -14,7 +14,7 @@ const (
 )
 
 func TestUserIssuedInitCertClusterIDIsNilUUID(t *testing.T) {
-	parsed, err := uuid.FromString(UserIssuedInitCertClusterID)
+	parsed, err := uuid.FromString(RegisteredInitCertClusterID)
 	require.NoError(t, err, "could not parse init cert cluster ID as UUID")
 	assert.Equal(t, uuid.Nil, parsed, "expected init cert cluster ID to be the nil UUID")
 }
@@ -43,36 +43,36 @@ func TestGetClusterID(t *testing.T) {
 			idFromCert:  testClusterID,
 			expectError: true,
 		},
-		// Feature flag enabled: explicit ID and user-issued wildcard cert
-		"explicit-id-and-user-issued-wildcard-cert": {
+		// Feature flag enabled: explicit ID and registered wildcard cert
+		"explicit-id-and-registered-wildcard-cert": {
 			explicitID: testClusterID,
-			idFromCert: UserIssuedInitCertClusterID,
+			idFromCert: RegisteredInitCertClusterID,
 			expectedID: testClusterID,
 		},
-		// Feature flag enabled: explicit nil ID and user-issued wildcard cert
-		"explicit-nil-id-and-user-issued-wildcard-cert": {
-			explicitID:  UserIssuedInitCertClusterID,
-			idFromCert:  UserIssuedInitCertClusterID,
+		// Feature flag enabled: explicit nil ID and registered wildcard cert
+		"explicit-nil-id-and-registered-wildcard-cert": {
+			explicitID:  RegisteredInitCertClusterID,
+			idFromCert:  RegisteredInitCertClusterID,
 			expectError: true,
 		},
-		"no-explicit-id-and-user-issued-wildcard-cert": {
+		"no-explicit-id-and-registered-wildcard-cert": {
 			explicitID:  "",
-			idFromCert:  UserIssuedInitCertClusterID,
+			idFromCert:  RegisteredInitCertClusterID,
 			expectError: true,
 		},
-		// Feature flag enabled: explicit ID and operator-issued wildcard cert
-		"explicit-id-and-operator-issued-wildcard-cert": {
+		// Feature flag enabled: explicit ID and ephemeral wildcard cert
+		"explicit-id-and-ephemeral-wildcard-cert": {
 			explicitID: testClusterID,
 			idFromCert: EphemeralInitCertClusterID,
 			expectedID: testClusterID,
 		},
-		// Feature flag enabled: explicit nil ID and operator-issued wildcard cert
-		"explicit-nil-id-and-operator-issued-wildcard-cert": {
-			explicitID:  UserIssuedInitCertClusterID,
+		// Feature flag enabled: explicit nil ID and ephemeral wildcard cert
+		"explicit-nil-id-and-ephemeral-wildcard-cert": {
+			explicitID:  RegisteredInitCertClusterID,
 			idFromCert:  EphemeralInitCertClusterID,
 			expectError: true,
 		},
-		"no-explicit-id-and-operator-issued-wildcard-cert": {
+		"no-explicit-id-and-ephemeral-wildcard-cert": {
 			explicitID:  "",
 			idFromCert:  EphemeralInitCertClusterID,
 			expectError: true,

@@ -5,11 +5,17 @@ import (
 )
 
 const (
-	// UserIssuedInitCertClusterID is the cluster ID used for user-issued init certs that allow dynamic creation of clusters.
+	// RegisteredInitCertClusterID is the cluster ID used for registered init certs that allow dynamic creation of clusters.
+	// "Registered" refers to the fact that the metadata of init bundles which contain such certificates is
+	// saved in central storage and used for revocation checks. Such init bundles are typically issued at
+	// user request via the web UI or roxctl.
 	// Use this only when you care about the difference between the user- and operator-issued init bundles.
 	// Otherwise, use IsInitCertClusterID().
-	UserIssuedInitCertClusterID = "00000000-0000-0000-0000-000000000000"
-	// EphemeralInitCertClusterID is the cluster ID used for operator-issued init certs that allow dynamic creation of clusters.
+	RegisteredInitCertClusterID = "00000000-0000-0000-0000-000000000000"
+	// EphemeralInitCertClusterID is the cluster ID used for ephemeral init certs that allow dynamic creation of clusters.
+	// "Ephemeral" refers to the fact that the metadata of init bundles which contain such certificates is
+	// not persisted anywhere, and the certificates have a short validity time. Such init bundles are
+	// typically issued automatically by the k8s operator.
 	// Use this only when you care about the difference between the user- and operator-issued init bundles.
 	// Otherwise, use IsInitCertClusterID().
 	EphemeralInitCertClusterID = "00000000-0000-0000-0000-000000000001"
@@ -17,7 +23,7 @@ const (
 
 // IsInitCertClusterID returns true if the passed cluster id is for an init cert that allows dynamic creation of clusters.
 func IsInitCertClusterID(clusterID string) bool {
-	return clusterID == UserIssuedInitCertClusterID || clusterID == EphemeralInitCertClusterID
+	return clusterID == RegisteredInitCertClusterID || clusterID == EphemeralInitCertClusterID
 }
 
 // GetClusterID allows joining
