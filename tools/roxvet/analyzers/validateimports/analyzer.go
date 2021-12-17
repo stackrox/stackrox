@@ -113,7 +113,7 @@ func getRoot(packageName string) (root string, valid bool, err error) {
 	}
 
 	return "", false, errors.Errorf("Package %s not found in list. If you added a new build root, "+
-		"you might need to add it to the validRoots list in tools/validateimports/verify.go.", packageName)
+		"you might need to add it to the validRoots list in tools/roxvet/analyzers/validateimports/analyzer.go.", packageName)
 }
 
 
