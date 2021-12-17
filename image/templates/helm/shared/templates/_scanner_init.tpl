@@ -7,6 +7,7 @@
   mode the image contains vulnerability data and can create it's own certificates.
 
   The "slim" mode is used to deploy Scanner with a smaller image and does not generate TLS certificates.
+  The scanner chart defaults to "full" mode if no mode was provided.
 
   $scannerConfig contains all values which are configured by the user. The structure can be viewed in the according
   config-shape.

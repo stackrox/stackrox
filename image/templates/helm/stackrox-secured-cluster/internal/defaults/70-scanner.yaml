@@ -3,7 +3,7 @@ scanner:
   disable: true
   replicas: 3
   logLevel: INFO
-  mode: lite
+  mode: slim
 
   autoscaling:
     disable: false
