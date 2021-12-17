@@ -17,7 +17,6 @@ import { SearchIcon } from '@patternfly/react-icons';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
-<<<<<<< HEAD
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -25,13 +24,6 @@ import { FalsePositiveCVEsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import FalsePositiveCVEActionsColumn from './FalsePositiveCVEActionsColumns';
-=======
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
-import { UsePaginationResult } from 'hooks/patternfly/usePagination';
-import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import ReobserveCVEModal from './ReobserveCVEModal';
-import { Vulnerability } from '../imageVulnerabilities.graphql';
->>>>>>> ROX-8269 + ROX-8235: Added GraphQL API for getting false positive CVEs data and added pagination
 
 export type FalsePositiveCVEsTableProps = {
     rows: Vulnerability[];
@@ -58,21 +50,10 @@ function FalsePositiveCVEsTable({
         onClearAll,
         getSelectedIds,
     } = useTableSelection<Vulnerability>(rows);
-<<<<<<< HEAD
     const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<FalsePositiveCVEsToBeAssessed>(null);
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
     });
-=======
-    const [falsePositiveCVEsToBeReobserved, setFalsePositiveCVEsToBeReobserved] = useState<
-        string[]
-    >([]);
-
-    function setSelectedCVEFalsePositivesToBeCancelled() {
-        const selectedIds = getSelectedIds();
-        setFalsePositiveCVEsToBeReobserved(selectedIds);
-    }
->>>>>>> ROX-8269 + ROX-8235: Added GraphQL API for getting false positive CVEs data and added pagination
 
     function cancelAssessment() {
         setVulnsToBeAssessed(null);
@@ -80,11 +61,7 @@ function FalsePositiveCVEsTable({
 
     async function completeAssessment() {
         onClearAll();
-<<<<<<< HEAD
         setVulnsToBeAssessed(null);
-=======
-        setFalsePositiveCVEsToBeReobserved([]);
->>>>>>> ROX-8269 + ROX-8235: Added GraphQL API for getting false positive CVEs data and added pagination
         updateTable();
     }
 
@@ -189,21 +166,12 @@ function FalsePositiveCVEsTable({
                                 <Td dataLabel="Expiration">-</Td>
                                 <Td dataLabel="Apply to">-</Td>
                                 <Td dataLabel="Approver">-</Td>
-<<<<<<< HEAD
                                 <Td className="pf-u-text-align-right">
                                     <FalsePositiveCVEActionsColumn
                                         row={row}
                                         setVulnsToBeAssessed={setVulnsToBeAssessed}
                                     />
                                 </Td>
-=======
-                                <Td
-                                    className="pf-u-text-align-right"
-                                    actions={{
-                                        items: actions,
-                                    }}
-                                />
->>>>>>> ROX-8269 + ROX-8235: Added GraphQL API for getting false positive CVEs data and added pagination
                             </Tr>
                         );
                     })}

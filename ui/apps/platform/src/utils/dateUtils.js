@@ -77,6 +77,33 @@ export const addDaysToDate = (date, amount) => {
     return format(addDays(date, amount + 1), 'YYYY-MM-DD[T]HH:mm:ss.SSSSSSSSS[Z]');
 };
 
+const weekDays = [
+    { key: 1, dayName: 'Monday' },
+    { key: 2, dayName: 'Tuesday' },
+    { key: 3, dayName: 'Wednesday' },
+    { key: 4, dayName: 'Thursday' },
+    { key: 5, dayName: 'Friday' },
+    { key: 6, dayName: 'Saturday' },
+    { key: 0, dayName: 'Sunday' },
+];
+
+const monthDays = [
+    { key: 1, dayName: 'the first of the month' },
+    { key: 15, dayName: 'the middle of the month' },
+];
+
+export function getDayList(dayListType, days) {
+    const dayNameConstants = dayListType === 'WEEKLY' ? weekDays : monthDays;
+
+    const dayNameArray = dayNameConstants.reduce((acc, constant) => {
+        const newItem = days.find((day) => day === constant.key);
+
+        return typeof newItem !== 'undefined' ? [...acc, constant.dayName] : [...acc];
+    }, []);
+
+    return dayNameArray;
+}
+
 export default {
     getLatestDatedItemByKey,
     addBrandedTimestampToString,

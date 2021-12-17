@@ -1,5 +1,5 @@
 // system under test (SUT)
-import { getLatestDatedItemByKey, addBrandedTimestampToString } from './dateUtils';
+import { getLatestDatedItemByKey, addBrandedTimestampToString, getDayList } from './dateUtils';
 
 describe('dateUtils', () => {
     describe('getLatestDatedItemByKey', () => {
@@ -40,6 +40,113 @@ describe('dateUtils', () => {
             const fileName = addBrandedTimestampToString(baseName);
 
             expect(fileName).toEqual(`StackRox:${baseName}-${month}/${dayOfMonth}/${year}`);
+        });
+    });
+
+    describe('getDayList', () => {
+        it('should return array with one weekly day', () => {
+            const dayListType = 'WEEKLY';
+            const daysArray = [1];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual(['Monday']);
+        });
+
+        it('should return array with two contiguous weekly days', () => {
+            const dayListType = 'WEEKLY';
+            const daysArray = [1, 2];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual(['Monday', 'Tuesday']);
+        });
+
+        it('should return array with two non-contiguous weekly days', () => {
+            const dayListType = 'WEEKLY';
+            const daysArray = [1, 5];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual(['Monday', 'Friday']);
+        });
+
+        it('should return array with three contiguous weekly days', () => {
+            const dayListType = 'WEEKLY';
+            const daysArray = [2, 3, 4];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual(['Tuesday', 'Wednesday', 'Thursday']);
+        });
+
+        it('should return array with three non-contiguous weekly days', () => {
+            const dayListType = 'WEEKLY';
+            const daysArray = [1, 5, 0];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual(['Monday', 'Friday', 'Sunday']);
+        });
+
+        it('should return array with all, but one, weekly days', () => {
+            const dayListType = 'WEEKLY';
+            const daysArray = [2, 3, 4, 5, 6, 0];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual([
+                'Tuesday',
+                'Wednesday',
+                'Thursday',
+                'Friday',
+                'Saturday',
+                'Sunday',
+            ]);
+        });
+
+        it('should return array with all weekly days', () => {
+            const dayListType = 'WEEKLY';
+            const daysArray = [1, 2, 3, 4, 5, 6, 0];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual([
+                'Monday',
+                'Tuesday',
+                'Wednesday',
+                'Thursday',
+                'Friday',
+                'Saturday',
+                'Sunday',
+            ]);
+        });
+
+        it('should return array with first monthly day', () => {
+            const dayListType = 'MONTHLY';
+            const daysArray = [1];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual(['the first of the month']);
+        });
+
+        it('should return array with other monthly days', () => {
+            const dayListType = 'MONTHLY';
+            const daysArray = [15];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual(['the middle of the month']);
+        });
+
+        it('should return array with both monthly days', () => {
+            const dayListType = 'MONTHLY';
+            const daysArray = [1, 15];
+
+            const daysList = getDayList(dayListType, daysArray);
+
+            expect(daysList).toEqual(['the first of the month', 'the middle of the month']);
         });
     });
 });

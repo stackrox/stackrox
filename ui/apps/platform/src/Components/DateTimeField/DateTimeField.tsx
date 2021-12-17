@@ -1,10 +1,14 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import { isValid, parse, format } from 'date-fns';
 
-const DateTimeField = ({ date, asString }) => {
+type DateTimeFieldProps = {
+    date?: string; // ISO 8601 formatted date
+    asString?: boolean;
+};
+
+function DateTimeField({ date = '', asString = false }: DateTimeFieldProps): ReactElement {
     if (!date || !isValid(parse(date))) {
-        return '—';
+        return <span>—</span>;
     }
 
     const datePart = format(date, 'MM/DD/YYYY');
@@ -18,16 +22,6 @@ const DateTimeField = ({ date, asString }) => {
             <span>{timePart}</span>
         </div>
     );
-};
-
-DateTimeField.propTypes = {
-    date: PropTypes.string,
-    asString: PropTypes.bool,
-};
-
-DateTimeField.defaultProps = {
-    date: '',
-    asString: false,
-};
+}
 
 export default DateTimeField;
