@@ -5,6 +5,7 @@ import { Button, ButtonVariant, Label } from '@patternfly/react-core';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import { fixabilityLabels, vulnerabilitySeverityLabels } from 'constants/reportConstants';
 import { vulnManagementReportsPath } from 'routePaths';
+import { getMappedFixability } from './VulnMgmtReport.utils';
 
 const VulnMgmtReportTableColumnDescriptor = [
     {
@@ -33,15 +34,20 @@ const VulnMgmtReportTableColumnDescriptor = [
     },
     {
         Header: 'CVE fixability type',
-        accessor: 'vulnReportFiltersMappedValues.fixabilityMappedValues',
+        accessor: 'vulnReportFilters.fixability',
         Cell: ({ value }): ReactElement => {
-            const fixabilityStrings = value.map((fixValue) => fixabilityLabels[fixValue] as string);
+            const mappedFixabilityValues = getMappedFixability(value);
+
+            const fixabilityStrings = mappedFixabilityValues.map(
+                (fixValue) => fixabilityLabels[fixValue]
+            );
+
             return <span>{fixabilityStrings.join(', ') || 'Issue: Fixabiltiy unset'}</span>;
         },
     },
     {
         Header: 'CVE severities',
-        accessor: 'vulnReportFiltersMappedValues.severities',
+        accessor: 'vulnReportFilters.severities',
         sortField: 'CVE severities',
         Cell: ({ value }): ReactElement => {
             const severityLabels = value.map((fixValue) => (

@@ -42,11 +42,11 @@ function NotifierSelection({
 
     function onMailingListsChange(value) {
         const explodedEmails = value.split(',').map((email) => email.trim() as string);
-        setFieldValue('notifierConfig.emailConfig.mailingLists', explodedEmails);
+        setFieldValue('emailConfig.mailingLists', explodedEmails);
     }
 
     function onNotifierChange(_id, selection) {
-        setFieldValue('notifierConfig.emailConfig.notifierId', selection);
+        setFieldValue('emailConfig.notifierId', selection);
     }
 
     const joinedMailingLists = mailingLists.join(', ');
@@ -57,12 +57,12 @@ function NotifierSelection({
                 className="pf-u-mb-md"
                 isRequired
                 label="Notifier"
-                fieldId="notifierConfig.emailConfig.notifierId"
+                fieldId="emailConfig.notifierId"
                 touched={{}}
                 errors={{}}
             >
                 <SelectSingle
-                    id="notifierConfig.emailConfig.notifierId"
+                    id="emailConfig.notifierId"
                     value={notifierId}
                     handleSelect={onNotifierChange}
                     placeholderText="Select a notifier"
@@ -76,14 +76,14 @@ function NotifierSelection({
             </FormLabelGroup>
             <FormLabelGroup
                 label="Distribution list"
-                fieldId="notifierConfig.emailConfig.mailingLists"
+                fieldId="emailConfig.mailingLists"
                 touched={{}}
                 errors={{}}
                 helperText="Enter an audience, who will receive the scheduled report. If an audience is not entered, the recipient defined in the notifier will be used. Multiple addresses can be entered with comma separators."
             >
                 <TextInput
                     type="text"
-                    id="notifierConfig.emailConfig.mailingLists"
+                    id="emailConfig.mailingLists"
                     value={joinedMailingLists}
                     onChange={onMailingListsChange}
                     onBlur={handleBlur}
