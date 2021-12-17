@@ -1,21 +1,20 @@
-package main
+package validateimports
 
 import (
 	"fmt"
 	"go/ast"
-	"go/parser"
 	"go/token"
-	"os"
-	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"golang.org/x/tools/go/ast/astutil"
+	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/passes/inspect"
 )
+
+const doc = `check that imports are valid`
 
 const roxPrefix = "github.com/stackrox/rox/"
 
@@ -81,17 +80,25 @@ var (
 	}
 )
 
+// Analyzer is the analyzer.
+var Analyzer = &analysis.Analyzer{
+	Name:     "validateimports",
+	Doc:      doc,
+	Requires: []*analysis.Analyzer{inspect.Analyzer},
+	Run:      run,
+}
+
 // Given the package name, get the root directory of the service.
 // (The directory boundary that imports should not cross.)
-func getRoot(packageName string) (root string, valid bool) {
+func getRoot(packageName string) (root string, valid bool, err error) {
 	if !strings.HasPrefix(packageName, roxPrefix) {
-		logAndExit("Package %s is not part of %s", packageName, roxPrefix)
+		return "", false, errors.Errorf("Package %s is not part of %s", packageName, roxPrefix)
 	}
 	unqualifiedPackageName := strings.TrimPrefix(packageName, roxPrefix)
 
 	for _, validRoot := range validRoots {
 		if strings.HasPrefix(unqualifiedPackageName, validRoot) {
-			return validRoot, true
+			return validRoot, true, nil
 		}
 	}
 
@@ -101,37 +108,18 @@ func getRoot(packageName string) (root string, valid bool) {
 	// adds a new service.
 	for _, ignoredRoot := range ignoredRoots {
 		if strings.HasPrefix(unqualifiedPackageName, ignoredRoot) {
-			return "", false
+			return "", false, nil
 		}
 	}
-	logAndExit("Package %s not found in list. If you added a new build root, "+
+
+	return "", false, errors.Errorf("Package %s not found in list. If you added a new build root, "+
 		"you might need to add it to the validRoots list in tools/validateimports/verify.go.", packageName)
-	return "", false
 }
 
-// getImports parses the given Go file, returning its imports
-func getImports(path string) ([]*ast.ImportSpec, error) {
-	fileContents, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	fileSet := token.NewFileSet()
-	parsed, err := parser.ParseFile(fileSet, path, fileContents, parser.ImportsOnly)
-	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't parse file %s", path)
-	}
-	impSections := astutil.Imports(fileSet, parsed)
-
-	impSpecs := make([]*ast.ImportSpec, 0)
-	for _, impSection := range impSections {
-		impSpecs = append(impSpecs, impSection...)
-	}
-	return impSpecs, nil
-}
 
 // verifySingleImportFromAllowedPackagesOnly returns true if the given import statement is allowed from the respective
 // source package.
-func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, allowedPackages ...string) error {
+func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, importRoot string, allowedPackages ...string) error {
 	impPath, err := strconv.Unquote(spec.Path.Value)
 	if err != nil {
 		return err
@@ -152,11 +140,10 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 			return nil
 		}
 	}
-	return fmt.Errorf("import %s is illegal", spec.Path.Value)
+	return fmt.Errorf("%s cannot import from %s; only allowed roots are %+v", importRoot, trimmed, allowedPackages)
 }
 
-// TODO: update "whitelist" to inclusive language when updating actual code
-// checkForbidden returns an error if an import has been forbidden and the importing package isn't on the whitelist
+// checkForbidden returns an error if an import has been forbidden and the importing package isn't in the allowlist
 func checkForbidden(impPath, packageName string) error {
 	forbiddenDetails, ok := forbiddenImports[impPath]
 	for !ok {
@@ -185,13 +172,7 @@ func checkForbidden(impPath, packageName string) error {
 
 // verifyImportsFromAllowedPackagesOnly verifies that all Go files in (subdirectories of) root
 // only import StackRox code from allowedPackages
-func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName string) (errs []error) {
-	imps, err := getImports(path)
-	if err != nil {
-		errs = append(errs, errors.Wrap(err, "import retrieval"))
-		return
-	}
-
+func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.ImportSpec, validImportRoot, packageName string) {
 	allowedPackages := []string{validImportRoot, "generated", "image"}
 	// The migrator is NOT allowed to import all code from pkg except process/id as that pkg is isolated.
 	if validImportRoot != "pkg" && validImportRoot != "migrator" {
@@ -217,94 +198,27 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 		allowedPackages = append(allowedPackages, "central")
 	}
 
-	for _, imp := range imps {
-		err := verifySingleImportFromAllowedPackagesOnly(imp, packageName, allowedPackages...)
+	for _, imp := range imports {
+		err := verifySingleImportFromAllowedPackagesOnly(imp, packageName, validImportRoot, allowedPackages...)
 		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "import verification for %s", imp.Path.Value))
+			pass.Reportf(imp.Pos(), "invalid import %s: %v", imp.Path.Value, err)
 		}
 	}
-	return
 }
 
-// Lifted straight from the goimports code
-func isGoFile(f os.DirEntry) bool {
-	name := f.Name()
-	return !f.IsDir() && !strings.HasPrefix(name, ".") && strings.HasSuffix(name, ".go")
-}
-
-// Returns the list of go files in this directory (non recursively).
-func getGoFilesInDir(packageDir string) (fileNames []string) {
-	files, err := os.ReadDir(packageDir)
+func run(pass *analysis.Pass) (interface{}, error) {
+	root, valid, err := getRoot(pass.Pkg.Path())
 	if err != nil {
-		logAndExit("Couldn't read go files in directory %s: %v", packageDir, err)
+		pass.Reportf(token.NoPos, "couldn't find valid root: %v", err)
+		return nil, nil
+	}
+	if !valid {
+		return nil, nil
 	}
 
-	for _, file := range files {
-		if !isGoFile(file) {
-			continue
-		}
-		fileNames = append(fileNames, path.Join(packageDir, file.Name()))
-	}
-	return
-}
-
-func logAndExit(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-	fmt.Println()
-	os.Exit(1)
-}
-
-func main() {
-	var (
-		goPath, goPathSet = os.LookupEnv("GOPATH")
-		dirForPackageName func(packageName string) string
-	)
-
-	if goPathSet {
-		p, err := filepath.Abs(goPath)
-		if err != nil {
-			logAndExit("failed to turn %s into an absolute path: %v", p, err)
-		}
-		goPath = p
+	for _, file := range pass.Files {
+		verifyImportsFromAllowedPackagesOnly(pass, file.Imports, root, pass.Pkg.Path())
 	}
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		logAndExit("failed to query current working directory: %v", err)
-	}
-
-	if !goPathSet || !strings.HasPrefix(cwd, goPath) {
-		dirForPackageName = func(packageName string) string {
-			return path.Join(cwd, strings.TrimPrefix(packageName, roxPrefix))
-		}
-	} else {
-		dirForPackageName = func(packageName string) string {
-			return path.Join(goPath, "src", packageName)
-		}
-	}
-
-	var failed bool
-
-	for _, packageName := range os.Args[1:] {
-		root, mustProcess := getRoot(packageName)
-		if !mustProcess {
-			continue
-		}
-
-		for _, goFile := range getGoFilesInDir(dirForPackageName(packageName)) {
-			errs := verifyImportsFromAllowedPackagesOnly(goFile, root, packageName)
-			if len(errs) > 0 {
-				failed = true
-				fmt.Printf("File %s\n", goFile)
-				for _, err := range errs {
-					fmt.Printf("\t%s\n", err)
-				}
-				fmt.Println()
-			}
-		}
-	}
-
-	if failed {
-		logAndExit("Failures were found. Please fix your package imports!")
-	}
+	return nil, nil
 }
