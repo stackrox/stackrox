@@ -186,7 +186,7 @@ ui-lint:
 .PHONY: ci-config-validate
 ci-config-validate:
 	@echo "+ $@"
-	circleci config validate
+	circleci config validate --org-slug gh/stackrox .circleci/config.yml
 
 .PHONY: staticcheck
 staticcheck: $(STATICCHECK_BIN)
