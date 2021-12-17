@@ -2169,6 +2169,7 @@ jobs:
 
   go-unit-tests:
     executor: custom
+    resource_class: large
     steps:
       - pre-go-unit-tests
       - run:
@@ -2179,6 +2180,7 @@ jobs:
 
   go-unit-tests-release:
     executor: custom
+    resource_class: large
     environment:
       ROX_IMAGE_FLAVOR: stackrox_io_release
     steps:
