@@ -116,7 +116,6 @@ func getRoot(packageName string) (root string, valid bool, err error) {
 		"you might need to add it to the validRoots list in tools/roxvet/analyzers/validateimports/analyzer.go.", packageName)
 }
 
-
 // verifySingleImportFromAllowedPackagesOnly returns true if the given import statement is allowed from the respective
 // source package.
 func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, importRoot string, allowedPackages ...string) error {
