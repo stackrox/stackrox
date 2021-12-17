@@ -1,5 +1,5 @@
 import React, { ReactElement, useState, useEffect } from 'react';
-import { Alert, Button } from '@patternfly/react-core';
+import { Alert, Button, Flex } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
@@ -129,7 +129,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                     return (
                         <li key={tacticId} className="pf-c-tree-view__list-item mitre-tactic-item">
                             <TreeViewContent>
-                                <div className="pf-l-flex pf-u-flex-nowrap">
+                                <Flex flexWrap={{ default: 'nowrap' }}>
                                     <MitreTacticSelect
                                         className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
                                         getIsDisabledOption={getPolicyHasTactic}
@@ -149,7 +149,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                     >
                                         <TrashIcon />
                                     </Button>
-                                </div>
+                                </Flex>
                                 <p className="description">{tacticDescription}</p>
                                 <ul className="pf-c-tree-view__list mitre-techniques-list">
                                     {techniqueIds.map((techniqueId) => {
@@ -162,7 +162,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                                 className="pf-c-tree-view__list-item mitre-technique-item"
                                             >
                                                 <TreeViewContent>
-                                                    <div className="pf-l-flex pf-u-flex-nowrap">
+                                                    <Flex flexWrap={{ default: 'nowrap' }}>
                                                         <MitreTechniqueSelect
                                                             className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
                                                             getIsDisabledOption={
@@ -194,7 +194,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                                         >
                                                             <TrashIcon />
                                                         </Button>
-                                                    </div>
+                                                    </Flex>
                                                     <p className="description">
                                                         {techniqueDescription}
                                                     </p>
@@ -207,7 +207,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                         className="pf-c-tree-view__list-item mitre-technique-item"
                                     >
                                         <TreeViewContent>
-                                            <div className="pf-l-flex pf-u-flex-nowrap">
+                                            <Flex flexWrap={{ default: 'nowrap' }}>
                                                 <MitreTechniqueSelect
                                                     className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
                                                     getIsDisabledOption={
@@ -220,7 +220,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                                     mitreTechniques={mitreTechniques}
                                                     techniqueId=""
                                                 />
-                                            </div>
+                                            </Flex>
                                         </TreeViewContent>
                                     </li>
                                 </ul>
@@ -230,7 +230,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                 })}
                 <li key="Add tactic" className="pf-c-tree-view__list-item mitre-tactic-item">
                     <TreeViewContent>
-                        <div className="pf-l-flex pf-u-flex-nowrap">
+                        <Flex flexWrap={{ default: 'nowrap' }}>
                             <MitreTacticSelect
                                 className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
                                 getIsDisabledOption={getPolicyHasTactic}
@@ -242,7 +242,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                 mitreAttackVectors={mitreAttackVectors}
                                 tacticId=""
                             />
-                        </div>
+                        </Flex>
                     </TreeViewContent>
                 </li>
             </ul>
