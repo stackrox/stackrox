@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // Write writes the contents of r into the path represented by the given file.
@@ -22,7 +23,7 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	// Write the contents of r into a temporary destination to prevent us from holding the lock
 	// while reading from r. The reader may be dependent on the network, and we do not want to
 	// lock while depending on something as unpredictable as the network.
-	scannerDefsFile, err := os.CreateTemp("", file.GetPath())
+	scannerDefsFile, err := os.CreateTemp("", uuid.NewV4().String())
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
 	}
@@ -30,7 +31,7 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	if err != nil {
 		return errors.Wrap(err, "copying scanner defs zip out")
 	}
-	err = os.Chtimes(file.GetPath(), time.Now(), modifiedTime)
+	err = os.Chtimes(scannerDefsFile.Name(), time.Now(), modifiedTime)
 	if err != nil {
 		return errors.Wrap(err, "changing modified time of scanner defs")
 	}
