@@ -97,8 +97,8 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 	}
 }
 
-//This test will be removed after the scanner integration is finished. It is critical to check that no scanner manifests are contained within
-//secured cluster.
+// This test will be removed after the scanner integration is finished. It is critical to check that no scanner manifests are contained within
+// secured cluster.
 func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() {
 	s.envIsolator.Setenv(features.LocalImageScanning.Name(), "false")
 
