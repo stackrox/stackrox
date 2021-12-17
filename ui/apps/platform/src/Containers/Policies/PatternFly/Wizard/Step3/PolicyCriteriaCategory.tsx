@@ -19,7 +19,7 @@ function PolicyCriteriaCategory({ category, keys }: PolicyCriteriaCategoryProps)
     return (
         <ExpandableSection isExpanded={isExpanded} onToggle={onToggle} toggleText={category}>
             {keys.map((key) => (
-                <PolicyCriteriaKey fieldKey={key} key={key} />
+                <PolicyCriteriaKey fieldKey={key} key={key.name} />
             ))}
         </ExpandableSection>
     );
