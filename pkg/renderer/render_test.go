@@ -65,7 +65,7 @@ func TestRenderScannerOnly(t *testing.T) {
 		},
 	}
 
-	files, err := render(config, scannerOnly, nil)
+	files, err := render(config, scannerOnly)
 	assert.NoError(t, err)
 
 	for _, f := range files {

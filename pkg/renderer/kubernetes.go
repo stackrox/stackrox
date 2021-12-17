@@ -2,7 +2,6 @@ package renderer
 
 import (
 	"encoding/base64"
-	"io"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -81,22 +80,16 @@ func postProcessConfig(c *Config, mode mode) error {
 
 // Render renders a bunch of zip files based on the given config.
 func Render(c Config) ([]*zip.File, error) {
-	return render(c, renderAll, nil)
-}
-
-// RenderWithOverrides renders a bunch of zip files based on the given config, allowing to selectively override some of
-// the bundled files.
-func RenderWithOverrides(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
-	return render(c, renderAll, centralOverrides)
+	return render(c, renderAll)
 }
 
 // RenderScannerOnly renders the zip files for the scanner based on the given config.
 func RenderScannerOnly(c Config) ([]*zip.File, error) {
-	return render(c, scannerOnly, nil)
+	return render(c, scannerOnly)
 }
 
 func renderAndExtractSingleFileContents(c Config, mode mode) ([]byte, error) {
-	files, err := render(c, mode, nil)
+	files, err := render(c, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +110,7 @@ func RenderScannerTLSSecretOnly(c Config) ([]byte, error) {
 	return renderAndExtractSingleFileContents(c, scannerTLSOnly)
 }
 
-func render(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
+func render(c Config, mode mode) ([]*zip.File, error) {
 	err := postProcessConfig(&c, mode)
 	if err != nil {
 		return nil, err
