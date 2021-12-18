@@ -94,7 +94,7 @@ func generate(props *operations.GeneratorProperties) error {
 		cmd.Env = os.Environ()
 		cmd.Env = append(cmd.Env, "GOFILE=store.go")
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("couldn't exec mockgen-wrapper: %v", err)
+			return fmt.Errorf("couldn't exec mockgen-wrapper: %w", err)
 		}
 	}
 
@@ -121,7 +121,6 @@ func main() {
 
 	c.Flags().BoolVar(&props.GenerateMockStore, "generate-mock-store", false, "whether to generate a mock for the store")
 	c.Flags().StringVar(&props.MockgenWrapperExecutablePath, "mockgen-executable-path", "", "path to mockgen-wrapper executable")
-
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.HumanName == "" {

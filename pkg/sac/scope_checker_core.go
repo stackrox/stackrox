@@ -56,4 +56,3 @@ func NewScopeCheckerCore(currentScope payload.AccessScope, reqTracker ScopeReque
 	}
 	return scc
 }
-

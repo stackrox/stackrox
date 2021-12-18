@@ -114,7 +114,7 @@ func generateMocks(props operations.GeneratorProperties) error {
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "GOFILE=indexer.go")
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("couldn't exec mockgen-wrapper: %v", err)
+		return fmt.Errorf("couldn't exec mockgen-wrapper: %w", err)
 	}
 	return nil
 }

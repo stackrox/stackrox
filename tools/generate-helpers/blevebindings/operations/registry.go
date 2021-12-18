@@ -21,8 +21,7 @@ type GeneratorProperties struct {
 	Tag            string
 	NeedsTxManager bool
 
-
-	GenerateMockIndexer bool
+	GenerateMockIndexer          bool
 	MockgenWrapperExecutablePath string
 }
 

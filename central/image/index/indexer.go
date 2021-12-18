@@ -8,6 +8,7 @@ import (
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
+// Indexer is the image indexer.
 //go:generate mockgen-wrapper
 type Indexer interface {
 	AddImage(image *storage.Image) error
@@ -20,6 +21,7 @@ type Indexer interface {
 	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 }
 
+// New returns a new image indexer.
 func New(index bleve.Index) Indexer {
 	return &indexerImpl{index: index}
 }

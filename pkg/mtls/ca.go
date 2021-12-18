@@ -36,7 +36,6 @@ type CA interface {
 	ValidateAndExtractSubject(cert *x509.Certificate) (Subject, error)
 }
 
-
 type ca struct {
 	certPEM, keyPEM []byte
 	tlsCert         tls.Certificate

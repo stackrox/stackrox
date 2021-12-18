@@ -20,7 +20,7 @@ type GeneratorProperties struct {
 	DeleteExists bool
 	Cache        bool
 
-	GenerateMockStore bool
+	GenerateMockStore            bool
 	MockgenWrapperExecutablePath string
 }
 

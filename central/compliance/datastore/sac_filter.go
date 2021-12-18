@@ -99,7 +99,6 @@ func (ds *sacFilterImpl) FilterBatchResults(ctx context.Context, batchResults ma
 }
 
 // Helper functions that filter objects.
-////////////////////////////////////////
 
 func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.StringSet) (set.StringSet, error) {
 	resourceScopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)

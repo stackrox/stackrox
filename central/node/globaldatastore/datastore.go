@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-
 // GlobalDataStore is the global datastore for all nodes across all clusters.
 //go:generate mockgen-wrapper
 type GlobalDataStore interface {

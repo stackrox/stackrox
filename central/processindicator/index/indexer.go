@@ -8,6 +8,7 @@ import (
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
+// Indexer is the process indicator indexer.
 //go:generate mockgen-wrapper
 type Indexer interface {
 	AddProcessIndicator(processindicator *storage.ProcessIndicator) error
@@ -20,6 +21,7 @@ type Indexer interface {
 	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 }
 
+// New returns a new process indicator indexer.
 func New(index bleve.Index) Indexer {
 	return &indexerImpl{index: index}
 }

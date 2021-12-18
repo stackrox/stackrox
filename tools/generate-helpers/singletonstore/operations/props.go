@@ -8,6 +8,6 @@ type GeneratorProperties struct {
 	BucketName         string
 	AddInsteadOfUpsert bool
 
-	GenerateMockStore bool
+	GenerateMockStore            bool
 	MockgenWrapperExecutablePath string
 }

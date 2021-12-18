@@ -140,7 +140,7 @@ func generate(props *operations.GeneratorProperties, methods []string, interface
 		cmd.Env = os.Environ()
 		cmd.Env = append(cmd.Env, "GOFILE=store.go")
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("couldn't exec mockgen-wrapper: %v", err)
+			return fmt.Errorf("couldn't exec mockgen-wrapper: %w", err)
 		}
 	}
 
@@ -191,7 +191,6 @@ func main() {
 
 	c.Flags().BoolVar(&props.GenerateMockStore, "generate-mock-store", false, "whether to generate a mock for the store")
 	c.Flags().StringVar(&props.MockgenWrapperExecutablePath, "mockgen-executable-path", "", "path to mockgen-wrapper executable")
-
 
 	// props.DeleteExists determines whether delete methods will return an "exists" boolean
 	// commented out as this hasn't been implemented yet
