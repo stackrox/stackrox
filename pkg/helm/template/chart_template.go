@@ -62,6 +62,7 @@ func (t *ChartTemplate) GetElements() []element {
 // This template should be used for processing .htpl and .sh files, i.e. for things around Helm charts that Helm
 // templating alone can't provide us.
 func InitTemplate(name string) *template.Template {
+	// TODO(RS-400): switch to .Delims("[<", ">]") in all templates and do it here.
 	return template.New(name).Funcs(sprig.TxtFuncMap()).Funcs(extraFuncMap)
 }
 
