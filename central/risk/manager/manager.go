@@ -37,7 +37,7 @@ var (
 )
 
 // Manager manages changes to the risk of deployments and nodes
-//go:generate mockgen-wrapper Manager
+//go:generate mockgen-wrapper
 type Manager interface {
 	ReprocessDeploymentRisk(deployment *storage.Deployment)
 	CalculateRiskAndUpsertImage(image *storage.Image) error
