@@ -2900,7 +2900,7 @@ jobs:
 
   build-operator:
     executor: custom
-    resource_class: medium
+    resource_class: large
     steps:
       - checkout
 
