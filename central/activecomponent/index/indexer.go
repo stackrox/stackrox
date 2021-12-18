@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
+//go:generate mockgen-wrapper
 // Indexer is the interface for indexing active component
 type Indexer interface {
 	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)

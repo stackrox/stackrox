@@ -20,6 +20,10 @@ type GeneratorProperties struct {
 	ObjectPathName string
 	Tag            string
 	NeedsTxManager bool
+
+
+	GenerateMockIndexer bool
+	MockgenWrapperExecutablePath string
 }
 
 // methodGenerator generates an interface and implementation for a specific kind of DB operation.
