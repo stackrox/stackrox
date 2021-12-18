@@ -2,9 +2,9 @@ package config
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/renderer"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
 )
 
 // imageSpecFromOverrides produces an image spec to be used in the Secured Cluster Helm chart configuration,
@@ -25,11 +25,11 @@ func imageSpecFromOverrides(overrides map[string]string) map[string]interface{} 
 	return image
 }
 
-// FromCluster returns the cluster's Helm chart configuration.
-func FromCluster(cluster *storage.Cluster) (map[string]interface{}, error) {
-	mainImageOverrides := renderer.ComputeImageOverrides(cluster.GetMainImage(), defaults.MainImageRegistry(), "main", "")
+// FromCluster returns the cluster's Helm chart configuration based on cluster and image flavor.
+func FromCluster(cluster *storage.Cluster, flavor defaults.ImageFlavor) (map[string]interface{}, error) {
+	mainImageOverrides := renderer.ComputeImageOverrides(cluster.GetMainImage(), flavor.MainRegistry, flavor.MainImageName, "")
 	mainImage := imageSpecFromOverrides(mainImageOverrides)
-	collectorImageOverrides := renderer.ComputeImageOverrides(cluster.GetCollectorImage(), defaults.CollectorImageRegistry(), "collector", "")
+	collectorImageOverrides := renderer.ComputeImageOverrides(cluster.GetCollectorImage(), flavor.CollectorRegistry, flavor.CollectorImageName, "")
 	collectorImage := imageSpecFromOverrides(collectorImageOverrides)
 
 	dynAdmissionControllerCfg := cluster.GetDynamicConfig().GetAdmissionControllerConfig()

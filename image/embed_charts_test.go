@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
@@ -61,11 +62,12 @@ func (s *embedTestSuite) TestChartTemplatesAvailable() {
 }
 
 func (s *embedTestSuite) TestLoadChartDefaultValues() {
-	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.DefaultMetaValues())
+	testFlavor := flavorUtils.MakeImageFlavorForTest(s.T())
+	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.GetMetaValuesForFlavor(testFlavor))
 	s.Require().NoError(err)
 	s.Equal("stackrox-central-services", chart.Name())
 
-	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.DefaultMetaValues())
+	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.GetMetaValuesForFlavor(testFlavor))
 	s.Require().NoError(err)
 	s.Equal("stackrox-secured-cluster-services", chart.Name())
 }
@@ -81,7 +83,7 @@ func (s *embedTestSuite) TestLoadChartRHACSValues() {
 }
 
 func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
-	metaVals := charts.DefaultMetaValues()
+	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
 	delete(metaVals, "FeatureFlags")
 
 	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
@@ -100,7 +102,8 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() {
 	s.envIsolator.Setenv(features.LocalImageScanning.Name(), "false")
 
-	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.DefaultMetaValues())
+	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
+	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
 	s.Require().NoError(err)
 	s.Equal("stackrox-secured-cluster-services", chart.Name())
 	s.NotEmpty(chart.Templates)
