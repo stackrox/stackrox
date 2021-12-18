@@ -20,4 +20,4 @@ func New() Validator {
 	return newValidator()
 }
 
-//go:generate mockgen-wrapper Validator
+//go:generate mockgen-wrapper

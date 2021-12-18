@@ -13,7 +13,7 @@ type ScopeRequest interface {
 }
 
 // ScopeRequestTracker tracks the list of pending permission checks
-//go:generate mockgen-wrapper ScopeRequestTracker
+//go:generate mockgen-wrapper
 type ScopeRequestTracker interface {
 	AddRequested(scopes ...ScopeRequest)
 	PerformChecks(ctx context.Context) error
