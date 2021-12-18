@@ -11,11 +11,20 @@ import (
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-// These are actually const.
+func getMetaValues(rhacs, release bool) charts.MetaValues {
+	if rhacs {
+		return charts.RHACSMetaValues()
+	} else if release {
+		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
+	} else {
+		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
+	}
+}
 
 func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, debug bool, debugChartPath string) error {
 	// Lookup chart template prefix.
@@ -49,12 +58,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 		templateImage = image.NewImage(os.DirFS(debugChartPath))
 	}
 
-	var metaVals charts.MetaValues
-	if rhacs {
-		metaVals = charts.RHACSMetaValues()
-	} else {
-		metaVals = charts.DefaultMetaValues()
-	}
+	metaVals := getMetaValues(rhacs, buildinfo.ReleaseBuild)
 
 	// Load and render template files.
 	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(chartTemplatePathPrefix, metaVals)

@@ -7,7 +7,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,12 +32,15 @@ func TestRender(t *testing.T) {
 
 type renderSuite struct {
 	suite.Suite
-	restorer *testbuildinfo.TestBuildTimestampRestorer
+	restorer    *testbuildinfo.TestBuildTimestampRestorer
+	envIsolator *envisolator.EnvIsolator
+	testFlavor  defaults.ImageFlavor
 }
 
 func (suite *renderSuite) SetupSuite() {
-	suite.restorer = testbuildinfo.SetForTest(suite.T())
-	testutils.SetExampleVersion(suite.T())
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv("TEST_VERSIONS", "true")
+	suite.testFlavor = flavorUtils.MakeImageFlavorForTest(suite.T())
 }
 
 func (suite *renderSuite) TeardownSuite() {
@@ -46,7 +51,7 @@ func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 	c.HostPath = &HostPathPersistence{
 		HostPath: "/var/lib/stackrox",
 	}
-	_, err := Render(c)
+	_, err := Render(c, suite.testFlavor)
 	assert.NoError(t, err)
 
 	c.HostPath = &HostPathPersistence{
@@ -54,7 +59,7 @@ func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 		NodeSelectorKey:   "key",
 		NodeSelectorValue: "value",
 	}
-	_, err = Render(c)
+	_, err = Render(c, suite.testFlavor)
 	assert.NoError(t, err)
 }
 
@@ -62,24 +67,24 @@ func (suite *renderSuite) testWithPV(t *testing.T, c Config) {
 	c.External = &ExternalPersistence{
 		Name: "name",
 	}
-	_, err := Render(c)
+	_, err := Render(c, suite.testFlavor)
 	assert.NoError(t, err)
 
 	c.External = &ExternalPersistence{
 		Name:         "name",
 		StorageClass: "storageClass",
 	}
-	_, err = Render(c)
+	_, err = Render(c, suite.testFlavor)
 	assert.NoError(t, err)
 }
 
 func (suite *renderSuite) testWithLoadBalancers(t *testing.T, c Config) {
 	c.K8sConfig.LoadBalancerType = v1.LoadBalancerType_NODE_PORT
-	_, err := Render(c)
+	_, err := Render(c, suite.testFlavor)
 	assert.NoError(t, err)
 
 	c.K8sConfig.LoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
-	_, err = Render(c)
+	_, err = Render(c, suite.testFlavor)
 	assert.NoError(t, err)
 }
 
@@ -102,6 +107,6 @@ func (suite *renderSuite) TestRenderMultiple() {
 func (suite *renderSuite) TestRenderWithBadImage() {
 	conf := getBaseConfig()
 	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
-	_, err := Render(conf)
+	_, err := Render(conf, suite.testFlavor)
 	suite.Error(err)
 }
