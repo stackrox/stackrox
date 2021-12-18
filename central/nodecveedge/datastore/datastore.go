@@ -9,7 +9,7 @@ import (
 )
 
 // DataStore is an intermediary to Node/CVE edge storage.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.NodeCVEEdge, bool, error)
 }

@@ -15,7 +15,7 @@ import (
 )
 
 // DataStore is an intermediary to ImageComponent storage.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 	SearchImageComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
