@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -16,21 +17,55 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func getMetaValues(rhacs, release bool) charts.MetaValues {
-	if rhacs {
+const (
+	imageDefaultsDevelopment string = "development"
+	imageDefaultsStackrox    string = "stackrox.io"
+	imageDefaultsRHACS       string = "rhacs"
+)
+
+func getMetaValues(flavor string, release bool) charts.MetaValues {
+	switch strings.ToLower(flavor) {
+	case imageDefaultsRHACS:
 		return charts.RHACSMetaValues()
-	} else if release {
+	case imageDefaultsStackrox:
 		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
-	} else {
+	case imageDefaultsDevelopment:
 		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
+	default:
+		return charts.RHACSMetaValues()
 	}
 }
 
-func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, debug bool, debugChartPath string) error {
+func validateFlavorFlags(rhacs bool, imageFlavor string) (string, error) {
+	if rhacs {
+		fmt.Fprintf(os.Stderr, "Warning: parameter '--rhacs' is deprecated in favor of '--image-defaults=%s'\n", imageDefaultsRHACS)
+		if imageFlavor != imageDefaultsRHACS {
+			return "", fmt.Errorf("Conflict: do not use --rhacs and --image-defaults simultaneously. Instead use: --image-defaults=%s", imageDefaultsRHACS)
+		}
+	}
+	switch {
+	case imageFlavor == imageDefaultsStackrox || imageFlavor == imageDefaultsRHACS:
+		return imageFlavor, nil
+	case imageFlavor == imageDefaultsDevelopment && !buildinfo.ReleaseBuild:
+		return imageFlavor, nil
+	default:
+		allowedHelpStr := fmt.Sprintf("allowed values: %s, %s", imageDefaultsRHACS, imageDefaultsStackrox)
+		if !buildinfo.ReleaseBuild {
+			allowedHelpStr = fmt.Sprintf("%s, %s", allowedHelpStr, imageDefaultsDevelopment)
+		}
+		return "", fmt.Errorf("invalid value of --image-defaults, %s", allowedHelpStr)
+	}
+}
+
+func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
+	}
+	flavor, err := validateFlavorFlags(rhacs, imageFlavor)
+	if err != nil {
+		return err
 	}
 
 	if outputDir == "" {
@@ -58,7 +93,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 		templateImage = image.NewImage(os.DirFS(debugChartPath))
 	}
 
-	metaVals := getMetaValues(rhacs, buildinfo.ReleaseBuild)
+	metaVals := getMetaValues(flavor, buildinfo.ReleaseBuild)
 
 	// Load and render template files.
 	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(chartTemplatePathPrefix, metaVals)
@@ -87,6 +122,7 @@ func Command() *cobra.Command {
 	var debug bool
 	var debugChartPath string
 	var rhacs bool
+	var imageFlavor string
 
 	c := &cobra.Command{
 		Use: fmt.Sprintf("output <%s>", common.PrettyChartNameList),
@@ -95,18 +131,19 @@ func Command() *cobra.Command {
 				return errors.New("incorrect number of arguments, see --help for usage information")
 			}
 			chartName := args[0]
-			return outputHelmChart(chartName, outputDir, removeOutputDir, rhacs, debug, debugChartPath)
+			return outputHelmChart(chartName, outputDir, removeOutputDir, rhacs, imageFlavor, debug, debugChartPath)
 		},
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
 	c.PersistentFlags().BoolVar(&removeOutputDir, "remove", false, "remove the output directory if it already exists")
-	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false, "render RHACS chart flavor")
+	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false, "render RHACS chart flavor [deprecated in favor of '--image-defaults="+imageDefaultsRHACS+"']")
 
 	if !buildinfo.ReleaseBuild {
 		defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/stackrox/image/")
 		c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
 		c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
 	}
+	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", imageDefaultsRHACS, "default container registry for container images")
 
 	return c
 }

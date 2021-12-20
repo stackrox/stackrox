@@ -6,10 +6,12 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/lint"
 	"helm.sh/helm/v3/pkg/lint/support"
 )
@@ -22,22 +24,79 @@ var (
 	lintNamespaces = []string{"default", "stackrox"}
 )
 
-func init() {
-	testutils.SetMainVersion(&testing.T{}, "3.0.55.0")
-	testbuildinfo.SetForTest(&testing.T{})
+type HelmLintTestSuite struct {
+	suite.Suite
 }
 
-func TestHelmLint(t *testing.T) {
-	for chartName := range common.ChartTemplates {
-		for _, rhacs := range []bool{false, true} {
-			t.Run(fmt.Sprintf("%s-rhacs-%v", chartName, rhacs), func(t *testing.T) {
-				testChartLint(t, chartName, rhacs)
+func (suite *HelmLintTestSuite) SetupTest() {
+	testutils.SetVersion(suite.T(), version.Versions{
+		MainVersion:      "3.0.55.0",
+		ScannerVersion:   "3.0.55.0",
+		CollectorVersion: "3.0.55.0",
+		GitCommit:        "face2face",
+	})
+	testbuildinfo.SetForTest(suite.T())
+}
+
+func (suite *HelmLintTestSuite) TestHelmOutput() {
+	tests := []struct {
+		imageFlavor string
+		rhacsFlag   bool
+		wantErr     bool
+	}{
+		// rhacs = true
+		{"", true, true},                       // error, --rhacs and --images-default!=rhacs returns conflict
+		{imageDefaultsRHACS, true, false},      // no error, --images-default=rhacs and --rhacs provided
+		{imageDefaultsDevelopment, true, true}, // error, --rhacs and --images-default!=rhacs returns conflict
+		{imageDefaultsStackrox, true, true},    // error, --rhacs and --images-default!=rhacs returns conflict
+		// rhacs = false
+		{"", false, true},                        // error, invalid value of --images-default
+		{"dummy", false, true},                   // error, invalid value of --images-default
+		{imageDefaultsRHACS, false, false},       // no error, valid value of --images-default
+		{imageDefaultsDevelopment, false, false}, // no error, valid value of --images-default
+		{imageDefaultsStackrox, false, false},    // no error, valid value of --images-default
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		for chartName := range common.ChartTemplates {
+			suite.T().Run(fmt.Sprintf("%s-rhacs-%t-image-defaults-%s", chartName, tt.rhacsFlag, tt.imageFlavor), func(t *testing.T) {
+				outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
+				require.NoError(suite.T(), err)
+				err = outputHelmChart(chartName, outputDir, true, tt.rhacsFlag, tt.imageFlavor, false, "")
+				defer func() {
+					_ = os.RemoveAll(outputDir)
+				}()
+				if tt.wantErr {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+				}
 			})
 		}
 	}
 }
 
-func testChartLint(t *testing.T, chartName string, rhacs bool) {
+func (suite *HelmLintTestSuite) TestHelmLint() {
+	for chartName := range common.ChartTemplates {
+		for _, imageFlavor := range []string{imageDefaultsDevelopment, imageDefaultsStackrox, imageDefaultsRHACS} {
+			suite.T().Run(fmt.Sprintf("%s-imageFlavor-%s", chartName, imageFlavor), func(t *testing.T) {
+				testChartLint(t, chartName, false, imageFlavor)
+			})
+		}
+		for _, rhacs := range []bool{false, true} {
+			suite.T().Run(fmt.Sprintf("%s-rhacs-%t", chartName, rhacs), func(t *testing.T) {
+				testChartLint(t, chartName, rhacs, "rhacs") // rhacs is default value for imageFlavor
+			})
+		}
+	}
+}
+
+func TestHelmLint(t *testing.T) {
+	suite.Run(t, new(HelmLintTestSuite))
+}
+
+func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor string) {
 	const noDebug = false
 	const noDebugChartPath = ""
 	outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
@@ -47,7 +106,7 @@ func testChartLint(t *testing.T, chartName string, rhacs bool) {
 		_ = os.RemoveAll(outputDir)
 	}()
 
-	err = outputHelmChart(chartName, outputDir, true, rhacs, noDebug, noDebugChartPath)
+	err = outputHelmChart(chartName, outputDir, true, rhacs, imageFlavor, noDebug, noDebugChartPath)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {
