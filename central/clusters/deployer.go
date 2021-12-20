@@ -1,17 +1,14 @@
 package clusters
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
@@ -28,43 +25,7 @@ type RenderOptions struct {
 	IstioVersion     string
 }
 
-func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.ImageName, error) {
-	image, _, err := utils.GenerateImageNameFromString(collectorImage)
-	if err != nil {
-		return nil, err
-	}
-	utils.SetImageTagNoSha(image, tag)
-	return image, nil
-}
-
-func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage string) (*storage.ImageName, error) {
-	collectorTag := version.GetCollectorVersion()
-	var collectorImageName *storage.ImageName
-	if collectorImage != "" {
-		var err error
-		collectorImageName, err = generateCollectorImageNameFromString(collectorImage, collectorTag)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		collectorImageName = defaultimages.GenerateNamedImageFromMainImage(mainImageName, collectorTag, defaultimages.Collector)
-	}
-	return collectorImageName, nil
-}
-
-// FieldsFromClusterAndRenderOpts gets the template values for values.yaml
-func FieldsFromClusterAndRenderOpts(c *storage.Cluster, flavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
-	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, version.GetMainVersion())
-	if err != nil {
-		return nil, err
-	}
-	mainImageName := mainImage.GetName()
-
-	collectorImageName, err := generateCollectorImageName(mainImageName, c.CollectorImage)
-	if err != nil {
-		return nil, err
-	}
-
+func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValues {
 	envVars := make(map[string]string)
 	if devbuild.IsEnabled() {
 		for _, feature := range features.Flags {
@@ -76,22 +37,14 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, flavor *defaults.ImageFl
 	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER || c.Type == storage.ClusterType_OPENSHIFT4_CLUSTER {
 		command = "oc"
 	}
-	fields := charts.MetaValues{
+
+	return charts.MetaValues{
 		"ClusterName": c.Name,
 		"ClusterType": c.Type.String(),
-
-		"MainRegistry": urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"ImageRemote":  mainImageName.GetRemote(),
-		"ImageTag":     mainImageName.GetTag(),
 
 		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		"CollectorRegistry":        urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"CollectorFullImageRemote": collectorImageName.GetRemote(),
-		"CollectorSlimImageRemote": collectorImageName.GetRemote(),
-		"CollectorFullImageTag":    fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
-		"CollectorSlimImageTag":    fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
 		"CollectionMethod":         c.CollectionMethod.String(),
 
 		// Hardcoding RHACS charts repo for now.
@@ -126,5 +79,19 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, flavor *defaults.ImageFl
 		"AdmissionControllerEnabled":       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		"AdmissionControlEnforceOnUpdates": c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 	}
-	return fields, nil
+}
+
+// FieldsFromClusterAndRenderOpts gets the template values for values.yaml
+func FieldsFromClusterAndRenderOpts(c *storage.Cluster, flavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
+	baseValues := getBaseMetaValues(c, &opts)
+	overrides, err := NewImageOverrides(flavor, c)
+	if err != nil {
+		return nil, err
+	}
+
+	overrides.SetMainOverride(baseValues)
+	overrides.SetCollectorFullOverride(baseValues)
+	overrides.SetCollectorSlimOverride(baseValues)
+
+	return baseValues, nil
 }

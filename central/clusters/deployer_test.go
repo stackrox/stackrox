@@ -94,40 +94,6 @@ func (s *deployerTestSuite) TestGenerateCollectorImage() {
 	}
 }
 
-func (s *deployerTestSuite) TestGenerateCollectorImageFromString() {
-	var cases = []struct {
-		collectorTag   string
-		collectorImage string
-		expectedImage  string
-	}{
-		{
-			collectorImage: "collector.stackrox.io/collector",
-			collectorTag:   "latest",
-			expectedImage:  "collector.stackrox.io/collector:latest",
-		},
-		{
-			collectorImage: "collector.stackrox.io/collector",
-			collectorTag:   "custom",
-			expectedImage:  "collector.stackrox.io/collector:custom",
-		},
-		{
-			collectorImage: "some.other.path/someothercollectorname",
-			collectorTag:   "latest",
-			expectedImage:  "some.other.path/someothercollectorname:latest",
-		},
-	}
-
-	for _, c := range cases {
-		s.Run(c.collectorImage, func() {
-			outputImg, err := utils.GenerateImageFromString(c.expectedImage)
-			s.NoError(err, "You wrote a bad test and your expected image string didn't parse")
-			collectorName, err := generateCollectorImageNameFromString(c.collectorImage, c.collectorTag)
-			s.NoError(err)
-			s.Equal(outputImg.GetName(), collectorName)
-		})
-	}
-}
-
 // Create a cluster object for test purposes.
 func makeTestCluster(mainImage, collectorImage string) *storage.Cluster {
 	return &storage.Cluster{
@@ -175,7 +141,7 @@ func testPathWithFlavor(s *deployerTestSuite, flavor defaults.ImageFlavor) {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
 			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
 			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
-			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorSlimImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"custom main image / default collector image": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", defaultCollectorFullImageNoTag),
@@ -230,9 +196,9 @@ func testPathWithFlavor(s *deployerTestSuite, flavor defaults.ImageFlavor) {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(c.expectedMain, getMain(fields))
-				s.Equal(c.expectedCollectorFullRef, getCollectorFull(fields))
-				s.Equal(c.expectedCollectorSlimRef, getCollectorSlim(fields))
+				s.Equal(c.expectedMain, getMain(fields), "Main image does not match")
+				s.Equal(c.expectedCollectorFullRef, getCollectorFull(fields), "Collector full image does not match")
+				s.Equal(c.expectedCollectorSlimRef, getCollectorSlim(fields), "Collector slim image does not match")
 			}
 		})
 	}
@@ -241,7 +207,7 @@ func testPathWithFlavor(s *deployerTestSuite, flavor defaults.ImageFlavor) {
 func (s *deployerTestSuite) TestImagePaths_ForFlavors() {
 	flavorCases := map[string]defaults.ImageFlavor {
 		"development": defaults.DevelopmentBuildImageFlavor(),
-		//"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
+		"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
 	}
 
 	for name, flavor := range flavorCases {
