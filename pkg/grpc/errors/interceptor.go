@@ -52,6 +52,8 @@ func errorTypeToGrpcCode(err error) codes.Code {
 		return codes.FailedPrecondition
 	case errors.Is(err, errorhelpers.ErrInvariantViolation):
 		return codes.Internal
+	case errors.Is(err, errorhelpers.ErrNotAuthenticated):
+		return codes.Unauthenticated
 	case errors.Is(err, errorhelpers.ErrNoCredentials):
 		return codes.Unauthenticated
 	case errors.Is(err, errorhelpers.ErrNoValidRole):
