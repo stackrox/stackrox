@@ -65,7 +65,6 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 	if request.GetId() != "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id field should be empty when posting a new cluster")
 	}
-
 	id, err := s.datastore.AddCluster(ctx, request)
 	if err != nil {
 		if errors.Is(err, errorhelpers.ErrAlreadyExists) {

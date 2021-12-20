@@ -14,7 +14,7 @@ func k8s() *cobra.Command {
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cluster.Type = storage.ClusterType_KUBERNETES_CLUSTER
 			cluster.DynamicConfig.DisableAuditLogs = true
-			if err := clusterValidation.Validate(&cluster); err.ToError() != nil {
+			if err := clusterValidation.ValidatePartial(&cluster); err.ToError() != nil {
 				return err.ToError()
 			}
 			return fullClusterCreation(flags.Timeout(c))

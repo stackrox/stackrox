@@ -126,3 +126,8 @@ func (flavor *ImageFlavor) MainImage() string {
 func (flavor *ImageFlavor) MainImageNoTag() string {
 	return fmt.Sprintf("%s/%s", flavor.MainRegistry, flavor.MainImageName)
 }
+
+// CollectorImageNoTag is the container image repository (image name including registry, excluding tag) for the "collector" image.
+func (flavor *ImageFlavor) CollectorImageNoTag() string {
+	return fmt.Sprintf("%s/%s", flavor.CollectorRegistry, flavor.CollectorImageName)
+}
