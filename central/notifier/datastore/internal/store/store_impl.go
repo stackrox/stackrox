@@ -111,7 +111,7 @@ func (b *storeImpl) RemoveNotifier(id string) error {
 		b := tx.Bucket(notifierBucket)
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
-			return dberrors.ErrNotFound{Type: "Notifier", ID: string(key)}
+			return dberrors.NotFound("Notifier", string(key))
 		}
 		if err := secondarykey.RemoveUniqueKey(tx, notifierBucket, id); err != nil {
 			return err

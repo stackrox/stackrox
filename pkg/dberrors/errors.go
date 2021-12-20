@@ -1,39 +1,12 @@
 package dberrors
 
 import (
-	"fmt"
-	"strings"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
-// An ErrNotFound indicates that the desired object could not be located.
-type ErrNotFound struct {
-	Type string
-	ID   string
-}
-
-func (e ErrNotFound) Error() string {
-	sb := strings.Builder{}
-	if e.Type != "" {
-		_, _ = sb.WriteString(fmt.Sprintf("%s ", e.Type))
-	}
-	if e.ID != "" {
-		_, _ = sb.WriteString(fmt.Sprintf("'%s' ", e.ID))
-	}
-	_, _ = sb.WriteString("not found")
-	return sb.String()
-}
-
-// GRPCStatus returns the error as a `status.Status` object. It is required to ensure interoperability with
-// `status.FromError()`.
-func (e ErrNotFound) GRPCStatus() *status.Status {
-	return status.New(codes.NotFound, e.Error())
-}
-
-// IsNotFound returns whether a given error is an instance of ErrNotFound.
-func IsNotFound(err error) bool {
-	_, ok := err.(ErrNotFound)
-	return ok
+// NOTE: We might want to introduce a DBNotFound error class to distinguish it
+// from generic NotFound errors (using an OverrideMessage() helper).
+func NotFound(typ string, ID string) error {
+	return errors.Wrapf(errorhelpers.ErrNotFound, "%s '%s'", typ, ID)
 }
