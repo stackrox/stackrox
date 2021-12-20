@@ -2,6 +2,7 @@ package errorhelpers
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/pkg/errors"
 )
@@ -12,17 +13,61 @@ import (
 var (
 	// ErrNoAuthzConfigured occurs if authorization is not implemented for a
 	// service. This is a programming error.
-	ErrNoAuthzConfigured = errors.New("service authorization is misconfigured")
+	ErrNoAuthzConfigured = OverrideMessage(ErrInvariantViolation, "service authorization is misconfigured")
 
 	// ErrNoCredentials occurs if no credentials can be found.
-	ErrNoCredentials = errors.New("credentials not found")
+	ErrNoCredentials = OverrideMessage(ErrNotAuthenticated, "credentials not found")
 
 	// ErrNoValidRole occurs if no valid role can be found for user.
-	ErrNoValidRole = errors.New("no valid role")
+	ErrNoValidRole = OverrideMessage(ErrNotAuthenticated, "no valid role")
 )
 
 func Explain(sentinel error, explanation string) error {
 	return fmt.Errorf("%w: %s", sentinel, explanation)
+}
+
+func OverrideMessage(sentinel error, message string) error {
+	if sentinel == nil {
+		return nil
+	}
+	overridden := &overrideMessage{
+		cause: sentinel,
+		msg:   message,
+	}
+	return errors.WithStack(overridden)
+}
+
+func OverrideMessagef(sentinel error, format string, args ...interface{}) error {
+	if sentinel == nil {
+		return nil
+	}
+	overridden := &overrideMessage{
+		cause: sentinel,
+		msg:   fmt.Sprintf(format, args...),
+	}
+	return errors.WithStack(overridden)
+}
+
+// This differs from `pkg/errors:withMessage{}` in that the underlying error's
+// message is dropped.
+type overrideMessage struct {
+	cause error
+	msg   string
+}
+func (om *overrideMessage) Error() string { return om.msg }
+func (om *overrideMessage) Unwrap() error { return om.cause }
+func (om *overrideMessage) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		if s.Flag('+') {
+			fmt.Fprintf(s, "%+v\n", om.Unwrap())
+			io.WriteString(s, om.Error())
+			return
+		}
+		fallthrough
+	case 's', 'q':
+		io.WriteString(s, om.Error())
+	}
 }
 
 // GenericNoValidRole wraps ErrNoValidRole with a generic error message

@@ -54,12 +54,6 @@ func errorTypeToGrpcCode(err error) codes.Code {
 		return codes.Internal
 	case errors.Is(err, errorhelpers.ErrNotAuthenticated):
 		return codes.Unauthenticated
-	case errors.Is(err, errorhelpers.ErrNoCredentials):
-		return codes.Unauthenticated
-	case errors.Is(err, errorhelpers.ErrNoValidRole):
-		return codes.Unauthenticated
-	case errors.Is(err, errorhelpers.ErrNoAuthzConfigured):
-		return codes.Unimplemented
 	case errors.Is(err, errorhelpers.ErrNotAuthorized):
 		return codes.PermissionDenied
 	case errors.Is(err, sac.ErrResourceAccessDenied):
