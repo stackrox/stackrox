@@ -33,11 +33,15 @@ const emptyImage = {
     lastUpdated: '',
     metadata: {
         layerShas: [],
-        v1: {},
+        v1: {
+            layers: [],
+        },
     },
     name: {},
     priority: 0,
-    scan: {},
+    scan: {
+        components: [],
+    },
     topVuln: {},
     vulnCount: 0,
 };
