@@ -116,7 +116,7 @@ describe('Boolean Policy Logic Section', () => {
             // unfurl Container Configuration policy key group
             clickPolicyKeyGroup('Container configuration');
             // to mock BPL policy here, but for now
-            dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("Root")`);
+            dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("root")`);
 
             cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).should('not.exist');
         });

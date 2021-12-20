@@ -21,7 +21,7 @@ describe('Risk search to new policy', () => {
 
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first`).should(
             'contain.text',
-            'Add capabilities:'
+            'Add Capabilities:'
         );
         cy.get(
             `${policySelectors.booleanPolicySection.policyFieldCard}:first .react-select__single-value`
@@ -33,7 +33,7 @@ describe('Risk search to new policy', () => {
 
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first`).should(
             'contain.text',
-            'Container CPU limit:'
+            'Container CPU Limit:'
         );
         cy.get(
             `${policySelectors.booleanPolicySection.policyFieldCard}:first .react-select__single-value`
