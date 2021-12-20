@@ -146,7 +146,7 @@ const memoryResource = (label) => ({
     reverse: will reverse boolean value on store 
  */
 
-type SubComponent = {
+export type SubComponent = {
     type: string;
     options?: {
         label: string;

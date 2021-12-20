@@ -10,19 +10,27 @@ import {
     Button,
     Checkbox,
 } from '@patternfly/react-core';
-import { TrashIcon } from '@patternfly/react-icons';
+import { TrashIcon, PlusIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
+import FieldValue from './FieldValue';
+import AndOrOperatorField from './AndOrOperatorField';
 
 type PolicyGroupCardProps = {
-    field: Descriptor;
+    descriptor: Descriptor;
     groupIndex: number;
     sectionIndex: number;
+    readOnly?: boolean;
 };
 
-function PolicyGroupCard({ field, groupIndex, sectionIndex }: PolicyGroupCardProps) {
+function PolicyGroupCard({
+    descriptor,
+    groupIndex,
+    sectionIndex,
+    readOnly = false,
+}: PolicyGroupCardProps) {
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { policyGroups } = values.policySections[sectionIndex];
     const group = policyGroups[groupIndex];
@@ -41,18 +49,27 @@ function PolicyGroupCard({ field, groupIndex, sectionIndex }: PolicyGroupCardPro
         });
     }
 
-    // function handleBooleanOperator() {
-    //     const newBooleanValue = group.booleanOperator === 'AND' ? 'OR' : 'AND';
-    //     setFieldValue(
-    //         `policySections[${sectionIndex as string}].policyGroups[${groupIndex as string}]`,
-    //         { ...group, booleanOperator: newBooleanValue }
-    //     );
-    // }
+    function handleRemoveValue(valueIndex) {
+        return () => {
+            setFieldValue(
+                `policySections[${sectionIndex}].policyGroups[${groupIndex}].values`,
+                group.values.filter((_, idx) => idx !== valueIndex)
+            );
+        };
+    }
+
+    function handleAddValue() {
+        setFieldValue(`policySections[${sectionIndex}].policyGroups[${groupIndex}].values`, [
+            ...group.values,
+            { value: '' },
+        ]);
+    }
 
     const headerText = group.negate
-        ? field.negatedName
-        : field?.longName || field?.shortName || field?.name;
+        ? descriptor.negatedName
+        : descriptor?.longName || descriptor?.shortName || descriptor?.name;
 
+    console.log('PolicyGroupCard', group);
     return (
         <>
             <Card isFlat isCompact>
@@ -61,7 +78,7 @@ function PolicyGroupCard({ field, groupIndex, sectionIndex }: PolicyGroupCardPro
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>{headerText}:</Flex>
                     </CardTitle>
                     <CardActions hasNoOffset>
-                        {field?.negatedName && (
+                        {descriptor?.negatedName && (
                             <>
                                 <Divider component="div" isVertical />
                                 <Checkbox
@@ -83,19 +100,51 @@ function PolicyGroupCard({ field, groupIndex, sectionIndex }: PolicyGroupCardPro
                     </CardActions>
                 </CardHeader>
                 <Divider component="div" />
-                <CardBody>sigh</CardBody>
+                <CardBody>
+                    {group.values.map((_, valueIndex) => {
+                        const name = `policySections[${sectionIndex}].policyGroups[${groupIndex}].values[${valueIndex}]`;
+                        return (
+                            // eslint-disable-next-line react/no-array-index-key
+                            <div key={valueIndex}>
+                                <FieldValue
+                                    name={name}
+                                    length={group.values.length}
+                                    descriptor={descriptor}
+                                    handleRemoveValue={handleRemoveValue(valueIndex)}
+                                />
+                                {/* only show and/or operator if not at end of array */}
+                                {valueIndex !== group.values.length - 1 && (
+                                    <AndOrOperatorField name={name} readOnly={readOnly} />
+                                )}
+                            </div>
+                        );
+                    })}
+                    {/* this is because there can't be multiple boolean values */}
+                    {!readOnly && descriptor?.type !== 'radioGroup' && (
+                        <Flex
+                            direction={{ default: 'column' }}
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            className="pf-u-pt-sm"
+                        >
+                            {/* <div className="flex justify-center"> */}
+                            <Button
+                                onClick={handleAddValue}
+                                variant="plain"
+                                // dataTestId="add-policy-field-value-btn"
+                            >
+                                <PlusIcon />
+                            </Button>
+                            {/* </div> */}
+                        </Flex>
+                    )}
+                </CardBody>
             </Card>
             <Flex
                 direction={{ default: 'row' }}
                 className="pf-u-my-sm"
                 justifyContent={{ default: 'justifyContentCenter' }}
             >
-                {/* <Button
-                        variant="plain"
-                        onClick={handleBooleanOperator}
-                        isDisabled={field?.canBooleanLogic}
-                    > */}
-                — and —{/* </Button> */}
+                — and —
             </Flex>
         </>
     );

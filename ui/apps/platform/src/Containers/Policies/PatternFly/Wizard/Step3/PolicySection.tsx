@@ -86,13 +86,15 @@ function PolicySection({ sectionIndex, descriptors }: PolicySectionProps) {
             <Divider component="div" />
             <CardBody>
                 {policyGroups.map((group, groupIndex) => {
-                    const descriptorField = descriptors.find(
-                        (field) => group.fieldName === field.name || group.fieldName === field.label
+                    const descriptor = descriptors.find(
+                        (descriptorField) =>
+                            group.fieldName === descriptorField.name ||
+                            group.fieldName === descriptorField.label
                     );
                     return (
-                        descriptorField && (
+                        descriptor && (
                             <PolicyGroupCard
-                                field={descriptorField}
+                                descriptor={descriptor}
                                 groupIndex={groupIndex}
                                 sectionIndex={sectionIndex}
                             />
