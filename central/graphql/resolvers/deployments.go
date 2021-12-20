@@ -503,7 +503,7 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 		return "", err
 	}
 	if len(results) == 0 {
-		log.Warnf("no matching service accounts found for deployment id: %s", resolver.Id(ctx))
+		log.Debugf("no matching service accounts found for deployment id: %s", resolver.Id(ctx))
 		return "", nil
 	}
 	return results[0].ID, nil
