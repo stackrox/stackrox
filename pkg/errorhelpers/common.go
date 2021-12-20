@@ -19,7 +19,7 @@ var (
 	ErrNoCredentials = OverrideMessage(ErrNotAuthenticated, "credentials not found")
 
 	// ErrNoValidRole occurs if no valid role can be found for user.
-	ErrNoValidRole = OverrideMessage(ErrNotAuthenticated, "no valid role")
+	ErrNoValidRole = OverrideMessage(ErrNotAuthenticated, "access for this user is not authorized: no valid role; please contact a system administrator")
 )
 
 func Explain(sentinel error, explanation string) error {
@@ -68,12 +68,6 @@ func (om *overrideMessage) Format(s fmt.State, verb rune) {
 	case 's', 'q':
 		io.WriteString(s, om.Error())
 	}
-}
-
-// GenericNoValidRole wraps ErrNoValidRole with a generic error message
-func GenericNoValidRole() error {
-	return fmt.Errorf("Access for this user is not authorized: %w. Please contact a system administrator.",
-		ErrNoValidRole)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -281,7 +281,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		err := errorhelpers.GenericNoValidRole()
+		err := errorhelpers.ErrNoValidRole
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
