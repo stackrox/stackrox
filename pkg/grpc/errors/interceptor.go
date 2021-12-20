@@ -2,12 +2,10 @@ package errors
 
 import (
 	"context"
-	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -35,27 +33,6 @@ func ErrToGrpcStatus(err error) *status.Status {
 		// `err` is either nil or status.Status.
 		return s
 	}
-	code := errorTypeToGrpcCode(err)
+	code := errorhelpers.ToGrpcCode(err)
 	return status.New(code, err.Error())
-}
-
-func errorTypeToGrpcCode(err error) codes.Code {
-	switch {
-	case errors.Is(err, errorhelpers.ErrNotFound):
-		return codes.NotFound
-	case errors.Is(err, errorhelpers.ErrInvalidArgs):
-		return codes.InvalidArgument
-	case errors.Is(err, errorhelpers.ErrAlreadyExists):
-		return codes.AlreadyExists
-	case errors.Is(err, errorhelpers.ErrReferencedByAnotherObject):
-		return codes.FailedPrecondition
-	case errors.Is(err, errorhelpers.ErrInvariantViolation):
-		return codes.Internal
-	case errors.Is(err, errorhelpers.ErrNotAuthenticated):
-		return codes.Unauthenticated
-	case errors.Is(err, errorhelpers.ErrNotAuthorized):
-		return codes.PermissionDenied
-	default:
-		return codes.Internal
-	}
 }

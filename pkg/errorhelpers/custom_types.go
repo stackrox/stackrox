@@ -9,6 +9,8 @@ import (
 // status codes. Note that error messages are the only reliable indicator of
 // the error type in some cases, e.g., when embedded into a GraphQL response,
 // thus changing them might break error matching for some clients, e.g., the UI.
+//
+// The list should be kept in sync with `ToGrpcCode()`.
 var (
 	// ErrAlreadyExists indicates that a object already exists.
 	ErrAlreadyExists = errors.New("already exists")
