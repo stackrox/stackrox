@@ -126,3 +126,18 @@ func (flavor *ImageFlavor) MainImage() string {
 func (flavor *ImageFlavor) MainImageNoTag() string {
 	return fmt.Sprintf("%s/%s", flavor.MainRegistry, flavor.MainImageName)
 }
+
+// CollectorFullImage is the container image reference (full name) for the "collector" image
+func (flavor *ImageFlavor) CollectorFullImage() string {
+	return fmt.Sprintf("%s/%s:%s", flavor.CollectorRegistry, flavor.CollectorImageName, flavor.CollectorImageTag)
+}
+
+// CollectorSlimImage is the container image reference (full name) for the "collector slim" image
+func (flavor *ImageFlavor) CollectorSlimImage() string {
+	return fmt.Sprintf("%s/%s:%s", flavor.CollectorRegistry, flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag)
+}
+
+// CollectorFullImageNoTag is the container image repository (image name including registry, excluding tag) for the  "collector" image.
+func (flavor *ImageFlavor) CollectorFullImageNoTag() string {
+	return fmt.Sprintf("%s/%s", flavor.CollectorRegistry, flavor.CollectorImageName)
+}

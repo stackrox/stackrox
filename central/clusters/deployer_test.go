@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -144,7 +145,12 @@ func makeTestCluster(mainImage, collectorImage string) *storage.Cluster {
 	}
 }
 
-func (s *deployerTestSuite) TestImagePaths() {
+func testPathWithFlavor(s *deployerTestSuite, flavor defaults.ImageFlavor) {
+	defaultMainImageNoTag := flavor.MainImageNoTag()
+	defaultMainImage := flavor.MainImage()
+	defaultCollectorFullImageNoTag := flavor.CollectorFullImageNoTag()
+	defaultCollectorFullImage := flavor.CollectorFullImage()
+	defaultCollectorSlimImage := flavor.CollectorSlimImage()
 
 	var cases = map[string]struct {
 		cluster                  *storage.Cluster
@@ -154,58 +160,58 @@ func (s *deployerTestSuite) TestImagePaths() {
 		expectedCollectorSlimRef string
 	}{
 		"default main image / no collector": {
-			cluster:                  makeTestCluster("stackrox.io/main", ""),
-			expectedMain:             "stackrox.io/main:3.0.99.0",
-			expectedCollectorFullRef: "collector.stackrox.io/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "collector.stackrox.io/collector:99.9.9-slim",
+			cluster:                  makeTestCluster(defaultMainImageNoTag, ""),
+			expectedMain:             defaultMainImage,
+			expectedCollectorFullRef: defaultCollectorFullImage,
+			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
 		"custom main image / no collector": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", ""),
-			expectedMain:             "quay.io/rhacs/main:3.0.99.0",
-			expectedCollectorFullRef: "quay.io/rhacs/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.MainImageName, flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"custom main and collector images": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
-			expectedMain:             "quay.io/rhacs/main:3.0.99.0",
-			expectedCollectorFullRef: "quay.io/rhacs/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorSlimImageTag),
 		},
 		"custom main image / default collector image": {
-			cluster:                  makeTestCluster("quay.io/rhacs/main", "collector.stackrox.io/collector"),
-			expectedMain:             "quay.io/rhacs/main:3.0.99.0",
-			expectedCollectorFullRef: "collector.stackrox.io/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "collector.stackrox.io/collector:99.9.9-slim",
+			cluster:                  makeTestCluster("quay.io/rhacs/main", defaultCollectorFullImageNoTag),
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: defaultCollectorFullImage,
+			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
 		"default main image / custom collector image": {
-			cluster:                  makeTestCluster("stackrox.io/main", "quay.io/rhacs/collector"),
-			expectedMain:             "stackrox.io/main:3.0.99.0",
-			expectedCollectorFullRef: "quay.io/rhacs/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
+			cluster:                  makeTestCluster(defaultMainImage, "quay.io/rhacs/collector"),
+			expectedMain:             defaultMainImage,
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"default main image with custom tag / no collector": {
-			cluster:                  makeTestCluster("stackrox.io/main:custom", ""),
-			expectedMain:             "stackrox.io/main:custom",
-			expectedCollectorFullRef: "collector.stackrox.io/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "collector.stackrox.io/collector:99.9.9-slim",
+			cluster:                  makeTestCluster(fmt.Sprintf("%s:custom", defaultMainImageNoTag), ""),
+			expectedMain:             fmt.Sprintf("%s:custom", defaultMainImageNoTag),
+			expectedCollectorFullRef: defaultCollectorFullImage,
+			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
 		"custom main image with custom tag / default collector image": {
-			cluster:                  makeTestCluster("quay.io/rhacs/main:custom", "collector.stackrox.io/collector"),
+			cluster:                  makeTestCluster("quay.io/rhacs/main:custom", defaultCollectorFullImageNoTag),
 			expectedMain:             "quay.io/rhacs/main:custom",
-			expectedCollectorFullRef: "collector.stackrox.io/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "collector.stackrox.io/collector:99.9.9-slim",
+			expectedCollectorFullRef: defaultCollectorFullImage,
+			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
 		"custom main image / custom collector image: same registry with different namespaces": {
 			cluster:                  makeTestCluster("quay.io/namespace-a/main", "quay.io/namespace-b/collector"),
-			expectedMain:             "quay.io/namespace-a/main:3.0.99.0",
-			expectedCollectorFullRef: "quay.io/namespace-b/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "quay.io/namespace-b/collector:99.9.9-slim",
+			expectedMain:             fmt.Sprintf("quay.io/namespace-a/main:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/namespace-b/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/namespace-b/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"custom main image with non-default name": {
 			cluster:                  makeTestCluster("quay.io/rhacs/customname", ""),
-			expectedMain:             "quay.io/rhacs/customname:3.0.99.0",
-			expectedCollectorFullRef: "quay.io/rhacs/collector:99.9.9-latest",
-			expectedCollectorSlimRef: "quay.io/rhacs/collector:99.9.9-slim",
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/customname:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"expectedError: invalid main image": {
 			cluster:       makeTestCluster("this is not an image #@!", ""),
@@ -219,7 +225,7 @@ func (s *deployerTestSuite) TestImagePaths() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			fields, err := FieldsFromClusterAndRenderOpts(c.cluster, RenderOptions{})
+			fields, err := FieldsFromClusterAndRenderOpts(c.cluster, &flavor, RenderOptions{})
 			if c.expectedError {
 				s.Error(err)
 			} else {
@@ -232,11 +238,26 @@ func (s *deployerTestSuite) TestImagePaths() {
 	}
 }
 
+func (s *deployerTestSuite) TestImagePaths_ForFlavors() {
+	flavorCases := map[string]defaults.ImageFlavor {
+		"development": defaults.DevelopmentBuildImageFlavor(),
+		//"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
+	}
+
+	for name, flavor := range flavorCases {
+		s.Run(name, func() {
+			testPathWithFlavor(s, flavor)
+		})
+	}
+
+}
+
 func TestRequiredFieldsArePresent(t *testing.T) {
 	testbuildinfo.SetForTest(t)
 	testutils.SetExampleVersion(t)
 
-	fields, err := FieldsFromClusterAndRenderOpts(makeTestCluster("docker.io/stackrox/main", ""), RenderOptions{})
+	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
+	fields, err := FieldsFromClusterAndRenderOpts(makeTestCluster("docker.io/stackrox/main", ""), &testFlavor, RenderOptions{})
 	assert.NoError(t, err)
 
 	assert.NotEmpty(t, fields[mainRegistryKey])

@@ -53,7 +53,7 @@ func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage
 }
 
 // FieldsFromClusterAndRenderOpts gets the template values for values.yaml
-func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (charts.MetaValues, error) {
+func FieldsFromClusterAndRenderOpts(c *storage.Cluster, flavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
 	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, version.GetMainVersion())
 	if err != nil {
 		return nil, err
