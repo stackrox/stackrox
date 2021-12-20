@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/helm/charts/tests"
+	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
@@ -114,7 +114,7 @@ func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...stri
 	// Retrieve template files from box.
 	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 	s.Require().NoError(err, "error retrieving chart template")
-	ch, err := tpl.InstantiateAndLoad(tests.DefaultTestMetaValues(s.T()))
+	ch, err := tpl.InstantiateAndLoad(metaUtil.MakeMetaValuesForTest(s.T()))
 	s.Require().NoError(err, "error instantiating chart")
 
 	effectiveInstallOpts := installOpts

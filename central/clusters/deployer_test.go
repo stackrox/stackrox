@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -250,6 +251,6 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	assert.NotEmpty(t, versions.CollectorVersion)
 	assert.NotEmpty(t, versions.ScannerVersion)
 
-	chartRepo := fields[chartRepoKey].(charts.ChartRepo)
+	chartRepo := fields[chartRepoKey].(defaults.ChartRepo)
 	assert.NotEmpty(t, chartRepo.URL)
 }
