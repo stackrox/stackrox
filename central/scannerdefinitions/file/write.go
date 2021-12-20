@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/uuid"
 )
+
+const tempFilePattern = "scanner-defs-download-*"
 
 // Write writes the contents of r into the path represented by the given file.
 // The file's modified time is set to the given modifiedTime.
@@ -23,7 +24,8 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	// Write the contents of r into a temporary destination to prevent us from holding the lock
 	// while reading from r. The reader may be dependent on the network, and we do not want to
 	// lock while depending on something as unpredictable as the network.
-	scannerDefsFile, err := os.CreateTemp("", uuid.NewV4().String())
+	// Rename works best when inside the same directory.
+	scannerDefsFile, err := os.CreateTemp(dir, tempFilePattern)
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
 	}

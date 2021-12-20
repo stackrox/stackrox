@@ -2,6 +2,7 @@ package handler
 
 import (
 	"archive/zip"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -131,9 +132,15 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	if !h.online || uuid == "" {
 		// Default to the offline dump.
 		h.offlineFile.RLock()
-		defer h.offlineFile.RUnlock()
+		f, fi, err := file.Read(h.offlineFile)
+		h.offlineFile.RUnlock()
 
-		h.serveFileNoLock(w, r, h.offlineFile.GetPath())
+		if err != nil {
+			writeErrorForFile(w, err, h.offlineFile.GetPath())
+			return
+		}
+
+		h.serveContent(w, r, f.Name(), fi.ModTime(), f)
 		return
 	}
 
@@ -152,27 +159,34 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		serveFile, unusedFile = unusedFile, serveFile
 	}
 	unusedFile.RUnlock()
-	defer serveFile.RUnlock()
 
-	h.serveFileNoLock(w, r, serveFile.GetPath())
+	// Get an instance of *os.File to ensure a reference to the file contents
+	// exists outside the lock. This ensures a concurrent file write,
+	// which is really just a file rename(), does not trigger a deletion
+	// of the previous file contents, as we grab a file descriptor here.
+	f, fi, err := file.Read(serveFile)
+	serveFile.RUnlock()
+
+	if err != nil {
+		writeErrorForFile(w, err, serveFile.GetPath())
+	}
+
+	http.ServeContent(w, r, f.Name(), fi.ModTime(), f)
 }
 
-func (h *httpHandler) serveFileNoLock(w http.ResponseWriter, r *http.Request, path string) {
-	basePath := filepath.Base(path)
-
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("No scanner definitions found"))
-			return
-		}
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "couldn't stat file %s: %v", basePath, err)
+func writeErrorForFile(w http.ResponseWriter, err error, path string) {
+	if os.IsNotExist(err) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("No scanner definitions found"))
 		return
 	}
 
-	log.Debugf("Serving vulnerability definitions from %s", basePath)
-	http.ServeFile(w, r, path)
+	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read file %s: %v", filepath.Base(path), err)
+}
+
+func (h *httpHandler) serveContent(w http.ResponseWriter, r *http.Request, name string, modtime time.Time, content io.ReadSeeker) {
+	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
+	http.ServeContent(w, r, name, modtime, content)
 }
 
 // getUpdater gets or creates the updater for the scanner definitions
