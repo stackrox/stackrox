@@ -721,4 +721,3 @@ class ImageScanningTest extends BaseSpecification {
         return imageDetail
     }
 }
-
