@@ -40,6 +40,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -846,6 +847,29 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	return cluster, nil
+}
+
+func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
+	cluster := &storage.Cluster{
+		Name:               "Cluster Defaults",
+		CentralApiEndpoint: "central-endpoint:8000",
+	}
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if v := md.Get("x-forwarded-host"); len(v) > 0 {
+			cluster.CentralApiEndpoint = v[0]
+		}
+	}
+
+	err := normalizeCluster(cluster)
+	if err != nil {
+		return nil, err
+	}
+	err = validateInput(cluster)
+	if err != nil {
+		return nil, err
+	}
+	return cluster, err
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
