@@ -87,11 +87,12 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		"CollectorRegistry":     urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"CollectorImageRemote":  collectorImageName.GetRemote(),
-		"CollectorFullImageTag": fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
-		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
-		"CollectionMethod":      c.CollectionMethod.String(),
+		"CollectorRegistry":        urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
+		"CollectorFullImageRemote": collectorImageName.GetRemote(),
+		"CollectorSlimImageRemote": collectorImageName.GetRemote(),
+		"CollectorFullImageTag":    fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
+		"CollectorSlimImageTag":    fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
+		"CollectionMethod":         c.CollectionMethod.String(),
 
 		// Hardcoding RHACS charts repo for now.
 		// TODO: fill ChartRepo based on the current image flavor.
