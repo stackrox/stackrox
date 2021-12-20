@@ -46,13 +46,13 @@ func TestBundleResourcesComplete(t *testing.T) {
 			MainVersion:      "3.0.49.0",
 			CollectorVersion: "1.2.3",
 		},
-		"MainRegistry":          "stackrox.io", // TODO: custom?
-		"ImageRemote":           "main",
-		"CollectorRegistry":     "collector.stackrox.io",
-		"CollectorFullImageRemote":  "collector",
-		"CollectorSlimImageRemote":  "collector",
-		"CollectorSlimImageTag": "1.2.3-slim",
-		"CollectorFullImageTag": "1.2.3",
+		"MainRegistry":             "stackrox.io", // TODO: custom?
+		"ImageRemote":              "main",
+		"CollectorRegistry":        "collector.stackrox.io",
+		"CollectorFullImageRemote": "collector",
+		"CollectorSlimImageRemote": "collector",
+		"CollectorSlimImageTag":    "1.2.3-slim",
+		"CollectorFullImageTag":    "1.2.3",
 		"ChartRepo": defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
