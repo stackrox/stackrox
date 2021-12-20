@@ -49,7 +49,8 @@ func TestBundleResourcesComplete(t *testing.T) {
 		"MainRegistry":          "stackrox.io", // TODO: custom?
 		"ImageRemote":           "main",
 		"CollectorRegistry":     "collector.stackrox.io",
-		"CollectorImageRemote":  "collector",
+		"CollectorFullImageRemote":  "collector",
+		"CollectorSlimImageRemote":  "collector",
 		"CollectorSlimImageTag": "1.2.3-slim",
 		"CollectorFullImageTag": "1.2.3",
 		"ChartRepo": defaults.ChartRepo{

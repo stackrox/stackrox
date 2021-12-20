@@ -88,7 +88,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (cha
 		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
 		"CollectorRegistry":     urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"CollectorImageRemote":  collectorImageName.GetRemote(),
+		"CollectorFullImageRemote":  collectorImageName.GetRemote(),
+		"CollectorSlimImageRemote":  collectorImageName.GetRemote(),
 		"CollectorFullImageTag": fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
 		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
 		"CollectionMethod":      c.CollectionMethod.String(),
