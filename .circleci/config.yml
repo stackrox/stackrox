@@ -507,6 +507,8 @@ executors:
     resource_class: << parameters.resource_class >>
     docker:
       - image: quay.io/rhacs-eng/apollo-ci:0.3.21
+        environment:
+          GOPROXY: 'https://goproxy.io,https://proxy.golang.org,direct'
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
