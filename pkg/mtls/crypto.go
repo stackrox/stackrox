@@ -54,6 +54,9 @@ const (
 	beforeGracePeriod = 1 * time.Hour
 
 	certLifetime = 365 * 24 * time.Hour
+
+	ephemeralProfile                = "ephemeral"
+	ephemeralInitBundleCertLifetime = 3 * time.Hour
 )
 
 var (
@@ -175,22 +178,29 @@ func CACert() (*x509.Certificate, []byte, error) {
 }
 
 func signer() (cfsigner.Signer, error) {
-	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), signingPolicy())
+	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
 }
 
-func signingPolicy() *config.Signing {
+func createSigningPolicy() *config.Signing {
 	return &config.Signing{
-		Default: &config.SigningProfile{
-			Usage:    []string{"signing", "key encipherment", "server auth", "client auth"},
-			Expiry:   certLifetime + beforeGracePeriod,
-			Backdate: beforeGracePeriod,
-			CSRWhitelist: &config.CSRWhitelist{
-				PublicKey:          true,
-				PublicKeyAlgorithm: true,
-				SignatureAlgorithm: true,
-			},
-			ClientProvidesSerialNumbers: true,
+		Default: createSigningProfile(certLifetime, beforeGracePeriod),
+		Profiles: map[string]*config.SigningProfile{
+			ephemeralProfile: createSigningProfile(ephemeralInitBundleCertLifetime, 0),
 		},
+	}
+}
+
+func createSigningProfile(lifetime time.Duration, gracePeriod time.Duration) *config.SigningProfile {
+	return &config.SigningProfile{
+		Usage:    []string{"signing", "key encipherment", "server auth", "client auth"},
+		Expiry:   lifetime + gracePeriod,
+		Backdate: gracePeriod,
+		CSRWhitelist: &config.CSRWhitelist{
+			PublicKey:          true,
+			PublicKeyAlgorithm: true,
+			SignatureAlgorithm: true,
+		},
+		ClientProvidesSerialNumbers: true,
 	}
 }
 
@@ -242,7 +252,8 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 			Names:        []cfcsr.Name{subj.Name()},
 			SerialNumber: serial.String(),
 		},
-		Serial: serial,
+		Serial:  serial,
+		Profile: issueOpts.signerProfile,
 	}
 	certBytes, err := signer.Sign(req)
 	if err != nil {
