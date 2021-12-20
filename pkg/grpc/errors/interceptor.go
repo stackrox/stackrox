@@ -6,7 +6,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -55,8 +54,6 @@ func errorTypeToGrpcCode(err error) codes.Code {
 	case errors.Is(err, errorhelpers.ErrNotAuthenticated):
 		return codes.Unauthenticated
 	case errors.Is(err, errorhelpers.ErrNotAuthorized):
-		return codes.PermissionDenied
-	case errors.Is(err, sac.ErrResourceAccessDenied):
 		return codes.PermissionDenied
 	default:
 		return codes.Internal
