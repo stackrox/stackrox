@@ -34,7 +34,7 @@ var (
 //   of the chart can be helpful. It's often sufficient to include an extra "---" document separator before the
 //   start of the object definition.
 // - If the false positive cannot be suppressed using the above methods, you can add it to the above
-//   gvksExcludedFromCompletenessTest list to explicitly suppress it in this test.
+//   ExcludedFromCompletenessTest list to explicitly suppress it in this test.
 func TestBundleResourcesComplete(t *testing.T) {
 	featureFlags := make(map[string]interface{})
 	for _, ff := range features.Flags {

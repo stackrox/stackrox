@@ -10,7 +10,7 @@ endpoint:
 image:
   repository:
     main: [< required "" .ImageRemote >]
-    collector: [< required "" .CollectorImageRemote >]
+    collector: [< required "" .CollectorFullImageRemote >]
   registry:
     main: [< required "" .MainRegistry >]
     collector: [< required "" .CollectorRegistry >]
