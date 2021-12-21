@@ -176,7 +176,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		}
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
-			go s.vulnReqMgr.OnImageScanRequest(img)
+			go s.vulnReqMgr.OnImageScanRequest(img.Clone())
 			utils.FilterSuppressedCVEsNoClone(img)
 			return &v1.ScanImageInternalResponse{
 				Image: utils.StripCVEDescriptions(img),
