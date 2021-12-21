@@ -28,7 +28,7 @@ func TestPartialValidation(t *testing.T) {
 			},
 			expectedErrors: []string{"invalid main image 'invalid image': invalid reference format"},
 		},
-		"Cluster with empty main image should not fail in local": {
+		"Cluster with empty main image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = ""
 			},
