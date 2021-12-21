@@ -3,10 +3,12 @@ package component
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/central/risk/scorer/vulns"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
@@ -31,9 +33,16 @@ func NewVulnerabilities(typ, heading string) Multiplier {
 
 // Score takes a component and evaluates its risk based on vulnerabilities
 func (c *vulnerabilitiesMultiplier) Score(_ context.Context, component scancomponent.ScanComponent) *storage.Risk_Result {
+	log := logging.LoggerForModule()
+	if strings.Contains(component.GetName(), "log4j") {
+		log.Errorf("[Score - Component] STARTING scoring for component %s", component.GetName())
+	}
 	min, max, sum, numCVEs := vulns.ProcessComponent(component)
 	if numCVEs == 0 {
 		return nil
+	}
+	if strings.Contains(component.GetName(), "log4j") {
+		log.Errorf("[Score - Component] ND scoring for component %s and got %v vulns", component.GetName(), numCVEs)
 	}
 
 	return &storage.Risk_Result{

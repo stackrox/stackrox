@@ -2,9 +2,11 @@ package vulns
 
 import (
 	"math"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
@@ -37,6 +39,11 @@ func ProcessComponents(components []scancomponent.ScanComponent) (min, max Compo
 		}
 		sum += cSum
 		num += cNum
+
+		log := logging.LoggerForModule()
+		if strings.Contains(component.GetName(), "log4j") {
+			log.Errorf("[ProcessComponents] For component %s got %+v vulns", component.GetName(), cNum)
+		}
 	}
 	return min, max, sum, num
 }
