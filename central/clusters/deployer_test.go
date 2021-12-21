@@ -111,7 +111,7 @@ func makeTestCluster(mainImage, collectorImage string) *storage.Cluster {
 	}
 }
 
-func testPathWithFlavor(s *deployerTestSuite, flavor defaults.ImageFlavor) {
+func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor defaults.ImageFlavor) {
 	defaultMainImageNoTag := flavor.MainImageNoTag()
 	defaultMainImage := flavor.MainImage()
 	defaultCollectorFullImageNoTag := flavor.CollectorFullImageNoTag()
@@ -204,7 +204,7 @@ func testPathWithFlavor(s *deployerTestSuite, flavor defaults.ImageFlavor) {
 	}
 }
 
-func (s *deployerTestSuite) TestImagePaths_ForFlavors() {
+func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 	flavorCases := map[string]defaults.ImageFlavor {
 		"development": defaults.DevelopmentBuildImageFlavor(),
 		"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
@@ -212,7 +212,7 @@ func (s *deployerTestSuite) TestImagePaths_ForFlavors() {
 
 	for name, flavor := range flavorCases {
 		s.Run(name, func() {
-			testPathWithFlavor(s, flavor)
+			testMetaValueGenerationWithImageFlavor(s, flavor)
 		})
 	}
 
