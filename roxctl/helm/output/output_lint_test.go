@@ -56,6 +56,7 @@ func (suite *HelmLintTestSuite) TestHelmOutput() {
 		{imageDefaultsRHACS, false, false},    // no error, valid value of --images-default
 		{imageDefaultsStackrox, false, false}, // no error, valid value of --images-default
 	}
+	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
 		tests = append(tests, []testCase{
 			{imageDefaultsDevelopment, true, true},   // error, --rhacs and --images-default!=rhacs returns conflict
@@ -84,8 +85,13 @@ func (suite *HelmLintTestSuite) TestHelmOutput() {
 }
 
 func (suite *HelmLintTestSuite) TestHelmLint() {
+	flavorsToTest := []string{imageDefaultsStackrox, imageDefaultsRHACS}
+	if !buildinfo.ReleaseBuild {
+		flavorsToTest = append(flavorsToTest, imageDefaultsDevelopment)
+	}
+
 	for chartName := range common.ChartTemplates {
-		for _, imageFlavor := range []string{imageDefaultsDevelopment, imageDefaultsStackrox, imageDefaultsRHACS} {
+		for _, imageFlavor := range flavorsToTest {
 			suite.T().Run(fmt.Sprintf("%s-imageFlavor-%s", chartName, imageFlavor), func(t *testing.T) {
 				testChartLint(t, chartName, false, imageFlavor)
 			})
