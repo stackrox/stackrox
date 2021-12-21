@@ -9,8 +9,10 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -174,8 +176,15 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []req
 		return nil
 	}
 
+	subject := mtls.SubjectFromCommonName(leaf.Subject.CommonName)
+	if subject.Identifier == centralsensor.EphemeralInitCertClusterID {
+		log.Debug("Not checking revocation for operator-issued init cert.")
+		return nil
+	}
+
 	if err := b.CheckRevoked(sac.WithAllAccess(ctx), bundleID[0]); err != nil {
 		if errors.Is(ErrInitBundleIsRevoked, err) {
+			log.Errorf("init bundle cert is revoked: %q", bundleID)
 			return errors.Wrapf(err, "init bundle verification failed %q", bundleID[0])
 		}
 		return errors.Wrap(err, "failed checking init bundle status")
