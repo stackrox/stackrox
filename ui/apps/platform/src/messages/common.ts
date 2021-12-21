@@ -148,15 +148,15 @@ export const envVarSrcLabels = Object.freeze({
 });
 
 export const policyCriteriaCategories = Object.freeze({
-    IMAGE_REGISTRY: 'Image Registry',
-    IMAGE_CONTENTS: 'Image Contents',
-    CONTAINER_CONFIGURATION: 'Container Configuration',
-    DEPLOYMENT_METADATA: 'Deployment Metadata',
+    IMAGE_REGISTRY: 'Image registry',
+    IMAGE_CONTENTS: 'Image contents',
+    CONTAINER_CONFIGURATION: 'Container configuration',
+    DEPLOYMENT_METADATA: 'Deployment metadata',
     STORAGE: 'Storage',
     NETWORKING: 'Networking',
-    PROCESS_ACTIVITY: 'Process Activity',
-    KUBERNETES_ACCESS: 'Kubernetes Access',
-    KUBERNETES_EVENTS: 'Kubernetes Events',
+    PROCESS_ACTIVITY: 'Process activity',
+    KUBERNETES_ACCESS: 'Kubernetes access',
+    KUBERNETES_EVENTS: 'Kubernetes events',
 });
 
 // For any update to severityRatings, please also update cve.proto,
