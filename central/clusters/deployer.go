@@ -110,8 +110,7 @@ func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFla
 // deriveImageWithNewName returns registry and repository for an image deriving values from a base image.
 // Slices base image taking into account image namespace and returns values for new image in the same repository as
 // base image. For example:
-// base image: "quay.io/namespace/imageA" => imageB: "quay.io/namespace/imageB"
-// 										  => imageC: "quay.io/namespace/imageC"
+// base image: "quay.io/namespace/main" => another: "quay.io/namespace/another"
 func deriveImageWithNewName(baseImage *storage.ImageName, name string) (string, string) {
 	newImageName := &storage.ImageName{
 		Registry: baseImage.Registry,
