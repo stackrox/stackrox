@@ -39,6 +39,10 @@ func (suite *HelmLintTestSuite) SetupTest() {
 	testbuildinfo.SetForTest(suite.T())
 }
 
+func TestHelmLint(t *testing.T) {
+	suite.Run(t, new(HelmLintTestSuite))
+}
+
 func (suite *HelmLintTestSuite) TestHelmOutput() {
 	type testCase struct {
 		flavor  string
@@ -46,10 +50,10 @@ func (suite *HelmLintTestSuite) TestHelmOutput() {
 		wantErr bool
 	}
 	tests := []testCase{
-		{"", true, true}, // "" means that --image-defaults parameter was not used
+		{"", true, false}, // '--rhacs' but no '--image-defaults'
 		{"dummy", true, true},
 		{imageDefaultsStackrox, true, false},
-		{"", false, true},
+		{"", false, false}, // no '--rhacs' and no '--image-defaults'
 		{"dummy", false, true},
 		{imageDefaultsStackrox, false, false},
 	}
@@ -95,14 +99,10 @@ func (suite *HelmLintTestSuite) TestHelmLint() {
 		}
 		for _, rhacs := range []bool{false, true} {
 			suite.T().Run(fmt.Sprintf("%s-rhacs-%t", chartName, rhacs), func(t *testing.T) {
-				testChartLint(t, chartName, rhacs, "rhacs") // rhacs is default value for imageFlavor
+				testChartLint(t, chartName, rhacs, imageDefaultsDefault) // TODO(RS-380): Use RHACS as the new default
 			})
 		}
 	}
-}
-
-func TestHelmLint(t *testing.T) {
-	suite.Run(t, new(HelmLintTestSuite))
 }
 
 func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor string) {
