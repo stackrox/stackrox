@@ -2,10 +2,10 @@ package clusters
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -69,11 +69,6 @@ func setMainOverride(mainImage *storage.ImageName, metaValues charts.MetaValues)
 	metaValues["ImageTag"] = mainImage.Tag
 }
 
-func deriveImage(base *storage.ImageName, name, tag string) (string, string){
-	img := defaultimages.GenerateNamedImageFromMainImage(base, tag, name)
-	return img.Registry, img.Remote
-}
-
 // setCollectorOverride adds collector full and slim image reference to meta values object.
 // The collector repository defined in the cluster object can be passed from roxctl or as direct
 // input in the UI when creating a new secured cluster. If no value is passed, the collector image
@@ -88,8 +83,8 @@ func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFla
 		// Use provided collector image and derive collector slim
 		metaValues["CollectorRegistry"] = collectorImage.Registry
 		metaValues["CollectorFullImageRemote"] = collectorImage.Remote
-		_, name := deriveImage(collectorImage, imageFlavor.CollectorSlimImageName, imageFlavor.CollectorSlimImageTag)
-		metaValues["CollectorSlimImageRemote"] = name
+		_, derivedName := deriveImageWithNewName(collectorImage, imageFlavor.CollectorSlimImageName)
+		metaValues["CollectorSlimImageRemote"] = derivedName
 	} else {
 		if imageFlavor.IsImageDefaultMain(mainImage) {
 			// Use all defaults from imageFlavor
@@ -98,16 +93,38 @@ func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFla
 			metaValues["CollectorSlimImageRemote"] = imageFlavor.CollectorSlimImageName
 		} else {
 			// Derive collector values from main image
-			derivedRegistry, derivedName := deriveImage(mainImage, imageFlavor.CollectorImageName, imageFlavor.CollectorImageTag)
+			derivedRegistry, derivedName := deriveImageWithNewName(mainImage, imageFlavor.CollectorImageName)
 			metaValues["CollectorRegistry"] = derivedRegistry
 			metaValues["CollectorFullImageRemote"] = derivedName
-			_, derivedName = deriveImage(mainImage, imageFlavor.CollectorSlimImageName, imageFlavor.CollectorImageTag)
+			derivedRegistry, derivedName = deriveImageWithNewName(mainImage, imageFlavor.CollectorSlimImageName)
 			metaValues["CollectorSlimImageRemote"] = derivedName
 		}
 	}
-
 	metaValues["CollectorFullImageTag"] = imageFlavor.CollectorImageTag
 	metaValues["CollectorSlimImageTag"] = imageFlavor.CollectorSlimImageTag
+}
+
+// deriveImageWithNewName returns registry and repository for an image deriving values from a base image.
+// Slices base image taking into account image namespace and returns values for new image in the same repository as
+// base image. For example:
+// base image: "quay.io/namespace/imageA" => imageB: "quay.io/namespace/imageB"
+// 										  => imageC: "quay.io/namespace/imageC"
+func deriveImageWithNewName(baseImage *storage.ImageName, name string) (string, string) {
+	newImageName := &storage.ImageName{
+		Registry: baseImage.Registry,
+	}
+
+	// Populate Remote
+	// This handles the case where there is no namespace. e.g. stackrox.io/NAME:tag
+	if slashIdx := strings.Index(baseImage.GetRemote(), "/"); slashIdx == -1 {
+		newImageName.Remote = name
+	} else {
+		newImageName.Remote = baseImage.GetRemote()[:slashIdx] + "/" + name
+	}
+
+	// Populate FullName
+	utils.NormalizeImageFullNameNoSha(newImageName)
+	return newImageName.Registry, newImageName.Remote
 }
 
 

@@ -6,11 +6,9 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -55,41 +53,50 @@ func (s *deployerTestSuite) SetupTest() {
 	testutils.SetExampleVersion(s.T())
 }
 
-func (s *deployerTestSuite) TestGenerateCollectorImage() {
-	var cases = []struct {
-		mainImage     string
-		collectorTag  string
-		expectedImage string
+var (
+	NoNamespaceImage = &storage.ImageName{
+		Registry:             "my.registry.io",
+		Remote:               "main",
+		Tag:                  "latest",
+	}
+	ImageWithSingleNamespace = &storage.ImageName{
+		Registry:             "my.registry.io",
+		Remote:               "stackrox/main",
+		Tag:                  "latest",
+	}
+)
+
+func (s *deployerTestSuite) Test_deriveImageWithNewName() {
+	var cases = map[string]struct{
+		baseImage *storage.ImageName
+		targetImageName string
+		expectedRegistry, expectedRepository string
 	}{
-		{
-			mainImage:     "stackrox/main:latest",
-			collectorTag:  "latest",
-			expectedImage: "docker.io/stackrox/collector:latest",
+		"my.registry.io/imageA": {
+			baseImage: NoNamespaceImage,
+			targetImageName: "imageA",
+			expectedRegistry: "my.registry.io",
+			expectedRepository: "imageA",
 		},
-		{
-			mainImage:     "docker.io/stackrox/main:latest",
-			collectorTag:  "latest",
-			expectedImage: "docker.io/stackrox/collector:latest",
+		"my.registry.io/imageB": {
+			baseImage: NoNamespaceImage,
+			targetImageName: "imageB",
+			expectedRegistry: "my.registry.io",
+			expectedRepository: "imageB",
 		},
-		{
-			mainImage:     "stackrox.io/main:latest",
-			collectorTag:  "latest",
-			expectedImage: "collector.stackrox.io/collector:latest",
-		},
-		{
-			mainImage:     "stackrox.io/main:latest",
-			collectorTag:  "custom",
-			expectedImage: "collector.stackrox.io/collector:custom",
+		"my.registry.io/stackrox/imageA": {
+			baseImage: ImageWithSingleNamespace,
+			targetImageName: "imageA",
+			expectedRegistry: "my.registry.io",
+			expectedRepository: "stackrox/imageA",
 		},
 	}
 
-	for _, c := range cases {
-		s.Run(c.mainImage, func() {
-			inputImg, err := utils.GenerateImageFromString(c.mainImage)
-			s.NoError(err)
-			outputImg, err := utils.GenerateImageFromString(c.expectedImage)
-			s.NoError(err, "You wrote a bad test and your expected image string didn't parse")
-			s.Equal(outputImg.GetName(), defaultimages.GenerateNamedImageFromMainImage(inputImg.GetName(), c.collectorTag, defaultimages.Collector))
+	for name, testCase := range cases {
+		s.Run(name, func() {
+			actualRegistry, actualRepository := deriveImageWithNewName(testCase.baseImage, testCase.targetImageName)
+			s.Equal(testCase.expectedRegistry, actualRegistry)
+			s.Equal(testCase.expectedRepository, actualRepository)
 		})
 	}
 }
