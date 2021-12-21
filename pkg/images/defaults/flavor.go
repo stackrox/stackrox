@@ -108,6 +108,7 @@ func GetImageFlavorByBuildType() ImageFlavor {
 	return DevelopmentBuildImageFlavor()
 }
 
+// IsImageDefaultMain checks if provided image matches main image defined in flavor.
 func (flavor *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
 	overrideImageNoTag := fmt.Sprintf("%s/%s", img.Registry, img.Remote)
 	return flavor.MainImageNoTag() == overrideImageNoTag

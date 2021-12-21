@@ -29,15 +29,15 @@ type RenderOptions struct {
 }
 
 // FieldsFromClusterAndRenderOpts gets the template values for values.yaml
-func FieldsFromClusterAndRenderOpts(c *storage.Cluster, flavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
-	mainImage, collectorImage, err := MakeClusterImageNames(flavor, c)
+func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
+	mainImage, collectorImage, err := MakeClusterImageNames(imageFlavor, c)
 	if err != nil {
 		return nil, err
 	}
 
 	baseValues := getBaseMetaValues(c, &opts)
 	setMainOverride(mainImage, baseValues)
-	setCollectorOverride(mainImage, collectorImage, flavor, baseValues)
+	setCollectorOverride(mainImage, collectorImage, imageFlavor, baseValues)
 
 	return baseValues, nil
 }
@@ -84,6 +84,7 @@ func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFla
 		metaValues["CollectorRegistry"] = collectorImage.Registry
 		metaValues["CollectorFullImageRemote"] = collectorImage.Remote
 		_, derivedName := deriveImageWithNewName(collectorImage, imageFlavor.CollectorSlimImageName)
+		log.Infof("Derived collector slim image from collector full as: %s/%s", collectorImage.Registry, derivedName)
 		metaValues["CollectorSlimImageRemote"] = derivedName
 	} else {
 		if imageFlavor.IsImageDefaultMain(mainImage) {
@@ -94,9 +95,11 @@ func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFla
 		} else {
 			// Derive collector values from main image
 			derivedRegistry, derivedName := deriveImageWithNewName(mainImage, imageFlavor.CollectorImageName)
+			log.Infof("Derived collector full image from main as: %s/%s", derivedRegistry, derivedName)
 			metaValues["CollectorRegistry"] = derivedRegistry
 			metaValues["CollectorFullImageRemote"] = derivedName
-			derivedRegistry, derivedName = deriveImageWithNewName(mainImage, imageFlavor.CollectorSlimImageName)
+			_, derivedName = deriveImageWithNewName(mainImage, imageFlavor.CollectorSlimImageName)
+			log.Infof("Derived collector slim image from collector full as: %s/%s", collectorImage.Registry, derivedName)
 			metaValues["CollectorSlimImageRemote"] = derivedName
 		}
 	}
@@ -127,7 +130,6 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) (string, 
 	return newImageName.Registry, newImageName.Remote
 }
 
-
 func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValues {
 	envVars := make(map[string]string)
 	if devbuild.IsEnabled() {
@@ -148,7 +150,7 @@ func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValue
 		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		"CollectionMethod":         c.CollectionMethod.String(),
+		"CollectionMethod": c.CollectionMethod.String(),
 
 		// Hardcoding RHACS charts repo for now.
 		// TODO: fill ChartRepo based on the current image flavor.

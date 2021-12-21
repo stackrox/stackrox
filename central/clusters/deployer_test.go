@@ -55,39 +55,39 @@ func (s *deployerTestSuite) SetupTest() {
 
 var (
 	NoNamespaceImage = &storage.ImageName{
-		Registry:             "my.registry.io",
-		Remote:               "main",
-		Tag:                  "latest",
+		Registry: "my.registry.io",
+		Remote:   "main",
+		Tag:      "latest",
 	}
 	ImageWithSingleNamespace = &storage.ImageName{
-		Registry:             "my.registry.io",
-		Remote:               "stackrox/main",
-		Tag:                  "latest",
+		Registry: "my.registry.io",
+		Remote:   "stackrox/main",
+		Tag:      "latest",
 	}
 )
 
 func (s *deployerTestSuite) Test_deriveImageWithNewName() {
-	var cases = map[string]struct{
-		baseImage *storage.ImageName
-		targetImageName string
+	var cases = map[string]struct {
+		baseImage                            *storage.ImageName
+		targetImageName                      string
 		expectedRegistry, expectedRepository string
 	}{
 		"my.registry.io/imageA": {
-			baseImage: NoNamespaceImage,
-			targetImageName: "imageA",
-			expectedRegistry: "my.registry.io",
+			baseImage:          NoNamespaceImage,
+			targetImageName:    "imageA",
+			expectedRegistry:   "my.registry.io",
 			expectedRepository: "imageA",
 		},
 		"my.registry.io/imageB": {
-			baseImage: NoNamespaceImage,
-			targetImageName: "imageB",
-			expectedRegistry: "my.registry.io",
+			baseImage:          NoNamespaceImage,
+			targetImageName:    "imageB",
+			expectedRegistry:   "my.registry.io",
 			expectedRepository: "imageB",
 		},
 		"my.registry.io/stackrox/imageA": {
-			baseImage: ImageWithSingleNamespace,
-			targetImageName: "imageA",
-			expectedRegistry: "my.registry.io",
+			baseImage:          ImageWithSingleNamespace,
+			targetImageName:    "imageA",
+			expectedRegistry:   "my.registry.io",
 			expectedRepository: "stackrox/imageA",
 		},
 	}
@@ -212,9 +212,9 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 }
 
 func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
-	flavorCases := map[string]defaults.ImageFlavor {
+	flavorCases := map[string]defaults.ImageFlavor{
 		"development": defaults.DevelopmentBuildImageFlavor(),
-		"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
+		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
 	}
 
 	for name, flavor := range flavorCases {
