@@ -1,0 +1,8 @@
+# This file provides the list of labels to apply on PRs based on files changed
+# More information on the supported syntax can be found here: https://github.com/actions/labeler
+
+# Label for Team merlin includes changes related to roxctl, authN + authZ
+team/merlin:
+- roxctl/**/*
+- pkg/auth/**/*
+- pkg/sac/**/*
