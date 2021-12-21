@@ -1468,16 +1468,6 @@ commands:
       - *checkQASpockResults
 
       - run:
-          name: QA Automation Platform Part 2
-          command: |
-            if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
-              export CLUSTER=OPENSHIFT
-            else
-              export CLUSTER=K8S
-            fi
-            make -C qa-tests-backend sensor-bounce-test
-
-      - run:
           name: Test for failure in Part 1
           command: |
             [[ ! -f FAIL ]]

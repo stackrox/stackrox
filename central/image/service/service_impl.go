@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -167,6 +168,9 @@ func (s *serviceImpl) saveImage(img *storage.Image) {
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
+	if strings.Contains(request.GetImage().GetName().GetFullName(), "log4j") || strings.Contains(request.GetImage().GetName().GetFullName(), "nginx") {
+		log.Errorf("[ScanImageInternal] Scan request for image %s", request.GetImage().GetName().GetFullName())
+	}
 	if request.GetImage().GetId() != "" {
 		img, exists, err := s.datastore.GetImage(ctx, request.GetImage().GetId())
 		if err != nil {
@@ -175,6 +179,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
 			utils.FilterSuppressedCVEsNoClone(img)
+			if strings.Contains(request.GetImage().GetName().GetFullName(), "log4j") || strings.Contains(request.GetImage().GetName().GetFullName(), "nginx") {
+				log.Errorf("[ScanImageInternal] Pulling image %s from DB", request.GetImage().GetName().GetFullName())
+			}
 			return &v1.ScanImageInternalResponse{
 				Image: utils.StripCVEDescriptions(img),
 			}, nil
@@ -203,6 +210,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 	// This modifies the image object
 	utils.FilterSuppressedCVEsNoClone(img)
+	if strings.Contains(request.GetImage().GetName().GetFullName(), "log4j") || strings.Contains(request.GetImage().GetName().GetFullName(), "nginx") {
+		log.Errorf("[ScanImageInternal] Pulling fresh refetch of image %s", request.GetImage().GetName().GetFullName())
+	}
 	return &v1.ScanImageInternalResponse{
 		Image: utils.StripCVEDescriptions(img),
 	}, nil

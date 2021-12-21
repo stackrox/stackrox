@@ -1,5 +1,6 @@
 package orchestratormanager
 
+import io.fabric8.kubernetes.api.model.apps.DeploymentStatus
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.Pod
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
@@ -55,6 +56,7 @@ interface OrchestratorMain {
     def createPortForward(int port, Deployment deployment)
     def updateDeploymentEnv(String ns, String name, String key, String value)
     EnvVar getDeploymentEnv(String ns, String name, String key)
+    Object getDeploymentStatus(Deployment deployment)
     def scaleDeployment(String ns, String name, Integer replicas)
     List<String> getDeployments(String ns)
 

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/sensor/common"
 )
 
@@ -68,6 +69,9 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 		return
 	}
 	for _, a := range alertResults.GetAlerts() {
+		if a.GetDeployment().GetName() == "vulnerable-deploy-enforce" {
+			log.Errorf("[ProcessAlertResults - %s]: Policy: %s, Deploy: %s, enforcement: %s", stage.String(), a.GetPolicy().GetName(), a.GetDeployment().GetName(), a.GetEnforcement().GetAction().String())
+		}
 		if a.GetEnforcement().GetAction() == storage.EnforcementAction_UNSET_ENFORCEMENT {
 			continue
 		}
@@ -107,6 +111,7 @@ func (e *enforcer) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
+	log.Errorf("Got enforce message from central: %+v", protoutils.NewWrapper(msg))
 	if enforcement.GetEnforcement() == storage.EnforcementAction_UNSET_ENFORCEMENT {
 		return errors.Errorf("received enforcement with unset action: %s", proto.MarshalTextString(enforcement))
 	}

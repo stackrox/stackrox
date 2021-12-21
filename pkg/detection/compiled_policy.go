@@ -303,6 +303,11 @@ func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheRecep
 	if cp.deploymentMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments", cp.Policy().GetName())
 	}
+	if deployment.GetName() == "vulnerable-deploy-enforce" {
+		if cp.Policy().GetName() == "e2e-vuln-DEFERRED-enforce" || cp.Policy().GetName() == "e2e-vuln-FALSE_POSITIVE-enforce" {
+			log.Errorf("[MatchAgainstDeployment] Going to match policy %s against %s", cp.Policy().GetName(), deployment.GetName())
+		}
+	}
 	return cp.deploymentMatcher.MatchDeployment(cache, deployment, images)
 }
 

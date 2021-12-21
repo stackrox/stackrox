@@ -2,10 +2,12 @@ package augmentedobjs
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -177,6 +179,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 // ConstructImage constructs the augmented image object.
 func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
+	log := logging.LoggerForModule()
 	obj := pathutil.NewAugmentedObj(image)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
@@ -206,6 +209,14 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 		)
 		if err != nil {
 			return nil, utils.Should(err)
+		}
+
+		if strings.Contains(image.GetName().GetFullName(), "log4j") || strings.Contains(image.GetName().GetFullName(), "nginx") {
+			for _, v := range component.GetVulns() {
+				if v.GetCve() == "CVE-2009-5155" || v.GetCve() == "CVE-2021-44228" || v.GetCve() == "CVE-2007-6755" || v.GetCve() == "CVE-2004-0971" {
+					log.Errorf("[ConstructImage] AugmentedObj created for image %s and component %s and cve %s with state %s and snoozed? %v", image.GetName().GetFullName(), component.GetName(), v.GetCve(), v.GetState().String(), v.GetSuppressed())
+				}
+			}
 		}
 	}
 	return obj, nil

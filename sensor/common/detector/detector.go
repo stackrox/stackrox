@@ -142,9 +142,19 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 				})
 			case central.ResourceAction_CREATE_RESOURCE:
 				// Regardless if an UPDATE was processed before the create, we should try to enforce on the CREATE
+				for _, a := range alertResults.GetAlerts() {
+					if a.GetDeployment().GetName() == "vulnerable-deploy-enforce" {
+						log.Errorf("[serializeDeployTimeOutput - CREATE] Policy: %s, Deploy: %s, enforcement: %s", a.GetPolicy().GetName(), a.GetDeployment().GetName(), a.GetEnforcement().GetAction().String())
+					}
+				}
 				d.enforcer.ProcessAlertResults(result.action, storage.LifecycleStage_DEPLOY, alertResults)
 				fallthrough
 			case central.ResourceAction_UPDATE_RESOURCE:
+				for _, a := range alertResults.GetAlerts() {
+					if a.GetDeployment().GetName() == "vulnerable-deploy-enforce" {
+						log.Errorf("[serializeDeployTimeOutput - UPDATE] Policy: %s, Deploy: %s, enforcement: %s", a.GetPolicy().GetName(), a.GetDeployment().GetName(), a.GetEnforcement().GetAction().String())
+					}
+				}
 				var isMostRecentUpdate bool
 				concurrency.WithRLock(&d.deploymentProcessingLock, func() {
 					value, exists := d.deploymentProcessingMap[alertResults.GetDeploymentId()]
@@ -278,6 +288,14 @@ func (d *detectorImpl) runDetector() {
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})
+
+			if scanOutput.deployment.GetName() == "vulnerable-deploy-enforce" {
+				imgsStr := "| "
+				for _, i := range scanOutput.images {
+					imgsStr = imgsStr + i.GetName().GetFullName() + " || "
+				}
+				log.Errorf("[runDetector] action: %s, images: %s", scanOutput.action.String(), imgsStr)
+			}
 
 			select {
 			case <-d.detectorStopper.StopDone():

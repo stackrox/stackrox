@@ -1,6 +1,7 @@
 package services
 
 import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.VulnReqService
 import io.stackrox.proto.api.v1.VulnerabilityRequestServiceGrpc
 import io.stackrox.proto.storage.VulnRequests.VulnerabilityRequest
@@ -9,6 +10,10 @@ import util.Helpers
 class VulnRequestService extends BaseService {
     static getVulnRequestClient() {
         return VulnerabilityRequestServiceGrpc.newBlockingStub(getChannel())
+    }
+
+    static listVulnRequests() {
+        return getVulnRequestClient().listVulnerabilityRequests(SearchServiceOuterClass.RawQuery.newBuilder().build())
     }
 
     static getVulnReq(String reqID) {
@@ -74,5 +79,20 @@ class VulnRequestService extends BaseService {
         return VulnerabilityRequest.Scope.newBuilder().
                 setGlobalScope(VulnerabilityRequest.Scope.Global.newBuilder()).
                         build()
+    }
+
+    static imageScope(String fullImageName, boolean allTags) {
+        def imageParts = fullImageName.split(":")
+        def tag = allTags ? ".*" : imageParts[1]
+        def idx = imageParts[0].indexOf('/')
+
+        def imageBuilder = VulnerabilityRequest.Scope.Image.newBuilder().
+                setRegistry(imageParts[0].substring(0, idx)).
+                setRemote(imageParts[0].substring(idx+1)).
+                setTag(tag)
+
+        return VulnerabilityRequest.Scope.newBuilder().
+                setImageScope(imageBuilder).
+                build()
     }
 }

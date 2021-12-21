@@ -1,5 +1,8 @@
 package orchestratormanager
 
+import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder
+import io.fabric8.kubernetes.api.model.apps.DeploymentStatus
+
 import static io.fabric8.kubernetes.client.utils.InputStreamPumper.pump
 
 import java.nio.file.Paths
@@ -535,6 +538,24 @@ class Kubernetes implements OrchestratorMain {
             throw new OrchestratorManagerException("Did not find env variable ${key} in ${ns}/${name}")
         }
         return envVars.get(index)
+    }
+
+    def getDeploymentStatus(Deployment deployment) {
+        K8sDeployment d = this.deployments.inNamespace(deployment.namespace)
+                .withName(deployment.name)
+                .get()
+        if (d != null) {
+            def e1 = client.events().v1().events().inNamespace(deployment.namespace).list()
+            def e2 = e1.getItems().findAll {
+                it.getRegarding().kind == "Deployment" && it.getRegarding().name == deployment.name
+            }
+            def e3 = e2.collect {
+                it.getNote()
+            }
+            DeploymentStatus status = d.getStatus()
+            println "${e3.toString()}"
+            return status
+        }
     }
 
     def updateDeploymentEnv(String ns, String name, String key, String value) {

@@ -221,6 +221,13 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 			if !cve.IsCVESnoozed(vuln) {
 				cveSet.Add(vuln.GetCve())
 				filteredVulns = append(filteredVulns, vuln)
+				if strings.Contains(img.GetName().GetFullName(), "log4j") || strings.Contains(img.GetName().GetFullName(), "nginx") {
+					log.Errorf("[FilterSuppressedCVEsNoClone] Image %s has cve %s UNsnoozed with state %s and suppressed %v", img.GetName().GetFullName(), vuln.GetCve(), vuln.GetState().String(), vuln.GetSuppressed())
+				}
+			} else {
+				if strings.Contains(img.GetName().GetFullName(), "log4j") || strings.Contains(img.GetName().GetFullName(), "nginx") {
+					log.Errorf("[FilterSuppressedCVEsNoClone] Image %s has cve %s snoozed with state %s and suppressed %v", img.GetName().GetFullName(), vuln.GetCve(), vuln.GetState().String(), vuln.GetSuppressed())
+				}
 			}
 		}
 		c.Vulns = filteredVulns

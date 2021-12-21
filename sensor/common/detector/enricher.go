@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -59,6 +60,15 @@ func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.Container
 		return
 	}
 	c.image = scannedImage.GetImage()
+	if strings.Contains(ci.GetName().GetFullName(), "log4j") || strings.Contains(ci.GetName().GetFullName(), "nginx") {
+		for _, c2 := range c.image.GetScan().GetComponents() {
+			for _, v := range c2.GetVulns() {
+				if v.GetCve() == "CVE-2009-5155" || v.GetCve() == "CVE-2021-44228" || v.GetCve() == "CVE-2007-6755" || v.GetCve() == "CVE-2004-0971" {
+					log.Errorf("[scanAndSet] Pulled image from scan for image %s component %s, cve %s, state %s and snoozed? %v", c.image.GetName().GetFullName(), c2.GetName(), v.GetCve(), v.GetState().String(), v.GetSuppressed())
+				}
+			}
+		}
+	}
 }
 
 func newEnricher(cache expiringcache.Cache) *enricher {
@@ -83,6 +93,9 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if ci.GetNotPullable() {
+		if strings.Contains(ci.GetName().GetFullName(), "log4j") || strings.Contains(ci.GetName().GetFullName(), "nginx") {
+			log.Errorf("[runScan] NOT PULLABE image for image %s with key %+v", ci.GetName().GetFullName(), key)
+		}
 		return imageChanResult{
 			image:        types.ToImage(ci),
 			containerIdx: containerIdx,
@@ -92,6 +105,15 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	// Fast path
 	img, ok := e.getImageFromCache(key)
 	if ok {
+		if strings.Contains(ci.GetName().GetFullName(), "log4j") || strings.Contains(ci.GetName().GetFullName(), "nginx") {
+			for _, c := range img.GetScan().GetComponents() {
+				for _, v := range c.GetVulns() {
+					if v.GetCve() == "CVE-2009-5155" || v.GetCve() == "CVE-2021-44228" || v.GetCve() == "CVE-2007-6755" || v.GetCve() == "CVE-2004-0971" {
+						log.Errorf("[runScan] Pulled image from cache for image %s with key %+v, component %s, cve %s, state %s and snoozed? %v", ci.GetName().GetFullName(), key, c.GetName(), v.GetCve(), v.GetState().String(), v.GetSuppressed())
+					}
+				}
+			}
+		}
 		return imageChanResult{
 			image:        img,
 			containerIdx: containerIdx,
@@ -119,6 +141,9 @@ func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, container
 }
 
 func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
+	if deployment.GetName() == "vulnerable-deploy-enforce" {
+		log.Errorf("Getting images from central for deploy %s", deployment.GetName())
+	}
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 	for idx, container := range deployment.GetContainers() {
 		e.runImageScanAsync(imageChan, idx, container.GetImage())
