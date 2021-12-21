@@ -3,12 +3,15 @@ package clusters
 import (
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
@@ -24,6 +27,89 @@ type RenderOptions struct {
 	SlimCollector    bool
 	IstioVersion     string
 }
+
+// FieldsFromClusterAndRenderOpts gets the template values for values.yaml
+func FieldsFromClusterAndRenderOpts(c *storage.Cluster, flavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
+	mainImage, collectorImage, err := MakeClusterImageNames(flavor, c)
+	if err != nil {
+		return nil, err
+	}
+
+	baseValues := getBaseMetaValues(c, &opts)
+	setMainOverride(mainImage, baseValues)
+	setCollectorOverride(mainImage, collectorImage, flavor, baseValues)
+
+	return baseValues, nil
+}
+
+// MakeClusterImageNames creates storage.ImageName objects for provided storage.Cluster main and collector images.
+func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*storage.ImageName, *storage.ImageName, error) {
+	var mainImageName, collectorImageName *storage.ImageName
+	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, flavor.MainImageTag)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "generating main image from cluster value (%s)", c.MainImage)
+	}
+	mainImageName = mainImage.GetName()
+
+	if c.CollectorImage != "" {
+		collectorImage, err := utils.GenerateImageFromString(c.CollectorImage)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "generating collector image from cluster value (%s)", c.CollectorImage)
+		}
+		collectorImageName = collectorImage.GetName()
+	}
+
+	return mainImageName, collectorImageName, nil
+}
+
+// setMainOverride adds main image values to meta values as defined in secured cluster object.
+func setMainOverride(mainImage *storage.ImageName, metaValues charts.MetaValues) {
+	metaValues["MainRegistry"] = mainImage.Registry
+	metaValues["ImageRemote"] = mainImage.Remote
+	metaValues["ImageTag"] = mainImage.Tag
+}
+
+func deriveImage(base *storage.ImageName, name, tag string) (string, string){
+	img := defaultimages.GenerateNamedImageFromMainImage(base, tag, name)
+	return img.Registry, img.Remote
+}
+
+// setCollectorOverride adds collector full and slim image reference to meta values object.
+// The collector repository defined in the cluster object can be passed from roxctl or as direct
+// input in the UI when creating a new secured cluster. If no value is passed, the collector image
+// will be derived from the main image. For example:
+// main image: "quay.io/rhacs/main" => collector image: "quay.io/rhacs/collector"
+// Similarly, slim collector will be derived. However, if a collector registry is specified and
+// current flavor has different image names for collector slim and full: collector slim has to be
+// derived from full instead. For example:
+// collector full image: "custom.registry.io/collector" => collector slim image: "custom.registry.io/collector-slim"
+func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor, metaValues charts.MetaValues) {
+	if collectorImage != nil {
+		// Use provided collector image and derive collector slim
+		metaValues["CollectorRegistry"] = collectorImage.Registry
+		metaValues["CollectorFullImageRemote"] = collectorImage.Remote
+		_, name := deriveImage(collectorImage, imageFlavor.CollectorSlimImageName, imageFlavor.CollectorSlimImageTag)
+		metaValues["CollectorSlimImageRemote"] = name
+	} else {
+		if imageFlavor.IsImageDefaultMain(mainImage) {
+			// Use all defaults from imageFlavor
+			metaValues["CollectorRegistry"] = imageFlavor.CollectorRegistry
+			metaValues["CollectorFullImageRemote"] = imageFlavor.CollectorImageName
+			metaValues["CollectorSlimImageRemote"] = imageFlavor.CollectorSlimImageName
+		} else {
+			// Derive collector values from main image
+			derivedRegistry, derivedName := deriveImage(mainImage, imageFlavor.CollectorImageName, imageFlavor.CollectorImageTag)
+			metaValues["CollectorRegistry"] = derivedRegistry
+			metaValues["CollectorFullImageRemote"] = derivedName
+			_, derivedName = deriveImage(mainImage, imageFlavor.CollectorSlimImageName, imageFlavor.CollectorImageTag)
+			metaValues["CollectorSlimImageRemote"] = derivedName
+		}
+	}
+
+	metaValues["CollectorFullImageTag"] = imageFlavor.CollectorImageTag
+	metaValues["CollectorSlimImageTag"] = imageFlavor.CollectorSlimImageTag
+}
+
 
 func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValues {
 	envVars := make(map[string]string)
@@ -79,19 +165,4 @@ func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValue
 		"AdmissionControllerEnabled":       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		"AdmissionControlEnforceOnUpdates": c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 	}
-}
-
-// FieldsFromClusterAndRenderOpts gets the template values for values.yaml
-func FieldsFromClusterAndRenderOpts(c *storage.Cluster, flavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
-	baseValues := getBaseMetaValues(c, &opts)
-	overrides, err := NewImageOverrides(flavor, c)
-	if err != nil {
-		return nil, err
-	}
-
-	overrides.SetMainOverride(baseValues)
-	overrides.SetCollectorFullOverride(baseValues)
-	overrides.SetCollectorSlimOverride(baseValues)
-
-	return baseValues, nil
 }

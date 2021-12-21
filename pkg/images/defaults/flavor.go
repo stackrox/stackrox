@@ -3,6 +3,7 @@ package defaults
 import (
 	"fmt"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -105,6 +106,11 @@ func GetImageFlavorByBuildType() ImageFlavor {
 		return StackRoxIOReleaseImageFlavor()
 	}
 	return DevelopmentBuildImageFlavor()
+}
+
+func (flavor *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
+	overrideImageNoTag := fmt.Sprintf("%s/%s", img.Registry, img.Remote)
+	return flavor.MainImageNoTag() == overrideImageNoTag
 }
 
 // ScannerImage is the container image reference (full name) for the scanner image.
