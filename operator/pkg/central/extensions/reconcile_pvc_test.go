@@ -12,11 +12,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -258,12 +257,12 @@ func TestReconcilePVCExtension(t *testing.T) {
 				testCase.Central.DeletionTimestamp = &time
 			}
 
-			var allExisting []runtime.Object
+			var allExisting []client.Object
 			for _, existingPVC := range testCase.ExistingPVCs {
 				allExisting = append(allExisting, existingPVC)
 			}
 
-			client := fake.NewSimpleClientset(allExisting...)
+			client := fake.NewClientBuilder().WithObjects(allExisting...).Build()
 
 			rFirstRun := newReconcilePVCExtensionRun(testCase.Central, client)
 			executeAndVerify(t, testCase, rFirstRun)
@@ -293,7 +292,8 @@ func executeAndVerify(t *testing.T, testCase pvcReconciliationTestCase, r reconc
 		pvcsToVerify[name] = pvf
 	}
 
-	pvcList, err := r.pvcClient.List(context.TODO(), metav1.ListOptions{})
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	err = r.ctrlClient.List(context.TODO(), pvcList)
 	require.NoError(t, err)
 
 	// check pvcs which should exist in cluster
@@ -343,11 +343,11 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 
 }
 
-func newReconcilePVCExtensionRun(c *platform.Central, client kubernetes.Interface) reconcilePVCExtensionRun {
+func newReconcilePVCExtensionRun(c *platform.Central, client client.Client) reconcilePVCExtensionRun {
 	return reconcilePVCExtensionRun{
 		ctx:        context.Background(),
 		namespace:  "stackrox",
-		pvcClient:  client.CoreV1().PersistentVolumeClaims("stackrox"),
+		ctrlClient: client,
 		centralObj: c,
 		log:        logr.Discard(),
 	}

@@ -7,16 +7,16 @@ import (
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CheckClusterNameExtension is an extension that ensures the spec.clusterName and status.clusterName fields are
 // in sync.
-func CheckClusterNameExtension(k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return wrapExtension(checkClusterName, k8sClient)
+func CheckClusterNameExtension(client client.Client) extensions.ReconcileExtension {
+	return wrapExtension(checkClusterName, client)
 }
 
-func checkClusterName(ctx context.Context, sc *platform.SecuredCluster, _ kubernetes.Interface, statusUpdater func(statusFunc updateStatusFunc), _ logr.Logger) error {
+func checkClusterName(ctx context.Context, sc *platform.SecuredCluster, _ client.Client, statusUpdater func(statusFunc updateStatusFunc), _ logr.Logger) error {
 	if sc.DeletionTimestamp != nil {
 		return nil // doesn't matter on deletion
 	}
