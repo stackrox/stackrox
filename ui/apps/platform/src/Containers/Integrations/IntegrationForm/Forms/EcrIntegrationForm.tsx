@@ -96,11 +96,11 @@ export const validationSchema = yup.object().shape({
             useAssumeRole: yup.bool(),
             assumeRoleId: yup.string().when('useAssumeRole', {
                 is: true,
-                then: yup.string().required('A Role ID is required'),
+                then: yup.string().trim().required('A Role ID is required'),
             }),
             assumeRoleExternalId: yup.string().when('useAssumeRole', {
                 is: true,
-                then: yup.string(),
+                then: yup.string().trim(),
             }),
         }),
         skipTestIntegration: yup.bool(),
@@ -225,7 +225,12 @@ function EcrIntegrationForm({
                             value={values.config.ecr.endpoint}
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable}
+                            isDisabled={!isEditable || values.config.ecr.useAssumeRole}
+                            title={
+                                !isEditable || values.config.ecr.useAssumeRole
+                                    ? `Endpoint disabled when AssumeRole is set`
+                                    : ``
+                            }
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -322,7 +327,12 @@ function EcrIntegrationForm({
                             isChecked={values.config.ecr.useAssumeRole}
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable}
+                            isDisabled={!isEditable || values.config.ecr.endpoint !== ``}
+                            title={
+                                !isEditable || values.config.ecr.endpoint !== ``
+                                    ? `AssumeRole disabled when Endpoint is set`
+                                    : ``
+                            }
                         />
                     </FormLabelGroup>
                     {values.config.ecr.useAssumeRole && (

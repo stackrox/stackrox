@@ -58,11 +58,7 @@ func (e *ecr) refreshDockerClient() error {
 	if e.expiryTime.After(time.Now()) {
 		return nil
 	}
-	authToken, err := e.service.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{
-		RegistryIds: []*string{
-			aws.String(e.config.GetRegistryId()),
-		},
-	})
+	authToken, err := e.service.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{})
 	if err != nil {
 		return err
 	}
@@ -153,6 +149,9 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 	var service *awsECR.ECR
 
 	if conf.GetUseAssumeRole() {
+		if endpoint != "" {
+			return nil, errorhelpers.NewErrInvalidArgs("Cannot enable both Endpoint and AssumeRole")
+		}
 		if conf.GetAssumeRoleId() == "" {
 			return nil, errorhelpers.NewErrInvalidArgs("AssumeRole ID is required to use AssumeRole")
 		}
