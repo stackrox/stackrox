@@ -50,7 +50,6 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         }
 
         def id = vulnReq.getId()
-        println id
 
         assert vulnReq.getStatus() == VulnRequests.RequestStatus.PENDING
         assert !vulnReq.getExpired()
