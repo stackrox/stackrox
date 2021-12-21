@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -39,22 +40,27 @@ func (suite *HelmLintTestSuite) SetupTest() {
 }
 
 func (suite *HelmLintTestSuite) TestHelmOutput() {
-	tests := []struct {
+	type testCase struct {
 		imageFlavor string
 		rhacsFlag   bool
 		wantErr     bool
-	}{
+	}
+	tests := []testCase{
 		// rhacs = true
-		{"", true, true},                       // error, --rhacs and --images-default!=rhacs returns conflict
-		{imageDefaultsRHACS, true, false},      // no error, --images-default=rhacs and --rhacs provided
-		{imageDefaultsDevelopment, true, true}, // error, --rhacs and --images-default!=rhacs returns conflict
-		{imageDefaultsStackrox, true, true},    // error, --rhacs and --images-default!=rhacs returns conflict
+		{"", true, true},                    // error, --rhacs and --images-default!=rhacs returns conflict
+		{imageDefaultsRHACS, true, false},   // no error, --images-default=rhacs and --rhacs provided
+		{imageDefaultsStackrox, true, true}, // error, --rhacs and --images-default!=rhacs returns conflict
 		// rhacs = false
-		{"", false, true},                        // error, invalid value of --images-default
-		{"dummy", false, true},                   // error, invalid value of --images-default
-		{imageDefaultsRHACS, false, false},       // no error, valid value of --images-default
-		{imageDefaultsDevelopment, false, false}, // no error, valid value of --images-default
-		{imageDefaultsStackrox, false, false},    // no error, valid value of --images-default
+		{"", false, true},                     // error, invalid value of --images-default
+		{"dummy", false, true},                // error, invalid value of --images-default
+		{imageDefaultsRHACS, false, false},    // no error, valid value of --images-default
+		{imageDefaultsStackrox, false, false}, // no error, valid value of --images-default
+	}
+	if !buildinfo.ReleaseBuild {
+		tests = append(tests, []testCase{
+			{imageDefaultsDevelopment, true, true},   // error, --rhacs and --images-default!=rhacs returns conflict
+			{imageDefaultsDevelopment, false, false}, // no error, valid value of --images-default
+		}...)
 	}
 
 	for _, tt := range tests {
