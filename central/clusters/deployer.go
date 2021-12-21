@@ -99,7 +99,7 @@ func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFla
 			metaValues["CollectorRegistry"] = derivedRegistry
 			metaValues["CollectorFullImageRemote"] = derivedName
 			_, derivedName = deriveImageWithNewName(mainImage, imageFlavor.CollectorSlimImageName)
-			log.Infof("Derived collector slim image from collector full as: %s/%s", collectorImage.Registry, derivedName)
+			log.Infof("Derived collector slim image from collector full as: %s/%s", derivedRegistry, derivedName)
 			metaValues["CollectorSlimImageRemote"] = derivedName
 		}
 	}
