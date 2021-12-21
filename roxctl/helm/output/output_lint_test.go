@@ -41,36 +41,33 @@ func (suite *HelmLintTestSuite) SetupTest() {
 
 func (suite *HelmLintTestSuite) TestHelmOutput() {
 	type testCase struct {
-		imageFlavor string
-		rhacsFlag   bool
-		wantErr     bool
+		flavor  string
+		rhacs   bool
+		wantErr bool
 	}
 	tests := []testCase{
-		// rhacs = true
-		{"", true, true},                    // error, --rhacs and --images-default!=rhacs returns conflict
-		{imageDefaultsRHACS, true, false},   // no error, --images-default=rhacs and --rhacs provided
-		{imageDefaultsStackrox, true, true}, // error, --rhacs and --images-default!=rhacs returns conflict
-		// rhacs = false
-		{"", false, true},                     // error, invalid value of --images-default
-		{"dummy", false, true},                // error, invalid value of --images-default
-		{imageDefaultsRHACS, false, false},    // no error, valid value of --images-default
-		{imageDefaultsStackrox, false, false}, // no error, valid value of --images-default
+		{"", true, true}, // "" means that --image-defaults parameter was not used
+		{"dummy", true, true},
+		{imageDefaultsStackrox, true, false},
+		{"", false, true},
+		{"dummy", false, true},
+		{imageDefaultsStackrox, false, false},
 	}
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
 		tests = append(tests, []testCase{
-			{imageDefaultsDevelopment, true, true},   // error, --rhacs and --images-default!=rhacs returns conflict
-			{imageDefaultsDevelopment, false, false}, // no error, valid value of --images-default
+			{imageDefaultsDevelopment, true, false},
+			{imageDefaultsDevelopment, false, false},
 		}...)
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		for chartName := range common.ChartTemplates {
-			suite.T().Run(fmt.Sprintf("%s-rhacs-%t-image-defaults-%s", chartName, tt.rhacsFlag, tt.imageFlavor), func(t *testing.T) {
+			suite.T().Run(fmt.Sprintf("%s-rhacs-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavor), func(t *testing.T) {
 				outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
 				require.NoError(suite.T(), err)
-				err = outputHelmChart(chartName, outputDir, true, tt.rhacsFlag, tt.imageFlavor, false, "")
+				err = outputHelmChart(chartName, outputDir, true, tt.rhacs, tt.flavor, false, "")
 				defer func() {
 					_ = os.RemoveAll(outputDir)
 				}()
@@ -85,7 +82,7 @@ func (suite *HelmLintTestSuite) TestHelmOutput() {
 }
 
 func (suite *HelmLintTestSuite) TestHelmLint() {
-	flavorsToTest := []string{imageDefaultsStackrox, imageDefaultsRHACS}
+	flavorsToTest := []string{imageDefaultsStackrox}
 	if !buildinfo.ReleaseBuild {
 		flavorsToTest = append(flavorsToTest, imageDefaultsDevelopment)
 	}

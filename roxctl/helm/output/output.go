@@ -20,13 +20,14 @@ import (
 const (
 	imageDefaultsDevelopment string = "development"
 	imageDefaultsStackrox    string = "stackrox.io"
-	imageDefaultsRHACS       string = "rhacs"
+	// imageDefaultsRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
 )
 
-func getMetaValues(flavor string, release bool) charts.MetaValues {
-	switch strings.ToLower(flavor) {
-	case imageDefaultsRHACS:
+func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
+	if rhacs {
 		return charts.RHACSMetaValues()
+	}
+	switch strings.ToLower(flavor) {
 	case imageDefaultsStackrox:
 		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
 	case imageDefaultsDevelopment:
@@ -37,23 +38,21 @@ func getMetaValues(flavor string, release bool) charts.MetaValues {
 }
 
 func validateFlavorFlags(rhacs bool, imageFlavor string) (string, error) {
-	if rhacs {
-		fmt.Fprintf(os.Stderr, "Warning: parameter '--rhacs' is deprecated in favor of '--image-defaults=%s'\n", imageDefaultsRHACS)
-		if imageFlavor != imageDefaultsRHACS {
-			return "", fmt.Errorf("Conflict: do not use --rhacs and --image-defaults simultaneously. Instead use: --image-defaults=%s", imageDefaultsRHACS)
-		}
+	if rhacs && imageFlavor != "" {
+		// TODO(RS-380): '--image-defaults' will be preferred (--rhacs deprecated) after we add RHACS flavor
+		fmt.Fprint(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'\n")
 	}
 	switch {
-	case imageFlavor == imageDefaultsStackrox || imageFlavor == imageDefaultsRHACS:
+	case imageFlavor == imageDefaultsStackrox:
 		return imageFlavor, nil
 	case imageFlavor == imageDefaultsDevelopment && !buildinfo.ReleaseBuild:
 		return imageFlavor, nil
 	default:
-		allowedHelpStr := fmt.Sprintf("allowed values: %s, %s", imageDefaultsRHACS, imageDefaultsStackrox)
+		allowedHelpStr := fmt.Sprintf("allowed values: %s", imageDefaultsStackrox)
 		if !buildinfo.ReleaseBuild {
 			allowedHelpStr = fmt.Sprintf("%s, %s", allowedHelpStr, imageDefaultsDevelopment)
 		}
-		return "", fmt.Errorf("invalid value of --image-defaults, %s", allowedHelpStr)
+		return "", fmt.Errorf("invalid value of '--image-defaults', %s", allowedHelpStr)
 	}
 }
 
@@ -93,7 +92,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 		templateImage = image.NewImage(os.DirFS(debugChartPath))
 	}
 
-	metaVals := getMetaValues(flavor, buildinfo.ReleaseBuild)
+	metaVals := getMetaValues(flavor, rhacs, buildinfo.ReleaseBuild)
 
 	// Load and render template files.
 	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(chartTemplatePathPrefix, metaVals)
@@ -136,14 +135,14 @@ func Command() *cobra.Command {
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
 	c.PersistentFlags().BoolVar(&removeOutputDir, "remove", false, "remove the output directory if it already exists")
-	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false, "render RHACS chart flavor [deprecated in favor of '--image-defaults="+imageDefaultsRHACS+"']")
+	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false, "render RHACS chart flavor")
 
 	if !buildinfo.ReleaseBuild {
 		defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/stackrox/image/")
 		c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
 		c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
 	}
-	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", imageDefaultsRHACS, "default container registry for container images")
+	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", "", "default container registry for container images")
 
 	return c
 }
