@@ -5,6 +5,7 @@ import (
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
@@ -13,13 +14,18 @@ func TestWithHelmtest(t *testing.T) {
 	helmImage := image.GetDefaultImage()
 	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 	require.NoError(t, err, "error retrieving chart template")
-	metaValues["FeatureFlags"] = map[string]interface{}{
-		"ROX_LOCAL_IMAGE_SCANNING": true,
-	}
 	ch, err := tpl.InstantiateAndLoad(metaValues)
 	require.NoError(t, err, "error instantiating chart")
 
-	suite, err := helmTest.NewLoader("testdata/helmtest").LoadSuite()
+	var opts []helmTest.LoaderOpt
+	if features.LocalImageScanning.Enabled() {
+		metaValues["FeatureFlags"] = map[string]interface{}{
+			"ROX_LOCAL_IMAGE_SCANNING": true,
+		}
+		opts = append(opts, helmTest.WithAdditionalTestSourceDirs("../shared/", "testdata/scanner"))
+	}
+
+	suite, err := helmTest.NewLoader("testdata/helmtest", opts...).LoadSuite()
 	require.NoError(t, err, "failed to load helmtest suite")
 
 	target := &helmTest.Target{

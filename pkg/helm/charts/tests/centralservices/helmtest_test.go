@@ -16,7 +16,7 @@ func TestWithHelmtest(t *testing.T) {
 	ch, err := tpl.InstantiateAndLoad(metaValues)
 	require.NoError(t, err, "error instantiating chart")
 
-	suite, err := helmTest.NewLoader("testdata/helmtest").LoadSuite()
+	suite, err := helmTest.NewLoader("testdata/helmtest", helmTest.WithAdditionalTestSourceDirs("../shared/")).LoadSuite()
 	require.NoError(t, err, "failed to load helmtest suite")
 
 	target := &helmTest.Target{

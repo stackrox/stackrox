@@ -100,7 +100,7 @@ require (
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
-	github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89
+	github.com/stackrox/helmtest v0.0.0-20211221080431-52af50c78809
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/testify v1.7.0

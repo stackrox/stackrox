@@ -2019,6 +2019,8 @@ github.com/stackrox/helm-operator v0.0.8-0.20210927052144-bbfc3e124f11 h1:E3Lkuv
 github.com/stackrox/helm-operator v0.0.8-0.20210927052144-bbfc3e124f11/go.mod h1:u5rkZgJvT0MfanZCoq/lCqY+3Ixr+CbPxYNnhvsggHg=
 github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89 h1:h3Z1bazS+4RWhzDk4L3B/jN4DL0UAZCDCx7UfQ6T5jg=
 github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89/go.mod h1:+BKUQnSVJqDJr4sa8zmCKyQ/UOjJuy/frPEyZnTrigY=
+github.com/stackrox/helmtest v0.0.0-20211221080431-52af50c78809 h1:hKR8DszUvfnn2OSZuR7mO4MFyFqg+MEIopQLOpEsj48=
+github.com/stackrox/helmtest v0.0.0-20211221080431-52af50c78809/go.mod h1:+BKUQnSVJqDJr4sa8zmCKyQ/UOjJuy/frPEyZnTrigY=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab h1:77xJmm1YkqbgrQzHI3C4MyPckWL+PYRLWakQRC6Mzj8=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab/go.mod h1:EBskgGC5Gzt/r8ToNsuD6tYMcf+AWY0ubaFSRy5/3QM=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5 h1:0O3kYf9IvjnzwKBE/UuofeiKmwb8x9ga3mm26dqL4/Y=

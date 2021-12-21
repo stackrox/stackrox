@@ -2,16 +2,13 @@ values:
   scanner:
     disable: false
 tests:
-- name: "scanner with default settings in slim mode"
+- name: "general scanner with default settings"
   expect: |
     .podsecuritypolicys["stackrox-scanner"] | assertThat(. != null)
     .rolebindings["stackrox-scanner-psp"] | assertThat(. != null)
     .clusterroles["stackrox-scanner-psp"] | assertThat(. != null)
     .serviceaccounts["scanner"] | assertThat(. != null)
     .secrets["scanner-db-password"].stringData.password | assertThat(length != 0)
-    .secrets["scanner-tls"] | assertThat(. == null)
-    .secrets["scanner-tls"] | assertThat(. == null)
-    .secrets["scanner-db-tls"] | assertThat(. == null)
     .configmaps["scanner-config"].data.["config.yaml"] | assertThat(length != 0)
     .networkpolicies["scanner"] | assertThat(length != null)
     .networkpolicies["scanner-db"] | assertThat(length != null)

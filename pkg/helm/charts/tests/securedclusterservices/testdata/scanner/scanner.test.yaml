@@ -1,0 +1,8 @@
+values:
+  scanner:
+    disable: false
+tests:
+- name: "scanner with default settings in slim mode"
+  expect: |
+    .secrets["scanner-tls"] | assertThat(. == null)
+    .secrets["scanner-db-tls"] | assertThat(. == null)
