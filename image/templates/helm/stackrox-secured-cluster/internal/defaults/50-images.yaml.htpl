@@ -7,7 +7,8 @@ image:
     name: [< required "" .ImageRemote >]
     pullPolicy: IfNotPresent
   collector:
-    name: [< required "" .CollectorImageRemote >]
+    name: [< required "" .CollectorFullImageRemote >]
+    slimName: [< required "" .CollectorSlimImageRemote >]
 ---
 image:
   main:
@@ -15,14 +16,18 @@ image:
   collector:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
 ---
+collector:
+  slimMode: {{ eq ._rox.image.collector.registry "[< required "" .CollectorRegistry >]" }}
+---
 image:
   main:
     repository: {{ list ._rox.image.main.registry ._rox.image.main.name | compact | join "/" }}
   collector:
+    {{- if ._rox.collector.slimMode }}
+    repository: {{ list ._rox.image.collector.registry ._rox.image.collector.slimName | compact | join "/" }}
+    {{- else }}
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
----
-collector:
-  slimMode: {{ eq ._rox.image.collector.registry "[< required "" .CollectorRegistry >]" }}
+    {{- end }}
 ---
 image:
   collector:

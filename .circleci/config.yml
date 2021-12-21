@@ -2169,6 +2169,7 @@ jobs:
 
   go-unit-tests:
     executor: custom
+    resource_class: large
     steps:
       - pre-go-unit-tests
       - run:
@@ -2179,6 +2180,7 @@ jobs:
 
   go-unit-tests-release:
     executor: custom
+    resource_class: large
     environment:
       ROX_IMAGE_FLAVOR: stackrox_io_release
     steps:
@@ -2229,7 +2231,7 @@ jobs:
 
   style-checks:
     executor: custom
-    resource_class: large
+    resource_class: xlarge
     steps:
       - checkout
 
@@ -2259,7 +2261,7 @@ jobs:
 
   check-generated-files-up-to-date:
     executor: custom
-    resource_class: small
+    resource_class: medium
     steps:
       - checkout
 
@@ -2605,7 +2607,7 @@ jobs:
 
   pre-build-cli:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
@@ -2721,7 +2723,7 @@ jobs:
 
   build:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
@@ -2959,6 +2961,7 @@ jobs:
 
   provision-gke-api-nongroovy-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -2970,6 +2973,7 @@ jobs:
 
   provision-gke-ui-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-label-to-skip-tests:
@@ -2980,6 +2984,7 @@ jobs:
 
   provision-gke-api-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
       - GCP_IMAGE_TYPE: "COS"
       - POD_SECURITY_POLICIES: "true"
@@ -2994,6 +2999,7 @@ jobs:
 
   provision-gke-kernel-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3008,6 +3014,7 @@ jobs:
 
   provision-gke-api-upgrade-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3022,7 +3029,7 @@ jobs:
 
   build-scale-monitoring-and-mock-server:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
@@ -3065,6 +3072,7 @@ jobs:
 
   provision-gke-api-scale-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3100,6 +3108,7 @@ jobs:
 
   provision-eks-api-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
@@ -3219,6 +3228,7 @@ jobs:
 
   provision-aks-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -3269,6 +3279,7 @@ jobs:
 
   provision-openshift-4-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-to-run:
@@ -3316,6 +3327,7 @@ jobs:
 
   provision-openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
     - checkout
     - check-to-run:
@@ -3359,6 +3371,7 @@ jobs:
 
   provision-openshift-4-6-operator-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
     - checkout
     - check-to-run:
@@ -3403,6 +3416,7 @@ jobs:
 
   provision-race-condition-tests:
     executor: custom
+    resource_class: small
     environment:
       GCP_IMAGE_TYPE: "COS"
       POD_SECURITY_POLICIES: "true"
@@ -4169,6 +4183,7 @@ jobs:
 
   openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
     - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
@@ -4239,6 +4254,7 @@ jobs:
 
   openshift-4-6-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
     - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
@@ -4633,7 +4649,7 @@ jobs:
 
   provision-openshift-rosa-api-e2e-tests:
     executor: custom
-    resource_class: large
+    resource_class: small
     steps:
       - checkout
       - check-to-run:
@@ -4666,7 +4682,7 @@ jobs:
 
   provision-openshift-aro-api-e2e-tests:
     executor: custom
-    resource_class: large
+    resource_class: small
     steps:
       - checkout
       - check-to-run:

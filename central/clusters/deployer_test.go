@@ -17,23 +17,24 @@ import (
 )
 
 const (
-	mainRegistryKey          charts.MetaValuesKey = "MainRegistry"
-	imageRemoteKey           charts.MetaValuesKey = "ImageRemote"
-	imageTagKey              charts.MetaValuesKey = "ImageTag"
-	collectorRegistryKey     charts.MetaValuesKey = "CollectorRegistry"
-	collectorImageRemoteKey  charts.MetaValuesKey = "CollectorImageRemote"
-	collectorFullImageTagKey charts.MetaValuesKey = "CollectorFullImageTag"
-	collectorSlimImageTagKey charts.MetaValuesKey = "CollectorSlimImageTag"
-	versionsKey              charts.MetaValuesKey = "Versions"
-	chartRepoKey             charts.MetaValuesKey = "ChartRepo"
+	mainRegistryKey             charts.MetaValuesKey = "MainRegistry"
+	imageRemoteKey              charts.MetaValuesKey = "ImageRemote"
+	imageTagKey                 charts.MetaValuesKey = "ImageTag"
+	collectorRegistryKey        charts.MetaValuesKey = "CollectorRegistry"
+	collectorFullImageRemoteKey charts.MetaValuesKey = "CollectorFullImageRemote"
+	collectorSlimImageRemoteKey charts.MetaValuesKey = "CollectorSlimImageRemote"
+	collectorFullImageTagKey    charts.MetaValuesKey = "CollectorFullImageTag"
+	collectorSlimImageTagKey    charts.MetaValuesKey = "CollectorSlimImageTag"
+	versionsKey                 charts.MetaValuesKey = "Versions"
+	chartRepoKey                charts.MetaValuesKey = "ChartRepo"
 )
 
 func getCollectorFull(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorFullImageTagKey])
+	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorFullImageRemoteKey], fields[collectorFullImageTagKey])
 }
 
 func getCollectorSlim(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorSlimImageTagKey])
+	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorSlimImageRemoteKey], fields[collectorSlimImageTagKey])
 }
 
 func getMain(fields charts.MetaValues) string {
@@ -241,7 +242,7 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	assert.NotEmpty(t, fields[mainRegistryKey])
 	assert.NotEmpty(t, fields[imageRemoteKey])
 	assert.NotEmpty(t, fields[collectorRegistryKey])
-	assert.NotEmpty(t, fields[collectorImageRemoteKey])
+	assert.NotEmpty(t, fields[collectorFullImageRemoteKey])
 	assert.NotEmpty(t, fields[collectorSlimImageTagKey])
 	assert.NotEmpty(t, fields[collectorFullImageTagKey])
 
