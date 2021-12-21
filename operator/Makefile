@@ -175,7 +175,7 @@ opm: ## Download opm.
 
 ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
-        $(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 GET_GITHUB_RELEASE_FN = get_github_release() { \
 	[ -f $${1} ] || { \
