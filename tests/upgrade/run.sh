@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 
-set -euo pipefail
+set -euxo pipefail
 
 # Tests upgrade. Formerly CircleCI gke-api-upgrade-tests.
 
