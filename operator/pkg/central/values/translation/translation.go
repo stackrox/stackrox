@@ -15,7 +15,6 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -25,7 +24,6 @@ var (
 
 // Translator translates and enriches helm values
 type Translator struct {
-	Client kubernetes.Interface
 }
 
 // Translate translates and enriches helm values

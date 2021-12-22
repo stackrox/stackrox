@@ -35,7 +35,6 @@ func TestReconcileAdminPassword(t *testing.T) {
 			Name:      "central-htpasswd",
 			Namespace: testNamespace,
 		},
-		Data: map[string][]byte{},
 	}
 
 	plaintextPasswordSecret := &v1.Secret{
