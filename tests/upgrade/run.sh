@@ -370,9 +370,11 @@ test_upgrade_paths() {
 
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
-
+    set -x
+    echo "$BASH_ENV"
+    cat "$BASH_ENV"
     MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
-
+    set +x
     get_central_basic_auth_creds
 }
 
