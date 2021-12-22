@@ -17,16 +17,16 @@ import { SearchIcon } from '@patternfly/react-icons';
 import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import CancelDeferralModal from './CancelDeferralModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
-
-export type DeferredCVERow = Vulnerability;
+import { DeferredCVEsToBeAssessed } from './types';
+import DeferredCVEActionsColumn from './DeferredCVEActionsColumn';
+import useRiskAcceptance from '../useRiskAcceptance';
+import UndoVulnRequestModal from '../UndoVulnRequestModal';
 
 export type DeferredCVEsTableProps = {
-    rows: DeferredCVERow[];
+    rows: Vulnerability[];
     isLoading: boolean;
     itemCount: number;
     updateTable: () => void;
@@ -49,43 +49,30 @@ function DeferredCVEsTable({
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<DeferredCVERow>(rows);
-    const [cveDeferralsToBeCancelled, setCVEDeferralsToBeCancelled] = useState<string[]>([]);
+    } = useTableSelection<Vulnerability>(rows);
+    const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<DeferredCVEsToBeAssessed>(null);
+    const { undoVulnRequests } = useRiskAcceptance({
+        requestIDs: vulnsToBeAssessed?.requestIDs || [],
+    });
 
-    function setSelectedCVEDeferralsToBeCancelled() {
-        const selectedIds = getSelectedIds();
-        setCVEDeferralsToBeCancelled(selectedIds);
+    function cancelAssessment() {
+        setVulnsToBeAssessed(null);
     }
 
-    function cancelCancellation() {
-        setCVEDeferralsToBeCancelled([]);
-    }
-
-    function completeCancelDeferral() {
+    async function completeAssessment() {
         onClearAll();
-        setCVEDeferralsToBeCancelled([]);
+        setVulnsToBeAssessed(null);
         updateTable();
     }
 
-    // @TODO: Convert the form values to the proper values used in the API for cancelling a request
-    function requestCancelDeferral(values) {
-        // @TODO: call parent function that will send out an API call to cancel request
-        const promise = new Promise<FormResponseMessage>((resolve, reject) => {
-            setTimeout(() => {
-                if (values?.comment === 'blah') {
-                    const formMessage = {
-                        message: 'Successfully cancelled request',
-                        isError: false,
-                    };
-                    resolve(formMessage);
-                } else {
-                    const formMessage = { message: 'API is not hooked up yet', isError: true };
-                    reject(formMessage);
-                }
-            }, 2000);
+    const selectedIds = getSelectedIds();
+    const vulnRequestIds = rows
+        .filter((row) => selectedIds.includes(row.id))
+        .map((row) => {
+            // @TODO: Once backend adds resolver for vulnRequests, access that and return the request id
+            // This will fail when sending the API request for now
+            return row.id;
         });
-        return promise;
-    }
 
     return (
         <>
@@ -112,11 +99,18 @@ function DeferredCVEsTable({
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
-                                key="upgrade"
+                                key="undo deferrals"
                                 component="button"
-                                onClick={setSelectedCVEDeferralsToBeCancelled}
+                                onClick={() =>
+                                    setVulnsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        action: 'UNDO',
+                                        requestIDs: vulnRequestIds,
+                                    })
+                                }
+                                isDisabled={vulnRequestIds.length === 0}
                             >
-                                Cancel deferral ({numSelected})
+                                Reobserve CVEs ({vulnRequestIds.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -152,16 +146,6 @@ function DeferredCVEsTable({
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
-                        const actions = [
-                            {
-                                title: 'Cancel deferral',
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    setCVEDeferralsToBeCancelled([row.id]);
-                                },
-                            },
-                        ];
-
                         return (
                             <Tr key={row.cve}>
                                 <Td
@@ -182,22 +166,24 @@ function DeferredCVEsTable({
                                 <Td dataLabel="Expiration">-</Td>
                                 <Td dataLabel="Apply to">-</Td>
                                 <Td dataLabel="Approver">-</Td>
-                                <Td
-                                    className="pf-u-text-align-right"
-                                    actions={{
-                                        items: actions,
-                                    }}
-                                />
+                                <Td className="pf-u-text-align-right">
+                                    <DeferredCVEActionsColumn
+                                        row={row}
+                                        setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                    />
+                                </Td>
                             </Tr>
                         );
                     })}
                 </Tbody>
             </TableComposable>
-            <CancelDeferralModal
-                isOpen={cveDeferralsToBeCancelled.length !== 0}
-                onSendRequest={requestCancelDeferral}
-                onCompleteRequest={completeCancelDeferral}
-                onCancel={cancelCancellation}
+            <UndoVulnRequestModal
+                type="DEFERRAL"
+                isOpen={vulnsToBeAssessed?.action === 'UNDO'}
+                numRequestsToBeAssessed={vulnsToBeAssessed?.requestIDs.length || 0}
+                onSendRequest={undoVulnRequests}
+                onCompleteRequest={completeAssessment}
+                onCancel={cancelAssessment}
             />
         </>
     );
