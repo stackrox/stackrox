@@ -6,6 +6,8 @@ out_dir=""
 setup() {
   out_dir="$(mktemp -d -u)"
   command -v yq > /dev/null || skip "Tests in this file require yq"
+  helm_output_dir="$out_dir/rendered/stackrox-central-services/templates"
+  central_generate_dir="$out_dir/central"
 }
 
 teardown() {
@@ -32,7 +34,7 @@ teardown() {
   run roxctl-development central generate k8s hostpath --output-dir "$out_dir"
   assert_success
   assert_output --partial "Wrote central bundle to"
-  assert_central_image_matches "$out_dir/central/01-central-12-deployment.yaml"    'docker\.io/stackrox/main:[0-9]+\.[0-9]+\.'
+  assert_components_registry "$central_generate_dir" 'docker.io' "main"
 }
 
 @test "roxctl-development helm output central-services should use docker.io registry" {
@@ -41,10 +43,7 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
 
   helm-template-central "$out_dir"
-
-  assert_central_image_matches "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"    'docker\.io/stackrox/main:[0-9]+\.[0-9]+\.'
-  assert_scanner_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"    'docker\.io/stackrox/scanner:[0-9]+\.[0-9]+\.'
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" 'docker\.io/stackrox/scanner-db:[0-9]+\.[0-9]+\.'
+  assert_components_registry "$helm_output_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs should use redhat.io registry" {
@@ -53,14 +52,9 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
 
   helm-template-central "$out_dir"
-
-  # TODO(RS-380): change assertions to these three:
-  # assert_central_image_matches "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"    'registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-main:[0-9]+\.[0-9]+\.'
-  # assert_scanner_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"    'registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-scanner:[0-9]+\.[0-9]+\.'
-  # assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" 'registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-scanner-db:[0-9]+\.[0-9]+\.'
-  assert_central_image_matches "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"    'docker\.io/stackrox/main:[0-9]+\.[0-9]+\.'
-  assert_scanner_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"    'docker\.io/stackrox/scanner:[0-9]+\.[0-9]+\.'
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" 'docker\.io/stackrox/scanner-db:[0-9]+\.[0-9]+\.'
+  # TODO(RS-380): change assertions to
+  # assert_components_registry "$helm_output_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  assert_components_registry "$helm_output_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --image-defaults=dummy should fail" {
@@ -75,10 +69,7 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
 
   helm-template-central "$out_dir"
-
-  assert_central_image_matches "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"    'stackrox\.io/main:[0-9]+\.[0-9]+\.'
-  assert_scanner_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"    'stackrox\.io/scanner:[0-9]+\.[0-9]+\.'
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" 'stackrox\.io/scanner-db:[0-9]+\.[0-9]+\.'
+  assert_components_registry "$helm_output_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --image-defaults=development should use docker.io registry" {
@@ -87,10 +78,7 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
 
   helm-template-central "$out_dir"
-
-  assert_central_image_matches "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"    'docker\.io/stackrox/main:[0-9]+\.[0-9]+\.'
-  assert_scanner_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"    'docker\.io/stackrox/scanner:[0-9]+\.[0-9]+\.'
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" 'docker\.io/stackrox/scanner-db:[0-9]+\.[0-9]+\.'
+  assert_components_registry "$helm_output_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=development should respect --rhacs flag and use redhat.io registry" {
@@ -99,12 +87,7 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
 
   helm-template-central "$out_dir"
-
-  # TODO(RS-380): change assertions to these three:
-  # assert_central_image_matches "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"    'registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-main:[0-9]+\.[0-9]+\.'
-  # assert_scanner_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"    'registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-scanner:[0-9]+\.[0-9]+\.'
-  # assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" 'registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-scanner-db:[0-9]+\.[0-9]+\.'
-  assert_central_image_matches "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"    'docker\.io/stackrox/main:[0-9]+\.[0-9]+\.'
-  assert_scanner_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"    'docker\.io/stackrox/scanner:[0-9]+\.[0-9]+\.'
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" 'docker\.io/stackrox/scanner-db:[0-9]+\.[0-9]+\.'
+  # TODO(RS-380): change assertions to
+  # assert_components_registry "$helm_output_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  assert_components_registry "$helm_output_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }

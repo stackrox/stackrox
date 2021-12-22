@@ -6,6 +6,8 @@ out_dir=""
 setup() {
   out_dir="$(mktemp -d -u)"
   command -v yq > /dev/null || skip "Tests in this file require yq"
+  helm_output_dir="$out_dir/rendered/stackrox-central-services/templates"
+  central_generate_dir="$out_dir/central"
 }
 
 teardown() {
@@ -16,8 +18,7 @@ teardown() {
   run roxctl-release central generate k8s hostpath --output-dir "$out_dir"
   assert_success
   assert_output --partial "Wrote central bundle to"
-
-  assert_central_image_matches "$out_dir/central/01-central-12-deployment.yaml" 'stackrox\.io/main:[0-9]+\.[0-9]+\.'
+  assert_components_registry "$central_generate_dir" 'stackrox.io' 'main'
 }
 
 @test "roxctl-release helm output central-services should use stackrox.io registry" {
@@ -26,11 +27,7 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
 
   helm-template-central "$out_dir"
-
-  reg_prefix="stackrox\.io/"
-  assert_central_image_matches    "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml" "${reg_prefix}main:[0-9]+\.[0-9]+\."
-  assert_scanner_image_matches    "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" "${reg_prefix}scanner:[0-9]+\.[0-9]+\."
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" "${reg_prefix}scanner-db:[0-9]+\.[0-9]+\."
+  assert_components_registry "$helm_output_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --rhacs should use redhat.io registry" {
@@ -40,11 +37,8 @@ teardown() {
 
   helm-template-central "$out_dir"
 
-  # reg_prefix="registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-" # TODO(RS-346): Ensure that we have a proper registry address here
-  reg_prefix="registry\.redhat\.io/rh-acs/"
-  assert_central_image_matches    "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml" "${reg_prefix}main:[0-9]+\.[0-9]+\."
-  assert_scanner_image_matches    "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" "${reg_prefix}scanner:[0-9]+\.[0-9]+\."
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" "${reg_prefix}scanner-db:[0-9]+\.[0-9]+\."
+  # TODO(RS-346): Ensure that we have a proper registry address here: 'registry.redhat.io' vs 'registry.redhat.io-short'
+  assert_components_registry "$helm_output_dir" 'registry.redhat.io-short' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --image-defaults=stackrox.io should use stackrox.io registry" {
@@ -53,11 +47,7 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
 
   helm-template-central "$out_dir"
-
-  reg_prefix="stackrox\.io/"
-  assert_central_image_matches    "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml" "${reg_prefix}main:[0-9]+\.[0-9]+\."
-  assert_scanner_image_matches    "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" "${reg_prefix}scanner:[0-9]+\.[0-9]+\."
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" "${reg_prefix}scanner-db:[0-9]+\.[0-9]+\."
+  assert_components_registry "$helm_output_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --image-defaults=development should fail" {
@@ -72,9 +62,5 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
 
   helm-template-central "$out_dir"
-
-  reg_prefix="stackrox\.io/"
-  assert_central_image_matches    "$out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml" "${reg_prefix}main:[0-9]+\.[0-9]+\."
-  assert_scanner_image_matches    "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" "${reg_prefix}scanner:[0-9]+\.[0-9]+\."
-  assert_scanner_db_image_matches "$out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml" "${reg_prefix}scanner-db:[0-9]+\.[0-9]+\."
+  assert_components_registry "$helm_output_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
