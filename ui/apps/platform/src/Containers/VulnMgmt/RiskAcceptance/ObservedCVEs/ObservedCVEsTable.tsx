@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th } from '@patternfly/react-table';
+import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Button,
     ButtonVariant,
@@ -20,12 +20,15 @@ import useTableSelection from 'hooks/useTableSelection';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
+import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
+import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
-import ObservedCVEsTableRow from './ObservedCVEsTableRow';
+import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
@@ -41,6 +44,7 @@ export type ObservedCVEsTableProps = {
     remote: string;
     tag: string;
     itemCount: number;
+    updateTable: () => void;
 } & UsePaginationResult;
 
 function ObservedCVEsTable({
@@ -53,6 +57,7 @@ function ObservedCVEsTable({
     perPage,
     onSetPage,
     onPerPageSelect,
+    updateTable,
 }: ObservedCVEsTableProps): ReactElement {
     const {
         selected,
@@ -94,6 +99,7 @@ function ObservedCVEsTable({
     function completeAssessment() {
         onClearAll();
         setCVEsToBeAssessed(null);
+        updateTable();
     }
 
     return (
@@ -185,15 +191,39 @@ function ObservedCVEsTable({
                             },
                         ];
                         return (
-                            <ObservedCVEsTableRow
-                                row={row}
-                                rowIndex={rowIndex}
-                                onSelect={onSelect}
-                                selected={selected}
-                                actions={actions}
-                                page={page}
-                                perPage={perPage}
-                            />
+                            <Tr key={rowIndex}>
+                                <Td
+                                    select={{
+                                        rowIndex,
+                                        onSelect,
+                                        isSelected: selected[rowIndex],
+                                    }}
+                                />
+                                <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
+                                <Td dataLabel="Severity">
+                                    <VulnerabilitySeverityLabel severity={row.severity} />
+                                </Td>
+                                <Td dataLabel="CVSS score">
+                                    <CVSSScoreLabel
+                                        cvss={row.cvss}
+                                        scoreVersion={row.scoreVersion}
+                                    />
+                                </Td>
+                                <Td dataLabel="Affected components">
+                                    <AffectedComponentsButton components={row.components} />
+                                </Td>
+                                <Td dataLabel="Discovered">
+                                    <DateTimeFormat time={row.discoveredAtImage} />
+                                </Td>
+                                <Td dataLabel="Request State">-</Td>
+                                <Td
+                                    className="pf-u-text-align-right"
+                                    actions={{
+                                        items: actions,
+                                    }}
+                                />
+                            </Tr>
                         );
                     })}
                 </Tbody>

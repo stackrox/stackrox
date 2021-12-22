@@ -19,14 +19,18 @@ function ApprovedDeferralActionsColumn({
             title: 'Update deferral',
             onClick: (event) => {
                 event.preventDefault();
-                setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'UPDATE', requests: [row] });
+                setRequestsToBeAssessed({
+                    type: 'DEFERRAL',
+                    action: 'UPDATE',
+                    requestIDs: [row.id],
+                });
             },
         },
         {
             title: 'Reobserve CVE',
             onClick: (event) => {
                 event.preventDefault();
-                setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'UNDO', requests: [row] });
+                setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'UNDO', requestIDs: [row.id] });
             },
         },
     ];

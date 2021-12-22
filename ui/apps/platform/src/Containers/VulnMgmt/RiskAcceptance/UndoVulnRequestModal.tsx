@@ -3,6 +3,7 @@ import { Button, Modal, ModalVariant } from '@patternfly/react-core';
 
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import pluralize from 'pluralize';
 
 type AllowedType = 'DEFERRAL' | 'FALSE_POSITIVE';
 
@@ -51,7 +52,7 @@ function UndoVulnRequestModal({
         onCancel();
     }
 
-    const title = `Reobserve approved deferrals (${numRequestsToBeAssessed} )`;
+    const title = `Reobserve approved ${pluralize(typeLabel[type])} (${numRequestsToBeAssessed} )`;
 
     return (
         <Modal

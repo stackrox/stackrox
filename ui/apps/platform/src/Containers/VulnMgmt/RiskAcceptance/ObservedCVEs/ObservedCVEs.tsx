@@ -3,15 +3,9 @@
 import React, { ReactElement } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 
-import { useQuery } from '@apollo/client';
 import usePagination from 'hooks/patternfly/usePagination';
-import {
-    GetImageVulnerabilitiesData,
-    GetImageVulnerabilitiesVars,
-    GET_IMAGE_VULNERABILITIES,
-} from '../imageVulnerabilities.graphql';
-
 import ObservedCVEsTable from './ObservedCVEsTable';
+import useImageVulnerabilities from '../useImageVulnerabilities';
 
 type ObservedCVEsProps = {
     imageId: string;
@@ -19,20 +13,15 @@ type ObservedCVEsProps = {
 
 function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
-    const { loading: isLoading, data } = useQuery<
-        GetImageVulnerabilitiesData,
-        GetImageVulnerabilitiesVars
-    >(GET_IMAGE_VULNERABILITIES, {
-        variables: {
-            imageId,
-            vulnsQuery: 'Vulnerability State:OBSERVED',
-            pagination: {
-                limit: perPage,
-                offset: (page - 1) * perPage,
-                sortOption: {
-                    field: 'cve',
-                    reversed: false,
-                },
+    const { isLoading, data, refetchQuery } = useImageVulnerabilities({
+        imageId,
+        vulnsQuery: 'Vulnerability State:OBSERVED',
+        pagination: {
+            limit: perPage,
+            offset: (page - 1) * perPage,
+            sortOption: {
+                field: 'cve',
+                reversed: false,
             },
         },
     });
@@ -63,6 +52,7 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             perPage={perPage}
             onSetPage={onSetPage}
             onPerPageSelect={onPerPageSelect}
+            updateTable={refetchQuery}
         />
     );
 }

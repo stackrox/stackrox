@@ -50,7 +50,7 @@ function ApprovedFalsePositivesTable({
     const [requestsToBeAssessed, setRequestsToBeAssessed] =
         useState<ApprovedFalsePositiveRequestsToBeAssessed>(null);
     const { undoVulnRequests } = useRiskAcceptance({
-        requests: requestsToBeAssessed?.requests || [],
+        requestIDs: requestsToBeAssessed?.requestIDs || [],
     });
 
     function cancelAssessment() {
@@ -64,7 +64,6 @@ function ApprovedFalsePositivesTable({
     }
 
     const selectedIds = getSelectedIds();
-    const selectedFalsePositiveRequests = rows.filter((row) => selectedIds.includes(row.id));
 
     return (
         <>
@@ -80,12 +79,12 @@ function ApprovedFalsePositivesTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'UNDO',
-                                        requests: selectedFalsePositiveRequests,
+                                        requestIDs: selectedIds,
                                     })
                                 }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                                isDisabled={selectedIds.length === 0}
                             >
-                                Reobserve CVEs ({selectedFalsePositiveRequests.length})
+                                Reobserve CVEs ({selectedIds.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -173,7 +172,7 @@ function ApprovedFalsePositivesTable({
             <UndoVulnRequestModal
                 type="FALSE_POSITIVE"
                 isOpen={requestsToBeAssessed?.action === 'UNDO'}
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
+                numRequestsToBeAssessed={requestsToBeAssessed?.requestIDs.length || 0}
                 onSendRequest={undoVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}
