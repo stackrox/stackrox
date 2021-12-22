@@ -370,9 +370,12 @@ test_upgrade_paths() {
 
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
-
+    # BASH_ENV already contains  a variable called MAIN_IMAGE_TAG
+    ORIG_MAIN_IMAGE_TAG="$MAIN_IMAGE_TAG"
+    cci-export MAIN_IMAGE_TAG "$EARLIER_TAG"
     MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
-
+    # restore the original value of MAIN_IMAGE_TAG
+    cci-export MAIN_IMAGE_TAG "$ORIG_MAIN_IMAGE_TAG"
     get_central_basic_auth_creds
 }
 
