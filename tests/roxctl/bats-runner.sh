@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -uo pipefail
+set -euo pipefail
 
 TESTS_OUTPUT="${1:-roxctl-test-output}"
 BATS_TESTS="${2:-tests/roxctl/bats-tests}"
