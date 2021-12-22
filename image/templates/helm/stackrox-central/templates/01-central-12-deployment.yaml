@@ -206,6 +206,7 @@ spec:
           items:
             - key: ca-bundle.crt
               path: tls-ca-bundle.pem
+          optional: true
       {{- end }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}

@@ -189,6 +189,7 @@ spec:
           items:
             - key: ca-bundle.crt
               path: tls-ca-bundle.pem
+          optional: true
       {{- end }}
 ---
 apiVersion: v1
