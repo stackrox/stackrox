@@ -71,18 +71,23 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 		statusFunc(&central.Status)
 	}
 
-	var allExisting []ctrlClient.Object
+	var existingSecrets []ctrlClient.Object
 	for _, existingSecret := range c.Existing {
-		allExisting = append(allExisting, existingSecret.DeepCopy())
+		existingSecrets = append(existingSecrets, existingSecret.DeepCopy())
 	}
+	var otherExisting []runtime.Object
 	for _, existingObj := range c.Other {
-		allExisting = append(allExisting, existingObj.DeepCopyObject().(ctrlClient.Object))
+		otherExisting = append(otherExisting, existingObj.DeepCopyObject())
 	}
 
 	sch := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(sch))
 	require.NoError(t, scheme.AddToScheme(sch))
-	client := fake.NewClientBuilder().WithScheme(sch).WithObjects(allExisting...).Build()
+	client := fake.NewClientBuilder().
+		WithScheme(sch).
+		WithObjects(existingSecrets...).
+		WithRuntimeObjects(otherExisting...).
+		Build()
 
 	// Verify that an initial invocation does not touch any of the existing secrets, and creates
 	// the expected ones.
