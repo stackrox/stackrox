@@ -10,7 +10,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
-	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -19,16 +19,16 @@ const (
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
-func ReconcileCentralTLSExtensions(k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralTLS, k8sClient)
+func ReconcileCentralTLSExtensions(client client.Client) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralTLS, client)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client client.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
 			centralObj: c,
-			k8sClient:  k8sClient,
+			ctrlClient: client,
 		},
 	}
 	return run.Execute()
