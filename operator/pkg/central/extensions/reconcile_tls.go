@@ -144,7 +144,8 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 }
 
 func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject, fileNamePrefix string, fileMap secretDataMap, opts ...mtls.IssueCertOption) error {
-	if err := certgen.IssueServiceCert(fileMap, r.ca, subj, fileNamePrefix, append(opts, mtls.WithNamespace(r.Namespace()))...); err != nil {
+	allOpts := append([]mtls.IssueCertOption{mtls.WithNamespace(r.Namespace())}, opts...)
+	if err := certgen.IssueServiceCert(fileMap, r.ca, subj, fileNamePrefix, allOpts...); err != nil {
 		return err
 	}
 	certgen.AddCACertToFileMap(fileMap, r.ca)
