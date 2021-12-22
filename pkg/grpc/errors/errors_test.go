@@ -42,6 +42,7 @@ func Test_unwrapGRPCStatus(t *testing.T) {
 }
 
 func Test_grpcCode(t *testing.T) {
+	assert.Len(t, erroxToGRPCCode, int(errox.CodeUnknown-errox.CodeOK)+1, "wrong number of mapped codes")
 	for code := errox.CodeOK; code <= errox.CodeUnknown; code++ {
 		_, ok := erroxToGRPCCode[code]
 		assert.Truef(t, ok, "missing mapping for code: %d", code)
