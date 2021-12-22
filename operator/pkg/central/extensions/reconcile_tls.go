@@ -61,10 +61,11 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
 
-	issueBundle, err := r.isSiblingSecuredClusterPresent()
+	bundleSecretShouldExist, err := r.shouldBundleSecretsExist(shouldDelete)
 	if err != nil {
-		return errors.Wrap(err, "determining whether to create init bundle")
+		return err
 	}
+	fixExistingInitBundleSecret := true
 	for _, serviceType := range centralsensor.AllSecuredClusterServices {
 		slugCaseService := services.ServiceTypeToSlugName(serviceType)
 		secretName := slugCaseService + "-tls"
@@ -74,13 +75,24 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 		generateFunc := func() (secretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
-		fixExistingInitBundleSecret := true
-		if err := r.reconcileSecret(secretName, issueBundle && !shouldDelete, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
+		if err := r.reconcileSecret(secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
 			return errors.Wrapf(err, "reconciling %s secret ", slugCaseService)
 		}
 	}
 
 	return nil
+}
+
+func (r *createCentralTLSExtensionRun) shouldBundleSecretsExist(shouldDelete bool) (bool, error) {
+	if shouldDelete {
+		// Don't bother listing secured clusters if we're ensuring absence of bundle for other reasons.
+		return false, nil
+	}
+	securedClusterPresent, err := r.isSiblingSecuredClusterPresent()
+	if err != nil {
+		return false, errors.Wrap(err, "determining whether to create init bundle failed")
+	}
+	return securedClusterPresent, nil
 }
 
 func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap secretDataMap, _ bool) error {
