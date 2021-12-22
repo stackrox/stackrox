@@ -43,32 +43,27 @@ func ErrToHTTPStatus(err error) int {
 	return runtime.HTTPStatusFromCode(ErrToGrpcStatus(err).Code())
 }
 
+// All errox codes except CodeUnknown are mapped to GRPC code.
+var erroxToGRPCCode = map[errox.Code]codes.Code{
+	errox.CodeOK:                        codes.OK,
+	errox.CodeAlreadyExists:             codes.AlreadyExists,
+	errox.CodeInvalidArgs:               codes.InvalidArgument,
+	errox.CodeNotFound:                  codes.NotFound,
+	errox.CodeReferencedByAnotherObject: codes.FailedPrecondition,
+	errox.CodeInvariantViolation:        codes.Internal,
+	errox.CodeNoCredentials:             codes.Unauthenticated,
+	errox.CodeNoValidRole:               codes.Unauthenticated,
+	errox.CodeNotAuthorized:             codes.PermissionDenied,
+	errox.CodeNoAuthzConfigured:         codes.Unimplemented,
+	errox.CodeResourceAccessDenied:      codes.PermissionDenied,
+	errox.CodeUnknown:                   codes.Internal,
+}
+
 func grpcCode(err error) codes.Code {
 	var re errox.RoxError
 	if errors.As(err, &re) {
-		switch re.Code() {
-		case errox.CodeOK:
-			return codes.OK
-		case errox.CodeAlreadyExists:
-			return codes.AlreadyExists
-		case errox.CodeInvalidArgs:
-			return codes.InvalidArgument
-		case errox.CodeNotFound:
-			return codes.NotFound
-		case errox.CodeReferencedByAnotherObject:
-			return codes.FailedPrecondition
-		case errox.CodeInvariantViolation:
-			return codes.Internal
-		case errox.CodeNoCredentials:
-			return codes.Unauthenticated
-		case errox.CodeNoValidRole:
-			return codes.Unauthenticated
-		case errox.CodeNotAuthorized:
-			return codes.PermissionDenied
-		case errox.CodeNoAuthzConfigured:
-			return codes.Unimplemented
-		case errox.CodeResourceAccessDenied:
-			return codes.PermissionDenied
+		if i, ok := erroxToGRPCCode[re.Code()]; ok {
+			return i
 		}
 	}
 	return codes.Internal

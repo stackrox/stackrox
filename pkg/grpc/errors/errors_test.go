@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,5 +38,12 @@ func Test_unwrapGRPCStatus(t *testing.T) {
 			s := unwrapGRPCStatus(tt.err)
 			assert.Equal(t, s.Code(), tt.code)
 		})
+	}
+}
+
+func Test_grpcCode(t *testing.T) {
+	for code := errox.CodeOK; code <= errox.CodeUnknown; code++ {
+		_, ok := erroxToGRPCCode[code]
+		assert.Truef(t, ok, "missing mapping for code: %d", code)
 	}
 }

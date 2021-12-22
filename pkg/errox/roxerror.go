@@ -22,7 +22,10 @@ const (
 	CodeNotAuthorized
 	CodeNoAuthzConfigured
 	CodeResourceAccessDenied
+
 	// When adding a new code, consider updating the existing translations to other codes, like GRPC.
+	// CodeUnknown must be the last one.
+	CodeUnknown
 )
 
 // RoxError is the common error interface.
