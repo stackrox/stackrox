@@ -575,11 +575,11 @@ class ImageScanningTest extends BaseSpecification {
                 { -> ECRRegistryIntegration.createDefaultIntegration() }
         "ecr-config-only"     | "ecr"       | true               | /^ecr$/                    |
                 { -> ECRRegistryIntegration.createDefaultIntegration() }
+        "acr-auto"            | "acr"       | false              | source("*.azurecr.io")     | null
         "acr-auto-and-config" | "acr"       | false              | /^acr$/                    |
                 { -> AzureRegistryIntegration.createDefaultIntegration() }
         "acr-config-only"     | "acr"       | true               | /^acr$/                    |
                 { -> AzureRegistryIntegration.createDefaultIntegration() }
-        "acr-auto"            | "acr"       | false              | source("*.azurecr.io")     | null
         "quay-auto"           | "quay"      | false              | source(".*.quay.io")       | null
         "gcr-auto"            | "gcr"       | false              | source(".*.gcr.io")        | null
     }
