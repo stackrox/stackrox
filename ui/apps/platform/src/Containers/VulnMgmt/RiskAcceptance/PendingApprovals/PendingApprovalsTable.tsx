@@ -54,8 +54,9 @@ function PendingApprovalsTable({
         onClearAll,
     } = useTableSelection<VulnerabilityRequest>(rows);
     const [requestsToBeAssessed, setRequestsToBeAssessed] = useState<RequestsToBeAssessed>(null);
+    const requestIDs = requestsToBeAssessed?.requests.map((request) => request.id) || [];
     const { approveVulnRequests, denyVulnRequests, deleteVulnRequests } = useRiskAcceptance({
-        requests: requestsToBeAssessed?.requests || [],
+        requestIDs,
     });
 
     function cancelAssessment() {

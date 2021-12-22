@@ -8,7 +8,7 @@ import ApprovedFalsePositivesTable from './ApprovedFalsePositivesTable';
 function ApprovedFalsePositives(): ReactElement {
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { isLoading, data, refetchQuery } = useVulnerabilityRequests({
-        query: 'Request Status:PENDING,APPROVED_PENDING_UPDATE+Expired Request:false',
+        query: 'Request Status:APPROVED+Requested Vulnerability State:FALSE_POSITIVE+Expired Request:false',
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
