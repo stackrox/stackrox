@@ -6,11 +6,13 @@ import { Vulnerability } from '../imageVulnerabilities.graphql';
 export type DeferredCVEActionsColumnProps = {
     row: Vulnerability;
     setVulnsToBeAssessed: React.Dispatch<React.SetStateAction<DeferredCVEsToBeAssessed>>;
+    canReobserveCVE: boolean;
 };
 
 function DeferredCVEActionsColumn({
     row,
     setVulnsToBeAssessed,
+    canReobserveCVE,
 }: DeferredCVEActionsColumnProps): ReactElement {
     const items = [
         {
@@ -20,6 +22,7 @@ function DeferredCVEActionsColumn({
                 // @TODO: pass the vuln request id for this vuln in requestIDs
                 setVulnsToBeAssessed({ type: 'DEFERRAL', action: 'UNDO', requestIDs: [row.id] });
             },
+            isDisabled: !canReobserveCVE,
         },
     ];
     return <ActionsColumn items={items} />;

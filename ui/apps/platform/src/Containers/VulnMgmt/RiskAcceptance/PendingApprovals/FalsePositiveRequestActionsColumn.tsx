@@ -1,15 +1,22 @@
 import React, { ReactElement } from 'react';
-import { ActionsColumn } from '@patternfly/react-table';
+import { ActionsColumn, IActions } from '@patternfly/react-table';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { RequestsToBeAssessed } from './types';
 
 export type DeferralRequestActionsColumnProps = {
     row: VulnerabilityRequest;
     setRequestsToBeAssessed: React.Dispatch<React.SetStateAction<RequestsToBeAssessed>>;
+    canApproveRequest: boolean;
+    canCancelRequest: boolean;
 };
 
-function FalsePositiveRequestActionsColumn({ row, setRequestsToBeAssessed }): ReactElement {
-    const items = [
+function FalsePositiveRequestActionsColumn({
+    row,
+    setRequestsToBeAssessed,
+    canApproveRequest,
+    canCancelRequest,
+}): ReactElement {
+    const items: IActions = [
         {
             title: 'Approve false positive',
             onClick: (event) => {
@@ -20,6 +27,7 @@ function FalsePositiveRequestActionsColumn({ row, setRequestsToBeAssessed }): Re
                     requests: [row],
                 });
             },
+            isDisabled: !canApproveRequest,
         },
         {
             title: 'Deny false positive',
@@ -31,6 +39,7 @@ function FalsePositiveRequestActionsColumn({ row, setRequestsToBeAssessed }): Re
                     requests: [row],
                 });
             },
+            isDisabled: !canApproveRequest,
         },
         {
             title: 'Cancel false positive',
@@ -42,6 +51,7 @@ function FalsePositiveRequestActionsColumn({ row, setRequestsToBeAssessed }): Re
                     requests: [row],
                 });
             },
+            isDisabled: !canCancelRequest,
         },
     ];
     return <ActionsColumn items={items} />;

@@ -13,6 +13,7 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedFalsePositiveRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -52,6 +53,7 @@ function ApprovedFalsePositivesTable({
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: requestsToBeAssessed?.requestIDs || [],
     });
+    const { currentUserName, hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setRequestsToBeAssessed(null);
@@ -63,7 +65,19 @@ function ApprovedFalsePositivesTable({
         updateTable();
     }
 
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const selectedIds = getSelectedIds();
+    const selectedDeferralsToReobserve = rows
+        .filter((row) => {
+            return (
+                selectedIds.includes(row.id) &&
+                (canApproveRequests ||
+                    (canCreateRequests && row.requestor.name === currentUserName))
+            );
+        })
+        .map((row) => row.id);
 
     return (
         <>
@@ -79,12 +93,12 @@ function ApprovedFalsePositivesTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'UNDO',
-                                        requestIDs: selectedIds,
+                                        requestIDs: selectedDeferralsToReobserve,
                                     })
                                 }
-                                isDisabled={selectedIds.length === 0}
+                                isDisabled={selectedDeferralsToReobserve.length === 0}
                             >
-                                Reobserve CVEs ({selectedIds.length})
+                                Reobserve CVEs ({selectedDeferralsToReobserve.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -120,6 +134,10 @@ function ApprovedFalsePositivesTable({
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
+                        const canReobserveCVE =
+                            canApproveRequests ||
+                            (canCreateRequests && row.requestor.name === currentUserName);
+
                         return (
                             <Tr key={row.id}>
                                 <Td
@@ -162,6 +180,7 @@ function ApprovedFalsePositivesTable({
                                     <ApprovedFalsePositiveActionsColumn
                                         row={row}
                                         setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                        canReobserveCVE={canReobserveCVE}
                                     />
                                 </Td>
                             </Tr>

@@ -6,11 +6,13 @@ import { Vulnerability } from '../imageVulnerabilities.graphql';
 export type FalsePositiveCVEActionsColumnProps = {
     row: Vulnerability;
     setVulnsToBeAssessed: React.Dispatch<React.SetStateAction<FalsePositiveCVEsToBeAssessed>>;
+    canReobserveCVE: boolean;
 };
 
 function FalsePositiveCVEActionsColumn({
     row,
     setVulnsToBeAssessed,
+    canReobserveCVE,
 }: FalsePositiveCVEActionsColumnProps): ReactElement {
     const items = [
         {
@@ -24,6 +26,7 @@ function FalsePositiveCVEActionsColumn({
                     requestIDs: [row.id],
                 });
             },
+            isDisabled: !canReobserveCVE,
         },
     ];
     return <ActionsColumn items={items} />;

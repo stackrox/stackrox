@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
     Button,
     ButtonVariant,
@@ -23,6 +23,7 @@ import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -81,16 +82,7 @@ function ObservedCVEsTable({
         remote,
         tag,
     });
-
-    function setSelectedCVEsToBeDeferred() {
-        const selectedIds = getSelectedIds();
-        setCVEsToBeAssessed({ type: 'DEFERRAL', ids: selectedIds });
-    }
-
-    function setSelectedCVEsToBeMarkedFalsePositive() {
-        const selectedIds = getSelectedIds();
-        setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: selectedIds });
-    }
+    const { hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setCVEsToBeAssessed(null);
@@ -101,6 +93,15 @@ function ObservedCVEsTable({
         setCVEsToBeAssessed(null);
         updateTable();
     }
+
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
+    const selectedIds = getSelectedIds();
+    const selectedVulnsToDeferOrMarkFalsePositive = rows
+        .filter((row) => {
+            return selectedIds.includes(row.id) && canCreateRequests;
+        })
+        .map((row) => row.id);
 
     return (
         <>
@@ -129,16 +130,29 @@ function ObservedCVEsTable({
                             <DropdownItem
                                 key="upgrade"
                                 component="button"
-                                onClick={setSelectedCVEsToBeDeferred}
+                                onClick={() =>
+                                    setCVEsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        ids: selectedVulnsToDeferOrMarkFalsePositive,
+                                    })
+                                }
+                                isDisabled={selectedVulnsToDeferOrMarkFalsePositive.length === 0}
                             >
-                                Defer CVE ({numSelected})
+                                Defer CVE ({selectedVulnsToDeferOrMarkFalsePositive.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="delete"
                                 component="button"
-                                onClick={setSelectedCVEsToBeMarkedFalsePositive}
+                                onClick={() =>
+                                    setCVEsToBeAssessed({
+                                        type: 'FALSE_POSITIVE',
+                                        ids: selectedVulnsToDeferOrMarkFalsePositive,
+                                    })
+                                }
+                                isDisabled={selectedVulnsToDeferOrMarkFalsePositive.length === 0}
                             >
-                                Mark false positive ({numSelected})
+                                Mark false positive (
+                                {selectedVulnsToDeferOrMarkFalsePositive.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -174,13 +188,14 @@ function ObservedCVEsTable({
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
-                        const actions = [
+                        const actions: IActions = [
                             {
                                 title: 'Defer CVE',
                                 onClick: (event) => {
                                     event.preventDefault();
                                     setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.cve] });
                                 },
+                                isDisabled: !canCreateRequests,
                             },
                             {
                                 title: 'Mark as False Positive',
@@ -188,6 +203,7 @@ function ObservedCVEsTable({
                                     event.preventDefault();
                                     setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: [row.cve] });
                                 },
+                                isDisabled: !canCreateRequests,
                             },
                         ];
                         return (

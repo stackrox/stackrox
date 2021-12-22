@@ -18,6 +18,7 @@ import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { DeferredCVEsToBeAssessed } from './types';
@@ -54,6 +55,7 @@ function DeferredCVEsTable({
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
     });
+    const { hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setVulnsToBeAssessed(null);
@@ -65,9 +67,23 @@ function DeferredCVEsTable({
         updateTable();
     }
 
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const selectedIds = getSelectedIds();
-    const vulnRequestIds = rows
-        .filter((row) => selectedIds.includes(row.id))
+    const selectedDeferralsToReobserve = rows
+        .filter((row) => {
+            return selectedIds.includes(row.id) && canApproveRequests;
+            /* 
+                @TODO: Use this filter when the vuln request information is added
+
+                return (
+                    selectedIds.includes(row.id) &&
+                    (canApproveRequests ||
+                        (canCreateRequests && row.requestor.name === currentUserName))
+                );
+            */
+        })
         .map((row) => {
             // @TODO: Once backend adds resolver for vulnRequests, access that and return the request id
             // This will fail when sending the API request for now
@@ -105,12 +121,12 @@ function DeferredCVEsTable({
                                     setVulnsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'UNDO',
-                                        requestIDs: vulnRequestIds,
+                                        requestIDs: selectedDeferralsToReobserve,
                                     })
                                 }
-                                isDisabled={vulnRequestIds.length === 0}
+                                isDisabled={selectedDeferralsToReobserve.length === 0}
                             >
-                                Reobserve CVEs ({vulnRequestIds.length})
+                                Reobserve CVEs ({selectedDeferralsToReobserve.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -146,6 +162,15 @@ function DeferredCVEsTable({
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
+                        const canReobserveCVE = canApproveRequests || canCreateRequests;
+                        /* 
+                            @TODO: Use this value when the vuln request information is added
+
+                            const canReobserveCVE =
+                                canApproveRequests ||
+                                (canCreateRequests && row.requestor.name === currentUserName);
+                        */
+
                         return (
                             <Tr key={row.cve}>
                                 <Td
@@ -170,6 +195,7 @@ function DeferredCVEsTable({
                                     <DeferredCVEActionsColumn
                                         row={row}
                                         setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                        canReobserveCVE={canReobserveCVE}
                                     />
                                 </Td>
                             </Tr>

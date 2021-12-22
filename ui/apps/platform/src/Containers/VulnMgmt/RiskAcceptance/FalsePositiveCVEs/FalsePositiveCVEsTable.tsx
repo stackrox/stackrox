@@ -18,6 +18,7 @@ import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySever
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';
@@ -54,6 +55,7 @@ function FalsePositiveCVEsTable({
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
     });
+    const { hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setVulnsToBeAssessed(null);
@@ -65,9 +67,23 @@ function FalsePositiveCVEsTable({
         updateTable();
     }
 
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const selectedIds = getSelectedIds();
-    const vulnRequestIds = rows
-        .filter((row) => selectedIds.includes(row.id))
+    const selectedFalsePositivesToReobserve = rows
+        .filter((row) => {
+            return selectedIds.includes(row.id) && canApproveRequests;
+            /* 
+                @TODO: Use this filter when the vuln request information is added
+
+                return (
+                    selectedIds.includes(row.id) &&
+                    (canApproveRequests ||
+                        (canCreateRequests && row.requestor.name === currentUserName))
+                );
+            */
+        })
         .map((row) => {
             // @TODO: Once backend adds resolver for vulnRequests, access that and return the request id
             // This will fail when sending the API request for now
@@ -105,12 +121,12 @@ function FalsePositiveCVEsTable({
                                     setVulnsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'UNDO',
-                                        requestIDs: vulnRequestIds,
+                                        requestIDs: selectedFalsePositivesToReobserve,
                                     })
                                 }
-                                isDisabled={vulnRequestIds.length === 0}
+                                isDisabled={selectedFalsePositivesToReobserve.length === 0}
                             >
-                                Reobserve CVEs ({vulnRequestIds.length})
+                                Reobserve CVEs ({selectedFalsePositivesToReobserve.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -146,6 +162,15 @@ function FalsePositiveCVEsTable({
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
+                        const canReobserveCVE = canApproveRequests || canCreateRequests;
+                        /* 
+                            @TODO: Use this value when the vuln request information is added
+
+                            const canReobserveCVE =
+                                canApproveRequests ||
+                                (canCreateRequests && row.requestor.name === currentUserName);
+                        */
+
                         return (
                             <Tr key={row.cve}>
                                 <Td
@@ -170,6 +195,7 @@ function FalsePositiveCVEsTable({
                                     <FalsePositiveCVEActionsColumn
                                         row={row}
                                         setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                        canReobserveCVE={canReobserveCVE}
                                     />
                                 </Td>
                             </Tr>
