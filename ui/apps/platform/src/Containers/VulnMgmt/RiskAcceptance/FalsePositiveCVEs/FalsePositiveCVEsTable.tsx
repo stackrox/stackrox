@@ -17,11 +17,13 @@ import { SearchIcon } from '@patternfly/react-icons';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import ReobserveCVEModal from './ReobserveCVEModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
+import { FalsePositiveCVEsToBeAssessed } from './types';
+import useRiskAcceptance from '../useRiskAcceptance';
+import UndoVulnRequestModal from '../UndoVulnRequestModal';
+import FalsePositiveCVEActionsColumn from './FalsePositiveCVEActionsColumns';
 
 export type FalsePositiveCVEsTableProps = {
     rows: Vulnerability[];
@@ -48,42 +50,29 @@ function FalsePositiveCVEsTable({
         onClearAll,
         getSelectedIds,
     } = useTableSelection<Vulnerability>(rows);
-    const [falsePositiveCVEsToBeReobserved, setFalsePositiveCVEsToBeReobserved] = useState<
-        string[]
-    >([]);
+    const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<FalsePositiveCVEsToBeAssessed>(null);
+    const { undoVulnRequests } = useRiskAcceptance({
+        requestIDs: vulnsToBeAssessed?.requestIDs || [],
+    });
 
-    function setSelectedCVEFalsePositivesToBeCancelled() {
-        const selectedIds = getSelectedIds();
-        setFalsePositiveCVEsToBeReobserved(selectedIds);
+    function cancelAssessment() {
+        setVulnsToBeAssessed(null);
     }
 
-    function cancelReobserveCVE() {
-        setFalsePositiveCVEsToBeReobserved([]);
-    }
-
-    function completeReobserveCVE() {
+    async function completeAssessment() {
         onClearAll();
-        setFalsePositiveCVEsToBeReobserved([]);
+        setVulnsToBeAssessed(null);
         updateTable();
     }
 
-    function requestReobserveCVE(values) {
-        const promise = new Promise<FormResponseMessage>((resolve, reject) => {
-            setTimeout(() => {
-                if (values?.comment === 'blah') {
-                    const formMessage = {
-                        message: 'Successfully reobserved CVE',
-                        isError: false,
-                    };
-                    resolve(formMessage);
-                } else {
-                    const formMessage = { message: 'API is not hooked up yet', isError: true };
-                    reject(formMessage);
-                }
-            }, 2000);
+    const selectedIds = getSelectedIds();
+    const vulnRequestIds = rows
+        .filter((row) => selectedIds.includes(row.id))
+        .map((row) => {
+            // @TODO: Once backend adds resolver for vulnRequests, access that and return the request id
+            // This will fail when sending the API request for now
+            return row.id;
         });
-        return promise;
-    }
 
     return (
         <>
@@ -110,11 +99,18 @@ function FalsePositiveCVEsTable({
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
-                                key="upgrade"
+                                key="undo false positives"
                                 component="button"
-                                onClick={setSelectedCVEFalsePositivesToBeCancelled}
+                                onClick={() =>
+                                    setVulnsToBeAssessed({
+                                        type: 'FALSE_POSITIVE',
+                                        action: 'UNDO',
+                                        requestIDs: vulnRequestIds,
+                                    })
+                                }
+                                isDisabled={vulnRequestIds.length === 0}
                             >
-                                Reobserve CVE ({numSelected})
+                                Reobserve CVEs ({vulnRequestIds.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -150,16 +146,6 @@ function FalsePositiveCVEsTable({
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
-                        const actions = [
-                            {
-                                title: 'Reobserve CVE',
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    setFalsePositiveCVEsToBeReobserved([row.id]);
-                                },
-                            },
-                        ];
-
                         return (
                             <Tr key={row.cve}>
                                 <Td
@@ -180,22 +166,24 @@ function FalsePositiveCVEsTable({
                                 <Td dataLabel="Expiration">-</Td>
                                 <Td dataLabel="Apply to">-</Td>
                                 <Td dataLabel="Approver">-</Td>
-                                <Td
-                                    className="pf-u-text-align-right"
-                                    actions={{
-                                        items: actions,
-                                    }}
-                                />
+                                <Td className="pf-u-text-align-right">
+                                    <FalsePositiveCVEActionsColumn
+                                        row={row}
+                                        setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                    />
+                                </Td>
                             </Tr>
                         );
                     })}
                 </Tbody>
             </TableComposable>
-            <ReobserveCVEModal
-                isOpen={falsePositiveCVEsToBeReobserved.length !== 0}
-                onSendRequest={requestReobserveCVE}
-                onCompleteRequest={completeReobserveCVE}
-                onCancel={cancelReobserveCVE}
+            <UndoVulnRequestModal
+                type="FALSE_POSITIVE"
+                isOpen={vulnsToBeAssessed?.action === 'UNDO'}
+                numRequestsToBeAssessed={vulnsToBeAssessed?.requestIDs.length || 0}
+                onSendRequest={undoVulnRequests}
+                onCompleteRequest={completeAssessment}
+                onCancel={cancelAssessment}
             />
         </>
     );
