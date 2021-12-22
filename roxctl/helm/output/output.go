@@ -21,7 +21,6 @@ const (
 	imageDefaultsDevelopment string = "development"
 	imageDefaultsStackrox    string = "stackrox.io"
 	// imageDefaultsRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
-	imageDefaultsDefault string = "stackrox.io" // if no flavor is specified, this value will be used
 )
 
 func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
@@ -44,8 +43,10 @@ func validateFlavorFlags(rhacs bool, imageFlavor string) (string, error) {
 		fmt.Fprint(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'\n")
 	}
 	switch {
-	case imageFlavor == "":
-		return imageDefaultsDefault, nil
+	case imageFlavor == "" && buildinfo.ReleaseBuild:
+		return imageDefaultsStackrox, nil
+	case imageFlavor == "" && !buildinfo.ReleaseBuild:
+		return imageDefaultsDevelopment, nil
 	case imageFlavor == imageDefaultsStackrox:
 		return imageDefaultsStackrox, nil
 	case imageFlavor == imageDefaultsDevelopment && !buildinfo.ReleaseBuild:

@@ -99,7 +99,7 @@ func (suite *HelmLintTestSuite) TestHelmLint() {
 		}
 		for _, rhacs := range []bool{false, true} {
 			suite.T().Run(fmt.Sprintf("%s-rhacs-%t", chartName, rhacs), func(t *testing.T) {
-				testChartLint(t, chartName, rhacs, imageDefaultsDefault) // TODO(RS-380): Use RHACS as the new default
+				testChartLint(t, chartName, rhacs, "") // TODO(RS-380): Use RHACS as the new default
 			})
 		}
 	}
