@@ -2,16 +2,20 @@
 
 set -uo pipefail
 
-BATS_TESTS="${1:-tests/roxctl/bats-tests}"
+TESTS_OUTPUT="${1:-roxctl-test-output}"
+BATS_TESTS="${2:-tests/roxctl/bats-tests}"
 CIRCLECI="${CIRCLECI:-}"
 echo "Using Bats version: $(bats --version)"
 echo "Testing roxctl version: '$(roxctl version)'"
 
-# All flags but --tap require at least Bats v1.5.0
-BATS_FLAGS=( "--print-output-on-failure" "--verbose-run" "--show-output-of-passing-tests" )
+# Requires Bats v1.5.0
+BATS_FLAGS=( "--print-output-on-failure" "--verbose-run" )
 if [[ $CIRCLECI == "true" ]]; then
-  mkdir -p roxctl-test-output
-  BATS_FLAGS+=( "--report-formatter" "junit" "--output" "roxctl-test-output" )
+  mkdir -p "$TESTS_OUTPUT"
+  BATS_FLAGS+=( "--report-formatter" "junit" "--output" "$TESTS_OUTPUT" )
+else
+  # Using this causes junit to treat all passing tests with output as failures
+  BATS_FLAGS+=( "--show-output-of-passing-tests" )
 fi
 
 # Running all bats test suites found in the directory

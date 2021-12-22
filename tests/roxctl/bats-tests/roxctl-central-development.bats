@@ -5,7 +5,7 @@ load "helpers.bash"
 out_dir=""
 setup() {
   out_dir="$(mktemp -d -u)"
-  command -v yq || skip "Tests in this file require yq"
+  command -v yq > /dev/null || skip "Tests in this file require yq"
 }
 
 teardown() {

@@ -3517,15 +3517,7 @@ jobs:
           command: |
             source tests/e2e/run.sh
             MAIN_TAG=$(make --quiet tag) \
-            run_roxctl_bats_tests
-
-      - run:
-          name: Generate roxctl Bats test JUnit report
-          command: |
-            if [[ -f roxctl-test-output/test.log ]]; then
-              tap-junit < roxctl-test-output/test.log > roxctl-test-output/report.xml
-            fi
-          when: always
+              run_roxctl_bats_tests "roxctl-test-output"
 
       - store-test-results-and-artifacts:
           path: roxctl-test-output
