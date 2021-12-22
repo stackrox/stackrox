@@ -71,11 +71,11 @@ func setMainOverride(mainImage *storage.ImageName, metaValues charts.MetaValues)
 
 // setCollectorOverride adds collector full and slim image reference to meta values object.
 // The collector repository defined in the cluster object can be passed from roxctl or as direct
-// input in the UI when creating a new secured cluster. If no value is passed, the collector image
+// input in the UI when creating a new secured cluster. If no value is provided, the collector image
 // will be derived from the main image. For example:
 // main image: "quay.io/rhacs/main" => collector image: "quay.io/rhacs/collector"
 // Similarly, slim collector will be derived. However, if a collector registry is specified and
-// current flavor has different image names for collector slim and full: collector slim has to be
+// current image flavor has different image names for collector slim and full: collector slim has to be
 // derived from full instead. For example:
 // collector full image: "custom.registry.io/collector" => collector slim image: "custom.registry.io/collector-slim"
 func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor, metaValues charts.MetaValues) {
@@ -107,10 +107,11 @@ func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFla
 	metaValues["CollectorSlimImageTag"] = imageFlavor.CollectorSlimImageTag
 }
 
-// deriveImageWithNewName returns registry and repository for an image deriving values from a base image.
+// deriveImageWithNewName returns registry and repository values derived from a base image.
 // Slices base image taking into account image namespace and returns values for new image in the same repository as
 // base image. For example:
 // base image: "quay.io/namespace/main" => another: "quay.io/namespace/another"
+// Return values are split as ("quay.io", "namespace/another")
 func deriveImageWithNewName(baseImage *storage.ImageName, name string) (string, string) {
 	newImageName := &storage.ImageName{
 		Registry: baseImage.Registry,
