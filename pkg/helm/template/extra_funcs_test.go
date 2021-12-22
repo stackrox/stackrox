@@ -16,7 +16,7 @@ type testDataStruct struct {
 	MandatoryValue string
 }
 
-func TestRequiredHappyCases(t *testing.T) {
+func TestRequiredStrongTyped(t *testing.T) {
 	casesStruct := map[string]testDataStruct{
 		"optional-in-struct / mandatory-in-struct": {
 			OptionalValue:  "optional-in-struct",
@@ -26,12 +26,15 @@ func TestRequiredHappyCases(t *testing.T) {
 			MandatoryValue: "mandatory-in-struct",
 		},
 	}
+
 	for expected, inputStruct := range casesStruct {
 		t.Run(expected, func(t *testing.T) {
 			executeAndAssertResult(t, inputStruct, expected)
 		})
 	}
+}
 
+func TestRequiredStringMap(t *testing.T) {
 	casesMap := map[string]map[string]string{
 		"optional-in-map / mandatory-in-map": {
 			"OptionalValue":  "optional-in-map",
@@ -46,6 +49,7 @@ func TestRequiredHappyCases(t *testing.T) {
 			"MandatoryValue": "mandatory-in-map",
 		},
 	}
+
 	for expected, inputMap := range casesMap {
 		t.Run(expected, func(t *testing.T) {
 			executeAndAssertResult(t, inputMap, expected)
