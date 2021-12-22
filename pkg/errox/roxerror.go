@@ -60,6 +60,7 @@ func (e *errRox) Namespace() string {
 	return e.namespace
 }
 
+// Is returns true if err wraps the same error code and comes from the same or higher namespace
 func (e *errRox) Is(err error) bool {
 	var re RoxError
 	if errors.As(err, &re) {

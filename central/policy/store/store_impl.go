@@ -275,7 +275,7 @@ func (s *storeImpl) RemovePolicy(id string) error {
 		key := []byte(id)
 		val := bucket.Get(key)
 		if val == nil {
-			return dberrors.New("Policy", id)
+			return dberrors.NewNotFound("Policy", id)
 		}
 
 		if err := proto.Unmarshal(val, &policy); err != nil {

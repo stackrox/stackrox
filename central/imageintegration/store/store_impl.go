@@ -110,7 +110,7 @@ func (b *storeImpl) RemoveImageIntegration(id string) error {
 		b := tx.Bucket(imageIntegrationBucket)
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
-			return dberrors.New("ImageIntegration", id)
+			return dberrors.NewNotFound("ImageIntegration", id)
 		}
 		if err := secondarykey.RemoveUniqueKey(tx, imageIntegrationBucket, id); err != nil {
 			return err

@@ -3,7 +3,7 @@ package printer
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +29,7 @@ func TestJUnitPrinterFactory_CreatePrinter(t *testing.T) {
 		"should fail if validate fails": {
 			j:          &JUnitPrinterFactory{},
 			shouldFail: true,
-			error:      errox.InvalidArgs,
+			error:      errorhelpers.ErrInvalidArgs,
 		},
 		"should fail if output format is invalid": {
 			j: &JUnitPrinterFactory{
@@ -42,7 +42,7 @@ func TestJUnitPrinterFactory_CreatePrinter(t *testing.T) {
 			},
 			format:     "json",
 			shouldFail: true,
-			error:      errox.InvalidArgs,
+			error:      errorhelpers.ErrInvalidArgs,
 		},
 	}
 
@@ -78,7 +78,7 @@ func TestJUnitPrinterFactory_Validate(t *testing.T) {
 		},
 		"should return an invalid args error if suite name is not set": {
 			shouldFail: true,
-			error:      errox.InvalidArgs,
+			error:      errorhelpers.ErrInvalidArgs,
 		},
 		"should return an invariant violation error if json path map is invalid": {
 			suiteName: "testsuite",
@@ -86,7 +86,7 @@ func TestJUnitPrinterFactory_Validate(t *testing.T) {
 				JUnitTestCasesExpressionKey: "test",
 			},
 			shouldFail: true,
-			error:      errox.InvariantViolation,
+			error:      errorhelpers.ErrInvariantViolation,
 		},
 	}
 

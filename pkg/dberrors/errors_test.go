@@ -9,7 +9,7 @@ import (
 )
 
 func TestErrNotFound(t *testing.T) {
-	err := New("foo", "bar")
+	err := NewNotFound("foo", "bar")
 	s := grpc_errors.ErrToGrpcStatus(err)
 	assert.NotNil(t, s)
 	assert.Equal(t, codes.NotFound, s.Code())

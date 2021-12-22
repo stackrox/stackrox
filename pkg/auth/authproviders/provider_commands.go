@@ -3,9 +3,10 @@ package authproviders
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // Commands that providers can execute.
@@ -40,7 +41,7 @@ func DeleteFromStore(ctx context.Context, store Store) ProviderOption {
 		if err != nil {
 			// If it's a type we don't want to store, then we're okay with it not existing.
 			// We do this in case it was stored in the DB in a previous version.
-			if pr.doNotStore && dberrors.IsNotFound(err) {
+			if pr.doNotStore && errors.Is(errorhelpers.ErrNotFound, err) {
 				return nil
 			}
 			return err
