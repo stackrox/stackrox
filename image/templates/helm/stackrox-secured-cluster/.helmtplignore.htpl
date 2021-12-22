@@ -24,4 +24,5 @@ feature-flag-values.yaml
 templates/keep.yaml
 templates/*scanner*
 internal/scanner-config-shape.yaml
+config-templates/scanner/
 [< end >]
