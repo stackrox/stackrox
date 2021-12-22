@@ -72,9 +72,9 @@ func (suite *HelmLintTestSuite) TestHelmOutput() {
 				outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
 				require.NoError(suite.T(), err)
 				err = outputHelmChart(chartName, outputDir, true, tt.rhacs, tt.flavor, false, "")
-				defer func() {
+				t.Cleanup(func() {
 					_ = os.RemoveAll(outputDir)
-				}()
+				})
 				if tt.wantErr {
 					assert.Error(t, err)
 				} else {
@@ -111,9 +111,9 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
 	require.NoError(t, err)
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.RemoveAll(outputDir)
-	}()
+	})
 
 	err = outputHelmChart(chartName, outputDir, true, rhacs, imageFlavor, noDebug, noDebugChartPath)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
