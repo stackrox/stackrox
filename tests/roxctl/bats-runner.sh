@@ -4,13 +4,12 @@ set -euo pipefail
 
 TESTS_OUTPUT="${1:-roxctl-test-output}"
 BATS_TESTS="${2:-tests/roxctl/bats-tests}"
-CIRCLECI="${CIRCLECI:-}"
 echo "Using Bats version: $(bats --version)"
 echo "Testing roxctl version: '$(roxctl version)'"
 
 # Requires Bats v1.5.0
 BATS_FLAGS=( "--print-output-on-failure" "--verbose-run" )
-if [[ $CIRCLECI == "true" ]]; then
+if [[ -n "${CI:-}" ]]; then
   mkdir -p "$TESTS_OUTPUT"
   BATS_FLAGS+=( "--report-formatter" "junit" "--output" "$TESTS_OUTPUT" )
 else

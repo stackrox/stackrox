@@ -25,11 +25,11 @@ var (
 	lintNamespaces = []string{"default", "stackrox"}
 )
 
-type HelmLintTestSuite struct {
+type HelmChartTestSuite struct {
 	suite.Suite
 }
 
-func (suite *HelmLintTestSuite) SetupTest() {
+func (suite *HelmChartTestSuite) SetupTest() {
 	testutils.SetVersion(suite.T(), version.Versions{
 		MainVersion:      "3.0.55.0",
 		ScannerVersion:   "3.0.55.0",
@@ -40,10 +40,10 @@ func (suite *HelmLintTestSuite) SetupTest() {
 }
 
 func TestHelmLint(t *testing.T) {
-	suite.Run(t, new(HelmLintTestSuite))
+	suite.Run(t, new(HelmChartTestSuite))
 }
 
-func (suite *HelmLintTestSuite) TestHelmOutput() {
+func (suite *HelmChartTestSuite) TestHelmOutput() {
 	type testCase struct {
 		flavor  string
 		rhacs   bool
@@ -52,16 +52,16 @@ func (suite *HelmLintTestSuite) TestHelmOutput() {
 	tests := []testCase{
 		{"", true, false}, // '--rhacs' but no '--image-defaults'
 		{"dummy", true, true},
-		{imageDefaultsStackrox, true, false},
+		{flavorStackrox, true, false},
 		{"", false, false}, // no '--rhacs' and no '--image-defaults'
 		{"dummy", false, true},
-		{imageDefaultsStackrox, false, false},
+		{flavorStackrox, false, false},
 	}
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
 		tests = append(tests,
-			testCase{imageDefaultsDevelopment, true, false},
-			testCase{imageDefaultsDevelopment, false, false},
+			testCase{flavorDevelopment, true, false},
+			testCase{flavorDevelopment, false, false},
 		)
 	}
 
@@ -85,10 +85,10 @@ func (suite *HelmLintTestSuite) TestHelmOutput() {
 	}
 }
 
-func (suite *HelmLintTestSuite) TestHelmLint() {
-	flavorsToTest := []string{imageDefaultsStackrox}
+func (suite *HelmChartTestSuite) TestHelmLint() {
+	flavorsToTest := []string{flavorStackrox}
 	if !buildinfo.ReleaseBuild {
-		flavorsToTest = append(flavorsToTest, imageDefaultsDevelopment)
+		flavorsToTest = append(flavorsToTest, flavorDevelopment)
 	}
 
 	for chartName := range common.ChartTemplates {

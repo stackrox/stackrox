@@ -117,6 +117,7 @@ prepare_for_endpoints_test() {
 
 install_yq() {
   # Intstall yq to allow more precise test assertions
+  # TODO(RS-404) Remove this function after adding yq to apollo-ci
   if is_CI; then
     if ! command -v yq >/dev/null 2>&1; then
         sudo wget https://github.com/mikefarah/yq/releases/download/v4.15.1/yq_linux_amd64 -O /usr/bin/yq

@@ -13,24 +13,31 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
 const (
-	imageDefaultsDevelopment string = "development"
-	imageDefaultsStackrox    string = "stackrox.io"
-	// imageDefaultsRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
+	flavorDevelopment string = "development"
+	flavorStackrox    string = "stackrox.io"
+	// flavorRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
 )
+
+var allowedFlavors set.StringSet
+
+func init() {
+	allowedFlavors = set.NewStringSet(flavorStackrox)
+}
 
 func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
 	if rhacs {
 		return charts.RHACSMetaValues()
 	}
 	switch strings.ToLower(flavor) {
-	case imageDefaultsStackrox:
+	case flavorStackrox:
 		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
-	case imageDefaultsDevelopment:
+	case flavorDevelopment:
 		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
 	default:
 		return charts.RHACSMetaValues()
@@ -42,22 +49,22 @@ func validateFlavorFlags(rhacs bool, imageFlavor string) (string, error) {
 		// TODO(RS-380): '--image-defaults' will be preferred (--rhacs deprecated) after we add RHACS flavor
 		fmt.Fprintln(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'")
 	}
-	switch {
-	case imageFlavor == "" && buildinfo.ReleaseBuild:
-		return imageDefaultsStackrox, nil
-	case imageFlavor == "" && !buildinfo.ReleaseBuild:
-		return imageDefaultsDevelopment, nil
-	case imageFlavor == imageDefaultsStackrox:
-		return imageDefaultsStackrox, nil
-	case imageFlavor == imageDefaultsDevelopment && !buildinfo.ReleaseBuild:
-		return imageDefaultsDevelopment, nil
-	default:
-		allowedHelpStr := fmt.Sprintf("allowed values: %s", imageDefaultsStackrox)
-		if !buildinfo.ReleaseBuild {
-			allowedHelpStr = fmt.Sprintf("%s, %s", allowedHelpStr, imageDefaultsDevelopment)
+	if imageFlavor == "" {
+		if buildinfo.ReleaseBuild {
+			imageFlavor = flavorStackrox
+		} else {
+			imageFlavor = flavorDevelopment
 		}
-		return "", fmt.Errorf("invalid value of '--image-defaults=%s', %s", imageFlavor, allowedHelpStr)
 	}
+	if !buildinfo.ReleaseBuild {
+		allowedFlavors.Add(flavorDevelopment)
+	}
+	// check validity
+	if allowedFlavors.Contains(imageFlavor) {
+		return imageFlavor, nil
+	}
+	return "", fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", imageFlavor, allowedFlavors.ElementsString(", "))
+
 }
 
 func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string) error {
