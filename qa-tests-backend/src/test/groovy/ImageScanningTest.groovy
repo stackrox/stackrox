@@ -568,12 +568,17 @@ class ImageScanningTest extends BaseSpecification {
 
         where:
         testName              | integration | deleteAutoRegistry | source                     | imageIntegrationConfig
-        "ecr-iam"             | "ecr"       | false              | /^ecr$/                    | { -> ECRRegistryIntegration.createCustomIntegration(useIam: true) }
+        "ecr-iam"             | "ecr"       | false              | /^ecr$/                    |
+                { -> ECRRegistryIntegration.createCustomIntegration(useIam: true) }
         "ecr-auto"            | "ecr"       | false              | source(".*.amazonaws.com") | null
-        "ecr-auto-and-config" | "ecr"       | false              | /^ecr$/                    | { -> ECRRegistryIntegration.createDefaultIntegration() }
-        "ecr-config-only"     | "ecr"       | true               | /^ecr$/                    | { -> ECRRegistryIntegration.createDefaultIntegration() }
-        "acr-auto-and-config" | "acr"       | false              | /^acr$/                    | { -> AzureRegistryIntegration.createDefaultIntegration() }
-        "acr-config-only"     | "acr"       | true               | /^acr$/                    | { -> AzureRegistryIntegration.createDefaultIntegration() }
+        "ecr-auto-and-config" | "ecr"       | false              | /^ecr$/                    |
+                { -> ECRRegistryIntegration.createDefaultIntegration() }
+        "ecr-config-only"     | "ecr"       | true               | /^ecr$/                    |
+                { -> ECRRegistryIntegration.createDefaultIntegration() }
+        "acr-auto-and-config" | "acr"       | false              | /^acr$/                    |
+                { -> AzureRegistryIntegration.createDefaultIntegration() }
+        "acr-config-only"     | "acr"       | true               | /^acr$/                    |
+                { -> AzureRegistryIntegration.createDefaultIntegration() }
         "acr-auto"            | "acr"       | false              | source("*.azurecr.io")     | null
         "quay-auto"           | "quay"      | false              | source(".*.quay.io")       | null
         "gcr-auto"            | "gcr"       | false              | source(".*.gcr.io")        | null
