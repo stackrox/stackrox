@@ -40,7 +40,7 @@ func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
 func validateFlavorFlags(rhacs bool, imageFlavor string) (string, error) {
 	if rhacs && imageFlavor != "" {
 		// TODO(RS-380): '--image-defaults' will be preferred (--rhacs deprecated) after we add RHACS flavor
-		fmt.Fprint(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'\n")
+		fmt.Fprintln(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'")
 	}
 	switch {
 	case imageFlavor == "" && buildinfo.ReleaseBuild:

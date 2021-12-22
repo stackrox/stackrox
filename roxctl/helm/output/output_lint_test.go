@@ -59,10 +59,10 @@ func (suite *HelmLintTestSuite) TestHelmOutput() {
 	}
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
-		tests = append(tests, []testCase{
-			{imageDefaultsDevelopment, true, false},
-			{imageDefaultsDevelopment, false, false},
-		}...)
+		tests = append(tests,
+			testCase{imageDefaultsDevelopment, true, false},
+			testCase{imageDefaultsDevelopment, false, false},
+		)
 	}
 
 	for _, tt := range tests {

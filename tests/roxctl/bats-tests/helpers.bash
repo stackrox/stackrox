@@ -14,9 +14,7 @@ load_maybe "${HOME}/bats-core/bats-assert/load.bash"
 
 # luname outputs uname in lowercase
 luname() {
-  local tmp_uname
-  tmp_uname="$(uname)"
-  echo "${tmp_uname,,}"
+  uname | tr A-Z a-z
 }
 
 # roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
