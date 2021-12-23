@@ -49,6 +49,12 @@ helm_template_central() {
   assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"
 }
 
+assert_helm_template_central_registry() {
+  local out_dir="${1}"; shift;
+  helm_template_central "$out_dir"
+  assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$@"
+}
+
 assert_components_registry() {
   local dir="$1"
   local registry_slug="$2"

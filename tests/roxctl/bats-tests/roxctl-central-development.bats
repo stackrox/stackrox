@@ -6,8 +6,6 @@ out_dir=""
 setup() {
   out_dir="$(mktemp -d -u)"
   command -v yq > /dev/null || skip "Tests in this file require yq"
-  helm_output_dir="$out_dir/rendered/stackrox-central-services/templates"
-  central_generate_dir="$out_dir/central"
 }
 
 teardown() {
@@ -34,27 +32,23 @@ teardown() {
   run roxctl-development central generate k8s hostpath --output-dir "$out_dir"
   assert_success
   assert_output --partial "Wrote central bundle to"
-  assert_components_registry "$central_generate_dir" 'docker.io' "main"
+  assert_components_registry "$out_dir/central" 'docker.io' "main"
 }
 
 @test "roxctl-development helm output central-services should use docker.io registry" {
   run roxctl-development helm output central-services --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-
-  helm_template_central "$out_dir"
-  assert_components_registry "$helm_output_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs should use redhat.io registry" {
   run roxctl-development helm output central-services --rhacs --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-
-  helm_template_central "$out_dir"
   # TODO(RS-380): change assertions to
-  # assert_components_registry "$helm_output_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
-  assert_components_registry "$helm_output_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
+  # assert_components_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --image-defaults=dummy should fail" {
@@ -67,27 +61,21 @@ teardown() {
   run roxctl-development helm output central-services --image-defaults=stackrox.io --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-
-  helm_template_central "$out_dir"
-  assert_components_registry "$helm_output_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --image-defaults=development should use docker.io registry" {
   run roxctl-development helm output central-services --image-defaults=development --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-
-  helm_template_central "$out_dir"
-  assert_components_registry "$helm_output_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=development should respect --rhacs flag and use redhat.io registry" {
   run roxctl-development helm output central-services --rhacs --image-defaults=development --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-
-  helm_template_central "$out_dir"
   # TODO(RS-380): change assertions to
-  # assert_components_registry "$helm_output_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
-  assert_components_registry "$helm_output_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
+  # assert_components_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
