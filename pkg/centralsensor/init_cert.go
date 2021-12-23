@@ -2,6 +2,7 @@ package centralsensor
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -20,6 +21,12 @@ const (
 	// Otherwise, use IsInitCertClusterID().
 	EphemeralInitCertClusterID = "00000000-0000-0000-0000-000000000001"
 )
+
+// AllSecuredClusterServices contains service types of all services that should be included in an init bundle.
+var AllSecuredClusterServices = []storage.ServiceType{
+	storage.ServiceType_COLLECTOR_SERVICE,
+	storage.ServiceType_SENSOR_SERVICE,
+	storage.ServiceType_ADMISSION_CONTROL_SERVICE}
 
 // IsInitCertClusterID returns true if the passed cluster id is for an init cert that allows dynamic creation of clusters.
 func IsInitCertClusterID(clusterID string) bool {

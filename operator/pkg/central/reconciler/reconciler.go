@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/pkg/version"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
@@ -19,6 +20,10 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv),
+		pkgReconciler.WithExtraWatch(
+			&source.Kind{Type: &platform.SecuredCluster{}},
+			handleSiblingCentrals(mgr),
+			createAndDeleteOnly{}),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(mgr.GetClient())),
