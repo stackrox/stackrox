@@ -26,7 +26,7 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
 
-  helm-template-central "$out_dir"
+  helm_template_central "$out_dir"
   assert_components_registry "$helm_output_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
 
@@ -35,7 +35,7 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
 
-  helm-template-central "$out_dir"
+  helm_template_central "$out_dir"
 
   # TODO(RS-346): Ensure that we have a proper registry address here: 'registry.redhat.io' vs 'registry.redhat.io-short'
   assert_components_registry "$helm_output_dir" 'registry.redhat.io-short' 'main' 'scanner' 'scanner-db'
@@ -46,7 +46,7 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
 
-  helm-template-central "$out_dir"
+  helm_template_central "$out_dir"
   assert_components_registry "$helm_output_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
 
@@ -61,6 +61,6 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
 
-  helm-template-central "$out_dir"
+  helm_template_central "$out_dir"
   assert_components_registry "$helm_output_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }

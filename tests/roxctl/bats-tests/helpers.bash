@@ -38,7 +38,7 @@ roxctl-release() {
   "${tmp_roxctl}/roxctl-release" "$@"
 }
 
-helm-template-central() {
+helm_template_central() {
   local out_dir="${1}"
   run helm template stackrox-central-services "$out_dir" \
     -n stackrox \
@@ -48,8 +48,6 @@ helm-template-central() {
   assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"
   assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"
 }
-
-### Assertions
 
 assert_components_registry() {
   local dir="$1"
