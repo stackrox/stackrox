@@ -52,13 +52,13 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 func (s *serviceImpl) RunReport(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
 	rc, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	if err != nil {
+		return &v1.Empty{}, errors.Wrapf(err, "error finding report configuration %s", id)
+	}
 	if !found {
 		return &v1.Empty{}, errors.Errorf("unable to find report configuration %s", id)
 	}
-	if err != nil {
-		return &v1.Empty{}, errors.Wrapf(err, "unable to find report configuration %s", id)
 
-	}
 	if err := s.manager.RunReport(ctx, rc); err != nil {
 		return &v1.Empty{}, err
 	}

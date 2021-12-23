@@ -42,14 +42,17 @@ func (c *GenericWriter) AddValue(value Value) {
 }
 
 // WriteBytes writes out csv header and values to the provided buffer
-func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) {
+func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) error {
 	cw := csv.NewWriter(buf)
 	cw.UseCRLF = true
 	_ = cw.Write(c.header)
 	for _, v := range c.values {
-		_ = cw.Write(v)
+		if err := cw.Write(v); err != nil {
+			return err
+		}
 	}
 	cw.Flush()
+	return nil
 }
 
 // Write writes back the CSV file contents into the http.ResponseWriter.

@@ -89,7 +89,10 @@ func Format(results []result) (*bytes.Buffer, error) {
 	}
 
 	var buf bytes.Buffer
-	csvWriter.WriteBytes(&buf)
+	err := csvWriter.WriteBytes(&buf)
+	if err != nil {
+		return &bytes.Buffer{}, errors.Wrap(err, "error creating csv report")
+	}
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)

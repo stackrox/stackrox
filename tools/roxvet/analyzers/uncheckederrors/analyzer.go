@@ -28,7 +28,7 @@ var (
 
 	// exclusion list contains functions from the standard library where we're okay with not
 	// checking returned errors.
-	whitelist = map[string]set.FrozenStringSet{
+	allowList = map[string]set.FrozenStringSet{
 		"bytes": set.NewFrozenStringSet(
 			"WriteString",
 		),
@@ -157,7 +157,7 @@ func doesFuncReturnError(pass *analysis.Pass, fun ast.Expr) (name string, return
 }
 
 func isWhitelisted(fun *types.Func) bool {
-	if whitelistSet, ok := whitelist[fun.Pkg().Path()]; ok {
+	if allowListSet, ok := allowList[fun.Pkg().Path()]; ok {
 		name := fun.Name()
 		sig := fun.Type().(*types.Signature)
 		if sig != nil && sig.Recv() != nil {
@@ -169,7 +169,7 @@ func isWhitelisted(fun *types.Func) bool {
 				name = fmt.Sprintf("%s.%s", types.TypeString(recvTy, qf), name)
 			}
 		}
-		if whitelistSet.Contains(name) {
+		if allowListSet.Contains(name) {
 			return true
 		}
 	}
