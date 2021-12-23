@@ -20,14 +20,17 @@ import (
 
 const (
 	flavorDevelopment string = "development"
-	flavorStackrox    string = "stackrox.io"
+	flavorStackRoxIO  string = "stackrox.io"
 	// flavorRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
 )
 
 var allowedFlavors set.StringSet
 
 func init() {
-	allowedFlavors = set.NewStringSet(flavorStackrox)
+	allowedFlavors = set.NewStringSet(flavorStackRoxIO)
+	if !buildinfo.ReleaseBuild {
+		allowedFlavors.Add(flavorDevelopment)
+	}
 }
 
 func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
@@ -35,7 +38,7 @@ func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
 		return charts.RHACSMetaValues()
 	}
 	switch strings.ToLower(flavor) {
-	case flavorStackrox:
+	case flavorStackRoxIO:
 		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
 	case flavorDevelopment:
 		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
@@ -44,27 +47,26 @@ func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
 	}
 }
 
-func validateFlavorFlags(rhacs bool, imageFlavor string) (string, error) {
+func validateFlavorFlags(rhacs bool, imageFlavor string) error {
 	if rhacs && imageFlavor != "" {
 		// TODO(RS-380): '--image-defaults' will be preferred (--rhacs deprecated) after we add RHACS flavor
 		fmt.Fprintln(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'")
 	}
-	if imageFlavor == "" {
-		if buildinfo.ReleaseBuild {
-			imageFlavor = flavorStackrox
-		} else {
-			imageFlavor = flavorDevelopment
-		}
+	if imageFlavor == "" || allowedFlavors.Contains(imageFlavor) {
+		return nil
 	}
-	if !buildinfo.ReleaseBuild {
-		allowedFlavors.Add(flavorDevelopment)
-	}
-	// check validity
-	if allowedFlavors.Contains(imageFlavor) {
-		return imageFlavor, nil
-	}
-	return "", fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", imageFlavor, allowedFlavors.ElementsString(", "))
+	return fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", imageFlavor, allowedFlavors.ElementsString(", "))
+}
 
+// defaultFlavor provides default flavor for calls without --image-defaults
+func defaultFlavor(flavor string) string {
+	if flavor != "" {
+		return flavor
+	}
+	if buildinfo.ReleaseBuild {
+		return flavorStackRoxIO
+	}
+	return flavorDevelopment
 }
 
 func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string) error {
@@ -73,10 +75,10 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
 	}
-	flavor, err := validateFlavorFlags(rhacs, imageFlavor)
-	if err != nil {
+	if err := validateFlavorFlags(rhacs, imageFlavor); err != nil {
 		return err
 	}
+	metaVals := getMetaValues(defaultFlavor(imageFlavor), rhacs, buildinfo.ReleaseBuild)
 
 	if outputDir == "" {
 		outputDir = fmt.Sprintf("./stackrox-%s-chart", chartName)
@@ -102,8 +104,6 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 	if debug {
 		templateImage = image.NewImage(os.DirFS(debugChartPath))
 	}
-
-	metaVals := getMetaValues(flavor, rhacs, buildinfo.ReleaseBuild)
 
 	// Load and render template files.
 	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(chartTemplatePathPrefix, metaVals)

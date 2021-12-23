@@ -52,10 +52,10 @@ func (suite *HelmChartTestSuite) TestHelmOutput() {
 	tests := []testCase{
 		{"", true, false}, // '--rhacs' but no '--image-defaults'
 		{"dummy", true, true},
-		{flavorStackrox, true, false},
+		{flavorStackRoxIO, true, false},
 		{"", false, false}, // no '--rhacs' and no '--image-defaults'
 		{"dummy", false, true},
-		{flavorStackrox, false, false},
+		{flavorStackRoxIO, false, false},
 	}
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
@@ -86,7 +86,7 @@ func (suite *HelmChartTestSuite) TestHelmOutput() {
 }
 
 func (suite *HelmChartTestSuite) TestHelmLint() {
-	flavorsToTest := []string{flavorStackrox}
+	flavorsToTest := []string{flavorStackRoxIO}
 	if !buildinfo.ReleaseBuild {
 		flavorsToTest = append(flavorsToTest, flavorDevelopment)
 	}
