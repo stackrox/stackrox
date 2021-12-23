@@ -97,6 +97,7 @@ type scheduler struct {
 	clusterDatastore      clusterDataStore.DataStore
 	namespaceDatastore    namespaceDatastore.DataStore
 	roleDatastore         roleDataStore.DataStore
+	notificationProcessor processor.Processor
 
 	reportsToRun chan *ReportRequest
 
@@ -135,6 +136,7 @@ func New() Scheduler {
 		clusterDatastore:       clusterDataStore.Singleton(),
 		namespaceDatastore:     namespaceDatastore.Singleton(),
 		roleDatastore:          roleDataStore.Singleton(),
+		notificationProcessor:  processor.Singleton(),
 		reportsToRun:           make(chan *ReportRequest, 100),
 		Schema:                 ourSchema,
 
@@ -215,7 +217,10 @@ func (s *scheduler) runReports() {
 }
 
 func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
-	if !req.OnDemand {
+	if req.OnDemand {
+		return nil
+	}
+	if err != nil {
 		// TODO: @khushboo for more accuracy, save timestamp when the vuln data is pulled aka the query is run
 		req.ReportConfig.LastRunStatus = &storage.ReportLastRunStatus{
 			ReportStatus: storage.ReportLastRunStatus_FAILURE,
@@ -231,7 +236,6 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 		req.ReportConfig.LastSuccessfulRunTime = timestamp.Now().GogoProtobuf()
 	}
 	return s.reportConfigDatastore.UpdateReportConfiguration(req.Ctx, req.ReportConfig)
-
 }
 
 func (s *scheduler) sendReportResults(req *ReportRequest) error {
@@ -261,7 +265,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return errors.Wrap(err, "error building report query")
 	}
 
-	notifier := processor.Singleton().GetNotifier(req.Ctx, rc.GetEmailConfig().GetNotifierId())
+	notifier := s.notificationProcessor.GetNotifier(req.Ctx, rc.GetEmailConfig().GetNotifierId())
 	reportNotifier, ok := notifier.(notifiers.ReportNotifier)
 	if !ok {
 		return errors.Errorf("incorrect notifier type in report config '%s'", rc.GetName())

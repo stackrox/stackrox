@@ -29,6 +29,9 @@ var (
 	// exclusion list contains functions from the standard library where we're okay with not
 	// checking returned errors.
 	whitelist = map[string]set.FrozenStringSet{
+		"bytes": set.NewFrozenStringSet(
+			"WriteString",
+		),
 		"fmt": set.NewFrozenStringSet(
 			"Print",
 			"Println",

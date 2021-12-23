@@ -181,33 +181,33 @@ type message struct {
 
 func (m message) Bytes() []byte {
 	buf := bytes.NewBuffer(nil)
-	_, _ = buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
-	_, _ = buf.WriteString(fmt.Sprintf("To: %s\r\n", m.To))
-	_, _ = buf.WriteString(fmt.Sprintf("Subject: %s\r\n", m.Subject))
+	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
+	buf.WriteString(fmt.Sprintf("To: %s\r\n", m.To))
+	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", m.Subject))
 
-	_, _ = buf.WriteString("MIME-Version: 1.0\r\n")
+	buf.WriteString("MIME-Version: 1.0\r\n")
 
 	writer := multipart.NewWriter(buf)
 	boundary := writer.Boundary()
 
 	if len(m.Attachments) > 0 {
-		_, _ = buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", boundary))
-		_, _ = buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+		buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", boundary))
+		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 	} else {
-		_, _ = buf.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
+		buf.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
 	}
-	_, _ = buf.WriteString(fmt.Sprintf("%s\r\n", m.Body))
+	buf.WriteString(fmt.Sprintf("%s\r\n", m.Body))
 
 	if len(m.Attachments) > 0 {
 		for k, v := range m.Attachments {
-			_, _ = buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
-			_, _ = buf.WriteString("Content-Type: application/zip\r\n")
-			_, _ = buf.WriteString("Content-Transfer-Encoding: base64\r\n")
-			_, _ = buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\r\n", k))
-			_, _ = buf.WriteString(base64.StdEncoding.EncodeToString(v))
-			_, _ = buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+			buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+			buf.WriteString("Content-Type: application/zip\r\n")
+			buf.WriteString("Content-Transfer-Encoding: base64\r\n")
+			buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\r\n", k))
+			buf.WriteString(base64.StdEncoding.EncodeToString(v))
+			buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 		}
-		_, _ = buf.WriteString("--")
+		buf.WriteString("--")
 	}
 	return buf.Bytes()
 }
