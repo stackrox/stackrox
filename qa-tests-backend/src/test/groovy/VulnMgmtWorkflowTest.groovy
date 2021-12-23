@@ -58,8 +58,7 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         "The request is approved or denied"
         if (approve) {
             VulnRequestService.approveRequest(id, "actioned")
-        }
-        else {
+        } else {
             VulnRequestService.denyRequest(id, "actioned")
         }
 
@@ -71,6 +70,8 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         assert req.getTargetState() ==
                 (requestType == "defer" ? Cve.VulnerabilityState.DEFERRED : Cve.VulnerabilityState.FALSE_POSITIVE)
         assert !req.getExpired()
+        assert req.getCves().getIdsCount() == 1
+        assert req.getCves().getIds(0) == (requestType == "defer" ? CVE_TO_DEFER: CVE_TO_MARK_FP)
         assert req.getCommentsCount() == 2
         assert req.getComments(0).getMessage() == "${requestType} me" &&
                 req.getComments(1).getMessage() == "actioned"
