@@ -17,16 +17,3 @@ stringData:
     {{- $cert | nindent 4 }}
   {{- end }}
 {{- end }}
-{{- if ._rox.env.openshift }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: trusted-ca-sensor
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "srox.labels" (list . "configmap" "trusted-ca-sensor") | nindent 4 }}
-    "config.openshift.io/inject-trusted-cabundle": "true"
-  annotations:
-    {{- include "srox.annotations" (list . "configmap" "trusted-ca-sensor") | nindent 4 }}
-{{- end }}

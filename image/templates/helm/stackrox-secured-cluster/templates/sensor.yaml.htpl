@@ -185,7 +185,7 @@ spec:
       {{- if ._rox.env.openshift }}
       - name: trusted-ca-volume
         configMap:
-          name: trusted-ca-sensor
+          name: injected-trusted-ca
           items:
             - key: ca-bundle.crt
               path: tls-ca-bundle.pem
