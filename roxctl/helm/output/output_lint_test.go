@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"github.com/stretchr/testify/assert"
@@ -29,21 +28,16 @@ type HelmChartTestSuite struct {
 	suite.Suite
 }
 
-func (suite *HelmChartTestSuite) SetupTest() {
-	testutils.SetVersion(suite.T(), version.Versions{
-		MainVersion:      "3.0.55.0",
-		ScannerVersion:   "3.0.55.0",
-		CollectorVersion: "3.0.55.0",
-		GitCommit:        "face2face",
-	})
-	testbuildinfo.SetForTest(suite.T())
+func (s *HelmChartTestSuite) SetupTest() {
+	testutils.SetExampleVersion(s.T())
+	testbuildinfo.SetForTest(s.T())
 }
 
 func TestHelmLint(t *testing.T) {
 	suite.Run(t, new(HelmChartTestSuite))
 }
 
-func (suite *HelmChartTestSuite) TestHelmOutput() {
+func (s *HelmChartTestSuite) TestHelmOutput() {
 	type testCase struct {
 		flavor  string
 		rhacs   bool
@@ -68,24 +62,24 @@ func (suite *HelmChartTestSuite) TestHelmOutput() {
 	for _, tt := range tests {
 		tt := tt
 		for chartName := range common.ChartTemplates {
-			suite.T().Run(fmt.Sprintf("%s-rhacs-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavor), func(t *testing.T) {
+			s.Run(fmt.Sprintf("%s-rhacs-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavor), func() {
 				outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
-				require.NoError(suite.T(), err)
-				err = outputHelmChart(chartName, outputDir, true, tt.rhacs, tt.flavor, false, "")
-				t.Cleanup(func() {
+				s.T().Cleanup(func() {
 					_ = os.RemoveAll(outputDir)
 				})
+				require.NoError(s.T(), err)
+				err = outputHelmChart(chartName, outputDir, true, tt.rhacs, tt.flavor, false, "")
 				if tt.wantErr {
-					assert.Error(t, err)
+					assert.Error(s.T(), err)
 				} else {
-					assert.NoError(t, err)
+					assert.NoError(s.T(), err)
 				}
 			})
 		}
 	}
 }
 
-func (suite *HelmChartTestSuite) TestHelmLint() {
+func (s *HelmChartTestSuite) TestHelmLint() {
 	flavorsToTest := []string{flavorStackRoxIO}
 	if !buildinfo.ReleaseBuild {
 		flavorsToTest = append(flavorsToTest, flavorDevelopment)
@@ -93,13 +87,13 @@ func (suite *HelmChartTestSuite) TestHelmLint() {
 
 	for chartName := range common.ChartTemplates {
 		for _, imageFlavor := range flavorsToTest {
-			suite.T().Run(fmt.Sprintf("%s-imageFlavor-%s", chartName, imageFlavor), func(t *testing.T) {
-				testChartLint(t, chartName, false, imageFlavor)
+			s.Run(fmt.Sprintf("%s-imageFlavor-%s", chartName, imageFlavor), func() {
+				testChartLint(s.T(), chartName, false, imageFlavor)
 			})
 		}
 		for _, rhacs := range []bool{false, true} {
-			suite.T().Run(fmt.Sprintf("%s-rhacs-%t", chartName, rhacs), func(t *testing.T) {
-				testChartLint(t, chartName, rhacs, "") // TODO(RS-380): Use RHACS as the new default
+			s.Run(fmt.Sprintf("%s-rhacs-%t", chartName, rhacs), func() {
+				testChartLint(s.T(), chartName, rhacs, "") // TODO(RS-380): Use RHACS as the new default
 			})
 		}
 	}
@@ -109,11 +103,10 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	const noDebug = false
 	const noDebugChartPath = ""
 	outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
-	require.NoError(t, err)
-
 	t.Cleanup(func() {
 		_ = os.RemoveAll(outputDir)
 	})
+	require.NoError(t, err)
 
 	err = outputHelmChart(chartName, outputDir, true, rhacs, imageFlavor, noDebug, noDebugChartPath)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
