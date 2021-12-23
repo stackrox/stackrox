@@ -48,17 +48,26 @@ func GenericNoValidRole() error {
 		NoValidRole)
 }
 
+func explain(err error, explanation string) error {
+	return fmt.Errorf("%w: %s", err, explanation)
+}
+
 // NewErrNotAuthorized wraps ErrNotAuthorized into an explanation.
 func NewErrNotAuthorized(explanation string) error {
-	return fmt.Errorf("%w: %s", NotAuthorized, explanation)
+	return explain(NotAuthorized, explanation)
+}
+
+// NewErrNoCredentials wraps ErrNoCredentials into an explanation.
+func NewErrNoCredentials(explanation string) error {
+	return explain(NoCredentials, explanation)
 }
 
 // NewErrInvariantViolation wraps ErrInvariantViolation into an explanation.
 func NewErrInvariantViolation(explanation string) error {
-	return fmt.Errorf("%w: %s", InvariantViolation, explanation)
+	return explain(InvariantViolation, explanation)
 }
 
 // NewErrInvalidArgs wraps ErrInvalidArgs into an explanation.
 func NewErrInvalidArgs(explanation string) error {
-	return fmt.Errorf("%w: %s", InvalidArgs, explanation)
+	return explain(InvalidArgs, explanation)
 }

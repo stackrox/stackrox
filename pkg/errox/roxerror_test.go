@@ -33,21 +33,54 @@ func Test_errRox_Is(t *testing.T) {
 	assert.ErrorIs(t, errors.WithMessage(errAA, "message"), errA)
 	assert.NotErrorIs(t, errors.WithMessage(errB, "message"), errA)
 
+	assert.NotErrorIs(t, NotFound, errors.New("some error"))
+	assert.NotErrorIs(t, errors.New("some error"), NotFound)
 }
 
 func TestWrap(t *testing.T) {
 	{
-		err := Wrap(NotFound, NotAuthorized)
+		err := NotFound
+		assert.Equal(t, err.Code(), CodeNotFound)
+		err = Wrap(err, NotAuthorized)
+		assert.Equal(t, err.Code(), CodeNotAuthorized, "should override the code")
+
 		assert.NotErrorIs(t, err, InvalidArgs)
 		assert.ErrorIs(t, err, NotFound)
 		assert.ErrorIs(t, err, NotAuthorized)
 
-		assert.Equal(t, "not authorized: not found", err.Error())
+	}
+
+	{
+		mine := Wrap(NewCustom(NotFound, "cannot load"), NotAuthorized)
+		assert.ErrorIs(t, mine, NotAuthorized)
 	}
 
 	{
 		mine := Wrap(errors.New("cannot load"), NotAuthorized)
 		assert.ErrorIs(t, mine, NotAuthorized)
+	}
+}
+
+func TestError(t *testing.T) {
+	{
+		err := NotFound
+		assert.Equal(t, "not found", err.Error())
+		err = Wrap(err, NotAuthorized)
+		assert.Equal(t, "not authorized: not found", err.Error())
+	}
+
+	{
+		mine := NewCustom(NotFound, "cannot load")
+		assert.Equal(t, "cannot load", mine.Error())
+	}
+
+	{
+		mine := Wrap(NewCustom(NotFound, "cannot load"), NotAuthorized)
+		assert.Equal(t, "not authorized: cannot load", mine.Error())
+	}
+
+	{
+		mine := Wrap(errors.New("cannot load"), NotAuthorized)
 		assert.Equal(t, "not authorized: cannot load", mine.Error())
 	}
 }

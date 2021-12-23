@@ -1,8 +1,6 @@
 package errorhelpers
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -43,30 +41,25 @@ var (
 
 // GenericNoValidRole wraps errox.NoValidRole with a generic error message.
 func GenericNoValidRole() error {
-	return fmt.Errorf("access for this user is not authorized: %w, please contact your system administrator",
-		errox.NoValidRole)
-}
-
-func explain(err error, explanation string) error {
-	return fmt.Errorf("%w: %s", err, explanation)
+	return errox.GenericNoValidRole()
 }
 
 // NewErrNotAuthorized wraps errox.NotAuthorized into an explanation.
 func NewErrNotAuthorized(explanation string) error {
-	return explain(errox.NotAuthorized, explanation)
+	return errox.NewErrNotAuthorized(explanation)
 }
 
 // NewErrNoCredentials wraps ErrNoCredentials into an explanation.
 func NewErrNoCredentials(explanation string) error {
-	return explain(errox.NoCredentials, explanation)
+	return errox.NewErrNoCredentials(explanation)
 }
 
 // NewErrInvariantViolation wraps errox.InvariantViolation into an explanation.
 func NewErrInvariantViolation(explanation string) error {
-	return explain(errox.InvariantViolation, explanation)
+	return errox.NewErrInvariantViolation(explanation)
 }
 
 // NewErrInvalidArgs wraps errox.InvalidArgs into an explanation.
 func NewErrInvalidArgs(explanation string) error {
-	return explain(errox.InvalidArgs, explanation)
+	return errox.NewErrInvalidArgs(explanation)
 }
