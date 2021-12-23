@@ -117,7 +117,7 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) (string, 
 
 	// This handles the case where there is no namespace. e.g. stackrox.io/NAME:tag
 	var remote string
-	if slashIdx := strings.Index(baseImage.GetRemote(), "/"); slashIdx == -1 {
+	if slashIdx := strings.IndexRune(baseImage.GetRemote(), '/'); slashIdx == -1 {
 		remote = name
 	} else {
 		remote = baseImage.GetRemote()[:slashIdx] + "/" + name
