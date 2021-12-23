@@ -8,3 +8,16 @@ area/auth:
 - pkg/sac/**/*
 area/ui:
 - ui/**/*
+area/operator:
+- operator/**/*
+area/helm:
+- image/**/*
+- central/helm/**/*
+- central/helmcharts/**/*
+- pkg/helm/**/*
+area/sensor:
+- sensor/**/*
+area/central:
+- central/**/*
+area/admission-controller:
+- sensor/admission-control/**/*
