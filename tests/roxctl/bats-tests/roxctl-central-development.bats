@@ -47,7 +47,7 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
   # TODO(RS-380): change assertions to
-  # assert_components_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  # assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
   assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
 
@@ -76,6 +76,6 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
   # TODO(RS-380): change assertions to
-  # assert_components_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  # assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
   assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
