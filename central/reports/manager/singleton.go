@@ -15,7 +15,9 @@ var (
 )
 
 func initialize() {
-	instance = New()
+	instance = &managerImpl{
+		scheduler: scheduler.New(),
+	}
 }
 
 // Singleton provides the instance of Manager to use.
@@ -25,11 +27,4 @@ func Singleton() Manager {
 	}
 	once.Do(initialize)
 	return instance
-}
-
-// New returns a new reports manager
-func New() Manager {
-	return &managerImpl{
-		scheduler: scheduler.New(),
-	}
 }

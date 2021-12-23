@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/reports/scheduler"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
@@ -60,17 +62,19 @@ func (m *managerImpl) RunReport(ctx context.Context, reportConfig *storage.Repor
 	}
 	defer m.inProgress.Set(false)
 
-	return m.scheduler.SubmitReport(&scheduler.ReportRequest{
+	m.scheduler.SubmitReport(&scheduler.ReportRequest{
 		ReportConfig: reportConfig,
 		OnDemand:     true,
+		Ctx:          loaders.WithLoaderContext(contextutil.WithValuesFrom(context.Background(), ctx)),
 	})
+	return nil
 }
 
 func (m *managerImpl) Start() {
 	if !features.VulnReporting.Enabled() {
 		return
 	}
-	go m.scheduler.Start()
+	m.scheduler.Start()
 }
 
 func (m *managerImpl) Stop() {

@@ -12,7 +12,7 @@ package v1;
 service ReportService {
     rpc RunReport(ResourceByID) returns (Empty) {
         option (google.api.http) = {
-            post: "/v1/report/run"
+            post: "/v1/report/run/{id}"
         };
     }
 }

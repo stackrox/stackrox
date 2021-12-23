@@ -1,6 +1,7 @@
 package csv
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"net/http"
@@ -38,6 +39,17 @@ func NewGenericWriter(header Header, sort bool) *GenericWriter {
 // AddValue adds a CSV value (row) to the CSV file.
 func (c *GenericWriter) AddValue(value Value) {
 	c.values = append(c.values, value)
+}
+
+// WriteBytes writes out csv header and values to the provided buffer
+func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) {
+	cw := csv.NewWriter(buf)
+	cw.UseCRLF = true
+	_ = cw.Write(c.header)
+	for _, v := range c.values {
+		_ = cw.Write(v)
+	}
+	cw.Flush()
 }
 
 // Write writes back the CSV file contents into the http.ResponseWriter.

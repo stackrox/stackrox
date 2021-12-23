@@ -17,6 +17,7 @@ type NotifierSet interface {
 
 	UpsertNotifier(ctx context.Context, notifier notifiers.Notifier)
 	RemoveNotifier(ctx context.Context, id string)
+	GetNotifier(ctx context.Context, id string) notifiers.Notifier
 }
 
 // NewNotifierSet returns a new instance of a NotifierSet
@@ -99,4 +100,12 @@ func (p *notifierSetImpl) RemoveNotifier(ctx context.Context, id string) {
 
 	delete(p.notifiers, id)
 	delete(p.failures, id)
+}
+
+// GetNotifier gets a notifier frpm the set.
+func (p *notifierSetImpl) GetNotifier(ctx context.Context, id string) notifiers.Notifier {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	return p.notifiers[id]
 }
