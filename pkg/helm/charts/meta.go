@@ -63,7 +63,7 @@ func RHACSMetaValues() MetaValues {
 		"Operator": false,
 	}
 
-	// TODO(RS-380): remove this block
+	// TODO(RS-380): move or remove this block - this override is done only for the operator
 	if !buildinfo.ReleaseBuild {
 		metaValues["MainRegistry"] = mainRegistryOverride.Setting()
 		metaValues["CollectorRegistry"] = collectorRegistryOverride.Setting()
