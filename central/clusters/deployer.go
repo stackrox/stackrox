@@ -44,13 +44,13 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 
 // MakeClusterImageNames creates storage.ImageName objects for provided storage.Cluster main and collector images.
 func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*storage.ImageName, *storage.ImageName, error) {
-	var mainImageName, collectorImageName *storage.ImageName
 	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, flavor.MainImageTag)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "generating main image from cluster value (%s)", c.MainImage)
 	}
-	mainImageName = mainImage.GetName()
+	mainImageName := mainImage.GetName()
 
+	var collectorImageName *storage.ImageName
 	if c.CollectorImage != "" {
 		collectorImage, err := utils.GenerateImageFromString(c.CollectorImage)
 		if err != nil {
