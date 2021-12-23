@@ -7,6 +7,7 @@ import {
     CardBody,
     Divider,
     Flex,
+    FlexItem,
     Button,
     Checkbox,
 } from '@patternfly/react-core';
@@ -103,9 +104,13 @@ function PolicyGroupCard({
                 <CardBody>
                     {group.values.map((_, valueIndex) => {
                         const name = `policySections[${sectionIndex}].policyGroups[${groupIndex}].values[${valueIndex}]`;
+                        const groupName = `policySections[${sectionIndex}].policyGroups[${groupIndex}]`;
                         return (
                             // eslint-disable-next-line react/no-array-index-key
-                            <div key={valueIndex}>
+                            <Flex
+                                direction={{ default: 'column' }}
+                                spaceItems={{ default: 'spaceItemsNone' }}
+                            >
                                 <FieldValue
                                     name={name}
                                     length={group.values.length}
@@ -114,9 +119,14 @@ function PolicyGroupCard({
                                 />
                                 {/* only show and/or operator if not at end of array */}
                                 {valueIndex !== group.values.length - 1 && (
-                                    <AndOrOperatorField name={name} readOnly={readOnly} />
+                                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                        <AndOrOperatorField
+                                            name={groupName}
+                                            readOnly={readOnly || !descriptor.canBooleanLogic}
+                                        />
+                                    </FlexItem>
                                 )}
-                            </div>
+                            </Flex>
                         );
                     })}
                     {/* this is because there can't be multiple boolean values */}
@@ -126,7 +136,6 @@ function PolicyGroupCard({
                             alignItems={{ default: 'alignItemsCenter' }}
                             className="pf-u-pt-sm"
                         >
-                            {/* <div className="flex justify-center"> */}
                             <Button
                                 onClick={handleAddValue}
                                 variant="plain"
@@ -134,7 +143,6 @@ function PolicyGroupCard({
                             >
                                 <PlusIcon />
                             </Button>
-                            {/* </div> */}
                         </Flex>
                     )}
                 </CardBody>

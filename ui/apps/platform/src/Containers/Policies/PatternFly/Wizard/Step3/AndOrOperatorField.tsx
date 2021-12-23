@@ -2,23 +2,22 @@ import React from 'react';
 import { useField } from 'formik';
 import { Button } from '@patternfly/react-core';
 
-type AndOrOperatorFieldProps = {
+interface AndOrOperatorFieldProps {
     name: string;
     readOnly?: boolean;
-};
+}
 
 function AndOrOperatorField({ name, readOnly = false }: AndOrOperatorFieldProps) {
     const [field, , helpers] = useField(name);
 
-    function handleBooleanOperator(e) {
-        // const newBooleanValue = group.booleanOperator === 'AND' ? 'OR' : 'AND';
-        // helpers.setValue({})
-        console.log(field.value);
+    function handleBooleanOperator() {
+        const newBooleanValue = field.value.booleanOperator === 'AND' ? 'OR' : 'AND';
+        helpers.setValue({ ...field.value, booleanOperator: newBooleanValue });
     }
 
     return (
         <Button variant="plain" onClick={handleBooleanOperator} isDisabled={readOnly}>
-            — and —
+            — {field.value.booleanOperator.toLowerCase()} —
         </Button>
     );
 }

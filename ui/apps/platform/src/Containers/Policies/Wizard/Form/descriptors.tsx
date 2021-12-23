@@ -161,7 +161,7 @@ export type SubComponent = {
 };
 
 export type Descriptor = {
-    label: string;
+    label?: string;
     name: string;
     longName?: string;
     shortName?: string;
@@ -572,7 +572,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: false,
     },
     {
-        label: 'Mount propagation',
         name: 'Mount Propagation',
         shortName: 'Mount propagation',
         negatedName: 'Mount propagation is not',
@@ -735,7 +734,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: false,
     },
     {
-        label: 'Drop capabilities',
         name: 'Drop Capabilities',
         shortName: 'Drop capabilities',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
@@ -744,7 +742,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
-        label: 'Add capabilities',
         name: 'Add Capabilities',
         shortName: 'Add capabilities',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
@@ -753,7 +750,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
-        label: 'Process name',
         name: 'Process Name',
         shortName: 'Process name',
         negatedName: `Process name doesn't match`,
@@ -763,7 +759,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
-        label: 'Process ancestor',
         name: 'Process Ancestor',
         shortName: 'Process ancestor',
         negatedName: `Process ancestor doesn't match`,
@@ -773,7 +768,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
-        label: 'Process arguments',
         name: 'Process Arguments',
         shortName: 'Process arguments',
         negatedName: `Process arguments don't match`,
@@ -792,7 +786,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
-        label: 'Port exposure method',
         name: 'Port Exposure Method',
         shortName: 'Port exposure method',
         negatedName: 'Port exposure method is not',
@@ -807,7 +800,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
-        label: 'Writable host mount',
         name: 'Writable Host Mount',
         shortName: 'Writable host mount',
         longName: 'Host mount writability',

@@ -34,6 +34,8 @@ function PolicyCriteriaForm() {
         }
     }
 
+    console.log('PolicyCriteriaForm', values);
+
     React.useEffect(() => {
         if (values.eventSource === 'AUDIT_LOG_EVENT') {
             setDescriptor(auditLogDescriptor);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, Button } from '@patternfly/react-core';
+import { Flex, Button, Divider } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
@@ -22,11 +22,15 @@ function FieldValue({
 }: FieldValueProps) {
     return (
         <div data-testid="policy-field-value">
-            <Flex direction={{ default: 'row' }}>
+            <Flex
+                direction={{ default: 'row' }}
+                flexWrap={{ default: 'nowrap' }}
+                alignItems={{ default: 'alignItemsStretch' }}
+            >
                 <Field descriptor={descriptor} name={name} readOnly={readOnly} />
                 {/* only show remove button if there is more than one value */}
                 {!readOnly && length > 1 && (
-                    <Button onClick={handleRemoveValue} variant="plain">
+                    <Button onClick={handleRemoveValue} variant="tertiary">
                         <TimesIcon />
                     </Button>
                 )}
