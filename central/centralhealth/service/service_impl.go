@@ -79,10 +79,15 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 		CanRollbackAfterUpgrade:               int64(freeBytes)+toBeFreedBytes > requiredBytes,
 		SpaceAvailableForRollbackAfterUpgrade: int64(freeBytes) + toBeFreedBytes,
 		SpaceRequiredForRollbackAfterUpgrade:  requiredBytes,
+		ForceRollbackTo:                       minForceRollbackTo,
 	}
 
 	// Get rollback to version
 	migVer, err := migrations.Read(filepath.Join(migrations.DBMountPath(), migrations.PreviousReplica))
+	if err != nil {
+		log.Warnf("Could not get prevous migration: %v", err)
+	}
+	log.Infof("Checking migration from %+v to %s", migVer, minForceRollbackTo)
 	if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
 		upgradeStatus.ForceRollbackTo = migVer.MainVersion
 	}
