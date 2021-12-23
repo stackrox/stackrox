@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -12,26 +13,72 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func getMetaValues(rhacs, release bool) charts.MetaValues {
-	if rhacs {
-		return charts.RHACSMetaValues()
-	} else if release {
-		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
-	} else {
-		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
+const (
+	flavorDevelopment string = "development"
+	flavorStackRoxIO  string = "stackrox.io"
+	// flavorRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
+)
+
+var allowedFlavors set.StringSet
+
+func init() {
+	allowedFlavors = set.NewStringSet(flavorStackRoxIO)
+	if !buildinfo.ReleaseBuild {
+		allowedFlavors.Add(flavorDevelopment)
 	}
 }
 
-func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, debug bool, debugChartPath string) error {
+func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
+	if rhacs {
+		return charts.RHACSMetaValues()
+	}
+	switch strings.ToLower(flavor) {
+	case flavorStackRoxIO:
+		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
+	case flavorDevelopment:
+		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
+	default:
+		return charts.RHACSMetaValues()
+	}
+}
+
+func validateFlavorFlags(rhacs bool, imageFlavor string) error {
+	if rhacs && imageFlavor != "" {
+		// TODO(RS-380): '--image-defaults' will be preferred (--rhacs deprecated) after we add RHACS flavor
+		fmt.Fprintln(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'")
+	}
+	if imageFlavor == "" || allowedFlavors.Contains(imageFlavor) {
+		return nil
+	}
+	return fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", imageFlavor, allowedFlavors.ElementsString(", "))
+}
+
+// defaultFlavor provides default flavor for calls without --image-defaults
+func defaultFlavor(flavor string) string {
+	if flavor != "" {
+		return flavor
+	}
+	if buildinfo.ReleaseBuild {
+		return flavorStackRoxIO
+	}
+	return flavorDevelopment
+}
+
+func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
 	}
+	if err := validateFlavorFlags(rhacs, imageFlavor); err != nil {
+		return err
+	}
+	metaVals := getMetaValues(defaultFlavor(imageFlavor), rhacs, buildinfo.ReleaseBuild)
 
 	if outputDir == "" {
 		outputDir = fmt.Sprintf("./stackrox-%s-chart", chartName)
@@ -57,8 +104,6 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 	if debug {
 		templateImage = image.NewImage(os.DirFS(debugChartPath))
 	}
-
-	metaVals := getMetaValues(rhacs, buildinfo.ReleaseBuild)
 
 	// Load and render template files.
 	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(chartTemplatePathPrefix, metaVals)
@@ -87,6 +132,7 @@ func Command() *cobra.Command {
 	var debug bool
 	var debugChartPath string
 	var rhacs bool
+	var imageFlavor string
 
 	c := &cobra.Command{
 		Use: fmt.Sprintf("output <%s>", common.PrettyChartNameList),
@@ -95,7 +141,7 @@ func Command() *cobra.Command {
 				return errors.New("incorrect number of arguments, see --help for usage information")
 			}
 			chartName := args[0]
-			return outputHelmChart(chartName, outputDir, removeOutputDir, rhacs, debug, debugChartPath)
+			return outputHelmChart(chartName, outputDir, removeOutputDir, rhacs, imageFlavor, debug, debugChartPath)
 		},
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
@@ -107,6 +153,7 @@ func Command() *cobra.Command {
 		c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
 		c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
 	}
+	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", "", "default container registry for container images")
 
 	return c
 }
