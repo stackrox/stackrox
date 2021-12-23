@@ -26,11 +26,11 @@ var Analyzer = &analysis.Analyzer{
 var (
 	errType = types.Universe.Lookup("error").Type()
 
-	// exclusion list contains functions from the standard library where we're okay with not
+	// allow list contains functions from the standard library where we're okay with not
 	// checking returned errors.
 	allowList = map[string]set.FrozenStringSet{
 		"bytes": set.NewFrozenStringSet(
-			"WriteString",
+			"(*Buffer).WriteString",
 		),
 		"fmt": set.NewFrozenStringSet(
 			"Print",
@@ -156,7 +156,7 @@ func doesFuncReturnError(pass *analysis.Pass, fun ast.Expr) (name string, return
 	return
 }
 
-func isWhitelisted(fun *types.Func) bool {
+func isAllowlisted(fun *types.Func) bool {
 	if allowListSet, ok := allowList[fun.Pkg().Path()]; ok {
 		name := fun.Name()
 		sig := fun.Type().(*types.Signature)
@@ -208,7 +208,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 
 		namedFun, _ := typeutil.Callee(pass.TypesInfo, call).(*types.Func)
-		if namedFun != nil && isWhitelisted(namedFun) {
+		if namedFun != nil && isAllowlisted(namedFun) {
 			return
 		}
 		objName, returnsError := doesFuncReturnError(pass, fun)
