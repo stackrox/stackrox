@@ -109,42 +109,42 @@ func GetImageFlavorByBuildType() ImageFlavor {
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
-func (flavor *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
+func (f *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
 	overrideImageNoTag := fmt.Sprintf("%s/%s", img.Registry, img.Remote)
-	return flavor.MainImageNoTag() == overrideImageNoTag
+	return f.MainImageNoTag() == overrideImageNoTag
 }
 
 // ScannerImage is the container image reference (full name) for the scanner image.
-func (flavor *ImageFlavor) ScannerImage() string {
-	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.ScannerImageName, flavor.ScannerImageTag)
+func (f *ImageFlavor) ScannerImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerImageName, f.ScannerImageTag)
 }
 
 // ScannerDBImage is the container image reference (full name) for the scanner-db image.
-func (flavor *ImageFlavor) ScannerDBImage() string {
-	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.ScannerDBImageName, flavor.ScannerDBImageTag)
+func (f *ImageFlavor) ScannerDBImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerDBImageName, f.ScannerDBImageTag)
 }
 
 // MainImage is the container image reference (full name) for the "main" image.
-func (flavor *ImageFlavor) MainImage() string {
-	return fmt.Sprintf("%s/%s:%s", flavor.MainRegistry, flavor.MainImageName, flavor.MainImageTag)
+func (f *ImageFlavor) MainImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.MainImageName, f.MainImageTag)
 }
 
 // MainImageNoTag is the container image repository (image name including registry, excluding tag) for the "main" image.
-func (flavor *ImageFlavor) MainImageNoTag() string {
-	return fmt.Sprintf("%s/%s", flavor.MainRegistry, flavor.MainImageName)
+func (f *ImageFlavor) MainImageNoTag() string {
+	return fmt.Sprintf("%s/%s", f.MainRegistry, f.MainImageName)
 }
 
 // CollectorFullImage is the container image reference (full name) for the "collector" image
-func (flavor *ImageFlavor) CollectorFullImage() string {
-	return fmt.Sprintf("%s/%s:%s", flavor.CollectorRegistry, flavor.CollectorImageName, flavor.CollectorImageTag)
+func (f *ImageFlavor) CollectorFullImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.CollectorRegistry, f.CollectorImageName, f.CollectorImageTag)
 }
 
 // CollectorSlimImage is the container image reference (full name) for the "collector slim" image
-func (flavor *ImageFlavor) CollectorSlimImage() string {
-	return fmt.Sprintf("%s/%s:%s", flavor.CollectorRegistry, flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag)
+func (f *ImageFlavor) CollectorSlimImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.CollectorRegistry, f.CollectorSlimImageName, f.CollectorSlimImageTag)
 }
 
 // CollectorFullImageNoTag is the container image repository (image name including registry, excluding tag) for the  "collector" image.
-func (flavor *ImageFlavor) CollectorFullImageNoTag() string {
-	return fmt.Sprintf("%s/%s", flavor.CollectorRegistry, flavor.CollectorImageName)
+func (f *ImageFlavor) CollectorFullImageNoTag() string {
+	return fmt.Sprintf("%s/%s", f.CollectorRegistry, f.CollectorImageName)
 }
