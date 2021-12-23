@@ -404,6 +404,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	for _, c := range cases {
+		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
 
@@ -539,6 +540,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	for _, c := range cases {
+		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
 
