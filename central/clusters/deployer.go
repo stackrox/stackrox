@@ -113,21 +113,17 @@ func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFla
 // base image: "quay.io/namespace/main" => another: "quay.io/namespace/another"
 // Return values are split as ("quay.io", "namespace/another")
 func deriveImageWithNewName(baseImage *storage.ImageName, name string) (string, string) {
-	newImageName := &storage.ImageName{
-		Registry: baseImage.Registry,
-	}
+	registry := baseImage.Registry
 
-	// Populate Remote
 	// This handles the case where there is no namespace. e.g. stackrox.io/NAME:tag
+	var remote string
 	if slashIdx := strings.Index(baseImage.GetRemote(), "/"); slashIdx == -1 {
-		newImageName.Remote = name
+		remote = name
 	} else {
-		newImageName.Remote = baseImage.GetRemote()[:slashIdx] + "/" + name
+		remote = baseImage.GetRemote()[:slashIdx] + "/" + name
 	}
 
-	// Populate FullName
-	utils.NormalizeImageFullNameNoSha(newImageName)
-	return newImageName.Registry, newImageName.Remote
+	return registry, remote
 }
 
 func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValues {
