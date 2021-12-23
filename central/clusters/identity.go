@@ -42,7 +42,7 @@ func IssueSecuredClusterCertificates(cluster *storage.Cluster, appNamespace stri
 	if appNamespace != "" && appNamespace != namespaces.StackRox {
 		issueOpts = append(issueOpts, mtls.WithNamespace(appNamespace))
 	}
-	for _, serviceType := range allSecuredClusterServices {
+	for _, serviceType := range centralsensor.AllSecuredClusterServices {
 		issuedCert, err := CreateIdentity(cluster.GetId(), serviceType, identityStore, issueOpts...)
 		if err != nil {
 			return certs, err
