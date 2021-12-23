@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, Button, Divider } from '@patternfly/react-core';
+import { Flex, Button } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';

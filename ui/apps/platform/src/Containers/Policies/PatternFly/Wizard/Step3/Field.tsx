@@ -24,6 +24,7 @@ function Field({ descriptor, readOnly, name }: FieldProps) {
     const { value } = field;
     const { setValue } = helper;
 
+    // TODO: Add group/nested fields
     // this is to accomodate for recursive Fields (when type is 'group')
     // const path = descriptor.subpath ? name : `${name}.value`;
 
@@ -41,7 +42,6 @@ function Field({ descriptor, readOnly, name }: FieldProps) {
     }
 
     function handleChangeSelectMultiple(e, selection) {
-        // TODO need to fix default value
         if (value.value?.includes(selection)) {
             handleChangeValue(value.value.filter((item) => item !== selection));
         } else {
@@ -69,13 +69,15 @@ function Field({ descriptor, readOnly, name }: FieldProps) {
                 <ToggleGroup>
                     {descriptor?.radioButtons?.map(({ text, value: radioValue }) => {
                         return (
-                            <ToggleGroupItem
-                                text={text}
-                                buttonId={text}
-                                isDisabled={readOnly}
-                                isSelected={value.value === radioValue}
-                                onChange={handleChangeSelectedValue(radioValue)}
-                            />
+                            <React.Fragment key={text}>
+                                <ToggleGroupItem
+                                    text={text}
+                                    buttonId={text}
+                                    isDisabled={readOnly}
+                                    isSelected={value.value === radioValue}
+                                    onChange={handleChangeSelectedValue(radioValue)}
+                                />
+                            </React.Fragment>
                         );
                     })}
                 </ToggleGroup>

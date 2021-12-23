@@ -70,7 +70,6 @@ function PolicyGroupCard({
         ? descriptor.negatedName
         : descriptor?.longName || descriptor?.shortName || descriptor?.name;
 
-    console.log('PolicyGroupCard', group);
     return (
         <>
             <Card isFlat isCompact>
@@ -106,27 +105,28 @@ function PolicyGroupCard({
                         const name = `policySections[${sectionIndex}].policyGroups[${groupIndex}].values[${valueIndex}]`;
                         const groupName = `policySections[${sectionIndex}].policyGroups[${groupIndex}]`;
                         return (
-                            // eslint-disable-next-line react/no-array-index-key
-                            <Flex
-                                direction={{ default: 'column' }}
-                                spaceItems={{ default: 'spaceItemsNone' }}
-                            >
-                                <FieldValue
-                                    name={name}
-                                    length={group.values.length}
-                                    descriptor={descriptor}
-                                    handleRemoveValue={handleRemoveValue(valueIndex)}
-                                />
-                                {/* only show and/or operator if not at end of array */}
-                                {valueIndex !== group.values.length - 1 && (
-                                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                                        <AndOrOperatorField
-                                            name={groupName}
-                                            readOnly={readOnly || !descriptor.canBooleanLogic}
-                                        />
-                                    </FlexItem>
-                                )}
-                            </Flex>
+                            <React.Fragment key={name}>
+                                <Flex
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsNone' }}
+                                >
+                                    <FieldValue
+                                        name={name}
+                                        length={group.values.length}
+                                        descriptor={descriptor}
+                                        handleRemoveValue={handleRemoveValue(valueIndex)}
+                                    />
+                                    {/* only show and/or operator if not at end of array */}
+                                    {valueIndex !== group.values.length - 1 && (
+                                        <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                            <AndOrOperatorField
+                                                name={groupName}
+                                                readOnly={readOnly || !descriptor.canBooleanLogic}
+                                            />
+                                        </FlexItem>
+                                    )}
+                                </Flex>
+                            </React.Fragment>
                         );
                     })}
                     {/* this is because there can't be multiple boolean values */}

@@ -174,7 +174,7 @@ export type Descriptor = {
     placeholder?: string;
     canBooleanLogic?: boolean;
     default?: boolean;
-    defaultValue?: string | boolean;
+    defaultValue?: string | boolean | [];
     disabled?: boolean;
     reverse?: boolean;
 };
@@ -582,6 +582,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             value: key,
         })),
         canBooleanLogic: true,
+        defaultValue: [],
     },
     {
         label: 'Protocol',
