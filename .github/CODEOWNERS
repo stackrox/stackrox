@@ -3,4 +3,6 @@
 # This will automatically assign a team / people as reviewers for PRs based on the files changed within the PR.
 
 # Merlin's main responsibilities include roxctl, authN (authproviders), authZ (SAC).
-roxctl/**/* pkg/auth/**/* pkg/sac/**/* @stackrox/merlin
+roxctl/**/*     @stackrox/merlin
+pkg/auth/**/*   @stackrox/merlin
+pkg/sac/**/*    @stackrox/merlin
