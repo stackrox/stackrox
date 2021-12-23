@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/internal"
 )
@@ -21,15 +20,17 @@ func GetMainVersion() string {
 
 // GetCollectorVersion returns the current Collector tag.
 func GetCollectorVersion() string {
-	if env.CollectorVersion.Setting() != "" {
-		return env.CollectorVersion.Setting()
-	}
-	return internal.CollectorVersion
+	return GetMainVersion()
+	// if env.CollectorVersion.Setting() != "" {
+	// 	return env.CollectorVersion.Setting()
+	// }
+	// return internal.CollectorVersion
 }
 
 // GetScannerVersion returns the current Scanner tag.
 func GetScannerVersion() string {
-	return internal.ScannerVersion
+	return GetMainVersion()
+	// return internal.ScannerVersion
 }
 
 // Versions represents a collection of various pieces of version information.
