@@ -31,3 +31,7 @@ export function saveReport(report: ReportConfiguration): Promise<ReportConfigura
         return response.data;
     });
 }
+
+export function deleteReport(reportId: string): Promise<Record<string, never>> {
+    return axios.delete(`${reportConfigurationsUrl}/${reportId}`);
+}

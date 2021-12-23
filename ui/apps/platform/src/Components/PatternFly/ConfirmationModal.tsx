@@ -1,22 +1,21 @@
 import React, { ReactElement } from 'react';
-import pluralize from 'pluralize';
 import { Modal, ModalVariant, Button } from '@patternfly/react-core';
 
-type DeleteConfirmationProps = {
-    selectedReportIds: string[];
+type ConfirmationModalProps = {
+    ariaLabel: string;
     closeModal: () => void;
     cancelModal: () => void;
     isOpen: boolean;
+    children: ReactElement | ReactElement[] | string;
 };
 
-function DeleteConfirmation({
-    selectedReportIds,
+function ConfirmationModal({
+    ariaLabel,
     closeModal,
     cancelModal,
     isOpen,
-}: DeleteConfirmationProps): ReactElement {
-    const numSelectedRows = selectedReportIds.length;
-
+    children,
+}: ConfirmationModalProps): ReactElement {
     return (
         <Modal
             isOpen={isOpen}
@@ -31,14 +30,11 @@ function DeleteConfirmation({
             ]}
             onClose={cancelModal}
             data-testid="delete-reports-modal"
-            aria-label="Confirm deleting reports"
+            aria-label={ariaLabel}
         >
-            {`Are you sure you want to delete ${numSelectedRows} ${pluralize(
-                'report',
-                numSelectedRows
-            )}?`}
+            {children}
         </Modal>
     );
 }
 
-export default DeleteConfirmation;
+export default ConfirmationModal;

@@ -16,7 +16,7 @@ import {
 import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
 import { vulnManagementReportsPath } from 'routePaths';
-import { fetchReports } from 'services/ReportsService';
+import { fetchReports, deleteReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
@@ -26,6 +26,10 @@ function ReportTablePage(): ReactElement {
     const columns = VulnMgmtReportTableColumnDescriptor;
 
     useEffect(() => {
+        refreshReportList();
+    }, []);
+
+    function refreshReportList() {
         fetchReports()
             .then((reportsResponse) => {
                 setReports(reportsResponse);
@@ -33,7 +37,15 @@ function ReportTablePage(): ReactElement {
             .catch(() => {
                 // TODO: show error message on failure
             });
-    }, []);
+    }
+
+    function onDeleteReports(reportIds) {
+        const deletePromises = reportIds.map((id) => deleteReport(id));
+
+        return Promise.all(deletePromises).then((response) => {
+            refreshReportList();
+        });
+    }
 
     return (
         <>
@@ -81,33 +93,34 @@ function ReportTablePage(): ReactElement {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection variant={PageSectionVariants.light}>
-                {reports.length > 0 ? (
-                    <VulnMgmtReportTablePanel
-                        reports={reports}
-                        reportCount={0}
-                        currentPage={0}
-                        setCurrentPage={function (page: number): void {
-                            throw new Error('Function not implemented.');
-                        }}
-                        perPage={0}
-                        setPerPage={function (perPage: number): void {
-                            throw new Error('Function not implemented.');
-                        }}
-                        activeSortIndex={0}
-                        setActiveSortIndex={function (idx: number): void {
-                            throw new Error('Function not implemented.');
-                        }}
-                        activeSortDirection="desc"
-                        setActiveSortDirection={function (dir: string): void {
-                            throw new Error('Function not implemented.');
-                        }}
-                        columns={columns}
-                    />
-                ) : (
+            {reports.length > 0 ? (
+                <VulnMgmtReportTablePanel
+                    reports={reports}
+                    reportCount={0}
+                    currentPage={0}
+                    setCurrentPage={function (page: number): void {
+                        throw new Error('Function not implemented.');
+                    }}
+                    perPage={0}
+                    setPerPage={function (perPage: number): void {
+                        throw new Error('Function not implemented.');
+                    }}
+                    activeSortIndex={0}
+                    setActiveSortIndex={function (idx: number): void {
+                        throw new Error('Function not implemented.');
+                    }}
+                    activeSortDirection="desc"
+                    setActiveSortDirection={function (dir: string): void {
+                        throw new Error('Function not implemented.');
+                    }}
+                    columns={columns}
+                    onDeleteReports={onDeleteReports}
+                />
+            ) : (
+                <PageSection variant={PageSectionVariants.light} isFilled>
                     <ACSEmptyState title="No reports are currently configured." />
-                )}
-            </PageSection>
+                </PageSection>
+            )}
         </>
     );
 }
