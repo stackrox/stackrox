@@ -11,35 +11,35 @@ import (
 // thus changing them might break error matching for some clients, e.g., the UI.
 var (
 	// AlreadyExists indicates that the object already exists.
-	AlreadyExists = New(CodeAlreadyExists, "", "already exists")
+	AlreadyExists = New(CodeAlreadyExists, "already exists")
 
 	// InvalidArgs indicates that a request has invalid arguments.
-	InvalidArgs = New(CodeInvalidArgs, "", "invalid arguments")
+	InvalidArgs = New(CodeInvalidArgs, "invalid arguments")
 
 	// NotFound indicates that the requested object was not found.
-	NotFound = New(CodeNotFound, "", "not found")
+	NotFound = New(CodeNotFound, "not found")
 
 	// ReferencedByAnotherObject indicates that the requested object cannot
 	// be removed because it is referred to / in use by another object.
-	ReferencedByAnotherObject = New(CodeReferencedByAnotherObject, "", "referenced by another object")
+	ReferencedByAnotherObject = New(CodeReferencedByAnotherObject, "referenced by another object")
 
 	// InvariantViolation indicates that some internal invariant has been
 	// violated and the underlying component is in an inconsistent state.
-	InvariantViolation = New(CodeInvariantViolation, "", "invariant violation")
+	InvariantViolation = New(CodeInvariantViolation, "invariant violation")
 
 	// NoCredentials occurs if no credentials can be found.
-	NoCredentials = New(CodeNoCredentials, "", "credentials not found")
+	NoCredentials = New(CodeNoCredentials, "credentials not found")
 
 	// NoValidRole occurs if no valid role can be found for user.
-	NoValidRole = New(CodeNoValidRole, "", "no valid role")
+	NoValidRole = New(CodeNoValidRole, "no valid role")
 
 	// NotAuthorized occurs if credentials are found, but they are
 	// insufficiently authorized.
-	NotAuthorized = New(CodeNotAuthorized, "", "not authorized")
+	NotAuthorized = New(CodeNotAuthorized, "not authorized")
 
 	// NoAuthzConfigured occurs if authorization is not implemented for a
 	// service. This is a programming error.
-	NoAuthzConfigured = New(CodeNoAuthzConfigured, "", "service authorization is misconfigured")
+	NoAuthzConfigured = New(CodeNoAuthzConfigured, "service authorization is misconfigured")
 )
 
 // GenericNoValidRole wraps ErrNoValidRole with a generic error message.

@@ -22,7 +22,7 @@ func format(t, id string) string {
 
 var (
 	// ErrNotFound is a package specific sentinel error, indicating that the requested object was not found.
-	ErrNotFound = errox.New(errox.CodeNotFound, "db", "object not found")
+	ErrNotFound = errox.NewCustom(errox.NotFound, "object not found")
 )
 
 // NewNotFound returns a new error associated with the provided type and id.

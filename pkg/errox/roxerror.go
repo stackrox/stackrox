@@ -1,7 +1,7 @@
 package errox
 
 import (
-	"strings"
+	"fmt"
 
 	"github.com/pkg/errors"
 )
@@ -33,23 +33,32 @@ const (
 // could convert such errors to other types.
 type RoxError interface {
 	error
-	Namespace() string
 	Code() Code
+	Base() RoxError
 }
 
 type errRox struct {
-	code      Code
-	namespace string
-	message   string
+	code    Code
+	base    RoxError
+	cause   error
+	message string
 }
 
 // New returns a new RoxError.
-func New(code Code, namespace, message string) RoxError {
-	return &errRox{code, namespace, message}
+func New(code Code, message string) RoxError {
+	return &errRox{code, nil, nil, message}
+}
+
+// NewCustom creates a new error based on base error.
+func NewCustom(base RoxError, message string) RoxError {
+	return &errRox{base.Code(), base, nil, message}
 }
 
 // Error return error message. Implements error interface.
 func (e *errRox) Error() string {
+	if e.cause != nil {
+		return fmt.Sprintf("%s: %s", e.message, e.cause.Error())
+	}
 	return e.message
 }
 
@@ -58,16 +67,37 @@ func (e *errRox) Code() Code {
 	return e.code
 }
 
-// Namespace returns error namespace. Implements RoxError interface.
-func (e *errRox) Namespace() string {
-	return e.namespace
+// Base returns the error base of the error. Implements RoxError interface.
+func (e *errRox) Base() RoxError {
+	return e.base
 }
 
-// Is returns true if err wraps the same error code and comes from the same or higher namespace
+// Wrap wraps an error by a RoxError. Returns a new error.
+func Wrap(cause error, rox RoxError) error {
+	return &errRox{
+		code:    rox.Code(),
+		base:    rox,
+		cause:   cause,
+		message: rox.Error(),
+	}
+}
+
+// Unwrap returns the cause of the error.
+func (e *errRox) Unwrap() error {
+	return e.cause
+}
+
+// Is returns true if e is or based on err.
 func (e *errRox) Is(err error) bool {
-	var re RoxError
-	if errors.As(err, &re) {
-		return e.code == re.Code() && strings.HasPrefix(e.namespace, re.Namespace())
+	if re := RoxError(nil); errors.As(err, &re) {
+		// Climb by the hierarchy to find the matching base.
+		// Don't confuse with Unwrap().
+		var base RoxError = e
+		for ; base != nil; base = base.Base() {
+			if re == base {
+				return true
+			}
+		}
 	}
 	return false
 }
