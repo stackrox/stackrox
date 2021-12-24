@@ -96,12 +96,12 @@ func determineCollectorImages(mainImage, collectorImage *storage.ImageName, imag
 		// Use default values for collector full/slim if no collector image is specified and main image is main
 		collectorImageFull = &storage.ImageName{
 			Registry: imageFlavor.CollectorRegistry,
-			Remote: imageFlavor.CollectorImageName,
-			Tag: imageFlavor.CollectorImageTag,
+			Remote:   imageFlavor.CollectorImageName,
+			Tag:      imageFlavor.CollectorImageTag,
 		}
 		collectorImageSlim = &storage.ImageName{
 			Remote: imageFlavor.CollectorSlimImageName,
-			Tag: imageFlavor.CollectorSlimImageTag,
+			Tag:    imageFlavor.CollectorSlimImageTag,
 		}
 	} else if collectorImage == nil {
 		// Derive collector full/slim from custom main image
@@ -135,7 +135,7 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 
 	return &storage.ImageName{
 		Registry: baseImage.Registry,
-		Remote: remote,
+		Remote:   remote,
 	}
 }
 
