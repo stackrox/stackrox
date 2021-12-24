@@ -49,7 +49,7 @@ updates:
       - "stackrox/backend-dep-updaters"
 
   - package-ecosystem: 'gomod'
-    directory: '/tools/lint/'
+    directory: '/tools/linters/'
     schedule:
       interval: 'weekly'
       day: 'wednesday'
