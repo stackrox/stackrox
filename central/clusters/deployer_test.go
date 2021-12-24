@@ -94,9 +94,9 @@ func (s *deployerTestSuite) Test_deriveImageWithNewName() {
 
 	for name, testCase := range cases {
 		s.Run(name, func() {
-			actualRegistry, actualRepository := deriveImageWithNewName(testCase.baseImage, testCase.targetImageName)
-			s.Equal(testCase.expectedRegistry, actualRegistry)
-			s.Equal(testCase.expectedRepository, actualRepository)
+			img := deriveImageWithNewName(testCase.baseImage, testCase.targetImageName)
+			s.Equal(testCase.expectedRegistry, img.Registry)
+			s.Equal(testCase.expectedRepository, img.Remote)
 		})
 	}
 }
