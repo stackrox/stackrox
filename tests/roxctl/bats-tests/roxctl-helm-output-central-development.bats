@@ -28,13 +28,6 @@ teardown() {
   assert_output --partial "Warning: '--rhacs' has priority over '--image-defaults'"
 }
 
-@test "roxctl-development central generate k8s should use docker.io registry" {
-  run roxctl-development central generate k8s hostpath --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Wrote central bundle to"
-  assert_components_registry "$out_dir/central" 'docker.io' "main"
-}
-
 @test "roxctl-development helm output central-services should use docker.io registry" {
   run roxctl-development helm output central-services --output-dir "$out_dir"
   assert_success
@@ -78,4 +71,12 @@ teardown() {
   # TODO(RS-380): change assertions to
   # assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
   assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
+}
+
+@test "roxctl-development central generate k8s should use docker.io registry" {
+  run roxctl-development central generate k8s hostpath --output-dir "$out_dir"
+  assert_success
+  assert_output --partial "Wrote central bundle to"
+  assert_components_registry "$out_dir/central" 'docker.io' 'main'
+  assert_components_registry "$out_dir/scanner" 'docker.io' 'scanner' 'scanner-db'
 }

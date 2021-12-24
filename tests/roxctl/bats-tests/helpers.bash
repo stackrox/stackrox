@@ -103,8 +103,19 @@ registry_regex() {
     registry.redhat.io)
       echo "registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-$component:$version"
       ;;
+    example.com)
+      echo "example\.com/$component:$version"
+      ;;
     *)
       fail "ERROR: unknown registry-slug: '$registry_slug'"
       ;;
   esac
+}
+
+skip_unless_rhacs() {
+  grep "\-\-rhacs" <(roxctl central generate -h) || skip "because roxctl generate does not support --rhacs flag yet"
+}
+
+skip_unless_image_defaults() {
+  grep "\-\-image\-defaults" <(roxctl central generate -h) || skip "because roxctl generate does not support --image-defaults flag yet"
 }
