@@ -5,24 +5,25 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/mtls"
 	"google.golang.org/grpc"
-
-	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
+// Service is the interface for the local scanner service.
 type Service interface {
 	pkgGRPC.APIService
 	central.LocalScannerServiceServer
 }
 
+// New creates a new local scanner service.
 func New() Service {
 	return &serviceImpl{}
 }
 
-type serviceImpl struct {}
+type serviceImpl struct{}
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
 	central.RegisterLocalScannerServiceServer(server, s)
@@ -34,11 +35,11 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 
 func localCertificatesForCertMap(serviceType storage.ServiceType, certificates secretDataMap) *central.LocalScannerCertificates {
 	// FIXME replace secretDataMap in central/localscanner/certificates.go by typed struct
-	return &central.LocalScannerCertificates {
+	return &central.LocalScannerCertificates{
 		ServiceType: serviceType,
-		Ca: certificates[mtls.CACertFileName],
-		Cert: certificates[mtls.ServiceCertFileName],
-		Key: certificates[mtls.ServiceKeyFileName],
+		Ca:          certificates[mtls.CACertFileName],
+		Cert:        certificates[mtls.ServiceCertFileName],
+		Key:         certificates[mtls.ServiceKeyFileName],
 	}
 }
 
@@ -60,7 +61,7 @@ func (s *serviceImpl) IssueLocalScannerCerts(_ context.Context, request *central
 	}
 
 	return &central.IssueLocalScannerCertsResponse{
-		ScannerCerts: localCertificatesForCertMap(storage.ServiceType_SCANNER_SERVICE, scannerCertificates),
+		ScannerCerts:   localCertificatesForCertMap(storage.ServiceType_SCANNER_SERVICE, scannerCertificates),
 		ScannerDbCerts: localCertificatesForCertMap(storage.ServiceType_SCANNER_DB_SERVICE, scannerDBCertificates),
 	}, nil
 }
