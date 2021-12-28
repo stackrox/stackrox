@@ -28,3 +28,10 @@ func WithEphemeralValidity() IssueCertOption {
 		o.signerProfile = ephemeralProfile
 	}
 }
+
+// WithLocalScannerProfile requests certificates using the local scanner profile.
+func WithLocalScannerProfile() IssueCertOption {
+	return func(o *issueOptions) {
+		o.signerProfile = localScannerProfile
+	}
+}

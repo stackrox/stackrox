@@ -57,6 +57,9 @@ const (
 
 	ephemeralProfile                = "ephemeral"
 	ephemeralInitBundleCertLifetime = 3 * time.Hour
+
+	localScannerProfile             = "localScanner"
+	localScannerProfileCertLifetime = 2 * 24 * time.Hour
 )
 
 var (
@@ -185,7 +188,8 @@ func createSigningPolicy() *config.Signing {
 	return &config.Signing{
 		Default: createSigningProfile(certLifetime, beforeGracePeriod),
 		Profiles: map[string]*config.SigningProfile{
-			ephemeralProfile: createSigningProfile(ephemeralInitBundleCertLifetime, 0),
+			ephemeralProfile:    createSigningProfile(ephemeralInitBundleCertLifetime, 0),
+			localScannerProfile: createSigningProfile(localScannerProfileCertLifetime, 0),
 		},
 	}
 }
