@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "storage/service_identity.proto";
+
+package central;
+
+message LocalScannerCertificates {
+  storage.ServiceType service_type = 1;
+  bytes               ca           = 2;
+  bytes               cert         = 3;
+  bytes               key          = 4;
+}
+
+message IssueLocalScannerCertsRequest {
+  string cluster_id = 1;
+  string namespace  = 2;
+}
+
+message IssueLocalScannerCertsResponse {
+  LocalScannerCertificates scanner_certs    = 1;
+  LocalScannerCertificates scanner_db_certs = 2;
+}
+
+service LocalScannerService {
+  rpc IssueLocalScannerCerts(IssueLocalScannerCertsRequest) returns (IssueLocalScannerCertsResponse);
+}

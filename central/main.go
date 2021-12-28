@@ -67,6 +67,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
 	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
+	"github.com/stackrox/rox/central/localscanner"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
@@ -312,6 +313,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		imageService.Singleton(),
 		iiService.Singleton(),
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
+		localscanner.New(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
