@@ -10,11 +10,11 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
-func generateServiceCertificate(serviceType storage.ServiceType, namespace string, clusterId string) (*mtls.IssuedCert, error) {
+func generateServiceCertificate(serviceType storage.ServiceType, namespace string, clusterID string) (*mtls.IssuedCert, error) {
 	if serviceType != storage.ServiceType_SCANNER_SERVICE && serviceType != storage.ServiceType_SCANNER_DB_SERVICE {
-		return nil, errors.Errorf("This function only generates certificates for Scanner services")
+		return nil, errors.New("can only generate certificates for Scanner services")
 	}
-	subject := mtls.NewSubject(clusterId, serviceType)
+	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
 		mtls.WithLocalScannerProfile(),
 		mtls.WithNamespace(namespace),
@@ -26,13 +26,13 @@ func generateServiceCertificate(serviceType storage.ServiceType, namespace strin
 	return scannerCert, nil
 }
 
-func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterId string) (secretDataMap, error) {
+func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
 	numServiceCertDataEntries := 3 // cert pem + key pem + ca pem
 	fileMap := make(secretDataMap, numServiceCertDataEntries)
 
-	cert, err := generateServiceCertificate(serviceType, namespace, clusterId)
+	cert, err := generateServiceCertificate(serviceType, namespace, clusterID)
 	if err != nil {
-		return fileMap, errors.Wrap(err,"error generating service certificate")
+		return fileMap, errors.Wrap(err, "error generating service certificate")
 	}
 	certgen.AddCertToFileMap(fileMap, cert, "")
 

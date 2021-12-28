@@ -13,7 +13,7 @@ import (
 
 const (
 	namespace = "namespace"
-	clusterId = "clusterId"
+	clusterID = "clusterID"
 )
 
 func TestHandler(t *testing.T) {
@@ -39,17 +39,17 @@ func (s *localScannerSuite) SetupTest() {
 }
 
 func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
-	testCases := []struct{
-		service  storage.ServiceType
+	testCases := []struct {
+		service     storage.ServiceType
 		expectError bool
-	} {
+	}{
 		{storage.ServiceType_SCANNER_SERVICE, false},
 		{storage.ServiceType_SCANNER_DB_SERVICE, false},
 		{storage.ServiceType_SENSOR_SERVICE, true},
 	}
 
 	for _, tc := range testCases {
-		certMap, err := generateServiceCertMap(tc.service, namespace, clusterId)
+		certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
 		if tc.expectError {
 			s.Require().Error(err, tc.service)
 			continue
@@ -65,11 +65,11 @@ func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
 }
 
 func (s *localScannerSuite) TestCertificateGeneration() {
-	testCases := []struct{
-		service  storage.ServiceType
-		expectOU string
+	testCases := []struct {
+		service                  storage.ServiceType
+		expectOU                 string
 		expectedAlternativeNames []string
-	} {
+	}{
 		{storage.ServiceType_SCANNER_SERVICE, "SCANNER_SERVICE",
 			[]string{"scanner.stackrox", "scanner.stackrox.svc", "scanner.namespace", "scanner.namespace.svc"}},
 		{storage.ServiceType_SCANNER_DB_SERVICE, "SCANNER_DB_SERVICE",
@@ -77,7 +77,7 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 	}
 
 	for _, tc := range testCases {
-		cert, err := generateServiceCertificate(tc.service, namespace, clusterId)
+		cert, err := generateServiceCertificate(tc.service, namespace, clusterID)
 
 		s.Require().NoError(err, tc.service)
 
@@ -86,7 +86,7 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 		s.Assert().Equal(1, len(certOUs), tc.service)
 		s.Assert().Equal(tc.expectOU, certOUs[0], tc.service)
 
-		s.Assert().Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterId), subject.CommonName, tc.service)
+		s.Assert().Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName, tc.service)
 
 		certAlternativeNames := cert.X509Cert.DNSNames
 		s.Assert().Equal(len(tc.expectedAlternativeNames), len(certAlternativeNames), tc.service)
@@ -94,8 +94,6 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 			s.Assert().Contains(certAlternativeNames, name, tc.service)
 		}
 
-		s.Assert().Equal(cert.X509Cert.NotBefore.Add(2 * 24 * time.Hour), cert.X509Cert.NotAfter, tc.service)
+		s.Assert().Equal(cert.X509Cert.NotBefore.Add(2*24*time.Hour), cert.X509Cert.NotAfter, tc.service)
 	}
 }
-
-
