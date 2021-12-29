@@ -31,3 +31,42 @@ teardown() {
   assert_components_registry "$out_dir/central" 'registry.redhat.io' 'main'
   assert_components_registry "$out_dir/scanner" 'registry.redhat.io' 'scanner' 'scanner-db'
 }
+
+@test "roxctl-release roxctl central generate k8s --image-defaults=rhacs should use redhat.io registry" {
+  skip_unless_image_defaults
+  run roxctl-release central generate --image-defaults=stackrox.io k8s hostpath --output-dir $out_dir
+  assert_success
+  assert_components_registry "$out_dir/central" 'docker.io' 'main'
+  assert_components_registry "$out_dir/scanner" 'docker.io' 'scanner' 'scanner-db'
+}
+
+@test "roxctl-release roxctl central generate k8s should raise warning when both --rhacs and --image-defaults flags are used" {
+  skip_unless_image_defaults
+  skip_unless_rhacs
+  run roxctl-release central generate --rhacs --image-defaults="stackrox.io" k8s hostpath --output-dir "$out_dir"
+  assert_success
+  assert_output --partial "Warning: '--rhacs' has priority over '--image-defaults'"
+}
+
+@test "roxctl-release roxctl central generate k8s --image-defaults=stackrox.io should use stackrox.io registry" {
+  skip_unless_image_defaults
+  run roxctl-release central generate --image-defaults=stackrox.io k8s hostpath --output-dir $out_dir
+  assert_success
+  assert_components_registry "$out_dir/central" 'stackrox.io' 'main'
+  assert_components_registry "$out_dir/scanner" 'stackrox.io' 'scanner' 'scanner-db'
+}
+
+@test "roxctl-release roxctl central generate k8s --image-defaults=development should fail" {
+  skip_unless_image_defaults
+  run roxctl-release central generate --image-defaults=stackrox.io k8s hostpath --output-dir $out_dir
+  assert_failure
+  assert_output --partial "invalid value of '--image-defaults=development', allowed values:"
+}
+
+@test "roxctl-release roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
+  skip_unless_image_defaults
+  run roxctl-release helm output central-services --image-defaults='' --output-dir "$out_dir"
+  assert_success
+  assert_components_registry "$out_dir/central" 'stackrox.io' 'main'
+  assert_components_registry "$out_dir/scanner" 'stackrox.io' 'scanner' 'scanner-db'
+}

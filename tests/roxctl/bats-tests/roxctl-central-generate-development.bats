@@ -27,8 +27,6 @@ teardown() {
 
 
 @test "roxctl-development central generate k8s should respect customly-provided images" {
-  # Ensure that custom images are respected
-  # TODO(PR): check how to set collector immage (here or somewhere else)
   run roxctl-development central generate k8s \
     --main-image example.com/main:1.2.3 \
     --scanner-image example.com/scanner:1.2.3 \
@@ -56,9 +54,33 @@ teardown() {
   assert_components_registry "$out_dir/scanner" 'stackrox.io' 'scanner' 'scanner-db'
 }
 
+@test "roxctl-development roxctl central generate k8s should raise warning when both --rhacs and --image-defaults flags are used" {
+  skip_unless_image_defaults
+  skip_unless_rhacs
+  run roxctl-development central generate --rhacs --image-defaults="stackrox.io" k8s hostpath --output-dir "$out_dir"
+  assert_success
+  assert_output --partial "Warning: '--rhacs' has priority over '--image-defaults'"
+}
+
+@test "roxctl-development roxctl central generate k8s --image-defaults=rhacs should use redhat.io registry" {
+  skip_unless_image_defaults
+  run roxctl-development central generate --image-defaults=stackrox.io k8s hostpath --output-dir $out_dir
+  assert_success
+  assert_components_registry "$out_dir/central" 'redhat.io' 'main'
+  assert_components_registry "$out_dir/scanner" 'redhat.io' 'scanner' 'scanner-db'
+}
+
 @test "roxctl-development roxctl central generate k8s --image-defaults=development should use docker.io registry" {
   skip_unless_image_defaults
   run roxctl-development central generate --image-defaults=development k8s hostpath --output-dir $out_dir
+  assert_success
+  assert_components_registry "$out_dir/central" 'docker.io' 'main'
+  assert_components_registry "$out_dir/scanner" 'docker.io' 'scanner' 'scanner-db'
+}
+
+@test "roxctl-development roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
+  skip_unless_image_defaults
+  run roxctl-development helm output central-services --image-defaults='' --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'docker.io' 'main'
   assert_components_registry "$out_dir/scanner" 'docker.io' 'scanner' 'scanner-db'
