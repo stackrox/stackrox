@@ -6,15 +6,14 @@ out_dir=""
 setup() {
   out_dir="$(mktemp -d -u)"
   command -v yq || skip "Tests in this file require yq"
-  [[ $GOTAGS = release ]] || skip "This is not a release build"
 }
 
 teardown() {
   rm -rf "$out_dir"
 }
 
-@test "(release) roxctl helm output secured-cluster-services --rhacs should use redhat.io registry" {
-  run roxctl helm output secured-cluster-services --ca "${ca_cert}-cert.pem" --output-dir "$out_dir"
+@test "roxctl-release helm output secured-cluster-services --rhacs should use redhat.io registry" {
+  run roxctl-release helm output secured-cluster-services --ca "${ca_cert}-cert.pem" --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 

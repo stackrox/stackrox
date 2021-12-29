@@ -20,8 +20,8 @@ teardown() {
   rm -f "${ca_cert}-key.pem" "${ca_cert}-cert.pem"
 }
 
-@test "(devel) roxctl helm output secured-cluster-services should use docker.io registry" {
-  run roxctl helm output secured-cluster-services --ca "${ca_cert}-cert.pem" --output-dir "$out_dir"
+@test "roxctl-development helm output secured-cluster-services should use docker.io registry" {
+  run roxctl-development helm output secured-cluster-services --ca "${ca_cert}-cert.pem" --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
