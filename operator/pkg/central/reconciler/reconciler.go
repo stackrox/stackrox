@@ -10,21 +10,25 @@ import (
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/pkg/version"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
-func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error {
+func RegisterNewReconciler(mgr ctrl.Manager) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
-		proxy.InjectProxyEnvVars(translation.Translator{Client: client}, proxyEnv),
-		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client)),
-		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(client)),
-		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(client)),
-		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(client)),
-		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(client, proxyEnv)),
+		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv),
+		pkgReconciler.WithExtraWatch(
+			&source.Kind{Type: &platform.SecuredCluster{}},
+			handleSiblingCentrals(mgr),
+			createAndDeleteOnly{}),
+		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient())),
+		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient())),
+		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(mgr.GetClient())),
+		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient())),
+		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 	)

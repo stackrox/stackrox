@@ -1,0 +1,8 @@
+# For further documentation on CODEOWNERS, visit
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#about-code-owners
+# This will automatically assign a team / people as reviewers for PRs based on the files changed within the PR.
+
+# Merlin's main responsibilities include roxctl, authN (authproviders), authZ (SAC).
+roxctl/**/*     @stackrox/merlin
+pkg/auth/**/*   @stackrox/merlin
+pkg/sac/**/*    @stackrox/merlin

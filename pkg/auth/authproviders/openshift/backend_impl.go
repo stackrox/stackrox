@@ -140,20 +140,18 @@ func (b *backend) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*a
 }
 
 func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthResponse {
+	// OpenShift doesn't provide emails in their users API response, see
+	// https://docs.openshift.com/container-platform/4.9/rest_api/user_and_group_apis/user-user-openshift-io-v1.html
 	attributes := map[string][]string{
 		"userid": {id.UserID},
 		"name":   {id.Username},
 		"groups": id.Groups,
-	}
-	if id.Email != "" {
-		attributes["email"] = []string{id.Email}
 	}
 
 	return &authproviders.AuthResponse{
 		Claims: &tokens.ExternalUserClaim{
 			UserID:     id.Username,
 			FullName:   id.Username,
-			Email:      id.Email,
 			Attributes: attributes,
 		},
 		Expiration: time.Now().Add(roxTokenExpiration),

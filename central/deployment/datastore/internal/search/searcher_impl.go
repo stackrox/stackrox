@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	"github.com/stackrox/rox/central/cve/cveedge"
+	"github.com/stackrox/rox/central/cve/edgefields"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -47,6 +47,7 @@ var (
 			imageComponentEdgeMappings.OptionsMap,
 			componentOptionsMap,
 			componentCVEEdgeMappings.OptionsMap,
+			imageCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
 		),
 	).Remove(search.RiskScore)
@@ -182,7 +183,7 @@ func formatSearcher(graphProvider graph.Provider,
 		imageSearcher,
 		deploymentSearcher,
 		imageCVEEdgeSearcher)
-	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), deploymentSAC.GetSACFilter()) // Make the UnsafeSearcher safe.
+	filteredSearcher := filtered.Searcher(edgefields.HandleCVEEdgeSearchQuery(compoundSearcher), deploymentSAC.GetSACFilter()) // Make the UnsafeSearcher safe.
 	// To transform Image to Image Registry, Image Remote, and Image Tag.
 	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher, imageMappings.OptionsMap)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortFieldSearcher)

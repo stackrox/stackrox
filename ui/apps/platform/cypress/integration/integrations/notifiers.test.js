@@ -550,21 +550,12 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.disabled');
 
             // Step 2, check fields for invalid formats
+            // none
+
+            // Step 3, check valid form and save
             getInputByLabel('Integration name')
                 .clear()
                 .type(`Nova Teams ${new Date().toISOString()}`);
-            getInputByLabel('Default Teams webhook')
-                .clear()
-                .type('https://outlook.office365.com/webhook')
-                .blur();
-
-            getHelperElementByLabel('Default Teams webhook').contains(
-                'Must be a valid Teams webhook URL, like https://outlook.office365.com/webhook/EXAMPLE'
-            );
-            cy.get(selectors.buttons.test).should('be.disabled');
-            cy.get(selectors.buttons.save).should('be.disabled');
-
-            // Step 3, check valid form and save
             getInputByLabel('Default Teams webhook')
                 .clear()
                 .type('https://outlook.office365.com/webhook/scooby/doo')

@@ -1,0 +1,23 @@
+# This file provides the list of labels to apply on PRs based on files changed
+# More information on the supported syntax can be found here: https://github.com/actions/labeler
+
+area/roxctl:
+- roxctl/**/*
+area/auth:
+- pkg/auth/**/*
+- pkg/sac/**/*
+area/ui:
+- ui/**/*
+area/operator:
+- operator/**/*
+area/helm:
+- image/**/*
+- central/helm/**/*
+- central/helmcharts/**/*
+- pkg/helm/**/*
+area/sensor:
+- sensor/**/*
+area/central:
+- central/**/*
+area/admission-controller:
+- sensor/admission-control/**/*

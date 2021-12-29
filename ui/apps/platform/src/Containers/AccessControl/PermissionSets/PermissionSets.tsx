@@ -136,7 +136,7 @@ function PermissionSets(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityId, { action: 'update' }));
+        history.push(getEntityPath(entityType, entityId, { action: 'edit' }));
     }
 
     function handleCancel() {

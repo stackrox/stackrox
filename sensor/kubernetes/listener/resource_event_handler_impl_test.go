@@ -105,7 +105,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestIDsAddedToMissingSet() {
 	expectedMap := makeExpectedMap(testMsgOne)
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 
-	//Can't change the expected values.  We've already stopped tracking the seen values
+	// Can't change the expected values.  We've already stopped tracking the seen values
 	testMsgTwo := randomID()
 	handler.PopulateInitialObjects([]interface{}{testMsgTwo})
 	suite.Equal(*expectedMap, handler.missingInitialIDs)

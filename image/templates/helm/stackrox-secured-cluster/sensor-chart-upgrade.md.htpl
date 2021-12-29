@@ -68,7 +68,7 @@ To upgrade,
    helm upgrade -n stackrox sensor stackrox/secured-cluster-services \
        --reuse-values -f sensor-values.yaml -f <fetch-secrets-output.yaml> ...
    ```
-   The above command assumes that you have added the [< .ChartRepo.URL >] Helm
+   The above command assumes that you have added the [< required "" .ChartRepo.URL >] Helm
    chart repository to your local Helm installation. See the main [README.md](README.md)
    for instructions on how to set this up.
    If you want to use this chart from a local directory, replace

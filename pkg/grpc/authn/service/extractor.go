@@ -37,7 +37,6 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	if e.validator != nil {
 		err := e.validator.ValidateClientCertificate(ctx, ri.VerifiedChains[0])
 		if err != nil {
-			log.Errorf("init bundle cert is revoked: %q", ri.VerifiedChains[0][0].Subject.Organization)
 			return nil, err
 		}
 	}

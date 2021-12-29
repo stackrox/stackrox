@@ -3,11 +3,12 @@ import qs from 'qs';
 
 import { accessControlBasePathV2, accessControlPathV2 } from 'routePaths'; // import { accessControlPath } from 'routePaths';
 import { AccessControlEntityType } from 'constants/entityTypes';
+import { BasePageAction, getQueryObject as baseGetQueryObject } from 'utils/queryStringUtils';
 
 export const accessControlBasePath = accessControlBasePathV2; // export { accessControlBasePath };
 export const accessControlPath = accessControlPathV2; // export { accessControlPath };
 
-export type AccessControlQueryAction = 'create' | 'update';
+export type AccessControlQueryAction = BasePageAction;
 
 export type AccessControlQueryFilter = Partial<Record<AccessControlEntityType, string>>;
 
@@ -53,5 +54,5 @@ export function getEntityPath(
 }
 
 export function getQueryObject(search: string): AccessControlQueryObject {
-    return qs.parse(search, { ignoreQueryPrefix: true });
+    return baseGetQueryObject(search);
 }

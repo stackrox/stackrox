@@ -31,13 +31,14 @@ import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useMultiSelect from 'hooks/useMultiSelect';
 import { saveReport } from 'services/ReportsService';
-import { ReportConfigurationMappedValues } from 'types/report.proto';
+import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotifierSelection from './Form/NotifierSelection';
 import ResourceScopeSelection from './Form/ResourceScopeSelection';
+import { getMappedFixability, getFixabilityConstantFromMap } from './VulnMgmtReport.utils';
 
 export type VulnMgmtReportFormProps = {
-    initialValues: ReportConfigurationMappedValues;
+    initialValues: ReportConfiguration;
     isEditable?: boolean;
 };
 
@@ -46,13 +47,14 @@ function VulnMgmtReportForm({
     isEditable = true,
 }: VulnMgmtReportFormProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
-    const formik = useFormik<ReportConfigurationMappedValues>({
+    const formik = useFormik<ReportConfiguration>({
         initialValues,
         onSubmit: (formValues) => {
             const response = onSave(formValues);
             return response;
         },
     });
+
     const {
         values,
         touched,
@@ -64,19 +66,19 @@ function VulnMgmtReportForm({
         submitForm,
         isSubmitting,
     } = formik;
+
+    const mappedFixabilityValues = getMappedFixability(values.vulnReportFilters.fixability);
+
     const {
         isOpen: isFixabilitySelectOpen,
         onToggle: onToggleFixabilitySelect,
         onSelect: onSelectFixability,
-    } = useMultiSelect(
-        handleFixabilitySelect,
-        values.vulnReportFiltersMappedValues.fixabilityMappedValues
-    );
+    } = useMultiSelect(handleFixabilitySelect, mappedFixabilityValues);
     const {
         isOpen: isSeveritySelectOpen,
         onToggle: onToggleSeveritySelect,
         onSelect: onSelectSeverity,
-    } = useMultiSelect(handleSeveritySelect, values.vulnReportFiltersMappedValues.severities);
+    } = useMultiSelect(handleSeveritySelect, values.vulnReportFilters.severities);
 
     async function onSave(data) {
         let responseData;
@@ -97,15 +99,16 @@ function VulnMgmtReportForm({
     }
 
     function handleFixabilitySelect(selection) {
-        void setFieldValue('vulnReportFiltersMappedValues.fixabilityMappedValues', selection);
+        const fixabilityConstant = getFixabilityConstantFromMap(selection);
+        void setFieldValue('vulnReportFilters.fixability', fixabilityConstant);
     }
 
     function handleSeveritySelect(selection) {
-        void setFieldValue('vulnReportFiltersMappedValues.severities', selection);
+        void setFieldValue('vulnReportFilters.severities', selection);
     }
 
     function onSinceLastReportChange(_id, selection) {
-        void setFieldValue('vulnReportFiltersMappedValues.sinceLastReport', selection === 'true');
+        void setFieldValue('vulnReportFilters.sinceLastReport', selection === 'true');
     }
 
     function onScheduledRepeatChange(_id, selection) {
@@ -161,8 +164,16 @@ function VulnMgmtReportForm({
                                     <DayPickerDropdown
                                         label="On…"
                                         isRequired
-                                        fieldId="schedule.interval.days"
-                                        value={values.schedule.interval.days}
+                                        fieldId={
+                                            values.schedule.intervalType === 'WEEKLY'
+                                                ? 'schedule.daysOfWeek.days'
+                                                : 'schedule.daysOfMonth.days'
+                                        }
+                                        value={
+                                            values.schedule.intervalType === 'WEEKLY'
+                                                ? values?.schedule?.daysOfWeek?.days || []
+                                                : values?.schedule?.daysOfMonth?.days || []
+                                        }
                                         handleSelect={onScheduledDaysChange}
                                         intervalType={values.schedule.intervalType}
                                     />
@@ -188,7 +199,7 @@ function VulnMgmtReportForm({
                                     <FormLabelGroup
                                         isRequired
                                         label="CVE fixability type"
-                                        fieldId="vulnReportFiltersMappedValues.fixabilityMappedValues"
+                                        fieldId="vulnReportFilters.fixability"
                                         touched={touched}
                                         errors={errors}
                                     >
@@ -197,14 +208,10 @@ function VulnMgmtReportForm({
                                             aria-label="Select CVE fixibility"
                                             onToggle={onToggleFixabilitySelect}
                                             onSelect={onSelectFixability}
-                                            selections={
-                                                values.vulnReportFiltersMappedValues
-                                                    .fixabilityMappedValues
-                                            }
+                                            selections={mappedFixabilityValues}
                                             isOpen={isFixabilitySelectOpen}
                                             placeholderText={
-                                                values.vulnReportFiltersMappedValues
-                                                    .fixabilityMappedValues.length > 0
+                                                mappedFixabilityValues.length > 0
                                                     ? 'Fixable states selected'
                                                     : 'Select CVE fixibility'
                                             }
@@ -222,13 +229,13 @@ function VulnMgmtReportForm({
                                     <FormLabelGroup
                                         isRequired
                                         label="Show vulnerabilities"
-                                        fieldId="vulnReportFiltersMappedValues.sinceLastReport"
+                                        fieldId="vulnReportFilters.sinceLastReport"
                                         touched={touched}
                                         errors={errors}
                                     >
                                         <SelectSingle
-                                            id="vulnReportFiltersMappedValues.sinceLastReport"
-                                            value={values.vulnReportFiltersMappedValues.sinceLastReport.toString()}
+                                            id="vulnReportFilters.sinceLastReport"
+                                            value={values.vulnReportFilters.sinceLastReport.toString()}
                                             handleSelect={onSinceLastReportChange}
                                             isDisabled={false}
                                         >
@@ -245,7 +252,7 @@ function VulnMgmtReportForm({
                                     <FormLabelGroup
                                         isRequired
                                         label="CVE severities"
-                                        fieldId="vulnReportFiltersMappedValues.severities"
+                                        fieldId="vulnReportFilters.severities"
                                         touched={touched}
                                         errors={errors}
                                     >
@@ -254,13 +261,10 @@ function VulnMgmtReportForm({
                                             aria-label="Select CVE severities"
                                             onToggle={onToggleSeveritySelect}
                                             onSelect={onSelectSeverity}
-                                            selections={
-                                                values.vulnReportFiltersMappedValues.severities
-                                            }
+                                            selections={values.vulnReportFilters.severities}
                                             isOpen={isSeveritySelectOpen}
                                             placeholderText={
-                                                values.vulnReportFiltersMappedValues.severities
-                                                    .length > 0
+                                                values.vulnReportFilters.severities.length > 0
                                                     ? 'Severities selected'
                                                     : 'Select CVE severities'
                                             }
@@ -298,8 +302,8 @@ function VulnMgmtReportForm({
                                     notification method and distribution list for the report
                                 </Text>
                                 <NotifierSelection
-                                    notifierId={values.notifierConfig.emailConfig.notifierId}
-                                    mailingLists={values.notifierConfig.emailConfig.mailingLists}
+                                    notifierId={values.emailConfig.notifierId}
+                                    mailingLists={values.emailConfig.mailingLists}
                                     setFieldValue={setFieldValue}
                                     handleBlur={handleBlur}
                                 />

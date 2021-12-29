@@ -8,6 +8,7 @@ import {
     Divider,
     DropdownItem,
     InputGroup,
+    Pagination,
     TextInput,
     Toolbar,
     ToolbarContent,
@@ -17,16 +18,17 @@ import { SearchIcon } from '@patternfly/react-icons';
 
 import useTableSelection from 'hooks/useTableSelection';
 
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
-import { Vulnerability } from './observedCVEs.graphql';
-import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
+import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
+import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
@@ -41,9 +43,22 @@ export type ObservedCVEsTableProps = {
     registry: string;
     remote: string;
     tag: string;
-};
+    itemCount: number;
+    updateTable: () => void;
+} & UsePaginationResult;
 
-function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTableProps): ReactElement {
+function ObservedCVEsTable({
+    rows,
+    registry,
+    remote,
+    tag,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+    updateTable,
+}: ObservedCVEsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -84,6 +99,7 @@ function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTablePro
     function completeAssessment() {
         onClearAll();
         setCVEsToBeAssessed(null);
+        updateTable();
     }
 
     return (
@@ -126,6 +142,15 @@ function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTablePro
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
+                    </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
             <Divider component="div" />
@@ -144,6 +169,7 @@ function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTablePro
                         <Th>CVSS score</Th>
                         <Th>Affected components</Th>
                         <Th>Discovered</Th>
+                        <Th>Request State</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -164,7 +190,6 @@ function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTablePro
                                 },
                             },
                         ];
-
                         return (
                             <Tr key={rowIndex}>
                                 <Td
@@ -191,6 +216,7 @@ function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTablePro
                                 <Td dataLabel="Discovered">
                                     <DateTimeFormat time={row.discoveredAtImage} />
                                 </Td>
+                                <Td dataLabel="Request State">-</Td>
                                 <Td
                                     className="pf-u-text-align-right"
                                     actions={{

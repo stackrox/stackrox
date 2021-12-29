@@ -49,6 +49,6 @@ func GetExampleVersion(t *testing.T) version.Versions {
 		MainVersion:      "3.0.99.0",
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
 		ScannerVersion:   "99.9.9",
-		ChartVersion:     "3.0.99.0",
+		ChartVersion:     "3.99.0",
 	}
 }

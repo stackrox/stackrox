@@ -3,29 +3,28 @@
 import React, { ReactElement } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 
-import { useQuery } from '@apollo/client';
-import {
-    GetObservedCVEsData,
-    GetObservedCVEsVars,
-    GET_OBSERVED_CVES,
-} from './observedCVEs.graphql';
-
+import usePagination from 'hooks/patternfly/usePagination';
 import ObservedCVEsTable from './ObservedCVEsTable';
+import useImageVulnerabilities from '../useImageVulnerabilities';
 
 type ObservedCVEsProps = {
     imageId: string;
 };
 
 function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
-    const { loading: isLoading, data } = useQuery<GetObservedCVEsData, GetObservedCVEsVars>(
-        GET_OBSERVED_CVES,
-        {
-            variables: {
-                imageId,
-                vulnsQuery: '',
+    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { isLoading, data, refetchQuery } = useImageVulnerabilities({
+        imageId,
+        vulnsQuery: 'Vulnerability State:OBSERVED',
+        pagination: {
+            limit: perPage,
+            offset: (page - 1) * perPage,
+            sortOption: {
+                field: 'cve',
+                reversed: false,
             },
-        }
-    );
+        },
+    });
 
     if (isLoading) {
         return (
@@ -35,10 +34,11 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
         );
     }
 
-    const rows = data?.result?.vulns || [];
-    const registry = data?.result?.name?.registry || '';
-    const remote = data?.result?.name?.remote || '';
-    const tag = data?.result?.name?.tag || '';
+    const itemCount = data?.vulnerabilityCount || 0;
+    const rows = data?.vulnerabilities || [];
+    const registry = data?.image.name.registry || '';
+    const remote = data?.image.name.remote || '';
+    const tag = data?.image.name.tag || '';
 
     return (
         <ObservedCVEsTable
@@ -47,6 +47,12 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             remote={remote}
             tag={tag}
             isLoading={isLoading}
+            itemCount={itemCount}
+            page={page}
+            perPage={perPage}
+            onSetPage={onSetPage}
+            onPerPageSelect={onPerPageSelect}
+            updateTable={refetchQuery}
         />
     );
 }

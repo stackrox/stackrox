@@ -3,6 +3,7 @@ import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-tab
 import {
     Divider,
     DropdownItem,
+    Pagination,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -11,23 +12,34 @@ import {
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedDeferralRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import UpdateDeferralModal from './UpdateDeferralModal';
-import DeferralExpiration from './DeferralExpiration';
 import ApprovedDeferralActionsColumn from './ApprovedDeferralActionsColumn';
-import VulnRequestType from '../VulnRequestType';
+import ImpactedEntities from '../ImpactedEntities';
+import VulnRequestedAction from '../VulnRequestedAction';
+import DeferralExpirationDate from '../DeferralExpirationDate';
 
 export type ApprovedDeferralsTableProps = {
     rows: VulnerabilityRequest[];
     updateTable: () => void;
     isLoading: boolean;
-};
+    itemCount: number;
+} & UsePaginationResult;
 
-function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTableProps): ReactElement {
+function ApprovedDeferralsTable({
+    rows,
+    updateTable,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+}: ApprovedDeferralsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -40,7 +52,7 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
     const [requestsToBeAssessed, setRequestsToBeAssessed] =
         useState<ApprovedDeferralRequestsToBeAssessed>(null);
     const { updateVulnRequests, undoVulnRequests } = useRiskAcceptance({
-        requests: requestsToBeAssessed?.requests || [],
+        requestIDs: requestsToBeAssessed?.requestIDs || [],
     });
 
     function cancelAssessment() {
@@ -54,7 +66,6 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
     }
 
     const selectedIds = getSelectedIds();
-    const selectedDeferralRequests = rows.filter((row) => selectedIds.includes(row.id));
 
     return (
         <>
@@ -70,12 +81,12 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                     setRequestsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'UPDATE',
-                                        requests: selectedDeferralRequests,
+                                        requestIDs: selectedIds,
                                     })
                                 }
-                                isDisabled={selectedDeferralRequests.length === 0}
+                                isDisabled={selectedIds.length === 0}
                             >
-                                Update deferrals ({selectedDeferralRequests.length})
+                                Update deferrals ({selectedIds.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="undo deferrals"
@@ -84,14 +95,23 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                     setRequestsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'UNDO',
-                                        requests: selectedDeferralRequests,
+                                        requestIDs: selectedIds,
                                     })
                                 }
-                                isDisabled={selectedDeferralRequests.length === 0}
+                                isDisabled={selectedIds.length === 0}
                             >
-                                Reobserve CVEs ({selectedDeferralRequests.length})
+                                Reobserve CVEs ({selectedIds.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
@@ -106,10 +126,10 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                             }}
                         />
                         <Th>Requested Entity</Th>
-                        <Th>Type</Th>
+                        <Th>Requested Action</Th>
+                        <Th>Expires</Th>
                         <Th>Scope</Th>
                         <Th>Impacted Entities</Th>
-                        <Th>Expiration</Th>
                         <Th>Apply to</Th>
                         <Th>Comments</Th>
                         <Th>Requestor</Th>
@@ -127,18 +147,29 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                     }}
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
-                                <Td dataLabel="Type">
-                                    <VulnRequestType
+                                <Td dataLabel="Requested Action">
+                                    <VulnRequestedAction
                                         targetState={row.targetState}
                                         requestStatus={row.status}
+                                        deferralReq={row.deferralReq}
+                                        currentDate={new Date()}
+                                    />
+                                </Td>
+                                <Td dataLabel="Expires">
+                                    <DeferralExpirationDate
+                                        targetState={row.targetState}
+                                        requestStatus={row.status}
+                                        deferralReq={row.deferralReq}
                                     />
                                 </Td>
                                 <Td dataLabel="Scope">
                                     {row.scope.imageScope ? 'image' : 'global'}
                                 </Td>
-                                <Td dataLabel="Impacted entities">-</Td>
-                                <Td dataLabel="Expiration">
-                                    <DeferralExpiration deferralReq={row.deferralReq} />
+                                <Td dataLabel="Impacted entities">
+                                    <ImpactedEntities
+                                        deploymentCount={row.deploymentCount}
+                                        imageCount={row.imageCount}
+                                    />
                                 </Td>
                                 <Td dataLabel="Apply to">
                                     <VulnerabilityRequestScope scope={row.scope} />
@@ -164,14 +195,14 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
             <UndoVulnRequestModal
                 type="DEFERRAL"
                 isOpen={requestsToBeAssessed?.action === 'UNDO'}
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
+                numRequestsToBeAssessed={requestsToBeAssessed?.requestIDs.length || 0}
                 onSendRequest={undoVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}
             />
             <UpdateDeferralModal
                 isOpen={requestsToBeAssessed?.action === 'UPDATE'}
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
+                numRequestsToBeAssessed={requestsToBeAssessed?.requestIDs.length || 0}
                 onSendRequest={updateVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}

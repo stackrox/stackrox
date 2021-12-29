@@ -21,35 +21,14 @@ export function getIsDefaultRoleName(name: string): boolean {
     return Boolean(defaultRoles[name]);
 }
 
-/* constants specific to Auth Providers */
-export const availableAuthProviders = [
-    {
-        label: 'Auth0',
-        value: 'auth0',
-    },
-    {
-        label: 'OpenID Connect',
-        value: 'oidc',
-    },
-    {
-        label: 'SAML 2.0',
-        value: 'saml',
-    },
-    {
-        label: 'User Certificates',
-        value: 'userpki',
-    },
-    {
-        label: 'Google IAP',
-        value: 'iap',
-    },
-    // TODO(alexr): Add this iff OpenShift auth is enabled, which is
-    // governed by Central's ROX_ENABLE_OPENSHIFT_AUTH env var.
-    {
-        label: 'OpenShift Auth',
-        value: 'openshift',
-    },
-];
+export const authProviderLabels = {
+    auth0: 'Auth0',
+    oidc: 'OpenID Connect',
+    saml: 'SAML 2.0',
+    userpki: 'User Certificates',
+    iap: 'Google IAP',
+    openshift: 'OpenShift Auth',
+};
 
 export const oidcCallbackModes = [
     {
@@ -77,10 +56,6 @@ export const oidcCallbackValues = {
     fragment: 'Fragment',
     query: 'Query',
 };
-
-export function getAuthProviderLabelByValue(value: string): string {
-    return availableAuthProviders.find((e) => e.value === value)?.label ?? '';
-}
 
 export const defaultMinimalReadAccessResources = [
     'Alert',

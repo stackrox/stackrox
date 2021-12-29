@@ -41,7 +41,7 @@ const (
 	operatorsForbidden
 )
 
-//RuntimeFieldType is the type of a runtime policy criteria field
+// RuntimeFieldType is the type of a runtime policy criteria field
 type RuntimeFieldType string
 
 const (
@@ -180,6 +180,17 @@ func initializeFieldMetadata() FieldMetadata {
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
+
+	f.registerFieldMetadata(fieldnames.AutomountServiceAccountToken,
+		querybuilders.ForFieldLabel(search.AutomountServiceAccountToken),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+		negationForbidden,
+		operatorsForbidden)
 
 	f.registerFieldMetadata(fieldnames.CVE,
 		querybuilders.ForCVE(),

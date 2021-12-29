@@ -305,7 +305,7 @@ downloadDiagnosticBundle: &downloadDiagnosticBundle
     when: always
 
 storeDiagnosticBundle: &storeDiagnosticBundle
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/diagnostic-bundle
     destination: diagnostic-bundle
 
@@ -329,12 +329,12 @@ collectMonitoringImages: &collectMonitoringImages
     when: always
 
 storeMonitoringImages: &storeMonitoringImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images
 
 storeMonitoringMetrics: &storeMonitoringMetrics
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/rawmetrics.zip
     destination: monitoring-metrics.zip
 
@@ -346,7 +346,7 @@ benchmarkDashboard: &benchmarkDashboard
       ./scripts/ci/bench-and-graph.sh .*Dashboard ./scale/tests/
 
 storeDashBenchImages: &storeDashBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-dashboard-bench
 
@@ -361,7 +361,7 @@ benchmarkCompliance: &benchmarkCompliance
       ./scripts/ci/bench-and-graph.sh .*Compliance ./scale/tests/
 
 storeComplianceBenchImages: &storeComplianceBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-compliance-bench
 
@@ -373,17 +373,17 @@ benchmarkDryRunPolicies: &benchmarkDryRunPolicies
       ./scripts/ci/bench-and-graph.sh .*DryRunPolicies ./scale/tests
 
 storeDryRunBenchImages: &storeDryRunBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-dryrun-bench
 
 storeQALogs: &storeQALogs
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/qa-tests-backend-logs
     destination: qa-tests-backend-logs
 
 storeProfilingResults: &storeProfilingResults
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/pprof.zip
     destination: pprof.zip
 
@@ -392,7 +392,7 @@ storeUITestReports: &storeUITestReports
     path: ui/test-results/reports
 
 storeUITestArtifacts: &storeUITestArtifacts
-  store_artifacts:
+  ci-artifacts/store:
     path: ui/test-results/artifacts
     destination: ui-test-artifacts
 
@@ -408,7 +408,7 @@ checkQASpockResults: &checkQASpockResults
         < ./qa-tests-backend/build/spock-reports/aggregated_report.json || true
 
 storeQASpockReports: &storeQASpockReports
-  store_artifacts:
+  ci-artifacts/store:
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
@@ -420,7 +420,7 @@ backupCentral: &backupCentral
       roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output central-backup
 
 storeCentralBackupArtifact: &storeCentralBackupArtifact
-  store_artifacts:
+  ci-artifacts/store:
     path: central-backup
     destination: central-backup
 
@@ -496,6 +496,7 @@ parameters:
 
 orbs:
   win: circleci/windows@2.2.0
+  ci-artifacts: stackrox/ci-artifacts-orb@0.0.11
 
 executors:
   custom:
@@ -665,7 +666,7 @@ commands:
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir debug-dump
             ls -l debug-dump
-      - store_artifacts:
+      - ci-artifacts/store:
           path: debug-dump
           destination: debug
 
@@ -677,7 +678,7 @@ commands:
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir diagnostic-bundle --insecure-skip-tls-verify
             ls -l diagnostic-bundle
-      - store_artifacts:
+      - ci-artifacts/store:
           path: diagnostic-bundle
           destination: diagnostic
 
@@ -694,7 +695,7 @@ commands:
             ./scripts/grab-data-from-central.sh << parameters.destination >>
             ls -l << parameters.destination >>
           when: always
-      - store_artifacts:
+      - ci-artifacts/store:
           path: << parameters.destination >>
           destination: << parameters.destination >>
 
@@ -705,7 +706,7 @@ commands:
         default: k8s-service-logs
     description: Stores StackRox and cluster logs as artifacts
     steps:
-    - store_artifacts:
+    - ci-artifacts/store:
         path: /tmp/k8s-service-logs
         destination: << parameters.destination >>
 
@@ -1088,7 +1089,7 @@ commands:
       - run:
           name: Destroy OpenShift 4 cluster
           environment:
-            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
           command: |
             if [ ! -d "$PWD/<< parameters.cluster-name >>" ]; then
               echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
@@ -1121,7 +1122,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.15 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.17 \
               destroy
 
   destroy-aro-cluster:
@@ -1143,7 +1144,7 @@ commands:
               -e CIRCLECI="$CIRCLECI" \
               -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.15 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
               destroy
 
   # ROSA and ARO teardown steps are not being run at the end of 'run-qa-tests'
@@ -1616,7 +1617,7 @@ commands:
             fi
             set -e
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift
           destination: openshift
 
@@ -1627,7 +1628,7 @@ commands:
             export KUBECONFIG="$PWD/openshift/artifacts/config"
             kubectl get nodes -o wide
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift
           destination: openshift
 
@@ -2079,7 +2080,7 @@ commands:
     steps:
       - store_test_results:
           path: << parameters.path >>
-      - store_artifacts:
+      - ci-artifacts/store:
           path: << parameters.path >>
 
   pre-go-unit-tests:
@@ -2124,7 +2125,7 @@ commands:
       - run:
           name: Create OpenShift 4 cluster
           environment:
-          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
+          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
           - GCP_PROJECT: stackrox-ci
           command: |
             mkdir $PWD/<< parameters.cluster-name >>
@@ -2137,7 +2138,7 @@ commands:
               gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION \
               create << parameters.cluster-name >>-"${CIRCLE_WORKFLOW_ID:0:7}" "${GCP_PROJECT}" openshift.ci.rox.systems
             docker cp openshift-4-automation:/data $PWD/<< parameters.cluster-name >>
-          no_output_timeout: 45m
+          no_output_timeout: 60m
 
 jobs:
   ###
@@ -2168,6 +2169,7 @@ jobs:
 
   go-unit-tests:
     executor: custom
+    resource_class: large
     steps:
       - pre-go-unit-tests
       - run:
@@ -2178,6 +2180,7 @@ jobs:
 
   go-unit-tests-release:
     executor: custom
+    resource_class: large
     environment:
       ROX_IMAGE_FLAVOR: stackrox_io_release
     steps:
@@ -2228,7 +2231,7 @@ jobs:
 
   style-checks:
     executor: custom
-    resource_class: large
+    resource_class: xlarge
     steps:
       - checkout
 
@@ -2241,7 +2244,7 @@ jobs:
           name: Run style checks
           command: make style
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: qa-tests-backend/build/reports/codenarc
           destination: reports/codenarc
 
@@ -2258,7 +2261,7 @@ jobs:
 
   check-generated-files-up-to-date:
     executor: custom
-    resource_class: small
+    resource_class: medium
     steps:
       - checkout
 
@@ -2327,7 +2330,7 @@ jobs:
               exit 1
             fi
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/policies-diff
           destination: policies-diff
 
@@ -2365,7 +2368,7 @@ jobs:
               cat /tmp/mitre-diff
               exit 1
             fi
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/mitre-diff
           destination: mitre-diff
 
@@ -2555,7 +2558,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - attach_workspace:
@@ -2604,10 +2607,10 @@ jobs:
 
   pre-build-cli:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - attach_workspace:
@@ -2660,7 +2663,7 @@ jobs:
     environment:
       - GOPATH: /home/circleci/go
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
       - checkout
@@ -2671,7 +2674,6 @@ jobs:
           command: |
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
-            sudo cp .circleci/bash.env /etc/bash.env
       - run:
           name: Install Go
           command: |
@@ -2721,10 +2723,10 @@ jobs:
 
   build:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout-with-submodules
       - check-docs-step:
@@ -2822,11 +2824,11 @@ jobs:
 
       - *saveGoModCache
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: bin/linux/roxctl
           destination: roxctl/roxctl-linux
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: bin/darwin/roxctl
           destination: roxctl/roxctl-darwin
 
@@ -2845,7 +2847,7 @@ jobs:
     executor: custom
     resource_class: large
     steps:
-      - checkout
+      - checkout-with-submodules
       - *checkToRunSeparateRaceConditionTestPipe
 
       - run:
@@ -2959,6 +2961,7 @@ jobs:
 
   provision-gke-api-nongroovy-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -2970,6 +2973,7 @@ jobs:
 
   provision-gke-ui-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-label-to-skip-tests:
@@ -2980,6 +2984,7 @@ jobs:
 
   provision-gke-api-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
       - GCP_IMAGE_TYPE: "COS"
       - POD_SECURITY_POLICIES: "true"
@@ -2994,6 +2999,7 @@ jobs:
 
   provision-gke-kernel-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3008,6 +3014,7 @@ jobs:
 
   provision-gke-api-upgrade-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3022,10 +3029,10 @@ jobs:
 
   build-scale-monitoring-and-mock-server:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - setup_remote_docker
@@ -3065,6 +3072,7 @@ jobs:
 
   provision-gke-api-scale-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3100,8 +3108,9 @@ jobs:
 
   provision-eks-api-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -3133,7 +3142,7 @@ jobs:
             sudo chown "$USER" $PWD/eks/data/eks-kube.yaml
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: eks
           destination: eks
 
@@ -3170,7 +3179,7 @@ jobs:
             wget https://storage.googleapis.com/kubernetes-release/release/v1.13.3/bin/linux/amd64/kubectl
             sudo install kubectl /usr/bin
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: kops
           destination: kops
 
@@ -3197,7 +3206,7 @@ jobs:
             sudo chown "$USER" $PWD/kops/kube.yaml
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: kops
           destination: kops
 
@@ -3219,6 +3228,7 @@ jobs:
 
   provision-aks-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -3253,7 +3263,7 @@ jobs:
             sudo chown "$USER" $PWD/aks/data/kubeconfig
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: aks
           destination: aks
 
@@ -3269,6 +3279,7 @@ jobs:
 
   provision-openshift-4-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-to-run:
@@ -3300,7 +3311,7 @@ jobs:
             export KUBECONFIG=$PWD/openshift-4/data/auth/kubeconfig
             ./scripts/ci/complianceoperator/create.sh
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift-4
           destination: openshift-4
 
@@ -3316,6 +3327,7 @@ jobs:
 
   provision-openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
     - checkout
     - check-to-run:
@@ -3342,7 +3354,7 @@ jobs:
           sudo chown "$USER" $PWD/operator-oc4/data/auth/kubeconfig
           oc get nodes
 
-    - store_artifacts:
+    - ci-artifacts/store:
         path: operator-oc4
         destination: operator-oc4
 
@@ -3359,6 +3371,7 @@ jobs:
 
   provision-openshift-4-6-operator-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
     - checkout
     - check-to-run:
@@ -3386,7 +3399,7 @@ jobs:
           sudo chown "$USER" $PWD/operator-oc4-6/data/auth/kubeconfig
           oc get nodes
 
-    - store_artifacts:
+    - ci-artifacts/store:
         path: operator-oc4-6
         destination: operator-oc4-6
 
@@ -3403,6 +3416,7 @@ jobs:
 
   provision-race-condition-tests:
     executor: custom
+    resource_class: small
     environment:
       GCP_IMAGE_TYPE: "COS"
       POD_SECURITY_POLICIES: "true"
@@ -3494,6 +3508,21 @@ jobs:
             cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
 
       - run:
+          name: Setup prerequisites for Bats tests
+          command: |
+            source tests/e2e/run.sh
+            install_yq
+      - run:
+          name: Run roxctl Bats tests
+          command: |
+            source tests/e2e/run.sh
+            MAIN_TAG=$(make --quiet tag) \
+              run_roxctl_bats_tests "roxctl-test-output"
+
+      - store-test-results-and-artifacts:
+          path: roxctl-test-output
+
+      - run:
           name: Run roxctl tests
           command: |
             source tests/e2e/run.sh
@@ -3559,7 +3588,7 @@ jobs:
             ./scripts/ci/collect-service-logs.sh stackrox /tmp/final-stackrox-logs
           when: always
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/final-stackrox-logs
           destination: final-stackrox-logs
 
@@ -3724,7 +3753,7 @@ jobs:
             ROX_LICENSE_KEY="${LONGTERM_LICENSE}" \
             ./tests/upgrade/run.sh
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/upgrade-test-logs
           destination: upgrade-test-logs
 
@@ -3743,6 +3772,7 @@ jobs:
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
+      - store-k8s-logs
       - *storeQALogs
       - teardown-gke
 
@@ -3886,7 +3916,7 @@ jobs:
   eks-api-e2e-tests:
     executor: custom
     environment:
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
@@ -4168,6 +4198,7 @@ jobs:
 
   openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
     - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
@@ -4238,6 +4269,7 @@ jobs:
 
   openshift-4-6-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
     - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
@@ -4632,7 +4664,7 @@ jobs:
 
   provision-openshift-rosa-api-e2e-tests:
     executor: custom
-    resource_class: large
+    resource_class: small
     steps:
       - checkout
       - check-to-run:
@@ -4654,7 +4686,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.15 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.17 \
               create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
@@ -4665,7 +4697,7 @@ jobs:
 
   provision-openshift-aro-api-e2e-tests:
     executor: custom
-    resource_class: large
+    resource_class: small
     steps:
       - checkout
       - check-to-run:
@@ -4685,7 +4717,7 @@ jobs:
               -e CIRCLECI="$CIRCLECI" \
               -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.15 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
               create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
@@ -4996,27 +5028,26 @@ workflows:
           context:
           - custom-executor-pull
 
-      # ROX-8306 - Disabled due to Azure account issue
-      # - provision-openshift-aro-api-e2e-tests:
-      #     <<: *runOnAllTagsWithQuayIOPullCtx
-      #     context:
-      #       - com-redhat-cloud
-      #       - quay-rhacs-eng-readonly
-      #       - azure-ci
-      #       - aro-cluster-manager
+      - provision-openshift-aro-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - azure-ci
+            - aro-cluster-manager
 
-      # - openshift-aro-api-e2e-tests:
-      #     <<: *runOnAllTagsWithQuayIOPullCtx
-      #     requires:
-      #       - build-scale-monitoring-and-mock-server
-      #       - provision-openshift-aro-api-e2e-tests
-      #       - pre-build-cli
-      #       - pre-build-go-binaries
-      #     context:
-      #       - com-redhat-cloud
-      #       - quay-rhacs-eng-readonly
-      #       - azure-ci
-      #       - aro-cluster-manager
+      - openshift-aro-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-aro-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - azure-ci
+            - aro-cluster-manager
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds

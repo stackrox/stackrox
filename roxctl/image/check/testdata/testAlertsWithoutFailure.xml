@@ -1,0 +1,20 @@
+<testsuite name="image-check" tests="6" failures="0" skipped="6" errors="0">
+  <testcase name="policy 4" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 8" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 2" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 5" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 6" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 7" classname="">
+    <skipped></skipped>
+  </testcase>
+</testsuite>

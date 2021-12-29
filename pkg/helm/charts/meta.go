@@ -1,12 +1,9 @@
 package charts
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/images/defaults"
 )
 
 // MetaValuesKey exists exclusively to protect MetaValues from losing typing and becoming exchangeable with
@@ -18,32 +15,21 @@ type MetaValuesKey string
 // MetaValues are the values to be passed to the StackRox chart templates.
 type MetaValues map[MetaValuesKey]interface{}
 
-// ChartRepo contains information about where the Helm charts are published.
-type ChartRepo struct {
-	URL string
-}
-
-// ImagePullSecrets represents the image pull secret defaults.
-type ImagePullSecrets struct {
-	AllowNone bool
-}
-
-// DefaultMetaValues are the default meta values for rendering the StackRox charts in production.
-func DefaultMetaValues() MetaValues {
+// GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
+func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 	metaValues := MetaValues{
-		"Versions":              version.GetAllVersions(),
-		"MainRegistry":          defaults.MainImageRegistry(),
-		"CollectorRegistry":     defaults.CollectorImageRegistry(),
-		"CollectorFullImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
-		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
-		"RenderMode":            "",
-		"ChartRepo": ChartRepo{
-			URL: "https://charts.stackrox.io",
-		},
-		"ImagePullSecrets": ImagePullSecrets{
-			AllowNone: false,
-		},
-		"Operator": false,
+		"Versions":                 imageFlavor.Versions,
+		"MainRegistry":             imageFlavor.MainRegistry,
+		"ImageRemote":              imageFlavor.MainImageName,
+		"CollectorRegistry":        imageFlavor.CollectorRegistry,
+		"CollectorFullImageRemote": imageFlavor.CollectorImageName,
+		"CollectorSlimImageRemote": imageFlavor.CollectorSlimImageName,
+		"CollectorFullImageTag":    imageFlavor.CollectorImageTag,
+		"CollectorSlimImageTag":    imageFlavor.CollectorSlimImageTag,
+		"RenderMode":               "",
+		"ChartRepo":                imageFlavor.ChartRepo,
+		"ImagePullSecrets":         imageFlavor.ImagePullSecrets,
+		"Operator":                 false,
 	}
 
 	if !buildinfo.ReleaseBuild {
@@ -55,24 +41,30 @@ func DefaultMetaValues() MetaValues {
 
 // RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
 func RHACSMetaValues() MetaValues {
+	// TODO: remove once RHACS flavor is added to `images` package
+	flavor := defaults.GetImageFlavorByBuildType()
 	metaValues := MetaValues{
-		"Versions":              version.GetAllVersions(),
-		"MainRegistry":          "registry.redhat.io/rh-acs",
-		"CollectorRegistry":     "registry.redhat.io/rh-acs",
-		"CollectorFullImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
-		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
-		"RenderMode":            "",
-		"ChartRepo": ChartRepo{
+		"Versions": flavor.Versions,
+		// TODO(RS-380): these registries will change once we have the RHACS flavor. For now they will remain hardcoded here.
+		"MainRegistry":             "registry.redhat.io/rh-acs",
+		"ImageRemote":              "main",
+		"CollectorRegistry":        "registry.redhat.io/rh-acs",
+		"CollectorFullImageRemote": "collector",
+		"CollectorSlimImageRemote": "collector",
+		"CollectorFullImageTag":    flavor.CollectorImageTag,
+		"CollectorSlimImageTag":    flavor.CollectorSlimImageTag,
+		"RenderMode":               "",
+		"ChartRepo": defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
-		"ImagePullSecrets": ImagePullSecrets{
+		"ImagePullSecrets": defaults.ImagePullSecrets{
 			AllowNone: true,
 		},
 		"Operator": false,
 	}
 
+	// TODO(RS-380): move or remove this block - this override is done only for the operator
 	if !buildinfo.ReleaseBuild {
-		// TODO(ROX-7740): Temporarily use images from quay until our private registries are up again
 		metaValues["MainRegistry"] = mainRegistryOverride.Setting()
 		metaValues["CollectorRegistry"] = collectorRegistryOverride.Setting()
 		metaValues["FeatureFlags"] = getFeatureFlags()

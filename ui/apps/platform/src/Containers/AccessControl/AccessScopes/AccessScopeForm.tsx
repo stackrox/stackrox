@@ -246,7 +246,7 @@ function AccessScopeForm({
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'update'}
+                                        isDisabled={action === 'edit'}
                                         isSmall
                                     >
                                         Edit access scope

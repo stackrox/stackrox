@@ -3,7 +3,6 @@ package generate
 import (
 	"encoding/pem"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"strconv"
@@ -16,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -116,28 +115,6 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	return nil
 }
 
-func openFileFunc(path string) func() io.ReadCloser {
-	return func() io.ReadCloser {
-		f, err := os.Open(path)
-		if err != nil {
-			return io.NopCloser(ioutils.ErrorReader(err))
-		}
-		return f
-	}
-}
-
-func buildConfigFileOverridesMap(filePathMap map[string]string) map[string]func() io.ReadCloser {
-	if len(filePathMap) == 0 {
-		return nil
-	}
-
-	fileOverridesMap := make(map[string]func() io.ReadCloser, len(filePathMap))
-	for configFilePath, replacementFilePath := range filePathMap {
-		fileOverridesMap[path.Join("config", configFilePath)] = openFileFunc(replacementFilePath)
-	}
-	return fileOverridesMap
-}
-
 func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 	wrapper := zip.NewWrapper()
 
@@ -199,7 +176,9 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 		return nil, err
 	}
 
-	files, err := renderer.RenderWithOverrides(config, buildConfigFileOverridesMap(config.ConfigFileOverrides))
+	// TODO(RS-396): roxctl should depend on its own mechanism to determine flavor (e.g. command line argument)
+	flavor := defaults.GetImageFlavorByBuildType()
+	files, err := renderer.Render(config, flavor)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not render files")
 	}

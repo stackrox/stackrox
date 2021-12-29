@@ -1,6 +1,6 @@
 import { useMutation } from '@apollo/client';
 import { FalsePositiveFormValues } from './FalsePositiveFormModal';
-import { MarkFalsePositiveRequest, MARK_FALSE_POSITIVE } from './observedCVEs.graphql';
+import { MarkFalsePositiveRequest, MARK_FALSE_POSITIVE } from '../imageVulnerabilities.graphql';
 import { getScopeValue } from '../utils/vulnRequestFormUtils';
 
 export type UseMarkFalsePositiveProps = {

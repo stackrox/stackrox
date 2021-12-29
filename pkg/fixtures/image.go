@@ -42,6 +42,28 @@ func GetImage() *storage.Image {
 			Vulns: getVulnsPerComponent(i),
 		})
 	}
+	return getImageWithComponents(componentsPerImage)
+}
+
+// GetImageWithUniqueComponents returns a Mock Image where each component is unique
+func GetImageWithUniqueComponents() *storage.Image {
+	numComponentsPerImage := 2
+	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
+	for i := 0; i < numComponentsPerImage; i++ {
+		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
+			Name:    fmt.Sprintf("name-%d", i),
+			Version: fmt.Sprintf("%d.2.3.4", i),
+			License: &storage.License{
+				Name: "blah",
+				Type: "GPL",
+			},
+			Vulns: getVulnsPerComponent(i),
+		})
+	}
+	return getImageWithComponents(componentsPerImage)
+}
+
+func getImageWithComponents(componentsPerImage []*storage.EmbeddedImageScanComponent) *storage.Image {
 	author := "author"
 	return &storage.Image{
 		Id: "sha256:SHA2",

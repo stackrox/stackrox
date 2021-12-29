@@ -45,7 +45,7 @@ func getStringsFromGJSONResult(results []gjson.Result) []string {
 	var stringResults []string
 	for _, result := range results {
 		result.ForEach(func(key, value gjson.Result) bool {
-			stringResults = append(stringResults, value.String())
+			stringResults = append(stringResults, getStringValuesFromNestedArrays(value, []string{})...)
 			return true
 		})
 	}

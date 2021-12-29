@@ -6,6 +6,7 @@ import {
     Divider,
     DropdownItem,
     InputGroup,
+    Pagination,
     TextInput,
     Toolbar,
     ToolbarContent,
@@ -13,34 +14,33 @@ import {
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
-
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
-import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
-import { RequestComment } from 'types/vuln_request.proto';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import VulnerabilityCommentsButton from '../RequestComments/RequestCommentsButton';
-import ReobserveCVEModal from './ReobserveCVEModal';
-import { EmbeddedImageScanComponent } from '../ObservedCVEs/observedCVEs.graphql';
-
-export type FalsePositiveCVERow = {
-    id: string;
-    cve: string;
-    cvssScore: string;
-    severity: VulnerabilitySeverity;
-    components: EmbeddedImageScanComponent[];
-    comments: RequestComment[];
-    applyTo: string;
-};
+import { Vulnerability } from '../imageVulnerabilities.graphql';
+import { FalsePositiveCVEsToBeAssessed } from './types';
+import useRiskAcceptance from '../useRiskAcceptance';
+import UndoVulnRequestModal from '../UndoVulnRequestModal';
+import FalsePositiveCVEActionsColumn from './FalsePositiveCVEActionsColumns';
 
 export type FalsePositiveCVEsTableProps = {
-    rows: FalsePositiveCVERow[];
-};
+    rows: Vulnerability[];
+    isLoading: boolean;
+    itemCount: number;
+    updateTable: () => void;
+} & UsePaginationResult;
 
-function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactElement {
+function FalsePositiveCVEsTable({
+    rows,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+    updateTable,
+}: FalsePositiveCVEsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -49,42 +49,30 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<FalsePositiveCVERow>(rows);
-    const [falsePositiveCVEsToBeReobserved, setFalsePositiveCVEsToBeReobserved] = useState<
-        string[]
-    >([]);
+    } = useTableSelection<Vulnerability>(rows);
+    const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<FalsePositiveCVEsToBeAssessed>(null);
+    const { undoVulnRequests } = useRiskAcceptance({
+        requestIDs: vulnsToBeAssessed?.requestIDs || [],
+    });
 
-    function setSelectedCVEFalsePositivesToBeCancelled() {
-        const selectedIds = getSelectedIds();
-        setFalsePositiveCVEsToBeReobserved(selectedIds);
+    function cancelAssessment() {
+        setVulnsToBeAssessed(null);
     }
 
-    function cancelReobserveCVE() {
-        setFalsePositiveCVEsToBeReobserved([]);
-    }
-
-    function completeReobserveCVE() {
+    async function completeAssessment() {
         onClearAll();
-        setFalsePositiveCVEsToBeReobserved([]);
+        setVulnsToBeAssessed(null);
+        updateTable();
     }
 
-    function requestReobserveCVE(values) {
-        const promise = new Promise<FormResponseMessage>((resolve, reject) => {
-            setTimeout(() => {
-                if (values?.comment === 'blah') {
-                    const formMessage = {
-                        message: 'Successfully reobserved CVE',
-                        isError: false,
-                    };
-                    resolve(formMessage);
-                } else {
-                    const formMessage = { message: 'API is not hooked up yet', isError: true };
-                    reject(formMessage);
-                }
-            }, 2000);
+    const selectedIds = getSelectedIds();
+    const vulnRequestIds = rows
+        .filter((row) => selectedIds.includes(row.id))
+        .map((row) => {
+            // @TODO: Once backend adds resolver for vulnRequests, access that and return the request id
+            // This will fail when sending the API request for now
+            return row.id;
         });
-        return promise;
-    }
 
     return (
         <>
@@ -111,13 +99,29 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
-                                key="upgrade"
+                                key="undo false positives"
                                 component="button"
-                                onClick={setSelectedCVEFalsePositivesToBeCancelled}
+                                onClick={() =>
+                                    setVulnsToBeAssessed({
+                                        type: 'FALSE_POSITIVE',
+                                        action: 'UNDO',
+                                        requestIDs: vulnRequestIds,
+                                    })
+                                }
+                                isDisabled={vulnRequestIds.length === 0}
                             >
-                                Reobserve CVE ({numSelected})
+                                Reobserve CVEs ({vulnRequestIds.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
@@ -133,24 +137,15 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
                         />
                         <Th>CVE</Th>
                         <Th>Severity</Th>
-                        <Th>CVSS score</Th>
                         <Th>Affected Components</Th>
-                        <Th>Apply to</Th>
                         <Th>Comments</Th>
+                        <Th>Expiration</Th>
+                        <Th>Apply to</Th>
+                        <Th>Approver</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
-                        const actions = [
-                            {
-                                title: 'Reobserve CVE',
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    setFalsePositiveCVEsToBeReobserved([row.id]);
-                                },
-                            },
-                        ];
-
                         return (
                             <Tr key={row.cve}>
                                 <Td
@@ -164,35 +159,31 @@ function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactEle
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
-                                <Td dataLabel="CVSS score">
-                                    <CVSSScoreLabel cvss={row.cvssScore} />
-                                </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
-                                <Td dataLabel="Apply to">{row.applyTo}</Td>
-                                <Td dataLabel="Comments">
-                                    <VulnerabilityCommentsButton
-                                        cve={row.cve}
-                                        comments={row.comments}
+                                <Td dataLabel="Comments">-</Td>
+                                <Td dataLabel="Expiration">-</Td>
+                                <Td dataLabel="Apply to">-</Td>
+                                <Td dataLabel="Approver">-</Td>
+                                <Td className="pf-u-text-align-right">
+                                    <FalsePositiveCVEActionsColumn
+                                        row={row}
+                                        setVulnsToBeAssessed={setVulnsToBeAssessed}
                                     />
                                 </Td>
-                                <Td
-                                    className="pf-u-text-align-right"
-                                    actions={{
-                                        items: actions,
-                                    }}
-                                />
                             </Tr>
                         );
                     })}
                 </Tbody>
             </TableComposable>
-            <ReobserveCVEModal
-                isOpen={falsePositiveCVEsToBeReobserved.length !== 0}
-                onSendRequest={requestReobserveCVE}
-                onCompleteRequest={completeReobserveCVE}
-                onCancel={cancelReobserveCVE}
+            <UndoVulnRequestModal
+                type="FALSE_POSITIVE"
+                isOpen={vulnsToBeAssessed?.action === 'UNDO'}
+                numRequestsToBeAssessed={vulnsToBeAssessed?.requestIDs.length || 0}
+                onSendRequest={undoVulnRequests}
+                onCompleteRequest={completeAssessment}
+                onCancel={cancelAssessment}
             />
         </>
     );

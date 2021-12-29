@@ -40,7 +40,7 @@ type scheduler struct {
 	stoppedSig concurrency.Signal
 }
 
-//ReportRequest is a request to the scheduler to run a scheduled or on demand report
+// ReportRequest is a request to the scheduler to run a scheduled or on demand report
 type ReportRequest struct {
 	ReportConfig *storage.ReportConfiguration
 	OnDemand     bool
@@ -126,7 +126,7 @@ func (s *scheduler) runReports() {
 		log.Infof("Executing report %s at %v", req.ReportConfig.GetName(), timestamp.Now())
 		err := sendReportResults(req.ReportConfig)
 		if !req.OnDemand {
-			//TODO: @khushboo for more accuracy, save timestamp when the vuln data is pulled aka the query is run
+			// TODO: @khushboo for more accuracy, save timestamp when the vuln data is pulled aka the query is run
 			if err != nil {
 				req.ReportConfig.LastRunStatus = &storage.ReportLastRunStatus{
 					ReportStatus: storage.ReportLastRunStatus_FAILURE,
@@ -149,7 +149,7 @@ func (s *scheduler) runReports() {
 }
 
 func sendReportResults(reportConfig *storage.ReportConfiguration) error {
-	//TODO: To be implemented by hooking up the actual reporting (@khushboo)
+	// TODO: To be implemented by hooking up the actual reporting (@khushboo)
 	/*
 	 1. Convert report config to v1.Query
 	 2. Execute query using resolvers

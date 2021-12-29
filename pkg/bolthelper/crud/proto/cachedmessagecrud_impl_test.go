@@ -39,7 +39,7 @@ type cachedMessageCrudTestSuite struct {
 }
 
 func (s *cachedMessageCrudTestSuite) SetupSuite() {
-	db := testutils.DBForSuite(s) //bolthelper.NewTemp(s.T().Name() + ".db")
+	db := testutils.DBForSuite(s) // bolthelper.NewTemp(s.T().Name() + ".db")
 
 	testBucket := []byte("testBucket")
 	bolthelper.RegisterBucketOrPanic(db, testBucket)

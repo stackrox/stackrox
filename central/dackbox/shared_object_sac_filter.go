@@ -141,7 +141,7 @@ func hasGlobalAccessScope(ctx context.Context, helper *sac.ForResourceHelper) bo
 
 func (f *combinedSAC) noSACApply(ctx context.Context, from ...string) ([]int, bool) {
 	var hasImageRead, hasNodeRead, hasClusterRead bool
-	if id := authn.IdentityFromContext(ctx); id != nil {
+	if id := authn.IdentityFromContextOrNil(ctx); id != nil {
 		hasImageRead = imageAuthorizer(ctx) == nil
 		hasNodeRead = nodeAuthorizer(ctx) == nil
 		hasClusterRead = f.clusterResourceHelper != nil && clusterAuthorizer(ctx) == nil

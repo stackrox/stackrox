@@ -33,11 +33,15 @@ const emptyImage = {
     lastUpdated: '',
     metadata: {
         layerShas: [],
-        v1: {},
+        v1: {
+            layers: [],
+        },
     },
     name: {},
     priority: 0,
-    scan: {},
+    scan: {
+        components: [],
+    },
     topVuln: {},
     vulnCount: 0,
 };
@@ -197,14 +201,14 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                         id="DEFERRED_CVES"
                                         hidden={activeKeyTab !== 'DEFERRED_CVES'}
                                     >
-                                        <DeferredCVEs />
+                                        <DeferredCVEs imageId={data.id} />
                                     </TabContent>
                                     <TabContent
                                         eventKey="FALSE_POSITIVE_CVES"
                                         id="FALSE_POSITIVE_CVES"
                                         hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
                                     >
-                                        <FalsePositiveCVEs />
+                                        <FalsePositiveCVEs imageId={data.id} />
                                     </TabContent>
                                 </Card>
                             </div>

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"google.golang.org/grpc"
 )
 
@@ -41,7 +42,7 @@ func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 
 func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest) (*sensor.GetImageResponse, error) {
 	if id := req.GetImage().GetId(); id != "" {
-		img, _ := s.imageCache.Get(id).(*storage.Image)
+		img, _ := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage())).(*storage.Image)
 		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
 			return &sensor.GetImageResponse{
 				Image: img,

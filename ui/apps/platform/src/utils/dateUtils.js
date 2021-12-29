@@ -55,8 +55,8 @@ export const getDayOfWeek = (timestamp) => daysOfWeek[new Date(timestamp).getDay
  * Specify rounding method explicitly because default changes to 'round' in date-fns@2.
  * formatDistanceStrict(currentDatetime, parseISO(dataDatetime), { roundingMethod: 'floor' });
  */
-export const getDistanceStrict = (dataDatetime, currentDatetime) =>
-    distanceInWordsStrict(dataDatetime, currentDatetime, { partialMethod: 'floor' });
+export const getDistanceStrict = (dataDatetime, currentDatetime, options) =>
+    distanceInWordsStrict(dataDatetime, currentDatetime, options);
 //
 /*
  * Given an ISO 8601 string and Date instance, return the time difference:

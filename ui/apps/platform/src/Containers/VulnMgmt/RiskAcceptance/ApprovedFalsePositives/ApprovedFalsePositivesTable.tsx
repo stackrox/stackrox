@@ -3,6 +3,7 @@ import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-tab
 import {
     Divider,
     DropdownItem,
+    Pagination,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -11,23 +12,31 @@ import {
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedFalsePositiveRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import ApprovedFalsePositiveActionsColumn from './ApprovedFalsePositiveActionsColumn';
-import VulnRequestType from '../VulnRequestType';
+import ImpactedEntities from '../ImpactedEntities';
+import VulnRequestedAction from '../VulnRequestedAction';
 
 export type ApprovedFalsePositivesTableProps = {
     rows: VulnerabilityRequest[];
     updateTable: () => void;
     isLoading: boolean;
-};
+    itemCount: number;
+} & UsePaginationResult;
 
 function ApprovedFalsePositivesTable({
     rows,
     updateTable,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
 }: ApprovedFalsePositivesTableProps): ReactElement {
     const {
         selected,
@@ -41,7 +50,7 @@ function ApprovedFalsePositivesTable({
     const [requestsToBeAssessed, setRequestsToBeAssessed] =
         useState<ApprovedFalsePositiveRequestsToBeAssessed>(null);
     const { undoVulnRequests } = useRiskAcceptance({
-        requests: requestsToBeAssessed?.requests || [],
+        requestIDs: requestsToBeAssessed?.requestIDs || [],
     });
 
     function cancelAssessment() {
@@ -55,7 +64,6 @@ function ApprovedFalsePositivesTable({
     }
 
     const selectedIds = getSelectedIds();
-    const selectedFalsePositiveRequests = rows.filter((row) => selectedIds.includes(row.id));
 
     return (
         <>
@@ -71,14 +79,23 @@ function ApprovedFalsePositivesTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'UNDO',
-                                        requests: selectedFalsePositiveRequests,
+                                        requestIDs: selectedIds,
                                     })
                                 }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                                isDisabled={selectedIds.length === 0}
                             >
-                                Reobserve CVEs ({selectedFalsePositiveRequests.length})
+                                Reobserve CVEs ({selectedIds.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
@@ -93,10 +110,9 @@ function ApprovedFalsePositivesTable({
                             }}
                         />
                         <Th>Requested Entity</Th>
-                        <Th>Type</Th>
+                        <Th>Requested Action</Th>
                         <Th>Scope</Th>
                         <Th>Impacted Entities</Th>
-                        <Th>Requested Action</Th>
                         <Th>Apply to</Th>
                         <Th>Comments</Th>
                         <Th>Requestor</Th>
@@ -114,17 +130,24 @@ function ApprovedFalsePositivesTable({
                                     }}
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
-                                <Td dataLabel="Type">
-                                    <VulnRequestType
+                                <Td dataLabel="Requested Action">
+                                    <VulnRequestedAction
                                         targetState={row.targetState}
                                         requestStatus={row.status}
+                                        deferralReq={row.deferralReq}
+                                        updatedDeferralReq={row.updatedDeferralReq}
+                                        currentDate={new Date()}
                                     />
                                 </Td>
                                 <Td dataLabel="Scope">
                                     {row.scope.imageScope ? 'image' : 'global'}
                                 </Td>
-                                <Td dataLabel="Impacted entities">-</Td>
-                                <Td dataLabel="Requested Action">Mark false positive</Td>
+                                <Td dataLabel="Impacted entities">
+                                    <ImpactedEntities
+                                        deploymentCount={row.deploymentCount}
+                                        imageCount={row.imageCount}
+                                    />
+                                </Td>
                                 <Td dataLabel="Apply to">
                                     <VulnerabilityRequestScope scope={row.scope} />
                                 </Td>
@@ -149,7 +172,7 @@ function ApprovedFalsePositivesTable({
             <UndoVulnRequestModal
                 type="FALSE_POSITIVE"
                 isOpen={requestsToBeAssessed?.action === 'UNDO'}
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
+                numRequestsToBeAssessed={requestsToBeAssessed?.requestIDs.length || 0}
                 onSendRequest={undoVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}

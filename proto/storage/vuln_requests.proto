@@ -33,7 +33,7 @@ enum RequestStatus {
 message RequestExpiry {
     oneof expiry {
         // Indicates that this request expires when the associated vulnerability is fixed.
-        bool                       expires_when_fixed = 1;
+        bool                       expires_when_fixed = 1 [(gogoproto.moretags) = "search:\"Request Expires When Fixed\""];
         // Indicates the timestamp when this request expires.
         google.protobuf.Timestamp  expires_on         = 2 [(gogoproto.moretags) = "search:\"Request Expiry Time\""];
     }

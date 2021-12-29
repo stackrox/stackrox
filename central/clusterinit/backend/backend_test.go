@@ -16,6 +16,7 @@ import (
 	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -285,6 +286,14 @@ func (s *clusterInitBackendTestSuite) TestIssuingWithDuplicateName() {
 	s.Require().Error(err, "issuing two init bundles with the same name")
 }
 
+func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEmptyChain() {
+	ctx := s.ctx
+
+	err := s.backend.ValidateClientCertificate(ctx, nil)
+	s.Require().Error(err)
+	s.Equal("empty cert chain passed", err.Error())
+}
+
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 	ctx := s.ctx
 	id := uuid.NewV4()
@@ -295,6 +304,20 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 	err := s.backend.ValidateClientCertificate(ctx, certs)
 	s.Require().Error(err)
 	s.Equal("failed checking init bundle status: retrieving init bundle: init bundle not found", err.Error())
+}
+
+func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEphemeralInitBundle() {
+	ctx := s.ctx
+	id := uuid.NewV4()
+	certs := []requestinfo.CertInfo{
+		{Subject: pkix.Name{
+			CommonName:   centralsensor.EphemeralInitCertClusterID,
+			Organization: []string{id.String()},
+		}},
+	}
+
+	err := s.backend.ValidateClientCertificate(ctx, certs)
+	s.Require().NoError(err)
 }
 
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificate() {

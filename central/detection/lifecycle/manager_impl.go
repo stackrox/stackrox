@@ -276,7 +276,7 @@ func (m *managerImpl) filterOutDisabledPolicies(alerts *[]*storage.Alert) {
 	*alerts = filteredAlerts
 }
 
-//HandleDeploymentAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified deployment
+// HandleDeploymentAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified deployment
 func (m *managerImpl) HandleDeploymentAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	defer m.reprocessor.ReprocessRiskForDeployments(deploymentID)
 
@@ -292,7 +292,7 @@ func (m *managerImpl) HandleDeploymentAlerts(deploymentID string, alerts []*stor
 	return nil
 }
 
-//HandleResourceAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified resource
+// HandleResourceAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified resource
 func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	m.filterOutDisabledPolicies(&alerts)
 	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {

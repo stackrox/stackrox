@@ -48,6 +48,7 @@ func init() {
 			"suppressActivation: Time",
 			"suppressExpiry: Time",
 			"activeState(query: String): ActiveState",
+			"vulnerabilityState: String!",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
@@ -102,6 +103,8 @@ type VulnerabilityResolver interface {
 	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
 
 	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
+
+	VulnerabilityState(ctx context.Context) string
 }
 
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).
@@ -198,10 +201,12 @@ func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
 		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok && mfQ.MatchFieldQuery.GetField() == search.CVESuppressed.String() && mfQ.MatchFieldQuery.GetValue() == "true" {
 			isSearchBySuppressed = true
+			return
 		}
 		if features.VulnRiskManagement.Enabled() {
 			if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
 				isSearchByVulnState = true
+				return
 			}
 		}
 	})

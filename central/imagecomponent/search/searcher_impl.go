@@ -6,7 +6,7 @@ import (
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterSAC "github.com/stackrox/rox/central/cluster/sac"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	"github.com/stackrox/rox/central/cve/cveedge"
+	"github.com/stackrox/rox/central/cve/edgefields"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -193,7 +193,7 @@ func formatSearcher(graphProvider graph.Provider,
 		nodeSearcher,
 		deploymentSearcher,
 		clusterSearcher)
-	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), componentSAC.GetSACFilter())
+	filteredSearcher := filtered.Searcher(edgefields.HandleCVEEdgeSearchQuery(compoundSearcher), componentSAC.GetSACFilter())
 	// To transform Image to Image Registry, Image Remote, and Image Tag.
 	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher, imageMappings.OptionsMap)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortSearcher)
@@ -221,10 +221,16 @@ func getCompoundComponentSearcher(
 			Options:        cveMappings.OptionsMap,
 		},
 		{
+			Searcher:       scoped.WithScoping(imageCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_VULN_EDGE)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_VULN_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
+			Options:        imageCVEEdgeMappings.OptionsMap,
+			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_VULNERABILITIES][v1.SearchCategory_IMAGE_VULN_EDGE],
+		},
+		{
 			Searcher:       scoped.WithScoping(componentCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_COMPONENT_VULN_EDGE)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_COMPONENT_VULN_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
 			Options:        componentCVEEdgeMappings.OptionsMap,
-			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_VULNERABILITIES][v1.SearchCategory_COMPONENT_VULN_EDGE],
+			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_IMAGE_VULN_EDGE][v1.SearchCategory_COMPONENT_VULN_EDGE],
 		},
 		{
 			IsDefault:  true,
@@ -236,11 +242,6 @@ func getCompoundComponentSearcher(
 			Searcher:       scoped.WithScoping(imageComponentEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_COMPONENT_EDGE)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_COMPONENT_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
 			Options:        imageComponentEdgeMappings.OptionsMap,
-		},
-		{
-			Searcher:       scoped.WithScoping(imageCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_VULN_EDGE)),
-			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_VULN_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
-			Options:        imageCVEEdgeMappings.OptionsMap,
 		},
 		{
 			Searcher:       scoped.WithScoping(imageSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGES)),

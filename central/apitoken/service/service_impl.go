@@ -96,9 +96,9 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "role(s) %s don't exist", strings.Join(sliceutils.StringSelect(req.GetRoles(), missingIndices...), ","))
 	}
 
-	id := authn.IdentityFromContext(ctx)
-	if id == nil {
-		return nil, errorhelpers.ErrNoCredentials
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 	if err := verifyNoPrivilegeEscalation(id.Roles(), roles); err != nil {
 		return nil, errorhelpers.NewErrNotAuthorized(err.Error())

@@ -14,10 +14,9 @@ import {
     PolicyExclusion,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
+import { ExtendedPageAction } from 'utils/queryStringUtils';
 
-export type PageAction = 'clone' | 'create' | 'edit';
-
-function isValidAction(action: unknown): action is PageAction {
+function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit';
 }
 
@@ -42,7 +41,7 @@ function isValidFilter(s: unknown): s is SearchFilter {
 }
 
 export type PoliciesSearch = {
-    pageAction?: PageAction;
+    pageAction?: ExtendedPageAction;
     searchFilter?: SearchFilter;
 };
 

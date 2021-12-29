@@ -126,6 +126,9 @@ done
 
 wait_for_anchore_to_start
 
+# More than a single analyzer is needed to bypass blocked analysis. See ROX-7807.
+kubectl -n "${namespace}" scale --replicas 3 "deploy/${app_name}-anchore-engine-analyzer"
+
 sleep 10 # required to let Anchore get ready
 
 # See how we did

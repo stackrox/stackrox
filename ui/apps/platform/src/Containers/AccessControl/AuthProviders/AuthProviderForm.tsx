@@ -23,7 +23,6 @@ import {
 } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
-import { availableAuthProviders } from 'constants/accessControl';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import { AuthProvider } from 'services/AuthService';
@@ -51,10 +50,11 @@ const authProviderState = createStructuredSelector({
     roles: selectors.getRoles,
     groups: selectors.getRuleGroups,
     saveAuthProviderStatus: selectors.getSaveAuthProviderStatus,
+    availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
-function getNewAuthProviderTitle(type) {
-    const selectedType = availableAuthProviders.find(({ value }) => value === type);
+function getNewAuthProviderTitle(type, availableProviderTypes) {
+    const selectedType = availableProviderTypes.find(({ value }) => value === type);
 
     return `Add new ${selectedType?.label as string} auth provider`;
 }
@@ -71,7 +71,8 @@ function AuthProviderForm({
     onClickEdit,
 }: AuthProviderFormProps): ReactElement {
     const history = useHistory();
-    const { groups, roles, saveAuthProviderStatus } = useSelector(authProviderState);
+    const { groups, roles, saveAuthProviderStatus, availableProviderTypes } =
+        useSelector(authProviderState);
     const dispatch = useDispatch();
 
     const initialValues = !selectedAuthProvider.name
@@ -222,7 +223,7 @@ function AuthProviderForm({
     const isViewing = !hasAction;
     const formTitle =
         action === 'create'
-            ? getNewAuthProviderTitle(selectedAuthProvider.type)
+            ? getNewAuthProviderTitle(selectedAuthProvider.type, availableProviderTypes)
             : selectedAuthProvider.name;
 
     return (
@@ -275,7 +276,7 @@ function AuthProviderForm({
                                                 <Button
                                                     variant="secondary"
                                                     onClick={handleTest}
-                                                    isDisabled={action === 'update'}
+                                                    isDisabled={action === 'edit'}
                                                     isSmall
                                                 >
                                                     Test login
@@ -286,7 +287,7 @@ function AuthProviderForm({
                                         <Button
                                             variant="primary"
                                             onClick={onClickEdit}
-                                            isDisabled={action === 'update'}
+                                            isDisabled={action === 'edit'}
                                             isSmall
                                         >
                                             {selectedAuthProvider.active
@@ -369,7 +370,7 @@ function AuthProviderForm({
                                     handleSelect={setFieldValue}
                                     isDisabled
                                 >
-                                    {availableAuthProviders.map(({ value, label }) => (
+                                    {availableProviderTypes.map(({ value, label }) => (
                                         <SelectOption key={value} value={value}>
                                             {label}
                                         </SelectOption>

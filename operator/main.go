@@ -24,7 +24,6 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
-	"github.com/stackrox/rox/operator/pkg/client"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
@@ -108,13 +107,11 @@ func run() error {
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
-	// TODO(ROX-7251): make sure that the client we create here is kosher
-	k8sClient := client.NewForConfigOrDie(mgr.GetConfig())
-	if err = centralReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
+	if err = centralReconciler.RegisterNewReconciler(mgr); err != nil {
 		return errors.Wrap(err, "unable to set up Central reconciler")
 	}
 
-	if err = securedClusterReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
+	if err = securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
 		return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
 	}
 
