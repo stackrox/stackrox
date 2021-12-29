@@ -24,12 +24,10 @@ teardown() {
   assert_components_registry "$out_dir/scanner" 'stackrox.io' 'scanner' 'scanner-db'
 }
 
-@test "roxctl-release roxctl central generate k8s --rhacs should use redhat.io registry" {
-  skip_unless_rhacs
+@test "roxctl-release roxctl central generate k8s should not support --rhacs flag" {
   run roxctl-release central generate --rhacs k8s hostpath --output-dir $out_dir
-  assert_success
-  assert_components_registry "$out_dir/central" 'registry.redhat.io' 'main'
-  assert_components_registry "$out_dir/scanner" 'registry.redhat.io' 'scanner' 'scanner-db'
+  assert_failure
+  assert_output --partial "unknown flag: --rhacs"
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=rhacs should use redhat.io registry" {
@@ -38,14 +36,6 @@ teardown() {
   assert_success
   assert_components_registry "$out_dir/central" 'docker.io' 'main'
   assert_components_registry "$out_dir/scanner" 'docker.io' 'scanner' 'scanner-db'
-}
-
-@test "roxctl-release roxctl central generate k8s should raise warning when both --rhacs and --image-defaults flags are used" {
-  skip_unless_image_defaults
-  skip_unless_rhacs
-  run roxctl-release central generate --rhacs --image-defaults="stackrox.io" k8s hostpath --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Warning: '--rhacs' has priority over '--image-defaults'"
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=stackrox.io should use stackrox.io registry" {

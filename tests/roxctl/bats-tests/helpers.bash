@@ -112,10 +112,6 @@ registry_regex() {
   esac
 }
 
-skip_unless_rhacs() {
-  grep "\-\-rhacs" <(roxctl central generate -h) || skip "because roxctl generate does not support --rhacs flag yet"
-}
-
 skip_unless_image_defaults() {
   grep "\-\-image\-defaults" <(roxctl central generate -h) || skip "because roxctl generate does not support --image-defaults flag yet"
 }
