@@ -43,18 +43,12 @@ func GetExampleVersion(t *testing.T) version.Versions {
 	testutils.MustBeInTest(t)
 	return version.Versions{
 		BuildDate:        time.Unix(0, 0),
-		CollectorVersion: GetExampleMainVersion(t),
+		CollectorVersion: "3.0.99.0",
 		GitCommit:        "45b4a8ac",
 		GoVersion:        runtime.Version(),
-		MainVersion:      GetExampleMainVersion(t),
+		MainVersion:      "3.0.99.0",
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   GetExampleMainVersion(t),
+		ScannerVersion:   "3.0.99.0",
 		ChartVersion:     "3.99.0",
 	}
-}
-
-// GetExampleMainVersion is a function returning fake but unified Main version that applies to collector and scanner
-func GetExampleMainVersion(t *testing.T) string {
-	testutils.MustBeInTest(t)
-	return "3.0.99.0"
 }
