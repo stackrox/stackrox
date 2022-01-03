@@ -58,7 +58,7 @@ teardown() {
 
 @test "roxctl-release roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
   skip_unless_image_defaults roxctl-release
-  run roxctl-release central generate k8s --image-defaults='' --output-dir "$out_dir"
+  run roxctl-release central generate k8s --image-defaults='' hostpath --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'stackrox.io' 'main'
   assert_components_registry "$out_dir/scanner" 'stackrox.io' 'scanner' 'scanner-db'
