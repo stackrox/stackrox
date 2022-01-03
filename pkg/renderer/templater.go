@@ -1,14 +1,11 @@
 package renderer
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"strings"
-	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -141,25 +138,6 @@ type Config struct {
 	ConfigFileOverrides map[string]string
 
 	RenderOpts *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
-}
-
-func executeRawTemplate(raw []byte, c *Config) ([]byte, error) {
-	t, err := template.New("temp").Funcs(sprig.TxtFuncMap()).Parse(string(raw))
-	if err != nil {
-		return nil, err
-	}
-	return ExecuteTemplate(t, c)
-}
-
-// ExecuteTemplate renders a given template, injecting the given values.
-func ExecuteTemplate(temp *template.Template, values interface{}) ([]byte, error) {
-	var buf bytes.Buffer
-	err := temp.Execute(&buf, values)
-	if err != nil {
-		log.Errorf("Template execution failed: %s", err)
-		return nil, err
-	}
-	return buf.Bytes(), nil
 }
 
 func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {
