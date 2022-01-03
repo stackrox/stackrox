@@ -1,12 +1,14 @@
 package localscanner
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
 	testutilsMTLS "github.com/stackrox/rox/central/testutils/mtls"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -113,5 +115,42 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 			s.Assert().Contains(certAlternativeNames, name, tc.service)
 		}
 		s.Assert().Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter, tc.service)
+	}
+}
+
+func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
+	service := New()
+	ctx := context.Background()
+	testCases := []struct {
+		description string
+		clusterID   string
+		namespace   string
+		shouldFail  bool
+	}{
+		{"no parameter missing", clusterID, namespace, false},
+		{"namespace missing", clusterID, "", true},
+		{"cluster id missing", "", namespace, true},
+		{"all parameters missing", "", "", true},
+	}
+	for _, tc := range testCases {
+		req := central.IssueLocalScannerCertsRequest{
+			ClusterId: tc.clusterID,
+			Namespace: tc.namespace,
+		}
+		resp, err := service.IssueLocalScannerCerts(ctx, &req)
+		if tc.shouldFail {
+			s.Require().Error(err, tc.description)
+			continue
+		}
+		s.Require().NoError(err, tc.description)
+		for _, certs := range []*central.LocalScannerCertificates{
+			resp.GetScannerCerts(),
+			resp.GetScannerDbCerts(),
+		} {
+			s.Require().NotNil(certs, tc.description)
+			s.Assert().NotEmpty(certs.GetCa(), tc.description)
+			s.Assert().NotEmpty(certs.GetCert(), tc.description)
+			s.Assert().NotEmpty(certs.GetKey(), tc.description)
+		}
 	}
 }

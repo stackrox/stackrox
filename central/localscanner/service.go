@@ -52,12 +52,13 @@ func (s *serviceImpl) IssueLocalScannerCerts(_ context.Context, request *central
 	}
 
 	scannerCertificates, err := generateServiceCertMap(storage.ServiceType_SCANNER_SERVICE, request.GetNamespace(), request.GetClusterId())
+	errorFormat := "error generating certificate for service %s"
 	if err != nil {
-		return nil, errors.Wrapf(err, "error generating certificate for service %s", storage.ServiceType_SCANNER_SERVICE)
+		return nil, errors.Wrapf(err, errorFormat, storage.ServiceType_SCANNER_SERVICE)
 	}
 	scannerDBCertificates, err := generateServiceCertMap(storage.ServiceType_SCANNER_DB_SERVICE, request.GetNamespace(), request.GetClusterId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "error generating certificate for service %s", storage.ServiceType_SCANNER_DB_SERVICE)
+		return nil, errors.Wrapf(err, errorFormat, storage.ServiceType_SCANNER_DB_SERVICE)
 	}
 
 	return &central.IssueLocalScannerCertsResponse{
