@@ -30,8 +30,7 @@ func InjectTrustedCAConfigMapExtension(k8s kubernetes.Interface) extensions.Reco
 			if _, err := client.Create(ctx, makeConfigMap(obj), metav1.CreateOptions{}); err != nil {
 				return errors.Wrapf(err, "cannot create configMap %s", configMapName)
 			}
-		case !isAlreadyControlled(configmap, obj):
-			addController(configmap, obj)
+		case takeControl(configmap, obj):
 			if _, err := client.Update(ctx, configmap, metav1.UpdateOptions{}); err != nil {
 				return errors.Wrapf(err, "cannot control configMap %s", configMapName)
 			}
@@ -79,27 +78,53 @@ func makeConfigMap(controller *unstructured.Unstructured) *corev1.ConfigMap {
 		}}
 }
 
-func addController(configmap *corev1.ConfigMap, obj *unstructured.Unstructured) {
+var (
+	ctrlrWeight = map[string]int8{
+		"Scanner": 1,
+		"Sensor":  2,
+		"Central": 3,
+	}
+)
+
+// takeControl returns true if the provided configmap structure has been altered and therefore
+// needs to be updated in the cluster.
+func takeControl(configmap *corev1.ConfigMap, obj *unstructured.Unstructured) bool {
+	controller := getController(configmap)
+
+	// Don't alter configmap if it's already properly controlled.
+	if controller != nil &&
+		(ctrlrWeight[controller.Kind] > ctrlrWeight[obj.GetKind()] ||
+			controller.UID == obj.GetUID()) {
+		return false
+	}
+
+	{
+		// Remove control from the existing controller, but keep it as an owner.
+		not := false
+		controller.Controller = &not
+	}
+
+	// Add new controller.
+	newref := metav1.NewControllerRef(obj, obj.GroupVersionKind())
+	{
+		// Allow k8s garbage collector to delete the owner if needed.
+		not := false
+		newref.BlockOwnerDeletion = &not
+	}
 	refs := configmap.GetOwnerReferences()
 	if refs == nil {
 		refs = []metav1.OwnerReference{}
 	}
-	newref := metav1.NewControllerRef(obj, obj.GroupVersionKind())
-	blockOwnerDeletion := false
-	newref.BlockOwnerDeletion = &blockOwnerDeletion
-	refs = append(refs, *newref)
-	configmap.SetOwnerReferences(refs)
+	configmap.SetOwnerReferences(append(refs, *newref))
+	return true
 }
 
-func isAlreadyControlled(configmap *corev1.ConfigMap, obj *unstructured.Unstructured) bool {
-	if obj.GetUID() == "" {
-		return false
-	}
+func getController(configmap *corev1.ConfigMap) *metav1.OwnerReference {
 	refs := configmap.GetOwnerReferences()
 	for i := range refs {
-		if refs[i].Controller != nil && refs[i].UID == obj.GetUID() {
-			return true
+		if refs[i].Controller != nil && *refs[i].Controller {
+			return &refs[i]
 		}
 	}
-	return false
+	return nil
 }

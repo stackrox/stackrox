@@ -8,10 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func makeTestController(name string, uid types.UID) *unstructured.Unstructured {
+func makeTestController(kind string, uid types.UID) *unstructured.Unstructured {
 	controller := &unstructured.Unstructured{}
 
-	controller.SetName(name)
+	controller.SetKind(kind)
 	controller.SetUID(uid)
 	controller.SetAPIVersion("test")
 	controller.SetNamespace("test")
@@ -19,16 +19,26 @@ func makeTestController(name string, uid types.UID) *unstructured.Unstructured {
 }
 
 func TestConfigMapController(t *testing.T) {
-	controller1 := makeTestController("test", "0000")
-	controller2 := makeTestController("test", "0001")
-	controller3 := makeTestController("test1", "0000")
+	scanner := makeTestController("Scanner", "0000")
+	sensor := makeTestController("Sensor", "0001")
+	central1 := makeTestController("Central", "0002")
+	central2 := makeTestController("Central", "0003")
 
-	cm := makeConfigMap(controller1)
-	assert.True(t, isAlreadyControlled(cm, controller1))
-	assert.False(t, isAlreadyControlled(cm, controller2))
-	assert.True(t, isAlreadyControlled(cm, controller3))
+	cm := makeConfigMap(scanner)
+	assert.False(t, takeControl(cm, scanner))
 
-	addController(cm, controller2)
-	assert.True(t, isAlreadyControlled(cm, controller1))
-	assert.True(t, isAlreadyControlled(cm, controller2))
+	assert.Equal(t, getController(cm).UID, scanner.GetUID())
+	assert.NotEqual(t, getController(cm).UID, sensor.GetUID())
+
+	assert.True(t, takeControl(cm, sensor))
+	assert.NotEqual(t, getController(cm).UID, scanner.GetUID())
+	assert.Equal(t, getController(cm).UID, sensor.GetUID())
+
+	assert.True(t, takeControl(cm, central1))
+	assert.NotEqual(t, getController(cm).UID, sensor.GetUID())
+	assert.Equal(t, getController(cm).UID, central1.GetUID())
+
+	assert.True(t, takeControl(cm, central2))
+	assert.NotEqual(t, getController(cm).UID, central1.GetUID())
+	assert.Equal(t, getController(cm).UID, central2.GetUID())
 }
