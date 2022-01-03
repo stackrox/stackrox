@@ -12,7 +12,8 @@ type secretDataMap = map[string][]byte
 
 func generateServiceCertificate(serviceType storage.ServiceType, namespace string, clusterID string) (*mtls.IssuedCert, error) {
 	if serviceType != storage.ServiceType_SCANNER_SERVICE && serviceType != storage.ServiceType_SCANNER_DB_SERVICE {
-		return nil, errors.New("can only generate certificates for Scanner services")
+		return nil, errors.Errorf("can only generate certificates for Scanner services, service type %s is not supported",
+			serviceType)
 	}
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
