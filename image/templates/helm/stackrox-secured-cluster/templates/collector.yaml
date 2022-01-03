@@ -107,7 +107,7 @@ spec:
         securityContext:
           runAsUser: 0
           readOnlyRootFilesystem: true
-          {{ if ne ._rox.collector.disableSeLinuxOptions true }}
+          {{ if not ._rox.collector.disableSELinuxOptions }}
           seLinuxOptions:
             type: {{ ._rox.collector.seLinuxOptionsType | default "container_runtime_t" | quote }}
           {{ end }}
