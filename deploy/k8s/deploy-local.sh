@@ -7,4 +7,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 export COLLECTION_METHOD="${COLLECTION_METHOD:-kernel-module}"
 export MONITORING_SUPPORT="${MONITORING_SUPPORT:-false}"
 
+export ROX_IMAGE_FLAVOR="${ROX_IMAGE_FLAVOR:-development_development}"
+
 $DIR/deploy.sh
