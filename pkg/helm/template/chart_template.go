@@ -164,6 +164,8 @@ func (t *ChartTemplate) InstantiateAndLoad(metaVals charts.MetaValues) (*chart.C
 	return ch, nil
 }
 
+// InstantiateAndLoadWithAdditionalFiles is like InstantiateAndLoad but also allows injecting additionalFiles
+// into the resulting chart.
 func (t *ChartTemplate) InstantiateAndLoadWithAdditionalFiles(metaVals charts.MetaValues, additionalFiles map[string][]byte) (*chart.Chart, error) {
 	instantiatedFiles, err := t.InstantiateRaw(metaVals)
 	if err != nil {
