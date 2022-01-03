@@ -27,7 +27,8 @@ function install_hook
     fi
   fi
 
-  ln -sf "$(realpath --relative-to "$hooks_path" "$hook_script")" "$hook_link"
+  src="$(realpath --relative-to "$hooks_path" "$hook_script")"
+  ln -sf "$src" "$hook_link"
 }
 
 for hook in "$@"
