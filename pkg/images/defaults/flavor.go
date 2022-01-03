@@ -5,7 +5,12 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ChartRepo contains information about where the Helm charts are published.
@@ -108,6 +113,28 @@ func GetImageFlavorByBuildType() ImageFlavor {
 		return StackRoxIOReleaseImageFlavor()
 	}
 	return DevelopmentBuildImageFlavor()
+}
+
+func GetImageFlavorFromEnv() ImageFlavor {
+	imageFlavorMap := map[string]func()ImageFlavor{
+		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
+		imageFlavorStackroxIO: StackRoxIOReleaseImageFlavor,
+	}
+
+	envValue := ImageFlavorFromEnv()
+	if buildinfo.ReleaseBuild && envValue == imageFlavorDevelopment {
+		panic(fmt.Sprintf("Cannot use %s flavor in build release", imageFlavorDevelopment))
+	}
+
+	if fn, ok := imageFlavorMap[ImageFlavorFromEnv()]; ok {
+		return fn()
+	} else {
+		log.Warnf("Environment variable %s has invalid value %s. Using default image flavor %s",
+			imageFlavorEnvName,
+			envValue,
+			"stackroxio_release")
+		return StackRoxIOReleaseImageFlavor()
+	}
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
