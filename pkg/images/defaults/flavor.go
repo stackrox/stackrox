@@ -52,14 +52,14 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 
 		CollectorRegistry:      "docker.io/stackrox",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      version.GetCollectorVersion() + "-latest",
+		CollectorImageTag:      version.GetCollectorVersion(false) + "-latest",
 		CollectorSlimImageName: "collector",
-		CollectorSlimImageTag:  version.GetCollectorVersion() + "-slim",
+		CollectorSlimImageTag:  version.GetCollectorVersion(false) + "-slim",
 
 		ScannerImageName:   "scanner",
-		ScannerImageTag:    version.GetScannerVersion(),
+		ScannerImageTag:    version.GetScannerVersion(false),
 		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  version.GetScannerVersion(),
+		ScannerDBImageTag:  version.GetScannerVersion(false),
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -67,7 +67,7 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
 		},
-		Versions: version.GetAllVersions(),
+		Versions: version.GetAllVersions(false),
 	}
 }
 
@@ -80,14 +80,14 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 
 		CollectorRegistry:      "collector.stackrox.io",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      version.GetCollectorVersion(),
+		CollectorImageTag:      version.GetCollectorVersion(true),
 		CollectorSlimImageName: "collector-slim",
-		CollectorSlimImageTag:  version.GetCollectorVersion(),
+		CollectorSlimImageTag:  version.GetCollectorVersion(true),
 
 		ScannerImageName:   "scanner",
-		ScannerImageTag:    version.GetScannerVersion(),
+		ScannerImageTag:    version.GetScannerVersion(true),
 		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  version.GetScannerVersion(),
+		ScannerDBImageTag:  version.GetScannerVersion(true),
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -95,7 +95,7 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: false,
 		},
-		Versions: version.GetAllVersions(),
+		Versions: version.GetAllVersions(true),
 	}
 }
 

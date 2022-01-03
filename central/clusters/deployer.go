@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -167,7 +168,7 @@ func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValue
 
 		"KubectlOutput": true,
 
-		"Versions": version.GetAllVersions(),
+		"Versions": version.GetAllVersions(buildinfo.ReleaseBuild),
 
 		"FeatureFlags": make(map[string]string),
 

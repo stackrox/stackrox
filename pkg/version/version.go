@@ -20,16 +20,22 @@ func GetMainVersion() string {
 }
 
 // GetCollectorVersion returns the current Collector tag.
-func GetCollectorVersion() string {
+func GetCollectorVersion(isRelease bool) string {
 	if env.CollectorVersion.Setting() != "" {
 		return env.CollectorVersion.Setting()
 	}
-	return GetMainVersion()
+	if isRelease {
+		return GetMainVersion()
+	}
+	return internal.CollectorVersion
 }
 
 // GetScannerVersion returns the current Scanner tag.
-func GetScannerVersion() string {
-	return GetMainVersion()
+func GetScannerVersion(isRelease bool) string {
+	if isRelease {
+		return GetMainVersion()
+	}
+	return internal.ScannerVersion
 }
 
 // Versions represents a collection of various pieces of version information.
@@ -45,15 +51,15 @@ type Versions struct {
 }
 
 // GetAllVersions returns all of the various pieces of version information.
-func GetAllVersions() Versions {
+func GetAllVersions(isRelease bool) Versions {
 	return Versions{
 		BuildDate:        buildinfo.BuildTimestamp(),
-		CollectorVersion: GetCollectorVersion(),
+		CollectorVersion: GetCollectorVersion(isRelease),
 		GitCommit:        internal.GitShortSha,
 		GoVersion:        runtime.Version(),
 		MainVersion:      GetMainVersion(),
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   GetScannerVersion(),
+		ScannerVersion:   GetScannerVersion(isRelease),
 		ChartVersion:     GetChartVersion(),
 	}
 }

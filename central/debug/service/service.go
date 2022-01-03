@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -302,7 +303,7 @@ func getVersion(zipWriter *zip.Writer) error {
 	if err != nil {
 		return err
 	}
-	versions := version.GetAllVersions()
+	versions := version.GetAllVersions(buildinfo.ReleaseBuild)
 	data, err := json.Marshal(versions)
 	if err != nil {
 		return err
@@ -453,7 +454,7 @@ func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versions := version.GetAllVersions()
+	versions := version.GetAllVersions(buildinfo.ReleaseBuild)
 	versionsJSON, err := json.Marshal(&versions)
 	if err != nil {
 		httputil.WriteErrorf(w, http.StatusInternalServerError, "could not marshal version info to JSON: %v", err)

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/internal"
@@ -41,14 +42,18 @@ func SetVersion(t *testing.T, version version.Versions) {
 // GetExampleVersion returns an example version, only intended for usage in testing.
 func GetExampleVersion(t *testing.T) version.Versions {
 	testutils.MustBeInTest(t)
+	unifiedVersion := "99.9.9" // unifiedVersion of collector and scanner - should match main version only on release
+	if buildinfo.ReleaseBuild {
+		unifiedVersion = "3.0.99.0"
+	}
 	return version.Versions{
 		BuildDate:        time.Unix(0, 0),
-		CollectorVersion: "3.0.99.0",
+		CollectorVersion: unifiedVersion,
 		GitCommit:        "45b4a8ac",
 		GoVersion:        runtime.Version(),
 		MainVersion:      "3.0.99.0",
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   "3.0.99.0",
+		ScannerVersion:   unifiedVersion,
 		ChartVersion:     "3.99.0",
 	}
 }
