@@ -21,10 +21,15 @@ func Test_CA_IssueCertForSubject(t *testing.T) {
 			minNotAfter: 364 * 24 * time.Hour,
 			maxNotAfter: 366 * 24 * time.Hour,
 		},
-		"ephemeral cert": {
-			opts:        []IssueCertOption{WithEphemeralValidity()},
+		"ephemeral cert hourly expiration": {
+			opts:        []IssueCertOption{WithValidityExpiringInHours()},
 			minNotAfter: 2 * time.Hour,
 			maxNotAfter: 4 * time.Hour,
+		},
+		"ephemeral cert daily expiration": {
+			opts:        []IssueCertOption{WithValidityExpiringInDays()},
+			minNotAfter: (2*24 - 1) * time.Hour,
+			maxNotAfter: (2*24 + 1) * time.Hour,
 		},
 	}
 

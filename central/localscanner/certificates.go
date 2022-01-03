@@ -17,7 +17,7 @@ func generateServiceCertificate(serviceType storage.ServiceType, namespace strin
 	}
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
-		mtls.WithLocalScannerProfile(),
+		mtls.WithValidityExpiringInDays(),
 		mtls.WithNamespace(namespace),
 	}
 	scannerCert, err := mtls.IssueNewCert(subject, issueOpts...)
