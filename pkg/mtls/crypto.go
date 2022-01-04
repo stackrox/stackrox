@@ -180,6 +180,21 @@ func CACert() (*x509.Certificate, []byte, error) {
 	return caCert, caCertDER, caCertErr
 }
 
+// CAForSigning reads the cert and key from the local file system and returns
+// a corresponding CA instance that can be used for signing
+func CAForSigning() (CA, error) {
+	_, certPEM, _, err := readCA()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read CA cert file")
+	}
+	keyPEM, err := readCAKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read CA key file")
+	}
+
+	return LoadCAForSigning(certPEM, keyPEM)
+}
+
 func signer() (cfsigner.Signer, error) {
 	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
 }
