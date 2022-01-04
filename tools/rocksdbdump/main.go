@@ -88,6 +88,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"service_accounts":                     (*storage.ServiceAccount)(nil),
 	"simple_access_scopes":                 (*storage.SimpleAccessScope)(nil),
 	"version":                              (*storage.Version)(nil),
+	"vuln_req":                             (*storage.VulnerabilityRequest)(nil),
 }
 
 var knownUnhandledBuckets = set.NewStringSet(
