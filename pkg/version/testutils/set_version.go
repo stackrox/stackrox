@@ -27,7 +27,13 @@ func SetMainVersion(t *testing.T, version string) {
 // SetExampleVersion sets the version to the example, only intended for usage in testing.
 func SetExampleVersion(t *testing.T) {
 	testutils.MustBeInTest(t)
-	SetVersion(t, GetExampleVersion(t))
+	SetVersion(t, GetExampleVersion(t, buildinfo.ReleaseBuild))
+}
+
+// SetExampleVersionRelease sets the version to the example for given release status, only intended for usage in testing.
+func SetExampleVersionRelease(t *testing.T, isRelease bool) {
+	testutils.MustBeInTest(t)
+	SetVersion(t, GetExampleVersion(t, isRelease))
 }
 
 // SetVersion sets the version, only intended for usage in testing.
@@ -39,11 +45,11 @@ func SetVersion(t *testing.T, version version.Versions) {
 	internal.GitShortSha = version.GitCommit
 }
 
-// GetExampleVersion returns an example version, only intended for usage in testing.
-func GetExampleVersion(t *testing.T) version.Versions {
+// GetExampleVersion returns an example version for given release status, only intended for usage in testing.
+func GetExampleVersion(t *testing.T, isRelease bool) version.Versions {
 	testutils.MustBeInTest(t)
 	unifiedVersion := "99.9.9" // unifiedVersion of collector and scanner - should match main version only on release
-	if buildinfo.ReleaseBuild {
+	if isRelease {
 		unifiedVersion = "3.0.99.0"
 	}
 	return version.Versions{
