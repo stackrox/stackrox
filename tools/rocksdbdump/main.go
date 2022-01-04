@@ -81,6 +81,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"processWhitelistResults":              (*storage.ProcessBaselineResults)(nil),
 	"processWhitelists2":                   (*storage.ProcessBaseline)(nil),
 	"process_indicators2":                  (*storage.ProcessIndicator)(nil),
+	"report_configurations":                (*storage.ReportConfiguration)(nil),
 	"risk":                                 (*storage.Risk)(nil),
 	"rolebindings":                         (*storage.K8SRoleBinding)(nil),
 	"roles":                                (*storage.Role)(nil),
