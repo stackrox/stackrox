@@ -4,12 +4,12 @@
 package defaults
 
 import (
-"testing"
+	"testing"
 
-"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-"github.com/stackrox/rox/pkg/testutils/envisolator"
-"github.com/stackrox/rox/pkg/version/testutils"
-"github.com/stretchr/testify/suite"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stretchr/testify/suite"
 )
 
 type devPanicTestSuite struct {
@@ -26,7 +26,5 @@ func (s *devPanicTestSuite) TestShouldPanic() {
 	testutils.SetExampleVersion(s.T())
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(imageFlavorEnvName, "development_build")
-	s.Panics(func(){ GetImageFlavorFromEnv() })
+	s.Panics(func() { GetImageFlavorFromEnv() })
 }
-
-

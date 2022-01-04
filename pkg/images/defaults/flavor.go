@@ -115,26 +115,31 @@ func GetImageFlavorByBuildType() ImageFlavor {
 	return DevelopmentBuildImageFlavor()
 }
 
+// GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR). This should be used
+// only where this environment variable is set, otherwise it will be defaulted to stackrox_io_release. Providing
+// development_build flavor on a release build binary will cause the application to panic.
 func GetImageFlavorFromEnv() ImageFlavor {
-	imageFlavorMap := map[string]func()ImageFlavor{
-		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
-		imageFlavorStackroxIO: StackRoxIOReleaseImageFlavor,
-	}
-
 	envValue := ImageFlavorFromEnv()
 	if buildinfo.ReleaseBuild && envValue == imageFlavorDevelopment {
-		panic(fmt.Sprintf("Cannot use %s flavor in build release", imageFlavorDevelopment))
+		// Release product build using development image repositories is likely a misconfiguration. We don't want to
+		// accidentally go out with development images into release.
+		log.Panicf("Cannot use %s flavor in build release", imageFlavorDevelopment)
+	}
+
+	imageFlavorMap := map[string]func() ImageFlavor{
+		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
+		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
 	}
 
 	if fn, ok := imageFlavorMap[ImageFlavorFromEnv()]; ok {
 		return fn()
-	} else {
-		log.Warnf("Environment variable %s has invalid value %s. Using default image flavor %s",
-			imageFlavorEnvName,
-			envValue,
-			"stackroxio_release")
-		return StackRoxIOReleaseImageFlavor()
 	}
+
+	log.Warnf("Environment variable %s has invalid value %s. Using default image flavor %s",
+		imageFlavorEnvName,
+		envValue,
+		"stackroxio_release")
+	return StackRoxIOReleaseImageFlavor()
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.

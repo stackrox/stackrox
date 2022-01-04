@@ -25,7 +25,7 @@ func (s *imageFlavorTestSuite) SetupTest() {
 }
 
 func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
-	testCases := map[string]struct{
+	testCases := map[string]struct {
 		expectedFlavor ImageFlavor
 	}{
 		"development_build": {
@@ -35,9 +35,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
 		},
 		// TODO(RS-380): Add test for RHACS flavor when available
-		//"rhacs_release": {
-		//	expectedFlavor: RHACS
-		//},
+		// "rhacs_release": {
+		//	 expectedFlavor: RHACS
+		// },
 		"wrong_value": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
 		},
