@@ -3,6 +3,7 @@ package defaults
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -27,12 +28,15 @@ func (s *imageFlavorTestSuite) SetupTest() {
 func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	testCases := map[string]struct {
 		expectedFlavor ImageFlavor
+		runOnRelease   bool
 	}{
 		"development_build": {
 			expectedFlavor: DevelopmentBuildImageFlavor(),
+			runOnRelease:   false,
 		},
 		"stackrox_io_release": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
+			runOnRelease:   true,
 		},
 		// TODO(RS-380): Add test for RHACS flavor when available
 		// "rhacs_release": {
@@ -44,6 +48,11 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	}
 
 	for envValue, testCase := range testCases {
+		if !testCase.runOnRelease && buildinfo.ReleaseBuild {
+			// skip this case on release
+			continue
+		}
+
 		s.Run(envValue, func() {
 			s.envIsolator.Setenv(imageFlavorEnvName, envValue)
 			flavor := GetImageFlavorFromEnv()
