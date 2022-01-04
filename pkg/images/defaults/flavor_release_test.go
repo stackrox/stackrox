@@ -1,7 +1,7 @@
 //go:build release
-// +build release test
+// +build release
 
-package defaults_release_test
+package defaults
 
 import (
 	"testing"
