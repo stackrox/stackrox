@@ -48,6 +48,15 @@ func validate(ecr *storage.ECRConfig) error {
 		}
 	}
 
+	if ecr.GetUseAssumeRole() {
+		if ecr.GetEndpoint() != "" {
+			errorList.AddString("AssumeRole cannot be done with an endpoint defined")
+		}
+		if ecr.GetAssumeRoleId() == "" {
+			errorList.AddString("AssumeRole ID must be set to use AssumeRole")
+		}
+	}
+
 	if ecr.GetRegion() == "" {
 		errorList.AddString("Region must be specified")
 	}
@@ -150,7 +159,7 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 
 	if conf.GetUseAssumeRole() {
 		if endpoint != "" {
-			return nil, errorhelpers.NewErrInvalidArgs("Cannot enable both Endpoint and AssumeRole")
+			return nil, errorhelpers.NewErrInvalidArgs("AssumeRole and Endpoint cannot both be enabled")
 		}
 		if conf.GetAssumeRoleId() == "" {
 			return nil, errorhelpers.NewErrInvalidArgs("AssumeRole ID is required to use AssumeRole")
@@ -162,7 +171,6 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 			if assumeRoleExternalID != "" {
 				p.ExternalID = &assumeRoleExternalID
 			}
-			//p.Duration = 900 (15min) default
 		})
 
 		service = awsECR.New(sess, &aws.Config{Credentials: stsCred})
