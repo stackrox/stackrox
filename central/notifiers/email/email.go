@@ -198,17 +198,16 @@ func (m message) Bytes() []byte {
 	}
 	buf.WriteString(fmt.Sprintf("%s\r\n", m.Body))
 
-	if len(m.Attachments) > 0 {
-		for k, v := range m.Attachments {
-			buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
-			buf.WriteString("Content-Type: application/zip\r\n")
-			buf.WriteString("Content-Transfer-Encoding: base64\r\n")
-			buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\r\n", k))
-			buf.WriteString(base64.StdEncoding.EncodeToString(v))
-			buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
-		}
-		buf.WriteString("--")
+	for k, v := range m.Attachments {
+		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+		buf.WriteString("Content-Type: application/zip\r\n")
+		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
+		buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\r\n", k))
+		buf.WriteString(base64.StdEncoding.EncodeToString(v))
+		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 	}
+	buf.WriteString("--")
+
 	return buf.Bytes()
 }
 

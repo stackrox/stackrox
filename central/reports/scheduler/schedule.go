@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
@@ -70,12 +69,7 @@ var (
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
-	scheduledSacCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster, resources.Deployment,
-				resources.Namespace, resources.Notifier, resources.Role, resources.VulnerabilityReports)))
-
-	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(scheduledSacCtx), allow.Anonymous())
+	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
 
 // Scheduler maintains the schedules for reports
@@ -243,19 +237,19 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 	clusters, err := s.clusterDatastore.GetClusters(req.Ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to build report query")
+		return errors.Wrap(err, "error building report query: unable to get clusters")
 	}
 	namespaces, err := s.namespaceDatastore.GetNamespaces(req.Ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to build report query")
+		return errors.Wrap(err, "error building report query: unable unable to get namespaces")
 	}
 
 	scope, found, err := s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
 	if err != nil {
-		return errors.Wrap(err, "unable to build report query")
+		return errors.Wrap(err, "error building report query: unable to get the resource scope")
 	}
 	if !found {
-		return errors.Errorf("resource scope %s not found, unable to build report query", scope.GetId())
+		return errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
 	}
 
 	qb := NewVulnReportQueryBuilder(clusters, namespaces, scope, rc.GetVulnReportFilters(),

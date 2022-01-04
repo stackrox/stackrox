@@ -25,11 +25,11 @@ type queryBuilder struct {
 
 // NewVulnReportQueryBuilder builds a query builder to build scope and cve filtering queries for vuln reporting
 func NewVulnReportQueryBuilder(clusters []*storage.Cluster,
-	namesapces []*storage.NamespaceMetadata, scope *storage.SimpleAccessScope,
+	namespaces []*storage.NamespaceMetadata, scope *storage.SimpleAccessScope,
 	vulnFilters *storage.VulnerabilityReportFilters, lastSuccessfulRunTime time.Time) *queryBuilder {
 	return &queryBuilder{
 		clusters:              clusters,
-		namespaces:            namesapces,
+		namespaces:            namespaces,
 		scope:                 scope,
 		vulnFilters:           vulnFilters,
 		lastSuccessfulRunTime: lastSuccessfulRunTime,
@@ -63,7 +63,7 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 	case storage.VulnerabilityReportFilters_FIXABLE:
 		fixQuery = search.NewQueryBuilder().AddStrings(search.Fixable, "true").ProtoQuery()
 	case storage.VulnerabilityReportFilters_NOT_FIXABLE:
-		fixQuery = search.NewQueryBuilder().AddStrings(search.Fixable, "true").ProtoQuery()
+		fixQuery = search.NewQueryBuilder().AddStrings(search.Fixable, "false").ProtoQuery()
 	}
 
 	sevQueries := make([]*v1.Query, len(vulnReportFilters.GetSeverities()))
