@@ -1,4 +1,4 @@
-# hey, that's Misha messing up things.
+# Hey, that's Misha messing up things.
 
 
 [![CircleCI][circleci-badge]][circleci-link]
