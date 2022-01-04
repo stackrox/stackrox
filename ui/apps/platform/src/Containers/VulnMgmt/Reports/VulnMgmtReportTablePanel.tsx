@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import {
     Alert,
     AlertGroup,
+    AlertVariant,
     Flex,
     FlexItem,
     Divider,
@@ -27,6 +28,12 @@ import { ReportConfiguration } from 'types/report.proto';
 export type ActionItem = {
     title: string | ReactElement;
     onClick: (item) => void;
+};
+
+type AlertInfo = {
+    title: string;
+    variant: AlertVariant;
+    key: number;
 };
 
 type ReportingTablePanelProps = {
@@ -62,7 +69,7 @@ function ReportingTablePanel({
     columns,
     onDeleteReports,
 }: ReportingTablePanelProps): ReactElement {
-    const [alerts, setAlerts] = React.useState<ReactElement[]>([]);
+    const [alerts, setAlerts] = React.useState<AlertInfo[]>([]);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
     const { userRolePermissions } = useSelector(permissionsSelector);
     const hasWriteAccessForPolicy = getHasReadWritePermission(
@@ -110,17 +117,19 @@ function ReportingTablePanel({
         setAlerts([]);
 
         onDeleteReports(deletingReportIds)
-            .then((response) => {
-                console.log({ response });
+            .then(() => {
                 setDeletingReportIds([]);
                 onClearAll();
             })
-            .catch((errors) => {
-                if (errors?.length) {
-                    errors.forEach((err) => {
-                        console.log({ err });
-                    });
-                }
+            .catch((error) => {
+                const alertInfo = {
+                    title: error?.message || 'An unknown error occurred while deleting',
+                    variant: AlertVariant.danger,
+                    key: new Date().getTime(),
+                };
+                setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
+
+                setDeletingReportIds([]);
             });
     }
 
@@ -134,7 +143,18 @@ function ReportingTablePanel({
 
     return (
         <>
-            <AlertGroup isLiveRegion>{alerts}</AlertGroup>
+            <PageSection padding={{ default: 'padding' }} variant={PageSectionVariants.light}>
+                <AlertGroup
+                    isLiveRegion
+                    aria-live="polite"
+                    aria-relevant="additions text"
+                    aria-atomic="false"
+                >
+                    {alerts.map(({ title, variant, key }) => (
+                        <Alert isInline variant={variant} title={title} key={key} />
+                    ))}
+                </AlertGroup>
+            </PageSection>
             <Flex
                 className="pf-u-p-md"
                 alignSelf={{ default: 'alignSelfCenter' }}
@@ -229,6 +249,7 @@ function ReportingTablePanel({
                                     <Td
                                         actions={{
                                             items: actionItems,
+                                            disable: !hasWriteAccessForPolicy,
                                         }}
                                     />
                                 </Tr>
