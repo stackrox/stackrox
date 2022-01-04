@@ -41,7 +41,7 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 
 // RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
 func RHACSMetaValues() MetaValues {
-	// TODO: remove once RHACS flavor is added to `images` package
+	// TODO(RS-380): remove once RHACS flavor is added to `images` package
 	flavor := defaults.GetImageFlavorByBuildType()
 	metaValues := MetaValues{
 		"Versions": flavor.Versions,

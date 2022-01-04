@@ -7,7 +7,8 @@ const (
 
 	imageFlavorDevelopment = "development_build"
 	imageFlavorStackroxIO  = "stackrox_io_release"
-	imageFlavorRHACS       = "rhacs_release"
+	// TODO(RS-380): add this flavor:
+	// imageFlavorRHACS       = "rhacs_release"
 )
 
 var (
