@@ -27,25 +27,26 @@ func createHeaderPrintOption(noHeaderFlag, headerAsCommentFlag bool) headerPrint
 	return printHeaders
 }
 
-type csvPrinter struct {
+// CSVPrinter contains fields related to formatting data into csv format
+type CSVPrinter struct {
 	columnHeaders         []string
 	rowJSONPathExpression string
 	headerPrintOption     headerPrintOption
 }
 
-// newCSVPrinter returns a printer with given configuration capable of printing output formatted as CSV
-func newCSVPrinter(columnHeaders []string, rowJSONPathExpression string, noHeader, headerAsComment bool) *csvPrinter {
+func newCSVPrinter(columnHeaders []string, rowJSONPathExpression string, noHeader, headerAsComment bool) *CSVPrinter {
 	// since we are potentially mutating the column headers, ensure we copy them to not impact
 	// the given slice's reference.
 	headers := sliceutils.StringClone(columnHeaders)
-	return &csvPrinter{
+	return &CSVPrinter{
 		columnHeaders:         headers,
 		rowJSONPathExpression: rowJSONPathExpression,
 		headerPrintOption:     createHeaderPrintOption(noHeader, headerAsComment),
 	}
 }
 
-func (c *csvPrinter) Print(jsonObject interface{}, out io.Writer) error {
+// Print prints the given json object into csv row(s) and writes it to the given writer
+func (c *CSVPrinter) Print(jsonObject interface{}, out io.Writer) error {
 	csvWriter := csv.NewWriter(out)
 
 	rowMapper, err := mapper.NewRowMapper(jsonObject, c.rowJSONPathExpression)

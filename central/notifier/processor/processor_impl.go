@@ -37,6 +37,11 @@ func (p *processorImpl) RemoveNotifier(ctx context.Context, id string) {
 	p.ns.RemoveNotifier(ctx, id)
 }
 
+// GetNotifier gets the in memory copy of the specified notifier id
+func (p *processorImpl) GetNotifier(ctx context.Context, id string) (notifier notifiers.Notifier) {
+	return p.ns.GetNotifier(ctx, id)
+}
+
 // UpdateNotifier updates or adds the passed notifier into memory
 func (p *processorImpl) UpdateNotifier(ctx context.Context, notifier notifiers.Notifier) {
 	p.ns.UpsertNotifier(ctx, notifier)

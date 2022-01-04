@@ -4,8 +4,14 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	notifierSAC = sac.ForResource(resources.Notifier)
 )
 
 // NotifierSet is a set that coordinates present policies and notifiers.
@@ -17,6 +23,7 @@ type NotifierSet interface {
 
 	UpsertNotifier(ctx context.Context, notifier notifiers.Notifier)
 	RemoveNotifier(ctx context.Context, id string)
+	GetNotifier(ctx context.Context, id string) notifiers.Notifier
 }
 
 // NewNotifierSet returns a new instance of a NotifierSet
@@ -99,4 +106,16 @@ func (p *notifierSetImpl) RemoveNotifier(ctx context.Context, id string) {
 
 	delete(p.notifiers, id)
 	delete(p.failures, id)
+}
+
+// GetNotifier gets a notifier from the set.
+func (p *notifierSetImpl) GetNotifier(ctx context.Context, id string) notifiers.Notifier {
+	if ok, err := notifierSAC.ReadAllowed(ctx); !ok || err != nil {
+		return nil
+	}
+
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	return p.notifiers[id]
 }
