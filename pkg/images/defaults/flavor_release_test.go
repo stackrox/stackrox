@@ -1,5 +1,5 @@
-//go:build !release
-// +build !release
+//go:build release
+// +build release test
 
 package defaults
 
