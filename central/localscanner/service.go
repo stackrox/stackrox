@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,14 +34,18 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 	return nil
 }
 
-func localCertificatesForCertMap(serviceType storage.ServiceType, certificates secretDataMap) *central.LocalScannerCertificates {
-	// FIXME replace secretDataMap in central/localscanner/certificates.go by typed struct
+func localScannerCertificatesFor(serviceType storage.ServiceType, namespace string, clusterID string) (*central.LocalScannerCertificates, error) {
+	certificates, err := generateServiceCertMap(serviceType, namespace, clusterID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error generating certificate for service %s", serviceType)
+	}
+
 	return &central.LocalScannerCertificates{
 		ServiceType: serviceType,
 		Ca:          certificates[mtls.CACertFileName],
 		Cert:        certificates[mtls.ServiceCertFileName],
 		Key:         certificates[mtls.ServiceKeyFileName],
-	}
+	}, nil
 }
 
 func (s *serviceImpl) IssueLocalScannerCerts(_ context.Context, request *central.IssueLocalScannerCertsRequest) (*central.IssueLocalScannerCertsResponse, error) {
@@ -51,18 +56,21 @@ func (s *serviceImpl) IssueLocalScannerCerts(_ context.Context, request *central
 		return nil, errors.New("cluster id is required to issue the certificates for the local scanner")
 	}
 
-	scannerCertificates, err := generateServiceCertMap(storage.ServiceType_SCANNER_SERVICE, request.GetNamespace(), request.GetClusterId())
-	errorFormat := "error generating certificate for service %s"
+	var certIssueError error
+	scannerCertificates, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_SERVICE, request.GetNamespace(), request.GetClusterId())
 	if err != nil {
-		return nil, errors.Wrapf(err, errorFormat, storage.ServiceType_SCANNER_SERVICE)
+		certIssueError = multierror.Append(certIssueError, err)
 	}
-	scannerDBCertificates, err := generateServiceCertMap(storage.ServiceType_SCANNER_DB_SERVICE, request.GetNamespace(), request.GetClusterId())
+	scannerDBCertificates, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_DB_SERVICE, request.GetNamespace(), request.GetClusterId())
 	if err != nil {
-		return nil, errors.Wrapf(err, errorFormat, storage.ServiceType_SCANNER_DB_SERVICE)
+		certIssueError = multierror.Append(certIssueError, err)
+	}
+	if certIssueError != nil {
+		return nil, certIssueError
 	}
 
 	return &central.IssueLocalScannerCertsResponse{
-		ScannerCerts:   localCertificatesForCertMap(storage.ServiceType_SCANNER_SERVICE, scannerCertificates),
-		ScannerDbCerts: localCertificatesForCertMap(storage.ServiceType_SCANNER_DB_SERVICE, scannerDBCertificates),
+		ScannerCerts:   scannerCertificates,
+		ScannerDbCerts: scannerDBCertificates,
 	}, nil
 }
