@@ -37,7 +37,7 @@ export function getLatestDatedItemByKey(key, list = []) {
 }
 
 export function addBrandedTimestampToString(str) {
-    return `StackRox:${str}-${format(new Date(), dateFormat)}`;
+    return `StackRox:${str as string}-${format(new Date(), dateFormat)}`;
 }
 
 const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -73,7 +73,7 @@ export const getDistanceStrictAsPhrase = (dataDatetime, currentDatetime) =>
         partialMethod: 'floor',
     });
 
-export const addDaysToDate = (date, amount) => {
+export const addDaysToDate = (date, amount: number) => {
     return format(addDays(date, amount + 1), 'YYYY-MM-DD[T]HH:mm:ss.SSSSSSSSS[Z]');
 };
 
@@ -95,7 +95,7 @@ const monthDays = [
 export function getDayList(dayListType, days) {
     const dayNameConstants = dayListType === 'WEEKLY' ? weekDays : monthDays;
 
-    const dayNameArray = dayNameConstants.reduce((acc, constant) => {
+    const dayNameArray = dayNameConstants.reduce((acc: string[], constant) => {
         const newItem = days.find((day) => day === constant.key);
 
         return typeof newItem !== 'undefined' ? [...acc, constant.dayName] : [...acc];

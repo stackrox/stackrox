@@ -10,8 +10,7 @@ type Result = { isLoading: boolean; notifiers: NotifierIntegrationBase[]; error:
 const defaultResultState = { notifiers: [], error: null, isLoading: true };
 
 /*
- * This hook does an API call to the baseline status API to get the baseline status
- * of the supplied peers
+ * This hook does an API call to the notifiers API to get the list of notifiers
  */
 function useFetchScopes(): Result {
     const [result, setResult] = useState<Result>(defaultResultState);

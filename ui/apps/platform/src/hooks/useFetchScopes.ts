@@ -7,8 +7,7 @@ type Result = { isLoading: boolean; scopes: AccessScope[]; error: string | null 
 const defaultResultState = { scopes: [], error: null, isLoading: true };
 
 /*
- * This hook does an API call to the baseline status API to get the baseline status
- * of the supplied peers
+ * This hook does an API call to the access scopes API to get the list of available scopes
  */
 function useFetchScopes(): Result {
     const [result, setResult] = useState<Result>(defaultResultState);

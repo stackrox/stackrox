@@ -8,8 +8,7 @@ type Result = { isLoading: boolean; report: ReportConfiguration | null; error: s
 const defaultResultState = { report: null, error: null, isLoading: true };
 
 /*
- * This hook does an API call to the baseline status API to get the baseline status
- * of the supplied peers
+ * This hook does an API call to the report configurations API to get the list of reports
  */
 function useFetchReport(reportId: string): Result {
     const [result, setResult] = useState<Result>(defaultResultState);

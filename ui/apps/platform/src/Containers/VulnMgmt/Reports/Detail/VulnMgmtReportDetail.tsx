@@ -3,12 +3,11 @@ import { useHistory } from 'react-router-dom';
 import {
     Breadcrumb,
     BreadcrumbItem,
-    Card,
-    CardBody,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
+    Divider,
     Dropdown,
     DropdownItem,
     DropdownToggle,
@@ -100,9 +99,8 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>
-            <PageSection>
-                <Card>
-                    <CardBody>
+            <Divider component="div" />
+            <PageSection variant="light">
                         <DescriptionList
                             columnModifier={{
                                 default: '2Col',
@@ -166,8 +164,6 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                         </DescriptionList>
-                    </CardBody>
-                </Card>
             </PageSection>
         </>
     );
