@@ -3,6 +3,7 @@ package object
 import (
 	"reflect"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protoreflect"
 )
 
@@ -17,7 +18,7 @@ func walk(s Struct, field reflect.StructField, typ reflect.Type) Field {
 	case reflect.Ptr:
 		return walk(s, field, typ.Elem())
 	case reflect.Struct:
-		if typ.String() == "types.Timestamp" {
+		if typ == reflect.TypeOf(types.Timestamp{}) {
 			return Struct{
 				Field:      newField(field, kind),
 				StructType: TIME,
@@ -26,7 +27,7 @@ func walk(s Struct, field reflect.StructField, typ reflect.Type) Field {
 
 		childStruct := Struct{
 			Field:      newField(field, kind),
-			StructType: GENERIC,
+			StructType: MESSAGE,
 		}
 		for i := 0; i < typ.NumField(); i++ {
 			field := typ.Field(i)

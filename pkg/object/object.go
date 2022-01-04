@@ -11,7 +11,7 @@ type StructType int
 
 // Different types of structs
 const (
-	GENERIC StructType = iota
+	MESSAGE StructType = iota
 	TIME
 	ONEOF
 )

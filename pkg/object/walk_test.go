@@ -13,7 +13,7 @@ func checkCloneSubMessage(t *testing.T, field Field) {
 
 	str, ok := field.(Struct)
 	assert.True(t, ok)
-	assert.Equal(t, str.StructType, GENERIC)
+	assert.Equal(t, str.StructType, MESSAGE)
 
 	checkBaseType(t, str.Fields[0], "Int32", reflect.Int32, "int32,omitempty")
 	checkBaseType(t, str.Fields[1], "String_", reflect.String, "string,omitempty")
@@ -28,7 +28,7 @@ func checkBaseType(t *testing.T, field Field, name string, kind reflect.Kind, js
 func TestWalk(t *testing.T) {
 	object := WalkObject((*test.TestClone)(nil))
 
-	assert.Equal(t, object.StructType, GENERIC)
+	assert.Equal(t, object.StructType, MESSAGE)
 	assert.Equal(t, object.Name(), "")
 	assert.Equal(t, object.Type(), reflect.Struct)
 
