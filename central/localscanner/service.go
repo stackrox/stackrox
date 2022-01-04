@@ -41,7 +41,6 @@ func localScannerCertificatesFor(serviceType storage.ServiceType, namespace stri
 	}
 
 	return &central.LocalScannerCertificates{
-		ServiceType: serviceType,
 		Ca:          certificates[mtls.CACertFileName],
 		Cert:        certificates[mtls.ServiceCertFileName],
 		Key:         certificates[mtls.ServiceKeyFileName],

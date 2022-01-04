@@ -7,7 +7,6 @@ import "storage/service_identity.proto";
 package central;
 
 message LocalScannerCertificates {
-  storage.ServiceType service_type = 1;
   bytes               ca           = 2;
   bytes               cert         = 3;
   bytes               key          = 4;
