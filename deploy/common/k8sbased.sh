@@ -330,11 +330,6 @@ function launch_central {
       hotload_binary central central central
     fi
 
-    if [[ "${is_local_dev}" == "true" && -n "${ROX_IMAGE_FLAVOR}" ]]; then
-      echo "Patching deployment with image flavor env: ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}"
-      kubectl -n stackrox set env deploy/central "ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}"
-    fi
-
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
         # wait for LB

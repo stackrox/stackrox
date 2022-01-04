@@ -28,10 +28,10 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	testCases := map[string]struct{
 		expectedFlavor ImageFlavor
 	}{
-		"development_development": {
+		"development_build": {
 			expectedFlavor: DevelopmentBuildImageFlavor(),
 		},
-		"stackroxio_release": {
+		"stackrox_io_release": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
 		},
 		// TODO(RS-380): Add test for RHACS flavor when available
