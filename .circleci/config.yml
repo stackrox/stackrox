@@ -868,6 +868,7 @@ commands:
             if .circleci/pr_has_label.sh "ci-release-build"; then
               cci-export GOTAGS release
             fi
+      - *setImageFlavor
 
   setup-dep-env:
     parameters:
@@ -2748,7 +2749,6 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - *setImageFlavor
 
       - run:
           name: Generate OSS notice
@@ -2920,7 +2920,6 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - *setImageFlavor
 
       - run:
           name: Build Operator Bundle image
