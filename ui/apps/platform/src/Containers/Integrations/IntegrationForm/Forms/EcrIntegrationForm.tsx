@@ -218,6 +218,11 @@ function EcrIntegrationForm({
                         fieldId="config.ecr.endpoint"
                         touched={touched}
                         errors={errors}
+                        helperText={
+                            values.config.ecr.useAssumeRole
+                                ? 'Endpoint disabled when AssumeRole is set'
+                                : ''
+                        }
                     >
                         <TextInput
                             type="text"
@@ -226,11 +231,6 @@ function EcrIntegrationForm({
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || values.config.ecr.useAssumeRole}
-                            title={
-                                !isEditable || values.config.ecr.useAssumeRole
-                                    ? `Endpoint disabled when AssumeRole is set`
-                                    : ``
-                            }
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -319,6 +319,11 @@ function EcrIntegrationForm({
                         fieldId="config.ecr.useAssumeRole"
                         touched={touched}
                         errors={errors}
+                        helperText={
+                            !isEditable || values.config.ecr.endpoint !== ''
+                                ? 'AssumeRole disabled when Endpoint is set'
+                                : ''
+                        }
                     >
                         <Checkbox
                             label="Use AssumeRole"
@@ -327,31 +332,24 @@ function EcrIntegrationForm({
                             isChecked={values.config.ecr.useAssumeRole}
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable || values.config.ecr.endpoint !== ``}
-                            title={
-                                !isEditable || values.config.ecr.endpoint !== ``
-                                    ? `AssumeRole disabled when Endpoint is set`
-                                    : ``
-                            }
+                            isDisabled={!isEditable || values.config.ecr.endpoint !== ''}
                         />
                     </FormLabelGroup>
                     {values.config.ecr.useAssumeRole && (
                         <>
                             <FormLabelGroup
-                                isRequired={values.updatePassword}
                                 label="AssumeRole ID"
                                 fieldId="config.ecr.assumeRoleId"
                                 touched={touched}
                                 errors={errors}
                             >
                                 <TextInput
-                                    isRequired={values.updatePassword}
                                     type="text"
                                     id="config.ecr.assumeRoleId"
                                     value={values.config.ecr.assumeRoleId}
                                     onChange={onChange}
                                     onBlur={handleBlur}
-                                    isDisabled={!isEditable || !values.updatePassword}
+                                    isDisabled={!isEditable}
                                 />
                             </FormLabelGroup>
                             <FormLabelGroup
@@ -366,7 +364,7 @@ function EcrIntegrationForm({
                                     value={values.config.ecr.assumeRoleExternalId}
                                     onChange={onChange}
                                     onBlur={handleBlur}
-                                    isDisabled={!isEditable || !values.updatePassword}
+                                    isDisabled={!isEditable}
                                 />
                             </FormLabelGroup>
                         </>
