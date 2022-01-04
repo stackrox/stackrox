@@ -138,7 +138,7 @@ describe('General sanity checks', () => {
         cy.url().should('contain', apidocsUrl);
     });
 
-    it('should allow to navigate to another page after exception happens on a page', () => {
+    it.only('should allow to navigate to another page after exception happens on a page', () => {
         cy.intercept('GET', api.alerts.alerts, {
             body: { alerts: [{ id: 'broken one' }] },
         }).as('alerts');
