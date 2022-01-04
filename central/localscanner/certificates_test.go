@@ -1,7 +1,6 @@
 package localscanner
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -119,25 +118,16 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 }
 
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
-	service := New()
-	ctx := context.Background()
 	testCases := []struct {
 		description string
-		clusterID   string
 		namespace   string
 		shouldFail  bool
 	}{
-		{"no parameter missing", clusterID, namespace, false},
-		{"namespace missing", clusterID, "", true},
-		{"cluster id missing", "", namespace, true},
-		{"all parameters missing", "", "", true},
+		{"no parameter missing", namespace, false},
+		{"namespace missing", "", true},
 	}
 	for _, tc := range testCases {
-		req := central.IssueLocalScannerCertsRequest{
-			ClusterId: tc.clusterID,
-			Namespace: tc.namespace,
-		}
-		resp, err := service.IssueLocalScannerCerts(ctx, &req)
+		resp, err := issueLocalScannerCerts(tc.namespace, clusterID)
 		if tc.shouldFail {
 			s.Require().Error(err, tc.description)
 			continue

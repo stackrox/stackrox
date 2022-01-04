@@ -13,8 +13,7 @@ message LocalScannerCertificates {
 }
 
 message IssueLocalScannerCertsRequest {
-  string cluster_id = 1;
-  string namespace  = 2;
+  string namespace  = 1;
 }
 
 message IssueLocalScannerCertsResponse {
