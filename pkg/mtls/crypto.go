@@ -181,7 +181,7 @@ func CACert() (*x509.Certificate, []byte, error) {
 }
 
 // CAForSigning reads the cert and key from the local file system and returns
-// a corresponding CA instance that can be used for signing
+// a corresponding CA instance that can be used for signing.
 func CAForSigning() (CA, error) {
 	_, certPEM, _, err := readCA()
 	if err != nil {
