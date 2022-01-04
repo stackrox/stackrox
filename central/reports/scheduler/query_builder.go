@@ -54,34 +54,32 @@ func (q *queryBuilder) BuildQuery() (*reportQuery, error) {
 
 func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 	vulnReportFilters := q.vulnFilters
-
-	var fixQuery *v1.Query
+	var conjuncts []*v1.Query
 
 	switch vulnReportFilters.GetFixability() {
 	case storage.VulnerabilityReportFilters_BOTH:
 		break
 	case storage.VulnerabilityReportFilters_FIXABLE:
-		fixQuery = search.NewQueryBuilder().AddStrings(search.Fixable, "true").ProtoQuery()
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStrings(search.Fixable, "true").ProtoQuery())
 	case storage.VulnerabilityReportFilters_NOT_FIXABLE:
-		fixQuery = search.NewQueryBuilder().AddStrings(search.Fixable, "false").ProtoQuery()
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStrings(search.Fixable, "false").ProtoQuery())
 	}
 
 	sevQueries := make([]*v1.Query, len(vulnReportFilters.GetSeverities()))
 	for _, severity := range vulnReportFilters.GetSeverities() {
 		sevQueries = append(sevQueries, search.NewQueryBuilder().AddStrings(search.Severity, severity.String()).ProtoQuery())
 	}
-	sevQuery := search.DisjunctionQuery(sevQueries...)
-
-	var discoveredTimeQuery *v1.Query
-	if vulnReportFilters.SinceLastReport {
-		reportLastSuccessfulRunTs := fmt.Sprintf("<%s", q.lastSuccessfulRunTime)
-
-		discoveredTimeQuery = search.NewQueryBuilder().
-			AddGenericTypeLinkedFields([]search.FieldLabel{search.FirstImageOccurrenceTimestamp},
-				[]interface{}{reportLastSuccessfulRunTs}).ProtoQuery()
+	if len(sevQueries) > 0 {
+		conjuncts = append(conjuncts, search.DisjunctionQuery(sevQueries...))
 	}
 
-	return search.ConjunctionQuery(fixQuery, discoveredTimeQuery, sevQuery).String(), nil
+	if vulnReportFilters.SinceLastReport {
+		reportLastSuccessfulRunTs := fmt.Sprintf("<%s", q.lastSuccessfulRunTime)
+		conjuncts = append(conjuncts, search.NewQueryBuilder().
+			AddGenericTypeLinkedFields([]search.FieldLabel{search.FirstImageOccurrenceTimestamp},
+				[]interface{}{reportLastSuccessfulRunTs}).ProtoQuery())
+	}
+	return search.ConjunctionQuery(conjuncts...).String(), nil
 }
 
 func (q *queryBuilder) buildScopeQueries() ([]string, error) {

@@ -241,7 +241,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	namespaces, err := s.namespaceDatastore.GetNamespaces(req.Ctx)
 	if err != nil {
-		return errors.Wrap(err, "error building report query: unable unable to get namespaces")
+		return errors.Wrap(err, "error building report query: unable to get namespaces")
 	}
 
 	scope, found, err := s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
