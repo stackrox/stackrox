@@ -78,14 +78,6 @@ func makeConfigMap(controller *unstructured.Unstructured) *corev1.ConfigMap {
 		}}
 }
 
-var (
-	ctrlrWeight = map[string]int8{
-		"Scanner": 1,
-		"Sensor":  2,
-		"Central": 3,
-	}
-)
-
 // takeControl returns true if the provided configmap structure has been altered and therefore
 // needs to be updated in the cluster.
 func takeControl(configmap *corev1.ConfigMap, obj *unstructured.Unstructured) bool {
@@ -93,7 +85,7 @@ func takeControl(configmap *corev1.ConfigMap, obj *unstructured.Unstructured) bo
 
 	// Don't alter configmap if it's already properly controlled.
 	if controller != nil &&
-		(ctrlrWeight[controller.Kind] > ctrlrWeight[obj.GetKind()] ||
+		(controller.Kind == "Central" && obj.GetKind() == "SecuredCluster" ||
 			controller.UID == obj.GetUID()) {
 		return false
 	}
