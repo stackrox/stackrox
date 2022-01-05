@@ -22,17 +22,17 @@ const usePermissions = (): UsePermissionsResponse => {
     const { userRolePermissions, currentUserName } = useSelector(stateSelector);
 
     function hasNoAccess(resourceName: ResourceName) {
-        const access = userRolePermissions.resourceToAccess[resourceName];
+        const access = userRolePermissions?.resourceToAccess[resourceName];
         return access === 'NO_ACCESS';
     }
 
     function hasReadAccess(resourceName: ResourceName) {
-        const access = userRolePermissions.resourceToAccess[resourceName];
+        const access = userRolePermissions?.resourceToAccess[resourceName];
         return access === 'READ_ACCESS' || access === 'READ_WRITE_ACCESS';
     }
 
     function hasReadWriteAccess(resourceName: ResourceName) {
-        const access = userRolePermissions.resourceToAccess[resourceName];
+        const access = userRolePermissions?.resourceToAccess[resourceName];
         return access === 'READ_WRITE_ACCESS';
     }
 
