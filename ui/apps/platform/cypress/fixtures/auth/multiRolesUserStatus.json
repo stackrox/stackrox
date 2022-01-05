@@ -12,26 +12,20 @@
         "permissions": {
             "name": "Admin",
             "resourceToAccess": {
-                "User": "READ_WRITE_ACCESS",
-                "VulnerabilityManagementRequests": "READ_WRITE_ACCESS",
-                "VulnerabilityManagementApprovals": "READ_WRITE_ACCESS"
+                "User": "READ_WRITE_ACCESS"
             }
         },
         "roles": [
             {
                 "name": "Admin",
                 "resourceToAccess": {
-                    "User": "READ_WRITE_ACCESS",
-                    "VulnerabilityManagementRequests": "READ_WRITE_ACCESS",
-                    "VulnerabilityManagementApprovals": "READ_WRITE_ACCESS"
+                    "User": "READ_WRITE_ACCESS"
                 }
             },
             {
                 "name": "Analyst",
                 "resourceToAccess": {
-                    "User": "READ_ACCESS",
-                    "VulnerabilityManagementRequests": "READ_ACCESS",
-                    "VulnerabilityManagementApprovals": "READ_ACCESS"
+                    "User": "READ_ACCESS"
                 }
             },
             {

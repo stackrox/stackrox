@@ -108,7 +108,7 @@ describe('User Info', () => {
         it('should show correct permissions for the role', () => {
             interceptWithMockMultiRolesUser();
             cy.visit(userPageUrl);
-            cy.wait('@authStatus');
+            cy.wait('@authStatus', { timeout: 15000 });
 
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).click();
 

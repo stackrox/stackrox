@@ -1,3 +1,4 @@
+import * as api from '../../constants/apiEndpoints';
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
@@ -34,7 +35,11 @@ describe('Vuln Management Dashboard Page', () => {
     withAuth();
 
     it('should show same number of policies between the tile and the policies list', () => {
+        cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.policiesCount)).as(
+            'getPoliciesCount'
+        );
         cy.visit(url.dashboard);
+        cy.wait('@getPoliciesCount', { timeout: 15000 });
         cy.get(selectors.tileLinks)
             .eq(0)
             .find(selectors.tileLinkValue)
@@ -86,7 +91,11 @@ describe('Vuln Management Dashboard Page', () => {
     });
 
     it('should properly navigate to the policies list', () => {
+        cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.policiesCount)).as(
+            'getPoliciesCount'
+        );
         cy.visit(url.dashboard);
+        cy.wait('@getPoliciesCount', { timeout: 15000 });
         cy.get(selectors.tileLinks).eq(0).click();
         cy.url().should('contain', url.list.policies);
     });
