@@ -16,7 +16,7 @@ import { useFormikContext } from 'formik';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
-import FieldValue from './FieldValue';
+import PolicyCriteriaFieldValue from './PolicyCriteriaFieldValue';
 import AndOrOperatorField from './AndOrOperatorField';
 
 type PolicyGroupCardProps = {
@@ -110,7 +110,7 @@ function PolicyGroupCard({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsNone' }}
                                 >
-                                    <FieldValue
+                                    <PolicyCriteriaFieldValue
                                         name={name}
                                         length={group.values.length}
                                         descriptor={descriptor}

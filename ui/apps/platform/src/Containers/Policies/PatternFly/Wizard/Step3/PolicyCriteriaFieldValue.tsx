@@ -3,7 +3,7 @@ import { Flex, Button } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
-import Field from './Field';
+import PolicyCriteriaFieldInput from './PolicyCriteriaFieldInput';
 
 type FieldValueProps = {
     name: string;
@@ -13,7 +13,7 @@ type FieldValueProps = {
     handleRemoveValue: () => void;
 };
 
-function FieldValue({
+function PolicyCriteriaFieldValue({
     name,
     length,
     handleRemoveValue,
@@ -27,7 +27,7 @@ function FieldValue({
                 flexWrap={{ default: 'nowrap' }}
                 alignItems={{ default: 'alignItemsStretch' }}
             >
-                <Field descriptor={descriptor} name={name} readOnly={readOnly} />
+                <PolicyCriteriaFieldInput descriptor={descriptor} name={name} readOnly={readOnly} />
                 {/* only show remove button if there is more than one value */}
                 {!readOnly && length > 1 && (
                     <Button onClick={handleRemoveValue} variant="tertiary">
@@ -39,4 +39,4 @@ function FieldValue({
     );
 }
 
-export default FieldValue;
+export default PolicyCriteriaFieldValue;

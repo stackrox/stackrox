@@ -10,7 +10,7 @@ import {
     SelectVariant,
 } from '@patternfly/react-core';
 
-import { Descriptor, SubComponent } from 'Containers/Policies/Wizard/Form/descriptors';
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 
 type FieldProps = {
     descriptor: Descriptor;
@@ -18,7 +18,7 @@ type FieldProps = {
     name: string;
 };
 
-function Field({ descriptor, readOnly, name }: FieldProps) {
+function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
     const [field, , helper] = useField(name);
     const [isSelectOpen, setIsSelectOpen] = React.useState(false);
     const { value } = field;
@@ -141,4 +141,4 @@ function Field({ descriptor, readOnly, name }: FieldProps) {
     }
 }
 
-export default Field;
+export default PolicyCriteriaFieldInput;
