@@ -16,7 +16,7 @@ import (
 
 const (
 	configMapName = "injected-trusted-ca"
-	annotation    = "config.openshift.io/inject-trusted-cabundle"
+	label         = "config.openshift.io/inject-trusted-cabundle"
 )
 
 // InjectTrustedCAConfigMapExtension returns an extension that takes care of reconciling the injected trusted CA ConfigMap.
@@ -47,14 +47,14 @@ func getConfigMap(ctx context.Context, client v1.ConfigMapInterface, obj *unstru
 		}
 		return nil, errors.Wrapf(err, "cannot retrieve configMap %s", configMapName)
 	}
-	annotations := configmap.GetAnnotations()
-	if annotations != nil {
-		if v, ok := annotations[annotation]; !ok || v != "true" {
-			annotations = nil
+	labels := configmap.GetLabels()
+	if labels != nil {
+		if v, ok := labels[label]; !ok || v != "true" {
+			labels = nil
 		}
 	}
-	if annotations == nil {
-		return nil, errors.Errorf("configMap %s exists, but is not properly annotated", configMapName)
+	if labels == nil {
+		return nil, errors.Errorf("configMap %s exists, but is not properly labeled", configMapName)
 	}
 
 	return configmap, nil
@@ -72,8 +72,8 @@ func makeConfigMap(controller *unstructured.Unstructured) *corev1.ConfigMap {
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(controller, controller.GroupVersionKind()),
 			},
-			Annotations: map[string]string{
-				annotation: "true",
+			Labels: map[string]string{
+				label: "true",
 			},
 		}}
 }
