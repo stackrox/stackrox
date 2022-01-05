@@ -3,6 +3,7 @@ package printers
 import (
 	"bytes"
 	"encoding/csv"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -216,4 +217,98 @@ func TestCsvPrinter_ReadCSVOutputWithCommentedHeaders_Failure(t *testing.T) {
 	records, err := r.ReadAll()
 	require.NoError(t, err)
 	assert.True(t, strings.HasPrefix(strings.Join(records[0], ","), ";"))
+}
+
+
+func TestCsvPrinter(t *testing.T) {
+	type vulnObj struct {
+		Name string `json:"vulnName"`
+	}
+
+	type compObj struct {
+		Name  string    `json:"compName"`
+		Vulns []vulnObj `json:"vulns"`
+	}
+
+	type imgObj struct {
+		Name       string    `json:"imgName"`
+		Components []compObj `json:"components"`
+	}
+
+	type depObj struct {
+		Name   string   `json:"depName"`
+		Images []imgObj `json:"images"`
+	}
+
+	type testObject struct {
+		Deployments []depObj `json:"deployments"`
+	}
+	type resultObject struct {
+		Result testObject `json:"result"`
+	}
+
+	obj := &resultObject{
+		Result: testObject{
+			Deployments: []depObj{
+				{
+					Name: "dep1",
+					Images: []imgObj{
+						{
+							Name: "image1",
+							Components: []compObj{
+								{
+									Name: "comp11",
+									Vulns: []vulnObj{
+										{
+											Name: "cve1",
+										},
+									},
+								},
+								{
+									Name:  "comp12",
+									Vulns: []vulnObj{},
+								},
+							},
+						},
+						{
+							Name: "image2",
+							Components: []compObj{
+								{
+									Name: "comp21",
+									Vulns: []vulnObj{
+										{
+											Name: "cve1",
+										},
+									},
+								},
+								{
+									Name: "comp22",
+									Vulns: []vulnObj{
+										{
+											Name: "cve2",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	columnHeaders := []string{
+		"Deployment",
+		"Image",
+		"Component",
+		"Vuln",
+	}
+
+	rowExpression := "{result.deployments.#.depName,result.deployments.#.images.#.imgName,result.deployments.#.images.#.components.#.compName,result.deployments.#.images.#.components.#.vulns.#.vulnName}"
+
+	p := newCSVPrinter(columnHeaders, rowExpression, false, false)
+	out := &bytes.Buffer{}
+	require.NoError(t, p.Print(&obj, out))
+
+	fmt.Println(out)
 }
