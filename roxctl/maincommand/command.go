@@ -30,7 +30,7 @@ func versionCommand() *cobra.Command {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
-				return enc.Encode(version.GetAllVersionsUnified) // Warning! Development version of roxctl will display unified versions of scanner and collector
+				return enc.Encode(version.GetAllVersionsUnified()) // Warning! Development version of roxctl will display unified versions of scanner and collector
 			}
 			fmt.Println(version.GetMainVersion())
 			return nil
