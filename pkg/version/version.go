@@ -27,15 +27,6 @@ func GetCollectorVersion() string {
 	return internal.CollectorVersion
 }
 
-// // GetInternalScannerVersion returns the current Scanner tag.
-// func GetInternalCollectorVersion(isRelease bool) string {
-// 	return internal.CollectorVersion
-// }
-// // GetInternalScannerVersion returns the current Scanner tag.
-// func GetInternalScannerVersion(isRelease bool) string {
-// 	return internal.ScannerVersion
-// }
-
 // GetScannerVersion returns the current Scanner tag.
 func GetScannerVersion() string {
 	return internal.ScannerVersion
@@ -44,12 +35,12 @@ func GetScannerVersion() string {
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
 	BuildDate        time.Time `json:"BuildDate"`
-	CollectorVersion string    `json:"CollectorVersion"` // hide?
+	CollectorVersion string    `json:"CollectorVersion"`
 	GitCommit        string    `json:"GitCommit"`
 	GoVersion        string    `json:"GoVersion"`
 	MainVersion      string    `json:"MainVersion"`
 	Platform         string    `json:"Platform"`
-	ScannerVersion   string    `json:"ScannerVersion"` // hide?
+	ScannerVersion   string    `json:"ScannerVersion"`
 	ChartVersion     string    `json:"ChartVersion"`
 }
 

@@ -38,7 +38,7 @@ func SetVersion(t *testing.T, version version.Versions) {
 	internal.GitShortSha = version.GitCommit
 }
 
-// GetExampleVersion returns an example version for given release status, only intended for usage in testing.
+// GetExampleVersion returns an example version, only intended for usage in testing.
 func GetExampleVersion(t *testing.T) version.Versions {
 	testutils.MustBeInTest(t)
 	return version.Versions{
@@ -53,7 +53,7 @@ func GetExampleVersion(t *testing.T) version.Versions {
 	}
 }
 
-// GetExampleVersion returns an example version for given release status, only intended for usage in testing.
+// GetExampleVersionUnified returns an example version where scanner and collector are unified with main, only intended for usage in testing.
 func GetExampleVersionUnified(t *testing.T) version.Versions {
 	testutils.MustBeInTest(t)
 	return version.Versions{
