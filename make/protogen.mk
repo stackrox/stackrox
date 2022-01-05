@@ -94,7 +94,7 @@ GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/
 # The --go_out=M... argument specifies the go package to use for an imported proto file. Here, we instruct protoc-gen-go
 # to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "github.com/stackrox/rox/generated/<path>".
-M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto)))),$(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/scanner/generated/$(patsubst %/,%,$(dir $(proto))))
 # This is the M_ARGS used for the grpc-gateway invocation. We only map the storage protos, because
 # - the gateway code produces no output (possibly because of a bug) if we pass M_ARGS_STR to it.
 # - the gateway code doesn't need access to anything outside api/v1 except storage. In particular, it should NOT import internalapi protos.
@@ -114,6 +114,7 @@ $(PROTOC_INCLUDES): $(PROTOC)
 
 GOGO_DIR = $(shell go list -f '{{.Dir}}' -m github.com/gogo/protobuf)
 GRPC_GATEWAY_DIR = $(shell go list -f '{{.Dir}}' -m github.com/grpc-ecosystem/grpc-gateway)
+SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
 
 .PHONY: proto-fmt
 proto-fmt: $(PROTOC_GEN_LINT)
@@ -122,6 +123,7 @@ proto-fmt: $(PROTOC_GEN_LINT)
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOGO_DIR)/protobuf \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+		-I$(SCANNER_DIR)/proto \
 		--lint_out=. \
 		--proto_path=$(PROTO_BASE_PATH) \
 		$(ALL_PROTOS)
@@ -190,6 +192,7 @@ $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTO
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+		-I$(SCANNER_DIR)/proto \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--gofast_out=$(GOGO_M_STR:%=%,)$(M_ARGS_STR:%=%,)plugins=grpc:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
@@ -204,6 +207,7 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOGO_DIR) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+		-I$(SCANNER_DIR)/proto \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,)allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
@@ -217,6 +221,7 @@ $(GENERATED_BASE_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) 
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+		-I$(SCANNER_DIR)/proto \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
