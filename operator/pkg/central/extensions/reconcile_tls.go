@@ -180,7 +180,7 @@ func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix 
 	fileMap := make(secretDataMap, numServiceCertDataEntries)
 	bundleID := uuid.NewV4()
 	subject := mtls.NewInitSubject(centralsensor.EphemeralInitCertClusterID, serviceType, bundleID)
-	if err := r.generateServiceTLSData(subject, fileNamePrefix, fileMap, mtls.WithEphemeralValidity()); err != nil {
+	if err := r.generateServiceTLSData(subject, fileNamePrefix, fileMap, mtls.WithValidityExpiringInHours()); err != nil {
 		return nil, err
 	}
 	return fileMap, nil
