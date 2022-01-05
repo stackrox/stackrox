@@ -105,6 +105,10 @@ var (
 	readCAKeyOnce     sync.Once
 	caKeyFileContents []byte
 	caKeyErr          error
+
+	caForSigningOnce  sync.Once
+	caForSigning      CA
+	caForSigningErr   error
 )
 
 // IssuedCert is a representation of an issued certificate
@@ -183,16 +187,22 @@ func CACert() (*x509.Certificate, []byte, error) {
 // CAForSigning reads the cert and key from the local file system and returns
 // a corresponding CA instance that can be used for signing.
 func CAForSigning() (CA, error) {
-	_, certPEM, _, err := readCA()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not read CA cert file")
-	}
-	keyPEM, err := readCAKey()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not read CA key file")
-	}
+	caForSigningOnce.Do(func() {
+		_, certPEM, _, err := readCA()
+		if err != nil {
+			caForSigningErr = errors.Wrap(err, "could not read CA cert file")
+			return
+		}
+		keyPEM, err := readCAKey()
+		if err != nil {
+			caForSigningErr = errors.Wrap(err, "could not read CA key file")
+			return
+		}
 
-	return LoadCAForSigning(certPEM, keyPEM)
+		caForSigning, caForSigningErr = LoadCAForSigning(certPEM, keyPEM)
+	})
+
+	return caForSigning, caForSigningErr
 }
 
 func signer() (cfsigner.Signer, error) {
