@@ -107,9 +107,11 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
                         selections={value.value}
                         placeholderText={descriptor.placeholder}
                     >
-                        {descriptor?.options?.map((option) => {
-                            return <SelectOption value={option.value}>{option.label}</SelectOption>;
-                        })}
+                        {descriptor?.options?.map((option) => (
+                            <React.Fragment key={option.value}>
+                                <SelectOption value={option.value}>{option.label}</SelectOption>
+                            </React.Fragment>
+                        ))}
                     </Select>
                 </FormGroup>
             );
@@ -130,9 +132,11 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
                         placeholderText={descriptor.placeholder}
                         variant={SelectVariant.typeaheadMulti}
                     >
-                        {descriptor?.options?.map((option) => {
-                            return <SelectOption value={option.value}>{option.label}</SelectOption>;
-                        })}
+                        {descriptor?.options?.map((option) => (
+                            <React.Fragment key={option.value}>
+                                <SelectOption value={option.value}>{option.label}</SelectOption>
+                            </React.Fragment>
+                        ))}
                     </Select>
                 </FormGroup>
             );

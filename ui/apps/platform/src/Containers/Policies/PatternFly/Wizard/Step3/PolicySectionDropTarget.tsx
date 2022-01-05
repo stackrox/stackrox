@@ -6,6 +6,7 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
+import './PolicySectionDropTarget.css';
 
 function getEmptyPolicyFieldCard(fieldKey) {
     const defaultValue = fieldKey.defaultValue !== undefined ? fieldKey.defaultValue : '';
