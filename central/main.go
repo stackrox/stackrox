@@ -313,7 +313,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		imageService.Singleton(),
 		iiService.Singleton(),
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
-		localscanner.New(),
+		localscanner.New(clusterDataStore.Singleton()),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
