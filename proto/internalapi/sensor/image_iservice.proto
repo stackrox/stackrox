@@ -5,8 +5,8 @@ option go_package = "sensor";
 import "storage/deployment.proto";
 import "storage/image.proto";
 
-import "shared/api/v1/component.proto";
-import "shared/api/v1/image_scan_service.proto";
+import "scanner/api/v1/component.proto";
+import "scanner/api/v1/note.proto";
 
 package sensor;
 
