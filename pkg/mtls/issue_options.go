@@ -21,10 +21,17 @@ func WithNamespace(namespace string) IssueCertOption {
 	}
 }
 
-// WithEphemeralValidity requests certificates with short validity.
+// WithValidityExpiringInHours requests certificates with validity expiring in the order of hours.
 // This option is suitable for issuing init bundles which cannot be revoked.
-func WithEphemeralValidity() IssueCertOption {
+func WithValidityExpiringInHours() IssueCertOption {
 	return func(o *issueOptions) {
-		o.signerProfile = ephemeralProfile
+		o.signerProfile = ephemeralProfileWithExpirationInHours
+	}
+}
+
+// WithValidityExpiringInDays requests certificates with validity expiring in the order of days.
+func WithValidityExpiringInDays() IssueCertOption {
+	return func(o *issueOptions) {
+		o.signerProfile = ephemeralProfileWithExpirationInDays
 	}
 }
