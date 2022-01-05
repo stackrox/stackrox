@@ -92,9 +92,7 @@ collector:
     key: null # string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
-  # ROX-8778: workaround for single customer. This option is not publicly documented, and it is not supported by our CRDs.
   disableSELinuxOptions: null # bool
-  # ROX-8778: workaround for single customer. This option is not publicly documented, and it is not supported by our CRDs.
   seLinuxOptionsType: null # string
 auditLogs:
   disableCollection: null # bool
