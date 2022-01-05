@@ -68,7 +68,7 @@ func Command() *cobra.Command {
 
 	c.AddCommand(
 		central.Command(),
-		cluster.Command(),
+		cluster.Command(cliEnvironment),
 		collector.Command(),
 		deployment.Command(cliEnvironment),
 		logconvert.Command(),
