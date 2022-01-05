@@ -15,8 +15,8 @@ export type VulnRequestedActionProps = {
 function VulnRequestedAction({
     targetState,
     requestStatus,
-    deferralReq,
-    updatedDeferralReq,
+    deferralReq = { expiresWhenFixed: undefined, expiresOn: undefined },
+    updatedDeferralReq = { expiresWhenFixed: undefined, expiresOn: undefined },
     currentDate,
 }: VulnRequestedActionProps): ReactElement {
     let type = '';
