@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/pkg/errors"
@@ -47,6 +48,15 @@ func validate(ecr *storage.ECRConfig) error {
 		}
 	}
 
+	if ecr.GetUseAssumeRole() {
+		if ecr.GetEndpoint() != "" {
+			errorList.AddString("AssumeRole cannot be done with an endpoint defined")
+		}
+		if ecr.GetAssumeRoleId() == "" {
+			errorList.AddString("AssumeRole ID must be set to use AssumeRole")
+		}
+	}
+
 	if ecr.GetRegion() == "" {
 		errorList.AddString("Region must be specified")
 	}
@@ -57,11 +67,7 @@ func (e *ecr) refreshDockerClient() error {
 	if e.expiryTime.After(time.Now()) {
 		return nil
 	}
-	authToken, err := e.service.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{
-		RegistryIds: []*string{
-			aws.String(e.config.GetRegistryId()),
-		},
-	})
+	authToken, err := e.service.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{})
 	if err != nil {
 		return err
 	}
@@ -148,7 +154,30 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 	if err != nil {
 		return nil, err
 	}
-	service := awsECR.New(sess)
+
+	var service *awsECR.ECR
+
+	if conf.GetUseAssumeRole() {
+		if endpoint != "" {
+			return nil, errorhelpers.NewErrInvalidArgs("AssumeRole and Endpoint cannot both be enabled")
+		}
+		if conf.GetAssumeRoleId() == "" {
+			return nil, errorhelpers.NewErrInvalidArgs("AssumeRole ID is required to use AssumeRole")
+		}
+
+		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.RegistryId, conf.AssumeRoleId)
+		stsCred := stscreds.NewCredentials(sess, roleToAssumeArn, func(p *stscreds.AssumeRoleProvider) {
+			assumeRoleExternalID := conf.GetAssumeRoleExternalId()
+			if assumeRoleExternalID != "" {
+				p.ExternalID = &assumeRoleExternalID
+			}
+		})
+
+		service = awsECR.New(sess, &aws.Config{Credentials: stsCred})
+	} else {
+		service = awsECR.New(sess)
+	}
+
 	reg := &ecr{
 		config:      conf,
 		integration: integration,

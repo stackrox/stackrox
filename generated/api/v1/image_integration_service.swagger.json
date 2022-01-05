@@ -421,6 +421,15 @@
         },
         "endpoint": {
           "type": "string"
+        },
+        "useAssumeRole": {
+          "type": "boolean"
+        },
+        "assumeRoleId": {
+          "type": "string"
+        },
+        "assumeRoleExternalId": {
+          "type": "string"
         }
       }
     },
