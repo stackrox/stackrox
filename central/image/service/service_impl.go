@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
-	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -67,7 +66,6 @@ type serviceImpl struct {
 	datastore    datastore.DataStore
 	cveDatastore cveDataStore.DataStore
 	riskManager  manager.Manager
-	vulnReqMgr   vulnReqMgr.Manager
 
 	metadataCache expiringcache.Cache
 	scanCache     expiringcache.Cache
@@ -176,7 +174,6 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		}
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
-			go s.vulnReqMgr.OnImageScanRequest(img.Clone())
 			utils.FilterSuppressedCVEsNoClone(img)
 			return &v1.ScanImageInternalResponse{
 				Image: utils.StripCVEDescriptions(img),
