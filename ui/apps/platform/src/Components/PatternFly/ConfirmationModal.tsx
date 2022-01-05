@@ -1,18 +1,20 @@
-import React, { ReactElement } from 'react';
-import { Modal, ModalVariant, Button } from '@patternfly/react-core';
+import React, { ReactElement, ReactNode } from 'react';
+import { Modal, ModalVariant, Button, ButtonVariant } from '@patternfly/react-core';
 
 type ConfirmationModalProps = {
-    ariaLabel: string;
-    closeModal: () => void;
-    cancelModal: () => void;
+    ariaLabel?: string;
+    confirmText?: string;
+    onConfirm: () => void;
+    onCancel: () => void;
     isOpen: boolean;
-    children: ReactElement | ReactElement[] | string;
+    children: ReactNode;
 };
 
 function ConfirmationModal({
-    ariaLabel,
-    closeModal,
-    cancelModal,
+    ariaLabel = 'Confirm delete',
+    confirmText = 'Delete',
+    onConfirm,
+    onCancel,
     isOpen,
     children,
 }: ConfirmationModalProps): ReactElement {
@@ -21,14 +23,14 @@ function ConfirmationModal({
             isOpen={isOpen}
             variant={ModalVariant.small}
             actions={[
-                <Button key="confirm" variant="primary" onClick={closeModal}>
-                    Confirm
+                <Button key="confirm" variant={ButtonVariant.danger} onClick={onConfirm}>
+                    {confirmText}
                 </Button>,
-                <Button key="cancel" variant="link" onClick={cancelModal}>
+                <Button key="cancel" variant="link" onClick={onCancel}>
                     Cancel
                 </Button>,
             ]}
-            onClose={cancelModal}
+            onClose={onCancel}
             data-testid="delete-reports-modal"
             aria-label={ariaLabel}
         >

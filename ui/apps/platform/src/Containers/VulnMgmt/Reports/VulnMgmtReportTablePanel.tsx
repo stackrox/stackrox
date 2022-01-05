@@ -24,6 +24,7 @@ import TableCell from 'Components/PatternFly/TableCell';
 import { selectors } from 'reducers';
 import { getHasReadWritePermission } from 'reducers/roles';
 import { ReportConfiguration } from 'types/report.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type ActionItem = {
     title: string | ReactElement;
@@ -72,7 +73,7 @@ function ReportingTablePanel({
     const [alerts, setAlerts] = React.useState<AlertInfo[]>([]);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
     const { userRolePermissions } = useSelector(permissionsSelector);
-    const hasWriteAccessForPolicy = getHasReadWritePermission(
+    const hasWriteAccessForVulnerabilityReports = getHasReadWritePermission(
         'VulnerabilityReports',
         userRolePermissions
     );
@@ -109,7 +110,7 @@ function ReportingTablePanel({
         setActiveSortDirection(direction);
     }
 
-    function onDeleteRequest(ids) {
+    function onClickDelete(ids) {
         setDeletingReportIds(ids);
     }
 
@@ -122,14 +123,16 @@ function ReportingTablePanel({
                 onClearAll();
             })
             .catch((error) => {
+                const message = getAxiosErrorMessage(error);
                 const alertInfo = {
-                    title: error?.message || 'An unknown error occurred while deleting',
+                    title: message || 'An unknown error occurred while deleting',
                     variant: AlertVariant.danger,
                     key: new Date().getTime(),
                 };
                 setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
 
                 setDeletingReportIds([]);
+                throw error;
             });
     }
 
@@ -219,12 +222,15 @@ function ReportingTablePanel({
                         {reports.map((report, rowIndex) => {
                             const { id } = report;
 
-                            const actionItems: ActionItem[] = [
-                                {
-                                    title: 'Delete report',
-                                    onClick: () => onDeleteRequest([report.id]),
-                                },
-                            ];
+                            const actionItems: ActionItem[] = [];
+                            if (hasWriteAccessForVulnerabilityReports) {
+                                actionItems.push({
+                                    title: (
+                                        <div className="pf-u-danger-color-100">Delete report</div>
+                                    ),
+                                    onClick: () => onClickDelete([report.id]),
+                                });
+                            }
 
                             return (
                                 // eslint-disable-next-line react/no-array-index-key
@@ -249,7 +255,6 @@ function ReportingTablePanel({
                                     <Td
                                         actions={{
                                             items: actionItems,
-                                            disable: !hasWriteAccessForPolicy,
                                         }}
                                     />
                                 </Tr>
@@ -259,10 +264,10 @@ function ReportingTablePanel({
                 </TableComposable>
             </PageSection>
             <ConfirmationModal
-                ariaLabel="Confirm deleting "
+                ariaLabel="Confirm deleting reports"
                 isOpen={deletingReportIds.length > 0}
-                closeModal={onConfirmDeletingReportIds}
-                cancelModal={onCancelDeleteReportIds}
+                onConfirm={onConfirmDeletingReportIds}
+                onCancel={onCancelDeleteReportIds}
             >
                 {deleteConfirmationText}
             </ConfirmationModal>

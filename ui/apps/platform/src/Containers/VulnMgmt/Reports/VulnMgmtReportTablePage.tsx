@@ -42,7 +42,7 @@ function ReportTablePage(): ReactElement {
     function onDeleteReports(reportIds) {
         const deletePromises = reportIds.map((id) => deleteReport(id));
 
-        return Promise.all(deletePromises).then((response) => {
+        return Promise.all(deletePromises).then(() => {
             refreshReportList();
         });
     }
