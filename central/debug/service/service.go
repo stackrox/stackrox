@@ -303,7 +303,10 @@ func getVersion(zipWriter *zip.Writer) error {
 	if err != nil {
 		return err
 	}
-	versions := version.GetAllVersions(buildinfo.ReleaseBuild)
+	versions := version.GetAllVersions()
+	if buildinfo.ReleaseBuild {
+		versions = version.GetAllVersionsUnified()
+	}
 	data, err := json.Marshal(versions)
 	if err != nil {
 		return err
@@ -454,7 +457,10 @@ func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versions := version.GetAllVersions(buildinfo.ReleaseBuild)
+	versions := version.GetAllVersions()
+	if buildinfo.ReleaseBuild {
+		versions = version.GetAllVersionsUnified()
+	}
 	versionsJSON, err := json.Marshal(&versions)
 	if err != nil {
 		httputil.WriteErrorf(w, http.StatusInternalServerError, "could not marshal version info to JSON: %v", err)

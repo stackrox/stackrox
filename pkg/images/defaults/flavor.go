@@ -52,14 +52,14 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 
 		CollectorRegistry:      "docker.io/stackrox",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      version.GetCollectorVersion(false) + "-latest",
+		CollectorImageTag:      version.GetCollectorVersion() + "-latest",
 		CollectorSlimImageName: "collector",
-		CollectorSlimImageTag:  version.GetCollectorVersion(false) + "-slim",
+		CollectorSlimImageTag:  version.GetCollectorVersion() + "-slim",
 
 		ScannerImageName:   "scanner",
-		ScannerImageTag:    version.GetScannerVersion(false),
+		ScannerImageTag:    version.GetScannerVersion(),
 		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  version.GetScannerVersion(false),
+		ScannerDBImageTag:  version.GetScannerVersion(),
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -67,7 +67,7 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
 		},
-		Versions: version.GetAllVersions(false),
+		Versions: version.GetAllVersions(),
 	}
 }
 
@@ -80,14 +80,14 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 
 		CollectorRegistry:      "collector.stackrox.io",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      version.GetCollectorVersion(true),
+		CollectorImageTag:      version.GetMainVersion(),
 		CollectorSlimImageName: "collector-slim",
-		CollectorSlimImageTag:  version.GetCollectorVersion(true),
+		CollectorSlimImageTag:  version.GetMainVersion(),
 
 		ScannerImageName:   "scanner",
-		ScannerImageTag:    version.GetScannerVersion(true),
+		ScannerImageTag:    version.GetMainVersion(),
 		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  version.GetScannerVersion(true),
+		ScannerDBImageTag:  version.GetMainVersion(),
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -95,7 +95,7 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: false,
 		},
-		Versions: version.GetAllVersions(true),
+		Versions: version.GetAllVersionsUnified(),
 	}
 }
 

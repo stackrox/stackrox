@@ -20,46 +20,63 @@ func GetMainVersion() string {
 }
 
 // GetCollectorVersion returns the current Collector tag.
-func GetCollectorVersion(isRelease bool) string {
+func GetCollectorVersion() string {
 	if env.CollectorVersion.Setting() != "" {
 		return env.CollectorVersion.Setting()
-	}
-	if isRelease {
-		return GetMainVersion()
 	}
 	return internal.CollectorVersion
 }
 
+// // GetInternalScannerVersion returns the current Scanner tag.
+// func GetInternalCollectorVersion(isRelease bool) string {
+// 	return internal.CollectorVersion
+// }
+// // GetInternalScannerVersion returns the current Scanner tag.
+// func GetInternalScannerVersion(isRelease bool) string {
+// 	return internal.ScannerVersion
+// }
+
 // GetScannerVersion returns the current Scanner tag.
-func GetScannerVersion(isRelease bool) string {
-	if isRelease {
-		return GetMainVersion()
-	}
+func GetScannerVersion() string {
 	return internal.ScannerVersion
 }
 
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
 	BuildDate        time.Time `json:"BuildDate"`
-	CollectorVersion string    `json:"CollectorVersion"`
+	CollectorVersion string    `json:"CollectorVersion"` // hide?
 	GitCommit        string    `json:"GitCommit"`
 	GoVersion        string    `json:"GoVersion"`
 	MainVersion      string    `json:"MainVersion"`
 	Platform         string    `json:"Platform"`
-	ScannerVersion   string    `json:"ScannerVersion"`
+	ScannerVersion   string    `json:"ScannerVersion"` // hide?
 	ChartVersion     string    `json:"ChartVersion"`
 }
 
 // GetAllVersions returns all of the various pieces of version information.
-func GetAllVersions(isRelease bool) Versions {
+func GetAllVersions() Versions {
 	return Versions{
 		BuildDate:        buildinfo.BuildTimestamp(),
-		CollectorVersion: GetCollectorVersion(isRelease),
+		CollectorVersion: GetCollectorVersion(),
 		GitCommit:        internal.GitShortSha,
 		GoVersion:        runtime.Version(),
 		MainVersion:      GetMainVersion(),
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   GetScannerVersion(isRelease),
+		ScannerVersion:   GetScannerVersion(),
+		ChartVersion:     GetChartVersion(),
+	}
+}
+
+// GetAllVersionsUnified returns all of the various pieces of version information (with scanner and collector having the same version as main).
+func GetAllVersionsUnified() Versions {
+	return Versions{
+		BuildDate:        buildinfo.BuildTimestamp(),
+		CollectorVersion: GetMainVersion(),
+		GitCommit:        internal.GitShortSha,
+		GoVersion:        runtime.Version(),
+		MainVersion:      GetMainVersion(),
+		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
+		ScannerVersion:   GetMainVersion(),
 		ChartVersion:     GetChartVersion(),
 	}
 }

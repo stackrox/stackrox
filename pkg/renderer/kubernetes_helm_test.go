@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
@@ -75,7 +74,7 @@ func getDefaultMetaValues(t *testing.T) charts.MetaValues {
 		"EnvVars":      nil,
 		"FeatureFlags": make(map[string]string),
 
-		"Versions": testutils.GetExampleVersion(t, buildinfo.ReleaseBuild),
+		"Versions": testutils.GetExampleVersion(t),
 
 		"ChartRepo": defaults.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
 

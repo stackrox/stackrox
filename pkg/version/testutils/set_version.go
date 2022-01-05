@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/internal"
@@ -27,13 +26,7 @@ func SetMainVersion(t *testing.T, version string) {
 // SetExampleVersion sets the version to the example, only intended for usage in testing.
 func SetExampleVersion(t *testing.T) {
 	testutils.MustBeInTest(t)
-	SetVersion(t, GetExampleVersion(t, buildinfo.ReleaseBuild))
-}
-
-// SetExampleVersionRelease sets the version to the example for given release status, only intended for usage in testing.
-func SetExampleVersionRelease(t *testing.T, isRelease bool) {
-	testutils.MustBeInTest(t)
-	SetVersion(t, GetExampleVersion(t, isRelease))
+	SetVersion(t, GetExampleVersion(t))
 }
 
 // SetVersion sets the version, only intended for usage in testing.
@@ -46,20 +39,31 @@ func SetVersion(t *testing.T, version version.Versions) {
 }
 
 // GetExampleVersion returns an example version for given release status, only intended for usage in testing.
-func GetExampleVersion(t *testing.T, isRelease bool) version.Versions {
+func GetExampleVersion(t *testing.T) version.Versions {
 	testutils.MustBeInTest(t)
-	unifiedVersion := "99.9.9" // unifiedVersion of collector and scanner - should match main version only on release
-	if isRelease {
-		unifiedVersion = "3.0.99.0"
-	}
 	return version.Versions{
 		BuildDate:        time.Unix(0, 0),
-		CollectorVersion: unifiedVersion,
+		CollectorVersion: "99.9.9",
 		GitCommit:        "45b4a8ac",
 		GoVersion:        runtime.Version(),
 		MainVersion:      "3.0.99.0",
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   unifiedVersion,
+		ScannerVersion:   "99.9.9",
+		ChartVersion:     "3.99.0",
+	}
+}
+
+// GetExampleVersion returns an example version for given release status, only intended for usage in testing.
+func GetExampleVersionUnified(t *testing.T) version.Versions {
+	testutils.MustBeInTest(t)
+	return version.Versions{
+		BuildDate:        time.Unix(0, 0),
+		CollectorVersion: "3.0.99.0",
+		GitCommit:        "45b4a8ac",
+		GoVersion:        runtime.Version(),
+		MainVersion:      "3.0.99.0",
+		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
+		ScannerVersion:   "3.0.99.0",
 		ChartVersion:     "3.99.0",
 	}
 }

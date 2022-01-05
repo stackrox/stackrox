@@ -16,14 +16,14 @@ import (
 
 func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)
-	// returning a function allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'
+	// having a function as value allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'
 	imageFlavorCases := map[string]func() defaults.ImageFlavor{
 		"development": func() defaults.ImageFlavor {
-			testutils.SetExampleVersionRelease(t, false) // manipulates global state that influences defaults used in defaults.DevelopmentBuildImageFlavor
+			testutils.SetExampleVersion(t)
 			return defaults.DevelopmentBuildImageFlavor()
 		},
 		"stackrox": func() defaults.ImageFlavor {
-			testutils.SetExampleVersionRelease(t, true) // manipulates global state that influences defaults used in defaults.StackRoxIOReleaseImageFlavor
+			testutils.GetExampleVersionUnified(t)
 			return defaults.StackRoxIOReleaseImageFlavor()
 		},
 	}
