@@ -144,7 +144,7 @@ describe('General sanity checks', () => {
         }).as('alerts');
 
         cy.visit(violationsUrl);
-        cy.wait('@alerts');
+        cy.wait('@alerts', { timeout: 15000 });
 
         cy.get(selectors.errorBoundary).contains(
             "We're sorry — something's gone wrong. The error has been logged."
