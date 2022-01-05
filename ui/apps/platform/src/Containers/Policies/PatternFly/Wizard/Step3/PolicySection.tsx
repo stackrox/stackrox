@@ -93,11 +93,13 @@ function PolicySection({ sectionIndex, descriptors }: PolicySectionProps) {
                     );
                     return (
                         descriptor && (
-                            <PolicyGroupCard
-                                descriptor={descriptor}
-                                groupIndex={groupIndex}
-                                sectionIndex={sectionIndex}
-                            />
+                            <React.Fragment key={descriptor.name}>
+                                <PolicyGroupCard
+                                    descriptor={descriptor}
+                                    groupIndex={groupIndex}
+                                    sectionIndex={sectionIndex}
+                                />
+                            </React.Fragment>
                         )
                     );
                 })}
