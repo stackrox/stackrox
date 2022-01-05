@@ -106,9 +106,9 @@ var (
 	caKeyFileContents []byte
 	caKeyErr          error
 
-	caForSigningOnce  sync.Once
-	caForSigning      CA
-	caForSigningErr   error
+	caForSigningOnce sync.Once
+	caForSigning     CA
+	caForSigningErr  error
 )
 
 // IssuedCert is a representation of an issued certificate
