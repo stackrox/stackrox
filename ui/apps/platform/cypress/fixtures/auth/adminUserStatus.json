@@ -7,9 +7,7 @@
             "resourceToAccess": {
                 "AuthProvider": "READ_WRITE_ACCESS",
                 "Cluster": "READ_WRITE_ACCESS",
-                "User": "READ_WRITE_ACCESS",
-                "VulnerabilityManagementRequests": "READ_WRITE_ACCESS",
-                "VulnerabilityManagementApprovals": "READ_WRITE_ACCESS"
+                "User": "READ_WRITE_ACCESS"
             }
         },
         "roles": [
@@ -18,9 +16,7 @@
                 "resourceToAccess": {
                     "AuthProvider": "READ_WRITE_ACCESS",
                     "Cluster": "READ_WRITE_ACCESS",
-                    "User": "READ_WRITE_ACCESS",
-                    "VulnerabilityManagementRequests": "READ_WRITE_ACCESS",
-                    "VulnerabilityManagementApprovals": "READ_WRITE_ACCESS"
+                    "User": "READ_WRITE_ACCESS"
                 }
             }
         ],
