@@ -3629,6 +3629,8 @@ jobs:
       - *setupRoxctl
       - setup_remote_docker
       - setup-gcp
+      - *restoreGoModCache
+      - setup-go-build-env
       - setup-dep-env
 
       - attach-gke-cluster:
