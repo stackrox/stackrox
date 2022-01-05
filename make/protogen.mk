@@ -94,7 +94,7 @@ GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/
 # The --go_out=M... argument specifies the go package to use for an imported proto file. Here, we instruct protoc-gen-go
 # to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "github.com/stackrox/rox/generated/<path>".
-M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto)))),$(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/scanner/generated/$(patsubst %/,%,$(dir $(proto))))
+M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
 # This is the M_ARGS used for the grpc-gateway invocation. We only map the storage protos, because
 # - the gateway code produces no output (possibly because of a bug) if we pass M_ARGS_STR to it.
 # - the gateway code doesn't need access to anything outside api/v1 except storage. In particular, it should NOT import internalapi protos.
