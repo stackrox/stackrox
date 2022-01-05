@@ -697,7 +697,7 @@ class IntegrationsTest extends BaseSpecification {
         "invalid endpoint"
 
         new ECRRegistryIntegration()    | { [registryId: '0123456789',]
-        }       | StatusRuntimeException | /InvalidParameterException/ | "incorrect registry ID"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "incorrect registry ID"
         new ECRRegistryIntegration()    | { [region: 'nowhere',]
         }       | StatusRuntimeException | /valid region/ | "incorrect region"
         new ECRRegistryIntegration()    | { [accessKeyId: Env.mustGetAWSAccessKeyID() + "OOPS",]
