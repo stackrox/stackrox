@@ -101,69 +101,69 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                        <DescriptionList
-                            columnModifier={{
-                                default: '2Col',
-                            }}
-                        >
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Description</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {report.description || <em>No description</em>}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Last run</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <DateTimeField date={report?.runStatus?.lastTimeRun || ''} />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>CVE fixability type</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <FixabilityLabelsList
-                                        fixability={report?.vulnReportFilters?.fixability}
-                                    />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Reporting schedule</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <ScheduleText schedule={report?.schedule} />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>CVE severities</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <SeverityLabelsList
-                                        severities={report?.vulnReportFilters?.severities}
-                                    />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Notification method</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <NotifierName notifierId={report?.emailConfig?.notifierId} />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Resource source</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <ScopeName scopeId={report?.scopeId} />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Distribution list</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {report?.emailConfig?.mailingLists.join(', ') || (
-                                        <em>
-                                            No distribution list specified. Default recipient for
-                                            notifier will be used.
-                                        </em>
-                                    )}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                        </DescriptionList>
+                <DescriptionList
+                    columnModifier={{
+                        default: '2Col',
+                    }}
+                >
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Description</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            {report.description || <em>No description</em>}
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Last run</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            <DateTimeField date={report?.runStatus?.lastTimeRun || ''} />
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>CVE fixability type</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            <FixabilityLabelsList
+                                fixability={report?.vulnReportFilters?.fixability}
+                            />
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Reporting schedule</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            <ScheduleText schedule={report?.schedule} />
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>CVE severities</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            <SeverityLabelsList
+                                severities={report?.vulnReportFilters?.severities}
+                            />
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Notification method</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            <NotifierName notifierId={report?.emailConfig?.notifierId} />
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Resource source</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            <ScopeName scopeId={report?.scopeId} />
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Distribution list</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            {report?.emailConfig?.mailingLists.join(', ') || (
+                                <em>
+                                    No distribution list specified. Default recipient for notifier
+                                    will be used.
+                                </em>
+                            )}
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                </DescriptionList>
             </PageSection>
         </>
     );
