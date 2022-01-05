@@ -3,7 +3,6 @@ import { Title, Flex, FlexItem, Divider, Button } from '@patternfly/react-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
-
 import {
     policyConfigurationDescriptor,
     networkDetectionDescriptor,
