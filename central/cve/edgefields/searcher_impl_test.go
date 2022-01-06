@@ -15,7 +15,7 @@ import (
 
 func TestGetCVEEdgeQuery(t *testing.T) {
 	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
 			Queries: []*v1.Query{
 				{Query: &v1.Query_BaseQuery{
 					BaseQuery: &v1.BaseQuery{
@@ -36,7 +36,7 @@ func TestGetCVEEdgeQuery(t *testing.T) {
 	}
 
 	expectedQuery := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
 			Queries: []*v1.Query{
 				{Query: &v1.Query_Disjunction{
 					Disjunction: &v1.DisjunctionQuery{
@@ -89,7 +89,7 @@ func TestSnoozedQueryHandler(t *testing.T) {
 	snoozedCVEsQuery := search.NewQueryBuilder().AddBools(search.CVESuppressed, true).ProtoQuery()
 	observedCVEsQuery := search.NewQueryBuilder().AddBools(search.CVESuppressed, false).ProtoQuery()
 	cveStateQuery := search.NewQueryBuilder().AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String(), storage.VulnerabilityState_FALSE_POSITIVE.String()).ProtoQuery()
-	conjunction := search.ConjunctionQuery(snoozedCVEsQuery, cveStateQuery)
+	conjunction := search.DisjunctionQuery(snoozedCVEsQuery, cveStateQuery)
 
 	for _, c := range []struct {
 		desc     string

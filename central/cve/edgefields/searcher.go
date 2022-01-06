@@ -140,7 +140,7 @@ func handleSnoozedCVEQuery(ctx context.Context, q *v1.Query) *v1.Query {
 	if !found {
 		return q
 	}
-	return search.ConjunctionQuery(
+	return search.DisjunctionQuery(
 		q,
 		search.NewQueryBuilder().AddExactMatches(
 			search.VulnerabilityState,
