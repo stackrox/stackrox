@@ -170,12 +170,16 @@ setupDefaultTLSCerts: &setupDefaultTLSCerts
       source ./tests/scripts/setup-certs.sh
       setup_default_TLS_certs
 
+      printf "DEBUG1 BASH_ENV=%s:\n----\n%s\n---END---\n" "$BASH_ENV" "$(cat $BASH_ENV)"
+
       cci-export ROX_DEFAULT_TLS_CERT_FILE "$ROX_DEFAULT_TLS_CERT_FILE"
       cci-export ROX_DEFAULT_TLS_KEY_FILE "$ROX_DEFAULT_TLS_KEY_FILE"
       cci-export DEFAULT_CA_FILE "$DEFAULT_CA_FILE"
       cci-export ROX_TEST_CA_PEM "$ROX_TEST_CA_PEM"
       cci-export ROX_TEST_CENTRAL_CN "$ROX_TEST_CENTRAL_CN"
       cci-export TRUSTSTORE_PATH "$TRUSTSTORE_PATH"
+
+      printf "DEBUG2 BASH_ENV=%s:\n----\n%s\n---END---\n" "$BASH_ENV" "$(cat $BASH_ENV)"
 
 setupClientTLSCerts: &setupClientTLSCerts
   run:
