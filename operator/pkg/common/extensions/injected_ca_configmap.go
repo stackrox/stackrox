@@ -90,19 +90,18 @@ func takeControl(configmap *corev1.ConfigMap, obj *unstructured.Unstructured) bo
 		return false
 	}
 
-	{
-		// Remove control from the existing controller, but keep it as an owner.
-		not := false
-		controller.Controller = &not
-	}
+	not := false
+
+	// Remove control from the existing controller, but keep it as an owner.
+	controller.Controller = &not
+	controller.BlockOwnerDeletion = &not
 
 	// Add new controller.
 	newref := metav1.NewControllerRef(obj, obj.GroupVersionKind())
-	{
-		// Allow k8s garbage collector to delete the owner if needed.
-		not := false
-		newref.BlockOwnerDeletion = &not
-	}
+
+	// Allow k8s garbage collector to delete the owner if needed.
+	newref.BlockOwnerDeletion = &not
+
 	refs := configmap.GetOwnerReferences()
 	if refs == nil {
 		refs = []metav1.OwnerReference{}
