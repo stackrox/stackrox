@@ -49,7 +49,7 @@ type ReportingTablePanelProps = {
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
     columns: TableColumn[];
-    onDeleteReports: (integration) => Promise<any>;
+    onDeleteReports: (reportIds: string[]) => Promise<void>; // return value not used
 };
 
 const permissionsSelector = createStructuredSelector({
@@ -142,7 +142,7 @@ function ReportingTablePanel({
 
     const deleteConfirmationText = `Are you sure you want to delete ${
         deletingReportIds.length
-    } ${pluralize('report', deletingReportIds.length)}`;
+    } ${pluralize('report', deletingReportIds.length)}?`;
 
     return (
         <>
@@ -233,8 +233,7 @@ function ReportingTablePanel({
                             }
 
                             return (
-                                // eslint-disable-next-line react/no-array-index-key
-                                <Tr key={rowIndex}>
+                                <Tr key={id}>
                                     <Td
                                         key={id}
                                         select={{
@@ -265,6 +264,7 @@ function ReportingTablePanel({
             </PageSection>
             <ConfirmationModal
                 ariaLabel="Confirm deleting reports"
+                confirmText="Delete"
                 isOpen={deletingReportIds.length > 0}
                 onConfirm={onConfirmDeletingReportIds}
                 onCancel={onCancelDeleteReportIds}

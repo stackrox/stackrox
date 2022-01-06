@@ -42,6 +42,8 @@ function ReportTablePage(): ReactElement {
     function onDeleteReports(reportIds) {
         const deletePromises = reportIds.map((id) => deleteReport(id));
 
+        // Note: errors are handled and displayed down at the call site,
+        //       ui/apps/platform/src/Containers/VulnMgmt/Reports/VulnMgmtReportTablePage.tsx
         return Promise.all(deletePromises).then(() => {
             refreshReportList();
         });

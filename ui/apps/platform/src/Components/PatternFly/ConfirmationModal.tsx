@@ -2,8 +2,8 @@ import React, { ReactElement, ReactNode } from 'react';
 import { Modal, ModalVariant, Button, ButtonVariant } from '@patternfly/react-core';
 
 type ConfirmationModalProps = {
-    ariaLabel?: string;
-    confirmText?: string;
+    ariaLabel: string;
+    confirmText: string;
     onConfirm: () => void;
     onCancel: () => void;
     isOpen: boolean;
@@ -11,8 +11,8 @@ type ConfirmationModalProps = {
 };
 
 function ConfirmationModal({
-    ariaLabel = 'Confirm delete',
-    confirmText = 'Delete',
+    ariaLabel,
+    confirmText,
     onConfirm,
     onCancel,
     isOpen,
@@ -31,7 +31,7 @@ function ConfirmationModal({
                 </Button>,
             ]}
             onClose={onCancel}
-            data-testid="delete-reports-modal"
+            data-testid="confirmation-modal"
             aria-label={ariaLabel}
         >
             {children}

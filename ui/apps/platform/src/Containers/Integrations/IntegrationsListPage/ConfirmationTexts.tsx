@@ -10,7 +10,7 @@ export function DeleteAPITokensConfirmationText({
 }: ConfirmationTextProps): ReactElement {
     return (
         <div>
-            Are you sure you want to revoke {numIntegrations} api&nbsp;
+            Are you sure you want to revoke {numIntegrations} API&nbsp;
             {pluralize('token', numIntegrations)}?
         </div>
     );
