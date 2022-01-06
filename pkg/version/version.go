@@ -69,16 +69,10 @@ func GetAllVersions() Versions {
 // Unified versions are effective for the release images.
 // Unified versions were introduced in the release 3.68.
 func GetAllVersionsUnified() Versions {
-	return Versions{
-		BuildDate:        buildinfo.BuildTimestamp(),
-		CollectorVersion: GetMainVersion(),
-		GitCommit:        internal.GitShortSha,
-		GoVersion:        runtime.Version(),
-		MainVersion:      GetMainVersion(),
-		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   GetMainVersion(),
-		ChartVersion:     GetChartVersion(),
-	}
+	v := GetAllVersions()
+	v.CollectorVersion = GetMainVersion()
+	v.ScannerVersion = GetMainVersion()
+	return v
 }
 
 // parsedMainVersion contains a parsed StackRox Main Version (see https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/673808422/Product+Versioning+yes+again).
