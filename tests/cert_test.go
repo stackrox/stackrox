@@ -40,6 +40,7 @@ func TestCustomCert(t *testing.T) {
 	if testCentralCertCAPEM == "" {
 		t.Skip("No test CA pem specified")
 	}
+	t.Logf("testCentralCertCAPEM=%s", testCentralCertCAPEM)
 
 	centralCN := os.Getenv("ROX_TEST_CENTRAL_CN")
 	require.NotEmpty(t, centralCN)
