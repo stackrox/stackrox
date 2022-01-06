@@ -34,14 +34,20 @@ func GetScannerVersion() string {
 
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
-	BuildDate        time.Time `json:"BuildDate"`
-	CollectorVersion string    `json:"CollectorVersion"`
-	GitCommit        string    `json:"GitCommit"`
-	GoVersion        string    `json:"GoVersion"`
-	MainVersion      string    `json:"MainVersion"`
-	Platform         string    `json:"Platform"`
-	ScannerVersion   string    `json:"ScannerVersion"`
-	ChartVersion     string    `json:"ChartVersion"`
+	BuildDate time.Time `json:"BuildDate"`
+	// CollectorVersion is exported for compatibility with users that depend on `roxctl version --json` output.
+	// Please do not depend on it. Rely on internal.CollectorVersion if you need the value from the COLLECTOR_VERSION file,
+	// or rely on defaults.ImageFlavor if you need a default collector image tag.
+	CollectorVersion string `json:"CollectorVersion"`
+	GitCommit        string `json:"GitCommit"`
+	GoVersion        string `json:"GoVersion"`
+	MainVersion      string `json:"MainVersion"`
+	Platform         string `json:"Platform"`
+	// ScannerVersion is exported for compatibility with users that depend on `roxctl version --json` output.
+	// Please do not depend on it. Rely on internal.ScannerVersion if you need the value from the SCANNER_VERSION file,
+	// or rely on defaults.ImageFlavor if you need a default collector image tag.
+	ScannerVersion string `json:"ScannerVersion"`
+	ChartVersion   string `json:"ChartVersion"`
 }
 
 // GetAllVersions returns all of the various pieces of version information.
