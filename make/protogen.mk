@@ -20,6 +20,7 @@ GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 
+SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
 SCANNER_PROTO_BASE_PATH = $(SCANNER_DIR)/proto
 ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')
 ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
@@ -123,7 +124,6 @@ $(PROTOC_INCLUDES): $(PROTOC)
 
 GOGO_DIR = $(shell go list -f '{{.Dir}}' -m github.com/gogo/protobuf)
 GRPC_GATEWAY_DIR = $(shell go list -f '{{.Dir}}' -m github.com/grpc-ecosystem/grpc-gateway)
-SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
 
 .PHONY: proto-fmt
 proto-fmt: $(PROTOC_GEN_LINT)
@@ -132,7 +132,7 @@ proto-fmt: $(PROTOC_GEN_LINT)
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOGO_DIR)/protobuf \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_DIR)/proto \
+		-I$(SCANNER_PROTO_BASE_PATH) \
 		--lint_out=. \
 		--proto_path=$(PROTO_BASE_PATH) \
 		$(ALL_PROTOS)
@@ -201,7 +201,7 @@ $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTO
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_DIR)/proto \
+		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--gofast_out=$(GOGO_M_STR:%=%,)$(M_ARGS_STR:%=%,)plugins=grpc:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
@@ -216,7 +216,7 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOGO_DIR) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_DIR)/proto \
+		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,)allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
@@ -230,7 +230,7 @@ $(GENERATED_BASE_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) 
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_DIR)/proto \
+		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
