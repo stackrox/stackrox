@@ -9,7 +9,7 @@ type upserterImpl struct {
 	keyFunc ProtoKeyFunction
 
 	addToIndex bool
-	cache *Cache
+	cache      *Cache
 }
 
 // UpsertIn saves the input object and adds a reference to it from the input parentKey if one is passed in.

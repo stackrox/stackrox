@@ -14,7 +14,7 @@ func NewCache() *Cache {
 
 // Cache is a dackbox cache that is lazily populated on upserts
 type Cache struct {
-	lock sync.RWMutex
+	lock  sync.RWMutex
 	cache map[string]proto.Message
 }
 

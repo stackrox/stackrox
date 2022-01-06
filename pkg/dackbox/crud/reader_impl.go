@@ -8,7 +8,7 @@ import (
 
 type readerImpl struct {
 	allocFunc ProtoAllocFunction
-	cache *Cache
+	cache     *Cache
 }
 
 // ExistsIn returns whether a data for a given key exists in a given transaction.

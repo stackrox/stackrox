@@ -7,7 +7,7 @@ import (
 type deleterImpl struct {
 	removeFromIndex bool
 	shared          bool
-	cache 			*Cache
+	cache           *Cache
 }
 
 // DeleteIn deletes the data for the input key on the input transaction.
