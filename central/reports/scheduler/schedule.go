@@ -44,7 +44,7 @@ var (
 								name
 								images {
 									name {
-										fullName
+										full_name:fullName
 									}
 									components {
 										name
