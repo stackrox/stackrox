@@ -10,6 +10,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The default gRPC port in Scanner's config map is changed to 8443, as that is what Scanner has actually been defaulting to this whole time.
   - Note: Scanner has been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expects `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
 - The versions of `scanner`, `scanner-db`, and `collector` are now identical to the version of main for all flavors but 'development_build'.
+- AWS ECR integration supports AssumeRole authentication.
 
 ## [67.2]
 

@@ -69,14 +69,17 @@ message DockerConfig {
 }
 
 message ECRConfig {
-    string registry_id       = 1;
+    string registry_id             = 1;
     // The access key ID for the integration. The server will mask the value of this credential in responses and logs.
-    string access_key_id     = 2 [(gogoproto.moretags) = "scrub:\"always\""];
+    string access_key_id           = 2 [(gogoproto.moretags) = "scrub:\"always\""];
     // The secret access key for the integration. The server will mask the value of this credential in responses and logs.
-    string secret_access_key = 3 [(gogoproto.moretags) = "scrub:\"always\""];
-    string region            = 4;
-    bool   use_iam           = 5 [(gogoproto.moretags) = "scrub:\"dependent\""];
-    string endpoint          = 6 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
+    string secret_access_key       = 3 [(gogoproto.moretags) = "scrub:\"always\""];
+    string region                  = 4;
+    bool   use_iam                 = 5 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint                = 6 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
+    bool   use_assume_role         = 7;
+    string assume_role_id          = 8;
+    string assume_role_external_id = 9;
 }
 
 message DTRConfig {
