@@ -9,3 +9,10 @@ func WithAllocFunction(alloc ProtoAllocFunction) ReaderOption {
 		rc.allocFunc = alloc
 	}
 }
+
+// WithReaderCache adds the passed cache to the reader
+func WithReaderCache(c *Cache) ReaderOption {
+	return func(rc *readerImpl) {
+		rc.cache = c
+	}
+}

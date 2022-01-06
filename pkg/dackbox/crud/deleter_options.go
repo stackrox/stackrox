@@ -28,3 +28,10 @@ func Shared() DeleterOption {
 		rc.shared = true
 	}
 }
+
+// WithDeleterCache adds the passed cache to the deleter
+func WithDeleterCache(c *Cache) DeleterOption {
+	return func(dc *deleterImpl) {
+		dc.cache = c
+	}
+}

@@ -9,6 +9,7 @@ type upserterImpl struct {
 	keyFunc ProtoKeyFunction
 
 	addToIndex bool
+	cache *Cache
 }
 
 // UpsertIn saves the input object and adds a reference to it from the input parentKey if one is passed in.
@@ -30,5 +31,8 @@ func (uc *upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *d
 		return err
 	}
 	dackTxn.Set(key, toWrite)
+	if uc.cache != nil {
+		uc.cache.Set(key, msg)
+	}
 	return nil
 }

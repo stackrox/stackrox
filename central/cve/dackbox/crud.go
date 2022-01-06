@@ -12,24 +12,29 @@ var (
 	// Bucket stores the child image vulnerabilities.
 	Bucket = []byte("image_vuln")
 
+	cache = crud.NewCache()
+
 	// BucketHandler is the bucket's handler.
 	BucketHandler = &dbhelper.BucketHandler{BucketPrefix: Bucket}
 
 	// Reader reads storage.CVEs directly from the store.
 	Reader = crud.NewReader(
 		crud.WithAllocFunction(Alloc),
+		crud.WithReaderCache(cache),
 	)
 
 	// Upserter writes storage.CVEs directly to the store.
 	Upserter = crud.NewUpserter(
 		crud.WithKeyFunction(KeyFunc),
 		crud.AddToIndex(),
+		crud.WithUpserterCache(cache),
 	)
 
 	// Deleter deletes vulns from the store.
 	Deleter = crud.NewDeleter(
 		crud.Shared(),
 		crud.RemoveFromIndex(),
+		crud.WithDeleterCache(cache),
 	)
 )
 

@@ -7,6 +7,7 @@ import (
 type deleterImpl struct {
 	removeFromIndex bool
 	shared          bool
+	cache 			*Cache
 }
 
 // DeleteIn deletes the data for the input key on the input transaction.
@@ -27,6 +28,9 @@ func (dc *deleterImpl) DeleteIn(key []byte, dackTxn *dackbox.Transaction) error 
 	g.DeleteRefsFrom(key)
 	g.DeleteRefsTo(key)
 	dackTxn.Delete(key)
+	if dc.cache != nil {
+		dc.cache.Delete(key)
+	}
 
 	return nil
 }

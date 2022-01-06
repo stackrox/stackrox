@@ -8,10 +8,16 @@ import (
 
 type readerImpl struct {
 	allocFunc ProtoAllocFunction
+	cache *Cache
 }
 
 // ExistsIn returns whether a data for a given key exists in a given transaction.
 func (rc *readerImpl) ExistsIn(key []byte, dackTxn *dackbox.Transaction) (bool, error) {
+	if rc.cache != nil {
+		if ok := rc.cache.Exists(key); ok {
+			return true, nil
+		}
+	}
 	_, exists, err := dackTxn.Get(key)
 	return exists, err
 }
@@ -51,6 +57,12 @@ func (rc *readerImpl) ReadKeysIn(prefix []byte, dackTxn *dackbox.Transaction) ([
 
 // ReadIn returns the object saved under the given key in the given transaction.
 func (rc *readerImpl) ReadIn(key []byte, dackTxn *dackbox.Transaction) (proto.Message, error) {
+	if rc.cache != nil {
+		if msg, ok := rc.cache.Get(key); ok {
+			return msg, nil
+		}
+	}
+
 	// Read the top level object from the DB.
 	value, exists, err := dackTxn.Get(key)
 	if err != nil {

@@ -19,6 +19,13 @@ func AddToIndex() UpserterOption {
 	}
 }
 
+// WithUpserterCache adds the passed cache to the upserter
+func WithUpserterCache(c *Cache) UpserterOption {
+	return func(rc *upserterImpl) {
+		rc.cache = c
+	}
+}
+
 // AddToIndexIfFeatureEnabled indexes the object after insert if provided feature flag is enabled. It operates lazily, so things may not be in the index right away.
 func AddToIndexIfFeatureEnabled(featureFlag features.FeatureFlag) UpserterOption {
 	if !featureFlag.Enabled() {
