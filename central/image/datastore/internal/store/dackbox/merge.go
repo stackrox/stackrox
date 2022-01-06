@@ -102,9 +102,12 @@ func generateEmbeddedCVE(os string, cp CVEParts, imageCVEEdge *storage.ImageCVEE
 	ret.FirstImageOccurrence = imageCVEEdge.GetFirstImageOccurrence()
 
 	if features.VulnRiskManagement.Enabled() {
-		// The `Suppressed` field is transferred to `State` field in `converter.ProtoCVEToEmbeddedCVE`. Therefore,
-		// read from the image-cve edge only if the cve is not snoozed globally using the legacy snooze feature.
-		if !ret.GetSuppressed() {
+		// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
+		// Now visit image-edge to derive the state.
+		switch imageCVEEdge.GetState() {
+		case storage.VulnerabilityState_DEFERRED:
+			ret.State = imageCVEEdge.GetState()
+		case storage.VulnerabilityState_FALSE_POSITIVE:
 			ret.State = imageCVEEdge.GetState()
 		}
 	}
