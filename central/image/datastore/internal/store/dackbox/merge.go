@@ -103,12 +103,9 @@ func generateEmbeddedCVE(os string, cp CVEParts, imageCVEEdge *storage.ImageCVEE
 
 	if features.VulnRiskManagement.Enabled() {
 		// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
-		// Now visit image-edge to derive the state.
-		switch imageCVEEdge.GetState() {
-		case storage.VulnerabilityState_DEFERRED:
-			ret.State = imageCVEEdge.GetState()
-		case storage.VulnerabilityState_FALSE_POSITIVE:
-			ret.State = imageCVEEdge.GetState()
+		// Now visit image-cve edge to derive the state.
+		if state := imageCVEEdge.GetState(); state != storage.VulnerabilityState_OBSERVED {
+			ret.State = state
 		}
 	}
 
