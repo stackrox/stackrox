@@ -2,11 +2,10 @@ syntax = "proto3";
 
 option go_package = "sensor";
 
-import "storage/deployment.proto";
-import "storage/image.proto";
-
 import "scanner/api/v1/component.proto";
 import "scanner/api/v1/note.proto";
+import "storage/deployment.proto";
+import "storage/image.proto";
 
 package sensor;
 
@@ -24,8 +23,8 @@ message GetImageComponentsRequest {
 }
 
 message GetImageComponentsResponse {
-    storage.ImageMetadata metadata  = 1;
-    scannerV1.Components components = 2;
+    storage.ImageMetadata   metadata  = 1;
+    scannerV1.Components    components = 2;
     repeated scannerV1.Note notes   = 3;
 }
 

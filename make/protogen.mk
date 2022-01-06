@@ -20,6 +20,10 @@ GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 
+SCANNER_PROTO_BASE_PATH = $(SCANNER_DIR)/proto
+ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')
+ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
+
 ##############
 ## Protobuf ##
 ##############
@@ -91,10 +95,15 @@ $(PROTOC_GEN_LINT): $(MODFILE_DIR)/github.com/ckaznocha/protoc-gen-lint/UPDATE_C
 
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 
-# The --go_out=M... argument specifies the go package to use for an imported proto file. Here, we instruct protoc-gen-go
-# to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
+# The --go_out=M... argument specifies the go package to use for an imported proto file.
+# Here, we instruct protoc-gen-go to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "github.com/stackrox/rox/generated/<path>".
-M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+ROX_M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+# Here, we instruct protoc-gen-go to import the go source for proto file github.com/scanner/proto/<path>/*.proto to
+# "github.com/stackrox/scanner/generated/<path>".
+SCANNER_M_ARGS = $(foreach proto,$(ALL_SCANNER_PROTOS_REL),M$(proto)=github.com/stackrox/scanner/generated/$(patsubst %/,%,$(dir $(proto))))
+# Combine the *_M_ARGS.
+M_ARGS = $(ROX_M_ARGS) $(SCANNER_M_ARGS)
 # This is the M_ARGS used for the grpc-gateway invocation. We only map the storage protos, because
 # - the gateway code produces no output (possibly because of a bug) if we pass M_ARGS_STR to it.
 # - the gateway code doesn't need access to anything outside api/v1 except storage. In particular, it should NOT import internalapi protos.
