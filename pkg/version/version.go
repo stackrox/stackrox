@@ -58,7 +58,10 @@ func GetAllVersions() Versions {
 	}
 }
 
-// GetAllVersionsUnified returns all of the various pieces of version information (with scanner and collector having the same version as main).
+// GetAllVersionsUnified returns all of the various pieces of version information.
+// Unified versions means that collector and scanner versions as shown in image tags are the same as main image version/tag.
+// Unified versions are effective for the release images.
+// Unified versions were introduced in the release 3.68.
 func GetAllVersionsUnified() Versions {
 	return Versions{
 		BuildDate:        buildinfo.BuildTimestamp(),
