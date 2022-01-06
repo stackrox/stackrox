@@ -19,11 +19,11 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 	// having a function as value allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'
 	imageFlavorCases := map[string]func() defaults.ImageFlavor{
 		"development": func() defaults.ImageFlavor {
-			testutils.SetExampleVersion(t)
+			testutils.SetVersion(t, testutils.GetExampleVersion(t))
 			return defaults.DevelopmentBuildImageFlavor()
 		},
 		"stackrox": func() defaults.ImageFlavor {
-			testutils.GetExampleVersionUnified(t)
+			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
 			return defaults.StackRoxIOReleaseImageFlavor()
 		},
 	}
