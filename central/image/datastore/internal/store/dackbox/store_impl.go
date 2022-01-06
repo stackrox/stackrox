@@ -144,13 +144,13 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 func (b *storeImpl) GetImageMetadata(id string) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
-	txn, err := b.dacky.NewReadOnlyTransaction()
+	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
 	}
-	defer txn.Discard()
+	defer branch.Discard()
 
-	image, err = b.readImageMetadata(txn, id)
+	image, err = b.readImageMetadata(branch, id)
 	if err != nil {
 		return nil, false, err
 	}
