@@ -1,37 +1,42 @@
 import React, { ReactElement, ReactNode } from 'react';
 import { Modal, ModalVariant, Button, ButtonVariant } from '@patternfly/react-core';
 
-export type DeleteIntegrationsConfirmationProps = {
+type ConfirmationModalProps = {
+    ariaLabel: string;
+    confirmText: string;
+    onConfirm: () => void;
+    onCancel: () => void;
     isOpen: boolean;
     children: ReactNode;
-    onCancel: () => void;
-    onConfirm: () => void;
 };
 
-function DeleteIntegrationsConfirmation({
+function ConfirmationModal({
+    ariaLabel,
+    confirmText,
+    onConfirm,
+    onCancel,
     isOpen,
     children,
-    onCancel,
-    onConfirm,
-}: DeleteIntegrationsConfirmationProps): ReactElement {
+}: ConfirmationModalProps): ReactElement {
     return (
         <Modal
-            aria-label="Confirm delete"
-            variant={ModalVariant.small}
             isOpen={isOpen}
-            onClose={onCancel}
+            variant={ModalVariant.small}
             actions={[
                 <Button key="confirm" variant={ButtonVariant.danger} onClick={onConfirm}>
-                    Delete
+                    {confirmText}
                 </Button>,
                 <Button key="cancel" variant="link" onClick={onCancel}>
                     Cancel
                 </Button>,
             ]}
+            onClose={onCancel}
+            data-testid="confirmation-modal"
+            aria-label={ariaLabel}
         >
             {children}
         </Modal>
     );
 }
 
-export default DeleteIntegrationsConfirmation;
+export default ConfirmationModal;
