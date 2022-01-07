@@ -149,7 +149,7 @@ function AuthProviders(): ReactElement {
             </AccessControlDescription>
             {isFetchingAuthProviders || isFetchingRoles ? (
                 <Bullseye>
-                    <Spinner />
+                    <Spinner isSVG />
                 </Bullseye>
             ) : isList ? (
                 <>

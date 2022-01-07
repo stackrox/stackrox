@@ -166,7 +166,7 @@ function PoliciesTablePage({
         <PageSection variant="light" isFilled id="policies-table">
             {isLoading && (
                 <Bullseye>
-                    <Spinner />
+                    <Spinner isSVG />
                 </Bullseye>
             )}
             {errorMessage ? (
