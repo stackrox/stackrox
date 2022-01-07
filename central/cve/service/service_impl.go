@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -72,16 +71,17 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
 		return nil, err
 	}
-	if features.VulnRiskManagement.Enabled() {
-		// This handles updating image-cve edges and reprocessing affected deployments.
-		go func() {
-			if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, suppressCVEReqToVulnReq(request, createdAt)); err != nil {
-				log.Error(err)
-			}
-		}()
-	} else {
-		go s.reprocessDeployments()
-	}
+	go s.reprocessDeployments()
+	// if features.VulnRiskManagement.Enabled() {
+	//	// This handles updating image-cve edges and reprocessing affected deployments.
+	//	go func() {
+	//		if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, suppressCVEReqToVulnReq(request, createdAt)); err != nil {
+	//			log.Error(err)
+	//		}
+	//	}()
+	// } else {
+	//	go s.reprocessDeployments()
+	// }
 	return &v1.Empty{}, nil
 }
 
@@ -98,16 +98,17 @@ func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.Unsuppress
 	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
 		return nil, err
 	}
-	if features.VulnRiskManagement.Enabled() {
-		// This handles updating image-cve edges and reprocessing affected deployments.
-		go func() {
-			if err := s.vulnReqMgr.UnSnoozeVulnerabilityOnRequest(ctx, unSuppressCVEReqToVulnReq(request)); err != nil {
-				log.Error(err)
-			}
-		}()
-	} else {
-		go s.reprocessDeployments()
-	}
+	go s.reprocessDeployments()
+	// if features.VulnRiskManagement.Enabled() {
+	//	// This handles updating image-cve edges and reprocessing affected deployments.
+	//	go func() {
+	//		if err := s.vulnReqMgr.UnSnoozeVulnerabilityOnRequest(ctx, unSuppressCVEReqToVulnReq(request)); err != nil {
+	//			log.Error(err)
+	//		}
+	//	}()
+	// } else {
+	//	go s.reprocessDeployments()
+	// }
 	return &v1.Empty{}, nil
 }
 
