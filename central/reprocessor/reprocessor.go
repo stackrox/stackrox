@@ -316,11 +316,11 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {
-		l.connManager.BroadcastMessage(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_ReassessPolicies{
-				ReassessPolicies: &central.ReassessPolicies{},
-			},
-		})
+		//l.connManager.BroadcastMessage(&central.MsgToSensor{
+		//	Msg: &central.MsgToSensor_ReassessPolicies{
+		//		ReassessPolicies: &central.ReassessPolicies{},
+		//	},
+		//})
 	}
 }
 
