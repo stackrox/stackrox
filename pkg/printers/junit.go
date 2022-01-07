@@ -26,6 +26,7 @@ type JUnitPrinter struct {
 	suiteName           string
 	jsonPathExpressions map[string]string
 }
+
 // NewJUnitPrinter creates a JUnitPrinter from the options set.
 // A JUnit printer expects a JSON Object and a map of JSON Path expressions that are compatible
 // with GJSON (https://github.com/tidwall/gjson).
