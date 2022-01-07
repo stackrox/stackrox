@@ -1,9 +1,11 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
+    Bullseye,
     Divider,
     DropdownItem,
     Pagination,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -14,6 +16,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
+import { SearchFilter } from 'types/search';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import VulnRequestedAction from '../VulnRequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
@@ -28,18 +31,25 @@ import DenyFalsePositiveModal from './DenyFalsePositiveModal';
 import CancelVulnRequestModal from './CancelVulnRequestModal';
 import DeferralExpirationDate from '../DeferralExpirationDate';
 import ImpactedEntities from '../ImpactedEntities';
+import VulnerabilityRequestSearchFilter from '../VulnerabilityRequestSearchFilter';
+import VulnerabilityRequestSearchResults from '../VulnerabilityRequestSearchResults';
 
 export type PendingApprovalsTableProps = {
     rows: VulnerabilityRequest[];
     updateTable: () => void;
     isLoading: boolean;
     itemCount: number;
+    searchFilter: SearchFilter;
+    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
 } & UsePaginationResult;
 
 function PendingApprovalsTable({
     rows,
     updateTable,
+    isLoading,
     itemCount,
+    searchFilter,
+    setSearchFilter,
     page,
     perPage,
     onSetPage,
@@ -106,6 +116,12 @@ function PendingApprovalsTable({
         <>
             <Toolbar>
                 <ToolbarContent>
+                    <ToolbarItem>
+                        <VulnerabilityRequestSearchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
                     <ToolbarItem variant="separator" />
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
@@ -207,96 +223,115 @@ function PendingApprovalsTable({
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
+            {Object.keys(searchFilter).length !== 0 && (
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <VulnerabilityRequestSearchResults
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
             <Divider component="div" />
-            <TableComposable aria-label="Pending Approvals Table" variant="compact" borders>
-                <Thead>
-                    <Tr>
-                        <Th
-                            select={{
-                                onSelect: onSelectAll,
-                                isSelected: allRowsSelected,
-                            }}
-                        />
-                        <Th>Requested Entity</Th>
-                        <Th>Requested Action</Th>
-                        <Th>Expires</Th>
-                        <Th modifier="fitContent">Scope</Th>
-                        <Th>Impacted Entities</Th>
-                        <Th>Comments</Th>
-                        <Th>Requestor</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {rows.map((row, rowIndex) => {
-                        const canCancelRequest =
-                            canCreateRequests && row.requestor.name === currentUserName;
+            {isLoading ? (
+                <Bullseye>
+                    <Spinner isSVG size="xl" />
+                </Bullseye>
+            ) : (
+                <TableComposable aria-label="Pending Approvals Table" variant="compact" borders>
+                    <Thead>
+                        <Tr>
+                            <Th
+                                select={{
+                                    onSelect: onSelectAll,
+                                    isSelected: allRowsSelected,
+                                }}
+                            />
+                            <Th>Requested Entity</Th>
+                            <Th>Requested Action</Th>
+                            <Th>Expires</Th>
+                            <Th modifier="fitContent">Scope</Th>
+                            <Th>Impacted Entities</Th>
+                            <Th>Comments</Th>
+                            <Th>Requestor</Th>
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        {rows.map((row, rowIndex) => {
+                            const canCancelRequest =
+                                canCreateRequests && row.requestor.name === currentUserName;
 
-                        return (
-                            <Tr key={row.id}>
-                                <Td
-                                    select={{
-                                        rowIndex,
-                                        onSelect,
-                                        isSelected: selected[rowIndex],
-                                    }}
-                                />
-                                <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
-                                <Td dataLabel="Requested Action">
-                                    <VulnRequestedAction
-                                        targetState={row.targetState}
-                                        requestStatus={row.status}
-                                        deferralReq={row.deferralReq}
-                                        updatedDeferralReq={row.updatedDeferralReq}
-                                        currentDate={new Date()}
+                            return (
+                                <Tr key={row.id}>
+                                    <Td
+                                        select={{
+                                            rowIndex,
+                                            onSelect,
+                                            isSelected: selected[rowIndex],
+                                        }}
                                     />
-                                </Td>
-                                <Td dataLabel="Expires">
-                                    <DeferralExpirationDate
-                                        targetState={row.targetState}
-                                        requestStatus={row.status}
-                                        deferralReq={row.deferralReq}
-                                        updatedDeferralReq={row.updatedDeferralReq}
-                                    />
-                                </Td>
-                                <Td dataLabel="Scope">
-                                    <VulnerabilityRequestScope scope={row.scope} />
-                                </Td>
-                                <Td dataLabel="Impacted entities">
-                                    <ImpactedEntities
-                                        deploymentCount={row.deploymentCount}
-                                        imageCount={row.imageCount}
-                                    />
-                                </Td>
-                                <Td dataLabel="Comments">
-                                    <RequestCommentsButton
-                                        comments={row.comments}
-                                        cve={row.cves.ids[0]}
-                                    />
-                                </Td>
-                                <Td dataLabel="Requestor">{row.requestor.name}</Td>
-                                <Td className="pf-u-text-align-right">
-                                    {row.targetState === 'DEFERRED' && (
-                                        <DeferralRequestActionsColumn
-                                            row={row}
-                                            setRequestsToBeAssessed={setRequestsToBeAssessed}
-                                            canApproveRequest={canApproveRequests}
-                                            canCancelRequest={canCancelRequest}
+                                    <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
+                                    <Td dataLabel="Requested Action">
+                                        <VulnRequestedAction
+                                            targetState={row.targetState}
+                                            requestStatus={row.status}
+                                            deferralReq={row.deferralReq}
+                                            updatedDeferralReq={row.updatedDeferralReq}
+                                            currentDate={new Date()}
                                         />
-                                    )}
-                                    {row.targetState === 'FALSE_POSITIVE' && (
-                                        <FalsePositiveRequestActionsColumn
-                                            row={row}
-                                            setRequestsToBeAssessed={setRequestsToBeAssessed}
-                                            canApproveRequest={canApproveRequests}
-                                            canCancelRequest={canCancelRequest}
+                                    </Td>
+                                    <Td dataLabel="Expires">
+                                        <DeferralExpirationDate
+                                            targetState={row.targetState}
+                                            requestStatus={row.status}
+                                            deferralReq={row.deferralReq}
+                                            updatedDeferralReq={row.updatedDeferralReq}
                                         />
-                                    )}
-                                </Td>
-                            </Tr>
-                        );
-                    })}
-                </Tbody>
-            </TableComposable>
+                                    </Td>
+                                    <Td dataLabel="Scope">
+                                        <VulnerabilityRequestScope scope={row.scope} />
+                                    </Td>
+                                    <Td dataLabel="Impacted entities">
+                                        <ImpactedEntities
+                                            deploymentCount={row.deploymentCount}
+                                            imageCount={row.imageCount}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Comments">
+                                        <RequestCommentsButton
+                                            comments={row.comments}
+                                            cve={row.cves.ids[0]}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Requestor">{row.requestor.name}</Td>
+                                    <Td className="pf-u-text-align-right">
+                                        {row.targetState === 'DEFERRED' && (
+                                            <DeferralRequestActionsColumn
+                                                row={row}
+                                                setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                                canApproveRequest={canApproveRequests}
+                                                canCancelRequest={canCancelRequest}
+                                            />
+                                        )}
+                                        {row.targetState === 'FALSE_POSITIVE' && (
+                                            <FalsePositiveRequestActionsColumn
+                                                row={row}
+                                                setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                                canApproveRequest={canApproveRequests}
+                                                canCancelRequest={canCancelRequest}
+                                            />
+                                        )}
+                                    </Td>
+                                </Tr>
+                            );
+                        })}
+                    </Tbody>
+                </TableComposable>
+            )}
+
             {/* @TODO: The modals are very similiar and probably could be abstracted out more */}
             <ApproveDeferralModal
                 isOpen={
