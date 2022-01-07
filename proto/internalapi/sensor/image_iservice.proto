@@ -2,8 +2,6 @@ syntax = "proto3";
 
 option go_package = "sensor";
 
-import "scanner/api/v1/component.proto";
-import "scanner/api/v1/note.proto";
 import "storage/deployment.proto";
 import "storage/image.proto";
 
@@ -18,20 +16,7 @@ message GetImageResponse {
     storage.Image image = 1;
 }
 
-message GetImageComponentsRequest {
-    storage.ContainerImage image = 1;
-}
-
-message GetImageComponentsResponse {
-    storage.ImageMetadata   metadata  = 1;
-    scannerV1.Components    components = 2;
-    repeated scannerV1.Note notes   = 3;
-}
-
 service ImageService {
     // A Sensor service which allows Admission Controller to retrieve images from Sensor
     rpc GetImage (GetImageRequest) returns (GetImageResponse);
-
-    // A Sensor service which allows Central to scan images stored in cluster-internal registries.
-    rpc GetImageComponents (GetImageComponentsRequest) returns (GetImageComponentsResponse);
 }

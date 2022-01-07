@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/scannerclient"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc/connectivity"
 	admission "k8s.io/api/admission/v1"
@@ -66,14 +67,28 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	// currently connected to sensor.
 	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
 		// Central route
-		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+		centralClient := v1.NewImageServiceClient(s.centralConn)
+		resp, err := centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      img,
 			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
 		})
 		if err != nil {
 			return nil, err
 		}
-		return resp.GetImage(), nil
+
+		image := resp.GetImage()
+
+		// ScanImageInternal may return without error even if it was unable to find the image.
+		// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
+		// image is stored in an internal registry which Admission Controller can reach.
+		if image.GetMetadata() == nil {
+			image, err = scannerclient.ScanImage(ctx, centralClient, img)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return image, nil
 	}
 
 	// Sensor route

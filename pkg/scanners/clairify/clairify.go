@@ -34,7 +34,8 @@ import (
 )
 
 const (
-	typeString = "clairify"
+	// TypeString is the name of the Clairify scanner.
+	TypeString = "clairify"
 
 	clientTimeout             = 5 * time.Minute
 	defaultMaxConcurrentScans = int64(30)
@@ -46,14 +47,14 @@ var (
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
+	return TypeString, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
 		return newScanner(integration, set)
 	}
 }
 
 // NodeScannerCreator provides the type scanners.NodeScannerCreator to add to the scanners registry.
 func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error)) {
-	return typeString, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
+	return TypeString, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
 		return newNodeScanner(integration)
 	}
 }
@@ -68,20 +69,20 @@ type clairify struct {
 	protoImageIntegration *storage.ImageIntegration
 	activeRegistries      registries.Set
 
-	pingServiceClient    clairGRPCV1.PingServiceClient
-	scanServiceClient    clairGRPCV1.NodeScanServiceClient
-	protoNodeIntegration *storage.NodeIntegration
+	pingServiceClient      clairGRPCV1.PingServiceClient
+	imageScanServiceClient clairGRPCV1.ImageScanServiceClient
+	nodeScanServiceClient  clairGRPCV1.NodeScanServiceClient
+	protoNodeIntegration   *storage.NodeIntegration
 
 	orchestratorScanServiceClient clairGRPCV1.OrchestratorScanServiceClient
 	protoOrchestratorIntegration  *storage.OrchestratorIntegration
 }
 
 func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistries registries.Set) (*clairify, error) {
-	clairifyConfig, ok := protoImageIntegration.IntegrationConfig.(*storage.ImageIntegration_Clairify)
-	if !ok {
+	conf := protoImageIntegration.GetClairify()
+	if conf == nil {
 		return nil, errors.New("Clairify configuration required")
 	}
-	conf := clairifyConfig.Clairify
 	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
@@ -105,6 +106,11 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		},
 	}
 
+	gRPCConnection, err := createGRPCConnectionToScanner(conf)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to make gRPC connection to Scanner")
+	}
+
 	numConcurrentScans := defaultMaxConcurrentScans
 	if conf.GetNumConcurrentScans() != 0 {
 		numConcurrentScans = int64(conf.GetNumConcurrentScans())
@@ -115,6 +121,8 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		conf:                  conf,
 		protoImageIntegration: protoImageIntegration,
 		activeRegistries:      activeRegistries,
+
+		imageScanServiceClient: clairGRPCV1.NewImageScanServiceClient(gRPCConnection),
 
 		ScanSemaphore: scannerTypes.NewSemaphoreWithValue(numConcurrentScans),
 	}
@@ -157,11 +165,11 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 	scanServiceClient := clairGRPCV1.NewNodeScanServiceClient(gRPCConnection)
 
 	return &clairify{
-		NodeScanSemaphore:    scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
-		conf:                 conf,
-		pingServiceClient:    pingServiceClient,
-		scanServiceClient:    scanServiceClient,
-		protoNodeIntegration: protoNodeIntegration,
+		NodeScanSemaphore:     scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
+		conf:                  conf,
+		pingServiceClient:     pingServiceClient,
+		nodeScanServiceClient: scanServiceClient,
+		protoNodeIntegration:  protoNodeIntegration,
 	}, nil
 }
 
@@ -366,10 +374,25 @@ func (c *clairify) addScan(image *storage.Image, uncertifiedRHEL bool) error {
 	return err
 }
 
+// GetVulnerabilities retrieves the vulnerabilities present in the given image
+// represented by the given components and scan notes.
+func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRPCV1.Components, notes []clairGRPCV1.Note) (*storage.ImageScan, error) {
+	req := &clairGRPCV1.GetImageVulnerabilitiesRequest{
+		Components: components,
+		Notes:      notes,
+	}
+	resp, err := c.imageScanServiceClient.GetImageVulnerabilities(context.Background(), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertImageToImageScan(image.GetMetadata(), resp.GetImage()), nil
+}
+
 // GetNodeScan retrieves the most recent node scan
 func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
 	req := convertNodeToVulnRequest(node)
-	resp, err := c.scanServiceClient.GetNodeVulnerabilities(context.Background(), req)
+	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
@@ -389,7 +412,7 @@ func (c *clairify) Match(image *storage.ImageName) bool {
 
 // Type returns the stringified type of this scanner
 func (c *clairify) Type() string {
-	return typeString
+	return TypeString
 }
 
 // Name returns the integration's name
@@ -411,7 +434,7 @@ func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 
 // OrchestratorScannerCreator provides creator for OrchestratorScanner
 func OrchestratorScannerCreator() (string, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error)) {
-	return typeString, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
+	return TypeString, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
 		return newOrchestratorScanner(integration)
 	}
 }

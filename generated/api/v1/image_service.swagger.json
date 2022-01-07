@@ -408,20 +408,6 @@
       ],
       "default": "UI_NONE"
     },
-    "EmbeddedImageScanComponentExecutable": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
     "EmbeddedVulnerabilityVulnerabilityType": {
       "type": "string",
       "enum": [
@@ -479,6 +465,210 @@
           }
         }
       }
+    },
+    "scannerV1Components": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "osComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1OSComponent"
+          }
+        },
+        "rhelComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1RHELComponent"
+          }
+        },
+        "languageComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1LanguageComponent"
+          }
+        }
+      }
+    },
+    "scannerV1Executable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "requiredFeatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1FeatureNameVersion"
+          }
+        }
+      }
+    },
+    "scannerV1FeatureNameVersion": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1JavaComponent": {
+      "type": "object",
+      "properties": {
+        "implementationVersion": {
+          "type": "string"
+        },
+        "mavenVersion": {
+          "type": "string"
+        },
+        "origins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "specificationVersion": {
+          "type": "string"
+        },
+        "bundleName": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1LanguageComponent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/scannerV1SourceType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "java": {
+          "$ref": "#/definitions/scannerV1JavaComponent"
+        },
+        "python": {
+          "$ref": "#/definitions/scannerV1PythonComponent"
+        },
+        "addedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1Note": {
+      "type": "string",
+      "enum": [
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "OS_CVES_UNAVAILABLE"
+    },
+    "scannerV1OSComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "addedBy": {
+          "type": "string"
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Executable"
+          }
+        }
+      }
+    },
+    "scannerV1PythonComponent": {
+      "type": "object",
+      "properties": {
+        "homepage": {
+          "type": "string"
+        },
+        "authorEmail": {
+          "type": "string"
+        },
+        "downloadUrl": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1RHELComponent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "cpes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addedBy": {
+          "type": "string"
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Executable"
+          }
+        }
+      }
+    },
+    "scannerV1SourceType": {
+      "type": "string",
+      "enum": [
+        "UNSET_SOURCE_TYPE",
+        "JAVA",
+        "PYTHON",
+        "NPM",
+        "GEM",
+        "DOTNETCORERUNTIME"
+      ],
+      "default": "UNSET_SOURCE_TYPE"
     },
     "storageCVSSV2": {
       "type": "object",
@@ -708,12 +898,26 @@
         "executables": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/EmbeddedImageScanComponentExecutable"
+            "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
           },
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
         }
       },
       "title": "Next Tag: 13"
+    },
+    "storageEmbeddedImageScanComponentExecutable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "storageEmbeddedVulnerability": {
       "type": "object",
@@ -1140,6 +1344,14 @@
     },
     "v1Empty": {
       "type": "object"
+    },
+    "v1GetImageVulnerabilitiesInternalResponse": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/storageImage"
+        }
+      }
     },
     "v1GetWatchedImagesResponse": {
       "type": "object",

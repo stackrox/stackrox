@@ -4,17 +4,19 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/scannerclient"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"google.golang.org/grpc"
 )
 
-// Service is an interface to receiving ComplianceReturns from launched daemons.
+// Service is an interface to receiving image scan results for the Admission Controller.
 type Service interface {
 	grpcPkg.APIService
 	sensor.ImageServiceServer
@@ -23,8 +25,7 @@ type Service interface {
 	SetClient(conn grpc.ClientConnInterface)
 }
 
-// NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
-// to the input channel.
+// NewService returns the ImageService API for the Admission Controller to use.
 func NewService(imageCache expiringcache.Cache) Service {
 	return &serviceImpl{
 		imageCache: imageCache,
@@ -49,15 +50,30 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 			}, nil
 		}
 	}
+
+	// Ask Central to scan the image.
 	scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 		Image:      req.GetImage(),
 		CachedOnly: !req.GetScanInline(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "scanning image via central")
 	}
+
+	img := scanResp.GetImage()
+
+	// ScanImageInternal may return without error even if it was unable to find the image.
+	// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
+	// image is stored in an internal registry which Scanner can reach.
+	if img.GetMetadata() == nil {
+		img, err = scannerclient.ScanImage(ctx, s.centralClient, req.GetImage())
+		if err != nil {
+			return nil, errors.Wrap(err, "scanning image via local scanner")
+		}
+	}
+
 	return &sensor.GetImageResponse{
-		Image: scanResp.GetImage(),
+		Image: img,
 	}, nil
 }
 

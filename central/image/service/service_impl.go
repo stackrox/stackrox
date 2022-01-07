@@ -163,7 +163,7 @@ func (s *serviceImpl) saveImage(img *storage.Image) {
 	}
 }
 
-// ScanImage handles an image request from Sensor
+// ScanImageInternal handles an image request from Sensor.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
@@ -172,7 +172,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		if err != nil {
 			return nil, err
 		}
-		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
+		// If the scan exists, and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
 			utils.FilterSuppressedCVEsNoClone(img)
 			return &v1.ScanImageInternalResponse{
@@ -265,6 +265,55 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 		return nil, err
 	}
 	return response, nil
+}
+
+func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.GetImageVulnerabilitiesInternalResponse, error) {
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
+	// images
+	if request.GetImageId() != "" {
+		img, exists, err := s.datastore.GetImage(ctx, request.GetImageId())
+		if err != nil {
+			return nil, err
+		}
+		// If the scan exists, and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
+		if exists {
+			utils.FilterSuppressedCVEsNoClone(img)
+			return &v1.GetImageVulnerabilitiesInternalResponse{
+				Image: utils.StripCVEDescriptions(img),
+			}, nil
+		}
+	}
+
+	// If no ID, then don't use caches as they could return stale data
+	fetchOpt := enricher.UseCachesIfPossible
+	if request.GetImageId() == "" {
+		fetchOpt = enricher.ForceRefetch
+	}
+	enrichmentCtx := enricher.EnrichmentContext{
+		FetchOpt: fetchOpt,
+		Internal: true,
+	}
+
+	img := &storage.Image{
+		Id:       request.GetImageId(),
+		Name:     request.GetImageName(),
+		Metadata: request.GetMetadata(),
+	}
+	_, err := s.enricher.EnrichWithVulnerabilities(enrichmentCtx, img, request.GetComponents(), request.GetNotes())
+	if err != nil {
+		return nil, err
+	}
+
+	// asynchronously upsert images as this rpc should be performant
+	if img.GetId() != "" {
+		go s.saveImage(img.Clone())
+	}
+
+	// This modifies the image object
+	utils.FilterSuppressedCVEsNoClone(img)
+	return &v1.GetImageVulnerabilitiesInternalResponse{
+		Image: utils.StripCVEDescriptions(img),
+	}, nil
 }
 
 func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequest) (*v1.WatchImageResponse, error) {

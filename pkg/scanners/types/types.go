@@ -3,6 +3,7 @@ package types
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 // Scanner is the interface that all scanners must implement
@@ -25,6 +26,12 @@ type Scanner interface {
 type ImageScanner interface {
 	Scanner
 	DataSource() *storage.DataSource
+}
+
+// ImageVulnerabilityGetter is a scanner which can retrieve vulnerabilities
+// which exist, given image components and scan notes for the given image.
+type ImageVulnerabilityGetter interface {
+	GetVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (*storage.ImageScan, error)
 }
 
 // AsyncScanner is an image scanner that can be accessed asynchronously.

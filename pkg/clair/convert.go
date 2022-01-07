@@ -25,7 +25,8 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	versionFormatsToSource = map[string]storage.SourceType{
+	// VersionFormatsToSource maps common package formats to their respective source types.
+	VersionFormatsToSource = map[string]storage.SourceType{
 		component.GemSourceType.String():               storage.SourceType_RUBY,
 		component.JavaSourceType.String():              storage.SourceType_JAVA,
 		component.NPMSourceType.String():               storage.SourceType_NODEJS,
@@ -144,7 +145,7 @@ func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent
 		FixedBy:  feature.FixedBy,
 	}
 
-	if source, ok := versionFormatsToSource[feature.VersionFormat]; ok {
+	if source, ok := VersionFormatsToSource[feature.VersionFormat]; ok {
 		component.Source = source
 	}
 	component.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(feature.Vulnerabilities))
@@ -167,30 +168,31 @@ func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent
 	return component
 }
 
-func buildSHAToIndexMap(image *storage.Image) map[string]int32 {
+// BuildSHAToIndexMap takes image metadata and maps each layer's SHA to its index.
+func BuildSHAToIndexMap(metadata *storage.ImageMetadata) map[string]int32 {
 	layerSHAToIndex := make(map[string]int32)
 
-	if image.GetMetadata().GetV2() != nil {
+	if metadata.GetV2() != nil {
 		var layerIdx int
-		for i, l := range image.GetMetadata().GetV1().GetLayers() {
+		for i, l := range metadata.GetV1().GetLayers() {
 			if !l.Empty {
-				if layerIdx >= len(image.Metadata.LayerShas) {
+				if layerIdx >= len(metadata.GetLayerShas()) {
 					log.Error("More layers than expected when correlating V2 instructions to V1 layers")
 					break
 				}
-				sha := image.GetMetadata().LayerShas[layerIdx]
+				sha := metadata.GetLayerShas()[layerIdx]
 				layerSHAToIndex[sha] = int32(i)
 				layerIdx++
 			}
 		}
 	} else {
 		// If it's V1 then we should have a 1:1 mapping of layer SHAs to the layerOrdering slice
-		for i := range image.GetMetadata().GetV1().GetLayers() {
-			if i >= len(image.Metadata.LayerShas) {
+		for i := range metadata.GetV1().GetLayers() {
+			if i >= len(metadata.GetLayerShas()) {
 				log.Error("More layers than expected when correlating V1 instructions to V1 layers")
 				break
 			}
-			layerSHAToIndex[image.Metadata.LayerShas[i]] = int32(i)
+			layerSHAToIndex[metadata.GetLayerShas()[i]] = int32(i)
 		}
 	}
 	return layerSHAToIndex
@@ -198,7 +200,7 @@ func buildSHAToIndexMap(image *storage.Image) map[string]int32 {
 
 // ConvertFeatures converts clair features to proto components
 func ConvertFeatures(image *storage.Image, features []clairV1.Feature) (components []*storage.EmbeddedImageScanComponent) {
-	layerSHAToIndex := buildSHAToIndexMap(image)
+	layerSHAToIndex := BuildSHAToIndexMap(image.GetMetadata())
 
 	components = make([]*storage.EmbeddedImageScanComponent, 0, len(features))
 	for _, feature := range features {
