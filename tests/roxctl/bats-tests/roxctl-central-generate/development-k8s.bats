@@ -48,7 +48,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate k8s --image-defaults=stackrox.io should use stackrox.io registry" {
-  skip_unless_image_defaults roxctl-development
+  skip_unless_image_defaults roxctl-development k8s
   run roxctl-development central generate k8s --image-defaults=stackrox.io hostpath --output-dir $out_dir
   assert_success
   assert_components_registry "$out_dir/central" 'stackrox.io' 'main'
@@ -56,7 +56,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate k8s --image-defaults=rhacs should use registry.redhat.io registry" {
-  skip_unless_image_defaults roxctl-development
+  skip_unless_image_defaults roxctl-development k8s
   run roxctl-development central generate k8s --image-defaults=stackrox.io hostpath --output-dir $out_dir
   assert_success
   assert_components_registry "$out_dir/central" 'registry.redhat.io' 'main'
@@ -64,7 +64,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate k8s --image-defaults=development should use docker.io registry" {
-  skip_unless_image_defaults roxctl-development
+  skip_unless_image_defaults roxctl-development k8s
   run roxctl-development central generate k8s --image-defaults=development hostpath --output-dir $out_dir
   assert_success
   assert_components_registry "$out_dir/central" 'docker.io' 'main'
@@ -72,7 +72,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
-  skip_unless_image_defaults roxctl-development
+  skip_unless_image_defaults roxctl-development k8s
   run roxctl-development central generate k8s --image-defaults='' hostpath --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'docker.io' 'main'

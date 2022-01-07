@@ -48,7 +48,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate openshift --image-defaults=stackrox.io should use stackrox.io registry" {
-  skip_unless_image_defaults roxctl-development
+  skip_unless_image_defaults roxctl-development openshift
   run roxctl-development central generate openshift --image-defaults=stackrox.io hostpath --output-dir $out_dir
   assert_success
   assert_components_registry "$out_dir/central" 'stackrox.io' 'main'
@@ -56,7 +56,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate openshift --image-defaults=rhacs should use registry.redhat.io registry" {
-  skip_unless_image_defaults roxctl-development
+  skip_unless_image_defaults roxctl-development openshift
   run roxctl-development central generate openshift --image-defaults=stackrox.io hostpath --output-dir $out_dir
   assert_success
   assert_components_registry "$out_dir/central" 'registry.redhat.io' 'main'
@@ -64,7 +64,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate openshift --image-defaults=development should use docker.io registry" {
-  skip_unless_image_defaults roxctl-development
+  skip_unless_image_defaults roxctl-development openshift
   run roxctl-development central generate openshift --image-defaults=development hostpath --output-dir $out_dir
   assert_success
   assert_components_registry "$out_dir/central" 'docker.io' 'main'
@@ -72,7 +72,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate openshift --image-defaults='' should behave as if --image-defaults would not be used" {
-  skip_unless_image_defaults roxctl-development
+  skip_unless_image_defaults roxctl-development openshift
   run roxctl-development central generate openshift --image-defaults='' hostpath --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'docker.io' 'main'
