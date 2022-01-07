@@ -254,8 +254,7 @@ func TestEnricherFlow(t *testing.T) {
 				Name: &storage.ImageName{
 					Registry: "reg",
 				},
-				Metadata: &storage.ImageMetadata{},
-				Scan:     &storage.ImageScan{},
+				Scan: &storage.ImageScan{},
 			},
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: true,
