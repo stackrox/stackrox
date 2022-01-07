@@ -27,7 +27,7 @@ const (
 	// GenericDockerRegistryType exposes the default registry type
 	GenericDockerRegistryType = "docker"
 
-	registryTimeout = 5 * time.Second
+	registryTimeout  = 5 * time.Second
 	repoListInterval = 10 * time.Minute
 )
 
@@ -53,9 +53,9 @@ type Registry struct {
 	url      string
 	registry string // This is the registry portion of the image
 
-	repositoryList set.StringSet
+	repositoryList       set.StringSet
 	repositoryListTicker *time.Ticker
-	repositoryListLock sync.RWMutex
+	repositoryListLock   sync.RWMutex
 }
 
 // Config is the basic config for the docker registry
@@ -114,7 +114,7 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 		cfg:                   cfg,
 		protoImageIntegration: integration,
 
-		repositoryList: repoSet,
+		repositoryList:       repoSet,
 		repositoryListTicker: time.NewTicker(repoListInterval),
 	}, nil
 }
