@@ -140,7 +140,7 @@ func populateRepositoryList(client *registry.Registry) (set.StringSet, error) {
 		return nil, err
 	}
 	if len(repos) == 0 {
-		return nil, errors.New("call to repositories was empty")
+		return nil, errors.New("empty response from repositories call")
 	}
 	return set.NewStringSet(repos...), nil
 }
