@@ -78,6 +78,8 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
 
         cleanup:
         VulnRequestService.undoReq(id)
+        req = VulnRequestService.getVulnReq(id)
+        assert req.getExpired()
 
         where:
         "Data inputs are:"
