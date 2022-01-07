@@ -1,7 +1,7 @@
 package crud
 
 import (
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -35,9 +35,11 @@ func (c *Cache) Exists(key []byte) bool {
 // Get returns the cloned message for the passed key if it exists
 func (c *Cache) Get(key []byte) (proto.Message, bool) {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
-
-	if msg, ok := c.cache[string(key)]; ok {
+	msg, ok := c.cache[string(key)]
+	c.lock.RUnlock()
+	if ok {
+		// This is thread-safe because the cache is the owner of the msg
+		// and will not modify it effectively making it read-only
 		return proto.Clone(msg), true
 	}
 	return nil, false
@@ -45,10 +47,12 @@ func (c *Cache) Get(key []byte) (proto.Message, bool) {
 
 // Set populates the cache
 func (c *Cache) Set(key []byte, msg proto.Message) {
+	cloned := proto.Clone(msg)
+
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.cache[string(key)] = proto.Clone(msg)
+	c.cache[string(key)] = cloned
 }
 
 // Delete removes an item from the cache
