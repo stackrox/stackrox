@@ -85,7 +85,7 @@ function TagConfirmation({
             title={modalTitle}
             data-testid="tag-confirmation-modal"
         >
-            {isLoading && <Spinner />}
+            {isLoading && <Spinner isSVG />}
             {hasErrors && (
                 <Alert
                     variant="warning"

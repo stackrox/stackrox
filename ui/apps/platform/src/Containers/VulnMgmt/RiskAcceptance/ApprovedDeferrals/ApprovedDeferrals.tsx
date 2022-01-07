@@ -22,7 +22,7 @@ function ApprovedDeferrals(): ReactElement {
     if (isLoading) {
         return (
             <Bullseye>
-                <Spinner size="sm" />
+                <Spinner isSVG size="sm" />
             </Bullseye>
         );
     }
