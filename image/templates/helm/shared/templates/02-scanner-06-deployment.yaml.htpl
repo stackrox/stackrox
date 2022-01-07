@@ -170,7 +170,7 @@ spec:
       {{- if ._rox.env.openshift }}
       - name: trusted-ca-volume
         configMap:
-          name: injected-trusted-ca
+          name: "injected-cabundle-{{ .Release.Name }}"
           items:
             - key: ca-bundle.crt
               path: tls-ca-bundle.pem
