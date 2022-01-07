@@ -103,7 +103,7 @@ const AnalystTags = ({ type, variables, autoComplete, autoCompleteVariables, onI
                 )}
                 {isLoading ? (
                     <Bullseye>
-                        <Spinner />
+                        <Spinner isSVG />
                     </Bullseye>
                 ) : (
                     <Select
