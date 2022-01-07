@@ -207,7 +207,11 @@ function launch_central {
 
     # Do not default to running monitoring locally for resource reasons, which can be overridden
     # with MONITORING_SUPPORT=true, otherwise default it to true on all other systems
+    needs_monitoring="false"
     if [[ "$MONITORING_SUPPORT" == "true" || ( "${is_local_dev}" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
+      needs_monitoring="true"
+    fi
+    if [[ "${needs_monitoring}" == "true" ]];
         echo "Deploying Monitoring..."
         helm_args=(
           -f "${COMMON_DIR}/monitoring-values.yaml"
@@ -353,7 +357,7 @@ function launch_central {
         $central_scripts_dir/port-forward.sh 8000
     fi
 
-    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+    if [[ "${needs_monitoring}" == "true" ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
 
@@ -498,8 +502,7 @@ function launch_sensor {
            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
        fi
     fi
-
-    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+    if [[ "$MONITORING_SUPPORT" == "true" || ( "${is_local_dev}" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
 
