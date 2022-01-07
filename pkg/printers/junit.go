@@ -1,4 +1,4 @@
-package printer
+package printers
 
 import (
 	"encoding/xml"
@@ -6,8 +6,8 @@ import (
 	"io"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/roxctl/common/printer/mapper"
 )
 
 const (
@@ -21,16 +21,80 @@ const (
 	JUnitTestCasesExpressionKey = "testcases"
 )
 
-type junitPrinter struct {
+// JUnitPrinter will print a JUnit compatible output from a given JSON Object.
+type JUnitPrinter struct {
 	suiteName           string
 	jsonPathExpressions map[string]string
 }
-
-func newJUnitPrinter(suiteName string, jsonPathExpressions map[string]string) *junitPrinter {
-	return &junitPrinter{suiteName: suiteName, jsonPathExpressions: jsonPathExpressions}
+// NewJUnitPrinter creates a JUnitPrinter from the options set.
+// A JUnit printer expects a JSON Object and a map of JSON Path expressions that are compatible
+// with GJSON (https://github.com/tidwall/gjson).
+// When printing, the JUnitPrinter will take the given JSON object and apply the JSON Path expressions
+// within the map to retrieve all required data to generate a JUnit report.
+// The JSON Object itself MUST be passable to json.Marshal, so it CAN NOT be a direct JSON input.
+// For the structure of the JSON object, it is preferred to have arrays of structs instead of
+// array of elements, since structs will provide default values if a field is missing.
+// The map of JSON Path expressions MUST provide a JSON Path expression for the keys
+// JUnitFailedTestCasesExpressionKey, JUnitFailedTestCaseErrMsgExpressionKey and JUnitTestCasesExpressionKey.
+// The JUnitFailedTestCasesExpressionKey is expected to yield an array of strings that represents
+// the names of test cases that should be marked as failed within the JUnit report.
+// The JUnitFailedTestCaseErrMsgExpressionKey is expected to yield an array of strings that represents
+// the error messages of failed test cases. This is in relation with the array yielded from the expression
+// JUnitFailedTestCasesExpressionKey.
+// The JUnitTestCasesExpressionKey is expected to yield an array of strings that represents all the names
+// of all test cases that should be added within the JUnit report.
+//
+// The GJSON expression syntax (https://github.com/tidwall/gjson/blob/master/SYNTAX.md) offers more complex
+// and advanced scenarios, if you require them and the below example is not sufficient.
+// Additionally, there are custom GJSON modifiers, which will post-process expression results. Currently,
+// the gjson.ListModifier and gjson.BoolReplaceModifier are available, see their documentation on usage and
+// GJSON's syntax expression to read more about modifiers.
+// The following example illustrates a JSON compatible structure and an example for the map of JSON Path expressions
+// JSON structure:
+// type data struct {
+//		Policies []policy `json:"policies"`
+//		FailedPolicies []failedPolicy `json:"failedPolicies"`
+// }
+// type policy struct {
+//		name string `json:"name"`
+//		severity string `json:"severity"`
+// }
+// type failedPolicy struct {
+//		name string `json:"name"`
+//		error string `json:"error"`
+// }
+// Data:
+// data := &data{Policies: []policy{
+//								{name: "policy1", severity: "HIGH"},
+//								{name: "policy2", severity: "LOW"},
+//								{name: "policy3", severity: "MEDIUM"}
+//								},
+//				 FailedPolicies: []failedPolicy{
+//								{name: "policy1", error: "error msg1"}},
+//				}
+// Map of GJSON expressions:
+//	- specify "#" to visit each element of an array
+//	- the expressions for failed test cases and error messages MUST be equal and correlated
+// expressions := map[string]{
+//					JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
+//					JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
+//					JUnitTestCasesExpressionKey: "data.policies.#.name",
+//				}
+//
+// This would result in the following test cases and failed test cases:
+// Amount of test cases: 3
+// Testcases:
+//		- Name: policy1, Failed: "error msg1"
+//		- Name: policy2, Successful
+//		- Name: policy3, Successful
+func NewJUnitPrinter(suiteName string, jsonPathExpressions map[string]string) *JUnitPrinter {
+	return &JUnitPrinter{suiteName: suiteName, jsonPathExpressions: jsonPathExpressions}
 }
 
-func (j *junitPrinter) Print(object interface{}, out io.Writer) error {
+// Print will print a JUnit compatible output to the io.Writer.
+// It will return an error if there is an issue with the JSON object, the JUnit report could not be generated
+// or it was not possible to write to the io.Writer.
+func (j *JUnitPrinter) Print(object interface{}, out io.Writer) error {
 	data, err := retrieveJUnitSuiteData(object, j.jsonPathExpressions)
 	if err != nil {
 		return err
@@ -60,7 +124,7 @@ func (j *junitPrinter) Print(object interface{}, out io.Writer) error {
 // retrieveJUnitSuiteData retrieves all required data from the JSON object to create a JUnit test suite.
 // It returns the test case names, failed test case names and the failed test case error messages.
 func retrieveJUnitSuiteData(jsonObj interface{}, junitJSONPathExpressions map[string]string) (map[string][]string, error) {
-	sliceMapper, err := mapper.NewSliceMapper(jsonObj, junitJSONPathExpressions)
+	sliceMapper, err := gjson.NewSliceMapper(jsonObj, junitJSONPathExpressions)
 	if err != nil {
 		return nil, err
 	}

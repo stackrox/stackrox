@@ -1,4 +1,4 @@
-package printer
+package printers
 
 import (
 	"strings"
@@ -96,7 +96,7 @@ func TestJsonPrinter_Print(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			out := strings.Builder{}
-			printer := newJSONPrinter(c.compact, c.escapeHTML)
+			printer := NewJSONPrinter(WithJSONCompact(c.compact), WithJSONEscapeHTML(c.escapeHTML))
 			require.NoError(t, printer.Print(&jsonObj, &out))
 			assert.Equal(t, c.expectedOutput, out.String())
 		})

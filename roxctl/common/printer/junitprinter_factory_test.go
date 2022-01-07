@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,9 +20,9 @@ func TestJUnitPrinterFactory_CreatePrinter(t *testing.T) {
 			j: &JUnitPrinterFactory{
 				suiteName: "testsuite",
 				jsonPathExpressions: map[string]string{
-					JUnitTestCasesExpressionKey:            "test",
-					JUnitFailedTestCasesExpressionKey:      "test",
-					JUnitFailedTestCaseErrMsgExpressionKey: "test",
+					printers.JUnitTestCasesExpressionKey:            "test",
+					printers.JUnitFailedTestCasesExpressionKey:      "test",
+					printers.JUnitFailedTestCaseErrMsgExpressionKey: "test",
 				},
 			},
 			format: "junit",
@@ -35,9 +36,9 @@ func TestJUnitPrinterFactory_CreatePrinter(t *testing.T) {
 			j: &JUnitPrinterFactory{
 				suiteName: "testsuite",
 				jsonPathExpressions: map[string]string{
-					JUnitTestCasesExpressionKey:            "test",
-					JUnitFailedTestCasesExpressionKey:      "test",
-					JUnitFailedTestCaseErrMsgExpressionKey: "test",
+					printers.JUnitTestCasesExpressionKey:            "test",
+					printers.JUnitFailedTestCasesExpressionKey:      "test",
+					printers.JUnitFailedTestCaseErrMsgExpressionKey: "test",
 				},
 			},
 			format:     "json",
@@ -71,9 +72,9 @@ func TestJUnitPrinterFactory_Validate(t *testing.T) {
 		"should not return an error if suite name is set and json path map is valid": {
 			suiteName: "testsuite",
 			jsonPathExpressionMap: map[string]string{
-				JUnitTestCasesExpressionKey:            "test",
-				JUnitFailedTestCasesExpressionKey:      "test",
-				JUnitFailedTestCaseErrMsgExpressionKey: "test",
+				printers.JUnitTestCasesExpressionKey:            "test",
+				printers.JUnitFailedTestCasesExpressionKey:      "test",
+				printers.JUnitFailedTestCaseErrMsgExpressionKey: "test",
 			},
 		},
 		"should return an invalid args error if suite name is not set": {
@@ -83,7 +84,7 @@ func TestJUnitPrinterFactory_Validate(t *testing.T) {
 		"should return an invariant violation error if json path map is invalid": {
 			suiteName: "testsuite",
 			jsonPathExpressionMap: map[string]string{
-				JUnitTestCasesExpressionKey: "test",
+				printers.JUnitTestCasesExpressionKey: "test",
 			},
 			shouldFail: true,
 			error:      errorhelpers.ErrInvariantViolation,

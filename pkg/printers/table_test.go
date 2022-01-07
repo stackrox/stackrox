@@ -1,4 +1,4 @@
-package printer
+package printers
 
 import (
 	"strings"
@@ -129,7 +129,7 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 			if c.merge {
 				columnsToMerge = columnHeaders
 			}
-			printer := newTablePrinter(columnHeaders, columnsToMerge, columnExpressions, c.noHeader)
+			printer := NewTablePrinter(columnExpressions, WithTableHeadersOption(columnHeaders, columnsToMerge, c.noHeader))
 			require.NoError(t, printer.Print(&jsonObject, &out))
 			assert.Equal(t, c.expectedOutput, out.String())
 		})
