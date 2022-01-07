@@ -172,7 +172,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		if err != nil {
 			return nil, err
 		}
-		// If the scan exists, and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
+		// If the scan exists, and it is less than the reprocessing interval, then return the scan. Otherwise, fetch it from the DB
 		if exists {
 			utils.FilterSuppressedCVEsNoClone(img)
 			return &v1.ScanImageInternalResponse{
