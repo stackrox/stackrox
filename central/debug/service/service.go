@@ -303,7 +303,7 @@ func getVersion(zipWriter *zip.Writer) error {
 	if err != nil {
 		return err
 	}
-	versions := version.GetAllVersions()
+	versions := version.GetAllVersionsDevelopment()
 	if buildinfo.ReleaseBuild {
 		versions = version.GetAllVersionsUnified()
 	}
@@ -457,7 +457,7 @@ func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versions := version.GetAllVersions()
+	versions := version.GetAllVersionsDevelopment()
 	if buildinfo.ReleaseBuild {
 		versions = version.GetAllVersionsUnified()
 	}

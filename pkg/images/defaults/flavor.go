@@ -45,7 +45,7 @@ type ImageFlavor struct {
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
 // Assumption: development_build flavor is never a release.
 func DevelopmentBuildImageFlavor() ImageFlavor {
-	v := version.GetAllVersions()
+	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
 		MainRegistry:  "docker.io/stackrox",
 		MainImageName: "main",

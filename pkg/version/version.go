@@ -45,8 +45,8 @@ type Versions struct {
 	ChartVersion   string `json:"ChartVersion"`
 }
 
-// GetAllVersions returns all of the various pieces of version information.
-func GetAllVersions() Versions {
+// GetAllVersionsDevelopment returns all of the various pieces of version information for development builds of the product.
+func GetAllVersionsDevelopment() Versions {
 	return Versions{
 		BuildDate:        buildinfo.BuildTimestamp(),
 		CollectorVersion: getCollectorVersion(),
@@ -64,7 +64,7 @@ func GetAllVersions() Versions {
 // Unified versions are effective for the release images.
 // Unified versions were introduced in the release 3.68.
 func GetAllVersionsUnified() Versions {
-	v := GetAllVersions()
+	v := GetAllVersionsDevelopment()
 	v.CollectorVersion = GetMainVersion()
 	v.ScannerVersion = GetMainVersion()
 	return v

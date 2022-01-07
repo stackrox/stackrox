@@ -34,7 +34,7 @@ func versionCommand() *cobra.Command {
 				if buildinfo.ReleaseBuild {
 					return enc.Encode(version.GetAllVersionsUnified())
 				}
-				return enc.Encode(version.GetAllVersions())
+				return enc.Encode(version.GetAllVersionsDevelopment())
 			}
 			fmt.Println(version.GetMainVersion())
 			return nil
