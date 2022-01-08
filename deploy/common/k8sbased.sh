@@ -505,7 +505,7 @@ function launch_sensor {
            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
        fi
     fi
-    if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)}" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
+    if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
 
