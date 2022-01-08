@@ -97,11 +97,13 @@ function ObservedCVEsTable({
     const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
 
     const selectedIds = getSelectedIds();
-    const selectedVulnsToDeferOrMarkFalsePositive = rows
-        .filter((row) => {
-            return selectedIds.includes(row.id) && canCreateRequests;
-        })
-        .map((row) => row.id);
+    const selectedVulnsToDeferOrMarkFalsePositive = canCreateRequests
+        ? rows
+              .filter((row) => {
+                  return selectedIds.includes(row.id);
+              })
+              .map((row) => row.id)
+        : [];
 
     return (
         <>

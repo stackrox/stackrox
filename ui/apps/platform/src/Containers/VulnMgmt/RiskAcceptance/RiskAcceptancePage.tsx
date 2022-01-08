@@ -44,8 +44,8 @@ function RiskAcceptancePage(): ReactElement {
     ) {
         return (
             <NotFoundMessage
-                title="404: Request not authorized"
-                message="You do not have the required permissions to view this page, return to Vulnerability Management"
+                title="404: Not found"
+                message="This page doesn't exist, return to Vulnerability Management"
                 actionText="Go to Vulnerability Management"
                 url={vulnManagementPath}
             />

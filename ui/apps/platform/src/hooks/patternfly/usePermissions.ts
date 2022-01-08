@@ -15,6 +15,7 @@ type CurrentUserName = (state) => string;
 
 const stateSelector = createStructuredSelector({
     userRolePermissions: selectors.getUserRolePermissions as UserRolePermissions,
+    // @TODO: currentUserName can be moved into it's own hook to separate concerns
     currentUserName: selectors.getCurrentUserName as CurrentUserName,
 });
 
