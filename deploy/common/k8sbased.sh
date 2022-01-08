@@ -82,7 +82,6 @@ function local_dev {
       is_local_dev="false"
       if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
         is_local_dev="true"
-        echo "Running in local dev mode. Will patch resources down"
       fi
       echo "${is_local_dev}"
 }
