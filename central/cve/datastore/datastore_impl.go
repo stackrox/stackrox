@@ -205,6 +205,8 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 				vuln.Suppressed = entry.Suppressed
 				vuln.SuppressActivation = entry.SuppressActivation
 				vuln.SuppressExpiry = entry.SuppressExpiry
+
+				vuln.State = storage.VulnerabilityState_DEFERRED
 			}
 		}
 	}
