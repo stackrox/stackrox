@@ -214,7 +214,7 @@ function launch_central {
     if [[ "$MONITORING_SUPPORT" == "true" || ( "${is_local_dev}" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       needs_monitoring="true"
     fi
-    if [[ "${needs_monitoring}" == "true" ]];
+    if [[ "${needs_monitoring}" == "true" ]]; then
         echo "Deploying Monitoring..."
         helm_args=(
           -f "${COMMON_DIR}/monitoring-values.yaml"
