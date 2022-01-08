@@ -1,6 +1,6 @@
 import { useApolloClient, useQuery } from '@apollo/client';
 import { useEffect, useState } from 'react';
-import { fetchVulnRequestsAsArray } from 'services/VulnerabilityRequestsService';
+import { fetchVulnRequests } from 'services/VulnerabilityRequestsService';
 import {
     GetImageVulnerabilitiesData,
     GetImageVulnerabilitiesVars,
@@ -33,7 +33,7 @@ function useImageVulnerabilities({ imageId, vulnsQuery, pagination }) {
         if (vulnsData) {
             const cves = vulnsData.image.vulns.map((vuln) => vuln.cve).join(',');
             const vulnRequestsQuery = vulnsData.image.vulns.length ? `CVE:${cves}` : '';
-            fetchVulnRequestsAsArray({ query: vulnRequestsQuery })
+            fetchVulnRequests({ query: vulnRequestsQuery })
                 .then((vulnRequests) => {
                     const { vulns } = vulnsData.image;
                     const newVulns = combineVulnsWithVulnRequests(vulns, vulnRequests);

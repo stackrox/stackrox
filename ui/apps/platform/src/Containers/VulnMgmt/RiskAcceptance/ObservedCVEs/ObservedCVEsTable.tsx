@@ -104,6 +104,8 @@ function ObservedCVEsTable({
               .map((row) => row.id)
         : [];
 
+    const currentDate = new Date();
+
     return (
         <>
             <Toolbar id="toolbar">
@@ -241,7 +243,7 @@ function ObservedCVEsTable({
                                             deferralReq={
                                                 row.vulnerabilityRequest.deferralReq?.expiry
                                             }
-                                            currentDate={new Date()}
+                                            currentDate={currentDate}
                                         />
                                     ) : (
                                         '-'

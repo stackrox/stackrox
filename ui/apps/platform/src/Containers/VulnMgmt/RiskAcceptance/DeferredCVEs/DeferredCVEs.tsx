@@ -35,8 +35,8 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
         );
     }
 
-    const itemCount = data?.image.vulnCount || 0;
-    const rows = (data?.image.vulns || []) as VulnerabilityWithRequest[];
+    const itemCount = data?.image?.vulnCount || 0;
+    const rows = (data?.image?.vulns || []) as VulnerabilityWithRequest[];
 
     return (
         <DeferredCVEsTable
