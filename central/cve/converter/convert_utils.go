@@ -261,11 +261,6 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		SuppressActivation:    protoCVE.GetSuppressActivation(),
 		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
 	}
-	// State cannot be solely derived from embedded vuln. The caller must visit
-	// image-cve edge to ensure that the deferral state is set correctly i.e. DEFERRED or FALSE_POSITIVE.
-	if embeddedCVE.GetSuppressed() {
-		embeddedCVE.State = storage.VulnerabilityState_DEFERRED
-	}
 	if protoCVE.CvssV3 != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
 	} else {
