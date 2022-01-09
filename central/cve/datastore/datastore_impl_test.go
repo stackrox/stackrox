@@ -56,7 +56,7 @@ func (suite *CVEDataStoreSuite) SetupSuite() {
 	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 	suite.provider = graphMocks.NewMockProvider(suite.mockCtrl)
 
-	suite.searcher.EXPECT().SearchRawCVEs(getCVECtx, testSuppressionQuery).Return([]*storage.CVE{}, nil)
+	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.CVE{}, nil)
 
 	ds, err := New(suite.provider, suite.storage, suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
@@ -138,7 +138,7 @@ func (suite *CVEDataStoreSuite) verifySuppressionState(cveMap map[string]bool, s
 
 func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 	// Add some results
-	suite.searcher.EXPECT().SearchRawCVEs(getCVECtx, testSuppressionQuery).Return([]*storage.CVE{
+	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.CVE{
 		{
 			Id:         "CVE-ABC",
 			Suppressed: true,
@@ -198,7 +198,7 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 
 func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 	// Add some results
-	suite.searcher.EXPECT().SearchRawCVEs(getCVECtx, testSuppressionQuery).Return([]*storage.CVE{
+	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.CVE{
 		{
 			Id:         "CVE-ABC",
 			Suppressed: true,
@@ -261,7 +261,7 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 	defer rocksdbtest.TearDownRocksDB(rocksDB)
 	dacky, err := dackbox.NewRocksDBDackBox(rocksDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	suite.Require().NoError(err)
-	suite.searcher.EXPECT().SearchRawCVEs(getCVECtx, testSuppressionQuery).Return([]*storage.CVE{}, nil)
+	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.CVE{}, nil)
 	datastore, err := New(dacky, store.New(dacky, concurrency.NewKeyFence()), suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
 	edgeStore, err := edgeStore.New(dacky, concurrency.NewKeyFence())
