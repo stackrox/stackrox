@@ -11,6 +11,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Note: Scanner has been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expects `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
 - AWS ECR integration supports AssumeRole authentication.
 - The default policy to detect Log4Shell vulnerability has been updated to also detect CVE-2021-45046 and the remediation has been updated to reflect the latest guidance by the Apache Logging security team.
+- Prior to this release, CVEs could be snoozed using global write access on `Images`. Starting this release, requests to snooze CVEs can be created only using `VulnerabilityManagementRequests` global write access and requests can be approved only using `VulnerabilityManagementApprovals` global write access. Roles with write access on `Images`, created prior to this release, are provided with the newly added permissions. All new roles must be explicitly supplied with `VulnerabilityManagementRequests` and/or `VulnerabilityManagementApprovals` permissions inorder to use CVE snoozing functionality.
 
 ## [67.2]
 
