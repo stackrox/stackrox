@@ -9,6 +9,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Added a new parameter `--image-defaults` to `roxctl helm output` that allows selecting the default registry from which container images will be taken for deploying central and scanner.
 - The default gRPC port in Scanner's config map is changed to 8443, as that is what Scanner has actually been defaulting to this whole time.
   - Note: Scanner has been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expects `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
+- Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images.
 - AWS ECR integration supports AssumeRole authentication.
 - The default policy to detect Log4Shell vulnerability has been updated to also detect CVE-2021-45046 and the remediation has been updated to reflect the latest guidance by the Apache Logging security team.
 
