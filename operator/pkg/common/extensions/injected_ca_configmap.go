@@ -24,16 +24,16 @@ func InjectTrustedCAConfigMapExtension(k8s kubernetes.Interface) extensions.Reco
 		client := k8s.CoreV1().ConfigMaps(obj.GetNamespace())
 		name := configMapNamePrefix + obj.GetName()
 		configmap, err := client.Get(ctx, name, metav1.GetOptions{})
-		if err = validate(name, configmap, err); err != nil {
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				return nil
+			}
+			return errors.Wrapf(err, "cannot retrieve configMap %s", name)
+		}
+		if err = validate(configmap); err != nil {
 			return err
 		}
-		if configmap == nil {
-			configmap = makeConfigMap(name, obj)
-			takeControl(configmap, obj)
-			if _, err := client.Create(ctx, configmap, metav1.CreateOptions{}); err != nil {
-				return errors.Wrapf(err, "cannot create configMap %s", name)
-			}
-		} else if !metav1.IsControlledBy(configmap, obj) {
+		if !metav1.IsControlledBy(configmap, obj) {
 			takeControl(configmap, obj)
 			if _, err := client.Update(ctx, configmap, metav1.UpdateOptions{}); err != nil {
 				return errors.Wrapf(err, "cannot control configMap %s", name)
@@ -43,14 +43,7 @@ func InjectTrustedCAConfigMapExtension(k8s kubernetes.Interface) extensions.Reco
 	}
 }
 
-func validate(name string, configmap *corev1.ConfigMap, err error) error {
-	if err != nil {
-		if apiErrors.IsNotFound(err) {
-			return nil
-		}
-		return errors.Wrapf(err, "cannot retrieve configMap %s", name)
-	}
-
+func validate(configmap *corev1.ConfigMap) error {
 	labels := configmap.GetLabels()
 	if labels != nil {
 		if v, ok := labels[label]; !ok || v != "true" {
@@ -61,22 +54,6 @@ func validate(name string, configmap *corev1.ConfigMap, err error) error {
 		return errors.Errorf("configMap %s exists, but is not properly labeled", configmap.GetName())
 	}
 	return nil
-}
-
-func makeConfigMap(name string, controller *unstructured.Unstructured) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: controller.GetNamespace(),
-			Labels: map[string]string{
-				label: "true",
-			},
-		},
-	}
 }
 
 func takeControl(configmap metav1.Object, controller *unstructured.Unstructured) {
