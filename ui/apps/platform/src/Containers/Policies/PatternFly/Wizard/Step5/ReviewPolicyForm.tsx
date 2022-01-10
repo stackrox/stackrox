@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Flex, Spinner, Title } from '@patternfly/react-core';
+import { Alert, Flex, FlexItem, Spinner, Title } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
 import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService';
@@ -99,7 +99,11 @@ function ReviewPolicyForm(): ReactElement {
                     accurate.
                 </div>
                 {isRunningDryRun ? (
-                    <Spinner isSVG />
+                    <Flex justifyContent={{ default: 'justifyContentCenter' }}>
+                        <FlexItem>
+                            <Spinner isSVG />
+                        </FlexItem>
+                    </Flex>
                 ) : errorMessageFromDryRun ? (
                     <Alert title="Request failure for violations" variant="danger" isInline>
                         {errorMessageFromDryRun}
