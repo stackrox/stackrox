@@ -143,10 +143,10 @@ run_no_rhacs_flag_test() {
   if [[ " ${extra_params[*]} " =~ ^[[:space:]]?--image-defaults ]]; then
     skip_unless_image_defaults roxctl-"$roxctl_flavor" "$orch"
   fi
-  run roxctl-"$roxctl_flavor" central generate --rhacs "$orch" pvc --output-dir /dev/null
+  run roxctl-"$roxctl_flavor" central generate --rhacs "$orch" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
-  run roxctl-"$roxctl_flavor" central generate "$orch" --rhacs pvc --output-dir /dev/null
+  run roxctl-"$roxctl_flavor" central generate "$orch" --rhacs pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
 }
@@ -159,7 +159,7 @@ run_invalid_flavor_value_test() {
   if [[ " ${extra_params[*]} " =~ ^[[:space:]]?--image-defaults ]]; then
     skip_unless_image_defaults roxctl-"$roxctl_flavor" "$orch"
   fi
-  run roxctl-"$roxctl_flavor" central generate "$orch" "${extra_params[@]}" pvc --output-dir /dev/null
+  run roxctl-"$roxctl_flavor" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --regexp "invalid value of '--image-defaults=.*', allowed values:"
 }
