@@ -17,7 +17,7 @@ teardown() {
   rm -rf "$out_dir"
 }
 
-# DEV / K8S
+# RELEASE / K8S
 
 @test "roxctl-release central generate k8s should use docker.io registry" {
   run_image_defaults_registry_test release k8s 'stackrox.io' "$out_dir"
