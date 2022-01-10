@@ -61,7 +61,7 @@ function PolicyOverview({ clusters, notifiers, policy }: PolicyOverviewProps): R
 
     return (
         <>
-            <DescriptionList columnModifier={{ lg: '3Col' }}>
+            <DescriptionList isCompact isHorizontal>
                 <DescriptionListItem
                     term="Severity"
                     desc={<PolicySeverityLabel severity={severity} />}
