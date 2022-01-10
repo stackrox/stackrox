@@ -128,7 +128,6 @@ func GetImageFlavorByBuildType() ImageFlavor {
 	return DevelopmentBuildImageFlavor()
 }
 
-
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR).
 // This function should be used only where this environment variable is set.
 // Providing development_build flavor on a release build binary will cause the application to panic.
