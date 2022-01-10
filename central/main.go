@@ -64,6 +64,7 @@ import (
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
+	"github.com/stackrox/rox/central/invariant"
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
 	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
@@ -461,6 +462,8 @@ func startGRPCServer() {
 	// This helps validate that SAC is being used correctly.
 	if devbuild.IsEnabled() {
 		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
+		config.UnaryInterceptors = append(config.UnaryInterceptors, invariant.PanicOnInvariantViolationUnaryInterceptor)
+		config.StreamInterceptors = append(config.StreamInterceptors, invariant.PanicOnInvariantViolationStreamInterceptor)
 	}
 
 	// This adds an on-demand global tracing for the built-in authorization.
