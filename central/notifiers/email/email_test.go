@@ -38,8 +38,14 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
 	assert.Contains(t, msgStr, "Content-Disposition: attachment; filename=attachment1.zip\r\n")
 
+	assert.Contains(t, msgStr, "Content-Type: image/png; name=logo.png\r\n")
+	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
+	assert.Contains(t, msgStr, "Content-Disposition: inline; filename=logo.png\r\n")
+	assert.Contains(t, msgStr, "Content-ID: <logo.png>\r\n")
+	assert.Contains(t, msgStr, "X-Attachment-Id: logo.png\r\n")
+
 	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
-	assert.Contains(t, msgStr, "How you doin'?\r\n")
+	assert.Contains(t, msgStr, "<div>How you doin'?</div>\r\n")
 
 }
 

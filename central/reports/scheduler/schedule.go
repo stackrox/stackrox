@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifiers"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -61,13 +62,16 @@ var (
         fixedByVersion
         isFixable
         discoveredAtImage
+		link
     }`
 
-	vulnReportEmailTemplate = `Hi,
-
-	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report for {{.WhichVulns}} for {{.DateStr}}.
+	vulnReportEmailTemplate = `
+	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
+
+	noVulnsFoundEmailTemplate = `
+	Red Hat Advanced Cluster Security for Kubernetes has found zero vulnerabilities associated with the running container images owned by your organization.`
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
@@ -252,7 +256,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
 	}
 
-	qb := NewVulnReportQueryBuilder(clusters, namespaces, scope, rc.GetVulnReportFilters(),
+	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, rc.GetVulnReportFilters(),
 		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
 	reportQuery, err := qb.BuildQuery()
 	if err != nil {
@@ -270,14 +274,22 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return err
 	}
 
-	zippedCSVData, err := Format(reportData)
-	if err != nil {
-		return errors.Wrap(err, "error formatting the report data")
-	}
+	var zippedCSVData *bytes.Buffer
+	var messageText string
 
-	messageText, err := formatMessage(rc)
-	if err != nil {
-		return errors.Wrap(err, "error formatting the report email text")
+	if len(reportData) == 0 {
+		zippedCSVData = nil
+		messageText = noVulnsFoundEmailTemplate
+	} else {
+		zippedCSVData, err = common.Format(reportData)
+		if err != nil {
+			return errors.Wrap(err, "error formatting the report data")
+		}
+
+		messageText, err = formatMessage(rc)
+		if err != nil {
+			return errors.Wrap(err, "error formatting the report email text")
+		}
 	}
 
 	if err = retry.WithRetry(func() error {
@@ -299,12 +311,12 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 	data := &reportEmailFormat{
-		WhichVulns: "all vulnerabilities",
-		DateStr:    time.Now().Format("January 02 2006"),
+		WhichVulns: "for all vulnerabilities",
+		DateStr:    time.Now().Format("January 02, 2006"),
 	}
-	if rc.GetVulnReportFilters().SinceLastReport {
-		data.WhichVulns = fmt.Sprintf("new vulnerabilities since %s",
-			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02 2006"))
+	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
+		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
+			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
 	tmpl, err := template.New("emailBody").Parse(vulnReportEmailTemplate)
 	if err != nil {
@@ -318,21 +330,21 @@ func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 	return tpl.String(), nil
 }
 
-func (s *scheduler) getReportData(ctx context.Context, rQuery *reportQuery) ([]result, error) {
-	r := make([]result, len(rQuery.scopeQueries))
-	for _, sq := range rQuery.scopeQueries {
+func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
+	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
+	for _, sq := range rQuery.ScopeQueries {
 		response := s.Schema.Exec(ctx,
 			reportDataQuery, "getVulnReportData", map[string]interface{}{
 				"scopequery": sq,
-				"cvequery":   rQuery.cveFieldsQuery,
+				"cvequery":   rQuery.CveFieldsQuery,
 			})
 		if len(response.Errors) > 0 {
-			return []result{}, response.Errors[0].Err
+			return []common.Result{}, response.Errors[0].Err
 		}
 
-		var resultData result
+		var resultData common.Result
 		if err := json.Unmarshal(response.Data, &resultData); err != nil {
-			return []result{}, err
+			return []common.Result{}, err
 		}
 		r = append(r, resultData)
 	}
