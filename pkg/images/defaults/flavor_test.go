@@ -49,7 +49,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		//	 expectedFlavor: RHACS
 		// },
 		"wrong_value": {
-			expectedFlavor:    StackRoxIOReleaseImageFlavor(),
+			shouldPanicAlways: true,
+		},
+		"": {
 			shouldPanicAlways: true,
 		},
 	}

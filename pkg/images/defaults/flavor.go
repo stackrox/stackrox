@@ -16,6 +16,13 @@ var (
 		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
 		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
 	}
+	validImageFlavors = func() []string {
+		result := make([]string, 0, len(imageFlavorMap))
+		for key := range imageFlavorMap {
+			result = append(result, key)
+		}
+		return result
+	}()
 )
 
 // ChartRepo contains information about where the Helm charts are published.
@@ -121,13 +128,10 @@ func GetImageFlavorByBuildType() ImageFlavor {
 	return DevelopmentBuildImageFlavor()
 }
 
-func getValidImageNames() []string {
-	return []string{"development_development", "stackrox_io_release"}
-}
 
-// GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR). This should be used
-// only where this environment variable is set, otherwise it will be defaulted to stackrox_io_release. Providing
-// development_build flavor on a release build binary will cause the application to panic.
+// GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR).
+// This function should be used only where this environment variable is set.
+// Providing development_build flavor on a release build binary will cause the application to panic.
 // We set ROX_IMAGE_FLAVOR in main and operator container images and so the code which executes in Central and operator
 // can rely on GetImageFlavorFromEnv. Any code that is executed outside these images should not use this function or at
 // least you should exercise great caution and check the context if ROX_IMAGE_FLAVOR is available (or make it so). For
@@ -147,15 +151,10 @@ func GetImageFlavorFromEnv() ImageFlavor {
 		return fn()
 	}
 
-	log.Warnf("Environment variable %s has invalid value %s. Using default image flavor %s",
-		imageFlavorEnvName,
-		envValue,
-		"stackrox_io_release")
-
 	// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
 	// build-time constant.
 	log.Panicf("Unexpected image flavor value in %s: '%s'. Expecting one of the following: %v.",
-		envValue, imageFlavorEnvName, getValidImageNames())
+		envValue, imageFlavorEnvName, validImageFlavors)
 	return ImageFlavor{}
 }
 
