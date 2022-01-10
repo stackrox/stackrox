@@ -6,6 +6,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+## [3.68.0]
+
 - Added a new parameter `--image-defaults` to `roxctl helm output` that allows selecting the default registry from which container images will be taken for deploying central and scanner.
 - The default gRPC port in Scanner's config map is changed to 8443, as that is what Scanner has actually been defaulting to this whole time.
   - Note: Scanner has been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expects `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
@@ -13,11 +15,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - AWS ECR integration supports AssumeRole authentication.
 - The default policy to detect Log4Shell vulnerability has been updated to also detect CVE-2021-45046 and the remediation has been updated to reflect the latest guidance by the Apache Logging security team.
 
-## [67.2]
+## [3.67.2]
 
 - A new default policy to detect Log4Shell vulnerability (CVE-2021-44228) has been added.
 
-## [67.0]
+## [3.67.0]
 
 - When the environment variable `ROX_NETWORK_ACCESS_LOG` for Central is enabled, the logs will now contain the request URI and `X-Forwarded-For` header values.
   Note: The network access logging feature was introduced in 51.0 and when enabled will cause noisy logging, and hence should be turned on

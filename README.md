@@ -1,5 +1,6 @@
 # Misha demoing sample change
-Test,test,test.
+
+Test, test, test.
 
 [![CircleCI][circleci-badge]][circleci-link]
 
