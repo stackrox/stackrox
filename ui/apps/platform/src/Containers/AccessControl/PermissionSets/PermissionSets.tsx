@@ -191,7 +191,7 @@ function PermissionSets(): ReactElement {
             {alertRoles}
             {counterFetching !== 0 ? (
                 <Bullseye>
-                    <Spinner />
+                    <Spinner isSVG />
                 </Bullseye>
             ) : isList ? (
                 <PermissionSetsList
