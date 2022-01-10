@@ -115,5 +115,5 @@ registry_regex() {
 skip_unless_image_defaults() {
   bin="${1:-roxctl}"
   orch="${2:-k8s}"
-  grep "\-\-image\-defaults" <("${bin} central generate $orch -h") || skip "because roxctl generate $orch does not support --image-defaults flag yet"
+  grep "\-\-image\-defaults" <("$bin" central generate "$orch" -h) || skip "because roxctl generate $orch does not support --image-defaults flag yet"
 }
