@@ -29,7 +29,7 @@ type RenderOptions struct {
 }
 
 // FieldsFromClusterAndRenderOpts gets the template values for values.yaml
-func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
+func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, opts RenderOptions) (*charts.MetaValues, error) {
 	mainImage, collectorImage, err := MakeClusterImageNames(imageFlavor, c)
 	if err != nil {
 		return nil, err
@@ -65,10 +65,10 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 }
 
 // setMainOverride adds main image values to meta values as defined in secured cluster object.
-func setMainOverride(mainImage *storage.ImageName, metaValues charts.MetaValues) {
-	metaValues["MainRegistry"] = mainImage.Registry
-	metaValues["ImageRemote"] = mainImage.Remote
-	metaValues["ImageTag"] = mainImage.Tag
+func setMainOverride(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
+	metaValues.MainRegistry = mainImage.Registry
+	metaValues.ImageRemote = mainImage.Remote
+	metaValues.ImageTag = mainImage.Tag
 }
 
 // setCollectorOverrideToMetaValues adds collector image values to meta values as defined in the provided *storage.ImageName objects.
@@ -136,45 +136,45 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 		command = "oc"
 	}
 
-	return charts.MetaValues{
-		"ClusterName": c.Name,
-		"ClusterType": c.Type.String(),
+	return &charts.MetaValues{
+		ClusterName: c.Name,
+		ClusterType: c.Type.String(),
 
-		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
+		PublicEndpoint:     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
+		AdvertisedEndpoint: urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		"CollectionMethod": c.CollectionMethod.String(),
+		CollectionMethod: c.CollectionMethod.String(),
 
 		// Hardcoding RHACS charts repo for now.
 		// TODO: fill ChartRepo based on the current image flavor.
-		"ChartRepo": defaults.ChartRepo{
+		ChartRepo: defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
 
-		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
-		"CreateUpgraderSA":   opts.CreateUpgraderSA,
+		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
+		CreateUpgraderSA:   opts.CreateUpgraderSA,
 
-		"EnvVars": envVars,
+		EnvVars: envVars,
 
-		"K8sCommand": command,
+		K8sCommand: command,
 
-		"OfflineMode": env.OfflineModeEnv.BooleanSetting(),
+		OfflineMode: env.OfflineModeEnv.BooleanSetting(),
 
-		"SlimCollector": opts.SlimCollector,
+		SlimCollector: opts.SlimCollector,
 
-		"KubectlOutput": true,
+		KubectlOutput: true,
 
-		"Versions": versions,
+		Versions: versions,
 
-		"FeatureFlags": make(map[string]string),
+		FeatureFlags: make(map[string]string),
 
-		"AdmissionController":              c.AdmissionController,
-		"AdmissionControlListenOnUpdates":  c.GetAdmissionControllerUpdates(),
-		"AdmissionControlListenOnEvents":   c.GetAdmissionControllerEvents(),
-		"DisableBypass":                    c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-		"TimeoutSeconds":                   c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-		"ScanInline":                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-		"AdmissionControllerEnabled":       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-		"AdmissionControlEnforceOnUpdates": c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
+		AdmissionController:              c.AdmissionController,
+		AdmissionControlListenOnUpdates:  c.GetAdmissionControllerUpdates(),
+		AdmissionControlListenOnEvents:   c.GetAdmissionControllerEvents(),
+		DisableBypass:                    c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
+		TimeoutSeconds:                   c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
+		ScanInline:                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
+		AdmissionControllerEnabled:       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
+		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 	}
 }

@@ -41,23 +41,23 @@ func TestBundleResourcesComplete(t *testing.T) {
 		featureFlags[ff.EnvVar()] = ff.Enabled()
 	}
 	metaValues := charts.MetaValues{
-		"Versions": version.Versions{
+		Versions: version.Versions{
 			ChartVersion:     "1.0.0",
 			MainVersion:      "3.0.49.0",
 			CollectorVersion: "1.2.3",
 		},
-		"MainRegistry":             "stackrox.io", // TODO: custom?
-		"ImageRemote":              "main",
-		"CollectorRegistry":        "collector.stackrox.io",
-		"CollectorFullImageRemote": "collector",
-		"CollectorSlimImageRemote": "collector",
-		"CollectorSlimImageTag":    "1.2.3-slim",
-		"CollectorFullImageTag":    "1.2.3",
-		"ChartRepo": defaults.ChartRepo{
+		MainRegistry:             "stackrox.io", // TODO: custom?
+		ImageRemote:              "main",
+		CollectorRegistry:        "collector.stackrox.io",
+		CollectorFullImageRemote: "collector",
+		CollectorSlimImageRemote: "collector",
+		CollectorSlimImageTag:    "1.2.3-slim",
+		CollectorFullImageTag:    "1.2.3",
+		ChartRepo: defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
-		"KubectlOutput": true,
-		"FeatureFlags":  featureFlags,
+		KubectlOutput: true,
+		FeatureFlags:  featureFlags,
 	}
 
 	helmImage := image.GetDefaultImage()

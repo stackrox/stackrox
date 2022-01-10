@@ -38,47 +38,47 @@ var certs = &sensor.Certs{
 
 func getDefaultMetaValues(t *testing.T) charts.MetaValues {
 	return charts.MetaValues{
-		"MainRegistry": "stackrox.io",
-		"ImageRemote":  "main",
-		"ImageTag":     "3.0.41.x-92-g9e8a347ffe",
+		MainRegistry: "stackrox.io",
+		ImageRemote:  "main",
+		ImageTag:     "3.0.41.x-92-g9e8a347ffe",
 
-		"PublicEndpoint": "central.stackrox:443",
+		PublicEndpoint: "central.stackrox:443",
 
-		"ClusterName": "remote",
+		ClusterName: "remote",
 
-		"AdvertisedEndpoint": "sensor.stackrox:443",
+		AdvertisedEndpoint: "sensor.stackrox:443",
 
-		"CollectorRegistry":        "collector.stackrox.io",
-		"CollectorFullImageRemote": "collector",
-		"CollectorSlimImageRemote": "collector",
-		"CollectorFullImageTag":    "3.0.11-latest",
-		"CollectorSlimImageTag":    "3.0.11-slim",
+		CollectorRegistry:        "collector.stackrox.io",
+		CollectorFullImageRemote: "collector",
+		CollectorSlimImageRemote: "collector",
+		CollectorFullImageTag:    "3.0.11-latest",
+		CollectorSlimImageTag:    "3.0.11-slim",
 
-		"CollectionMethod": "EBPF",
+		CollectionMethod: "EBPF",
 
-		"ClusterType": "KUBERNETES_CLUSTER",
+		ClusterType: "KUBERNETES_CLUSTER",
 
-		"TolerationsEnabled": false,
+		TolerationsEnabled: false,
 
-		"CreateUpgraderSA": true,
+		CreateUpgraderSA: true,
 
-		"AdmissionController":              false,
-		"AdmissionControlListenOnUpdates":  false,
-		"AdmissionControlListenOnEvents":   true,
-		"DisableBypass":                    false,
-		"TimeoutSeconds":                   3,
-		"ScanInline":                       true,
-		"AdmissionControllerEnabled":       false,
-		"AdmissionControlEnforceOnUpdates": false,
+		AdmissionController:              false,
+		AdmissionControlListenOnUpdates:  false,
+		AdmissionControlListenOnEvents:   true,
+		DisableBypass:                    false,
+		TimeoutSeconds:                   3,
+		ScanInline:                       true,
+		AdmissionControllerEnabled:       false,
+		AdmissionControlEnforceOnUpdates: false,
 
-		"EnvVars":      nil,
-		"FeatureFlags": make(map[string]string),
+		EnvVars:      nil,
+		FeatureFlags: make(map[string]string),
 
-		"Versions": testutils.GetExampleVersion(t),
+		Versions: testutils.GetExampleVersion(t),
 
-		"ChartRepo": defaults.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
+		ChartRepo: defaults.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
 
-		"KubectlOutput": true,
+		KubectlOutput: true,
 	}
 }
 func TestRenderSensorHelm(t *testing.T) {
@@ -121,10 +121,10 @@ func TestRenderSensorHelm(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			fields := getDefaultMetaValues(t)
-			fields["AdmissionController"] = c.admissionController
-			fields["AdmissionControllerEnabled"] = c.admissionController
-			fields["AdmissionControlEnforceOnUpdates"] = c.admissionController
-			fields["EnvVars"] = envVars
+			fields.AdmissionController = c.admissionController
+			fields.AdmissionControllerEnabled = c.admissionController
+			fields.AdmissionControlEnforceOnUpdates = c.admissionController
+			fields.EnvVars = envVars
 			opts := helmUtil.Options{
 				ReleaseOptions: chartutil.ReleaseOptions{
 					Name:      "stackrox-secured-cluster-services",
@@ -168,7 +168,7 @@ func TestRenderSensorHelm(t *testing.T) {
 
 func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 	fields := getDefaultMetaValues(t)
-	fields["CertOnly"] = true
+	fields.CertsOnly = true
 
 	manifestsBytes, err := RenderSensorTLSSecretsOnly(fields, certs)
 	require.NoError(t, err)

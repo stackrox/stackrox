@@ -275,7 +275,7 @@ func (i *Image) getSensorChart(values charts.MetaValues, certs *sensor.Certs) (*
 		})
 	}
 
-	if certOnly, _ := values["CertsOnly"].(bool); !certOnly {
+	if certOnly := values.CertsOnly; !certOnly {
 		scriptFiles, err := i.addScripts(values)
 		if err != nil {
 			return nil, err
@@ -288,13 +288,13 @@ func (i *Image) getSensorChart(values charts.MetaValues, certs *sensor.Certs) (*
 }
 
 func (i *Image) addScripts(values charts.MetaValues) ([]*loader.BufferedFile, error) {
-	if values["ClusterType"] == storage.ClusterType_KUBERNETES_CLUSTER.String() {
+	if values.ClusterType == storage.ClusterType_KUBERNETES_CLUSTER.String() {
 		return i.scripts(values, k8sScriptsFileMap)
-	} else if values["ClusterType"] == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values["ClusterType"] == storage.ClusterType_OPENSHIFT4_CLUSTER.String() {
+	} else if values.ClusterType == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values.ClusterType == storage.ClusterType_OPENSHIFT4_CLUSTER.String() {
 		return i.scripts(values, osScriptsFileMap)
 	} else {
 		return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",
-			values["ClusterName"])
+			values.ClusterName)
 	}
 }
 

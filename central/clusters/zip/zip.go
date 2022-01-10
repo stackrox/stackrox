@@ -68,7 +68,7 @@ func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions
 		opts.APIVersions = helmUtil.VersionSetFromResources(istioAPIResources...)
 	}
 
-	baseFiles, err := renderer.RenderSensor(fields, &certs, opts)
+	baseFiles, err := renderer.RenderSensor(*fields, &certs, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}

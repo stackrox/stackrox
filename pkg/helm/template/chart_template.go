@@ -40,6 +40,7 @@ var (
 type element struct {
 	name string
 	get  func(vals map[string]interface{}) ([]byte, error)
+	//get func(vals charts.MetaValues) ([]byte, error) // TODO: lvm change to this?
 }
 
 // Name returns the name of the element

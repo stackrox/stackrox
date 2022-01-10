@@ -9,12 +9,12 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
+/*
 const (
 	mainRegistryKey             charts.MetaValuesKey = "MainRegistry"
 	imageRemoteKey              charts.MetaValuesKey = "ImageRemote"
@@ -27,17 +27,18 @@ const (
 	versionsKey                 charts.MetaValuesKey = "Versions"
 	chartRepoKey                charts.MetaValuesKey = "ChartRepo"
 )
+*/
 
 func getCollectorFull(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorFullImageRemoteKey], fields[collectorFullImageTagKey])
+	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorFullImageRemote, fields.CollectorFullImageTag)
 }
 
 func getCollectorSlim(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorSlimImageRemoteKey], fields[collectorSlimImageTagKey])
+	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorSlimImageRemote, fields.CollectorSlimImageTag)
 }
 
 func getMain(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[mainRegistryKey], fields[imageRemoteKey], fields[imageTagKey])
+	return fmt.Sprintf("%s/%s:%s", fields.MainRegistry, fields.ImageRemote, fields.ImageTag)
 }
 
 type deployerTestSuite struct {
@@ -215,9 +216,9 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(c.expectedMain, getMain(fields), "Main image does not match")
-				s.Equal(c.expectedCollectorFullRef, getCollectorFull(fields), "Collector full image does not match")
-				s.Equal(c.expectedCollectorSlimRef, getCollectorSlim(fields), "Collector slim image does not match")
+				s.Equal(c.expectedMain, getMain(*fields), "Main image does not match")
+				s.Equal(c.expectedCollectorFullRef, getCollectorFull(*fields), "Collector full image does not match")
+				s.Equal(c.expectedCollectorSlimRef, getCollectorSlim(*fields), "Collector slim image does not match")
 			}
 		})
 	}
@@ -245,19 +246,19 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	fields, err := FieldsFromClusterAndRenderOpts(makeTestCluster("docker.io/stackrox/main", ""), &testFlavor, RenderOptions{})
 	assert.NoError(t, err)
 
-	assert.NotEmpty(t, fields[mainRegistryKey])
-	assert.NotEmpty(t, fields[imageRemoteKey])
-	assert.NotEmpty(t, fields[collectorRegistryKey])
-	assert.NotEmpty(t, fields[collectorFullImageRemoteKey])
-	assert.NotEmpty(t, fields[collectorSlimImageTagKey])
-	assert.NotEmpty(t, fields[collectorFullImageTagKey])
+	assert.NotEmpty(t, fields.MainRegistry)
+	assert.NotEmpty(t, fields.ImageRemote)
+	assert.NotEmpty(t, fields.CollectorRegistry)
+	assert.NotEmpty(t, fields.CollectorFullImageRemote)
+	assert.NotEmpty(t, fields.CollectorSlimImageTag)
+	assert.NotEmpty(t, fields.CollectorFullImageTag)
 
-	versions := fields[versionsKey].(version.Versions)
+	versions := fields.Versions
 	assert.NotEmpty(t, versions.ChartVersion)
 	assert.NotEmpty(t, versions.MainVersion)
 	assert.NotEmpty(t, versions.CollectorVersion)
 	assert.NotEmpty(t, versions.ScannerVersion)
 
-	chartRepo := fields[chartRepoKey].(defaults.ChartRepo)
+	chartRepo := fields.ChartRepo
 	assert.NotEmpty(t, chartRepo.URL)
 }
