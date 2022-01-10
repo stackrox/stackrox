@@ -15,7 +15,7 @@ type imageFlavorTestSuite struct {
 	envIsolator *envisolator.EnvIsolator
 }
 
-func TestImageFlavorTest(t *testing.T) {
+func TestImageFlavor(t *testing.T) {
 	suite.Run(t, new(imageFlavorTestSuite))
 }
 
