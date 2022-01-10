@@ -18,14 +18,14 @@ teardown() {
 }
 
 @test "roxctl-release central generate k8s should use stackrox.io registry" {
-  run roxctl-release central generate k8s hostpath --output-dir "$out_dir"
+  run roxctl-release central generate k8s pvc --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'stackrox.io' 'main'
   assert_components_registry "$out_dir/scanner" 'stackrox.io' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release roxctl central generate k8s should not support --rhacs flag" {
-  run roxctl-release central generate --rhacs k8s hostpath --output-dir "$out_dir"
+  run roxctl-release central generate --rhacs k8s pvc --output-dir "$out_dir"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
   run roxctl-release central generate k8s --rhacs hostpath --output-dir "$out_dir"

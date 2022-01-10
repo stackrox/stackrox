@@ -18,7 +18,7 @@ teardown() {
 }
 
 @test "roxctl-development central generate k8s should use docker.io registry" {
-  run roxctl-development central generate k8s hostpath --output-dir "$out_dir"
+  run roxctl-development central generate k8s pvc --output-dir "$out_dir"
   assert_success
   assert_output --partial "Wrote central bundle to"
   assert_components_registry "$out_dir/central" 'docker.io' 'main'
@@ -39,7 +39,7 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate k8s should not support --rhacs flag" {
-  run roxctl-development central generate --rhacs k8s hostpath --output-dir "$out_dir"
+  run roxctl-development central generate --rhacs k8s pvc --output-dir "$out_dir"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
   run roxctl-development central generate k8s --rhacs hostpath --output-dir "$out_dir"
