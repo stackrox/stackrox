@@ -27,6 +27,7 @@ function install_hook
     fi
   fi
 
+  command -v realpath >/dev/null || { echo "realpath not found, please make sure it is installed (e.g. by installing GNU coreutils)"; exit 1; }
   ln -sf "$(realpath --relative-to "$hooks_path" "$hook_script")" "$hook_link"
 }
 
