@@ -12,7 +12,7 @@ const (
 )
 
 var (
-	imageFlavorSetting = env.RegisterSetting(imageFlavorEnvName, env.WithDefault(imageFlavorStackroxIO))
+	imageFlavorSetting = env.RegisterSetting(imageFlavorEnvName)
 )
 
 // imageFlavorEnv returns the environment variable ROX_IMAGE_FLAVOR value
