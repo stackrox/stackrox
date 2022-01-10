@@ -25,36 +25,48 @@ func (s *imageFlavorTestSuite) SetupTest() {
 	testutils.SetExampleVersion(s.T())
 }
 
+func (s *imageFlavorTestSuite) getEnvShouldPanic() {
+	s.Panics(func() {
+		GetImageFlavorFromEnv()
+	})
+}
+
 func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	testCases := map[string]struct {
-		expectedFlavor ImageFlavor
-		runOnRelease   bool
+		expectedFlavor       ImageFlavor
+		shouldPanicOnRelease bool
+		shouldPanicAlways    bool
 	}{
 		"development_build": {
-			expectedFlavor: DevelopmentBuildImageFlavor(),
-			runOnRelease:   false,
+			expectedFlavor:       DevelopmentBuildImageFlavor(),
+			shouldPanicOnRelease: true,
 		},
 		"stackrox_io_release": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
-			runOnRelease:   true,
 		},
 		// TODO(RS-380): Add test for RHACS flavor when available
 		// "rhacs_release": {
 		//	 expectedFlavor: RHACS
 		// },
 		"wrong_value": {
-			expectedFlavor: StackRoxIOReleaseImageFlavor(),
+			expectedFlavor:    StackRoxIOReleaseImageFlavor(),
+			shouldPanicAlways: true,
 		},
 	}
 
 	for envValue, testCase := range testCases {
-		if !testCase.runOnRelease && buildinfo.ReleaseBuild {
-			// skip this case on release
-			continue
-		}
-
 		s.Run(envValue, func() {
 			s.envIsolator.Setenv(imageFlavorEnvName, envValue)
+			if testCase.shouldPanicAlways {
+				s.getEnvShouldPanic()
+				return
+			}
+
+			if testCase.shouldPanicOnRelease && buildinfo.ReleaseBuild {
+				s.getEnvShouldPanic()
+				return
+			}
+
 			flavor := GetImageFlavorFromEnv()
 			s.Equal(testCase.expectedFlavor, flavor)
 		})

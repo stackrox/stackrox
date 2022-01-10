@@ -120,6 +120,10 @@ func GetImageFlavorByBuildType() ImageFlavor {
 	return DevelopmentBuildImageFlavor()
 }
 
+func getValidImageNames() []string {
+	return []string{ "development_development", "stackrox_io_release"}
+}
+
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR). This should be used
 // only where this environment variable is set, otherwise it will be defaulted to stackrox_io_release. Providing
 // development_build flavor on a release build binary will cause the application to panic.
@@ -145,8 +149,13 @@ func GetImageFlavorFromEnv() ImageFlavor {
 	log.Warnf("Environment variable %s has invalid value %s. Using default image flavor %s",
 		imageFlavorEnvName,
 		envValue,
-		"stackroxio_release")
-	return StackRoxIOReleaseImageFlavor()
+		"stackrox_io_release")
+
+	// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
+	// build-time constant.
+	log.Panicf("Unexpected image flavor value in %s: '%s'. Expecting one of the following: %v.",
+		envValue, imageFlavorEnvName, getValidImageNames())
+	return ImageFlavor{}
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
