@@ -66,6 +66,7 @@ func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectTy
 
 func (d *datastoreImpl) GetRiskForDeployment(ctx context.Context, deployment *storage.Deployment) (*storage.Risk, bool, error) {
 	if allowed, err := riskSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !allowed {
+		log.Infof("Allowed to read risk for deployment %v %v: %v", deployment.GetName(), allowed, err)
 		return nil, false, err
 	}
 	return d.getRiskForSubject(deployment.GetId(), storage.RiskSubjectType_DEPLOYMENT)

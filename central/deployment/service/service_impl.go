@@ -140,8 +140,10 @@ func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.Res
 
 	risk, _, err := s.risks.GetRiskForDeployment(ctx, deployment)
 	if err != nil {
+		log.Infof("Error returned when obtaining risk for deployment %v: %v", deployment.GetName(), err)
 		return nil, err
 	}
+	log.Infof("Risk for deployment %v: %v", deployment.GetName(), risk)
 
 	return &v1.GetDeploymentWithRiskResponse{
 		Deployment: deployment,
