@@ -118,6 +118,12 @@ func GetImageFlavorByBuildType() ImageFlavor {
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR). This should be used
 // only where this environment variable is set, otherwise it will be defaulted to stackrox_io_release. Providing
 // development_build flavor on a release build binary will cause the application to panic.
+// We set ROX_IMAGE_FLAVOR in main and operator container images and so the code which executes in Central and operator
+// can rely on GetImageFlavorFromEnv. Any code that is executed outside these images should not use this function or at
+// least you should exercise great caution and check the context if ROX_IMAGE_FLAVOR is available (or make it so). For
+// example, roxctl should not rely on this function because it is a standalone cli that can be run in any environment.
+// roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
+// provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
 	envValue := ImageFlavorFromEnv()
 	if buildinfo.ReleaseBuild && envValue == imageFlavorDevelopment {
