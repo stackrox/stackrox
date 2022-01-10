@@ -12,6 +12,7 @@ import { getValidationSchema } from './policyValidationSchemas';
 import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
 import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
+import ReviewPolicyForm from './Step5/ReviewPolicyForm';
 
 type PolicyWizardProps = {
     pageAction: ExtendedPageAction;
@@ -22,9 +23,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const history = useHistory();
     const [stepId, setStepId] = useState(1);
     const [stepIdReached, setStepIdReached] = useState(1);
-
-    const [isDryRunPending] = useState(false); // TODO setIsDryRunPending
-    const [dryRunErrorMessage] = useState(''); // TODO setDryRunErrorMessage
 
     const formik = useFormik({
         initialValues: policy,
@@ -112,10 +110,10 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                         {
                             id: 5,
                             name: 'Review policy',
-                            component: <div>ReviewPolicyForm</div>,
+                            component: <ReviewPolicyForm />,
                             nextButtonText: 'Save',
                             canJumpTo: stepIdReached >= 5,
-                            enableNext: !isDryRunPending && !dryRunErrorMessage,
+                            enableNext: isValid,
                         },
                     ]}
                     onBack={onBack}
