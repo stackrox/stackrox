@@ -4,6 +4,7 @@ import { Alert, Bullseye, PageSection, Spinner } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import useFetchReport from 'hooks/useFetchReport';
+import usePermissions from 'hooks/usePermissions';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getQueryObject } from 'utils/queryStringUtils';
 import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
@@ -12,6 +13,10 @@ import VulnMgmtEditReportPage from './Detail/VulnMgmtEditReportPage';
 
 function VulnMgmtReportPage(): ReactElement {
     const { search } = useLocation();
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+
     const queryObject = getQueryObject<VulnMgmtReportQueryObject>(search);
     const { action } = queryObject;
     const { reportId } = useParams();
@@ -35,7 +40,7 @@ function VulnMgmtReportPage(): ReactElement {
                     {getAxiosErrorMessage(error)}
                 </Alert>
             )}
-            {action === 'edit' && !!report ? (
+            {action === 'edit' && hasVulnReportWriteAccess && !!report ? (
                 <VulnMgmtEditReportPage report={report} />
             ) : (
                 !!report && <VulnMgmtReportDetail report={report} />

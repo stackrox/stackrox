@@ -20,6 +20,8 @@ type VulnMgmtEditReportPageProps = {
 };
 
 function VulnMgmtEditReportPage({ report }: VulnMgmtEditReportPageProps): ReactElement {
+    const { id, name } = report;
+
     return (
         <>
             <PageSection variant="light">
@@ -28,10 +30,13 @@ function VulnMgmtEditReportPage({ report }: VulnMgmtEditReportPageProps): ReactE
                     <BreadcrumbItemLink to={vulnManagementReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
-                    <BreadcrumbItem isActive>Create a vulnerability report</BreadcrumbItem>
+                    <BreadcrumbItemLink to={`${vulnManagementReportsPath}/${id}`}>
+                        {name}
+                    </BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>Edit</BreadcrumbItem>
                 </Breadcrumb>
                 <TextContent>
-                    <Title headingLevel="h1">Create a vulnerability report</Title>
+                    <Title headingLevel="h1">Edit vulnerability report</Title>
                     <Text component="p">
                         Configure reports, define reporting scopes, and assign distribution lists to
                         report on vulnerabilities across the organization.
