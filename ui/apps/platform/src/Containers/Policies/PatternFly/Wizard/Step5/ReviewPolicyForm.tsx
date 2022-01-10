@@ -50,6 +50,7 @@ function ReviewPolicyForm(): ReactElement {
                      * Replace ({ data: { pending, result } }) with ({ pending, result }) above.
                      */
                     if (pending) {
+                        // To make another request, increment counterToCheckDryRun which is in useEffect dependencies.
                         setCounterToCheckDryRun((counter) => counter + 1);
                     } else {
                         setIsRunningDryRun(false);
