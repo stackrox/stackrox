@@ -705,6 +705,9 @@ class IntegrationsTest extends BaseSpecification {
         new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
 
+        new ECRRegistryIntegration()    | { [useAssumeRole: true, assumeRoleRoleId: "OOPS",]
+        }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
+
         new QuayImageIntegration()      | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
