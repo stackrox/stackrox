@@ -7,7 +7,7 @@ In order to run the tests locally, we need to install Bats (in version at least 
 Bats can be installed with:
 
 ```shell
-$ brew install bats
+$ brew install bats-core
 # (output suppressed)
 
 $ bats --version

@@ -117,3 +117,49 @@ skip_unless_image_defaults() {
   orch="${2:-k8s}"
   grep -- "--image-defaults" <("$bin" central generate "$orch" -h) || skip "because roxctl generate $orch does not support --image-defaults flag yet"
 }
+
+# Central-generate
+
+run_image_defaults_registry_test() {
+  local roxctl_flavor="$1"; shift;
+  local orch="$1"; shift;
+  local expected_registry="$1"; shift;
+  local out_dir="$1"; shift;
+  local extra_params=("${@}")
+
+  if [[ " ${extra_params[*]} " =~ ^[[:space:]]?--image-defaults ]]; then
+    skip_unless_image_defaults roxctl-"$roxctl_flavor" "$orch"
+  fi
+  run roxctl-"$roxctl_flavor" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$out_dir"
+  assert_success
+  assert_components_registry "$out_dir/central" "$expected_registry" 'main'
+  assert_components_registry "$out_dir/scanner" "$expected_registry" 'scanner' 'scanner-db'
+}
+
+run_no_rhacs_flag_test() {
+  local roxctl_flavor="$1"
+  local orch="$2"
+
+  if [[ " ${extra_params[*]} " =~ ^[[:space:]]?--image-defaults ]]; then
+    skip_unless_image_defaults roxctl-"$roxctl_flavor" "$orch"
+  fi
+  run roxctl-"$roxctl_flavor" central generate --rhacs "$orch" pvc --output-dir /dev/null
+  assert_failure
+  assert_output --partial "unknown flag: --rhacs"
+  run roxctl-"$roxctl_flavor" central generate "$orch" --rhacs pvc --output-dir /dev/null
+  assert_failure
+  assert_output --partial "unknown flag: --rhacs"
+}
+
+run_invalid_flavor_value_test() {
+  local roxctl_flavor="$1"; shift;
+  local orch="$1"; shift;
+  local extra_params=("${@}")
+
+  if [[ " ${extra_params[*]} " =~ ^[[:space:]]?--image-defaults ]]; then
+    skip_unless_image_defaults roxctl-"$roxctl_flavor" "$orch"
+  fi
+  run roxctl-"$roxctl_flavor" central generate "$orch" "${extra_params[@]}" pvc --output-dir /dev/null
+  assert_failure
+  assert_output --regexp "invalid value of '--image-defaults=.*', allowed values:"
+}
