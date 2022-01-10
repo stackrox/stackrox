@@ -1,4 +1,4 @@
-package printer
+package printers
 
 import (
 	"bytes"
@@ -99,7 +99,8 @@ School4,40,4
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			out := strings.Builder{}
-			printer := newCSVPrinter(testColumnHeaders, testRowExpression, c.noHeaders, c.headerAsComments)
+			printer := NewCSVPrinter(testRowExpression, WithCSVColumnHeaders(testColumnHeaders),
+				WithCSVHeaderOptions(c.noHeaders, c.headerAsComments))
 			err := printer.Print(&testCSVObject, &out)
 			require.NoError(t, err)
 			assert.Equal(t, c.expectedOutput, out.String())
@@ -147,7 +148,7 @@ func TestCsvPrinter_Print_Failures(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			p := newCSVPrinter(c.headers, c.rowExpression, false, false)
+			p := NewCSVPrinter(c.rowExpression, WithCSVColumnHeaders(c.headers), WithCSVHeaderOptions(false, false))
 			err := p.Print(c.object, c.out)
 			require.Error(t, err)
 			assert.Equal(t, c.expectedOutput, c.out.String())
@@ -180,7 +181,8 @@ func TestCsvPrinter_Print_EmptyData(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			p := newCSVPrinter(testColumnHeaders, testRowExpression, c.noHeader, c.headerAsComment)
+			p := NewCSVPrinter(testRowExpression, WithCSVColumnHeaders(testColumnHeaders),
+				WithCSVHeaderOptions(c.noHeader, c.headerAsComment))
 			err := p.Print(&testResultObject{}, c.out)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expectedOutput, c.out.String())
@@ -189,7 +191,8 @@ func TestCsvPrinter_Print_EmptyData(t *testing.T) {
 }
 
 func TestCsvPrinter_ReadCSVOutputWithCommentedHeaders_Success(t *testing.T) {
-	p := newCSVPrinter(testColumnHeaders, testRowExpression, false, true)
+	p := NewCSVPrinter(testRowExpression, WithCSVColumnHeaders(testColumnHeaders),
+		WithCSVHeaderOptions(false, true))
 	out := &bytes.Buffer{}
 	require.NoError(t, p.Print(testCSVObject, out))
 	r := csv.NewReader(out)
@@ -203,7 +206,8 @@ func TestCsvPrinter_ReadCSVOutputWithCommentedHeaders_Success(t *testing.T) {
 }
 
 func TestCsvPrinter_ReadCSVOutputWithCommentedHeaders_Failure(t *testing.T) {
-	p := newCSVPrinter(testColumnHeaders, testRowExpression, false, true)
+	p := NewCSVPrinter(testRowExpression, WithCSVColumnHeaders(testColumnHeaders),
+		WithCSVHeaderOptions(false, true))
 	out := &bytes.Buffer{}
 	require.NoError(t, p.Print(testCSVObject, out))
 	r := csv.NewReader(out)

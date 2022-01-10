@@ -1,4 +1,4 @@
-package mapper
+package gjson
 
 import (
 	"github.com/tidwall/gjson"

@@ -1,4 +1,4 @@
-package mapper
+package gjson
 
 import (
 	"encoding/json"

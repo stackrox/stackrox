@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -111,9 +112,12 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	}
 	switch strings.ToLower(format) {
 	case "table":
-		return newTablePrinter(t.Headers, t.columnsToMerge, t.RowJSONPathExpression, t.NoHeader), nil
+
+		return printers.NewTablePrinter(t.RowJSONPathExpression,
+			printers.WithTableHeadersOption(t.Headers, t.columnsToMerge, t.NoHeader)), nil
 	case "csv":
-		return newCSVPrinter(t.Headers, t.RowJSONPathExpression, t.NoHeader, t.HeaderAsComment), nil
+		return printers.NewCSVPrinter(t.RowJSONPathExpression,
+			printers.WithCSVColumnHeaders(t.Headers), printers.WithCSVHeaderOptions(t.NoHeader, t.HeaderAsComment)), nil
 	default:
 		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
 			"Tabular Printer: %q", format))
