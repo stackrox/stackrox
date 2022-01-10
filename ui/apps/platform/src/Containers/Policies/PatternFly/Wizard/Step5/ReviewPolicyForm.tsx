@@ -14,7 +14,7 @@ import './ReviewPolicyForm.css';
 function ReviewPolicyForm(): ReactElement {
     const { values } = useFormikContext<Policy>();
 
-    const [isRunning, setIsRunning] = useState(false);
+    const [isRunningDryRun, setIsRunningDryRun] = useState(false);
     const [jobIdOfDryRun, setJobIdOfDryRun] = useState('');
     const [errorMessageFromDryRun, setErrorMessageFromDryRun] = useState('');
     const [counterToCheckDryRun, setCounterToCheckDryRun] = useState(0);
@@ -22,7 +22,7 @@ function ReviewPolicyForm(): ReactElement {
 
     // Start "dry run" job for preview of violations.
     useEffect(() => {
-        setIsRunning(true);
+        setIsRunningDryRun(true);
         setErrorMessageFromDryRun('');
         setAlertsFromDryRun([]);
 
@@ -35,7 +35,7 @@ function ReviewPolicyForm(): ReactElement {
                 setJobIdOfDryRun(jobId);
             })
             .catch((error) => {
-                setIsRunning(false);
+                setIsRunningDryRun(false);
                 setErrorMessageFromDryRun(getAxiosErrorMessage(error));
             });
     }, [values]);
@@ -52,14 +52,14 @@ function ReviewPolicyForm(): ReactElement {
                     if (pending) {
                         setCounterToCheckDryRun((counter) => counter + 1);
                     } else {
-                        setIsRunning(false);
+                        setIsRunningDryRun(false);
                         setJobIdOfDryRun('');
                         setCounterToCheckDryRun(0);
                         setAlertsFromDryRun(result.alerts);
                     }
                 })
                 .catch((error) => {
-                    setIsRunning(false);
+                    setIsRunningDryRun(false);
                     setErrorMessageFromDryRun(getAxiosErrorMessage(error));
                     setJobIdOfDryRun('');
                     setCounterToCheckDryRun(0);
@@ -97,7 +97,7 @@ function ReviewPolicyForm(): ReactElement {
                     deployments. Before you save the policy, verify that the violations seem
                     accurate.
                 </div>
-                {isRunning ? (
+                {isRunningDryRun ? (
                     <Spinner isSVG />
                 ) : errorMessageFromDryRun ? (
                     <Alert title="Request failure for violations" variant="danger" isInline>
