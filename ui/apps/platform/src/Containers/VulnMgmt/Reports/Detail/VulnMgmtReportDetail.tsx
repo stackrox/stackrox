@@ -26,10 +26,9 @@ import SeverityLabelsList from 'Components/PatternFly/SeverityLabelsList';
 import NotifierName from 'Containers/VulnMgmt/Reports/Components/NotifierName';
 import ScheduleText from 'Containers/VulnMgmt/Reports/Components/ScheduleText';
 import ScopeName from 'Containers/VulnMgmt/Reports/Components/ScopeName';
+import usePermissions from 'hooks/usePermissions';
 import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
-
-// import ReportOverview from './ReportOverview';
 
 type VulnMgmtReportDetailProps = {
     report: ReportConfiguration;
@@ -39,6 +38,17 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
     const history = useHistory();
 
     const [isActionsOpen, setIsActionsOpen] = useState(false);
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const dropdownItems: ReactElement[] = [];
+    if (hasVulnReportWriteAccess) {
+        dropdownItems.push(
+            <DropdownItem key="Edit report" component="button" onClick={onEditReport}>
+                Edit report
+            </DropdownItem>
+        );
+    }
 
     const { id, name } = report;
 
@@ -71,31 +81,25 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
                         <ToolbarItem>
                             <Title headingLevel="h1">{name}</Title>
                         </ToolbarItem>
-                        <ToolbarItem alignment={{ default: 'alignRight' }}>
-                            <Dropdown
-                                onSelect={onSelectActions}
-                                position="right"
-                                toggle={
-                                    <DropdownToggle
-                                        isPrimary
-                                        onToggle={onToggleActions}
-                                        toggleIndicator={CaretDownIcon}
-                                    >
-                                        Actions
-                                    </DropdownToggle>
-                                }
-                                isOpen={isActionsOpen}
-                                dropdownItems={[
-                                    <DropdownItem
-                                        key="Edit report"
-                                        component="button"
-                                        onClick={onEditReport}
-                                    >
-                                        Edit report
-                                    </DropdownItem>,
-                                ]}
-                            />
-                        </ToolbarItem>
+                        {dropdownItems.length > 0 && (
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <Dropdown
+                                    onSelect={onSelectActions}
+                                    position="right"
+                                    toggle={
+                                        <DropdownToggle
+                                            isPrimary
+                                            onToggle={onToggleActions}
+                                            toggleIndicator={CaretDownIcon}
+                                        >
+                                            Actions
+                                        </DropdownToggle>
+                                    }
+                                    isOpen={isActionsOpen}
+                                    dropdownItems={dropdownItems}
+                                />
+                            </ToolbarItem>
+                        )}
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>

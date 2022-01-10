@@ -24,7 +24,7 @@ import {
     systemHealthPath,
 } from 'routePaths';
 
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import LeftNavItem from './LeftNavItem';
 
 const platformConfigurationPaths = [

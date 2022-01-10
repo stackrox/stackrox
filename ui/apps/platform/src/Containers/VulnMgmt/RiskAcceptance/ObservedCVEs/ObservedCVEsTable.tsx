@@ -23,7 +23,7 @@ import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';

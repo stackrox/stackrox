@@ -13,7 +13,7 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedFalsePositiveRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
