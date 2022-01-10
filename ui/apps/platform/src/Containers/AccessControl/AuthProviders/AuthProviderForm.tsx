@@ -60,7 +60,7 @@ function getNewAuthProviderTitle(type, availableProviderTypes) {
 }
 
 function getRuleAttributes(type, availableProviderTypes) {
-    return availableProviderTypes.find(({ value }) => value === type)?.ruleAttributes as string[];
+    return availableProviderTypes.find(({ value }) => value === type)?.ruleAttributes || [];
 }
 
 function testModeSupported(provider) {
