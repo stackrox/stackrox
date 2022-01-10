@@ -4,10 +4,10 @@ tests:
     collector.slimMode: false
   expect: |
     assertMainIs("stackrox.io/main:3.0.99.0")
-    assertCollectorIs("collector.stackrox.io/collector:99.9.9")
+    assertCollectorIs("collector.stackrox.io/collector:3.0.99.0")
 - name: slim mode
   set:
     collector.slimMode: true
   expect: |
     assertMainIs("stackrox.io/main:3.0.99.0")
-    assertCollectorIs("collector.stackrox.io/collector-slim:99.9.9")
+    assertCollectorIs("collector.stackrox.io/collector-slim:3.0.99.0")
