@@ -422,7 +422,7 @@ type tstAuthProviderBackendFactory struct {
 }
 
 func (f *tstAuthProviderBackendFactory) GetAvailableAttributes() []string {
-	return []string{}
+	panic("shouldn't be in the list of available providers")
 }
 
 func (f *tstAuthProviderBackendFactory) registerProcessResponse(providerID string, clientState string, err error) {
