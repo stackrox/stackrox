@@ -27,7 +27,7 @@ function DeferralExpirationDate({
             ? updatedDeferralReq
             : deferralReq;
     if (expiresWhenFixed) {
-        expirationDate = '-';
+        expirationDate = 'when fixed';
     }
     if (expiresOn) {
         expirationDate = getDate(expiresOn);

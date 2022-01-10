@@ -20,14 +20,16 @@ import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/patternfly/usePermissions';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import { Vulnerability } from '../imageVulnerabilities.graphql';
+import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import FalsePositiveCVEActionsColumn from './FalsePositiveCVEActionsColumns';
+import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
+import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 
 export type FalsePositiveCVEsTableProps = {
-    rows: Vulnerability[];
+    rows: VulnerabilityWithRequest[];
     isLoading: boolean;
     itemCount: number;
     updateTable: () => void;
@@ -50,12 +52,12 @@ function FalsePositiveCVEsTable({
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<Vulnerability>(rows);
+    } = useTableSelection<VulnerabilityWithRequest>(rows);
     const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<FalsePositiveCVEsToBeAssessed>(null);
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
     });
-    const { hasReadWriteAccess } = usePermissions();
+    const { currentUserName, hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setVulnsToBeAssessed(null);
@@ -73,21 +75,15 @@ function FalsePositiveCVEsTable({
     const selectedIds = getSelectedIds();
     const selectedFalsePositivesToReobserve = rows
         .filter((row) => {
-            return selectedIds.includes(row.id) && canApproveRequests;
-            /* 
-                @TODO: Use this filter when the vuln request information is added
-
-                return (
-                    selectedIds.includes(row.id) &&
-                    (canApproveRequests ||
-                        (canCreateRequests && row.requestor.name === currentUserName))
-                );
-            */
+            return (
+                selectedIds.includes(row.id) &&
+                (canApproveRequests ||
+                    (canCreateRequests &&
+                        row.vulnerabilityRequest.requestor.name === currentUserName))
+            );
         })
         .map((row) => {
-            // @TODO: Once backend adds resolver for vulnRequests, access that and return the request id
-            // This will fail when sending the API request for now
-            return row.id;
+            return row.vulnerabilityRequest.id;
         });
 
     return (
@@ -155,21 +151,16 @@ function FalsePositiveCVEsTable({
                         <Th>Severity</Th>
                         <Th>Affected Components</Th>
                         <Th>Comments</Th>
-                        <Th>Expiration</Th>
                         <Th>Apply to</Th>
                         <Th>Approver</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
-                        const canReobserveCVE = canApproveRequests || canCreateRequests;
-                        /* 
-                            @TODO: Use this value when the vuln request information is added
-
-                            const canReobserveCVE =
-                                canApproveRequests ||
-                                (canCreateRequests && row.requestor.name === currentUserName);
-                        */
+                        const canReobserveCVE =
+                            canApproveRequests ||
+                            (canCreateRequests &&
+                                row.vulnerabilityRequest.requestor.name === currentUserName);
 
                         return (
                             <Tr key={row.cve}>
@@ -187,10 +178,22 @@ function FalsePositiveCVEsTable({
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
-                                <Td dataLabel="Comments">-</Td>
-                                <Td dataLabel="Expiration">-</Td>
-                                <Td dataLabel="Apply to">-</Td>
-                                <Td dataLabel="Approver">-</Td>
+                                <Td dataLabel="Comments">
+                                    <RequestCommentsButton
+                                        comments={row.vulnerabilityRequest.comments}
+                                        cve={row.vulnerabilityRequest.cves.ids[0]}
+                                    />
+                                </Td>
+                                <Td dataLabel="Apply to">
+                                    <VulnerabilityRequestScope
+                                        scope={row.vulnerabilityRequest.scope}
+                                    />
+                                </Td>
+                                <Td dataLabel="Approver">
+                                    {row.vulnerabilityRequest.approvers
+                                        .map((user) => user.name)
+                                        .join(',')}
+                                </Td>
                                 <Td className="pf-u-text-align-right">
                                     <FalsePositiveCVEActionsColumn
                                         row={row}

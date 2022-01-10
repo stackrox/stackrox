@@ -30,16 +30,15 @@ import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
+import VulnRequestedAction from '../VulnRequestedAction';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
     ids: string[];
 } | null;
 
-export type ObservedCVERow = Vulnerability;
-
 export type ObservedCVEsTableProps = {
-    rows: ObservedCVERow[];
+    rows: Vulnerability[];
     isLoading: boolean;
     registry: string;
     remote: string;
@@ -68,7 +67,7 @@ function ObservedCVEsTable({
         onSelectAll,
         getSelectedIds,
         onClearAll,
-    } = useTableSelection<ObservedCVERow>(rows);
+    } = useTableSelection<Vulnerability>(rows);
     const [cvesToBeAssessed, setCVEsToBeAssessed] = useState<CVEsToBeAssessed>(null);
     const requestDeferral = useDeferVulnerability({
         cveIDs: cvesToBeAssessed?.ids || [],
@@ -104,6 +103,8 @@ function ObservedCVEsTable({
               })
               .map((row) => row.id)
         : [];
+
+    const currentDate = new Date();
 
     return (
         <>
@@ -185,7 +186,7 @@ function ObservedCVEsTable({
                         <Th>CVSS score</Th>
                         <Th>Affected components</Th>
                         <Th>Discovered</Th>
-                        <Th>Request State</Th>
+                        <Th>Pending Request State</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -234,7 +235,20 @@ function ObservedCVEsTable({
                                 <Td dataLabel="Discovered">
                                     <DateTimeFormat time={row.discoveredAtImage} />
                                 </Td>
-                                <Td dataLabel="Request State">-</Td>
+                                <Td dataLabel="Pending Request State">
+                                    {row.vulnerabilityRequest ? (
+                                        <VulnRequestedAction
+                                            targetState={row.vulnerabilityRequest.targetState}
+                                            requestStatus={row.vulnerabilityRequest.status}
+                                            deferralReq={
+                                                row.vulnerabilityRequest.deferralReq?.expiry
+                                            }
+                                            currentDate={currentDate}
+                                        />
+                                    ) : (
+                                        '-'
+                                    )}
+                                </Td>
                                 <Td
                                     className="pf-u-text-align-right"
                                     actions={{
