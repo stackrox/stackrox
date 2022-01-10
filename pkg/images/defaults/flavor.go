@@ -113,6 +113,7 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 
 // GetImageFlavorByBuildType returns the flavor based on build type (development or release). Release builds use StackroxIO
 // flavor and development builds use development flavor.
+// TODO(RS-380): Remove this function
 func GetImageFlavorByBuildType() ImageFlavor {
 	if buildinfo.ReleaseBuild {
 		return StackRoxIOReleaseImageFlavor()
