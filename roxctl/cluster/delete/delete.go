@@ -2,19 +2,16 @@ package delete
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
-
-var errNameIsRequired = errors.New("--name is required")
 
 // Command removes a Sensor from Central without deleting any orchestrator objects.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
@@ -54,7 +51,7 @@ func (cmd *clusterDeleteCommand) Construct(args []string, cbr *cobra.Command) er
 
 func (cmd *clusterDeleteCommand) Validate() error {
 	if cmd.name == "" {
-		return errNameIsRequired
+		return errorhelpers.ErrInvalidArgs
 	}
 	return nil
 }
@@ -80,7 +77,8 @@ func (cmd *clusterDeleteCommand) Delete() error {
 		}
 	}
 	if cluster == nil {
-		return fmt.Errorf("cluster with name %q not found. Valid clusters are [ %s ]", cmd.name, strings.Join(validClusters, " | "))
+		cmd.env.Logger().ErrfLn("Cluster with name %q not found. Valid clusters are [ %s ]", cmd.name, strings.Join(validClusters, " | "))
+		return errorhelpers.ErrNotFound
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
@@ -90,7 +88,7 @@ func (cmd *clusterDeleteCommand) Delete() error {
 		return err
 	}
 
-	fmt.Fprintf(cmd.env.InputOutput().Out, "Successfully deleted cluster %q\n", cmd.name)
+	cmd.env.Logger().PrintfLn("Successfully deleted cluster %q\n", cmd.name)
 	return nil
 }
 
