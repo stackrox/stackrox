@@ -868,7 +868,6 @@ commands:
             if .circleci/pr_has_label.sh "ci-release-build"; then
               cci-export GOTAGS release
             fi
-      - *setImageFlavor
 
   setup-dep-env:
     parameters:
@@ -2175,6 +2174,8 @@ jobs:
   go-unit-tests:
     executor: custom
     resource_class: large
+    environment:
+      ROX_IMAGE_FLAVOR: development_build
     steps:
       - pre-go-unit-tests
       - run:
@@ -2749,6 +2750,7 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
+      - *setImageFlavor
 
       - run:
           name: Generate OSS notice
@@ -2920,6 +2922,7 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
+      - *setImageFlavor
 
       - run:
           name: Build Operator Bundle image
@@ -3629,8 +3632,6 @@ jobs:
       - *setupRoxctl
       - setup_remote_docker
       - setup-gcp
-#      - *restoreGoModCache
-#      - setup-go-build-env
       - setup-dep-env
 
       - attach-gke-cluster:
