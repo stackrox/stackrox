@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -11,12 +12,21 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
+
+func TestClusterDeleteCommand(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(clusterDeleteTestSuite))
+}
+
+type clusterDeleteTestSuite struct {
+	suite.Suite
+	defaultClusterDeleteCommand clusterDeleteCommand
+}
 
 type mockClustersServiceServer struct {
 	v1.ClustersServiceServer
@@ -29,16 +39,6 @@ func (m *mockClustersServiceServer) GetClusters(ctx context.Context, req *v1.Get
 
 func (m *mockClustersServiceServer) DeleteCluster(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	return &v1.Empty{}, nil
-}
-
-func TestClusterDeleteCommand(t *testing.T) {
-	t.Parallel()
-	suite.Run(t, new(clusterDeleteTestSuite))
-}
-
-type clusterDeleteTestSuite struct {
-	suite.Suite
-	defaultClusterDeleteCommand clusterDeleteCommand
 }
 
 func (c *clusterDeleteTestSuite) createGRPCMockClustersService(clusters []*storage.Cluster) (*grpc.ClientConn, func()) {
@@ -65,15 +65,55 @@ func (c *clusterDeleteTestSuite) createGRPCMockClustersService(clusters []*stora
 	return conn, closeFunction
 }
 
-func (c *clusterDeleteTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
-	return mocks.NewEnvWithConn(conn, c.T())
-}
-
 func (c *clusterDeleteTestSuite) SetupTest() {
 	c.defaultClusterDeleteCommand = clusterDeleteCommand{
 		name:    "dummy",
 		timeout: 5 * time.Second,
 	}
+	os.Stderr = nil
+}
+
+func (c *clusterDeleteTestSuite) setupCommand(clusters []*storage.Cluster) (*cobra.Command, func(), *bytes.Buffer, *bytes.Buffer) {
+	conn, closeFunction := c.createGRPCMockClustersService(clusters)
+	mockedEnv, stdout, stderr := mocks.NewEnvWithConn(conn, c.T())
+	cbr := Command(mockedEnv)
+	cbr.PersistentFlags().DurationP("timeout", "t", 5*time.Second, "timeout for API requests")
+
+	return cbr, closeFunction, stdout, stderr
+}
+
+func (c *clusterDeleteTestSuite) TestCommandHappyPath() {
+	clusters := []*storage.Cluster{{Name: "dummy"}}
+	cbr, closeFunction, stdout, _ := c.setupCommand(clusters)
+	defer closeFunction()
+
+	cbr.SetArgs([]string{"--name", "dummy"})
+	err := cbr.Execute()
+
+	c.Require().NoError(err)
+	c.Assert().Contains(stdout.String(), `Successfully deleted cluster "dummy"`)
+}
+
+func (c *clusterDeleteTestSuite) TestCommandRequiresName() {
+	clusters := []*storage.Cluster{{Name: "dummy"}}
+	cbr, closeFunction, _, _ := c.setupCommand(clusters)
+	defer closeFunction()
+
+	err := cbr.Execute()
+
+	c.Require().Error(err)
+	c.Assert().ErrorIs(err, errNameIsRequired)
+}
+
+func (c *clusterDeleteTestSuite) TestCommandFailsIfClusterNotFound() {
+	clusters := []*storage.Cluster{}
+	cbr, closeFunction, _, _ := c.setupCommand(clusters)
+	defer closeFunction()
+
+	cbr.SetArgs([]string{"--name", "dummy"})
+	err := cbr.Execute()
+
+	c.Require().Error(err)
 }
 
 func (c *clusterDeleteTestSuite) TestConstructSetsTimeoutFlag() {
@@ -86,44 +126,4 @@ func (c *clusterDeleteTestSuite) TestConstructSetsTimeoutFlag() {
 
 	c.Assert().NoError(err)
 	c.Assert().Equal(clusterDeleteCmd.timeout, expectedTimeout, "Timeout does not match value of '--timeout' flag.")
-}
-
-func (c *clusterDeleteTestSuite) TestValidateRequiresName() {
-	clusterDeleteCmd := c.defaultClusterDeleteCommand
-	clusterDeleteCmd.name = ""
-
-	err := clusterDeleteCmd.Validate()
-
-	c.Require().Error(err)
-	c.Assert().ErrorIs(err, errNameIsRequired)
-}
-
-func (c *clusterDeleteTestSuite) TestDeleteHappyPath() {
-	clusters := []*storage.Cluster{{Name: "dummy"}}
-	conn, closeFunction := c.createGRPCMockClustersService(clusters)
-	defer closeFunction()
-	clusterDeleteCmd := c.defaultClusterDeleteCommand
-	mockedEnv, stdout, _ := c.createMockEnvironmentWithConn(conn)
-	clusterDeleteCmd.env = mockedEnv
-
-	err := clusterDeleteCmd.Validate()
-	c.Require().NoError(err)
-
-	err = clusterDeleteCmd.Delete()
-	c.Require().NoError(err)
-	c.Assert().Contains(stdout.String(), `Successfully deleted cluster "dummy"`)
-}
-
-func (c *clusterDeleteTestSuite) TestDeleteFailsIfClusterNotFound() {
-	clusters := []*storage.Cluster{}
-	conn, closeFunction := c.createGRPCMockClustersService(clusters)
-	defer closeFunction()
-	clusterDeleteCmd := c.defaultClusterDeleteCommand
-	clusterDeleteCmd.env, _, _ = c.createMockEnvironmentWithConn(conn)
-
-	err := clusterDeleteCmd.Validate()
-	c.Require().NoError(err)
-
-	err = clusterDeleteCmd.Delete()
-	c.Require().Error(err)
 }
