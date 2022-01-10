@@ -848,6 +848,14 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
+func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
+	cluster := &storage.Cluster{}
+	if err := addDefaults(cluster); err != nil {
+		return nil, err
+	}
+	return cluster, nil
+}
+
 func normalizeCluster(cluster *storage.Cluster) error {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")

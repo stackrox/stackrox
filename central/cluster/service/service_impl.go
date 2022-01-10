@@ -29,6 +29,7 @@ var (
 			"/v1.ClustersService/GetClusters",
 			"/v1.ClustersService/GetCluster",
 			"/v1.ClustersService/GetKernelSupportAvailable",
+			"/v1.ClustersService/GetClusterDefaults",
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
 			"/v1.ClustersService/PostCluster",
@@ -144,6 +145,17 @@ func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty
 	}
 	result := &v1.KernelSupportAvailableResponse{
 		KernelSupportAvailable: anyAvailable,
+	}
+	return result, nil
+}
+
+func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.ClusterResponse, error) {
+	cluster, err := s.datastore.GetClusterDefaults(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := &v1.ClusterResponse{
+		Cluster: cluster,
 	}
 	return result, nil
 }
