@@ -96,6 +96,8 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 
 	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
 
+	flagWrap.StringVar(&k8sConfig.ImageFlavor, "image-defaults", flavor.RoxctlFlavorID, "default container registry for container images")
+
 	return c
 }
 

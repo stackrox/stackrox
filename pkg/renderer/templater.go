@@ -49,6 +49,7 @@ type CommonConfig struct {
 	MainImage      string
 	ScannerImage   string
 	ScannerDBImage string
+	ImageFlavor    string
 }
 
 // PersistenceType describes the type of persistence

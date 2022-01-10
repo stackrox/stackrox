@@ -10,6 +10,16 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
+// All flavor names are used as valid values for the roxctl '--image-defaults' parameter
+const (
+  // FlavorDevelopment is the name of development flavor
+  FlavorDevelopment string = "development"
+  // FlavorStackRoxIO is the name of release flavor using the stackrox.io container registry
+  FlavorStackRoxIO string = "stackrox.io"
+  // FlavorRHACS is the name of release flavor using the redhat.io container registry
+  // FlavorRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
+)
+
 var (
 	log            = logging.LoggerForModule()
 	imageFlavorMap = map[string]func() ImageFlavor{
@@ -23,7 +33,6 @@ var (
 		}
 		return result
 	}()
-)
 
 // ChartRepo contains information about where the Helm charts are published.
 type ChartRepo struct {
@@ -37,6 +46,9 @@ type ImagePullSecrets struct {
 
 // ImageFlavor represents default settings for pulling images.
 type ImageFlavor struct {
+	// RoxctlFlavorID is a value that identifies this flavor for the --image-defaults parameter passed to roxctl
+	RoxctlFlavorID string
+
 	// MainRegistry is a registry for all images except of collector.
 	MainRegistry  string
 	MainImageName string
@@ -64,10 +76,10 @@ type ImageFlavor struct {
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
-		MainRegistry:  "docker.io/stackrox",
-		MainImageName: "main",
-		MainImageTag:  v.MainVersion,
-
+		RoxctlFlavorID:         FlavorDevelopment,
+		MainRegistry:           "docker.io/stackrox",
+		MainImageName:          "main",
+		MainImageTag:           v.MainVersion,
 		CollectorRegistry:      "docker.io/stackrox",
 		CollectorImageName:     "collector",
 		CollectorImageTag:      v.CollectorVersion + "-latest",
@@ -93,9 +105,10 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		MainRegistry:  "stackrox.io",
-		MainImageName: "main",
-		MainImageTag:  v.MainVersion,
+		RoxctlFlavorID: FlavorStackRoxIO,
+		MainRegistry:   "stackrox.io",
+		MainImageName:  "main",
+		MainImageTag:   v.MainVersion,
 
 		CollectorRegistry:      "collector.stackrox.io",
 		CollectorImageName:     "collector",
