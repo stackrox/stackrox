@@ -45,12 +45,7 @@ func InjectTrustedCAConfigMapExtension(k8s kubernetes.Interface) extensions.Reco
 
 func validate(configmap *corev1.ConfigMap) error {
 	labels := configmap.GetLabels()
-	if labels != nil {
-		if v, ok := labels[label]; !ok || v != "true" {
-			labels = nil
-		}
-	}
-	if labels == nil {
+	if labels[label] != "true" {
 		return errors.Errorf("configMap %s exists, but is not properly labeled", configmap.GetName())
 	}
 	return nil
