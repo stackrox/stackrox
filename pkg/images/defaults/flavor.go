@@ -2,6 +2,7 @@ package defaults
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -129,14 +130,15 @@ func GetImageFlavorByBuildType() ImageFlavor {
 // roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
 // provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
-	envValue := ImageFlavorFromEnv()
+	envValue := strings.ToLower(strings.TrimSpace(imageFlavorEnv()))
+
 	if buildinfo.ReleaseBuild && envValue == imageFlavorDevelopment {
 		// Release product build using development image repositories is likely a misconfiguration. We don't want to
 		// accidentally go out with development images into release.
 		log.Panicf("Cannot use %s flavor in build release", imageFlavorDevelopment)
 	}
 
-	if fn, ok := imageFlavorMap[ImageFlavorFromEnv()]; ok {
+	if fn, ok := imageFlavorMap[envValue]; ok {
 		return fn()
 	}
 
