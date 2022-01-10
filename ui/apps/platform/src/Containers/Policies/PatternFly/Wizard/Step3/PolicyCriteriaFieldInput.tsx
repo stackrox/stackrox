@@ -11,6 +11,7 @@ import {
 } from '@patternfly/react-core';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
+import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 
 type FieldProps = {
     descriptor: Descriptor;
@@ -18,7 +19,7 @@ type FieldProps = {
     name: string;
 };
 
-function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
+function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps): React.ReactElement {
     const [field, , helper] = useField(name);
     const [isSelectOpen, setIsSelectOpen] = React.useState(false);
     const { value } = field;
@@ -67,19 +68,16 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
         case 'radioGroup':
             return (
                 <ToggleGroup>
-                    {descriptor?.radioButtons?.map(({ text, value: radioValue }) => {
-                        return (
-                            <React.Fragment key={text}>
-                                <ToggleGroupItem
-                                    text={text}
-                                    buttonId={text}
-                                    isDisabled={readOnly}
-                                    isSelected={value.value === radioValue}
-                                    onChange={handleChangeSelectedValue(radioValue)}
-                                />
-                            </React.Fragment>
-                        );
-                    })}
+                    {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
+                        <ToggleGroupItem
+                            key={text}
+                            text={text}
+                            buttonId={text}
+                            isDisabled={readOnly}
+                            isSelected={value.value === radioValue}
+                            onChange={handleChangeSelectedValue(radioValue)}
+                        />
+                    ))}
                 </ToggleGroup>
             );
         case 'number':
@@ -108,9 +106,9 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
                         placeholderText={descriptor.placeholder}
                     >
                         {descriptor?.options?.map((option) => (
-                            <React.Fragment key={option.value}>
-                                <SelectOption value={option.value}>{option.label}</SelectOption>
-                            </React.Fragment>
+                            <SelectOption key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectOption>
                         ))}
                     </Select>
                 </FormGroup>
@@ -132,13 +130,25 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
                         placeholderText={descriptor.placeholder}
                         variant={SelectVariant.typeaheadMulti}
                     >
-                        {descriptor?.options?.map((option) => (
-                            <React.Fragment key={option.value}>
-                                <SelectOption value={option.value}>{option.label}</SelectOption>
-                            </React.Fragment>
+                        {descriptor.options?.map((option) => (
+                            <SelectOption key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectOption>
                         ))}
                     </Select>
                 </FormGroup>
+            );
+        case 'group':
+            return (
+                <>
+                    {descriptor.subComponents?.map((subComponent) => (
+                        <PolicyCriteriaFieldSubInput
+                            subComponent={subComponent}
+                            readOnly={readOnly}
+                            name={`${name}.${subComponent.subpath}`}
+                        />
+                    ))}
+                </>
             );
         default:
             throw new Error(`Unknown field type: ${descriptor.type}`);

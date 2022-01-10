@@ -315,8 +315,8 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             {
                 type: 'number',
                 placeholder: '0-10',
-                max: 10,
-                min: 0,
+                max: 10.0,
+                min: 0.0,
                 step: 0.1,
                 subpath: 'value',
             },
@@ -337,6 +337,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
             {
                 type: 'select',
+                placeholder: 'Select a severity',
                 options: Object.keys(severityRatings).map((key) => ({
                     label: severityRatings[key],
                     value: key,
