@@ -78,4 +78,10 @@ service ClustersService {
             get: "/v1/clusters-env/kernel-support-available"
         };
     }
+
+    rpc GetClusterDefaults(Empty) returns (ClusterResponse) {
+        option (google.api.http) = {
+            get: "/v1/clusters-env/cluster-defaults"
+        };
+    }
 }

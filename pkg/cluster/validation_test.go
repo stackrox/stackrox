@@ -14,7 +14,7 @@ var validCluster = &storage.Cluster{
 	Type:               storage.ClusterType_OPENSHIFT4_CLUSTER,
 }
 
-func TestValidation(t *testing.T) {
+func TestPartialValidation(t *testing.T) {
 	cases := map[string]struct {
 		configureClusterFn func(*storage.Cluster)
 		expectedErrors     []string
@@ -27,6 +27,11 @@ func TestValidation(t *testing.T) {
 				cluster.MainImage = "invalid image"
 			},
 			expectedErrors: []string{"invalid main image 'invalid image': invalid reference format"},
+		},
+		"Cluster with empty main image should not fail": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.MainImage = ""
+			},
 		},
 		"Cluster with configured collector image tag should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -44,6 +49,11 @@ func TestValidation(t *testing.T) {
 				cluster.CollectorImage = "invalid image"
 			},
 			expectedErrors: []string{"invalid collector image 'invalid image': invalid reference format"},
+		},
+		"Cluster with empty collector image should not fail": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.CollectorImage = ""
+			},
 		},
 		"Helm Managed cluster with configured collector image tag is allowed": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -88,6 +98,37 @@ func TestValidation(t *testing.T) {
 				cluster.DynamicConfig = &storage.DynamicClusterConfig{DisableAuditLogs: false}
 				cluster.Type = storage.ClusterType_OPENSHIFT4_CLUSTER
 			},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			cluster := validCluster.Clone()
+			c.configureClusterFn(cluster)
+
+			gotErrors := ValidatePartial(cluster)
+
+			if len(c.expectedErrors) == 0 {
+				assert.NoError(t, gotErrors.ToError(), "expected a valid cluster but received errors")
+			}
+
+			for _, expectedErr := range c.expectedErrors {
+				assert.Contains(t, gotErrors.String(), expectedErr)
+			}
+		})
+	}
+}
+
+func TestFullValidation(t *testing.T) {
+	cases := map[string]struct {
+		configureClusterFn func(*storage.Cluster)
+		expectedErrors     []string
+	}{
+		"Cluster with empty main image should fail": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.MainImage = ""
+			},
+			expectedErrors: []string{"invalid main image '': invalid reference format"},
 		},
 	}
 
