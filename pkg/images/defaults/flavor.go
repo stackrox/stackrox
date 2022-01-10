@@ -11,6 +11,10 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+	imageFlavorMap = map[string]func() ImageFlavor{
+		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
+		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
+	}
 )
 
 // ChartRepo contains information about where the Helm charts are published.
@@ -130,11 +134,6 @@ func GetImageFlavorFromEnv() ImageFlavor {
 		// Release product build using development image repositories is likely a misconfiguration. We don't want to
 		// accidentally go out with development images into release.
 		log.Panicf("Cannot use %s flavor in build release", imageFlavorDevelopment)
-	}
-
-	imageFlavorMap := map[string]func() ImageFlavor{
-		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
-		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
 	}
 
 	if fn, ok := imageFlavorMap[ImageFlavorFromEnv()]; ok {
