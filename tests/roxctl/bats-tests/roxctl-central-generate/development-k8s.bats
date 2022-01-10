@@ -31,7 +31,7 @@ teardown() {
     --main-image example.com/main:1.2.3 \
     --scanner-image example.com/scanner:1.2.3 \
     --scanner-db-image example.com/scanner-db:1.2.3 \
-    hostpath \
+    pvc \
     --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'example.com' 'main'
@@ -42,14 +42,14 @@ teardown() {
   run roxctl-development central generate --rhacs k8s pvc --output-dir "$out_dir"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
-  run roxctl-development central generate k8s --rhacs hostpath --output-dir "$out_dir"
+  run roxctl-development central generate k8s --rhacs pvc --output-dir "$out_dir"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
 }
 
 @test "roxctl-development roxctl central generate k8s --image-defaults=stackrox.io should use stackrox.io registry" {
   skip_unless_image_defaults roxctl-development k8s
-  run roxctl-development central generate k8s --image-defaults=stackrox.io hostpath --output-dir "$out_dir"
+  run roxctl-development central generate k8s --image-defaults=stackrox.io pvc --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'stackrox.io' 'main'
   assert_components_registry "$out_dir/scanner" 'stackrox.io' 'scanner' 'scanner-db'
@@ -57,7 +57,7 @@ teardown() {
 
 @test "roxctl-development roxctl central generate k8s --image-defaults=rhacs should use registry.redhat.io registry" {
   skip_unless_image_defaults roxctl-development k8s
-  run roxctl-development central generate k8s --image-defaults=stackrox.io hostpath --output-dir "$out_dir"
+  run roxctl-development central generate k8s --image-defaults=stackrox.io pvc --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'registry.redhat.io' 'main'
   assert_components_registry "$out_dir/scanner" 'registry.redhat.io' 'scanner' 'scanner-db'
@@ -65,7 +65,7 @@ teardown() {
 
 @test "roxctl-development roxctl central generate k8s --image-defaults=development should use docker.io registry" {
   skip_unless_image_defaults roxctl-development k8s
-  run roxctl-development central generate k8s --image-defaults=development hostpath --output-dir "$out_dir"
+  run roxctl-development central generate k8s --image-defaults=development pvc --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'docker.io' 'main'
   assert_components_registry "$out_dir/scanner" 'docker.io' 'scanner' 'scanner-db'
@@ -73,7 +73,7 @@ teardown() {
 
 @test "roxctl-development roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
   skip_unless_image_defaults roxctl-development k8s
-  run roxctl-development central generate k8s --image-defaults='' hostpath --output-dir "$out_dir"
+  run roxctl-development central generate k8s --image-defaults='' pvc --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" 'docker.io' 'main'
   assert_components_registry "$out_dir/scanner" 'docker.io' 'scanner' 'scanner-db'
