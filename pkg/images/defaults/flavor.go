@@ -135,7 +135,7 @@ func GetImageFlavorFromEnv() ImageFlavor {
 	if buildinfo.ReleaseBuild && envValue == imageFlavorDevelopment {
 		// Release product build using development image repositories is likely a misconfiguration. We don't want to
 		// accidentally go out with development images into release.
-		log.Panicf("Cannot use %s flavor in build release", imageFlavorDevelopment)
+		log.Panicf("Cannot use %s image flavor in release build", envValue)
 	}
 
 	if fn, ok := imageFlavorMap[envValue]; ok {
