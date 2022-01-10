@@ -1,44 +1,42 @@
 {
-  "userId": "user-id",
-  "authProvider": {
-    "id": "id",
-    "name": "My OIDC Provider",
-    "type": "oidc",
-    "validated": true,
-    "active": true
-  },
-  "userInfo": {
-    "username": "ai",
-    "permissions": {
-      "name": "Admin",
-      "resourceToAccess": {
-        "User": "READ_WRITE_ACCESS"
-      }
+    "userId": "user-id",
+    "authProvider": {
+        "id": "id",
+        "name": "My OIDC Provider",
+        "type": "oidc",
+        "validated": true,
+        "active": true
     },
-    "roles": [
-      {
-        "name": "Admin",
-        "resourceToAccess": {
-          "User": "READ_WRITE_ACCESS"
+    "userInfo": {
+        "username": "ai",
+        "permissions": {
+            "name": "Admin",
+            "resourceToAccess": {
+                "User": "READ_WRITE_ACCESS"
+            }
+        },
+        "roles": [
+            {
+                "name": "Admin",
+                "resourceToAccess": {
+                    "User": "READ_WRITE_ACCESS"
+                }
+            },
+            {
+                "name": "Analyst",
+                "resourceToAccess": {
+                    "User": "READ_ACCESS"
+                }
+            },
+            {
+                "name": "Continuous Integration",
+                "resourceToAccess": {}
+            }
+        ],
+        "role": {
+            "name": "Admin",
+            "resourceToAccess": {}
         }
-      },
-      {
-        "name": "Analyst",
-        "resourceToAccess": {
-          "User": "READ_ACCESS"
-        }
-      },
-      {
-        "name": "Continuous Integration",
-        "resourceToAccess": {}
-      }
-    ],
-    "role": {
-      "name": "Admin",
-      "resourceToAccess": {}
-    }
-  },
-  "userAttributes": [
-    { "key": "email", "values": ["ai@stackrox.com"] }
-  ]
+    },
+    "userAttributes": [{ "key": "email", "values": ["ai@stackrox.com"] }]
 }
