@@ -224,10 +224,7 @@ function ObservedCVEsTable({
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
                                 <Td dataLabel="CVSS score">
-                                    <CVSSScoreLabel
-                                        cvss={row.cvss}
-                                        scoreVersion={row.scoreVersion}
-                                    />
+                                    <CVSSScoreLabel cvss={row.cvss} />
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />

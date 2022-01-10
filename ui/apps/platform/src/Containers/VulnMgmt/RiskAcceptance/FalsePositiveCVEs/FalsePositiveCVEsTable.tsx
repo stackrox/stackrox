@@ -149,9 +149,9 @@ function FalsePositiveCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Severity</Th>
+                        <Th modifier="fitContent">Scope</Th>
                         <Th>Affected Components</Th>
                         <Th>Comments</Th>
-                        <Th>Apply to</Th>
                         <Th>Approver</Th>
                     </Tr>
                 </Thead>
@@ -175,6 +175,11 @@ function FalsePositiveCVEsTable({
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
+                                <Td dataLabel="Scope">
+                                    <VulnerabilityRequestScope
+                                        scope={row.vulnerabilityRequest.scope}
+                                    />
+                                </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
@@ -182,11 +187,6 @@ function FalsePositiveCVEsTable({
                                     <RequestCommentsButton
                                         comments={row.vulnerabilityRequest.comments}
                                         cve={row.vulnerabilityRequest.cves.ids[0]}
-                                    />
-                                </Td>
-                                <Td dataLabel="Apply to">
-                                    <VulnerabilityRequestScope
-                                        scope={row.vulnerabilityRequest.scope}
                                     />
                                 </Td>
                                 <Td dataLabel="Approver">
