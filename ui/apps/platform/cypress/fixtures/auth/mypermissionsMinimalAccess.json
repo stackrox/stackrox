@@ -44,6 +44,8 @@
         "SensorUpgradeConfig": "NO_ACCESS",
         "ServiceAccount": "NO_ACCESS",
         "ServiceIdentity": "NO_ACCESS",
-        "User": "NO_ACCESS"
+        "User": "NO_ACCESS",
+        "VulnerabilityManagementApprovals": "NO_ACCESS",
+        "VulnerabilityManagementRequests": "NO_ACCESS"
     }
 }
