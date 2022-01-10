@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
 	imageFlavorMap = map[string]func() ImageFlavor{
 		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
 		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
@@ -122,7 +122,7 @@ func GetImageFlavorByBuildType() ImageFlavor {
 }
 
 func getValidImageNames() []string {
-	return []string{ "development_development", "stackrox_io_release"}
+	return []string{"development_development", "stackrox_io_release"}
 }
 
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR). This should be used
