@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -19,7 +18,7 @@ const (
 
 // updater periodically updates a file by downloading the contents from the downloadURL.
 type updater struct {
-	filePath string
+	file *file.File
 
 	client      *http.Client
 	downloadURL string
@@ -29,9 +28,9 @@ type updater struct {
 }
 
 // newUpdater creates a new updater.
-func newUpdater(path string, client *http.Client, downloadURL string, interval time.Duration) *updater {
+func newUpdater(file *file.File, client *http.Client, downloadURL string, interval time.Duration) *updater {
 	return &updater{
-		filePath:    path,
+		file:        file,
 		client:      client,
 		downloadURL: downloadURL,
 		interval:    interval,
@@ -80,17 +79,11 @@ func (u *updater) doUpdate() error {
 		return errors.Wrap(err, "constructing request")
 	}
 
-	// TODO: does not work for first time...
-	// Get a file descriptor.
-	f, err := os.Open(u.filePath)
+	_, modTime, err := u.file.Read()
 	if err != nil {
-		return errors.Wrapf(err, "could not open %s", u.filePath)
+		return errors.Wrapf(err, "reading file %s", u.file.Path())
 	}
-	fi, err := f.Stat()
-	if err != nil {
-		return errors.Wrapf(err, "could not stat %s", u.filePath)
-	}
-	req.Header.Set(ifModifiedSinceHeader, fi.ModTime().Format(http.TimeFormat))
+	req.Header.Set(ifModifiedSinceHeader, modTime.Format(http.TimeFormat))
 
 	resp, err := u.client.Do(req)
 	if err != nil {
@@ -110,5 +103,5 @@ func (u *updater) doUpdate() error {
 		return errors.Errorf("unable to determine upstream definitions file's modified time: %v", err)
 	}
 
-	return file.Write(u.filePath, resp.Body, lastModified)
+	return u.file.Write(resp.Body, lastModified)
 }

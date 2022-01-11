@@ -60,12 +60,12 @@ type requestedUpdater struct {
 type httpHandler struct {
 	cveManager fetcher.OrchestratorIstioCVEManager
 
-	online          bool
-	interval        time.Duration
-	lock            sync.Mutex
-	updaters        map[string]*requestedUpdater
-	onlineVulnDir   string
-	offlineFilePath string
+	online        bool
+	interval      time.Duration
+	lock          sync.Mutex
+	updaters      map[string]*requestedUpdater
+	onlineVulnDir string
+	offlineFile   *file.File
 }
 
 // New creates a new http.Handler to handle vulnerability data.
@@ -93,7 +93,7 @@ func (h *httpHandler) initializeOfflineVulnDump(vulnDefsDir string) {
 		vulnDefsDir = filepath.Join(migrations.DBMountPath(), definitionsBaseDir)
 	}
 
-	h.offlineFilePath = filepath.Join(vulnDefsDir, offlineScannerDefsName)
+	h.offlineFile = file.New(filepath.Join(vulnDefsDir, offlineScannerDefsName))
 }
 
 func (h *httpHandler) initializeUpdaters(cleanupInterval, cleanupAge *time.Duration) {
@@ -120,7 +120,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	uuid := r.URL.Query().Get(`uuid`)
 	if !h.online || uuid == "" {
 		// Default to the offline dump.
-		serveFile(w, r, h.offlineFilePath)
+		serveFile(w, r, h.offlineFile.Path())
 		return
 	}
 
@@ -130,36 +130,23 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	// Serve the more recent of the requested file and the manually uploaded definitions.
 
-	// Grab the file descriptors to ensure rename (called in file.Write)
-	// does not cause the file to be deleted until we are done with it.
-	onlineF, err := os.Open(u.filePath)
+	onlineF, onlineModTime, err := u.file.Read()
 	if err != nil {
-		writeErrorForFile(w, err, u.filePath)
+		writeErrorForFile(w, err, u.file.Path())
 		return
 	}
-	offlineF, err := os.Open(h.offlineFilePath)
+	offlineF, offlineModTime, err := h.offlineFile.Read()
 	if err != nil {
-		writeErrorForFile(w, err, h.offlineFilePath)
-		return
-	}
-
-	onlineFI, err := onlineF.Stat()
-	if err != nil {
-		writeErrorForFile(w, err, u.filePath)
-		return
-	}
-	offlineFI, err := offlineF.Stat()
-	if err != nil {
-		writeErrorForFile(w, err, h.offlineFilePath)
+		writeErrorForFile(w, err, h.offlineFile.Path())
 		return
 	}
 
-	f, fi := onlineF, onlineFI
-	if offlineFI.ModTime().After(onlineFI.ModTime()) {
-		f, fi = offlineF, offlineFI
+	f, modTime := onlineF, onlineModTime
+	if offlineModTime.After(onlineModTime) {
+		f, modTime = offlineF, offlineModTime
 	}
 
-	serveContent(w, r, f.Name(), fi.ModTime(), f)
+	serveContent(w, r, f.Name(), modTime, f)
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {
@@ -195,7 +182,7 @@ func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
 
 		h.updaters[uuid] = &requestedUpdater{
 			updater: newUpdater(
-				filePath,
+				file.New(filePath),
 				client,
 				strings.Join([]string{scannerUpdateDomain, uuid, scannerUpdateURLSuffix}, "/"),
 				h.interval,
@@ -224,7 +211,7 @@ func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
 	defer utils.IgnoreError(r.Close)
 
 	// POST requests only update the offline feed.
-	if err := file.Write(h.offlineFilePath, r, zipF.Modified); err != nil {
+	if err := h.offlineFile.Write(r, zipF.Modified); err != nil {
 		return errors.Wrap(err, "writing scanner definitions")
 	}
 

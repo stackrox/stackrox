@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,29 +28,28 @@ func assertOnFileExistence(t *testing.T, path string, shouldExist bool) {
 }
 
 func TestUpdate(t *testing.T) {
-	lastUpdatedTime := time.Now().Add(time.Minute)
 	filePath := filepath.Join(t.TempDir(), "dump.zip")
-	mustCreate(t, filePath, lastUpdatedTime)
-	u := newUpdater(filePath, &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
+	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
+	// Should fetch first time.
+	require.NoError(t, u.doUpdate())
+	assertOnFileExistence(t, filePath, true)
+
+	lastUpdatedTime := time.Now().Add(time.Minute)
+	mustSetModTime(t, filePath, lastUpdatedTime)
 	// Should not fetch since it can't be updated in a time in the future.
 	require.NoError(t, u.doUpdate())
-	assert.Equal(t, lastUpdatedTime.UTC(), mustStat(t, filePath).ModTime().UTC())
+	assert.Equal(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
+	assertOnFileExistence(t, filePath, true)
 
 	// Should definitely fetch.
-	mustSetModifiedTime(t, filePath, nov23)
+	mustSetModTime(t, filePath, nov23)
 	require.NoError(t, u.doUpdate())
-	assert.True(t, mustStat(t, filePath).ModTime().After(nov23.UTC()))
+	assert.True(t, mustGetModTime(t, filePath).After(nov23.UTC()))
 	assertOnFileExistence(t, filePath, true)
 }
 
-func mustCreate(t *testing.T, path string, modTime time.Time) {
-	_, err := os.Create(path)
-	require.NoError(t, err)
-	mustSetModifiedTime(t, path, modTime)
-}
-
-func mustStat(t *testing.T, path string) os.FileInfo {
+func mustGetModTime(t *testing.T, path string) time.Time {
 	fi, err := os.Stat(path)
 	require.NoError(t, err)
-	return fi
+	return fi.ModTime().UTC()
 }
