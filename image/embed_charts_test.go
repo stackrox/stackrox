@@ -87,7 +87,6 @@ func (s *embedTestSuite) TestLoadChartForFlavor() {
 
 func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
-	//delete(metaVals, "FeatureFlags")
 	metaVals.FeatureFlags = nil
 
 	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
