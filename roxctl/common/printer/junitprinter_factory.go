@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/printers"
 )
 
 // JUnitPrinterFactory holds all configuration options for a JUnit printer.
@@ -103,7 +104,7 @@ func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 
 	switch strings.ToLower(format) {
 	case "junit":
-		return newJUnitPrinter(j.suiteName, j.jsonPathExpressions), nil
+		return printers.NewJUnitPrinter(j.suiteName, j.jsonPathExpressions), nil
 	default:
 		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
 			"JUnit Printer: %q", format))
@@ -119,7 +120,7 @@ func (j *JUnitPrinterFactory) validate() error {
 			"please provide a meaningful name")
 	}
 
-	for _, key := range []string{JUnitTestCasesExpressionKey, JUnitFailedTestCasesExpressionKey, JUnitFailedTestCaseErrMsgExpressionKey} {
+	for _, key := range []string{printers.JUnitTestCasesExpressionKey, printers.JUnitFailedTestCasesExpressionKey, printers.JUnitFailedTestCaseErrMsgExpressionKey} {
 		if _, exists := j.jsonPathExpressions[key]; !exists {
 			// since the jsonPathExpression map is NOT expected to be set by the user, return an ErrInvariantViolation
 			// instead

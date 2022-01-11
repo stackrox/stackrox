@@ -27,9 +27,6 @@ var (
 	// ActiveVulnManagement enables detection of active vulnerabilities
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", true)
 
-	// AlternateProbeDownload enables alternate probe download solution for collector
-	AlternateProbeDownload = registerFeature("Enable alternate probe download solution for collector", "ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", false)
-
 	// VulnRiskManagement enables the vulnerability risk management workflow that allows accepting risk for vulnerabilities.
 	VulnRiskManagement = registerFeature("Enable Vulnerability Risk Management workflow", "ROX_VULN_RISK_MANAGEMENT", false)
 

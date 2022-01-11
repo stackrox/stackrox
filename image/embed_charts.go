@@ -15,7 +15,6 @@ import (
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
-	rendererUtils "github.com/stackrox/rox/pkg/renderer/utils"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chart"
@@ -92,18 +91,13 @@ func (i *Image) LoadFileContents(filename string) (string, error) {
 }
 
 // ReadFileAndTemplate reads and renders the template for the file
-func (i *Image) ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (*template.Template, error) {
+func (i *Image) ReadFileAndTemplate(pathToFile string) (*template.Template, error) {
 	templatePath := path.Join(templatePath, pathToFile)
 	contents, err := i.LoadFileContents(templatePath)
 	if err != nil {
 		return nil, err
 	}
-
-	tpl := template.New(templatePath)
-	if funcs != nil {
-		tpl = tpl.Funcs(funcs)
-	}
-	return tpl.Parse(contents)
+	return helmTemplate.InitTemplate(templatePath).Parse(contents)
 }
 
 func (i *Image) getChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.ChartTemplate, error) {
@@ -312,7 +306,7 @@ func (i *Image) scripts(values charts.MetaValues, filenameMap map[string]string)
 		if err != nil {
 			return nil, err
 		}
-		t, err := template.New("temp").Funcs(rendererUtils.BuiltinFuncs).Parse(string(fileData))
+		t, err := helmTemplate.InitTemplate(srcFile).Parse(string(fileData))
 		if err != nil {
 			return nil, err
 		}

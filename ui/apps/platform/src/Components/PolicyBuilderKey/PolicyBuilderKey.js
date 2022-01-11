@@ -5,6 +5,7 @@ import { useDrag } from 'react-dnd';
 function PolicyBuilderKey({ fieldKey }) {
     const { name, shortName } = fieldKey;
     const [, drag] = useDrag({
+        type: name,
         item: { id: name, type: name, fieldKey },
     });
     return (

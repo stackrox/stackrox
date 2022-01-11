@@ -1,11 +1,11 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, ButtonVariant, Label } from '@patternfly/react-core';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
-import { fixabilityLabels, vulnerabilitySeverityLabels } from 'constants/reportConstants';
+import FixabilityLabelsList from 'Components/PatternFly/FixabilityLabelsList';
+import SeverityLabelsList from 'Components/PatternFly/SeverityLabelsList';
 import { vulnManagementReportsPath } from 'routePaths';
-import { getMappedFixability } from './VulnMgmtReport.utils';
 
 const VulnMgmtReportTableColumnDescriptor = [
     {
@@ -35,28 +35,13 @@ const VulnMgmtReportTableColumnDescriptor = [
     {
         Header: 'CVE fixability type',
         accessor: 'vulnReportFilters.fixability',
-        Cell: ({ value }): ReactElement => {
-            const mappedFixabilityValues = getMappedFixability(value);
-
-            const fixabilityStrings = mappedFixabilityValues.map(
-                (fixValue) => fixabilityLabels[fixValue]
-            );
-
-            return <span>{fixabilityStrings.join(', ') || 'Issue: Fixabiltiy unset'}</span>;
-        },
+        Cell: ({ value }): ReactElement => <FixabilityLabelsList fixability={value} />,
     },
     {
         Header: 'CVE severities',
         accessor: 'vulnReportFilters.severities',
         sortField: 'CVE severities',
-        Cell: ({ value }): ReactElement => {
-            const severityLabels = value.map((fixValue) => (
-                <Label className="pf-u-mr-sm" color="red" isCompact>
-                    {vulnerabilitySeverityLabels[fixValue]}
-                </Label>
-            ));
-            return <>{severityLabels}</>;
-        },
+        Cell: ({ value }): ReactElement => <SeverityLabelsList severities={value} />,
     },
     {
         Header: 'Last run',

@@ -9,9 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-//go:generate mockgen-wrapper GlobalDataStore
-
 // GlobalDataStore is the global datastore for all nodes across all clusters.
+//go:generate mockgen-wrapper
 type GlobalDataStore interface {
 	GetAllClusterNodeStores(ctx context.Context, writeAccess bool) (map[string]datastore.DataStore, error)
 	GetClusterNodeStore(ctx context.Context, clusterID string, writeAccess bool) (datastore.DataStore, error)

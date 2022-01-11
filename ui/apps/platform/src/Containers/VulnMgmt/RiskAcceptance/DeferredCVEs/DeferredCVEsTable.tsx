@@ -6,6 +6,7 @@ import {
     Divider,
     DropdownItem,
     InputGroup,
+    Pagination,
     TextInput,
     Toolbar,
     ToolbarContent,
@@ -13,33 +14,37 @@ import {
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
 import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import { RequestComment } from 'types/vuln_request.proto';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import CancelDeferralModal from './CancelDeferralModal';
-import VulnerabilityCommentsButton from '../RequestComments/RequestCommentsButton';
-import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
-
-export type DeferredCVERow = {
-    id: string;
-    cve: string;
-    severity: VulnerabilitySeverity;
-    components: EmbeddedImageScanComponent[];
-    comments: RequestComment[];
-    expiresAt: string;
-    applyTo: string;
-    approver: string;
-};
+import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
+import { DeferredCVEsToBeAssessed } from './types';
+import DeferredCVEActionsColumn from './DeferredCVEActionsColumn';
+import useRiskAcceptance from '../useRiskAcceptance';
+import UndoVulnRequestModal from '../UndoVulnRequestModal';
+import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
+import DeferralExpirationDate from '../DeferralExpirationDate';
+import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 
 export type DeferredCVEsTableProps = {
-    rows: DeferredCVERow[];
-};
+    rows: VulnerabilityWithRequest[];
+    isLoading: boolean;
+    itemCount: number;
+    updateTable: () => void;
+} & UsePaginationResult;
 
-function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
+function DeferredCVEsTable({
+    rows,
+    itemCount,
+    page,
+    perPage,
+    onSetPage,
+    onPerPageSelect,
+    updateTable,
+}: DeferredCVEsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -48,42 +53,39 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<DeferredCVERow>(rows);
-    const [cveDeferralsToBeCancelled, setCVEDeferralsToBeCancelled] = useState<string[]>([]);
+    } = useTableSelection<VulnerabilityWithRequest>(rows);
+    const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<DeferredCVEsToBeAssessed>(null);
+    const { undoVulnRequests } = useRiskAcceptance({
+        requestIDs: vulnsToBeAssessed?.requestIDs || [],
+    });
+    const { currentUserName, hasReadWriteAccess } = usePermissions();
 
-    function setSelectedCVEDeferralsToBeCancelled() {
-        const selectedIds = getSelectedIds();
-        setCVEDeferralsToBeCancelled(selectedIds);
+    function cancelAssessment() {
+        setVulnsToBeAssessed(null);
     }
 
-    function cancelCancellation() {
-        setCVEDeferralsToBeCancelled([]);
-    }
-
-    function completeCancelDeferral() {
+    async function completeAssessment() {
         onClearAll();
-        setCVEDeferralsToBeCancelled([]);
+        setVulnsToBeAssessed(null);
+        updateTable();
     }
 
-    // @TODO: Convert the form values to the proper values used in the API for cancelling a request
-    function requestCancelDeferral(values) {
-        // @TODO: call parent function that will send out an API call to cancel request
-        const promise = new Promise<FormResponseMessage>((resolve, reject) => {
-            setTimeout(() => {
-                if (values?.comment === 'blah') {
-                    const formMessage = {
-                        message: 'Successfully cancelled request',
-                        isError: false,
-                    };
-                    resolve(formMessage);
-                } else {
-                    const formMessage = { message: 'API is not hooked up yet', isError: true };
-                    reject(formMessage);
-                }
-            }, 2000);
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
+    const selectedIds = getSelectedIds();
+    const selectedDeferralsToReobserve = rows
+        .filter((row) => {
+            return (
+                selectedIds.includes(row.id) &&
+                (canApproveRequests ||
+                    (canCreateRequests &&
+                        row.vulnerabilityRequest.requestor.name === currentUserName))
+            );
+        })
+        .map((row) => {
+            return row.vulnerabilityRequest.id;
         });
-        return promise;
-    }
 
     return (
         <>
@@ -110,13 +112,29 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
-                                key="upgrade"
+                                key="undo deferrals"
                                 component="button"
-                                onClick={setSelectedCVEDeferralsToBeCancelled}
+                                onClick={() =>
+                                    setVulnsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        action: 'UNDO',
+                                        requestIDs: selectedDeferralsToReobserve,
+                                    })
+                                }
+                                isDisabled={selectedDeferralsToReobserve.length === 0}
                             >
-                                Cancel deferral ({numSelected})
+                                Reobserve CVEs ({selectedDeferralsToReobserve.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={itemCount}
+                            page={page}
+                            onSetPage={onSetPage}
+                            perPage={perPage}
+                            onPerPageSelect={onPerPageSelect}
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
@@ -134,22 +152,17 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                         <Th>Severity</Th>
                         <Th>Affected Components</Th>
                         <Th>Comments</Th>
-                        <Th>Expiration</Th>
+                        <Th>Expires</Th>
                         <Th>Apply to</Th>
                         <Th>Approver</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
-                        const actions = [
-                            {
-                                title: 'Cancel deferral',
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    setCVEDeferralsToBeCancelled([row.id]);
-                                },
-                            },
-                        ];
+                        const canReobserveCVE =
+                            canApproveRequests ||
+                            (canCreateRequests &&
+                                row.vulnerabilityRequest?.requestor.name === currentUserName);
 
                         return (
                             <Tr key={row.cve}>
@@ -168,30 +181,47 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
                                 <Td dataLabel="Comments">
-                                    <VulnerabilityCommentsButton
-                                        cve={row.cve}
-                                        comments={row.comments}
+                                    <RequestCommentsButton
+                                        comments={row.vulnerabilityRequest.comments}
+                                        cve={row.vulnerabilityRequest.cves.ids[0]}
                                     />
                                 </Td>
-                                <Td dataLabel="Expiration">{row.expiresAt}</Td>
-                                <Td dataLabel="Apply to">{row.applyTo}</Td>
-                                <Td dataLabel="Approver">{row.approver}</Td>
-                                <Td
-                                    className="pf-u-text-align-right"
-                                    actions={{
-                                        items: actions,
-                                    }}
-                                />
+                                <Td dataLabel="Expires">
+                                    <DeferralExpirationDate
+                                        targetState={row.vulnerabilityRequest.targetState}
+                                        requestStatus={row.vulnerabilityRequest.status}
+                                        deferralReq={row.vulnerabilityRequest.deferralReq.expiry}
+                                    />
+                                </Td>
+                                <Td dataLabel="Apply to">
+                                    <VulnerabilityRequestScope
+                                        scope={row.vulnerabilityRequest.scope}
+                                    />
+                                </Td>
+                                <Td dataLabel="Approver">
+                                    {row.vulnerabilityRequest.approvers
+                                        .map((user) => user.name)
+                                        .join(',')}
+                                </Td>
+                                <Td className="pf-u-text-align-right">
+                                    <DeferredCVEActionsColumn
+                                        row={row}
+                                        setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                        canReobserveCVE={canReobserveCVE}
+                                    />
+                                </Td>
                             </Tr>
                         );
                     })}
                 </Tbody>
             </TableComposable>
-            <CancelDeferralModal
-                isOpen={cveDeferralsToBeCancelled.length !== 0}
-                onSendRequest={requestCancelDeferral}
-                onCompleteRequest={completeCancelDeferral}
-                onCancel={cancelCancellation}
+            <UndoVulnRequestModal
+                type="DEFERRAL"
+                isOpen={vulnsToBeAssessed?.action === 'UNDO'}
+                numRequestsToBeAssessed={vulnsToBeAssessed?.requestIDs.length || 0}
+                onSendRequest={undoVulnRequests}
+                onCompleteRequest={completeAssessment}
+                onCancel={cancelAssessment}
             />
         </>
     );

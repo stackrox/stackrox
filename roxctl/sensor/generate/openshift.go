@@ -58,7 +58,7 @@ func openshift() *cobra.Command {
 			}
 			cluster.DynamicConfig.DisableAuditLogs = *disableAuditLogCollection
 
-			if err := clusterValidation.Validate(&cluster).ToError(); err != nil {
+			if err := clusterValidation.ValidatePartial(&cluster).ToError(); err != nil {
 				return err
 			}
 			return fullClusterCreation(flags.Timeout(c))

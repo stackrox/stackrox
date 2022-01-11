@@ -1,7 +1,6 @@
 import { useMutation } from '@apollo/client';
 
 import {
-    VulnerabilityRequest,
     ApproveVulnerabilityRequest,
     DeleteVulnerabilityRequest,
     DenyVulnerabilityRequest,
@@ -16,10 +15,10 @@ import {
 import { getExpiresOnValue, getExpiresWhenFixedValue } from './utils/vulnRequestFormUtils';
 
 export type UseRiskAcceptance = {
-    requests: VulnerabilityRequest[];
+    requestIDs: string[];
 };
 
-function useRiskAcceptance({ requests }: UseRiskAcceptance) {
+function useRiskAcceptance({ requestIDs }: UseRiskAcceptance) {
     const [approveVulnerabilityRequest] = useMutation(APPROVE_VULNERABILITY_REQUEST);
     const [denyVulnerabilityRequest] = useMutation(DENY_VULNERABILITY_REQUEST);
     const [deleteVulnerabilityRequest] = useMutation(DELETE_VULNERABILITY_REQUEST);
@@ -27,9 +26,9 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
     const [updateVulnerabilityRequest] = useMutation(UPDATE_VULNERABILITY_REQUEST);
 
     function approveVulnRequests(values) {
-        const promises = requests.map((request) => {
+        const promises = requestIDs.map((requestID) => {
             const variables: ApproveVulnerabilityRequest = {
-                requestID: request.id,
+                requestID,
                 comment: values.comment,
             };
             return approveVulnerabilityRequest({ variables });
@@ -48,9 +47,9 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
     }
 
     function denyVulnRequests(values) {
-        const promises = requests.map((request) => {
+        const promises = requestIDs.map((requestID) => {
             const variables: DenyVulnerabilityRequest = {
-                requestID: request.id,
+                requestID,
                 comment: values.comment,
             };
             return denyVulnerabilityRequest({ variables });
@@ -69,9 +68,9 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
     }
 
     function deleteVulnRequests() {
-        const promises = requests.map((request) => {
+        const promises = requestIDs.map((requestID) => {
             const variables: DeleteVulnerabilityRequest = {
-                requestID: request.id,
+                requestID,
             };
             return deleteVulnerabilityRequest({ variables });
         });
@@ -100,9 +99,9 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
             expiry = { ...expiry, expiresOn };
         }
 
-        const promises = requests.map((request) => {
+        const promises = requestIDs.map((requestID) => {
             const variables: UpdateVulnerabilityRequest = {
-                requestID: request.id,
+                requestID,
                 comment,
                 expiry,
             };
@@ -122,9 +121,9 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
     }
 
     function undoVulnRequests() {
-        const promises = requests.map((request) => {
+        const promises = requestIDs.map((requestID) => {
             const variables: UndoVulnerabilityRequest = {
-                requestID: request.id,
+                requestID,
             };
             return undoVulnerabilityRequest({ variables });
         });

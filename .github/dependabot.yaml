@@ -49,7 +49,7 @@ updates:
       - "stackrox/backend-dep-updaters"
 
   - package-ecosystem: 'gomod'
-    directory: '/tools/lint/'
+    directory: '/tools/linters/'
     schedule:
       interval: 'weekly'
       day: 'wednesday'
@@ -68,15 +68,6 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: 'operator/'
-    schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-    open-pull-requests-limit: 1
-    reviewers:
-    - "stackrox/backend-dep-updaters"
-
-  - package-ecosystem: 'docker'
-    directory: 'ci/splunk/'
     schedule:
       interval: 'weekly'
       day: 'wednesday'

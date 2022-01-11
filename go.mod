@@ -4,7 +4,7 @@ go 1.16
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20211214023301-55ee93adca37
+require github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d
 
 require (
 	cloud.google.com/go v0.94.1
@@ -115,7 +115,7 @@ require (
 	golang.org/x/sys v0.0.0-20210908233432-aa78b53d3365
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 	golang.org/x/tools v0.1.5
-	golang.stackrox.io/grpc-http1 v0.2.3
+	golang.stackrox.io/grpc-http1 v0.2.4
 	google.golang.org/api v0.57.0
 	google.golang.org/genproto v0.0.0-20210903162649-d08c68adba83
 	google.golang.org/grpc v1.40.0

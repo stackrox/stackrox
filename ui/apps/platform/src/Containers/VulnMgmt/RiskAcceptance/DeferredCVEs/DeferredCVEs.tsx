@@ -1,135 +1,55 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
-import React from 'react';
-import DeferredCVEsTable, { DeferredCVERow } from './DeferredCVEsTable';
+import React, { ReactElement } from 'react';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
-const rows = [
-    {
-        id: 'CVE-2014-232',
-        cve: 'CVE-2014-232',
-        severity: 'MODERATE_VULNERABILITY_SEVERITY',
-        components: [
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'glibc 2.24-11+deb9u4',
-                fixedIn: 'struts-232',
-            },
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'perl 5.24.1-3+deb9u5',
-                fixedIn: 'struts-232',
-            },
-        ],
-        comments: [
-            {
-                id: '1',
-                user: {
-                    id: '1',
-                    name: 'Trevor',
-                },
-                message: "Update fix isn't ready",
-                createdAt: '12/21/2020 | 4:24 AM',
-            },
-            {
-                id: '2',
-                user: {
-                    id: '2',
-                    name: 'Jacob',
-                },
-                message: 'Get it done!',
-                createdAt: '12/21/2020 | 4:50 AM',
-            },
-        ],
-        expiresAt: 'in 2 weeks',
-        applyTo: 'All image tags',
-        approver: 'Jacob',
-    },
-    {
-        id: 'CVE-2015-532',
-        cve: 'CVE-2015-532',
-        severity: 'MODERATE_VULNERABILITY_SEVERITY',
-        components: [
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'glibc 2.24-11+deb9u4',
-                fixedIn: 'struts-232',
-            },
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'perl 5.24.1-3+deb9u5',
-                fixedIn: 'struts-232',
-            },
-        ],
-        comments: [
-            {
-                id: '1',
-                user: {
-                    id: '1',
-                    name: 'Trevor',
-                },
-                message: "Update fix isn't ready",
-                createdAt: '12/21/2020 | 4:24 AM',
-            },
-            {
-                id: '2',
-                user: {
-                    id: '2',
-                    name: 'Jacob',
-                },
-                message: 'Get it done!',
-                createdAt: '12/21/2020 | 4:50 AM',
-            },
-        ],
-        expiresAt: 'in 2 weeks',
-        applyTo: 'All image tags',
-        approver: 'Jacob',
-    },
-    {
-        id: 'CVE-2016-322',
-        cve: 'CVE-2065-322',
-        severity: 'MODERATE_VULNERABILITY_SEVERITY',
-        components: [
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'glibc 2.24-11+deb9u4',
-                fixedIn: 'struts-232',
-            },
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'perl 5.24.1-3+deb9u5',
-                fixedIn: 'struts-232',
-            },
-        ],
-        comments: [
-            {
-                id: '1',
-                user: {
-                    id: '1',
-                    name: 'Trevor',
-                },
-                message: "Update fix isn't ready",
-                createdAt: '12/21/2020 | 4:24 AM',
-            },
-            {
-                id: '2',
-                user: {
-                    id: '2',
-                    name: 'Jacob',
-                },
-                message: 'Get it done!',
-                createdAt: '12/21/2020 | 4:50 AM',
-            },
-        ],
-        expiresAt: 'in 2 weeks',
-        applyTo: 'All image tags',
-        approver: 'Jacob',
-    },
-] as DeferredCVERow[];
+import usePagination from 'hooks/patternfly/usePagination';
+import DeferredCVEsTable from './DeferredCVEsTable';
+import useImageVulnerabilities from '../useImageVulnerabilities';
+import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 
-function DeferredCVEs() {
-    // @TODO: hook to GET Deferred CVEs data goes here
+type DeferredCVEsProps = {
+    imageId: string;
+};
 
-    return <DeferredCVEsTable rows={rows} />;
+function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
+    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { isLoading, data, refetchQuery } = useImageVulnerabilities({
+        imageId,
+        vulnsQuery: 'Vulnerability State:DEFERRED',
+        pagination: {
+            limit: perPage,
+            offset: (page - 1) * perPage,
+            sortOption: {
+                field: 'cve',
+                reversed: false,
+            },
+        },
+    });
+
+    if (isLoading) {
+        return (
+            <Bullseye>
+                <Spinner isSVG size="sm" />
+            </Bullseye>
+        );
+    }
+
+    const itemCount = data?.image?.vulnCount || 0;
+    const rows = (data?.image?.vulns || []) as VulnerabilityWithRequest[];
+
+    return (
+        <DeferredCVEsTable
+            rows={rows}
+            isLoading={isLoading}
+            itemCount={itemCount}
+            page={page}
+            perPage={perPage}
+            onSetPage={onSetPage}
+            onPerPageSelect={onPerPageSelect}
+            updateTable={refetchQuery}
+        />
+    );
 }
 
 export default DeferredCVEs;

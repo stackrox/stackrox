@@ -55,8 +55,11 @@ const (
 
 	certLifetime = 365 * 24 * time.Hour
 
-	ephemeralProfile                = "ephemeral"
-	ephemeralInitBundleCertLifetime = 3 * time.Hour
+	ephemeralProfileWithExpirationInHours             = "ephemeralWithExpirationInHours"
+	ephemeralProfileWithExpirationInHoursCertLifetime = 3 * time.Hour
+
+	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
+	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
 )
 
 var (
@@ -177,6 +180,21 @@ func CACert() (*x509.Certificate, []byte, error) {
 	return caCert, caCertDER, caCertErr
 }
 
+// CAForSigning reads the cert and key from the local file system and returns
+// a corresponding CA instance that can be used for signing.
+func CAForSigning() (CA, error) {
+	_, certPEM, _, err := readCA()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read CA cert file")
+	}
+	keyPEM, err := readCAKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read CA key file")
+	}
+
+	return LoadCAForSigning(certPEM, keyPEM)
+}
+
 func signer() (cfsigner.Signer, error) {
 	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
 }
@@ -185,7 +203,8 @@ func createSigningPolicy() *config.Signing {
 	return &config.Signing{
 		Default: createSigningProfile(certLifetime, beforeGracePeriod),
 		Profiles: map[string]*config.SigningProfile{
-			ephemeralProfile: createSigningProfile(ephemeralInitBundleCertLifetime, 0),
+			ephemeralProfileWithExpirationInHours: createSigningProfile(ephemeralProfileWithExpirationInHoursCertLifetime, 0),
+			ephemeralProfileWithExpirationInDays:  createSigningProfile(ephemeralProfileWithExpirationInDaysCertLifetime, 0),
 		},
 	}
 }

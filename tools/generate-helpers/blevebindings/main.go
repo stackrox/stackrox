@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 	"unicode"
@@ -102,6 +103,22 @@ func generateIndexInterfaceFile(interfaceMethods []Code) error {
 	return f.Save("indexer.go")
 }
 
+func generateMocks(props operations.GeneratorProperties) error {
+	if !props.GenerateMockIndexer {
+		return nil
+	}
+	if props.MockgenWrapperExecutablePath == "" {
+		return errors.New("mockgen-wrapper path not specified")
+	}
+	cmd := exec.Command(props.MockgenWrapperExecutablePath)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "GOFILE=indexer.go")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("couldn't exec mockgen-wrapper: %w", err)
+	}
+	return nil
+}
+
 func generate(props operations.GeneratorProperties) error {
 	interfaceMethods, implementations := operations.GenerateInterfaceAndImplementation(props)
 
@@ -115,6 +132,9 @@ func generate(props operations.GeneratorProperties) error {
 		return err
 	}
 
+	if err := generateMocks(props); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -159,6 +179,9 @@ func main() {
 	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.ObjectPathName, "object-path-name", "", "overwrite the object path underneath Central")
 	c.Flags().StringVar(&props.Tag, "tag", "", "use the specified json tag")
+
+	c.Flags().BoolVar(&props.GenerateMockIndexer, "generate-mock-indexer", false, "whether to generate a mock for the indexer")
+	c.Flags().StringVar(&props.MockgenWrapperExecutablePath, "mockgen-executable-path", "", "path to mockgen-wrapper executable")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.Plural == "" {

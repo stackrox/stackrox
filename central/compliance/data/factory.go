@@ -74,4 +74,4 @@ func (f *factory) CreateDataRepository(ctx context.Context, domain framework.Com
 	return newRepository(ctx, domain, scrapeResults, f)
 }
 
-//go:generate mockgen-wrapper RepositoryFactory
+//go:generate mockgen-wrapper

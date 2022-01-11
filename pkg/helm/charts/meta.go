@@ -63,8 +63,8 @@ func RHACSMetaValues() MetaValues {
 		"Operator": false,
 	}
 
+	// TODO(RS-380): move or remove this block - this override is done only for the operator
 	if !buildinfo.ReleaseBuild {
-		// TODO(ROX-7740): Temporarily use images from quay until our private registries are up again
 		metaValues["MainRegistry"] = mainRegistryOverride.Setting()
 		metaValues["CollectorRegistry"] = collectorRegistryOverride.Setting()
 		metaValues["FeatureFlags"] = getFeatureFlags()

@@ -193,7 +193,7 @@ message ImageComponentEdge {
 message ImageCVEEdge {
     // base 64 encoded Image:CVE ids.
     string                    id                     = 1;
-    google.protobuf.Timestamp first_image_occurrence = 2;
+    google.protobuf.Timestamp first_image_occurrence = 2 [(gogoproto.moretags) = "search:\"First Image Occurrence Timestamp,hidden\""];
     VulnerabilityState        state                  = 3 [(gogoproto.moretags) = "search:\"Vulnerability State\""];
 }
 

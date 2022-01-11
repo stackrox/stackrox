@@ -1936,8 +1936,8 @@ github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5 h1:0
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5/go.mod h1:GEtZ9DYAzmOtyqQPCJCEIzXJ7NcrHbMy6ZPJbcyfmLM=
 github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56 h1:D2wYiy+hcKy8qZAg9SxSWfZgbvmEgD9AdV0g0lJqGZ0=
 github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56/go.mod h1:AIeN7k60Q/kcW9aeiMpA0PY8CU3zsrLV0UhIksolMn4=
-github.com/stackrox/scanner v0.0.0-20211214023301-55ee93adca37 h1:XRSG0THUUfZojIpwEkscfc7AaU76l1CFBibzX+4Obms=
-github.com/stackrox/scanner v0.0.0-20211214023301-55ee93adca37/go.mod h1:DxQRXuuHfgvLOCBkhwX67Q6qO/6MkKizEBXdnhKudkQ=
+github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d h1:AugbkBwG2hVTam/UG0k+/GcjNMLMDd8/au9ke2NnOtY=
+github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d/go.mod h1:DxQRXuuHfgvLOCBkhwX67Q6qO/6MkKizEBXdnhKudkQ=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
@@ -2695,8 +2695,8 @@ golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
-golang.stackrox.io/grpc-http1 v0.2.3 h1:JA8LahLPUv2HIo+9V30UsDhSF8i/+Kcp0X+MdcVAi6w=
-golang.stackrox.io/grpc-http1 v0.2.3/go.mod h1:lIwQSucTm7oGZpp1jUkVRqpTdPMAGfPN8GUo1yfHPbw=
+golang.stackrox.io/grpc-http1 v0.2.4 h1:jHaWKZZezwljBRKP7JC9iDdSuAjpmJt9rzKLAInRpxg=
+golang.stackrox.io/grpc-http1 v0.2.4/go.mod h1:lIwQSucTm7oGZpp1jUkVRqpTdPMAGfPN8GUo1yfHPbw=
 gomodules.xyz/jsonpatch/v2 v2.0.1/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
 gomodules.xyz/jsonpatch/v2 v2.1.0/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
 gomodules.xyz/jsonpatch/v2 v2.2.0 h1:4pT439QV83L+G9FkcCriY6EkpcK6r6bK+A5FBUMI7qY=

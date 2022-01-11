@@ -261,9 +261,6 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		SuppressActivation:    protoCVE.GetSuppressActivation(),
 		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
 	}
-	if embeddedCVE.GetSuppressed() {
-		embeddedCVE.State = storage.VulnerabilityState_DEFERRED
-	}
 	if protoCVE.CvssV3 != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
 	} else {

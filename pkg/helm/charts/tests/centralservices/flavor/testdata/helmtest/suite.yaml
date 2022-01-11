@@ -1,0 +1,35 @@
+defs: |
+  def container(obj; name):
+    obj.spec.template.spec.containers[] | select(.name == name);
+
+  def assertCentral(name):
+    container(.deployments.central; "central") | assertThat(.image == name);
+
+  def assertScanner(name):
+    container(.deployments.scanner; "scanner") | assertThat(.image == name);
+
+  def assertScannerDB(name):
+    container(.deployments["scanner-db"]; "db") | assertThat(.image == name);
+
+server:
+  visibleSchemas:
+  - kubernetes-1.20.2
+values:
+  imagePullSecrets:
+    allowNone: true
+  ca:
+    cert: "CA cert"
+    key: "CA key"
+  central:
+    adminPassword:
+      value: adminpw
+    serviceTLS:
+      cert: "Central cert"
+      key: "Central key"
+  scanner:
+    serviceTLS:
+      cert: "Scanner cert"
+      key: "Scanner key"
+    dbServiceTLS:
+      cert: "ScannerDB cert"
+      key: "ScannerDB key"

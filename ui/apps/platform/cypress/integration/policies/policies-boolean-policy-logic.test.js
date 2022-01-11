@@ -80,10 +80,10 @@ describe('Boolean Policy Logic Section', () => {
             addPolicySection();
 
             // unfurl Container Configuration policy key group
-            clickPolicyKeyGroup('Container Configuration');
+            clickPolicyKeyGroup('Container configuration');
             // first, select a CPU field
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Container CPU Request")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Container CPU request")`
             );
 
             cy.get(selectors.booleanPolicySection.form.selectArrow).first().click();
@@ -98,7 +98,7 @@ describe('Boolean Policy Logic Section', () => {
             addPolicySection();
 
             // unfurl Image Contents policy field key group
-            clickPolicyKeyGroup('Image Contents');
+            clickPolicyKeyGroup('Image contents');
             // second, select CVSS field
             dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("CVSS")`);
 
@@ -114,9 +114,9 @@ describe('Boolean Policy Logic Section', () => {
             addPolicySection();
 
             // unfurl Container Configuration policy key group
-            clickPolicyKeyGroup('Container Configuration');
+            clickPolicyKeyGroup('Container configuration');
             // to mock BPL policy here, but for now
-            dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("Root")`);
+            dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("root")`);
 
             cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).should('not.exist');
         });
@@ -145,10 +145,10 @@ describe('Boolean Policy Logic Section', () => {
             goToNextWizardStage();
 
             // unfurl Image Contents Policy Key Group
-            clickPolicyKeyGroup('Image Contents');
+            clickPolicyKeyGroup('Image contents');
             // first, drag in an image scan age field
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Scan Age")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Image scan age")`
             );
 
             // second, add a value to it
@@ -180,7 +180,7 @@ describe('Boolean Policy Logic Section', () => {
 
             // first, drag in an image field
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Registry")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Image registry")`
             );
 
             // second, add a value to it
@@ -281,9 +281,9 @@ describe('Boolean Policy Logic Section', () => {
             addPolicySection();
 
             // unfurl Image Contents policy key group
-            clickPolicyKeyGroup('Image Contents');
+            clickPolicyKeyGroup('Image contents');
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Age")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Image age")`
             );
             cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
             const policyFieldCardAndOrOperator = `${selectors.booleanPolicySection.policyFieldCard} ${selectors.booleanPolicySection.andOrOperator}`;
@@ -315,9 +315,9 @@ describe('Boolean Policy Logic Section', () => {
             addPolicySection();
 
             // unfurl Image Contents policy key group
-            clickPolicyKeyGroup('Image Contents');
+            clickPolicyKeyGroup('Image contents');
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Age")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Image age")`
             );
             cy.get(selectors.booleanPolicySection.policyFieldCard).should(
                 'contain',

@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th } from '@patternfly/react-table';
+import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
     Button,
     ButtonVariant,
@@ -20,27 +20,31 @@ import useTableSelection from 'hooks/useTableSelection';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
+import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
+import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
-import ObservedCVEsTableRow from './ObservedCVEsTableRow';
+import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
+import VulnRequestedAction from '../VulnRequestedAction';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
     ids: string[];
 } | null;
 
-export type ObservedCVERow = Vulnerability;
-
 export type ObservedCVEsTableProps = {
-    rows: ObservedCVERow[];
+    rows: Vulnerability[];
     isLoading: boolean;
     registry: string;
     remote: string;
     tag: string;
     itemCount: number;
+    updateTable: () => void;
 } & UsePaginationResult;
 
 function ObservedCVEsTable({
@@ -53,6 +57,7 @@ function ObservedCVEsTable({
     perPage,
     onSetPage,
     onPerPageSelect,
+    updateTable,
 }: ObservedCVEsTableProps): ReactElement {
     const {
         selected,
@@ -62,7 +67,7 @@ function ObservedCVEsTable({
         onSelectAll,
         getSelectedIds,
         onClearAll,
-    } = useTableSelection<ObservedCVERow>(rows);
+    } = useTableSelection<Vulnerability>(rows);
     const [cvesToBeAssessed, setCVEsToBeAssessed] = useState<CVEsToBeAssessed>(null);
     const requestDeferral = useDeferVulnerability({
         cveIDs: cvesToBeAssessed?.ids || [],
@@ -76,16 +81,7 @@ function ObservedCVEsTable({
         remote,
         tag,
     });
-
-    function setSelectedCVEsToBeDeferred() {
-        const selectedIds = getSelectedIds();
-        setCVEsToBeAssessed({ type: 'DEFERRAL', ids: selectedIds });
-    }
-
-    function setSelectedCVEsToBeMarkedFalsePositive() {
-        const selectedIds = getSelectedIds();
-        setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: selectedIds });
-    }
+    const { hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setCVEsToBeAssessed(null);
@@ -94,7 +90,21 @@ function ObservedCVEsTable({
     function completeAssessment() {
         onClearAll();
         setCVEsToBeAssessed(null);
+        updateTable();
     }
+
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
+    const selectedIds = getSelectedIds();
+    const selectedVulnsToDeferOrMarkFalsePositive = canCreateRequests
+        ? rows
+              .filter((row) => {
+                  return selectedIds.includes(row.id);
+              })
+              .map((row) => row.id)
+        : [];
+
+    const currentDate = new Date();
 
     return (
         <>
@@ -123,16 +133,29 @@ function ObservedCVEsTable({
                             <DropdownItem
                                 key="upgrade"
                                 component="button"
-                                onClick={setSelectedCVEsToBeDeferred}
+                                onClick={() =>
+                                    setCVEsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        ids: selectedVulnsToDeferOrMarkFalsePositive,
+                                    })
+                                }
+                                isDisabled={selectedVulnsToDeferOrMarkFalsePositive.length === 0}
                             >
-                                Defer CVE ({numSelected})
+                                Defer CVE ({selectedVulnsToDeferOrMarkFalsePositive.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="delete"
                                 component="button"
-                                onClick={setSelectedCVEsToBeMarkedFalsePositive}
+                                onClick={() =>
+                                    setCVEsToBeAssessed({
+                                        type: 'FALSE_POSITIVE',
+                                        ids: selectedVulnsToDeferOrMarkFalsePositive,
+                                    })
+                                }
+                                isDisabled={selectedVulnsToDeferOrMarkFalsePositive.length === 0}
                             >
-                                Mark false positive ({numSelected})
+                                Mark false positive (
+                                {selectedVulnsToDeferOrMarkFalsePositive.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -163,18 +186,19 @@ function ObservedCVEsTable({
                         <Th>CVSS score</Th>
                         <Th>Affected components</Th>
                         <Th>Discovered</Th>
-                        <Th>Request State</Th>
+                        <Th>Pending Request State</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
-                        const actions = [
+                        const actions: IActions = [
                             {
                                 title: 'Defer CVE',
                                 onClick: (event) => {
                                     event.preventDefault();
                                     setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.cve] });
                                 },
+                                isDisabled: !canCreateRequests,
                             },
                             {
                                 title: 'Mark as False Positive',
@@ -182,18 +206,56 @@ function ObservedCVEsTable({
                                     event.preventDefault();
                                     setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: [row.cve] });
                                 },
+                                isDisabled: !canCreateRequests,
                             },
                         ];
                         return (
-                            <ObservedCVEsTableRow
-                                row={row}
-                                rowIndex={rowIndex}
-                                onSelect={onSelect}
-                                selected={selected}
-                                actions={actions}
-                                page={page}
-                                perPage={perPage}
-                            />
+                            <Tr key={rowIndex}>
+                                <Td
+                                    select={{
+                                        rowIndex,
+                                        onSelect,
+                                        isSelected: selected[rowIndex],
+                                    }}
+                                />
+                                <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
+                                <Td dataLabel="Severity">
+                                    <VulnerabilitySeverityLabel severity={row.severity} />
+                                </Td>
+                                <Td dataLabel="CVSS score">
+                                    <CVSSScoreLabel
+                                        cvss={row.cvss}
+                                        scoreVersion={row.scoreVersion}
+                                    />
+                                </Td>
+                                <Td dataLabel="Affected components">
+                                    <AffectedComponentsButton components={row.components} />
+                                </Td>
+                                <Td dataLabel="Discovered">
+                                    <DateTimeFormat time={row.discoveredAtImage} />
+                                </Td>
+                                <Td dataLabel="Pending Request State">
+                                    {row.vulnerabilityRequest ? (
+                                        <VulnRequestedAction
+                                            targetState={row.vulnerabilityRequest.targetState}
+                                            requestStatus={row.vulnerabilityRequest.status}
+                                            deferralReq={
+                                                row.vulnerabilityRequest.deferralReq?.expiry
+                                            }
+                                            currentDate={currentDate}
+                                        />
+                                    ) : (
+                                        '-'
+                                    )}
+                                </Td>
+                                <Td
+                                    className="pf-u-text-align-right"
+                                    actions={{
+                                        items: actions,
+                                    }}
+                                />
+                            </Tr>
                         );
                     })}
                 </Tbody>

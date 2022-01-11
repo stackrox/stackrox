@@ -12,15 +12,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 type secretReconcilerExtensionTestSuite struct {
 	suite.Suite
 
 	centralObj *platform.Central
-	k8sClient  kubernetes.Interface
+	client     client.Client
 
 	reconcileExt *secretReconciliationExtension
 }
@@ -75,11 +75,11 @@ func (s *secretReconcilerExtensionTestSuite) SetupTest() {
 		},
 	}
 
-	s.k8sClient = fake.NewSimpleClientset(existingSecret, existingOwnedSecret)
+	s.client = fake.NewClientBuilder().WithObjects(existingSecret, existingOwnedSecret).Build()
 
 	s.reconcileExt = &secretReconciliationExtension{
 		ctx:        context.Background(),
-		k8sClient:  s.k8sClient,
+		ctrlClient: s.client,
 		centralObj: s.centralObj,
 	}
 }
@@ -97,7 +97,9 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnNonExisting_S
 	err := s.reconcileExt.reconcileSecret("absent-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
-	_, err = s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "absent-secret", metav1.GetOptions{})
+	dummy := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "absent-secret"}
+	err = s.client.Get(context.Background(), key, dummy)
 	s.True(errors.IsNotFound(err))
 }
 
@@ -114,7 +116,9 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingManag
 	err := s.reconcileExt.reconcileSecret("existing-managed-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
-	_, err = s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
+	dummy := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "existing-managed-secret"}
+	err = s.client.Get(context.Background(), key, dummy)
 	s.True(errors.IsNotFound(err))
 }
 
@@ -131,7 +135,9 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingUnman
 	err := s.reconcileExt.reconcileSecret("existing-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
-	_, err = s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
+	dummy := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "existing-managed-secret"}
+	err = s.client.Get(context.Background(), key, dummy)
 	s.NoError(err)
 }
 
@@ -153,7 +159,9 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnNonExisting_Shou
 	s.Require().NoError(err)
 	s.NotEmpty(markerID, "generate function has not been called")
 
-	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "absent-secret", metav1.GetOptions{})
+	secret := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "absent-secret"}
+	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
 
 	s.EqualValues(secret.GetOwnerReferences(), []metav1.OwnerReference{*metav1.NewControllerRef(s.centralObj, platform.CentralGVK)})
@@ -162,7 +170,9 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnNonExisting_Shou
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_PassingValidation_ShouldDoNothing() {
-	initSecret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
+	initSecret := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "existing-managed-secret"}
+	err := s.client.Get(context.Background(), key, initSecret)
 	s.Require().NoError(err)
 
 	validated := false
@@ -182,7 +192,8 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	s.Require().NoError(err)
 	s.True(validated)
 
-	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
+	secret := &v1.Secret{}
+	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
 
 	s.Equal(initSecret, secret)
@@ -205,7 +216,9 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	err := s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
-	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
+	secret := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "existing-managed-secret"}
+	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
 
 	s.Equal("existing-managed-secret", string(secret.Data["secret-name"]))
@@ -228,14 +241,18 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	err := s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn, true)
 	s.NoError(err)
 
-	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
+	secret := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "existing-managed-secret"}
+	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
 
 	s.Equal("foo", string(secret.Data["new-secret-data"]))
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanaged_PassingValidation_ShouldDoNothing() {
-	initSecret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-secret", metav1.GetOptions{})
+	initSecret := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "existing-secret"}
+	err := s.client.Get(context.Background(), key, initSecret)
 	s.Require().NoError(err)
 
 	validated := false
@@ -255,14 +272,16 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanage
 	s.Require().NoError(err)
 	s.True(validated)
 
-	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-secret", metav1.GetOptions{})
+	secret := &v1.Secret{}
+	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
-
 	s.Equal(initSecret, secret)
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanaged_FailingValidation_ShouldDoNothingAndFail() {
-	initSecret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-secret", metav1.GetOptions{})
+	initSecret := &v1.Secret{}
+	key := client.ObjectKey{Namespace: testNamespace, Name: "existing-secret"}
+	err := s.client.Get(context.Background(), key, initSecret)
 	s.Require().NoError(err)
 
 	failValidationErr := pkgErrors.New("failed validation")
@@ -280,7 +299,8 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanage
 	err = s.reconcileExt.reconcileSecret("existing-secret", true, validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
-	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-secret", metav1.GetOptions{})
+	secret := &v1.Secret{}
+	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
 
 	s.Equal(initSecret, secret)

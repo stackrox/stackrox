@@ -1,5 +1,5 @@
 plugins {
-    id "com.google.protobuf" version "0.8.17"
+    id "com.google.protobuf" version "0.8.18"
     id "groovy"
     id "codenarc"
 }
@@ -19,12 +19,19 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.17.3'
 def protobufVersion = '3.18.1'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '5.7.0'
+def fabric8Version = '5.10.1'
 
 protobuf {
+    // There is no protoc-grpc-gen for Apple Silicon (M1), so if you are running on it, force the osx-x86_64 version
+    // See https://github.com/grpc/grpc-java/issues/7690
+    def protocGenArch = ''
+    if (System.getProperty("os.arch") == "aarch64" && System.getProperty("os.name").toLowerCase().contains("mac")) {
+        protocGenArch = ':osx-x86_64'
+    }
+
     protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
     plugins {
-        grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}" }
+        grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}${protocGenArch}" }
     }
     generateProtoTasks {
         all()*.plugins {
@@ -102,7 +109,7 @@ dependencies {
     implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.9.0'
 
     // JAX-B dependencies for JDK 9+
-    implementation "jakarta.xml.bind:jakarta.xml.bind-api:3.0.1"
+    implementation "javax.xml.bind:jaxb-api:2.3.1"
     implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
 
     // Required to make codenarc work with JDK 14.

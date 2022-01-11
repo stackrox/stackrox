@@ -1,156 +1,55 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
-import React from 'react';
-import FalsePositiveCVEsTable, { FalsePositiveCVERow } from './FalsePositiveCVEsTable';
+import React, { ReactElement } from 'react';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
-const rows = [
-    {
-        id: 'CVE-2014-232',
-        cve: 'CVE-2014-232',
-        severity: 'MODERATE_VULNERABILITY_SEVERITY',
-        cvssScore: '5.8',
-        components: [
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'glibc 2.24-11+deb9u4',
-                fixedIn: 'struts-232',
-            },
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'perl 5.24.1-3+deb9u5',
-                fixedIn: 'struts-232',
-            },
-        ],
-        comments: [
-            {
-                id: '1',
-                user: {
-                    id: '1',
-                    name: 'Trevor',
-                },
-                message: "Update fix isn't ready",
-                createdAt: '12/21/2020 | 4:24 AM',
-            },
-            {
-                id: '2',
-                user: {
-                    id: '2',
-                    name: 'Jacob',
-                },
-                message: 'Get it done!',
-                createdAt: '12/21/2020 | 4:50 AM',
-            },
-        ],
-        applyTo: 'All image tags',
-    },
-    {
-        id: 'CVE-2019-5953',
-        cve: 'CVE-2019-5953',
-        severity: 'CRITICAL_VULNERABILITY_SEVERITY',
-        cvssScore: '9.8',
-        components: [
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'glibc 2.24-11+deb9u4',
-                fixedIn: 'struts-232',
-            },
-        ],
-        comments: [
-            {
-                id: '1',
-                user: {
-                    id: '1',
-                    name: 'Trevor',
-                },
-                message: "Update fix isn't ready",
-                createdAt: '12/21/2020 | 4:24 AM',
-            },
-            {
-                id: '2',
-                user: {
-                    id: '2',
-                    name: 'Jacob',
-                },
-                message: 'Get it done!',
-                createdAt: '12/21/2020 | 4:50 AM',
-            },
-        ],
-        applyTo: 'All image tags',
-    },
-    {
-        id: 'CVE-2017-13090',
-        cve: 'CVE-2017-13090',
-        severity: 'IMPORTANT_VULNERABILITY_SEVERITY',
-        cvssScore: '8.8',
-        components: [
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'glibc 2.24-11+deb9u4',
-                fixedIn: 'struts-232',
-            },
-        ],
-        comments: [
-            {
-                id: '1',
-                user: {
-                    id: '1',
-                    name: 'Trevor',
-                },
-                message: "Update fix isn't ready",
-                createdAt: '12/21/2020 | 4:24 AM',
-            },
-            {
-                id: '2',
-                user: {
-                    id: '2',
-                    name: 'Jacob',
-                },
-                message: 'Get it done!',
-                createdAt: '12/21/2020 | 4:50 AM',
-            },
-        ],
-        applyTo: 'All image tags',
-    },
-    {
-        id: 'CVE-2016-7098',
-        cve: 'CVE-2016-7098',
-        severity: 'IMPORTANT_VULNERABILITY_SEVERITY',
-        cvssScore: '8.1',
-        components: [
-            {
-                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
-                name: 'glibc 2.24-11+deb9u4',
-                fixedIn: 'struts-232',
-            },
-        ],
-        comments: [
-            {
-                id: '1',
-                user: {
-                    id: '1',
-                    name: 'Trevor',
-                },
-                message: "Update fix isn't ready",
-                createdAt: '12/21/2020 | 4:24 AM',
-            },
-            {
-                id: '2',
-                user: {
-                    id: '2',
-                    name: 'Jacob',
-                },
-                message: 'Get it done!',
-                createdAt: '12/21/2020 | 4:50 AM',
-            },
-        ],
-        applyTo: 'All image tags',
-    },
-] as FalsePositiveCVERow[];
+import usePagination from 'hooks/patternfly/usePagination';
+import FalsePositiveCVEsTable from './FalsePositiveCVEsTable';
+import useImageVulnerabilities from '../useImageVulnerabilities';
+import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 
-function FalsePositiveCVEs() {
-    // @TODO: hook to GET false positive CVEs data goes here
+type FalsePositiveCVEsProps = {
+    imageId: string;
+};
 
-    return <FalsePositiveCVEsTable rows={rows} />;
+function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
+    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { isLoading, data, refetchQuery } = useImageVulnerabilities({
+        imageId,
+        vulnsQuery: 'Vulnerability State:FALSE_POSITIVE',
+        pagination: {
+            limit: perPage,
+            offset: (page - 1) * perPage,
+            sortOption: {
+                field: 'cve',
+                reversed: false,
+            },
+        },
+    });
+
+    if (isLoading) {
+        return (
+            <Bullseye>
+                <Spinner isSVG size="sm" />
+            </Bullseye>
+        );
+    }
+
+    const itemCount = data?.image?.vulnCount || 0;
+    const rows = (data?.image?.vulns || []) as VulnerabilityWithRequest[];
+
+    return (
+        <FalsePositiveCVEsTable
+            rows={rows}
+            isLoading={isLoading}
+            itemCount={itemCount}
+            page={page}
+            perPage={perPage}
+            onSetPage={onSetPage}
+            onPerPageSelect={onPerPageSelect}
+            updateTable={refetchQuery}
+        />
+    );
 }
 
 export default FalsePositiveCVEs;

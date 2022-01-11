@@ -32,8 +32,8 @@ are inferred from the `central-deploy` directory.
 - If you have deployed the cluster differently or need to use a custom environment variable configuration:
 - Go to `Run > Edit Configurations`
 - Select Gradle, add a new configuration
-  - Script path : `github.com/stackrox/rox/qa-tests-backend/src/test/groovy/<Groovy class name>.groovy`
-  - Working Directory : `github.com/stackrox/rox/qa-tests-backend`
+  - Script path : `github.com/stackrox/stackrox/qa-tests-backend/src/test/groovy/<Groovy class name>.groovy`
+  - Working Directory : `github.com/stackrox/stackrox/qa-tests-backend`
   - Environment Variables:
     - `CLUSTER`: Either `OPENSHIFT` or `K8S`
     - `API_HOSTNAME`: hostname central is running; default `localhost`
@@ -88,8 +88,8 @@ of kubernetes code for example. One way to do that is to use a
 standalone gradle task.
 
 See for example: 
-[build.gradle](https://github.com/stackrox/rox/blob/2995f06927248966665a546881db2e4d233bf487/qa-tests-backend/build.gradle#L145)
-the task `checkSensorCollectorHealth` corresponds to [checkSensorCollectorHealth.groovy](https://github.com/stackrox/rox/blob/2995f06927248966665a546881db2e4d233bf487/qa-tests-backend/src/main/groovy/checkSensorCollectorHealth.groovy). This can be executed with: 
+[build.gradle](https://github.com/stackrox/stackrox/blob/391a08e18b7386cb6ce2ec205b6489a20df0e61c/qa-tests-backend/build.gradle#L145)
+the task `checkSensorCollectorHealth` corresponds to [checkSensorCollectorHealth.groovy](https://github.com/stackrox/stackrox/blob/391a08e18b7386cb6ce2ec205b6489a20df0e61c/qa-tests-backend/src/main/groovy/checkSensorCollectorHealth.groovy). This can be executed with:
 ```
 ./gradlew checkSensorCollectorHealth
 ```

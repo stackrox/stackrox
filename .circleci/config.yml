@@ -493,6 +493,10 @@ parameters:
   rox_license_key:
     type: string
     default: ""
+  ci_machine_image:
+    type: string
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
+    default: "ubuntu-2004:202111-02"
 
 orbs:
   win: circleci/windows@2.2.0
@@ -2264,7 +2268,6 @@ jobs:
     resource_class: medium
     steps:
       - checkout
-
       - *restoreGoModCache
       - setup-go-build-env
       - run:
@@ -2273,7 +2276,8 @@ jobs:
           command: |
             git ls-files --others --exclude-standard >/tmp/untracked
             make proto-generated-srcs
-            make go-generated-srcs
+            # Print the timestamp along with each new line of output, so we can track how long each command takes
+            make go-generated-srcs 2>&1 | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
             git diff --exit-code HEAD
             { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
             if [[ -s /tmp/untracked-new ]]; then
@@ -2286,7 +2290,6 @@ jobs:
           name: Ensure that all TODO references to fixed tickets are gone
           command: |
             .circleci/check-pr-fixes.sh
-
       - run:
           name: Ensure that there are no TODO references that the developer has marked as blocking a merge
           command: |
@@ -2447,7 +2450,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -2658,12 +2660,13 @@ jobs:
       - cleanup-clusters-on-fail
 
   pre-build-go-binaries:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
-      - GOPATH: /home/circleci/go
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.2.17
+      GOPATH: /home/circleci/go
+      KOPS_AUTOMATION_VERSION: 0.0.9
+      EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
       - checkout
@@ -2688,7 +2691,6 @@ jobs:
       - *restoreGoBuildBinaryCache
       - setup-dep-env:
           docker-login: true
-
       - run:
           name: Build the main Go binaries
           command: |
@@ -3084,7 +3086,8 @@ jobs:
           machine-type: e2-standard-8
 
   provision-openshift-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-tests
@@ -3095,7 +3098,8 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   provision-openshift-crio-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-crio-tests
@@ -3163,7 +3167,8 @@ jobs:
           when: on_fail
 
   provision-kops-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
     steps:
@@ -3447,7 +3452,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - SENSOR_HELM_DEPLOY: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_ACTIVE_VULN_MANAGEMENT: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
       - ROX_VULN_RISK_MANAGEMENT: true
@@ -3506,6 +3510,21 @@ jobs:
             cci-export "SERVICE_CA_FILE" "$SERVICE_CA_FILE"
             cci-export "SERVICE_CERT_FILE" "$SERVICE_CERT_FILE"
             cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
+
+      - run:
+          name: Setup prerequisites for Bats tests
+          command: |
+            source tests/e2e/run.sh
+            install_yq
+      - run:
+          name: Run roxctl Bats tests
+          command: |
+            source tests/e2e/run.sh
+            MAIN_TAG=$(make --quiet tag) \
+              run_roxctl_bats_tests "roxctl-test-output"
+
+      - store-test-results-and-artifacts:
+          path: roxctl-test-output
 
       - run:
           name: Run roxctl tests
@@ -3666,7 +3685,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -3696,7 +3714,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -3859,7 +3876,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - SENSOR_HELM_DEPLOY: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -3885,7 +3901,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -3912,7 +3927,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4004,7 +4018,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4113,7 +4126,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4154,7 +4166,6 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4383,7 +4394,6 @@ jobs:
       ROX_NETWORK_DETECTION_BLOCKED_FLOWS: "true"
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
-      ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: "true"
       IS_RACE_BUILD: "true"
       ROX_VULN_RISK_MANAGEMENT: "true"
 

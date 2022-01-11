@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { ActionsColumn } from '@patternfly/react-table';
+import { ActionsColumn, IActions } from '@patternfly/react-table';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedDeferralRequestsToBeAssessed } from './types';
 
@@ -8,26 +8,40 @@ export type ApprovedDeferralActionsColumnProps = {
     setRequestsToBeAssessed: React.Dispatch<
         React.SetStateAction<ApprovedDeferralRequestsToBeAssessed>
     >;
+    canUpdateDeferral: boolean;
+    canReobserveCVE: boolean;
 };
 
 function ApprovedDeferralActionsColumn({
     row,
     setRequestsToBeAssessed,
+    canUpdateDeferral,
+    canReobserveCVE,
 }: ApprovedDeferralActionsColumnProps): ReactElement {
-    const items = [
+    const items: IActions = [
         {
             title: 'Update deferral',
             onClick: (event) => {
                 event.preventDefault();
-                setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'UPDATE', requests: [row] });
+                setRequestsToBeAssessed({
+                    type: 'DEFERRAL',
+                    action: 'UPDATE',
+                    requestIDs: [row.id],
+                });
             },
+            isDisabled: !canUpdateDeferral,
         },
         {
             title: 'Reobserve CVE',
             onClick: (event) => {
                 event.preventDefault();
-                setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'UNDO', requests: [row] });
+                setRequestsToBeAssessed({
+                    type: 'DEFERRAL',
+                    action: 'UNDO',
+                    requestIDs: [row.id],
+                });
             },
+            isDisabled: !canReobserveCVE,
         },
     ];
     return <ActionsColumn items={items} />;

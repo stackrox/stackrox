@@ -88,7 +88,6 @@ test_preamble() {
     export ROX_NETWORK_DETECTION_BASELINE_SIMULATION=true
     export ROX_NETWORK_DETECTION_BLOCKED_FLOWS=true
     export SENSOR_HELM_DEPLOY=true
-    export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
     export ROX_ACTIVE_VULN_MANAGEMENT=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
     MONITORING_IMAGE="$REGISTRY/monitoring:$(cat "$TEST_ROOT"/MONITORING_VERSION)"
@@ -113,6 +112,24 @@ prepare_for_endpoints_test() {
     export SERVICE_CERT_FILE="$gencerts_dir/sensor-cert.pem"
     export SERVICE_KEY_FILE="$gencerts_dir/sensor-key.pem"
     start_port_forwards_for_test
+}
+
+install_yq() {
+  # Intstall yq to allow more precise test assertions
+  # TODO(RS-404) Remove this function after adding yq to apollo-ci
+  if is_CI; then
+    if ! command -v yq >/dev/null 2>&1; then
+        sudo wget https://github.com/mikefarah/yq/releases/download/v4.15.1/yq_linux_amd64 -O /usr/bin/yq
+        sudo chmod 0755 /usr/bin/yq
+    fi
+  else
+      require_executable yq
+  fi
+}
+
+run_roxctl_bats_tests() {
+    info "Running Bats e2e tests on development roxctl"
+    "$TEST_ROOT/tests/roxctl/bats-runner.sh" "$TEST_ROOT/tests/roxctl/bats-tests/"
 }
 
 run_roxctl_tests() {

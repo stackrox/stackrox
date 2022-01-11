@@ -92,6 +92,8 @@ collector:
     key: null # string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
+  disableSELinuxOptions: null # bool
+  seLinuxOptionsType: null # string
 auditLogs:
   disableCollection: null # bool
 customize:

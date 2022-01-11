@@ -66,8 +66,8 @@ func (resolver *Resolver) AddDistroContext(ctx context.Context, query, scopeQuer
 		return ctx, nil
 	}
 
-	scope, ok := scoped.GetScope(ctx)
-	if ok && scope.Level == v1.SearchCategory_IMAGES {
+	scope, hasScope := scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES)
+	if hasScope {
 		if image := resolver.getImage(ctx, scope.ID); image != nil {
 			return distroctx.Context(ctx, image.GetScan().GetOperatingSystem()), nil
 		}
@@ -214,6 +214,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 
 	originalQuery := query.Clone()
 	var queryModified, postSortingNeeded bool
+
 	if distroctx.IsImageScoped(ctx) {
 		query, queryModified = search.InverseFilterQueryWithMap(query, cvePostFilteringOptionsMap) // CVE queryModified
 		postSortingNeeded = needsPostSorting(originalQuery)
@@ -752,10 +753,10 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuer
 	}
 
 	var imageID string
-	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if hasScope && scope.Level == v1.SearchCategory_IMAGES {
+	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
+	if hasScope {
 		imageID = scope.ID
-	} else if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
+	} else {
 		var err error
 		imageID, err = getImageIDFromIfImageShaQuery(ctx, resolver.root, args)
 		if err != nil {

@@ -1,8 +1,8 @@
 import React from 'react';
-import { ExpandableSection, Draggable, Droppable } from '@patternfly/react-core';
+import { ExpandableSection } from '@patternfly/react-core';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
-import './PolicyCriteriaCategory.css';
+import PolicyCriteriaKey from './PolicyCriteriaKey';
 
 type PolicyCriteriaCategoryProps = {
     category: string;
@@ -18,17 +18,9 @@ function PolicyCriteriaCategory({ category, keys }: PolicyCriteriaCategoryProps)
 
     return (
         <ExpandableSection isExpanded={isExpanded} onToggle={onToggle} toggleText={category}>
-            <Droppable>
-                {keys.map(({ name, shortName }) => (
-                    <Draggable
-                        key={name}
-                        className="pf-u-p-sm pf-u-mb-md pf-u-display-flex policy-criteria-key"
-                    >
-                        <span className="draggable-grip" />
-                        {shortName || name}
-                    </Draggable>
-                ))}
-            </Droppable>
+            {keys.map((key) => (
+                <PolicyCriteriaKey fieldKey={key} key={key.name} />
+            ))}
         </ExpandableSection>
     );
 }

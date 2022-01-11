@@ -13,6 +13,7 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import VulnRequestedAction from '../VulnRequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
@@ -54,9 +55,11 @@ function PendingApprovalsTable({
         onClearAll,
     } = useTableSelection<VulnerabilityRequest>(rows);
     const [requestsToBeAssessed, setRequestsToBeAssessed] = useState<RequestsToBeAssessed>(null);
+    const requestIDs = requestsToBeAssessed?.requests.map((request) => request.id) || [];
     const { approveVulnRequests, denyVulnRequests, deleteVulnRequests } = useRiskAcceptance({
-        requests: requestsToBeAssessed?.requests || [],
+        requestIDs,
     });
+    const { currentUserName, hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setRequestsToBeAssessed(null);
@@ -68,13 +71,36 @@ function PendingApprovalsTable({
         updateTable();
     }
 
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const selectedIds = getSelectedIds();
-    const selectedDeferralRequests = rows.filter(
-        (row) => selectedIds.includes(row.id) && row.targetState === 'DEFERRED'
-    );
-    const selectedFalsePositiveRequests = rows.filter(
-        (row) => selectedIds.includes(row.id) && row.targetState === 'FALSE_POSITIVE'
-    );
+    const selectedDeferralsToApproveDeny = rows.filter((row) => {
+        return canApproveRequests && row.targetState === 'DEFERRED' && selectedIds.includes(row.id);
+    });
+    const selectedFalsePositivesToApproveDeny = rows.filter((row) => {
+        return (
+            canApproveRequests &&
+            row.targetState === 'FALSE_POSITIVE' &&
+            selectedIds.includes(row.id)
+        );
+    });
+    const selectedDeferralsToCancel = rows.filter((row) => {
+        return (
+            canCreateRequests &&
+            row.requestor.name === currentUserName &&
+            row.targetState === 'DEFERRED' &&
+            selectedIds.includes(row.id)
+        );
+    });
+    const selectedFalsePositivesToCancel = rows.filter((row) => {
+        return (
+            canCreateRequests &&
+            row.requestor.name === currentUserName &&
+            row.targetState === 'FALSE_POSITIVE' &&
+            selectedIds.includes(row.id)
+        );
+    });
 
     return (
         <>
@@ -90,40 +116,12 @@ function PendingApprovalsTable({
                                     setRequestsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'APPROVE',
-                                        requests: selectedDeferralRequests,
+                                        requests: selectedDeferralsToApproveDeny,
                                     })
                                 }
-                                isDisabled={selectedDeferralRequests.length === 0}
+                                isDisabled={selectedDeferralsToApproveDeny.length === 0}
                             >
-                                Approve deferrals ({selectedDeferralRequests.length})
-                            </DropdownItem>
-                            <DropdownItem
-                                key="deny deferrals"
-                                component="button"
-                                onClick={() =>
-                                    setRequestsToBeAssessed({
-                                        type: 'DEFERRAL',
-                                        action: 'DENY',
-                                        requests: selectedDeferralRequests,
-                                    })
-                                }
-                                isDisabled={selectedDeferralRequests.length === 0}
-                            >
-                                Deny deferrals ({selectedDeferralRequests.length})
-                            </DropdownItem>
-                            <DropdownItem
-                                key="cancel deferrals"
-                                component="button"
-                                onClick={() =>
-                                    setRequestsToBeAssessed({
-                                        type: 'DEFERRAL',
-                                        action: 'CANCEL',
-                                        requests: selectedDeferralRequests,
-                                    })
-                                }
-                                isDisabled={selectedDeferralRequests.length === 0}
-                            >
-                                Cancel deferrals ({selectedDeferralRequests.length})
+                                Approve deferrals ({selectedDeferralsToApproveDeny.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="approve false positives"
@@ -132,12 +130,27 @@ function PendingApprovalsTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'APPROVE',
-                                        requests: selectedFalsePositiveRequests,
+                                        requests: selectedFalsePositivesToApproveDeny,
                                     })
                                 }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                                isDisabled={selectedFalsePositivesToApproveDeny.length === 0}
                             >
-                                Approve false positives ({selectedFalsePositiveRequests.length})
+                                Approve false positives (
+                                {selectedFalsePositivesToApproveDeny.length})
+                            </DropdownItem>
+                            <DropdownItem
+                                key="deny deferrals"
+                                component="button"
+                                onClick={() =>
+                                    setRequestsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        action: 'DENY',
+                                        requests: selectedDeferralsToApproveDeny,
+                                    })
+                                }
+                                isDisabled={selectedDeferralsToApproveDeny.length === 0}
+                            >
+                                Deny deferrals ({selectedDeferralsToApproveDeny.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="deny false positives"
@@ -146,12 +159,26 @@ function PendingApprovalsTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'DENY',
-                                        requests: selectedFalsePositiveRequests,
+                                        requests: selectedFalsePositivesToApproveDeny,
                                     })
                                 }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                                isDisabled={selectedFalsePositivesToApproveDeny.length === 0}
                             >
-                                Deny false positives ({selectedFalsePositiveRequests.length})
+                                Deny false positives ({selectedFalsePositivesToApproveDeny.length})
+                            </DropdownItem>
+                            <DropdownItem
+                                key="cancel deferrals"
+                                component="button"
+                                onClick={() =>
+                                    setRequestsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        action: 'CANCEL',
+                                        requests: selectedDeferralsToCancel,
+                                    })
+                                }
+                                isDisabled={selectedDeferralsToCancel.length === 0}
+                            >
+                                Cancel deferrals ({selectedDeferralsToCancel.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="cancel false positives"
@@ -160,12 +187,12 @@ function PendingApprovalsTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'CANCEL',
-                                        requests: selectedFalsePositiveRequests,
+                                        requests: selectedFalsePositivesToCancel,
                                     })
                                 }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                                isDisabled={selectedFalsePositivesToCancel.length === 0}
                             >
-                                Cancel false positives ({selectedFalsePositiveRequests.length})
+                                Cancel false positives ({selectedFalsePositivesToCancel.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -202,6 +229,9 @@ function PendingApprovalsTable({
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
+                        const canCancelRequest =
+                            canCreateRequests && row.requestor.name === currentUserName;
+
                         return (
                             <Tr key={row.id}>
                                 <Td
@@ -253,12 +283,16 @@ function PendingApprovalsTable({
                                         <DeferralRequestActionsColumn
                                             row={row}
                                             setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                            canApproveRequest={canApproveRequests}
+                                            canCancelRequest={canCancelRequest}
                                         />
                                     )}
                                     {row.targetState === 'FALSE_POSITIVE' && (
                                         <FalsePositiveRequestActionsColumn
                                             row={row}
                                             setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                            canApproveRequest={canApproveRequests}
+                                            canCancelRequest={canCancelRequest}
                                         />
                                     )}
                                 </Td>

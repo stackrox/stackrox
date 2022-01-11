@@ -38,7 +38,7 @@ describe('Policies list Page and its entity detail page , related entities sub l
             cy.get(`${selectors.tableRows}:contains('Privileged')`).click();
 
             cy.get(
-                `${policySelectors.booleanPolicySection.policyFieldCard}:contains("Privileged Container Status") ${policySelectors.booleanPolicySection.policyFieldValue}:first button`
+                `${policySelectors.booleanPolicySection.policyFieldCard}:contains("Privileged container status") ${policySelectors.booleanPolicySection.policyFieldValue}:first button`
             ).should('have.value', 'true');
         });
     });

@@ -1,28 +1,41 @@
 import React, { useState, ReactElement } from 'react';
+import { useSelector } from 'react-redux';
 import {
+    Alert,
+    AlertGroup,
+    AlertVariant,
     Flex,
     FlexItem,
     Divider,
     PageSection,
+    PageSectionVariants,
     Pagination,
     DropdownItem,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
+import { createStructuredSelector } from 'reselect';
 
 import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import TableCell from 'Components/PatternFly/TableCell';
+import { selectors } from 'reducers';
+import { getHasReadWritePermission } from 'reducers/roles';
 import { ReportConfiguration } from 'types/report.proto';
-import DeleteConfirmation from './Modals/DeleteConfirmation';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type ActionItem = {
     title: string | ReactElement;
     onClick: (item) => void;
 };
 
-type ModalType = 'delete' | null;
+type AlertInfo = {
+    title: string;
+    variant: AlertVariant;
+    key: number;
+};
 
 type ReportingTablePanelProps = {
     reports: ReportConfiguration[];
@@ -36,7 +49,12 @@ type ReportingTablePanelProps = {
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
     columns: TableColumn[];
+    onDeleteReports: (reportIds: string[]) => Promise<void>; // return value not used
 };
+
+const permissionsSelector = createStructuredSelector({
+    userRolePermissions: selectors.getUserRolePermissions,
+});
 
 function ReportingTablePanel({
     reports,
@@ -50,8 +68,15 @@ function ReportingTablePanel({
     activeSortDirection,
     setActiveSortDirection,
     columns,
+    onDeleteReports,
 }: ReportingTablePanelProps): ReactElement {
-    const [modalType, setModalType] = useState<ModalType>(null);
+    const [alerts, setAlerts] = React.useState<AlertInfo[]>([]);
+    const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
+    const { userRolePermissions } = useSelector(permissionsSelector);
+    const hasWriteAccessForVulnerabilityReports = getHasReadWritePermission(
+        'VulnerabilityReports',
+        userRolePermissions
+    );
 
     const {
         selected,
@@ -65,18 +90,8 @@ function ReportingTablePanel({
     } = useTableSelection(reports);
 
     function onDeleteSelected() {
-        setModalType('delete');
-    }
-
-    // Handle closing confirmation modals for bulk actions;
-    function cancelModal() {
-        setModalType(null);
-    }
-
-    // Handle closing confirmation modal and clearing selection;
-    function closeModal() {
-        setModalType(null);
-        onClearAll();
+        const idsToDelete = getSelectedIds();
+        setDeletingReportIds(idsToDelete);
     }
 
     // Handle page changes.
@@ -95,10 +110,54 @@ function ReportingTablePanel({
         setActiveSortDirection(direction);
     }
 
-    const selectedIds = getSelectedIds();
+    function onClickDelete(ids) {
+        setDeletingReportIds(ids);
+    }
+
+    function onConfirmDeletingReportIds() {
+        setAlerts([]);
+
+        onDeleteReports(deletingReportIds)
+            .then(() => {
+                setDeletingReportIds([]);
+                onClearAll();
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                const alertInfo = {
+                    title: message || 'An unknown error occurred while deleting',
+                    variant: AlertVariant.danger,
+                    key: new Date().getTime(),
+                };
+                setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
+
+                setDeletingReportIds([]);
+                throw error;
+            });
+    }
+
+    function onCancelDeleteReportIds() {
+        setDeletingReportIds([]);
+    }
+
+    const deleteConfirmationText = `Are you sure you want to delete ${
+        deletingReportIds.length
+    } ${pluralize('report', deletingReportIds.length)}?`;
 
     return (
         <>
+            <PageSection padding={{ default: 'padding' }} variant={PageSectionVariants.light}>
+                <AlertGroup
+                    isLiveRegion
+                    aria-live="polite"
+                    aria-relevant="additions text"
+                    aria-atomic="false"
+                >
+                    {alerts.map(({ title, variant, key }) => (
+                        <Alert isInline variant={variant} title={title} key={key} />
+                    ))}
+                </AlertGroup>
+            </PageSection>
             <Flex
                 className="pf-u-p-md"
                 alignSelf={{ default: 'alignSelfCenter' }}
@@ -122,7 +181,12 @@ function ReportingTablePanel({
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
+            <PageSection
+                isFilled
+                padding={{ default: 'noPadding' }}
+                hasOverflowScroll
+                variant={PageSectionVariants.light}
+            >
                 <TableComposable variant="compact">
                     <Thead>
                         <Tr>
@@ -157,11 +221,19 @@ function ReportingTablePanel({
                     <Tbody>
                         {reports.map((report, rowIndex) => {
                             const { id } = report;
+
                             const actionItems: ActionItem[] = [];
+                            if (hasWriteAccessForVulnerabilityReports) {
+                                actionItems.push({
+                                    title: (
+                                        <div className="pf-u-danger-color-100">Delete report</div>
+                                    ),
+                                    onClick: () => onClickDelete([report.id]),
+                                });
+                            }
 
                             return (
-                                // eslint-disable-next-line react/no-array-index-key
-                                <Tr key={rowIndex}>
+                                <Tr key={id}>
                                     <Td
                                         key={id}
                                         select={{
@@ -190,12 +262,15 @@ function ReportingTablePanel({
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            <DeleteConfirmation
-                isOpen={modalType === 'delete'}
-                selectedReportIds={selectedIds}
-                closeModal={closeModal}
-                cancelModal={cancelModal}
-            />
+            <ConfirmationModal
+                ariaLabel="Confirm deleting reports"
+                confirmText="Delete"
+                isOpen={deletingReportIds.length > 0}
+                onConfirm={onConfirmDeletingReportIds}
+                onCancel={onCancelDeleteReportIds}
+            >
+                {deleteConfirmationText}
+            </ConfirmationModal>
         </>
     );
 }

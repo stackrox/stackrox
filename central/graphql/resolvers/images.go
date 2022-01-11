@@ -248,7 +248,7 @@ func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (
 	}), RawQuery{Query: &query})
 }
 
-// Vulns returns all of the vulnerabilities in the image.
+// Components returns all of the components in the image.
 func (resolver *imageResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
 

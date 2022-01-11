@@ -7,9 +7,12 @@ import (
 	types "github.com/docker/docker/api/types"
 	container "github.com/docker/docker/api/types/container"
 	image "github.com/docker/docker/api/types/image"
+	mount "github.com/docker/docker/api/types/mount"
 	network "github.com/docker/docker/api/types/network"
 	registry "github.com/docker/docker/api/types/registry"
 	swarm "github.com/docker/docker/api/types/swarm"
+	nat "github.com/docker/go-connections/nat"
+	go_units "github.com/docker/go-units"
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
@@ -62,7 +65,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes(in *jlexer.Lexer, 
 				}
 				for !in.IsDelim(']') {
 					var v1 ContainerJSON
-					(v1).UnmarshalEasyJSON(in)
+					easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in, &v1)
 					out.Containers = append(out.Containers, v1)
 					in.WantComma()
 				}
@@ -85,7 +88,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes(in *jlexer.Lexer, 
 				}
 				for !in.IsDelim(']') {
 					var v2 ImageWrap
-					easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in, &v2)
+					easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes2(in, &v2)
 					out.Images = append(out.Images, v2)
 					in.WantComma()
 				}
@@ -123,7 +126,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 				if v3 > 0 {
 					out.RawByte(',')
 				}
-				(v4).MarshalEasyJSON(out)
+				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out, v4)
 			}
 			out.RawByte(']')
 		}
@@ -139,7 +142,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 				if v5 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out, v6)
+				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes2(out, v6)
 			}
 			out.RawByte(']')
 		}
@@ -1093,7 +1096,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork5(out *jwriter.Wr
 	}
 	out.RawByte('}')
 }
-func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer, out *ImageWrap) {
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes2(in *jlexer.Lexer, out *ImageWrap) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1113,7 +1116,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 		}
 		switch key {
 		case "image":
-			(out.Image).UnmarshalEasyJSON(in)
+			easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes3(in, &out.Image)
 		case "history":
 			if in.IsNull() {
 				in.Skip()
@@ -1147,14 +1150,14 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writer, in ImageWrap) {
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes2(out *jwriter.Writer, in ImageWrap) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
 		const prefix string = ",\"image\":"
 		out.RawString(prefix[1:])
-		(in.Image).MarshalEasyJSON(out)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes3(out, in.Image)
 	}
 	{
 		const prefix string = ",\"history\":"
@@ -1283,6 +1286,1454 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesImage(out *jwriter.Write
 	}
 	out.RawByte('}')
 }
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes3(in *jlexer.Lexer, out *ImageInspect) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Id":
+			out.ID = string(in.String())
+		case "RepoTags":
+			if in.IsNull() {
+				in.Skip()
+				out.RepoTags = nil
+			} else {
+				in.Delim('[')
+				if out.RepoTags == nil {
+					if !in.IsDelim(']') {
+						out.RepoTags = make([]string, 0, 4)
+					} else {
+						out.RepoTags = []string{}
+					}
+				} else {
+					out.RepoTags = (out.RepoTags)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v39 string
+					v39 = string(in.String())
+					out.RepoTags = append(out.RepoTags, v39)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "RepoDigests":
+			if in.IsNull() {
+				in.Skip()
+				out.RepoDigests = nil
+			} else {
+				in.Delim('[')
+				if out.RepoDigests == nil {
+					if !in.IsDelim(']') {
+						out.RepoDigests = make([]string, 0, 4)
+					} else {
+						out.RepoDigests = []string{}
+					}
+				} else {
+					out.RepoDigests = (out.RepoDigests)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v40 string
+					v40 = string(in.String())
+					out.RepoDigests = append(out.RepoDigests, v40)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "Config":
+			if in.IsNull() {
+				in.Skip()
+				out.Config = nil
+			} else {
+				if out.Config == nil {
+					out.Config = new(Config)
+				}
+				easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes4(in, out.Config)
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes3(out *jwriter.Writer, in ImageInspect) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"Id\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.ID))
+	}
+	if len(in.RepoTags) != 0 {
+		const prefix string = ",\"RepoTags\":"
+		out.RawString(prefix)
+		{
+			out.RawByte('[')
+			for v41, v42 := range in.RepoTags {
+				if v41 > 0 {
+					out.RawByte(',')
+				}
+				out.String(string(v42))
+			}
+			out.RawByte(']')
+		}
+	}
+	if len(in.RepoDigests) != 0 {
+		const prefix string = ",\"RepoDigests\":"
+		out.RawString(prefix)
+		{
+			out.RawByte('[')
+			for v43, v44 := range in.RepoDigests {
+				if v43 > 0 {
+					out.RawByte(',')
+				}
+				out.String(string(v44))
+			}
+			out.RawByte(']')
+		}
+	}
+	if in.Config != nil {
+		const prefix string = ",\"Config\":"
+		out.RawString(prefix)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out, *in.Config)
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes4(in *jlexer.Lexer, out *Config) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Healthcheck":
+			if in.IsNull() {
+				in.Skip()
+				out.Healthcheck = nil
+			} else {
+				if out.Healthcheck == nil {
+					out.Healthcheck = new(container.HealthConfig)
+				}
+				easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer(in, out.Healthcheck)
+			}
+		case "User":
+			out.User = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out *jwriter.Writer, in Config) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Healthcheck != nil {
+		const prefix string = ",\"Healthcheck\":"
+		first = false
+		out.RawString(prefix[1:])
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer(out, *in.Healthcheck)
+	}
+	if in.User != "" {
+		const prefix string = ",\"User\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.User))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer(in *jlexer.Lexer, out *container.HealthConfig) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Test":
+			if in.IsNull() {
+				in.Skip()
+				out.Test = nil
+			} else {
+				in.Delim('[')
+				if out.Test == nil {
+					if !in.IsDelim(']') {
+						out.Test = make([]string, 0, 4)
+					} else {
+						out.Test = []string{}
+					}
+				} else {
+					out.Test = (out.Test)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v45 string
+					v45 = string(in.String())
+					out.Test = append(out.Test, v45)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "Interval":
+			out.Interval = time.Duration(in.Int64())
+		case "Timeout":
+			out.Timeout = time.Duration(in.Int64())
+		case "StartPeriod":
+			out.StartPeriod = time.Duration(in.Int64())
+		case "Retries":
+			out.Retries = int(in.Int())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer(out *jwriter.Writer, in container.HealthConfig) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Test) != 0 {
+		const prefix string = ",\"Test\":"
+		first = false
+		out.RawString(prefix[1:])
+		{
+			out.RawByte('[')
+			for v46, v47 := range in.Test {
+				if v46 > 0 {
+					out.RawByte(',')
+				}
+				out.String(string(v47))
+			}
+			out.RawByte(']')
+		}
+	}
+	if in.Interval != 0 {
+		const prefix string = ",\"Interval\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.Interval))
+	}
+	if in.Timeout != 0 {
+		const prefix string = ",\"Timeout\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.Timeout))
+	}
+	if in.StartPeriod != 0 {
+		const prefix string = ",\"StartPeriod\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.StartPeriod))
+	}
+	if in.Retries != 0 {
+		const prefix string = ",\"Retries\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int(int(in.Retries))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer, out *ContainerJSON) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	out.ContainerJSONBase = new(ContainerJSONBase)
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Mounts":
+			if in.IsNull() {
+				in.Skip()
+				out.Mounts = nil
+			} else {
+				in.Delim('[')
+				if out.Mounts == nil {
+					if !in.IsDelim(']') {
+						out.Mounts = make([]MountPoint, 0, 0)
+					} else {
+						out.Mounts = []MountPoint{}
+					}
+				} else {
+					out.Mounts = (out.Mounts)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v48 MountPoint
+					easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes5(in, &v48)
+					out.Mounts = append(out.Mounts, v48)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "Config":
+			if in.IsNull() {
+				in.Skip()
+				out.Config = nil
+			} else {
+				if out.Config == nil {
+					out.Config = new(Config)
+				}
+				easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes4(in, out.Config)
+			}
+		case "NetworkSettings":
+			if in.IsNull() {
+				in.Skip()
+				out.NetworkSettings = nil
+			} else {
+				if out.NetworkSettings == nil {
+					out.NetworkSettings = new(NetworkSettings)
+				}
+				easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes6(in, out.NetworkSettings)
+			}
+		case "Id":
+			out.ID = string(in.String())
+		case "Image":
+			out.Image = string(in.String())
+		case "State":
+			if in.IsNull() {
+				in.Skip()
+				out.State = nil
+			} else {
+				if out.State == nil {
+					out.State = new(ContainerState)
+				}
+				easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes7(in, out.State)
+			}
+		case "Name":
+			out.Name = string(in.String())
+		case "AppArmorProfile":
+			out.AppArmorProfile = string(in.String())
+		case "HostConfig":
+			if in.IsNull() {
+				in.Skip()
+				out.HostConfig = nil
+			} else {
+				if out.HostConfig == nil {
+					out.HostConfig = new(HostConfig)
+				}
+				easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes8(in, out.HostConfig)
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writer, in ContainerJSON) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Mounts) != 0 {
+		const prefix string = ",\"Mounts\":"
+		first = false
+		out.RawString(prefix[1:])
+		{
+			out.RawByte('[')
+			for v49, v50 := range in.Mounts {
+				if v49 > 0 {
+					out.RawByte(',')
+				}
+				easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes5(out, v50)
+			}
+			out.RawByte(']')
+		}
+	}
+	if in.Config != nil {
+		const prefix string = ",\"Config\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes4(out, *in.Config)
+	}
+	if in.NetworkSettings != nil {
+		const prefix string = ",\"NetworkSettings\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes6(out, *in.NetworkSettings)
+	}
+	{
+		const prefix string = ",\"Id\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.ID))
+	}
+	if in.Image != "" {
+		const prefix string = ",\"Image\":"
+		out.RawString(prefix)
+		out.String(string(in.Image))
+	}
+	if in.State != nil {
+		const prefix string = ",\"State\":"
+		out.RawString(prefix)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes7(out, *in.State)
+	}
+	if in.Name != "" {
+		const prefix string = ",\"Name\":"
+		out.RawString(prefix)
+		out.String(string(in.Name))
+	}
+	if in.AppArmorProfile != "" {
+		const prefix string = ",\"AppArmorProfile\":"
+		out.RawString(prefix)
+		out.String(string(in.AppArmorProfile))
+	}
+	if in.HostConfig != nil {
+		const prefix string = ",\"HostConfig\":"
+		out.RawString(prefix)
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out, *in.HostConfig)
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes8(in *jlexer.Lexer, out *HostConfig) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "CapAdd":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.CapAdd).UnmarshalJSON(data))
+			}
+		case "CapDrop":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.CapDrop).UnmarshalJSON(data))
+			}
+		case "SecurityOpt":
+			if in.IsNull() {
+				in.Skip()
+				out.SecurityOpt = nil
+			} else {
+				in.Delim('[')
+				if out.SecurityOpt == nil {
+					if !in.IsDelim(']') {
+						out.SecurityOpt = make([]string, 0, 4)
+					} else {
+						out.SecurityOpt = []string{}
+					}
+				} else {
+					out.SecurityOpt = (out.SecurityOpt)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v51 string
+					v51 = string(in.String())
+					out.SecurityOpt = append(out.SecurityOpt, v51)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "NetworkMode":
+			out.NetworkMode = container.NetworkMode(in.String())
+		case "RestartPolicy":
+			easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer1(in, &out.RestartPolicy)
+		case "IpcMode":
+			out.IpcMode = container.IpcMode(in.String())
+		case "PidMode":
+			out.PidMode = container.PidMode(in.String())
+		case "Privileged":
+			out.Privileged = bool(in.Bool())
+		case "ReadonlyRootfs":
+			out.ReadonlyRootfs = bool(in.Bool())
+		case "UTSMode":
+			out.UTSMode = container.UTSMode(in.String())
+		case "UsernsMode":
+			out.UsernsMode = container.UsernsMode(in.String())
+		case "CgroupParent":
+			out.CgroupParent = string(in.String())
+		case "CpuShares":
+			out.CPUShares = int64(in.Int64())
+		case "Memory":
+			out.Memory = int64(in.Int64())
+		case "Devices":
+			if in.IsNull() {
+				in.Skip()
+				out.Devices = nil
+			} else {
+				in.Delim('[')
+				if out.Devices == nil {
+					if !in.IsDelim(']') {
+						out.Devices = make([]container.DeviceMapping, 0, 1)
+					} else {
+						out.Devices = []container.DeviceMapping{}
+					}
+				} else {
+					out.Devices = (out.Devices)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v52 container.DeviceMapping
+					easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer2(in, &v52)
+					out.Devices = append(out.Devices, v52)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "PidsLimit":
+			out.PidsLimit = int64(in.Int64())
+		case "Ulimits":
+			if in.IsNull() {
+				in.Skip()
+				out.Ulimits = nil
+			} else {
+				in.Delim('[')
+				if out.Ulimits == nil {
+					if !in.IsDelim(']') {
+						out.Ulimits = make([]*go_units.Ulimit, 0, 8)
+					} else {
+						out.Ulimits = []*go_units.Ulimit{}
+					}
+				} else {
+					out.Ulimits = (out.Ulimits)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v53 *go_units.Ulimit
+					if in.IsNull() {
+						in.Skip()
+						v53 = nil
+					} else {
+						if v53 == nil {
+							v53 = new(go_units.Ulimit)
+						}
+						easyjson6601e8cdDecodeGithubComDockerGoUnits(in, v53)
+					}
+					out.Ulimits = append(out.Ulimits, v53)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes8(out *jwriter.Writer, in HostConfig) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.CapAdd) != 0 {
+		const prefix string = ",\"CapAdd\":"
+		first = false
+		out.RawString(prefix[1:])
+		{
+			out.RawByte('[')
+			for v54, v55 := range in.CapAdd {
+				if v54 > 0 {
+					out.RawByte(',')
+				}
+				out.String(string(v55))
+			}
+			out.RawByte(']')
+		}
+	}
+	if len(in.CapDrop) != 0 {
+		const prefix string = ",\"CapDrop\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v56, v57 := range in.CapDrop {
+				if v56 > 0 {
+					out.RawByte(',')
+				}
+				out.String(string(v57))
+			}
+			out.RawByte(']')
+		}
+	}
+	if len(in.SecurityOpt) != 0 {
+		const prefix string = ",\"SecurityOpt\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v58, v59 := range in.SecurityOpt {
+				if v58 > 0 {
+					out.RawByte(',')
+				}
+				out.String(string(v59))
+			}
+			out.RawByte(']')
+		}
+	}
+	if in.NetworkMode != "" {
+		const prefix string = ",\"NetworkMode\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.NetworkMode))
+	}
+	if true {
+		const prefix string = ",\"RestartPolicy\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer1(out, in.RestartPolicy)
+	}
+	if in.IpcMode != "" {
+		const prefix string = ",\"IpcMode\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.IpcMode))
+	}
+	if in.PidMode != "" {
+		const prefix string = ",\"PidMode\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.PidMode))
+	}
+	if in.Privileged {
+		const prefix string = ",\"Privileged\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.Privileged))
+	}
+	if in.ReadonlyRootfs {
+		const prefix string = ",\"ReadonlyRootfs\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.ReadonlyRootfs))
+	}
+	if in.UTSMode != "" {
+		const prefix string = ",\"UTSMode\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.UTSMode))
+	}
+	if in.UsernsMode != "" {
+		const prefix string = ",\"UsernsMode\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.UsernsMode))
+	}
+	if in.CgroupParent != "" {
+		const prefix string = ",\"CgroupParent\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.CgroupParent))
+	}
+	{
+		const prefix string = ",\"CpuShares\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.CPUShares))
+	}
+	if in.Memory != 0 {
+		const prefix string = ",\"Memory\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.Memory))
+	}
+	if len(in.Devices) != 0 {
+		const prefix string = ",\"Devices\":"
+		out.RawString(prefix)
+		{
+			out.RawByte('[')
+			for v60, v61 := range in.Devices {
+				if v60 > 0 {
+					out.RawByte(',')
+				}
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer2(out, v61)
+			}
+			out.RawByte(']')
+		}
+	}
+	if in.PidsLimit != 0 {
+		const prefix string = ",\"PidsLimit\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.PidsLimit))
+	}
+	if len(in.Ulimits) != 0 {
+		const prefix string = ",\"Ulimits\":"
+		out.RawString(prefix)
+		{
+			out.RawByte('[')
+			for v62, v63 := range in.Ulimits {
+				if v62 > 0 {
+					out.RawByte(',')
+				}
+				if v63 == nil {
+					out.RawString("null")
+				} else {
+					easyjson6601e8cdEncodeGithubComDockerGoUnits(out, *v63)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComDockerGoUnits(in *jlexer.Lexer, out *go_units.Ulimit) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Name":
+			out.Name = string(in.String())
+		case "Hard":
+			out.Hard = int64(in.Int64())
+		case "Soft":
+			out.Soft = int64(in.Int64())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComDockerGoUnits(out *jwriter.Writer, in go_units.Ulimit) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"Name\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.Name))
+	}
+	{
+		const prefix string = ",\"Hard\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.Hard))
+	}
+	{
+		const prefix string = ",\"Soft\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.Soft))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer2(in *jlexer.Lexer, out *container.DeviceMapping) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "PathOnHost":
+			out.PathOnHost = string(in.String())
+		case "PathInContainer":
+			out.PathInContainer = string(in.String())
+		case "CgroupPermissions":
+			out.CgroupPermissions = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer2(out *jwriter.Writer, in container.DeviceMapping) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"PathOnHost\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.PathOnHost))
+	}
+	{
+		const prefix string = ",\"PathInContainer\":"
+		out.RawString(prefix)
+		out.String(string(in.PathInContainer))
+	}
+	{
+		const prefix string = ",\"CgroupPermissions\":"
+		out.RawString(prefix)
+		out.String(string(in.CgroupPermissions))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesContainer1(in *jlexer.Lexer, out *container.RestartPolicy) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Name":
+			out.Name = string(in.String())
+		case "MaximumRetryCount":
+			out.MaximumRetryCount = int(in.Int())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesContainer1(out *jwriter.Writer, in container.RestartPolicy) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"Name\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.Name))
+	}
+	{
+		const prefix string = ",\"MaximumRetryCount\":"
+		out.RawString(prefix)
+		out.Int(int(in.MaximumRetryCount))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes7(in *jlexer.Lexer, out *ContainerState) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Running":
+			out.Running = bool(in.Bool())
+		case "Health":
+			if in.IsNull() {
+				in.Skip()
+				out.Health = nil
+			} else {
+				if out.Health == nil {
+					out.Health = new(Health)
+				}
+				easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes9(in, out.Health)
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes7(out *jwriter.Writer, in ContainerState) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Running {
+		const prefix string = ",\"Running\":"
+		first = false
+		out.RawString(prefix[1:])
+		out.Bool(bool(in.Running))
+	}
+	if in.Health != nil {
+		const prefix string = ",\"Health\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes9(out, *in.Health)
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes9(in *jlexer.Lexer, out *Health) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Status":
+			out.Status = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes9(out *jwriter.Writer, in Health) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Status != "" {
+		const prefix string = ",\"Status\":"
+		first = false
+		out.RawString(prefix[1:])
+		out.String(string(in.Status))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes6(in *jlexer.Lexer, out *NetworkSettings) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Networks":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				in.Delim('{')
+				if !in.IsDelim('}') {
+					out.Networks = make(map[string]struct{})
+				} else {
+					out.Networks = nil
+				}
+				for !in.IsDelim('}') {
+					key := string(in.String())
+					in.WantColon()
+					var v64 struct{}
+					easyjson6601e8cdDecode(in, &v64)
+					(out.Networks)[key] = v64
+					in.WantComma()
+				}
+				in.Delim('}')
+			}
+		case "Ports":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				in.Delim('{')
+				if !in.IsDelim('}') {
+					out.Ports = make(nat.PortMap)
+				} else {
+					out.Ports = nil
+				}
+				for !in.IsDelim('}') {
+					key := nat.Port(in.String())
+					in.WantColon()
+					var v65 []nat.PortBinding
+					if in.IsNull() {
+						in.Skip()
+						v65 = nil
+					} else {
+						in.Delim('[')
+						if v65 == nil {
+							if !in.IsDelim(']') {
+								v65 = make([]nat.PortBinding, 0, 2)
+							} else {
+								v65 = []nat.PortBinding{}
+							}
+						} else {
+							v65 = (v65)[:0]
+						}
+						for !in.IsDelim(']') {
+							var v66 nat.PortBinding
+							easyjson6601e8cdDecodeGithubComDockerGoConnectionsNat(in, &v66)
+							v65 = append(v65, v66)
+							in.WantComma()
+						}
+						in.Delim(']')
+					}
+					(out.Ports)[key] = v65
+					in.WantComma()
+				}
+				in.Delim('}')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes6(out *jwriter.Writer, in NetworkSettings) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Networks) != 0 {
+		const prefix string = ",\"Networks\":"
+		first = false
+		out.RawString(prefix[1:])
+		{
+			out.RawByte('{')
+			v67First := true
+			for v67Name, v67Value := range in.Networks {
+				if v67First {
+					v67First = false
+				} else {
+					out.RawByte(',')
+				}
+				out.String(string(v67Name))
+				out.RawByte(':')
+				easyjson6601e8cdEncode(out, v67Value)
+			}
+			out.RawByte('}')
+		}
+	}
+	if len(in.Ports) != 0 {
+		const prefix string = ",\"Ports\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('{')
+			v68First := true
+			for v68Name, v68Value := range in.Ports {
+				if v68First {
+					v68First = false
+				} else {
+					out.RawByte(',')
+				}
+				out.String(string(v68Name))
+				out.RawByte(':')
+				if v68Value == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+					out.RawString("null")
+				} else {
+					out.RawByte('[')
+					for v69, v70 := range v68Value {
+						if v69 > 0 {
+							out.RawByte(',')
+						}
+						easyjson6601e8cdEncodeGithubComDockerGoConnectionsNat(out, v70)
+					}
+					out.RawByte(']')
+				}
+			}
+			out.RawByte('}')
+		}
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComDockerGoConnectionsNat(in *jlexer.Lexer, out *nat.PortBinding) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "HostIp":
+			out.HostIP = string(in.String())
+		case "HostPort":
+			out.HostPort = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComDockerGoConnectionsNat(out *jwriter.Writer, in nat.PortBinding) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"HostIp\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.HostIP))
+	}
+	{
+		const prefix string = ",\"HostPort\":"
+		out.RawString(prefix)
+		out.String(string(in.HostPort))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecode(in *jlexer.Lexer, out *struct{}) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncode(out *jwriter.Writer, in struct{}) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes5(in *jlexer.Lexer, out *MountPoint) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "Type":
+			out.Type = mount.Type(in.String())
+		case "Name":
+			out.Name = string(in.String())
+		case "Source":
+			out.Source = string(in.String())
+		case "Destination":
+			out.Destination = string(in.String())
+		case "Driver":
+			out.Driver = string(in.String())
+		case "Mode":
+			out.Mode = string(in.String())
+		case "Propagation":
+			out.Propagation = mount.Propagation(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes5(out *jwriter.Writer, in MountPoint) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Type != "" {
+		const prefix string = ",\"Type\":"
+		first = false
+		out.RawString(prefix[1:])
+		out.String(string(in.Type))
+	}
+	if in.Name != "" {
+		const prefix string = ",\"Name\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Name))
+	}
+	if in.Source != "" {
+		const prefix string = ",\"Source\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Source))
+	}
+	if in.Destination != "" {
+		const prefix string = ",\"Destination\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Destination))
+	}
+	if in.Driver != "" {
+		const prefix string = ",\"Driver\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Driver))
+	}
+	if in.Mode != "" {
+		const prefix string = ",\"Mode\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Mode))
+	}
+	if in.Propagation != "" {
+		const prefix string = ",\"Propagation\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Propagation))
+	}
+	out.RawByte('}')
+}
 func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *types.Info) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -1332,16 +2783,16 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 					out.DriverStatus = (out.DriverStatus)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v39 [2]string
+					var v71 [2]string
 					if in.IsNull() {
 						in.Skip()
 					} else {
 						in.Delim('[')
-						v40 := 0
+						v72 := 0
 						for !in.IsDelim(']') {
-							if v40 < 2 {
-								(v39)[v40] = string(in.String())
-								v40++
+							if v72 < 2 {
+								(v71)[v72] = string(in.String())
+								v72++
 							} else {
 								in.SkipRecursive()
 							}
@@ -1349,7 +2800,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 						}
 						in.Delim(']')
 					}
-					out.DriverStatus = append(out.DriverStatus, v39)
+					out.DriverStatus = append(out.DriverStatus, v71)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1370,16 +2821,16 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 					out.SystemStatus = (out.SystemStatus)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v41 [2]string
+					var v73 [2]string
 					if in.IsNull() {
 						in.Skip()
 					} else {
 						in.Delim('[')
-						v42 := 0
+						v74 := 0
 						for !in.IsDelim(']') {
-							if v42 < 2 {
-								(v41)[v42] = string(in.String())
-								v42++
+							if v74 < 2 {
+								(v73)[v74] = string(in.String())
+								v74++
 							} else {
 								in.SkipRecursive()
 							}
@@ -1387,7 +2838,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 						}
 						in.Delim(']')
 					}
-					out.SystemStatus = append(out.SystemStatus, v41)
+					out.SystemStatus = append(out.SystemStatus, v73)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1474,9 +2925,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 					out.GenericResources = (out.GenericResources)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v43 swarm.GenericResource
-					easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm(in, &v43)
-					out.GenericResources = append(out.GenericResources, v43)
+					var v75 swarm.GenericResource
+					easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm(in, &v75)
+					out.GenericResources = append(out.GenericResources, v75)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1507,9 +2958,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 					out.Labels = (out.Labels)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v44 string
-					v44 = string(in.String())
-					out.Labels = append(out.Labels, v44)
+					var v76 string
+					v76 = string(in.String())
+					out.Labels = append(out.Labels, v76)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1531,9 +2982,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v45 types.Runtime
-					easyjson6601e8cdDecodeGithubComDockerDockerApiTypes4(in, &v45)
-					(out.Runtimes)[key] = v45
+					var v77 types.Runtime
+					easyjson6601e8cdDecodeGithubComDockerDockerApiTypes4(in, &v77)
+					(out.Runtimes)[key] = v77
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -1570,9 +3021,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 					out.SecurityOptions = (out.SecurityOptions)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v46 string
-					v46 = string(in.String())
-					out.SecurityOptions = append(out.SecurityOptions, v46)
+					var v78 string
+					v78 = string(in.String())
+					out.SecurityOptions = append(out.SecurityOptions, v78)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1595,9 +3046,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 					out.Warnings = (out.Warnings)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v47 string
-					v47 = string(in.String())
-					out.Warnings = append(out.Warnings, v47)
+					var v79 string
+					v79 = string(in.String())
+					out.Warnings = append(out.Warnings, v79)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -1658,16 +3109,16 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v48, v49 := range in.DriverStatus {
-				if v48 > 0 {
+			for v80, v81 := range in.DriverStatus {
+				if v80 > 0 {
 					out.RawByte(',')
 				}
 				out.RawByte('[')
-				for v50 := range v49 {
-					if v50 > 0 {
+				for v82 := range v81 {
+					if v82 > 0 {
 						out.RawByte(',')
 					}
-					out.String(string((v49)[v50]))
+					out.String(string((v81)[v82]))
 				}
 				out.RawByte(']')
 			}
@@ -1681,16 +3132,16 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v51, v52 := range in.SystemStatus {
-				if v51 > 0 {
+			for v83, v84 := range in.SystemStatus {
+				if v83 > 0 {
 					out.RawByte(',')
 				}
 				out.RawByte('[')
-				for v53 := range v52 {
-					if v53 > 0 {
+				for v85 := range v84 {
+					if v85 > 0 {
 						out.RawByte(',')
 					}
-					out.String(string((v52)[v53]))
+					out.String(string((v84)[v85]))
 				}
 				out.RawByte(']')
 			}
@@ -1853,11 +3304,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v54, v55 := range in.GenericResources {
-				if v54 > 0 {
+			for v86, v87 := range in.GenericResources {
+				if v86 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out, v55)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out, v87)
 			}
 			out.RawByte(']')
 		}
@@ -1894,11 +3345,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v56, v57 := range in.Labels {
-				if v56 > 0 {
+			for v88, v89 := range in.Labels {
+				if v88 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v57))
+				out.String(string(v89))
 			}
 			out.RawByte(']')
 		}
@@ -1930,16 +3381,16 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 			out.RawString(`null`)
 		} else {
 			out.RawByte('{')
-			v58First := true
-			for v58Name, v58Value := range in.Runtimes {
-				if v58First {
-					v58First = false
+			v90First := true
+			for v90Name, v90Value := range in.Runtimes {
+				if v90First {
+					v90First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v58Name))
+				out.String(string(v90Name))
 				out.RawByte(':')
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypes4(out, v58Value)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypes4(out, v90Value)
 			}
 			out.RawByte('}')
 		}
@@ -1991,11 +3442,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v59, v60 := range in.SecurityOptions {
-				if v59 > 0 {
+			for v91, v92 := range in.SecurityOptions {
+				if v91 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v60))
+				out.String(string(v92))
 			}
 			out.RawByte(']')
 		}
@@ -2012,11 +3463,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v61, v62 := range in.Warnings {
-				if v61 > 0 {
+			for v93, v94 := range in.Warnings {
+				if v93 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v62))
+				out.String(string(v94))
 			}
 			out.RawByte(']')
 		}
@@ -2117,9 +3568,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm1(in *jlexer.Lexer,
 					out.RemoteManagers = (out.RemoteManagers)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v63 swarm.Peer
-					easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm2(in, &v63)
-					out.RemoteManagers = append(out.RemoteManagers, v63)
+					var v95 swarm.Peer
+					easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm2(in, &v95)
+					out.RemoteManagers = append(out.RemoteManagers, v95)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -2154,9 +3605,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm1(in *jlexer.Lexer,
 					out.Warnings = (out.Warnings)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v64 string
-					v64 = string(in.String())
-					out.Warnings = append(out.Warnings, v64)
+					var v96 string
+					v96 = string(in.String())
+					out.Warnings = append(out.Warnings, v96)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -2207,11 +3658,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out *jwriter.Writ
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v65, v66 := range in.RemoteManagers {
-				if v65 > 0 {
+			for v97, v98 := range in.RemoteManagers {
+				if v97 > 0 {
 					out.RawByte(',')
 				}
-				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm2(out, v66)
+				easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm2(out, v98)
 			}
 			out.RawByte(']')
 		}
@@ -2236,11 +3687,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out *jwriter.Writ
 		out.RawString(prefix)
 		{
 			out.RawByte('[')
-			for v67, v68 := range in.Warnings {
-				if v67 > 0 {
+			for v99, v100 := range in.Warnings {
+				if v99 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v68))
+				out.String(string(v100))
 			}
 			out.RawByte(']')
 		}
@@ -2290,9 +3741,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm3(in *jlexer.Lexer,
 					out.DefaultAddrPool = (out.DefaultAddrPool)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v69 string
-					v69 = string(in.String())
-					out.DefaultAddrPool = append(out.DefaultAddrPool, v69)
+					var v101 string
+					v101 = string(in.String())
+					out.DefaultAddrPool = append(out.DefaultAddrPool, v101)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -2352,11 +3803,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out *jwriter.Writ
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v70, v71 := range in.DefaultAddrPool {
-				if v70 > 0 {
+			for v102, v103 := range in.DefaultAddrPool {
+				if v102 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v71))
+				out.String(string(v103))
 			}
 			out.RawByte(']')
 		}
@@ -2550,9 +4001,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm4(in *jlexer.Lexer,
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v78 string
-					v78 = string(in.String())
-					(out.Labels)[key] = v78
+					var v110 string
+					v110 = string(in.String())
+					(out.Labels)[key] = v110
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -2649,16 +4100,16 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writ
 			out.RawString(`null`)
 		} else {
 			out.RawByte('{')
-			v79First := true
-			for v79Name, v79Value := range in.Labels {
-				if v79First {
-					v79First = false
+			v111First := true
+			for v111Name, v111Value := range in.Labels {
+				if v111First {
+					v111First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v79Name))
+				out.String(string(v111Name))
 				out.RawByte(':')
-				out.String(string(v79Value))
+				out.String(string(v111Value))
 			}
 			out.RawByte('}')
 		}
@@ -2792,9 +4243,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm13(in *jlexer.Lexer
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v80 string
-					v80 = string(in.String())
-					(out.Options)[key] = v80
+					var v112 string
+					v112 = string(in.String())
+					(out.Options)[key] = v112
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -2829,16 +4280,16 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm13(out *jwriter.Wri
 		}
 		{
 			out.RawByte('{')
-			v81First := true
-			for v81Name, v81Value := range in.Options {
-				if v81First {
-					v81First = false
+			v113First := true
+			for v113Name, v113Value := range in.Options {
+				if v113First {
+					v113First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v81Name))
+				out.String(string(v113Name))
 				out.RawByte(':')
-				out.String(string(v81Value))
+				out.String(string(v113Value))
 			}
 			out.RawByte('}')
 		}
@@ -2882,17 +4333,17 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm10(in *jlexer.Lexer
 					out.ExternalCAs = (out.ExternalCAs)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v82 *swarm.ExternalCA
+					var v114 *swarm.ExternalCA
 					if in.IsNull() {
 						in.Skip()
-						v82 = nil
+						v114 = nil
 					} else {
-						if v82 == nil {
-							v82 = new(swarm.ExternalCA)
+						if v114 == nil {
+							v114 = new(swarm.ExternalCA)
 						}
-						easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm14(in, v82)
+						easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm14(in, v114)
 					}
-					out.ExternalCAs = append(out.ExternalCAs, v82)
+					out.ExternalCAs = append(out.ExternalCAs, v114)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -2933,14 +4384,14 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm10(out *jwriter.Wri
 		}
 		{
 			out.RawByte('[')
-			for v83, v84 := range in.ExternalCAs {
-				if v83 > 0 {
+			for v115, v116 := range in.ExternalCAs {
+				if v115 > 0 {
 					out.RawByte(',')
 				}
-				if v84 == nil {
+				if v116 == nil {
 					out.RawString("null")
 				} else {
-					easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out, *v84)
+					easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out, *v116)
 				}
 			}
 			out.RawByte(']')
@@ -3014,9 +4465,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm14(in *jlexer.Lexer
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v85 string
-					v85 = string(in.String())
-					(out.Options)[key] = v85
+					var v117 string
+					v117 = string(in.String())
+					(out.Options)[key] = v117
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -3052,16 +4503,16 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out *jwriter.Wri
 		out.RawString(prefix)
 		{
 			out.RawByte('{')
-			v86First := true
-			for v86Name, v86Value := range in.Options {
-				if v86First {
-					v86First = false
+			v118First := true
+			for v118Name, v118Value := range in.Options {
+				if v118First {
+					v118First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v86Name))
+				out.String(string(v118Name))
 				out.RawByte(':')
-				out.String(string(v86Value))
+				out.String(string(v118Value))
 			}
 			out.RawByte('}')
 		}
@@ -3347,9 +4798,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes4(in *jlexer.Lexer, out 
 					out.Args = (out.Args)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v87 string
-					v87 = string(in.String())
-					out.Args = append(out.Args, v87)
+					var v119 string
+					v119 = string(in.String())
+					out.Args = append(out.Args, v119)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -3378,11 +4829,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes4(out *jwriter.Writer, i
 		out.RawString(prefix)
 		{
 			out.RawByte('[')
-			for v88, v89 := range in.Args {
-				if v88 > 0 {
+			for v120, v121 := range in.Args {
+				if v120 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v89))
+				out.String(string(v121))
 			}
 			out.RawByte(']')
 		}
@@ -3605,19 +5056,19 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry(in *jlexer.Lexe
 					out.AllowNondistributableArtifactsCIDRs = (out.AllowNondistributableArtifactsCIDRs)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v90 *registry.NetIPNet
+					var v122 *registry.NetIPNet
 					if in.IsNull() {
 						in.Skip()
-						v90 = nil
+						v122 = nil
 					} else {
-						if v90 == nil {
-							v90 = new(registry.NetIPNet)
+						if v122 == nil {
+							v122 = new(registry.NetIPNet)
 						}
 						if data := in.Raw(); in.Ok() {
-							in.AddError((*v90).UnmarshalJSON(data))
+							in.AddError((*v122).UnmarshalJSON(data))
 						}
 					}
-					out.AllowNondistributableArtifactsCIDRs = append(out.AllowNondistributableArtifactsCIDRs, v90)
+					out.AllowNondistributableArtifactsCIDRs = append(out.AllowNondistributableArtifactsCIDRs, v122)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -3638,9 +5089,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry(in *jlexer.Lexe
 					out.AllowNondistributableArtifactsHostnames = (out.AllowNondistributableArtifactsHostnames)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v91 string
-					v91 = string(in.String())
-					out.AllowNondistributableArtifactsHostnames = append(out.AllowNondistributableArtifactsHostnames, v91)
+					var v123 string
+					v123 = string(in.String())
+					out.AllowNondistributableArtifactsHostnames = append(out.AllowNondistributableArtifactsHostnames, v123)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -3661,19 +5112,19 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry(in *jlexer.Lexe
 					out.InsecureRegistryCIDRs = (out.InsecureRegistryCIDRs)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v92 *registry.NetIPNet
+					var v124 *registry.NetIPNet
 					if in.IsNull() {
 						in.Skip()
-						v92 = nil
+						v124 = nil
 					} else {
-						if v92 == nil {
-							v92 = new(registry.NetIPNet)
+						if v124 == nil {
+							v124 = new(registry.NetIPNet)
 						}
 						if data := in.Raw(); in.Ok() {
-							in.AddError((*v92).UnmarshalJSON(data))
+							in.AddError((*v124).UnmarshalJSON(data))
 						}
 					}
-					out.InsecureRegistryCIDRs = append(out.InsecureRegistryCIDRs, v92)
+					out.InsecureRegistryCIDRs = append(out.InsecureRegistryCIDRs, v124)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -3687,17 +5138,17 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry(in *jlexer.Lexe
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v93 *registry.IndexInfo
+					var v125 *registry.IndexInfo
 					if in.IsNull() {
 						in.Skip()
-						v93 = nil
+						v125 = nil
 					} else {
-						if v93 == nil {
-							v93 = new(registry.IndexInfo)
+						if v125 == nil {
+							v125 = new(registry.IndexInfo)
 						}
-						easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry1(in, v93)
+						easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry1(in, v125)
 					}
-					(out.IndexConfigs)[key] = v93
+					(out.IndexConfigs)[key] = v125
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -3718,9 +5169,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry(in *jlexer.Lexe
 					out.Mirrors = (out.Mirrors)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v94 string
-					v94 = string(in.String())
-					out.Mirrors = append(out.Mirrors, v94)
+					var v126 string
+					v126 = string(in.String())
+					out.Mirrors = append(out.Mirrors, v126)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -3746,14 +5197,14 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v95, v96 := range in.AllowNondistributableArtifactsCIDRs {
-				if v95 > 0 {
+			for v127, v128 := range in.AllowNondistributableArtifactsCIDRs {
+				if v127 > 0 {
 					out.RawByte(',')
 				}
-				if v96 == nil {
+				if v128 == nil {
 					out.RawString("null")
 				} else {
-					out.Raw((*v96).MarshalJSON())
+					out.Raw((*v128).MarshalJSON())
 				}
 			}
 			out.RawByte(']')
@@ -3766,11 +5217,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v97, v98 := range in.AllowNondistributableArtifactsHostnames {
-				if v97 > 0 {
+			for v129, v130 := range in.AllowNondistributableArtifactsHostnames {
+				if v129 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v98))
+				out.String(string(v130))
 			}
 			out.RawByte(']')
 		}
@@ -3782,14 +5233,14 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v99, v100 := range in.InsecureRegistryCIDRs {
-				if v99 > 0 {
+			for v131, v132 := range in.InsecureRegistryCIDRs {
+				if v131 > 0 {
 					out.RawByte(',')
 				}
-				if v100 == nil {
+				if v132 == nil {
 					out.RawString("null")
 				} else {
-					out.Raw((*v100).MarshalJSON())
+					out.Raw((*v132).MarshalJSON())
 				}
 			}
 			out.RawByte(']')
@@ -3802,19 +5253,19 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 			out.RawString(`null`)
 		} else {
 			out.RawByte('{')
-			v101First := true
-			for v101Name, v101Value := range in.IndexConfigs {
-				if v101First {
-					v101First = false
+			v133First := true
+			for v133Name, v133Value := range in.IndexConfigs {
+				if v133First {
+					v133First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v101Name))
+				out.String(string(v133Name))
 				out.RawByte(':')
-				if v101Value == nil {
+				if v133Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out, *v101Value)
+					easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out, *v133Value)
 				}
 			}
 			out.RawByte('}')
@@ -3827,11 +5278,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v102, v103 := range in.Mirrors {
-				if v102 > 0 {
+			for v134, v135 := range in.Mirrors {
+				if v134 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v103))
+				out.String(string(v135))
 			}
 			out.RawByte(']')
 		}
@@ -3875,9 +5326,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry1(in *jlexer.Lex
 					out.Mirrors = (out.Mirrors)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v104 string
-					v104 = string(in.String())
-					out.Mirrors = append(out.Mirrors, v104)
+					var v136 string
+					v136 = string(in.String())
+					out.Mirrors = append(out.Mirrors, v136)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -3912,11 +5363,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out *jwriter.W
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v105, v106 := range in.Mirrors {
-				if v105 > 0 {
+			for v137, v138 := range in.Mirrors {
+				if v137 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v106))
+				out.String(string(v138))
 			}
 			out.RawByte(']')
 		}
@@ -3968,9 +5419,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes3(in *jlexer.Lexer, out 
 					out.Volume = (out.Volume)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v107 string
-					v107 = string(in.String())
-					out.Volume = append(out.Volume, v107)
+					var v139 string
+					v139 = string(in.String())
+					out.Volume = append(out.Volume, v139)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -3991,9 +5442,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes3(in *jlexer.Lexer, out 
 					out.Network = (out.Network)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v108 string
-					v108 = string(in.String())
-					out.Network = append(out.Network, v108)
+					var v140 string
+					v140 = string(in.String())
+					out.Network = append(out.Network, v140)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -4014,9 +5465,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes3(in *jlexer.Lexer, out 
 					out.Authorization = (out.Authorization)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v109 string
-					v109 = string(in.String())
-					out.Authorization = append(out.Authorization, v109)
+					var v141 string
+					v141 = string(in.String())
+					out.Authorization = append(out.Authorization, v141)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -4037,9 +5488,9 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes3(in *jlexer.Lexer, out 
 					out.Log = (out.Log)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v110 string
-					v110 = string(in.String())
-					out.Log = append(out.Log, v110)
+					var v142 string
+					v142 = string(in.String())
+					out.Log = append(out.Log, v142)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -4065,11 +5516,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v111, v112 := range in.Volume {
-				if v111 > 0 {
+			for v143, v144 := range in.Volume {
+				if v143 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v112))
+				out.String(string(v144))
 			}
 			out.RawByte(']')
 		}
@@ -4081,11 +5532,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v113, v114 := range in.Network {
-				if v113 > 0 {
+			for v145, v146 := range in.Network {
+				if v145 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v114))
+				out.String(string(v146))
 			}
 			out.RawByte(']')
 		}
@@ -4097,11 +5548,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v115, v116 := range in.Authorization {
-				if v115 > 0 {
+			for v147, v148 := range in.Authorization {
+				if v147 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v116))
+				out.String(string(v148))
 			}
 			out.RawByte(']')
 		}
@@ -4113,11 +5564,11 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v117, v118 := range in.Log {
-				if v117 > 0 {
+			for v149, v150 := range in.Log {
+				if v149 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v118))
+				out.String(string(v150))
 			}
 			out.RawByte(']')
 		}

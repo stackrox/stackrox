@@ -37,6 +37,20 @@ func (m *MockProcessor) EXPECT() *MockProcessorMockRecorder {
 	return m.recorder
 }
 
+// GetNotifier mocks base method.
+func (m *MockProcessor) GetNotifier(ctx context.Context, id string) notifiers.Notifier {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNotifier", ctx, id)
+	ret0, _ := ret[0].(notifiers.Notifier)
+	return ret0
+}
+
+// GetNotifier indicates an expected call of GetNotifier.
+func (mr *MockProcessorMockRecorder) GetNotifier(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifier", reflect.TypeOf((*MockProcessor)(nil).GetNotifier), ctx, id)
+}
+
 // HasEnabledAuditNotifiers mocks base method.
 func (m *MockProcessor) HasEnabledAuditNotifiers() bool {
 	m.ctrl.T.Helper()

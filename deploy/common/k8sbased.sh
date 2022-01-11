@@ -78,6 +78,14 @@ function verify_orch {
     exit 1
 }
 
+function local_dev {
+      is_local_dev="false"
+      if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
+        is_local_dev="true"
+      fi
+      echo "${is_local_dev}"
+}
+
 function launch_central {
     local k8s_dir="$1"
     local common_dir="${k8s_dir}/../common"
@@ -119,12 +127,6 @@ function launch_central {
     	fi
     	EXTRA_ARGS+=("$(realpath "$1")")
     }
-
-    is_local_dev="false"
-    if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
-      is_local_dev="true"
-      echo "Running in local dev mode. Will patch resources down"
-    fi
 
     if [ -n "${OUTPUT_FORMAT}" ]; then
         add_args "--output-format=${OUTPUT_FORMAT}"
@@ -207,7 +209,12 @@ function launch_central {
 
     # Do not default to running monitoring locally for resource reasons, which can be overridden
     # with MONITORING_SUPPORT=true, otherwise default it to true on all other systems
+    is_local_dev=$(local_dev)
+    needs_monitoring="false"
     if [[ "$MONITORING_SUPPORT" == "true" || ( "${is_local_dev}" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
+      needs_monitoring="true"
+    fi
+    if [[ "${needs_monitoring}" == "true" ]]; then
         echo "Deploying Monitoring..."
         helm_args=(
           -f "${COMMON_DIR}/monitoring-values.yaml"
@@ -353,7 +360,7 @@ function launch_central {
         $central_scripts_dir/port-forward.sh 8000
     fi
 
-    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+    if [[ "${needs_monitoring}" == "true" ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
 
@@ -498,8 +505,7 @@ function launch_sensor {
            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
        fi
     fi
-
-    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+    if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
 

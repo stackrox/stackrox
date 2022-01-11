@@ -1,0 +1,3 @@
+.dropzone {
+    border: 1px dashed var(--pf-global--BorderColor--100);
+}
