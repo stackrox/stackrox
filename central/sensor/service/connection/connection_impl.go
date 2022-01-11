@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
@@ -215,6 +216,8 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	case *central.MsgFromSensor_TelemetryDataResponse:
 		return c.telemetryCtrl.ProcessTelemetryDataResponse(m.TelemetryDataResponse)
+	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
+		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
 	case *central.MsgFromSensor_Event:
 		// Special case the reprocess deployment because its fields are already set
 		if msg.GetEvent().GetReprocessDeployment() != nil {
@@ -232,6 +235,20 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return nil
 	}
 	return c.eventPipeline.Run(ctx, msg, c)
+}
+
+func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Context, request *central.IssueLocalScannerCertsRequest) error {
+	namespace := request.GetNamespace()
+	certs, err := localscanner.IssueLocalScannerCerts(namespace, c.clusterID)
+	errMsgTemplate := "Error issuing local Scanner certificates for cluster with ID %s and namespace %s"
+	if err != nil {
+		return errors.Wrapf(err, errMsgTemplate, c.clusterID, namespace)
+	}
+	err = c.InjectMessage(ctx, &central.MsgToSensor{Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{IssueLocalScannerCertsResponse: certs}})
+	if err != nil {
+		return errors.Wrapf(err, errMsgTemplate, c.clusterID, namespace)
+	}
+	return nil
 }
 
 // getPolicySyncMsg fetches stored policies and prepares them for delivery to sensor.

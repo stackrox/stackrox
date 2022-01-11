@@ -7,13 +7,13 @@ import "storage/service_identity.proto";
 package central;
 
 message LocalScannerCertificates {
-  bytes               ca           = 1;
-  bytes               cert         = 2;
-  bytes               key          = 3;
+  bytes ca   = 1;
+  bytes cert = 2;
+  bytes key  = 3;
 }
 
 message IssueLocalScannerCertsRequest {
-  string namespace  = 1;
+  string namespace = 1;
 }
 
 message IssueLocalScannerCertsResponse {
@@ -21,6 +21,3 @@ message IssueLocalScannerCertsResponse {
   LocalScannerCertificates scanner_db_certs = 2;
 }
 
-service LocalScannerService {
-  rpc IssueLocalScannerCerts(IssueLocalScannerCertsRequest) returns (IssueLocalScannerCertsResponse);
-}

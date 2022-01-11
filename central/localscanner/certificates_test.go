@@ -118,29 +118,30 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 }
 
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
-	testCases := []struct {
-		description string
-		namespace   string
-		shouldFail  bool
+	testCases := map[string]struct {
+		namespace  string
+		shouldFail bool
 	}{
-		{"no parameter missing", namespace, false},
-		{"namespace missing", "", true},
+		"no parameter missing": {namespace, false},
+		"namespace missing":    {"", true},
 	}
-	for _, tc := range testCases {
-		resp, err := issueLocalScannerCerts(tc.namespace, clusterID)
-		if tc.shouldFail {
-			s.Require().Error(err, tc.description)
-			continue
-		}
-		s.Require().NoError(err, tc.description)
-		for _, certs := range []*central.LocalScannerCertificates{
-			resp.GetScannerCerts(),
-			resp.GetScannerDbCerts(),
-		} {
-			s.Require().NotNil(certs, tc.description)
-			s.Assert().NotEmpty(certs.GetCa(), tc.description)
-			s.Assert().NotEmpty(certs.GetCert(), tc.description)
-			s.Assert().NotEmpty(certs.GetKey(), tc.description)
-		}
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			resp, err := IssueLocalScannerCerts(tc.namespace, clusterID)
+			if tc.shouldFail {
+				s.Require().Error(err)
+				return
+			}
+			s.Require().NoError(err)
+			for _, certs := range []*central.LocalScannerCertificates{
+				resp.GetScannerCerts(),
+				resp.GetScannerDbCerts(),
+			} {
+				s.Require().NotNil(certs)
+				s.Assert().NotEmpty(certs.GetCa())
+				s.Assert().NotEmpty(certs.GetCert())
+				s.Assert().NotEmpty(certs.GetKey())
+			}
+		})
 	}
 }
