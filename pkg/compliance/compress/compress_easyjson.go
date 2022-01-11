@@ -434,3 +434,4 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 	}
 	out.RawByte('}')
 }
+//lint:file-ignore SA4006 This is a generated file
