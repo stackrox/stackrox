@@ -18,7 +18,7 @@ import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySever
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';

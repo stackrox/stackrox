@@ -3,6 +3,8 @@ import { useHistory } from 'react-router-dom';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    Card,
+    CardBody,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -26,10 +28,9 @@ import SeverityLabelsList from 'Components/PatternFly/SeverityLabelsList';
 import NotifierName from 'Containers/VulnMgmt/Reports/Components/NotifierName';
 import ScheduleText from 'Containers/VulnMgmt/Reports/Components/ScheduleText';
 import ScopeName from 'Containers/VulnMgmt/Reports/Components/ScopeName';
+import usePermissions from 'hooks/usePermissions';
 import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
-
-// import ReportOverview from './ReportOverview';
 
 type VulnMgmtReportDetailProps = {
     report: ReportConfiguration;
@@ -39,6 +40,17 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
     const history = useHistory();
 
     const [isActionsOpen, setIsActionsOpen] = useState(false);
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const dropdownItems: ReactElement[] = [];
+    if (hasVulnReportWriteAccess) {
+        dropdownItems.push(
+            <DropdownItem key="Edit report" component="button" onClick={onEditReport}>
+                Edit report
+            </DropdownItem>
+        );
+    }
 
     const { id, name } = report;
 
@@ -71,99 +83,97 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
                         <ToolbarItem>
                             <Title headingLevel="h1">{name}</Title>
                         </ToolbarItem>
-                        <ToolbarItem alignment={{ default: 'alignRight' }}>
-                            <Dropdown
-                                onSelect={onSelectActions}
-                                position="right"
-                                toggle={
-                                    <DropdownToggle
-                                        isPrimary
-                                        onToggle={onToggleActions}
-                                        toggleIndicator={CaretDownIcon}
-                                    >
-                                        Actions
-                                    </DropdownToggle>
-                                }
-                                isOpen={isActionsOpen}
-                                dropdownItems={[
-                                    <DropdownItem
-                                        key="Edit report"
-                                        component="button"
-                                        onClick={onEditReport}
-                                    >
-                                        Edit report
-                                    </DropdownItem>,
-                                ]}
-                            />
-                        </ToolbarItem>
+                        {dropdownItems.length > 0 && (
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <Dropdown
+                                    onSelect={onSelectActions}
+                                    position="right"
+                                    toggle={
+                                        <DropdownToggle
+                                            isPrimary
+                                            onToggle={onToggleActions}
+                                            toggleIndicator={CaretDownIcon}
+                                        >
+                                            Actions
+                                        </DropdownToggle>
+                                    }
+                                    isOpen={isActionsOpen}
+                                    dropdownItems={dropdownItems}
+                                />
+                            </ToolbarItem>
+                        )}
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
-                <DescriptionList
-                    columnModifier={{
-                        default: '2Col',
-                    }}
-                >
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Description</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            {report.description || <em>No description</em>}
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Last run</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            <DateTimeField date={report?.runStatus?.lastTimeRun || ''} />
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>CVE fixability type</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            <FixabilityLabelsList
-                                fixability={report?.vulnReportFilters?.fixability}
-                            />
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Reporting schedule</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            <ScheduleText schedule={report?.schedule} />
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>CVE severities</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            <SeverityLabelsList
-                                severities={report?.vulnReportFilters?.severities}
-                            />
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Notification method</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            <NotifierName notifierId={report?.emailConfig?.notifierId} />
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Resource source</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            <ScopeName scopeId={report?.scopeId} />
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Distribution list</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            {report?.emailConfig?.mailingLists.join(', ') || (
-                                <em>
-                                    No distribution list specified. Default recipient for notifier
-                                    will be used.
-                                </em>
-                            )}
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
-                </DescriptionList>
+            <PageSection>
+                <Card>
+                    <CardBody>
+                        <DescriptionList
+                            columnModifier={{
+                                default: '2Col',
+                            }}
+                        >
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Description</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {report.description || <em>No description</em>}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Last run</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <DateTimeField date={report?.runStatus?.lastTimeRun || ''} />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>CVE fixability type</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <FixabilityLabelsList
+                                        fixability={report?.vulnReportFilters?.fixability}
+                                    />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Reporting schedule</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <ScheduleText schedule={report?.schedule} />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>CVE severities</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <SeverityLabelsList
+                                        severities={report?.vulnReportFilters?.severities}
+                                    />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Notification method</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <NotifierName notifierId={report?.emailConfig?.notifierId} />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Resource source</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <ScopeName scopeId={report?.scopeId} />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Distribution list</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {report?.emailConfig?.mailingLists.join(', ') || (
+                                        <em>
+                                            No distribution list specified. Default recipient for
+                                            notifier will be used.
+                                        </em>
+                                    )}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                        </DescriptionList>
+                    </CardBody>
+                </Card>
             </PageSection>
         </>
     );

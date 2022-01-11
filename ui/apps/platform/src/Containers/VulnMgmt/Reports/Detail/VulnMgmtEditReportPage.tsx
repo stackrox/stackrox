@@ -4,7 +4,6 @@ import {
     BreadcrumbItem,
     Divider,
     PageSection,
-    PageSectionVariants,
     Text,
     TextContent,
     Title,
@@ -13,22 +12,31 @@ import {
 import { vulnManagementReportsPath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import VulnMgmtReportForm from './VulnMgmtReportForm';
-import { emptyReportValues } from './VulnMgmtReport.utils';
+import { ReportConfiguration } from 'types/report.proto';
+import VulnMgmtReportForm from '../VulnMgmtReportForm';
 
-function VulnMgmtCreateReportPage(): ReactElement {
+type VulnMgmtEditReportPageProps = {
+    report: ReportConfiguration;
+};
+
+function VulnMgmtEditReportPage({ report }: VulnMgmtEditReportPageProps): ReactElement {
+    const { id, name } = report;
+
     return (
         <>
-            <PageSection variant={PageSectionVariants.light}>
-                <PageTitle title="Vulnerability Management - Create report" />
+            <PageSection variant="light">
+                <PageTitle title="Vulnerability Management - Edit" />
                 <Breadcrumb className="pf-u-mb-md">
                     <BreadcrumbItemLink to={vulnManagementReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
-                    <BreadcrumbItem isActive>Create a vulnerability report</BreadcrumbItem>
+                    <BreadcrumbItemLink to={`${vulnManagementReportsPath}/${id}`}>
+                        {name}
+                    </BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>Edit</BreadcrumbItem>
                 </Breadcrumb>
                 <TextContent>
-                    <Title headingLevel="h1">Create a vulnerability report</Title>
+                    <Title headingLevel="h1">Edit vulnerability report</Title>
                     <Text component="p">
                         Configure reports, define reporting scopes, and assign distribution lists to
                         report on vulnerabilities across the organization.
@@ -36,9 +44,9 @@ function VulnMgmtCreateReportPage(): ReactElement {
                 </TextContent>
             </PageSection>
             <Divider component="div" />
-            <VulnMgmtReportForm initialValues={emptyReportValues} />
+            <VulnMgmtReportForm initialValues={report} />
         </>
     );
 }
 
-export default VulnMgmtCreateReportPage;
+export default VulnMgmtEditReportPage;

@@ -16,7 +16,7 @@ import {
 import useTabs from 'hooks/patternfly/useTabs';
 
 import { vulnManagementPath } from 'routePaths';
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PendingApprovals from './PendingApprovals';
 import ApprovedDeferrals from './ApprovedDeferrals';

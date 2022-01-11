@@ -24,9 +24,12 @@ export function saveReport(report: ReportConfiguration): Promise<ReportConfigura
     const apiPayload = {
         reportConfig: report,
     };
+
+    // TODO: add `/{report.id}` back to end of PUT url after that is available in the API
     const promise = report.id
-        ? axios.put<ReportConfiguration>(`${reportConfigurationsUrl}/${report.id}`, apiPayload)
+        ? axios.put<ReportConfiguration>(`${reportConfigurationsUrl}`, apiPayload)
         : axios.post<ReportConfiguration>(reportConfigurationsUrl, apiPayload);
+
     return promise.then((response) => {
         return response.data;
     });
