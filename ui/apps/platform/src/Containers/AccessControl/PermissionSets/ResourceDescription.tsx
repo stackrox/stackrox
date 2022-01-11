@@ -1,7 +1,9 @@
 import React, { ReactElement } from 'react';
 
+import { ResourceName } from 'types/roleResources';
+
 // First draft of description fields for possible future request from backend.
-const resourceDescriptions: Record<string, string> = {
+const resourceDescriptions: Record<ResourceName, string> = {
     APIToken: 'Read: View API tokens. Write: Add or revoke API tokens.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
     AllComments:
@@ -12,13 +14,13 @@ const resourceDescriptions: Record<string, string> = {
         'Read: View configuration for authentication services. Write: Modify configuration for authentication services.',
     BackupPlugins:
         'Read: View backup integrations and configurations. Write: Modify backup integrations and configurations.',
-    CVE: 'Internal use only',
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
     Compliance: 'Read: View compliance standards and results. Write: N/A',
     ComplianceRunSchedule:
         'Read: View scheduled compliance runs. Write: Add, modify, or delete scheduled compliance runs.',
     ComplianceRuns:
         'Read: View recent compliance runs and their completion status. Write: Trigger compliance runs.',
+    CVE: 'Internal use only',
     Config: 'Read: View options for data retention, security notices, and other related configurations. Write: Modify options for data retention, security notices, and other related configurations.',
     DebugLogs:
         "Read: View the current logging verbosity level in Red Hat Advanced Cluster Security for Kubernetes components. Download diagnostic bundle. Note: diagnostic bundle contains information about all clusters and namespaces regardless of user's access scope. Don't give this permission to users with limited access scope. Write: Modify the logging verbosity level.",
@@ -93,6 +95,7 @@ function ResourceDescription({ resource }: ResourceDescriptionProps): ReactEleme
                     <strong>Read</strong>: {description.slice(6, writeIndex)}
                 </p>
                 <p>
+                    {/* eslint-disable-next-line @typescript-eslint/restrict-plus-operands */}
                     <strong>Write</strong>: {description.slice(writeIndex + 8)}
                 </p>
             </>
