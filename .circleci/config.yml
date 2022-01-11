@@ -2689,7 +2689,7 @@ jobs:
           name: Overwrite GOPATH to /home/circleci/go
           command: |
             echo "GOPATH: '$GOPATH'"
-            cci-export GOPATH /home/circleci/go
+            # cci-export GOPATH /home/circleci/go
       - run:
           name: Install Go
           command: |
