@@ -284,7 +284,7 @@ go-easyjson-srcs: $(EASYJSON_BIN)
 	@easyjson -pkg pkg/docker/types/image.go
 	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
 	@easyjson -pkg pkg/compliance/compress/compress.go
-    @echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/compress_easyjson.go
+	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/compliance/compress/compress_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
@@ -292,7 +292,7 @@ clean-easyjson-srcs:
 	@find . -name '*_easyjson.go' -exec rm {} \;
 
 .PHONY: go-generated-srcs
-go-generated-srcs: deps go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
 	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 
