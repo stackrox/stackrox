@@ -24,7 +24,7 @@ const equalityOptions = [
     { label: 'Is less than', value: '<' },
 ];
 
-const cpuResource = (label) => ({
+const cpuResource = (label: string): GroupDescriptor => ({
     label,
     name: startCase(label),
     shortName: label,
@@ -93,7 +93,7 @@ const APIVerbs = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDATE'].map((verb) => ({
     value: verb,
 }));
 
-const memoryResource = (label) => ({
+const memoryResource = (label: string): GroupDescriptor => ({
     label,
     name: startCase(label),
     shortName: label,
@@ -160,24 +160,56 @@ export type SubComponent = {
     step?: number;
 };
 
-export type Descriptor = {
+export type BaseDescriptor = {
     label?: string;
     name: string;
     longName?: string;
     shortName?: string;
     negatedName?: string;
     category: string;
-    type: string;
-    subComponents?: SubComponent[];
-    radioButtons?: { text: string; value: string | boolean }[];
-    options?: { label: string; value: string }[];
-    placeholder?: string;
+    type: DescriptorType;
     canBooleanLogic?: boolean;
-    default?: boolean;
-    defaultValue?: string | boolean;
     disabled?: boolean;
-    reverse?: boolean;
 };
+
+export type DescriptorType = 'group' | 'multiselect' | 'number' | 'radioGroup' | 'select' | 'text';
+
+export type Descriptor =
+    | GroupDescriptor
+    | NumberDescriptor
+    | RadioGroupDescriptor
+    | SelectDescriptor
+    | TextDescriptor;
+
+export type GroupDescriptor = {
+    type: 'group';
+    subComponents: SubComponent[];
+    default?: boolean;
+} & BaseDescriptor;
+
+export type NumberDescriptor = {
+    type: 'number';
+    placeholder?: string;
+} & BaseDescriptor;
+
+export type RadioGroupDescriptor = {
+    type: 'radioGroup';
+    radioButtons: { text: string; value: string | boolean }[];
+    defaultValue?: string | boolean;
+    reverse?: boolean;
+} & BaseDescriptor;
+
+export type SelectDescriptor = {
+    type: 'multiselect' | 'select';
+    options: { label: string; value: string }[];
+    placeholder?: string;
+    reverse?: boolean;
+} & BaseDescriptor;
+
+export type TextDescriptor = {
+    type: 'text';
+    placeholder?: string;
+} & BaseDescriptor;
 
 export const policyConfigurationDescriptor: Descriptor[] = [
     {
