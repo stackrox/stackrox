@@ -2271,13 +2271,6 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      # This is a workaround for the issue of CircleCI ignoring/overwriting our env var setting
-      - run:
-          name: Overwrite GOPATH to /home/circleci/go
-          command: |
-            echo "GOPATH: '$GOPATH'"
-            cci-export GOPATH /home/circleci/go
-            cci-export PATH $PATH:$GOPATH/bin
       - run:
           no_output_timeout: 30m
           name: Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)
@@ -2684,12 +2677,6 @@ jobs:
           command: |
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
-      # This is a workaround for the issue of CircleCI ignoring/overwriting our env var setting
-      - run:
-          name: Overwrite GOPATH to /home/circleci/go
-          command: |
-            echo "GOPATH: '$GOPATH'"
-            # cci-export GOPATH /home/circleci/go
       - run:
           name: Install Go
           command: |
