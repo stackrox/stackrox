@@ -5,7 +5,7 @@ import (
 )
 
 // Store defines the interface for Risk storage
-//go:generate mockgen-wrapper Store
+//go:generate mockgen-wrapper
 type Store interface {
 	Get(id string) (*storage.Risk, bool, error)
 	GetMany(ids []string) ([]*storage.Risk, []int, error)
