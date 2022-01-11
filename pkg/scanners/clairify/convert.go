@@ -183,8 +183,7 @@ func convertFeature(feature *v1.Feature) *storage.EmbeddedImageScanComponent {
 		Name:     feature.GetName(),
 		Version:  feature.GetVersion(),
 		Location: feature.GetLocation(),
-		// TODO
-		//FixedBy:  feature.GetFixedBy(),
+		FixedBy:  feature.GetFixedBy(),
 	}
 
 	if source, ok := clair.VersionFormatsToSource[feature.GetFeatureType()]; ok {
