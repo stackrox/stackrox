@@ -495,6 +495,7 @@ parameters:
     default: ""
   ci_machine_image:
     type: string
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
     default: "ubuntu-2004:202111-02"
 
 orbs:
