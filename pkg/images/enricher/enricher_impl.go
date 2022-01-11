@@ -90,12 +90,11 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
-	if ctx.FetchOnlyIfMetadataEmpty() && image.GetMetadata() != nil {
+	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
+	if !metadataOutOfDate {
 		return false, nil
 	}
-	if !metadataIsOutOfDate(image.GetMetadata()) {
-		return false, nil
-	}
+
 	if ctx.FetchOpt != ForceRefetch {
 		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
 			e.metrics.IncrementMetadataCacheHit()
