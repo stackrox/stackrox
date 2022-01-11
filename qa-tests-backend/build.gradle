@@ -150,9 +150,8 @@ test {
 }
 
 task runSampleScript(dependsOn: 'classes', type: JavaExec) {
-    if (!project.hasProperty("runScript")) {
-        throw new RuntimeException("A runScript is required. e.g. ./gradlew runSampleScript -PrunScript=checkSensorCollectorHealth")
+    if (project.hasProperty("runScript")) {
+        main = "sampleScripts." + project.getProperty("runScript")
+        classpath = sourceSets.main.runtimeClasspath
     }
-    main = "sampleScripts." + project.getProperty("runScript")
-    classpath = sourceSets.main.runtimeClasspath
 }

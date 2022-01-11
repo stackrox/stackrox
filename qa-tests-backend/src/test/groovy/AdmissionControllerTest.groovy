@@ -40,7 +40,6 @@ class AdmissionControllerTest extends BaseSpecification {
     private final static String LATEST_TAG = "Latest tag"
     private final static String SEVERITY = "Fixable Severity at least Important"
 
-
     static final private Deployment GCR_NGINX_DEPLOYMENT = new Deployment()
             .setName(GCR_NGINX)
             .setImage("us.gcr.io/stackrox-ci/nginx:1.10.1")
