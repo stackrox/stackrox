@@ -149,7 +149,10 @@ test {
     outputs.upToDateWhen { false }
 }
 
-task checkSensorCollectorHealth(dependsOn: 'classes', type: JavaExec) {
-    main = 'checkSensorCollectorHealth'
+task runSampleScript(dependsOn: 'classes', type: JavaExec) {
+    if (!project.hasProperty("runScript")) {
+        throw new RuntimeException("A runScript is required. e.g. ./gradlew runSampleScript -PrunScript=checkSensorCollectorHealth")
+    }
+    main = "sampleScripts." + project.getProperty("runScript")
     classpath = sourceSets.main.runtimeClasspath
 }
