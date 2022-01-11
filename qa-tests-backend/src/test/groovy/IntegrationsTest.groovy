@@ -705,12 +705,16 @@ class IntegrationsTest extends BaseSpecification {
         new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
 
+        // TODO remove this line -- osward
+        new ECRRegistryIntegration()    | { [useAssumeRole: true,]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "bad string on purpose"
+
         new ECRRegistryIntegration()    | { [useAssumeRole: true,]
         }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole cannot be done"
         new ECRRegistryIntegration()    | { [useAssumeRole: true, assumeRoleRoleId: "OOPS", endpoint: "",]
-        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "Access Denied"
-        new ECRRegistryIntegration()    | { [useAssumeRoleExternalId: true, assumeRoleRoleId: "OOPS", endpoint: "",]
-        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "Access Denied"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "not authorized to perform: sts:AssumeRole"
+        new ECRRegistryIntegration()    | { [useAssumeRoleExternalId: true, assumeRoleExternalId: "OOPS", endpoint: "",]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "not authorized to perform: sts:AssumeRole"
 
         new QuayImageIntegration()      | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
