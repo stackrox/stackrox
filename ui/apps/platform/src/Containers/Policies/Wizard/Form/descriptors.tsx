@@ -10,7 +10,7 @@ import {
     severityRatings,
 } from 'messages/common';
 
-const equalityOptions = [
+const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
     {
         label: 'Is greater than or equal to',
@@ -47,7 +47,7 @@ const cpuResource = (label: string): GroupDescriptor => ({
     canBooleanLogic: true,
 });
 
-const capabilities = [
+const capabilities: DescriptorOption[] = [
     'AUDIT_CONTROL',
     'AUDIT_READ',
     'AUDIT_WRITE',
@@ -88,7 +88,7 @@ const capabilities = [
     'WAKE_ALARM',
 ].map((cap) => ({ label: cap, value: cap }));
 
-const APIVerbs = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDATE'].map((verb) => ({
+const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDATE'].map((verb) => ({
     label: verb,
     value: verb,
 }));
@@ -146,12 +146,14 @@ const memoryResource = (label: string): GroupDescriptor => ({
     reverse: will reverse boolean value on store 
  */
 
+export type DescriptorOption = {
+    label: string;
+    value: string;
+};
+
 export type SubComponent = {
     type: string;
-    options?: {
-        label: string;
-        value: string;
-    }[];
+    options?: DescriptorOption[];
     subpath: string;
     placeholder?: string;
     label?: string;
@@ -201,7 +203,7 @@ export type RadioGroupDescriptor = {
 
 export type SelectDescriptor = {
     type: 'multiselect' | 'select';
-    options: { label: string; value: string }[];
+    options: DescriptorOption[];
     placeholder?: string;
     reverse?: boolean;
 } & BaseDescriptor;
