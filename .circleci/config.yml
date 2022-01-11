@@ -2268,13 +2268,16 @@ jobs:
     resource_class: medium
     steps:
       - checkout
-
       - *restoreGoModCache
       - setup-go-build-env
       - run:
           no_output_timeout: 30m
           name: Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)
           command: |
+            # Workaround to ensure that files searched for in '/home/circleci/go' are found in '/go'
+            mkdir -p /home/circleci/go/src/github.com/stackrox
+            ln -s /go/src/github.com/stackrox/rox /home/circleci/go/src/github.com/stackrox/rox || true
+
             git ls-files --others --exclude-standard >/tmp/untracked
             make proto-generated-srcs
             make go-generated-srcs
