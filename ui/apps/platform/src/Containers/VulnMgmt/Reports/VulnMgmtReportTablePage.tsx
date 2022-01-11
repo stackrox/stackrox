@@ -15,6 +15,7 @@ import {
 
 import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
+import usePermissions from 'hooks/usePermissions';
 import { vulnManagementReportsPath } from 'routePaths';
 import { fetchReports, deleteReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
@@ -22,6 +23,9 @@ import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
 
 function ReportTablePage(): ReactElement {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+
     const [reports, setReports] = useState<ReportConfiguration[]>([]);
     const columns = VulnMgmtReportTableColumnDescriptor;
 
@@ -71,28 +75,30 @@ function ReportTablePage(): ReactElement {
                             </Text>
                         </TextContent>
                     </FlexItem>
-                    <FlexItem
-                        align={{
-                            default: 'alignLeft',
-                            md: 'alignRight',
-                            lg: 'alignRight',
-                            xl: 'alignRight',
-                            '2xl': 'alignRight',
-                        }}
-                    >
-                        <Button
-                            variant={ButtonVariant.primary}
-                            isInline
-                            component={(props) => (
-                                <Link
-                                    {...props}
-                                    to={`${vulnManagementReportsPath}?action=create`}
-                                />
-                            )}
+                    {hasVulnReportWriteAccess && (
+                        <FlexItem
+                            align={{
+                                default: 'alignLeft',
+                                md: 'alignRight',
+                                lg: 'alignRight',
+                                xl: 'alignRight',
+                                '2xl': 'alignRight',
+                            }}
                         >
-                            Create report
-                        </Button>
-                    </FlexItem>
+                            <Button
+                                variant={ButtonVariant.primary}
+                                isInline
+                                component={(props) => (
+                                    <Link
+                                        {...props}
+                                        to={`${vulnManagementReportsPath}?action=create`}
+                                    />
+                                )}
+                            >
+                                Create report
+                            </Button>
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
             {reports.length > 0 ? (
