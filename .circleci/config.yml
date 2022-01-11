@@ -2665,9 +2665,9 @@ jobs:
       image: << pipeline.parameters.ci_machine_image >>
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
-      - GOPATH: /home/circleci/go
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.2.17
+      GOPATH: /home/circleci/go
+      KOPS_AUTOMATION_VERSION: 0.0.9
+      EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
       - run:
