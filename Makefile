@@ -25,10 +25,10 @@ MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE_BASE := stackrox/docs
 
 ifdef CI
-    QUAY_REPO := rhacs-eng
-    BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
-    MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
-    DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
+		QUAY_REPO := rhacs-eng
+		BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+		MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
+		DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
 endif
 
 DOCS_IMAGE = $(DOCS_IMAGE_BASE):$(shell make --quiet --no-print-directory docs-tag)
@@ -284,7 +284,7 @@ go-easyjson-srcs: $(EASYJSON_BIN)
 	@easyjson -pkg pkg/docker/types/image.go
 	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
 	@easyjson -pkg pkg/compliance/compress/compress.go
-    @echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/compress_easyjson.go
+	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/compress_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
@@ -337,7 +337,7 @@ clean-obsolete-protos:
 
 HOST_OS:=linux
 ifeq ($(UNAME_S),Darwin)
-    HOST_OS:=darwin
+	HOST_OS:=darwin
 endif
 
 .PHONY: build-prep
@@ -425,7 +425,7 @@ main-build-nodeps:
 	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
-    CGO_ENABLED=0 $(GOBUILD) roxctl
+	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
 
 .PHONY: scale-build
@@ -496,7 +496,7 @@ test: go-unit-tests ui-test shell-unit-tests
 
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep
-	 GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 $(shell go list ./... | grep  "registries\|scanners\|notifiers")
+	 GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 $(shell go list ./... | grep\t"registries\|scanners\|notifiers")
 
 generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 	$(BASE_DIR)/scripts/generate-junit-reports.sh
@@ -552,7 +552,7 @@ docs-image:
 .PHONY: docker-build-data-image
 docker-build-data-image: docs-image
 	docker build -t stackrox-data:$(TAG) \
-	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
+		--build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
 
