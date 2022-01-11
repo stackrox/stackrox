@@ -884,6 +884,11 @@ func (in *SecuredClusterSpec) DeepCopyInto(out *SecuredClusterSpec) {
 		*out = new(AuditLogsSpec)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Scanner != nil {
+		in, out := &in.Scanner, &out.Scanner
+		*out = new(ScannerComponentSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.TLS != nil {
 		in, out := &in.TLS, &out.TLS
 		*out = new(TLSConfig)
