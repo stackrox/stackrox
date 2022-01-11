@@ -20,61 +20,105 @@ teardown() {
 # RELEASE / K8S
 
 @test "roxctl-release central generate k8s should use docker.io registry" {
-  run_image_defaults_registry_test release k8s 'stackrox.io' "$out_dir"
+  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' "$out_dir"
 }
 
 @test "roxctl-release central generate k8s should respect customly-provided images" {
-  params=( '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3' )
-  run_image_defaults_registry_test release k8s 'example.com' "$out_dir" "${params[@]}"
+  run_image_defaults_registry_test roxctl-release k8s \
+    'example.com' \
+    'example.com' \
+    "$out_dir" \
+    '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3'
+}
+
+@test "roxctl-release central generate k8s should work when main and scanner are from different registries" {
+  run_image_defaults_registry_test roxctl-release k8s \
+    'example.com' \
+    'example2.com' \
+    "$out_dir" \
+    '--main-image' 'example.com/main:1.2.3' \
+    '--scanner-image' 'example2.com/scanner:1.2.3' \
+    '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
+}
+
+@test "roxctl-release central generate k8s should work when main is from custom registry and --image-defaults are used" {
+  run_image_defaults_registry_test roxctl-release k8s \
+    'example.com' \
+    'stackrox.io' \
+    "$out_dir" \
+    '--main-image' 'example.com/main:1.2.3' \
+    '--image-defaults' 'stackrox.io'
 }
 
 @test "roxctl-release roxctl central generate k8s should not support --rhacs flag" {
-  run_no_rhacs_flag_test release k8s
+  run_no_rhacs_flag_test roxctl-release k8s
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=stackrox.io should use stackrox.io registry" {
-  run_image_defaults_registry_test release k8s 'stackrox.io' "$out_dir" '--image-defaults' 'stackrox.io'
+  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' "$out_dir" '--image-defaults' 'stackrox.io'
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=rhacs should use registry.redhat.io registry" {
-  run_image_defaults_registry_test release k8s 'registry.redhat.io' "$out_dir" '--image-defaults' 'rhacs'
+  run_image_defaults_registry_test roxctl-release k8s 'registry.redhat.io' "$out_dir" '--image-defaults' 'rhacs'
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=development should fail" {
-  run_invalid_flavor_value_test release k8s '--image-defaults' 'development'
+  run_invalid_flavor_value_test roxctl-release k8s '--image-defaults' 'development'
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
-  run_image_defaults_registry_test release k8s 'stackrox.io' "$out_dir" "--image-defaults=abc"
+  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' "$out_dir" "--image-defaults=abc"
 }
 
 # RELEASE / OPENSHIFT
 
 @test "roxctl-release central generate openshift should use docker.io registry" {
-  run_image_defaults_registry_test release openshift 'stackrox.io' "$out_dir"
+  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' "$out_dir"
 }
 
 @test "roxctl-release central generate openshift should respect customly-provided images" {
-  params=( '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3' )
-  run_image_defaults_registry_test release openshift 'example.com' "$out_dir" "${params[@]}"
+  run_image_defaults_registry_test roxctl-release openshift \
+    'example.com' \
+    'example.com' \
+    "$out_dir" \
+    '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3'
+}
+
+@test "roxctl-release central generate openshift should work when main and scanner are from different registries" {
+  run_image_defaults_registry_test roxctl-release openshift \
+    'example.com' \
+    'example2.com' \
+    "$out_dir" \
+    '--main-image' 'example.com/main:1.2.3' \
+    '--scanner-image' 'example2.com/scanner:1.2.3' \
+    '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
+}
+
+@test "roxctl-release central generate openshift should work when main is from custom registry and --image-defaults are used" {
+  run_image_defaults_registry_test roxctl-release openshift \
+    'example.com' \
+    'stackrox.io' \
+    "$out_dir" \
+    '--main-image' 'example.com/main:1.2.3' \
+    '--image-defaults' 'stackrox.io'
 }
 
 @test "roxctl-release roxctl central generate openshift should not support --rhacs flag" {
-  run_no_rhacs_flag_test release openshift
+  run_no_rhacs_flag_test roxctl-release openshift
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=stackrox.io should use stackrox.io registry" {
-  run_image_defaults_registry_test release openshift 'stackrox.io' "$out_dir" '--image-defaults' 'stackrox.io'
+  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' "$out_dir" '--image-defaults' 'stackrox.io'
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=rhacs should use registry.redhat.io registry" {
-  run_image_defaults_registry_test release openshift 'registry.redhat.io' "$out_dir" '--image-defaults' 'rhacs'
+  run_image_defaults_registry_test roxctl-release openshift 'registry.redhat.io' "$out_dir" '--image-defaults' 'rhacs'
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=development should fail" {
-  run_invalid_flavor_value_test release openshift '--image-defaults' 'development'
+  run_invalid_flavor_value_test roxctl-release openshift '--image-defaults' 'development'
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults='' should behave as if --image-defaults would not be used" {
-  run_image_defaults_registry_test release openshift 'stackrox.io' "$out_dir" "--image-defaults=abc"
+  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' "$out_dir" "--image-defaults=abc"
 }
