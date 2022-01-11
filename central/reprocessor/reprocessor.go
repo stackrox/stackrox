@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
+	imageMapping "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -40,6 +42,8 @@ var (
 	loop Loop
 
 	allAccessCtx = sac.WithAllAccess(context.Background())
+
+	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 )
 
 // Singleton returns the singleton reprocessor loop
@@ -269,14 +273,14 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	log.Infof("Successfully reprocessed %d/%d %ss", nReprocessed.Load(), len(ids), entityType)
 }
 
-func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption) bool {
+func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption) (*storage.Image, bool) {
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorf("error fetching image %q from the database: %v", id, err)
-		return false
+		return nil, false
 	}
 	if !exists || image.GetNotPullable() {
-		return false
+		return nil, false
 	}
 
 	result, err := l.imageEnricher.EnrichImage(imageEnricher.EnrichmentContext{
@@ -285,16 +289,16 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 
 	if err != nil {
 		log.Errorf("error enriching image: %v", err)
-		return false
+		return nil, false
 	}
 	if result.ImageUpdated {
 		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
 			log.Errorf("error upserting image %q into datastore: %v", image.GetName().GetFullName(), err)
-			return false
+			return nil, false
 		}
 	}
 
-	return true
+	return image, true
 }
 
 func (l *loopImpl) getActiveImageIDs() ([]string, error) {
@@ -308,17 +312,72 @@ func (l *loopImpl) getActiveImageIDs() ([]string, error) {
 }
 
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption) {
-	l.runReprocessingForObjects("image", l.getActiveImageIDs, func(id string) bool {
-		return l.reprocessImage(id, fetchOpt)
-	})
+	if l.stopSig.IsDone() {
+		return
+	}
+	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).ProtoQuery()
+	results, err := l.images.Search(allAccessCtx, query)
+	if err != nil {
+		log.Errorf("error searching for active image IDs: %v", err)
+		return
+	}
 
+	log.Infof("Found %d images to scan", len(results))
+	if len(results) == 0 {
+		return
+	}
+
+	sema := semaphore.NewWeighted(5)
+	wg := concurrency.NewWaitGroup(0)
+	nReprocessed := atomic.NewInt32(0)
+	for _, result := range results {
+		wg.Add(1)
+		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
+			log.Errorf("context cancelled via stop: %v", err)
+			return
+		}
+		go func(id string, clusterIDs []string) {
+			defer sema.Release(1)
+			defer wg.Add(-1)
+
+			image, successfullyProcessed := l.reprocessImage(id, fetchOpt)
+			if !successfullyProcessed {
+				return
+			}
+			nReprocessed.Inc()
+
+			utils.FilterSuppressedCVEsNoClone(image)
+			utils.StripCVEDescriptions(image)
+			for _, clusterID := range clusterIDs {
+				conn := l.connManager.GetConnection(clusterID)
+				if conn == nil {
+					continue
+				}
+				err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
+					Msg: &central.MsgToSensor_UpdatedImage{
+						UpdatedImage: image,
+					},
+				})
+				if err != nil {
+					log.Errorf("error injecting updated image %s to Sensor %q: %v", image.GetName().GetFullName(), clusterID, err)
+				}
+			}
+		}(result.ID, result.Matches[imageClusterIDFieldPath])
+	}
+	select {
+	case <-wg.Done():
+	case <-l.stopSig.Done():
+		log.Info("Stopping reprocessing due to stop signal")
+		return
+	}
+	log.Infof("Successfully reprocessed %d/%d images", nReprocessed.Load(), len(results))
 	log.Infof("Resyncing deployments now that images have been reprocessed...")
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {
 		l.connManager.BroadcastMessage(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_ReassessPolicies{
-				ReassessPolicies: &central.ReassessPolicies{},
+			Msg: &central.MsgToSensor_ReprocessDeployments{
+				ReprocessDeployments: &central.ReprocessDeployments{},
 			},
 		})
 	}
