@@ -106,6 +106,9 @@ registry_regex() {
     example.com)
       echo "example\.com/$component:$version"
       ;;
+    example2.com)
+      echo "example2\.com/$component:$version"
+      ;;
     *)
       fail "ERROR: unknown registry-slug: '$registry_slug'"
       ;;
@@ -123,7 +126,8 @@ skip_unless_image_defaults() {
 run_image_defaults_registry_test() {
   local roxctl_flavor="$1"; shift;
   local orch="$1"; shift;
-  local expected_registry="$1"; shift;
+  local expected_main_registry="$1"; shift;
+  local expected_scanner_registry="$1"; shift;
   local out_dir="$1"; shift;
   local extra_params=("${@}")
 
@@ -132,8 +136,8 @@ run_image_defaults_registry_test() {
   fi
   run roxctl-"$roxctl_flavor" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$out_dir"
   assert_success
-  assert_components_registry "$out_dir/central" "$expected_registry" 'main'
-  assert_components_registry "$out_dir/scanner" "$expected_registry" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/central" "$expected_main_registry" 'main'
+  assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" 'scanner' 'scanner-db'
 }
 
 run_no_rhacs_flag_test() {
