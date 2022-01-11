@@ -124,46 +124,46 @@ skip_unless_image_defaults() {
 # Central-generate
 
 run_image_defaults_registry_test() {
-  local roxctl_flavor="$1"; shift;
+  local roxctl_env="$1"; shift;
   local orch="$1"; shift;
   local expected_main_registry="$1"; shift;
   local expected_scanner_registry="$1"; shift;
   local out_dir="$1"; shift;
   local extra_params=("${@}")
 
-  if [[ " ${extra_params[*]} " =~ ^[[:space:]]?--image-defaults ]]; then
-    skip_unless_image_defaults roxctl-"$roxctl_flavor" "$orch"
+  if [[ " ${extra_params[*]} " =~ --image-defaults ]]; then
+    skip_unless_image_defaults roxctl-"$roxctl_env" "$orch"
   fi
-  run roxctl-"$roxctl_flavor" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$out_dir"
+  run roxctl-"$roxctl_env" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" "$expected_main_registry" 'main'
   assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" 'scanner' 'scanner-db'
 }
 
 run_no_rhacs_flag_test() {
-  local roxctl_flavor="$1"
+  local roxctl_env="$1"
   local orch="$2"
 
   if [[ " ${extra_params[*]} " =~ ^[[:space:]]?--image-defaults ]]; then
-    skip_unless_image_defaults roxctl-"$roxctl_flavor" "$orch"
+    skip_unless_image_defaults roxctl-"$roxctl_env" "$orch"
   fi
-  run roxctl-"$roxctl_flavor" central generate --rhacs "$orch" pvc --output-dir "$(mktemp -d -u)"
+  run roxctl-"$roxctl_env" central generate --rhacs "$orch" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
-  run roxctl-"$roxctl_flavor" central generate "$orch" --rhacs pvc --output-dir "$(mktemp -d -u)"
+  run roxctl-"$roxctl_env" central generate "$orch" --rhacs pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
 }
 
 run_invalid_flavor_value_test() {
-  local roxctl_flavor="$1"; shift;
+  local roxctl_env="$1"; shift;
   local orch="$1"; shift;
   local extra_params=("${@}")
 
   if [[ " ${extra_params[*]} " =~ ^[[:space:]]?--image-defaults ]]; then
-    skip_unless_image_defaults roxctl-"$roxctl_flavor" "$orch"
+    skip_unless_image_defaults roxctl-"$roxctl_env" "$orch"
   fi
-  run roxctl-"$roxctl_flavor" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
+  run roxctl-"$roxctl_env" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --regexp "invalid value of '--image-defaults=.*', allowed values:"
 }
