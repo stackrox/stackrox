@@ -24,7 +24,7 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 	// Write the contents of r into a temporary destination to prevent us from holding the lock
 	// while reading from r. The reader may be dependent on the network, and we do not want to
 	// lock while depending on something as unpredictable as the network.
-	// Rename works best when inside the same directory.
+	// Rename is only guaranteed to be atomic inside the same directory.
 	scannerDefsFile, err := os.CreateTemp(dir, tempFilePattern)
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")

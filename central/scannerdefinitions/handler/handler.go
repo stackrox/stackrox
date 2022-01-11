@@ -3,6 +3,7 @@ package handler
 import (
 	"archive/zip"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -140,7 +141,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.serveContent(w, r, f.Name(), fi.ModTime(), f)
+		serveContent(w, r, f.Name(), fi.ModTime(), f)
 		return
 	}
 
@@ -171,11 +172,11 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		writeErrorForFile(w, err, serveFile.GetPath())
 	}
 
-	http.ServeContent(w, r, f.Name(), fi.ModTime(), f)
+	serveContent(w, r, f.Name(), fi.ModTime(), f)
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte("No scanner definitions found"))
 		return
@@ -184,7 +185,7 @@ func writeErrorForFile(w http.ResponseWriter, err error, path string) {
 	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read file %s: %v", filepath.Base(path), err)
 }
 
-func (h *httpHandler) serveContent(w http.ResponseWriter, r *http.Request, name string, modtime time.Time, content io.ReadSeeker) {
+func serveContent(w http.ResponseWriter, r *http.Request, name string, modtime time.Time, content io.ReadSeeker) {
 	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
 	http.ServeContent(w, r, name, modtime, content)
 }
