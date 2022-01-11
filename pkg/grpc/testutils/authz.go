@@ -7,7 +7,7 @@ import (
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/rox/pkg/grpc/errors/grpccode"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -38,7 +38,7 @@ func AssertAuthzWorks(t *testing.T, service pkgGRPC.APIService) {
 
 	for _, method := range allMethods(service) {
 		_, err := authFunc.AuthFuncOverride(context.Background(), method)
-		s := errors.ErrToGrpcStatus(err)
+		s := grpccode.ErrToGrpcStatus(err)
 		assert.Containsf(t, allowedAuthStatusCodes, s.Code(), "authorizing method %s: invalid auth error code %v from error %v", method, s.Code(), s)
 	}
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/rox/pkg/grpc/errors/grpccode"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -47,7 +47,7 @@ func StatusFromError(err error) int {
 
 	// `errors.ErrToHTTPStatus()` must handle both gRPC and known internal
 	// sentinel errors.
-	return errors.ErrToHTTPStatus(err)
+	return grpccode.ErrToHTTPStatus(err)
 }
 
 // ErrorFromStatus returns a HTTP error for the given status, or nil if the status does not indicate an error.

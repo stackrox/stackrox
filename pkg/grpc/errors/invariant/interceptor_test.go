@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestErrorToGrpcCodeInterceptor(t *testing.T) {
+func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 	tests := []struct {
 		name    string
 		handler grpc.UnaryHandler
@@ -58,12 +58,12 @@ func TestErrorToGrpcCodeInterceptor(t *testing.T) {
 				return
 			}
 			require.NotNil(t, err)
-			assert.Equal(t, tt.err.Error(), err.Error())
+			assert.ErrorIs(t, err, tt.err)
 		})
 	}
 }
 
-func TestErrorToGrpcCodeStreamInterceptor(t *testing.T) {
+func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 	tests := []struct {
 		name    string
 		handler grpc.StreamHandler
@@ -109,7 +109,7 @@ func TestErrorToGrpcCodeStreamInterceptor(t *testing.T) {
 				return
 			}
 			require.NotNil(t, err)
-			assert.Equal(t, tt.err.Error(), err.Error())
+			assert.ErrorIs(t, err, tt.err)
 		})
 	}
 }

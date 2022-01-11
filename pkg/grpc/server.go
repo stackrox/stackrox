@@ -23,7 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
-	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
+	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors/grpccode"
 	grpc_logging "github.com/stackrox/rox/pkg/grpc/logging"
 	"github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
