@@ -105,6 +105,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
 
+	if sc.Spec.Scanner != nil {
+		v.AddChild("scanner", translation.GetScannerComponentValues(sc.Spec.Scanner))
+	}
+
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 	v.AddChild("customize", &customize)
 	v.AddChild("meta", getMetaValues(sc))

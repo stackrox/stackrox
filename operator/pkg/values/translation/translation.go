@@ -1,6 +1,8 @@
 package translation
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -124,4 +126,54 @@ func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder
 	v.SetSlice(key, convertedList)
 
 	return &v
+}
+
+// GetScannerComponentValues converts platform.ScannerComponentSpec to a *ValuesBuilder.
+func GetScannerComponentValues(s *platform.ScannerComponentSpec) *ValuesBuilder {
+	sv := NewValuesBuilder()
+
+	if s.ScannerComponent != nil {
+		switch *s.ScannerComponent {
+		case platform.ScannerComponentDisabled:
+			sv.SetBoolValue("disable", true)
+		case platform.ScannerComponentEnabled:
+			sv.SetBoolValue("disable", false)
+		default:
+			return sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *s.ScannerComponent))
+		}
+	}
+
+	if s.GetAnalyzer().GetScaling() != nil {
+		scaling := s.GetAnalyzer().GetScaling()
+		sv.SetInt32("replicas", scaling.Replicas)
+
+		autoscaling := NewValuesBuilder()
+		if scaling.AutoScaling != nil {
+			switch *scaling.AutoScaling {
+			case platform.ScannerAutoScalingDisabled:
+				autoscaling.SetBoolValue("disable", true)
+			case platform.ScannerAutoScalingEnabled:
+				autoscaling.SetBoolValue("disable", false)
+			default:
+				return autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
+			}
+		}
+		autoscaling.SetInt32("minReplicas", scaling.MinReplicas)
+		autoscaling.SetInt32("maxReplicas", scaling.MaxReplicas)
+		sv.AddChild("autoscaling", &autoscaling)
+	}
+
+	if s.GetAnalyzer() != nil {
+		sv.SetStringMap("nodeSelector", s.GetAnalyzer().NodeSelector)
+		sv.AddChild(ResourcesKey, GetResources(s.GetAnalyzer().Resources))
+		sv.AddAllFrom(GetTolerations(TolerationsKey, s.GetAnalyzer().DeploymentSpec.Tolerations))
+	}
+
+	if s.DB != nil {
+		sv.SetStringMap("dbNodeSelector", s.DB.NodeSelector)
+		sv.AddChild("dbResources", GetResources(s.DB.Resources))
+		sv.AddAllFrom(GetTolerations("dbTolerations", s.DB.Tolerations))
+	}
+
+	return &sv
 }

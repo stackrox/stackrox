@@ -68,7 +68,7 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	v.AddChild("central", getCentralComponentValues(centralSpec))
 
 	if c.Spec.Scanner != nil {
-		v.AddChild("scanner", getScannerComponentValues(c.Spec.Scanner))
+		v.AddChild("scanner", translation.GetScannerComponentValues(c.Spec.Scanner))
 	}
 
 	v.AddChild("customize", &customize)
@@ -149,53 +149,4 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		cv.AddChild("exposure", &exposure)
 	}
 	return &cv
-}
-
-func getScannerComponentValues(s *platform.ScannerComponentSpec) *translation.ValuesBuilder {
-	sv := translation.NewValuesBuilder()
-
-	if s.ScannerComponent != nil {
-		switch *s.ScannerComponent {
-		case platform.ScannerComponentDisabled:
-			sv.SetBoolValue("disable", true)
-		case platform.ScannerComponentEnabled:
-			sv.SetBoolValue("disable", false)
-		default:
-			return sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *s.ScannerComponent))
-		}
-	}
-
-	if s.GetAnalyzer().GetScaling() != nil {
-		scaling := s.GetAnalyzer().GetScaling()
-		sv.SetInt32("replicas", scaling.Replicas)
-
-		autoscaling := translation.NewValuesBuilder()
-		if scaling.AutoScaling != nil {
-			switch *scaling.AutoScaling {
-			case platform.ScannerAutoScalingDisabled:
-				autoscaling.SetBoolValue("disable", true)
-			case platform.ScannerAutoScalingEnabled:
-				autoscaling.SetBoolValue("disable", false)
-			default:
-				return autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
-			}
-		}
-		autoscaling.SetInt32("minReplicas", scaling.MinReplicas)
-		autoscaling.SetInt32("maxReplicas", scaling.MaxReplicas)
-		sv.AddChild("autoscaling", &autoscaling)
-	}
-
-	if s.GetAnalyzer() != nil {
-		sv.SetStringMap("nodeSelector", s.GetAnalyzer().NodeSelector)
-		sv.AddChild(translation.ResourcesKey, translation.GetResources(s.GetAnalyzer().Resources))
-		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, s.GetAnalyzer().DeploymentSpec.Tolerations))
-	}
-
-	if s.DB != nil {
-		sv.SetStringMap("dbNodeSelector", s.DB.NodeSelector)
-		sv.AddChild("dbResources", translation.GetResources(s.DB.Resources))
-		sv.AddAllFrom(translation.GetTolerations("dbTolerations", s.DB.Tolerations))
-	}
-
-	return &sv
 }

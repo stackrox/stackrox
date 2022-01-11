@@ -55,6 +55,13 @@ func TestTranslate(t *testing.T) {
 		sc     platform.SecuredCluster
 	}
 
+	scannerComponentPolicy := platform.ScannerComponentEnabled
+	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
+
+	scannerReplicas := int32(7)
+	scannerMinReplicas := int32(6)
+	scannerMaxReplicas := int32(8)
+
 	// TODO(ROX-7647): Add sensor, collector and compliance tests
 	tests := map[string]struct {
 		args args
@@ -167,6 +174,57 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 						},
+						Scanner: &platform.ScannerComponentSpec{
+							ScannerComponent: &scannerComponentPolicy,
+							Analyzer: &platform.ScannerAnalyzerComponent{
+								Scaling: &platform.ScannerAnalyzerScaling{
+									AutoScaling: &scannerAutoScalingPolicy,
+									Replicas:    &scannerReplicas,
+									MinReplicas: &scannerMinReplicas,
+									MaxReplicas: &scannerMaxReplicas,
+								},
+								DeploymentSpec: platform.DeploymentSpec{
+									NodeSelector: map[string]string{
+										"scanner-node-selector-label1": "scanner-node-selector-value1",
+										"scanner-node-selector-label2": "scanner-node-selector-value2",
+									},
+									Tolerations: []*v1.Toleration{
+										{Key: "node.stackrox.io", Value: "false", Operator: v1.TolerationOpEqual},
+										{Key: "node-role.kubernetes.io/infra", Value: "", Operator: v1.TolerationOpExists},
+									},
+									Resources: &v1.ResourceRequirements{
+										Limits: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("50"),
+											v1.ResourceMemory: resource.MustParse("60"),
+										},
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("70"),
+											v1.ResourceMemory: resource.MustParse("80"),
+										},
+									},
+								},
+							},
+							DB: &platform.DeploymentSpec{
+								NodeSelector: map[string]string{
+									"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
+									"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
+								},
+								Tolerations: []*v1.Toleration{
+									{Key: "node.stackrox.io", Value: "false", Operator: v1.TolerationOpEqual},
+									{Key: "node-role.kubernetes.io/infra", Value: "", Operator: v1.TolerationOpExists},
+								},
+								Resources: &v1.ResourceRequirements{
+									Limits: v1.ResourceList{
+										v1.ResourceCPU:    resource.MustParse("90"),
+										v1.ResourceMemory: resource.MustParse("100"),
+									},
+									Requests: v1.ResourceList{
+										v1.ResourceCPU:    resource.MustParse("110"),
+										v1.ResourceMemory: resource.MustParse("120"),
+									},
+								},
+							},
+						},
 						Customize: &platform.CustomizeSpec{
 							Labels: map[string]string{
 								"customize-label1": "customize-label1-value",
@@ -259,6 +317,63 @@ func TestTranslate(t *testing.T) {
 				},
 				"auditLogs": map[string]interface{}{
 					"disableCollection": false,
+				},
+				"scanner": map[string]interface{}{
+					"disable":  false,
+					"replicas": int32(7),
+					"autoscaling": map[string]interface{}{
+						"disable":     false,
+						"minReplicas": int32(6),
+						"maxReplicas": int32(8),
+					},
+					"nodeSelector": map[string]string{
+						"scanner-node-selector-label1": "scanner-node-selector-value1",
+						"scanner-node-selector-label2": "scanner-node-selector-value2",
+					},
+					"tolerations": []map[string]interface{}{
+						{
+							"key":      "node.stackrox.io",
+							"operator": "Equal",
+							"value":    "false",
+						}, {
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+						},
+					},
+					"dbNodeSelector": map[string]string{
+						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
+						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
+					},
+					"dbTolerations": []map[string]interface{}{
+						{
+							"key":      "node.stackrox.io",
+							"operator": "Equal",
+							"value":    "false",
+						}, {
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+						},
+					},
+					"resources": map[string]interface{}{
+						"limits": map[string]interface{}{
+							"cpu":    "50",
+							"memory": "60",
+						},
+						"requests": map[string]interface{}{
+							"cpu":    "70",
+							"memory": "80",
+						},
+					},
+					"dbResources": map[string]interface{}{
+						"limits": map[string]interface{}{
+							"cpu":    "90",
+							"memory": "100",
+						},
+						"requests": map[string]interface{}{
+							"cpu":    "110",
+							"memory": "120",
+						},
+					},
 				},
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
