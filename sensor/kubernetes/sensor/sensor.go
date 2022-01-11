@@ -45,6 +45,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
@@ -115,6 +116,18 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	imageService := image.NewService(imageCache)
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
+	sensorNamespace, err := satoken.LoadNamespaceFromFile()
+	if err != nil {
+		log.Errorf("Failed to determine namespace from service account token file: %s", err)
+	}
+	if sensorNamespace == "" {
+		sensorNamespace = os.Getenv("POD_NAMESPACE")
+	}
+	if sensorNamespace == "" {
+		sensorNamespace = namespaces.StackRox
+		log.Warnf("Unable to determine Sensor namespace, defaulting to %s", sensorNamespace)
+	}
+
 	// Create Process Pipeline
 	indicators := make(chan *central.MsgFromSensor)
 	processPipeline := processsignal.NewProcessPipeline(indicators, clusterentities.StoreInstance(), processfilter.Singleton(), policyDetector)
@@ -135,22 +148,11 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
+		localscanner.NewLocalScannerOperator(client.Kubernetes(), sensorNamespace),
 	}
 
 	if features.VulnRiskManagement.Enabled() {
 		components = append(components, reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache))
-	}
-
-	sensorNamespace, err := satoken.LoadNamespaceFromFile()
-	if err != nil {
-		log.Errorf("Failed to determine namespace from service account token file: %s", err)
-	}
-	if sensorNamespace == "" {
-		sensorNamespace = os.Getenv("POD_NAMESPACE")
-	}
-	if sensorNamespace == "" {
-		sensorNamespace = namespaces.StackRox
-		log.Warnf("Unable to determine Sensor namespace, defaulting to %s", sensorNamespace)
 	}
 
 	if admCtrlSettingsMgr != nil {
