@@ -2883,7 +2883,7 @@ jobs:
             make RACE=true CIRCLE_TAG="$(make --quiet tag)" main-image
 
       - run:
-          name: Push new image
+          name: Push new main-image with '-rcd' suffix
           command: |
             TAG="$(make --quiet tag)"
 
@@ -2893,6 +2893,12 @@ jobs:
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             QUAY_REPO="rhacs-eng"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
+
+      - run:
+          name: Retag collector to '-rcd'
+          command: |
+            MAIN_TAG="$(make --quiet tag)"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}" "quay.io/rhacs-eng/collector:${MAIN_TAG}-rcd"
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
