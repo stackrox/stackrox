@@ -14,8 +14,8 @@ const tempFilePattern = "scanner-defs-download-*"
 // Write writes the contents of r into the path represented by the given file.
 // The file's modified time is set to the given modifiedTime.
 // Write is thread-safe.
-func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
-	dir := filepath.Dir(file.GetPath())
+func Write(path string, r io.Reader, modifiedTime time.Time) error {
+	dir := filepath.Dir(path)
 
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
@@ -40,7 +40,7 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 
 	// Note: os.Rename does not alter the file's modified time,
 	// so there is no need to call os.Chtimes here.
-	err = os.Rename(scannerDefsFile.Name(), file.GetPath())
+	err = os.Rename(scannerDefsFile.Name(), path)
 	if err != nil {
 		return errors.Wrap(err, "renaming scanner defs file")
 	}

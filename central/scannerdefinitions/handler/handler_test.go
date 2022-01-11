@@ -84,7 +84,7 @@ func TestServeHTTP_Online_Get(t *testing.T) {
 
 	// Set the offline dump's modified time to later than the online update's.
 	handler := h.(*httpHandler)
-	handler.offlineFile.SetLastModifiedTime(time.Now().Add(time.Minute))
+	mustSetModifiedTime(t, handler.offlineFilePath, time.Now().Add(time.Minute))
 
 	// Served the offline dump, as it is more recent.
 	w.Reset()
@@ -93,7 +93,7 @@ func TestServeHTTP_Online_Get(t *testing.T) {
 	assert.Equal(t, "Hello, World!", w.String())
 
 	// Set the offline dump's modified time to earlier than the online update's.
-	handler.offlineFile.SetLastModifiedTime(nov23)
+	mustSetModifiedTime(t, handler.offlineFilePath, nov23)
 
 	// Served the online dump, as it is, now, more recent.
 	w.Reset()
@@ -107,4 +107,8 @@ func TestServeHTTP_Online_Get(t *testing.T) {
 	h.ServeHTTP(&w, req)
 	assert.Equal(t, http.StatusNotModified, w.statusCode)
 	assert.Empty(t, w.String())
+}
+
+func mustSetModifiedTime(t *testing.T, path string, modTime time.Time) {
+	require.NoError(t, os.Chtimes(path, time.Now(), modTime))
 }
