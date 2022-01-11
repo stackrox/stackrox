@@ -1,9 +1,11 @@
 import React, { useState, ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
     Alert,
     AlertGroup,
     AlertVariant,
+    Button,
     Flex,
     FlexItem,
     Divider,
@@ -23,6 +25,7 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import TableCell from 'Components/PatternFly/TableCell';
 import { selectors } from 'reducers';
 import { getHasReadWritePermission } from 'reducers/roles';
+import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -146,18 +149,20 @@ function ReportingTablePanel({
 
     return (
         <>
-            <PageSection padding={{ default: 'padding' }} variant={PageSectionVariants.light}>
-                <AlertGroup
-                    isLiveRegion
-                    aria-live="polite"
-                    aria-relevant="additions text"
-                    aria-atomic="false"
-                >
-                    {alerts.map(({ title, variant, key }) => (
-                        <Alert isInline variant={variant} title={title} key={key} />
-                    ))}
-                </AlertGroup>
-            </PageSection>
+            {alerts.length > 0 && (
+                <PageSection padding={{ default: 'padding' }} variant={PageSectionVariants.light}>
+                    <AlertGroup
+                        isLiveRegion
+                        aria-live="polite"
+                        aria-relevant="additions text"
+                        aria-atomic="false"
+                    >
+                        {alerts.map(({ title, variant, key }) => (
+                            <Alert isInline variant={variant} title={title} key={key} />
+                        ))}
+                    </AlertGroup>
+                </PageSection>
+            )}
             <Flex
                 className="pf-u-p-md"
                 alignSelf={{ default: 'alignSelfCenter' }}
@@ -181,12 +186,7 @@ function ReportingTablePanel({
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <PageSection
-                isFilled
-                padding={{ default: 'noPadding' }}
-                hasOverflowScroll
-                variant={PageSectionVariants.light}
-            >
+            <PageSection isFilled hasOverflowScroll>
                 <TableComposable variant="compact">
                     <Thead>
                         <Tr>
@@ -224,6 +224,24 @@ function ReportingTablePanel({
 
                             const actionItems: ActionItem[] = [];
                             if (hasWriteAccessForVulnerabilityReports) {
+                                actionItems.push({
+                                    title: (
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            // eslint-disable-next-line jsx-a11y/anchor-is-valid
+                                            component={(props) => (
+                                                <Link
+                                                    {...props}
+                                                    to={`${vulnManagementReportsPath}/${id}`}
+                                                />
+                                            )}
+                                        >
+                                            Edit report
+                                        </Button>
+                                    ),
+                                    onClick: () => {},
+                                });
                                 actionItems.push({
                                     title: (
                                         <div className="pf-u-danger-color-100">Delete report</div>

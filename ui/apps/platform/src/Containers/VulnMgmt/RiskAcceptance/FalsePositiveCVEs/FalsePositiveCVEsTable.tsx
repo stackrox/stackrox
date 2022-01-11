@@ -18,7 +18,7 @@ import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySever
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';
@@ -149,9 +149,9 @@ function FalsePositiveCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Severity</Th>
+                        <Th modifier="fitContent">Scope</Th>
                         <Th>Affected Components</Th>
                         <Th>Comments</Th>
-                        <Th>Apply to</Th>
                         <Th>Approver</Th>
                     </Tr>
                 </Thead>
@@ -175,6 +175,11 @@ function FalsePositiveCVEsTable({
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
+                                <Td dataLabel="Scope">
+                                    <VulnerabilityRequestScope
+                                        scope={row.vulnerabilityRequest.scope}
+                                    />
+                                </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
@@ -182,11 +187,6 @@ function FalsePositiveCVEsTable({
                                     <RequestCommentsButton
                                         comments={row.vulnerabilityRequest.comments}
                                         cve={row.vulnerabilityRequest.cves.ids[0]}
-                                    />
-                                </Td>
-                                <Td dataLabel="Apply to">
-                                    <VulnerabilityRequestScope
-                                        scope={row.vulnerabilityRequest.scope}
                                     />
                                 </Td>
                                 <Td dataLabel="Approver">

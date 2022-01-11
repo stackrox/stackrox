@@ -21,7 +21,12 @@ export type VulnerabilityWithRequest = Vulnerability & {
 };
 
 // This type is specific to the way we query using GraphQL
-export type EmbeddedImageScanComponent = { id: string; name: string; fixedIn: string };
+export type EmbeddedImageScanComponent = {
+    id: string;
+    name: string;
+    version: string;
+    fixedIn: string;
+};
 
 export type GetImageVulnerabilitiesData = {
     image: {
@@ -69,6 +74,7 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                 components {
                     id
                     name
+                    version
                     fixedIn
                 }
             }

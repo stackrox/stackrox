@@ -13,7 +13,7 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedFalsePositiveRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -125,9 +125,8 @@ function ApprovedFalsePositivesTable({
                         />
                         <Th>Requested Entity</Th>
                         <Th>Requested Action</Th>
-                        <Th>Scope</Th>
+                        <Th modifier="fitContent">Scope</Th>
                         <Th>Impacted Entities</Th>
-                        <Th>Apply to</Th>
                         <Th>Comments</Th>
                         <Th>Requestor</Th>
                     </Tr>
@@ -158,16 +157,13 @@ function ApprovedFalsePositivesTable({
                                     />
                                 </Td>
                                 <Td dataLabel="Scope">
-                                    {row.scope.imageScope ? 'image' : 'global'}
+                                    <VulnerabilityRequestScope scope={row.scope} />
                                 </Td>
                                 <Td dataLabel="Impacted entities">
                                     <ImpactedEntities
                                         deploymentCount={row.deploymentCount}
                                         imageCount={row.imageCount}
                                     />
-                                </Td>
-                                <Td dataLabel="Apply to">
-                                    <VulnerabilityRequestScope scope={row.scope} />
                                 </Td>
                                 <Td dataLabel="Comments">
                                     <RequestCommentsButton
