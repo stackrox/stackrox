@@ -2688,6 +2688,9 @@ jobs:
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
       - run:
+          name: Overwrite GOPATH
+          command: cci-export GOPATH /home/circleci/go
+      - run:
           name: echo GOPATH
           command: echo "$GOPATH"
       - run:
