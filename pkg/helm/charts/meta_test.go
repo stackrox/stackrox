@@ -59,8 +59,7 @@ func TestMetaValuesInTemplating(t *testing.T) {
 
 	tpl = template.Must(template.New("blah").Parse("value is: {{.TimeoutSeconds}}"))
 	// This fragment shows what to do with MetaValues in order to leverage them in templating.
-	dataConvertedToRaw := dataMetaVals.ToRaw()
-	res, err = templates.ExecuteToString(tpl, dataConvertedToRaw)
+	res, err = templates.ExecuteToString(tpl, dataMetaVals)
 	assert.NoError(t, err)
 	assert.Equal(t, "value is: 500", res)
 }

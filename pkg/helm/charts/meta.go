@@ -95,7 +95,7 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 // the map.
 // TODO(RS-379): Switch MetaVals to struct and get rid of ToRaw function.
 // TODO: lvm delete this function
-func (m MetaValues) ToRaw() map[string]interface{} {
+func (m MetaValues) ToRaws() map[string]interface{} {
 	v := reflect.ValueOf(m)
 	result := make(map[string]interface{}, v.NumField())
 	for i := 0; i < v.NumField(); i++ {

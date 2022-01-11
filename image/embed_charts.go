@@ -300,7 +300,6 @@ func (i *Image) addScripts(values charts.MetaValues) ([]*loader.BufferedFile, er
 
 func (i *Image) scripts(values charts.MetaValues, filenameMap map[string]string) ([]*loader.BufferedFile, error) {
 	var chartFiles []*loader.BufferedFile
-	valuesRaw := values.ToRaw()
 	for srcFile, dstFile := range filenameMap {
 		fileData, err := AssetFS.ReadFile(srcFile)
 		if err != nil {
@@ -310,7 +309,7 @@ func (i *Image) scripts(values charts.MetaValues, filenameMap map[string]string)
 		if err != nil {
 			return nil, err
 		}
-		data, err := templates.ExecuteToBytes(t, valuesRaw)
+		data, err := templates.ExecuteToBytes(t, values)
 		if err != nil {
 			return nil, err
 		}
