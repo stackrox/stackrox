@@ -151,25 +151,24 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	// Serve the more recent of the requested file and the manually uploaded definitions.
 
-	serveFile := u.file
-	unusedFile := h.offlineFile
-
-	serveFile.RLock()
-	unusedFile.RLock()
-	if unusedFile.GetLastModifiedTime().After(serveFile.GetLastModifiedTime()) {
-		serveFile, unusedFile = unusedFile, serveFile
-	}
-	unusedFile.RUnlock()
-
-	// Get an instance of *os.File to ensure a reference to the file contents
-	// exists outside the lock. This ensures a concurrent file write,
-	// which is really just a file rename(), does not trigger a deletion
-	// of the previous file contents, as we grab a file descriptor here.
-	f, fi, err := file.Read(serveFile)
-	serveFile.RUnlock()
-
+	onlineF, err := os.Stat(u.file.GetPath())
 	if err != nil {
-		writeErrorForFile(w, err, serveFile.GetPath())
+		writeErrorForFile(w, err, u.file.GetPath())
+	}
+
+	offlineF, err := os.Stat(h.offlineFile.GetPath())
+	if err != nil {
+		writeErrorForFile(w, err, h.offlineFile.GetPath())
+	}
+
+	fi := onlineF
+	if offlineF.ModTime().After(onlineF.ModTime()) {
+		fi = offlineF
+	}
+
+	f, err := os.Open(fi.Name())
+	if err != nil {
+		writeErrorForFile(w, err, fi.Name())
 	}
 
 	serveContent(w, r, f.Name(), fi.ModTime(), f)

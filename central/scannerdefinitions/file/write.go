@@ -38,19 +38,12 @@ func Write(file *Metadata, r io.Reader, modifiedTime time.Time) error {
 		return errors.Wrap(err, "changing modified time of scanner defs")
 	}
 
-	// Atomically rename the temporary file to the permanent name
-	// and set the modified time.
-	file.Lock()
-	defer file.Unlock()
-
 	// Note: os.Rename does not alter the file's modified time,
 	// so there is no need to call os.Chtimes here.
 	err = os.Rename(scannerDefsFile.Name(), file.GetPath())
 	if err != nil {
 		return errors.Wrap(err, "renaming scanner defs file")
 	}
-
-	file.SetLastModifiedTime(modifiedTime)
 
 	return nil
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -78,9 +79,12 @@ func (u *updater) doUpdate() error {
 	if err != nil {
 		return errors.Wrap(err, "constructing request")
 	}
-	// No need to grab a read lock on u.file.LastModifiedTime
-	// as a parallel write to this read is not possible.
-	req.Header.Set(ifModifiedSinceHeader, u.file.GetLastModifiedTime().Format(http.TimeFormat))
+
+	f, err := os.Stat(u.file.GetPath())
+	if err != nil {
+		return errors.Wrapf(err, "could not stat %s", u.file.GetPath())
+	}
+	req.Header.Set(ifModifiedSinceHeader, f.ModTime().Format(http.TimeFormat))
 
 	resp, err := u.client.Do(req)
 	if err != nil {
