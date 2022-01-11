@@ -220,9 +220,8 @@ function PendingApprovalsTable({
                         <Th>Requested Entity</Th>
                         <Th>Requested Action</Th>
                         <Th>Expires</Th>
-                        <Th>Scope</Th>
+                        <Th modifier="fitContent">Scope</Th>
                         <Th>Impacted Entities</Th>
-                        <Th>Apply to</Th>
                         <Th>Comments</Th>
                         <Th>Requestor</Th>
                     </Tr>
@@ -260,16 +259,13 @@ function PendingApprovalsTable({
                                     />
                                 </Td>
                                 <Td dataLabel="Scope">
-                                    {row.scope.imageScope ? 'image' : 'global'}
+                                    <VulnerabilityRequestScope scope={row.scope} />
                                 </Td>
                                 <Td dataLabel="Impacted entities">
                                     <ImpactedEntities
                                         deploymentCount={row.deploymentCount}
                                         imageCount={row.imageCount}
                                     />
-                                </Td>
-                                <Td dataLabel="Apply to">
-                                    <VulnerabilityRequestScope scope={row.scope} />
                                 </Td>
                                 <Td dataLabel="Comments">
                                     <RequestCommentsButton

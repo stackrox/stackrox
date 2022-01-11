@@ -150,10 +150,10 @@ function DeferredCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Severity</Th>
+                        <Th>Expires</Th>
+                        <Th modifier="fitContent">Scope</Th>
                         <Th>Affected Components</Th>
                         <Th>Comments</Th>
-                        <Th>Expires</Th>
-                        <Th>Apply to</Th>
                         <Th>Approver</Th>
                     </Tr>
                 </Thead>
@@ -177,15 +177,6 @@ function DeferredCVEsTable({
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
-                                <Td dataLabel="Affected components">
-                                    <AffectedComponentsButton components={row.components} />
-                                </Td>
-                                <Td dataLabel="Comments">
-                                    <RequestCommentsButton
-                                        comments={row.vulnerabilityRequest.comments}
-                                        cve={row.vulnerabilityRequest.cves.ids[0]}
-                                    />
-                                </Td>
                                 <Td dataLabel="Expires">
                                     <DeferralExpirationDate
                                         targetState={row.vulnerabilityRequest.targetState}
@@ -193,9 +184,18 @@ function DeferredCVEsTable({
                                         deferralReq={row.vulnerabilityRequest.deferralReq.expiry}
                                     />
                                 </Td>
-                                <Td dataLabel="Apply to">
+                                <Td dataLabel="Scope">
                                     <VulnerabilityRequestScope
                                         scope={row.vulnerabilityRequest.scope}
+                                    />
+                                </Td>
+                                <Td dataLabel="Affected components">
+                                    <AffectedComponentsButton components={row.components} />
+                                </Td>
+                                <Td dataLabel="Comments">
+                                    <RequestCommentsButton
+                                        comments={row.vulnerabilityRequest.comments}
+                                        cve={row.vulnerabilityRequest.cves.ids[0]}
                                     />
                                 </Td>
                                 <Td dataLabel="Approver">
