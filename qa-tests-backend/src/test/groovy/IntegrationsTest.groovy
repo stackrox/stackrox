@@ -705,8 +705,12 @@ class IntegrationsTest extends BaseSpecification {
         new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
 
-        new ECRRegistryIntegration()    | { [useAssumeRole: true, assumeRoleRoleId: "OOPS",]
-        }       | StatusRuntimeException | /InvalidSignatureException/ | "it's a bad string"
+        new ECRRegistryIntegration()    | { [useAssumeRole: true,]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole cannot be done"
+        new ECRRegistryIntegration()    | { [useAssumeRole: true, assumeRoleRoleId: "OOPS", endpoint: "",]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "Access Denied"
+        new ECRRegistryIntegration()    | { [useAssumeRoleExternalId: true, assumeRoleRoleId: "OOPS", endpoint: "",]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "Access Denied"
 
         new QuayImageIntegration()      | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
