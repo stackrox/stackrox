@@ -9,7 +9,6 @@ import services.BaseService
 import services.ClusterService
 import util.ChaosMonkey
 import util.Env
-import util.Helpers
 
 // This script attempts to reproduce a failure with
 // AdmissionControllerTest.Verify admission controller does not impair cluster operations when unstable
@@ -53,10 +52,8 @@ def deployment = new Deployment()
         .addLabel("app", "random-busybox")
 assert client.createDeploymentNoWait(deployment)
 
-and:
-"Verify deployment can be modified reliably"
 for (int i = 0; i < 450; i++) {
-    Helpers.sleepWithRetryBackoff(1000)
+    sleep(1000)
     deployment.addAnnotation("qa.stackrox.io/iteration", "${i}")
     assert client.updateDeploymentNoWait(deployment)
 }
