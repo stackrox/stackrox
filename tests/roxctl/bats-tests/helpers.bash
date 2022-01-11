@@ -123,6 +123,14 @@ skip_unless_image_defaults() {
 
 # Central-generate
 
+# run_image_defaults_registry_test runs `roxctl central generate` and asserts the image registries match the expected values.
+# Parameters:
+# $1 - path to roxctl binary
+# $2 - orchestrator (k8s, openshift)
+# $3 - registry-slug for expected main registry (see 'registry_regex()' for the list of currently supported registry-slugs)
+# $4 - registry-slug for expected scanner and scanner-db registries (see 'registry_regex()' for the list of currently supported registry-slugs)
+# $5 - output directory where the yamls should be generated (must not exist)
+# $@ - open-ended list of other parameters that should be passed into 'roxctl central generate'
 run_image_defaults_registry_test() {
   local roxctl_bin="$1"; shift;
   local orch="$1"; shift;
@@ -140,6 +148,7 @@ run_image_defaults_registry_test() {
   assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" 'scanner' 'scanner-db'
 }
 
+# run_no_rhacs_flag_test asserts that 'roxctl central generate' fails when presented with `--rhacs` parameter
 run_no_rhacs_flag_test() {
   local roxctl_bin="$1"
   local orch="$2"
@@ -155,6 +164,7 @@ run_no_rhacs_flag_test() {
   assert_output --partial "unknown flag: --rhacs"
 }
 
+# run_invalid_flavor_value_test asserts that 'roxctl central generate' fails when presented invalid value of `--image-defaults` parameter
 run_invalid_flavor_value_test() {
   local roxctl_bin="$1"; shift;
   local orch="$1"; shift;
