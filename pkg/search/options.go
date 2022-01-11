@@ -248,6 +248,7 @@ var (
 	RequestExpiryTime           = newFieldLabel("Request Expiry Time")
 	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
+	UserName                    = newFieldLabel("User Name")
 )
 
 func newFieldLabel(s string) FieldLabel {

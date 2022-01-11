@@ -31,6 +31,7 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -847,6 +848,14 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
+func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
+	cluster := &storage.Cluster{}
+	if err := addDefaults(cluster); err != nil {
+		return nil, err
+	}
+	return cluster, nil
+}
+
 func normalizeCluster(cluster *storage.Cluster) error {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
@@ -890,6 +899,13 @@ func addDefaults(cluster *storage.Cluster) error {
 	}
 	if acConfig.GetTimeoutSeconds() == 0 {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
+	}
+	flavor := defaults.GetImageFlavorByBuildType()
+	if cluster.CollectorImage == "" {
+		cluster.CollectorImage = flavor.CollectorImageNoTag()
+	}
+	if cluster.MainImage == "" {
+		cluster.MainImage = flavor.MainImage()
 	}
 	return nil
 }

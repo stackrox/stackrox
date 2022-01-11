@@ -16,13 +16,20 @@ import (
 
 func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)
-	testutils.SetExampleVersion(t)
-	imageFlavorCases := map[string]defaults.ImageFlavor{
-		"development": defaults.DevelopmentBuildImageFlavor(),
-		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
+	// having a function as value allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'
+	imageFlavorCases := map[string]func() defaults.ImageFlavor{
+		"development": func() defaults.ImageFlavor {
+			testutils.SetVersion(t, testutils.GetExampleVersion(t))
+			return defaults.DevelopmentBuildImageFlavor()
+		},
+		"stackrox": func() defaults.ImageFlavor {
+			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
+			return defaults.StackRoxIOReleaseImageFlavor()
+		},
 	}
 
-	for name, imageFlavor := range imageFlavorCases {
+	for name, f := range imageFlavorCases {
+		imageFlavor := f()
 		t.Run(name, func(t *testing.T) {
 			helmImage := image.GetDefaultImage()
 			tpl, err := helmImage.GetCentralServicesChartTemplate()

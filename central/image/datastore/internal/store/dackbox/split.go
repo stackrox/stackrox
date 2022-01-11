@@ -112,8 +112,5 @@ func generateImageCVEEdge(imageID string, convertedCVE *storage.CVE, embedded *s
 	if ret.GetState() != storage.VulnerabilityState_OBSERVED {
 		return ret
 	}
-	if convertedCVE.GetSuppressed() {
-		ret.State = storage.VulnerabilityState_DEFERRED
-	}
 	return ret
 }

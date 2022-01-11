@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import { Scope } from 'types/vuln_request.proto';
+import { Scope, VulnerabilityRequest } from 'types/vuln_request.proto';
 
 // This type is specific to the way we query using GraphQL
 export type Vulnerability = {
@@ -13,6 +13,11 @@ export type Vulnerability = {
     scoreVersion: string;
     discoveredAtImage: string;
     components: EmbeddedImageScanComponent[];
+    vulnerabilityRequest?: VulnerabilityRequest;
+};
+
+export type VulnerabilityWithRequest = Vulnerability & {
+    vulnerabilityRequest: VulnerabilityRequest;
 };
 
 // This type is specific to the way we query using GraphQL
@@ -25,9 +30,9 @@ export type GetImageVulnerabilitiesData = {
             remote: string;
             tag: string;
         };
+        vulnCount: number;
+        vulns: Vulnerability[];
     };
-    vulnerabilityCount: number;
-    vulnerabilities: Vulnerability[];
 };
 
 export type GetImageVulnerabilitiesVars = {
@@ -52,20 +57,20 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                 remote
                 tag
             }
-        }
-        vulnerabilityCount(query: $vulnsQuery)
-        vulnerabilities(query: $vulnsQuery, pagination: $pagination) {
-            id: cve
-            cve
-            isFixable
-            severity
-            scoreVersion
-            cvss
-            discoveredAtImage
-            components {
-                id
-                name
-                fixedIn
+            vulnCount(query: $vulnsQuery)
+            vulns(query: $vulnsQuery, pagination: $pagination) {
+                id: cve
+                cve
+                isFixable
+                severity
+                scoreVersion
+                cvss
+                discoveredAtImage
+                components {
+                    id
+                    name
+                    fixedIn
+                }
             }
         }
     }

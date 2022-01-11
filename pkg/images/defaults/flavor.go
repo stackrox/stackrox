@@ -45,21 +45,22 @@ type ImageFlavor struct {
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
 // Assumption: development_build flavor is never a release.
 func DevelopmentBuildImageFlavor() ImageFlavor {
+	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
 		MainRegistry:  "docker.io/stackrox",
 		MainImageName: "main",
-		MainImageTag:  version.GetMainVersion(),
+		MainImageTag:  v.MainVersion,
 
 		CollectorRegistry:      "docker.io/stackrox",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      version.GetCollectorVersion() + "-latest",
+		CollectorImageTag:      v.CollectorVersion + "-latest",
 		CollectorSlimImageName: "collector",
-		CollectorSlimImageTag:  version.GetCollectorVersion() + "-slim",
+		CollectorSlimImageTag:  v.CollectorVersion + "-slim",
 
 		ScannerImageName:   "scanner",
-		ScannerImageTag:    version.GetScannerVersion(),
+		ScannerImageTag:    v.ScannerVersion,
 		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  version.GetScannerVersion(),
+		ScannerDBImageTag:  v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -67,27 +68,28 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
 		},
-		Versions: version.GetAllVersions(),
+		Versions: v,
 	}
 }
 
 // StackRoxIOReleaseImageFlavor returns image values for `stackrox_io_release` flavor.
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
+	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
 		MainRegistry:  "stackrox.io",
 		MainImageName: "main",
-		MainImageTag:  version.GetMainVersion(),
+		MainImageTag:  v.MainVersion,
 
 		CollectorRegistry:      "collector.stackrox.io",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      version.GetCollectorVersion(),
+		CollectorImageTag:      v.CollectorVersion,
 		CollectorSlimImageName: "collector-slim",
-		CollectorSlimImageTag:  version.GetCollectorVersion(),
+		CollectorSlimImageTag:  v.CollectorVersion,
 
 		ScannerImageName:   "scanner",
-		ScannerImageTag:    version.GetScannerVersion(),
+		ScannerImageTag:    v.ScannerVersion,
 		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  version.GetScannerVersion(),
+		ScannerDBImageTag:  v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -95,7 +97,7 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: false,
 		},
-		Versions: version.GetAllVersions(),
+		Versions: v,
 	}
 }
 
@@ -146,5 +148,10 @@ func (f *ImageFlavor) CollectorSlimImage() string {
 
 // CollectorFullImageNoTag is the container image repository (image name including registry, excluding tag) for the  "collector" image.
 func (f *ImageFlavor) CollectorFullImageNoTag() string {
+	return fmt.Sprintf("%s/%s", f.CollectorRegistry, f.CollectorImageName)
+}
+
+// CollectorImageNoTag is the container image repository (image name including registry, excluding tag) for the "collector" image.
+func (f *ImageFlavor) CollectorImageNoTag() string {
 	return fmt.Sprintf("%s/%s", f.CollectorRegistry, f.CollectorImageName)
 }

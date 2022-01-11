@@ -18,15 +18,19 @@ import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import { Vulnerability } from '../imageVulnerabilities.graphql';
+import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 import { DeferredCVEsToBeAssessed } from './types';
 import DeferredCVEActionsColumn from './DeferredCVEActionsColumn';
 import useRiskAcceptance from '../useRiskAcceptance';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
+import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
+import DeferralExpirationDate from '../DeferralExpirationDate';
+import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 
 export type DeferredCVEsTableProps = {
-    rows: Vulnerability[];
+    rows: VulnerabilityWithRequest[];
     isLoading: boolean;
     itemCount: number;
     updateTable: () => void;
@@ -49,11 +53,12 @@ function DeferredCVEsTable({
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<Vulnerability>(rows);
+    } = useTableSelection<VulnerabilityWithRequest>(rows);
     const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<DeferredCVEsToBeAssessed>(null);
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
     });
+    const { currentUserName, hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setVulnsToBeAssessed(null);
@@ -65,13 +70,21 @@ function DeferredCVEsTable({
         updateTable();
     }
 
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const selectedIds = getSelectedIds();
-    const vulnRequestIds = rows
-        .filter((row) => selectedIds.includes(row.id))
+    const selectedDeferralsToReobserve = rows
+        .filter((row) => {
+            return (
+                selectedIds.includes(row.id) &&
+                (canApproveRequests ||
+                    (canCreateRequests &&
+                        row.vulnerabilityRequest.requestor.name === currentUserName))
+            );
+        })
         .map((row) => {
-            // @TODO: Once backend adds resolver for vulnRequests, access that and return the request id
-            // This will fail when sending the API request for now
-            return row.id;
+            return row.vulnerabilityRequest.id;
         });
 
     return (
@@ -105,12 +118,12 @@ function DeferredCVEsTable({
                                     setVulnsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'UNDO',
-                                        requestIDs: vulnRequestIds,
+                                        requestIDs: selectedDeferralsToReobserve,
                                     })
                                 }
-                                isDisabled={vulnRequestIds.length === 0}
+                                isDisabled={selectedDeferralsToReobserve.length === 0}
                             >
-                                Reobserve CVEs ({vulnRequestIds.length})
+                                Reobserve CVEs ({selectedDeferralsToReobserve.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -139,13 +152,18 @@ function DeferredCVEsTable({
                         <Th>Severity</Th>
                         <Th>Affected Components</Th>
                         <Th>Comments</Th>
-                        <Th>Expiration</Th>
+                        <Th>Expires</Th>
                         <Th>Apply to</Th>
                         <Th>Approver</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
+                        const canReobserveCVE =
+                            canApproveRequests ||
+                            (canCreateRequests &&
+                                row.vulnerabilityRequest?.requestor.name === currentUserName);
+
                         return (
                             <Tr key={row.cve}>
                                 <Td
@@ -162,14 +180,34 @@ function DeferredCVEsTable({
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
-                                <Td dataLabel="Comments">-</Td>
-                                <Td dataLabel="Expiration">-</Td>
-                                <Td dataLabel="Apply to">-</Td>
-                                <Td dataLabel="Approver">-</Td>
+                                <Td dataLabel="Comments">
+                                    <RequestCommentsButton
+                                        comments={row.vulnerabilityRequest.comments}
+                                        cve={row.vulnerabilityRequest.cves.ids[0]}
+                                    />
+                                </Td>
+                                <Td dataLabel="Expires">
+                                    <DeferralExpirationDate
+                                        targetState={row.vulnerabilityRequest.targetState}
+                                        requestStatus={row.vulnerabilityRequest.status}
+                                        deferralReq={row.vulnerabilityRequest.deferralReq.expiry}
+                                    />
+                                </Td>
+                                <Td dataLabel="Apply to">
+                                    <VulnerabilityRequestScope
+                                        scope={row.vulnerabilityRequest.scope}
+                                    />
+                                </Td>
+                                <Td dataLabel="Approver">
+                                    {row.vulnerabilityRequest.approvers
+                                        .map((user) => user.name)
+                                        .join(',')}
+                                </Td>
                                 <Td className="pf-u-text-align-right">
                                     <DeferredCVEActionsColumn
                                         row={row}
                                         setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                        canReobserveCVE={canReobserveCVE}
                                     />
                                 </Td>
                             </Tr>

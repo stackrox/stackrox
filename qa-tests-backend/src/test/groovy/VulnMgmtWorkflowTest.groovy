@@ -69,7 +69,11 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         assert req.getStatus() == (approve ? VulnRequests.RequestStatus.APPROVED : VulnRequests.RequestStatus.DENIED)
         assert req.getTargetState() ==
                 (requestType == "defer" ? Cve.VulnerabilityState.DEFERRED : Cve.VulnerabilityState.FALSE_POSITIVE)
-        assert !req.getExpired()
+        if (approve) {
+            assert !req.getExpired()
+        } else {
+            assert req.getExpired()
+        }
         assert req.getCves().getIdsCount() == 1
         assert req.getCves().getIds(0) == (requestType == "defer" ? CVE_TO_DEFER: CVE_TO_MARK_FP)
         assert req.getCommentsCount() == 2
@@ -77,7 +81,9 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
                 req.getComments(1).getMessage() == "actioned"
 
         cleanup:
-        VulnRequestService.undoReq(id)
+        if (approve) {
+            VulnRequestService.undoReq(id)
+        }
 
         where:
         "Data inputs are:"

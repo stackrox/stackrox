@@ -6,6 +6,7 @@ import { Bullseye, Spinner } from '@patternfly/react-core';
 import usePagination from 'hooks/patternfly/usePagination';
 import FalsePositiveCVEsTable from './FalsePositiveCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
+import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 
 type FalsePositiveCVEsProps = {
     imageId: string;
@@ -34,8 +35,8 @@ function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
         );
     }
 
-    const itemCount = data?.vulnerabilityCount || 0;
-    const rows = data?.vulnerabilities || [];
+    const itemCount = data?.image?.vulnCount || 0;
+    const rows = (data?.image?.vulns || []) as VulnerabilityWithRequest[];
 
     return (
         <FalsePositiveCVEsTable

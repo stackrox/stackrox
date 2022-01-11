@@ -13,6 +13,7 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/patternfly/usePermissions';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedDeferralRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -54,6 +55,7 @@ function ApprovedDeferralsTable({
     const { updateVulnRequests, undoVulnRequests } = useRiskAcceptance({
         requestIDs: requestsToBeAssessed?.requestIDs || [],
     });
+    const { currentUserName, hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setRequestsToBeAssessed(null);
@@ -65,7 +67,28 @@ function ApprovedDeferralsTable({
         updateTable();
     }
 
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const selectedIds = getSelectedIds();
+    const selectedDeferralsToUpdate = rows
+        .filter((row) => {
+            return (
+                selectedIds.includes(row.id) &&
+                canCreateRequests &&
+                row.requestor.name === currentUserName
+            );
+        })
+        .map((row) => row.id);
+    const selectedDeferralsToReobserve = rows
+        .filter((row) => {
+            return (
+                selectedIds.includes(row.id) &&
+                (canApproveRequests ||
+                    (canCreateRequests && row.requestor.name === currentUserName))
+            );
+        })
+        .map((row) => row.id);
 
     return (
         <>
@@ -81,12 +104,12 @@ function ApprovedDeferralsTable({
                                     setRequestsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'UPDATE',
-                                        requestIDs: selectedIds,
+                                        requestIDs: selectedDeferralsToUpdate,
                                     })
                                 }
-                                isDisabled={selectedIds.length === 0}
+                                isDisabled={selectedDeferralsToUpdate.length === 0}
                             >
-                                Update deferrals ({selectedIds.length})
+                                Update deferrals ({selectedDeferralsToUpdate.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="undo deferrals"
@@ -95,12 +118,12 @@ function ApprovedDeferralsTable({
                                     setRequestsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'UNDO',
-                                        requestIDs: selectedIds,
+                                        requestIDs: selectedDeferralsToReobserve,
                                     })
                                 }
-                                isDisabled={selectedIds.length === 0}
+                                isDisabled={selectedDeferralsToReobserve.length === 0}
                             >
-                                Reobserve CVEs ({selectedIds.length})
+                                Reobserve CVEs ({selectedDeferralsToReobserve.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -137,6 +160,12 @@ function ApprovedDeferralsTable({
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
+                        const canUpdateDeferral =
+                            canCreateRequests && row.requestor.name === currentUserName;
+                        const canReobserveCVE =
+                            canApproveRequests ||
+                            (canCreateRequests && row.requestor.name === currentUserName);
+
                         return (
                             <Tr key={row.id}>
                                 <Td
@@ -185,6 +214,8 @@ function ApprovedDeferralsTable({
                                     <ApprovedDeferralActionsColumn
                                         row={row}
                                         setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                        canReobserveCVE={canReobserveCVE}
+                                        canUpdateDeferral={canUpdateDeferral}
                                     />
                                 </Td>
                             </Tr>

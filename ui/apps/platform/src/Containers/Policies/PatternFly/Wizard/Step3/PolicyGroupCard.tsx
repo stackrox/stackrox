@@ -68,7 +68,7 @@ function PolicyGroupCard({
 
     const headerText = group.negate
         ? descriptor.negatedName
-        : descriptor?.longName || descriptor?.shortName || descriptor?.name;
+        : descriptor.longName ?? descriptor.shortName ?? descriptor.name;
 
     return (
         <>
@@ -78,7 +78,7 @@ function PolicyGroupCard({
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>{headerText}:</Flex>
                     </CardTitle>
                     <CardActions hasNoOffset>
-                        {descriptor?.negatedName && (
+                        {descriptor.negatedName && (
                             <>
                                 <Divider component="div" isVertical />
                                 <Checkbox
@@ -130,7 +130,7 @@ function PolicyGroupCard({
                         );
                     })}
                     {/* this is because there can't be multiple boolean values */}
-                    {!readOnly && descriptor?.type !== 'radioGroup' && (
+                    {!readOnly && descriptor.type !== 'radioGroup' && (
                         <Flex
                             direction={{ default: 'column' }}
                             alignItems={{ default: 'alignItemsCenter' }}

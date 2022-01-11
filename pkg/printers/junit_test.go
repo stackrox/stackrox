@@ -1,4 +1,4 @@
-package printer
+package printers
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ func TestJunitPrinter_Print_JaggedArray(t *testing.T) {
 		JUnitFailedTestCaseErrMsgExpressionKey: "data.#.failedTests.#.error",
 		JUnitSkippedTestCasesExpressionKey:     "data.#.skippedTests.#.name",
 	}
-	p := newJUnitPrinter("testsuite", jsonExpr)
+	p := NewJUnitPrinter("testsuite", jsonExpr)
 	testObj := &jaggedJunitTestData{
 		Data: []junitTestStructure{{
 			Tests: []test{
@@ -122,7 +122,7 @@ func TestJunitPrinter_Print(t *testing.T) {
 		JUnitFailedTestCaseErrMsgExpressionKey: "data.failedTests.#.error",
 		JUnitSkippedTestCasesExpressionKey:     "data.skippedTests.#.name",
 	}
-	p := newJUnitPrinter("testsuite", jsonExpr)
+	p := NewJUnitPrinter("testsuite", jsonExpr)
 	testObj := &junitTestData{
 		Data: junitTestStructure{
 			Tests: []test{

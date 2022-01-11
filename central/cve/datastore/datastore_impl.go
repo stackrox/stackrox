@@ -13,7 +13,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
@@ -21,12 +20,13 @@ import (
 )
 
 var (
-	imagesSAC   = sac.ForResource(resources.Image)
+	vulnRequesterOrApproverSAC = sac.ForResources(
+		sac.ForResource(resources.VulnerabilityManagementRequests),
+		sac.ForResource(resources.VulnerabilityManagementApprovals),
+	)
 	clustersSAC = sac.ForResource(resources.Cluster)
 
-	getCVECtx = sac.WithAllAccess(context.Background())
-
-	log = logging.LoggerForModule()
+	accessAllCtx = sac.WithAllAccess(context.Background())
 )
 
 type datastoreImpl struct {
@@ -47,7 +47,7 @@ type suppressionCacheEntry struct {
 
 func (ds *datastoreImpl) buildSuppressedCache() error {
 	query := searchPkg.NewQueryBuilder().AddBools(searchPkg.CVESuppressed, true).ProtoQuery()
-	suppressedCVEs, err := ds.searcher.SearchRawCVEs(getCVECtx, query)
+	suppressedCVEs, err := ds.searcher.SearchRawCVEs(accessAllCtx, query)
 	if err != nil {
 		return errors.Wrap(err, "searching suppress CVEs")
 	}
@@ -127,9 +127,10 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 }
 
 func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error {
-	// Check global write permissions since this may effect images risk/visibility in in places the user does not have read access.
-	// TODO: What about cluster or node CVEs...?
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+	// Image permission check replaced by vuln request permission check in 68.0. Previously, global image permission
+	// check did not guarantee that the requestor is disallowed from suppressing node/cluster cves. Hence, verification
+	// to determine if the cve is image cve was not added.
+	if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -167,9 +168,10 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 }
 
 func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
-	// Check global write permissions since this may effect images risk/visibility in in places the user does not have read access.
-	// TODO: What about cluster or node CVEs...?
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+	// Image permission check replaced by vuln request permission check in 68.0. Previously, global image permission
+	// check did not guarantee that the requestor is disallowed from unsuppressing node/cluster cves. Hence, verification
+	// to determine if the cve is image cve was not added.
+	if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -205,6 +207,8 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 				vuln.Suppressed = entry.Suppressed
 				vuln.SuppressActivation = entry.SuppressActivation
 				vuln.SuppressExpiry = entry.SuppressExpiry
+
+				vuln.State = storage.VulnerabilityState_DEFERRED
 			}
 		}
 	}

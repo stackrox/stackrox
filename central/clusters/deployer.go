@@ -35,7 +35,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 		return nil, err
 	}
 
-	baseValues := getBaseMetaValues(c, &opts)
+	baseValues := getBaseMetaValues(c, imageFlavor.Versions, &opts)
 	setMainOverride(mainImage, baseValues)
 	setCollectorOverride(mainImage, collectorImage, imageFlavor, baseValues)
 
@@ -126,7 +126,7 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) (string, 
 	return registry, remote
 }
 
-func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValues {
+func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) charts.MetaValues {
 	envVars := make(map[string]string)
 	if devbuild.IsEnabled() {
 		for _, feature := range features.Flags {
@@ -167,7 +167,7 @@ func getBaseMetaValues(c *storage.Cluster, opts *RenderOptions) charts.MetaValue
 
 		"KubectlOutput": true,
 
-		"Versions": version.GetAllVersions(),
+		"Versions": versions,
 
 		"FeatureFlags": make(map[string]string),
 
