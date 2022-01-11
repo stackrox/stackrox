@@ -19,7 +19,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.17.3'
 def protobufVersion = '3.18.1'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '5.10.1'
+def fabric8Version = '5.11.2'
 
 protobuf {
     // There is no protoc-grpc-gen for Apple Silicon (M1), so if you are running on it, force the osx-x86_64 version
