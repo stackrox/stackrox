@@ -152,7 +152,7 @@ export type DescriptorOption = {
 };
 
 export type SubComponent = {
-    type: string;
+    type: 'number' | 'select' | 'text'; // add more if needed
     options?: DescriptorOption[];
     subpath: string;
     placeholder?: string;
