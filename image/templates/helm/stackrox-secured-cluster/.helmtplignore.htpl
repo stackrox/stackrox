@@ -20,7 +20,7 @@ templates/*
 feature-flag-values.yaml
 [< end >]
 *.swp
-[< if not .FeaturesFlag.ROX_LOCAL_IMAGE_SCANNING >]
+[< if not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
 templates/keep.yaml
 templates/*scanner*
 internal/scanner-config-shape.yaml
