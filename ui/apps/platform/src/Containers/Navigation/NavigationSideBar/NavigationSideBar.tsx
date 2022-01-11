@@ -53,7 +53,7 @@ function NavigationSideBar(): ReactElement {
     ) {
         vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
     }
-    if (isVulnReportingEnabled) {
+    if (isVulnReportingEnabled && hasReadAccess('VulnerabilityReports')) {
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }
 

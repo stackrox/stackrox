@@ -149,18 +149,20 @@ function ReportingTablePanel({
 
     return (
         <>
-            <PageSection padding={{ default: 'padding' }} variant={PageSectionVariants.light}>
-                <AlertGroup
-                    isLiveRegion
-                    aria-live="polite"
-                    aria-relevant="additions text"
-                    aria-atomic="false"
-                >
-                    {alerts.map(({ title, variant, key }) => (
-                        <Alert isInline variant={variant} title={title} key={key} />
-                    ))}
-                </AlertGroup>
-            </PageSection>
+            {alerts.length > 0 && (
+                <PageSection padding={{ default: 'padding' }} variant={PageSectionVariants.light}>
+                    <AlertGroup
+                        isLiveRegion
+                        aria-live="polite"
+                        aria-relevant="additions text"
+                        aria-atomic="false"
+                    >
+                        {alerts.map(({ title, variant, key }) => (
+                            <Alert isInline variant={variant} title={title} key={key} />
+                        ))}
+                    </AlertGroup>
+                </PageSection>
+            )}
             <Flex
                 className="pf-u-p-md"
                 alignSelf={{ default: 'alignSelfCenter' }}
