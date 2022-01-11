@@ -60,8 +60,10 @@ function getNewAuthProviderTitle(type, availableProviderTypes) {
 }
 
 function getRuleAttributes(type, availableProviderTypes) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return availableProviderTypes.find(({ value }) => value === type)?.ruleAttributes || [];
+    return (
+        (availableProviderTypes.find(({ value }) => value === type)?.ruleAttributes as string[]) ||
+        []
+    );
 }
 
 function testModeSupported(provider) {
