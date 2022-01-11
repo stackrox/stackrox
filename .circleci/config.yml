@@ -2275,6 +2275,7 @@ jobs:
       - run:
           name: Overwrite GOPATH to /home/circleci/go
           command: |
+            echo "GOPATH: '$GOPATH'"
             cci-export GOPATH /home/circleci/go
             cci-export PATH $PATH:$GOPATH/bin
       - run:
@@ -2686,7 +2687,9 @@ jobs:
       # This is a workaround for the issue of CircleCI ignoring/overwriting our env var setting
       - run:
           name: Overwrite GOPATH to /home/circleci/go
-          command: cci-export GOPATH /home/circleci/go
+          command: |
+            echo "GOPATH: '$GOPATH'"
+            cci-export GOPATH /home/circleci/go
       - run:
           name: Install Go
           command: |
