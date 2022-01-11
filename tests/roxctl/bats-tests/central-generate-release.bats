@@ -10,7 +10,7 @@ setup_file() {
 }
 
 setup() {
-  out_dir="$(mktemp -d -u)"
+  export out_dir="$(mktemp -d -u)"
 }
 
 teardown() {
@@ -20,14 +20,13 @@ teardown() {
 # RELEASE / K8S
 
 @test "roxctl-release central generate k8s should use docker.io registry" {
-  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' "$out_dir"
+  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' 'stackrox.io'
 }
 
 @test "roxctl-release central generate k8s should respect customly-provided images" {
   run_image_defaults_registry_test roxctl-release k8s \
     'example.com' \
     'example.com' \
-    "$out_dir" \
     '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3'
 }
 
@@ -35,7 +34,6 @@ teardown() {
   run_image_defaults_registry_test roxctl-release k8s \
     'example.com' \
     'example2.com' \
-    "$out_dir" \
     '--main-image' 'example.com/main:1.2.3' \
     '--scanner-image' 'example2.com/scanner:1.2.3' \
     '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
@@ -45,7 +43,6 @@ teardown() {
   run_image_defaults_registry_test roxctl-release k8s \
     'example.com' \
     'stackrox.io' \
-    "$out_dir" \
     '--main-image' 'example.com/main:1.2.3' \
     '--image-defaults' 'stackrox.io'
 }
@@ -55,11 +52,11 @@ teardown() {
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=stackrox.io should use stackrox.io registry" {
-  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' "$out_dir" '--image-defaults' 'stackrox.io'
+  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' 'stackrox.io' '--image-defaults' 'stackrox.io'
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=rhacs should use registry.redhat.io registry" {
-  run_image_defaults_registry_test roxctl-release k8s 'registry.redhat.io' "$out_dir" '--image-defaults' 'rhacs'
+  run_image_defaults_registry_test roxctl-release k8s 'registry.redhat.io' 'registry.redhat.io' '--image-defaults' 'rhacs'
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=development should fail" {
@@ -67,20 +64,19 @@ teardown() {
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
-  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' "$out_dir" "--image-defaults=abc"
+  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' 'stackrox.io' "--image-defaults=abc"
 }
 
 # RELEASE / OPENSHIFT
 
 @test "roxctl-release central generate openshift should use docker.io registry" {
-  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' "$out_dir"
+  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' 'stackrox.io'
 }
 
 @test "roxctl-release central generate openshift should respect customly-provided images" {
   run_image_defaults_registry_test roxctl-release openshift \
     'example.com' \
     'example.com' \
-    "$out_dir" \
     '--main-image' 'example.com/main:1.2.3' '--scanner-image' 'example.com/scanner:1.2.3' '--scanner-db-image' 'example.com/scanner-db:1.2.3'
 }
 
@@ -88,7 +84,6 @@ teardown() {
   run_image_defaults_registry_test roxctl-release openshift \
     'example.com' \
     'example2.com' \
-    "$out_dir" \
     '--main-image' 'example.com/main:1.2.3' \
     '--scanner-image' 'example2.com/scanner:1.2.3' \
     '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
@@ -98,7 +93,6 @@ teardown() {
   run_image_defaults_registry_test roxctl-release openshift \
     'example.com' \
     'stackrox.io' \
-    "$out_dir" \
     '--main-image' 'example.com/main:1.2.3' \
     '--image-defaults' 'stackrox.io'
 }
@@ -108,11 +102,11 @@ teardown() {
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=stackrox.io should use stackrox.io registry" {
-  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' "$out_dir" '--image-defaults' 'stackrox.io'
+  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' 'stackrox.io' '--image-defaults' 'stackrox.io'
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=rhacs should use registry.redhat.io registry" {
-  run_image_defaults_registry_test roxctl-release openshift 'registry.redhat.io' "$out_dir" '--image-defaults' 'rhacs'
+  run_image_defaults_registry_test roxctl-release openshift 'registry.redhat.io' 'registry.redhat.io' '--image-defaults' 'rhacs'
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=development should fail" {
@@ -120,5 +114,5 @@ teardown() {
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults='' should behave as if --image-defaults would not be used" {
-  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' "$out_dir" "--image-defaults=abc"
+  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' 'stackrox.io' "--image-defaults=abc"
 }
