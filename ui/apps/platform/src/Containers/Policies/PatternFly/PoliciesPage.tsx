@@ -1,7 +1,7 @@
 import React from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import { policiesBasePathPatternFly } from 'routePaths';
 import { SearchFilter } from 'types/search';
 
