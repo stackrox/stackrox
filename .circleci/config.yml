@@ -2271,6 +2271,10 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
+      # This is a workaround for the issue of CircleCI ignoring/overwriting our env var setting
+      - run:
+          name: Overwrite GOPATH to /home/circleci/go
+          command: cci-export GOPATH /home/circleci/go
       - run:
           no_output_timeout: 30m
           name: Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)
@@ -2290,7 +2294,6 @@ jobs:
           name: Ensure that all TODO references to fixed tickets are gone
           command: |
             .circleci/check-pr-fixes.sh
-
       - run:
           name: Ensure that there are no TODO references that the developer has marked as blocking a merge
           command: |
@@ -2670,29 +2673,18 @@ jobs:
       EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - checkout
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - attach_workspace:
           at: ~/go/src/github.com/stackrox/rox
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - run:
           name: Create cci-export utility and setup env
           command: |
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
+      # This is a workaround for the issue of CircleCI ignoring/overwriting our env var setting
       - run:
-          name: Overwrite GOPATH
+          name: Overwrite GOPATH to /home/circleci/go
           command: cci-export GOPATH /home/circleci/go
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - run:
           name: Install Go
           command: |
@@ -2702,26 +2694,11 @@ jobs:
             wget -c "https://storage.googleapis.com/golang/${go_version}.linux-amd64.tar.gz"
             sudo tar -C /usr/local -xvzf "${go_version}.linux-amd64.tar.gz"
             cci-export PATH $PATH:$GOPATH/bin
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - *restoreGoModBinaryCache
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - setup-go-build-env
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - *restoreGoBuildBinaryCache
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - setup-dep-env:
           docker-login: true
-      - run:
-          name: echo GOPATH
-          command: echo "$GOPATH"
       - run:
           name: Build the main Go binaries
           command: |
