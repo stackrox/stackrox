@@ -1,6 +1,6 @@
 /* eslint-disable no-void */
 import React, { useState, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import {
     ActionList,
     ActionListItem,
@@ -46,6 +46,7 @@ function VulnMgmtReportForm({
     initialValues,
     isEditable = true,
 }: VulnMgmtReportFormProps): ReactElement {
+    const history = useHistory();
     const [message, setMessage] = useState<FormResponseMessage>(null);
     const formik = useFormik<ReportConfiguration>({
         initialValues,
@@ -78,17 +79,15 @@ function VulnMgmtReportForm({
         isOpen: isSeveritySelectOpen,
         onToggle: onToggleSeveritySelect,
         onSelect: onSelectSeverity,
-    } = useMultiSelect(handleSeveritySelect, values.vulnReportFilters.severities);
+    } = useMultiSelect(handleSeveritySelect, values.vulnReportFilters.severities, false);
 
     async function onSave(data) {
         let responseData;
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             responseData = await saveReport(data);
-            setMessage({
-                message: 'Integration was saved successfully',
-                isError: false,
-            });
+
+            history.goBack();
         } catch (error) {
             setMessage({ message: getAxiosErrorMessage(error), isError: true });
         }

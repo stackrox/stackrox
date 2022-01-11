@@ -23,7 +23,7 @@ import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
-import usePermissions from 'hooks/patternfly/usePermissions';
+import usePermissions from 'hooks/usePermissions';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -224,10 +224,7 @@ function ObservedCVEsTable({
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
                                 <Td dataLabel="CVSS score">
-                                    <CVSSScoreLabel
-                                        cvss={row.cvss}
-                                        scoreVersion={row.scoreVersion}
-                                    />
+                                    <CVSSScoreLabel cvss={row.cvss} />
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />

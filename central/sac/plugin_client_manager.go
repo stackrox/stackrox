@@ -11,7 +11,7 @@ var (
 )
 
 // AuthPluginClientManger implementations must provide access to the auth plugin client if it has been configured.
-//go:generate mockgen-wrapper AuthPluginClientManger
+//go:generate mockgen-wrapper
 type AuthPluginClientManger interface {
 	SetClient(newClient client.Client)
 	GetClient() client.Client

@@ -6,20 +6,14 @@ import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 
 export type CVSSScoreLabelProps = {
     cvss: string;
-    scoreVersion?: string;
 };
 
-function CVSSScoreLabel({ cvss, scoreVersion }: CVSSScoreLabelProps) {
+function CVSSScoreLabel({ cvss }: CVSSScoreLabelProps) {
     const severity = getSeverityByCvss(cvss);
     const severityLabel = severityLabels[severity];
     const cvssNum = Number(cvss).toFixed(1);
 
-    return (
-        <>
-            <Label color={severityColorMapPF[severityLabel]}>{cvssNum}</Label>
-            {scoreVersion && <span className="pf-u-ml-sm">({scoreVersion})</span>}
-        </>
-    );
+    return <Label color={severityColorMapPF[severityLabel]}>{cvssNum}</Label>;
 }
 
 export default CVSSScoreLabel;

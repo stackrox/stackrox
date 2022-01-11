@@ -111,6 +111,7 @@ function Body(): ReactElement {
                         path={vulnManagementReportsPath}
                         component={AsyncVulnMgmtReports}
                         featureFlagEnabled={isVulnReportingEnabled}
+                        requiredPermission="VulnerabilityReports"
                     />
                     <ProtectedRoute
                         path={vulnManagementRiskAcceptancePath}
