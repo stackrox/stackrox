@@ -506,7 +506,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:snapshot-0.3.22-8-ge7a4238a76 # TODO(do not merge): After upstream PR is merged, cut a tag and update this
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.21
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -2657,7 +2657,8 @@ jobs:
       - cleanup-clusters-on-fail
 
   pre-build-go-binaries:
-    machine: true
+    machine:
+      image: ubuntu-2004:202111-02
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
       - GOPATH: /home/circleci/go
