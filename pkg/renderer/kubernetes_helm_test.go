@@ -72,7 +72,7 @@ func getDefaultMetaValues(t *testing.T) charts.MetaValues {
 		AdmissionControlEnforceOnUpdates: false,
 
 		EnvVars:      nil,
-		FeatureFlags: make(map[string]string),
+		FeatureFlags: make(map[string]interface{}),
 
 		Versions: testutils.GetExampleVersion(t),
 

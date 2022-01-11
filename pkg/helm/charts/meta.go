@@ -1,8 +1,6 @@
 package charts
 
 import (
-	"reflect"
-
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -34,7 +32,7 @@ type MetaValues struct {
 	ChartRepo                        defaults.ChartRepo
 	ImagePullSecrets                 defaults.ImagePullSecrets
 	Operator                         bool
-	FeatureFlags                     interface{} // TODO: lvm change ?
+	FeatureFlags                     map[string]interface{}
 	CertsOnly                        bool
 	ClusterType                      string
 	ClusterName                      string
@@ -47,6 +45,7 @@ type MetaValues struct {
 	CreateUpgraderSA                 bool
 	EnvVars                          map[string]string
 	K8sCommand                       string
+	K8sConfig                        map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
 	OfflineMode                      bool
 	SlimCollector                    bool
 	AdmissionController              bool
@@ -87,24 +86,6 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 		metaValues.FeatureFlags = getFeatureFlags()
 	}
 	return metaValues
-}
-
-// ToRaw converts MetaValues to map[string]interface{} for use in Go templating.
-// Go templating does not like our MetaValuesKey and prefers to have string as a key in the map.
-// Unfortunately, an attempt to cast MetaValues to map[string]interface{} does not compile, therefore we need to copy
-// the map.
-// TODO(RS-379): Switch MetaVals to struct and get rid of ToRaw function.
-// TODO: lvm delete this function
-func (m MetaValues) ToRaws() map[string]interface{} {
-	v := reflect.ValueOf(m)
-	result := make(map[string]interface{}, v.NumField())
-	for i := 0; i < v.NumField(); i++ {
-		if v.Field(i).Interface() == nil {
-			continue
-		}
-		result[v.Type().Field(i).Name] = v.Field(i).Interface()
-	}
-	return result
 }
 
 func getFeatureFlags() map[string]interface{} {

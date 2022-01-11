@@ -166,7 +166,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 
 		Versions: versions,
 
-		FeatureFlags: make(map[string]string),
+		FeatureFlags: make(map[string]interface{}),
 
 		AdmissionController:              c.AdmissionController,
 		AdmissionControlListenOnUpdates:  c.GetAdmissionControllerUpdates(),
