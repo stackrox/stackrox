@@ -101,7 +101,7 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 
 	client.Client.Timeout = registryTimeout
 
-	repoSet, err := populateRepositoryList(client)
+	repoSet, err := retrieveRepositoryList(client)
 	if err != nil {
 		// This is not a critical error so it is purposefully not returned
 		log.Debugf("could not update repo list for integration %s: %v", integration.GetName(), err)
@@ -134,7 +134,7 @@ func NewDockerRegistry(integration *storage.ImageIntegration) (*Registry, error)
 	return NewDockerRegistryWithConfig(cfg, integration)
 }
 
-func populateRepositoryList(client *registry.Registry) (set.StringSet, error) {
+func retrieveRepositoryList(client *registry.Registry) (set.StringSet, error) {
 	repos, err := client.Repositories()
 	if err != nil {
 		return nil, err
@@ -148,22 +148,25 @@ func populateRepositoryList(client *registry.Registry) (set.StringSet, error) {
 // Match decides if the image is contained within this registry
 func (r *Registry) Match(image *storage.ImageName) bool {
 	match := urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
-	if r.repositoryList == nil {
+	var list set.StringSet
+	concurrency.WithRLock(&r.repositoryListLock, func() {
+		list = r.repositoryList
+	})
+	if list == nil {
 		return match
 	}
 
 	// Lazily update if the ticker has elapsed
 	select {
 	case <-r.repositoryListTicker.C:
-		concurrency.WithLock(&r.repositoryListLock, func() {
-			newRepoSet, err := populateRepositoryList(r.Client)
-			if err != nil {
-				log.Debugf("could not update repo list for integration %s: %v", r.protoImageIntegration.GetName(), err)
-				return
-			}
-			log.Infof("%s: Repo list: %+v", r.protoImageIntegration.GetName(), newRepoSet.AsSlice())
-			r.repositoryList = newRepoSet
-		})
+		newRepoSet, err := retrieveRepositoryList(r.Client)
+		if err != nil {
+			log.Debugf("could not update repo list for integration %s: %v", r.protoImageIntegration.GetName(), err)
+		} else {
+			concurrency.WithLock(&r.repositoryListLock, func() {
+				r.repositoryList = newRepoSet
+			})
+		}
 	default:
 	}
 
