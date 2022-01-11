@@ -26,6 +26,7 @@ const (
 // Note: This interface does not provide any information about the scope it represents. This is
 // intentional to allow efficient implementations for special access scope checkers such as
 // "allow all".
+//go:generate mockgen-wrapper
 type ScopeCheckerCore interface {
 	// SubScopeChecker obtains an access scope checker for the access scope directly underneath
 	// this scope, keyed by the given key.
@@ -55,5 +56,3 @@ func NewScopeCheckerCore(currentScope payload.AccessScope, reqTracker ScopeReque
 	}
 	return scc
 }
-
-//go:generate mockgen-wrapper ScopeCheckerCore

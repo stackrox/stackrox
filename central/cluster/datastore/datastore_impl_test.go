@@ -136,7 +136,7 @@ func (suite *ClusterDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-//// Test that when the cluster we try to remove does not exist, we return an error.
+// Test that when the cluster we try to remove does not exist, we return an error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	// Return false for the cluster not existing.
 	suite.clusters.EXPECT().Get(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
