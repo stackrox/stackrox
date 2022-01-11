@@ -198,7 +198,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 		return false, errors.Wrapf(err, "error getting metadata from registry: %q", registry.Name())
 	}
 	metadata.DataSource = registry.DataSource()
-	metadata.Version = currentMetadataVersion
+	metadata.Version = metadataVersion
 	image.Metadata = metadata
 
 	cachedMetadata := metadata.Clone()
