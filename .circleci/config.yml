@@ -493,6 +493,9 @@ parameters:
   rox_license_key:
     type: string
     default: ""
+  ci_machine_image:
+    type: string
+    default: "ubuntu-2004:202111-02"
 
 orbs:
   win: circleci/windows@2.2.0
@@ -2658,7 +2661,7 @@ jobs:
 
   pre-build-go-binaries:
     machine:
-      image: ubuntu-2004:202111-02
+      image: << pipeline.parameters.ci_machine_image >>
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
       - GOPATH: /home/circleci/go
@@ -3084,7 +3087,8 @@ jobs:
           machine-type: e2-standard-8
 
   provision-openshift-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-tests
@@ -3095,7 +3099,8 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   provision-openshift-crio-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-crio-tests
@@ -3163,7 +3168,8 @@ jobs:
           when: on_fail
 
   provision-kops-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
     steps:
