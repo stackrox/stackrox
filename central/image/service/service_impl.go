@@ -15,6 +15,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 )
 
@@ -59,6 +61,8 @@ var (
 			"/v1.ImageService/UnwatchImage",
 		},
 	})
+
+	internalScanSemaphore = semaphore.NewWeighted(int64(env.ScanRateLimit.IntegerSetting()))
 )
 
 // serviceImpl provides APIs for alerts.
@@ -165,6 +169,10 @@ func (s *serviceImpl) saveImage(img *storage.Image) {
 
 // ScanImage handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	if err := internalScanSemaphore.Acquire(ctx, 1); err != nil {
+		return nil, errors.Wrapf(err, "error acquiring semaphore")
+	}
+
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
 	if request.GetImage().GetId() != "" {
