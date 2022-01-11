@@ -132,9 +132,11 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.ResourceByID) (*v1.GetDeploymentWithRiskResponse, error) {
 	deployment, exists, err := s.datastore.GetDeployment(ctx, request.GetId())
 	if err != nil {
+		log.Infof("Error retrieving deployment %v: %v", request.GetId(), err)
 		return nil, err
 	}
 	if !exists {
+		log.Infof("Deployment %v does not exist", request.GetId())
 		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
 
