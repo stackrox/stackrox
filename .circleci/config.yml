@@ -2670,14 +2670,26 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - checkout
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - attach_workspace:
           at: ~/go/src/github.com/stackrox/rox
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - run:
           name: Create cci-export utility and setup env
           command: |
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - run:
           name: Install Go
           command: |
@@ -2687,12 +2699,26 @@ jobs:
             wget -c "https://storage.googleapis.com/golang/${go_version}.linux-amd64.tar.gz"
             sudo tar -C /usr/local -xvzf "${go_version}.linux-amd64.tar.gz"
             cci-export PATH $PATH:$GOPATH/bin
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - *restoreGoModBinaryCache
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - setup-go-build-env
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - *restoreGoBuildBinaryCache
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - setup-dep-env:
           docker-login: true
-
+      - run:
+          name: echo GOPATH
+          command: echo "$GOPATH"
       - run:
           name: Build the main Go binaries
           command: |
