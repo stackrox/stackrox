@@ -21,6 +21,7 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 		"Versions":                 imageFlavor.Versions,
 		"MainRegistry":             imageFlavor.MainRegistry,
 		"ImageRemote":              imageFlavor.MainImageName,
+		"ImageTag":                 imageFlavor.MainImageTag,
 		"CollectorRegistry":        imageFlavor.CollectorRegistry,
 		"CollectorFullImageRemote": imageFlavor.CollectorImageName,
 		"CollectorSlimImageRemote": imageFlavor.CollectorSlimImageName,
@@ -52,6 +53,7 @@ func RHACSMetaValues() MetaValues {
 		// TODO(RS-380): these registries will change once we have the RHACS flavor. For now they will remain hardcoded here.
 		"MainRegistry":             "registry.redhat.io/rh-acs",
 		"ImageRemote":              "main",
+		"ImageTag":                 flavor.MainImageTag,
 		"CollectorRegistry":        "registry.redhat.io/rh-acs",
 		"CollectorFullImageRemote": "collector",
 		"CollectorSlimImageRemote": "collector",

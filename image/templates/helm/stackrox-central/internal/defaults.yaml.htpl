@@ -19,7 +19,7 @@ defaults:
 
     image:
       name: [< required "" .ImageRemote >]
-      tag: [< required "" .Versions.MainVersion >]
+      tag: [< required "" .ImageTag >]
 
     resources:
       requests:

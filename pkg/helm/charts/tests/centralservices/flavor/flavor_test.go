@@ -14,6 +14,25 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
+func customFlavor(t *testing.T) defaults.ImageFlavor {
+	return defaults.ImageFlavor{
+		MainRegistry:           "example.io",
+		MainImageName:          "custom-main",
+		MainImageTag:           "1.2.3",
+		ScannerImageName:       "custom-scanner",
+		ScannerImageTag:        "3.2.1",
+		ScannerDBImageName:     "custom-scanner-db",
+		ScannerDBImageTag:      "3.2.1",
+		ChartRepo:              defaults.ChartRepo{
+			URL: "url",
+		},
+		ImagePullSecrets:       defaults.ImagePullSecrets{
+			AllowNone: false,
+		},
+		Versions:               testutils.GetExampleVersion(t),
+	}
+}
+
 func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)
 	// having a function as value allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'
@@ -25,6 +44,9 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 		"stackrox": func() defaults.ImageFlavor {
 			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
 			return defaults.StackRoxIOReleaseImageFlavor()
+		},
+		"custom": func() defaults.ImageFlavor {
+			return customFlavor(t)
 		},
 	}
 
