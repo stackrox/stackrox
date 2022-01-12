@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,19 +22,28 @@ func TestMigration(t *testing.T) {
 type vulnMgmtPermisssionTestSuite struct {
 	suite.Suite
 
-	db        *rocksdb.RocksDB
-	databases *dbTypes.Databases
+	db          *rocksdb.RocksDB
+	databases   *dbTypes.Databases
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (suite *vulnMgmtPermisssionTestSuite) SetupTest() {
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.VulnRiskManagement.EnvVar(), "true")
+
 	rocksDB, err := rocksdb.NewTemp(suite.T().Name())
 	suite.NoError(err)
 
 	suite.db = rocksDB
 	suite.databases = &dbTypes.Databases{RocksDB: rocksDB.DB}
+
+	if !features.VulnRiskManagement.Enabled() {
+		suite.T().SkipNow()
+	}
 }
 
 func (suite *vulnMgmtPermisssionTestSuite) TearDownTest() {
+	suite.envIsolator.RestoreAll()
 	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
