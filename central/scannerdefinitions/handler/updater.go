@@ -79,10 +79,14 @@ func (u *updater) doUpdate() error {
 		return errors.Wrap(err, "constructing request")
 	}
 
-	_, modTime, err := u.file.Read()
+	// The returned *os.File is not used, but we need to be sure to close the file
+	// to prevent leaking file descriptor.
+	f, modTime, err := u.file.Open()
 	if err != nil {
-		return errors.Wrapf(err, "reading file %s", u.file.Path())
+		return errors.Wrapf(err, "reading modified time of file %s", u.file.Path())
 	}
+	defer utils.IgnoreError(f.Close)
+
 	req.Header.Set(ifModifiedSinceHeader, modTime.Format(http.TimeFormat))
 
 	resp, err := u.client.Do(req)

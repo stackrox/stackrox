@@ -13,7 +13,7 @@ import (
 const tempFilePattern = "scanner-defs-download-*"
 
 // File is a wrapper around a file path
-// which exposes a Read and Write API.
+// which exposes an Open and Write API.
 type File struct {
 	path string
 }
@@ -40,6 +40,7 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	if err != nil {
 		return errors.Wrap(err, "creating subdirectory for scanner defs")
 	}
+
 	// Write the contents of r into a temporary destination to prevent us from holding the lock
 	// while reading from r. The reader may be dependent on the network, and we do not want to
 	// lock while depending on something as unpredictable as the network.
@@ -52,6 +53,13 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	if err != nil {
 		return errors.Wrap(err, "copying scanner defs zip out")
 	}
+
+	// No longer need the file descriptor, so release it.
+	err = scannerDefsFile.Close()
+	if err != nil {
+		return errors.Wrap(err, "closing temp scanner defs file")
+	}
+
 	err = os.Chtimes(scannerDefsFile.Name(), time.Now(), modifiedTime)
 	if err != nil {
 		return errors.Wrap(err, "changing modified time of scanner defs")
@@ -67,10 +75,11 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	return nil
 }
 
-// Read reads the file at the given path and returns the contents and modified time.
-// If the file does not exist, it is *not* an error.
-// Read is thread-safe, as Write simply calls rename().
-func (file *File) Read() (*os.File, time.Time, error) {
+// Open opens the file at the given path and returns the contents and modified time.
+// If the file does not exist, it is *not* an error. In this case, nil is returned.
+// Open is thread-safe, as Write simply calls rename().
+// It is the caller's responsibility to close the returned file.
+func (file *File) Open() (*os.File, time.Time, error) {
 	f, err := os.Open(file.path)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		return nil, time.Time{}, nil

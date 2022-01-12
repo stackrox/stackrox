@@ -130,16 +130,19 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	// Serve the more recent of the requested file and the manually uploaded definitions.
 
-	onlineF, onlineModTime, err := u.file.Read()
+	onlineF, onlineModTime, err := u.file.Open()
 	if err != nil {
 		writeErrorForFile(w, err, u.file.Path())
 		return
 	}
-	offlineF, offlineModTime, err := h.offlineFile.Read()
+	defer utils.IgnoreError(onlineF.Close)
+
+	offlineF, offlineModTime, err := h.offlineFile.Open()
 	if err != nil {
 		writeErrorForFile(w, err, h.offlineFile.Path())
 		return
 	}
+	defer utils.IgnoreError(offlineF.Close)
 
 	f, modTime := onlineF, onlineModTime
 	if offlineModTime.After(onlineModTime) {
