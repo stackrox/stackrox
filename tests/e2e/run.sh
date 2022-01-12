@@ -129,7 +129,7 @@ install_yq() {
 
 run_roxctl_bats_tests() {
     info "Running Bats e2e tests on development roxctl"
-    "$TEST_ROOT/tests/roxctl/bats-runner.sh" "$TEST_ROOT/tests/roxctl/bats-tests/"
+    "$TEST_ROOT/tests/roxctl/bats-runner.sh" ${1:-roxctl-test-output} "$TEST_ROOT/tests/roxctl/bats-tests/"
 }
 
 run_roxctl_tests() {
