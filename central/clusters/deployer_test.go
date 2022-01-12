@@ -14,21 +14,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-/*
-const (
-	mainRegistryKey             charts.MetaValuesKey = "MainRegistry"
-	imageRemoteKey              charts.MetaValuesKey = "ImageRemote"
-	imageTagKey                 charts.MetaValuesKey = "ImageTag"
-	collectorRegistryKey        charts.MetaValuesKey = "CollectorRegistry"
-	collectorFullImageRemoteKey charts.MetaValuesKey = "CollectorFullImageRemote"
-	collectorSlimImageRemoteKey charts.MetaValuesKey = "CollectorSlimImageRemote"
-	collectorFullImageTagKey    charts.MetaValuesKey = "CollectorFullImageTag"
-	collectorSlimImageTagKey    charts.MetaValuesKey = "CollectorSlimImageTag"
-	versionsKey                 charts.MetaValuesKey = "Versions"
-	chartRepoKey                charts.MetaValuesKey = "ChartRepo"
-)
-*/
-
 func getCollectorFull(fields charts.MetaValues) string {
 	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorFullImageRemote, fields.CollectorFullImageTag)
 }

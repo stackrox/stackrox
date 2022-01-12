@@ -3,37 +3,12 @@ package charts
 import (
 	"fmt"
 	"testing"
-	"text/template"
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestMetaValuesInTemplating(t *testing.T) {
-	tpl := template.Must(template.New("blah").Parse("value is: {{.foo}}"))
-
-	// This fragment shows that we can use map[string]interface{} (hand-crafted) in templates without issues.
-	dataMap := map[string]interface{}{"foo": 6}
-	res, err := templates.ExecuteToString(tpl, dataMap)
-	assert.NoError(t, err)
-	assert.Equal(t, "value is: 6", res)
-
-	// This fragment shows that an attempt to use strongly-typed MetaValues leads to a rendering error.
-	dataMetaVals := MetaValues{TimeoutSeconds: 500}
-	res, err = templates.ExecuteToString(tpl, dataMetaVals)
-	assert.Equal(t, "", res)
-	assert.Error(t, err)
-	assert.Equal(t, "template: blah:1:12: executing \"blah\" at <.foo>: can't evaluate field foo in type charts.MetaValues", err.Error())
-
-	tpl = template.Must(template.New("blah").Parse("value is: {{.TimeoutSeconds}}"))
-	// This fragment shows what to do with MetaValues in order to leverage them in templating.
-	res, err = templates.ExecuteToString(tpl, dataMetaVals)
-	assert.NoError(t, err)
-	assert.Equal(t, "value is: 500", res)
-}
 
 // TestRequiredMetaValuesArePresent validates that MetaValues attributes that are consumed and required by .htpl files
 // are actually present.
