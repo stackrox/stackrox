@@ -642,7 +642,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
+    @Category(BAT)
     def "Verify improper #imageIntegration.name() integration - #testAspect"() {
         Assume.assumeTrue(imageIntegration.isTestable())
 
