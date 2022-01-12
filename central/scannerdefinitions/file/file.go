@@ -92,11 +92,18 @@ func (file *File) Open() (*os.File, time.Time, error) {
 	if err != nil {
 		return nil, time.Time{}, err
 	}
+	var succeeded bool
+	defer func() {
+		if !succeeded {
+			utils.IgnoreError(f.Close)
+		}
+	}()
 
 	fi, err := f.Stat()
 	if err != nil {
 		return nil, time.Time{}, err
 	}
 
+	succeeded = true
 	return f, fi.ModTime().UTC(), nil
 }
