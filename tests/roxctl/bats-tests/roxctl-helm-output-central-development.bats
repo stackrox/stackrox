@@ -25,7 +25,7 @@ teardown() {
 @test "roxctl-development helm output should raise warning when both --rhacs and --image-defaults flags are used" {
   run roxctl-development helm output central-services --rhacs --image-defaults="stackrox.io" --output-dir "$out_dir"
   assert_success
-  assert_output --partial "Warning: '--rhacs' has priority over '--image-defaults'"
+  assert_line "Warning: '--rhacs' has priority over '--image-defaults'"
 }
 
 @test "roxctl-development helm output central-services should use docker.io registry" {
@@ -39,9 +39,7 @@ teardown() {
   run roxctl-development helm output central-services --rhacs --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-  # TODO(RS-380): change assertions to
-  # assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
-  assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --image-defaults=dummy should fail" {
@@ -64,11 +62,18 @@ teardown() {
   assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
 }
 
-@test "roxctl-development helm output central-services --rhacs --image-defaults=development should respect --rhacs flag and use redhat.io registry" {
+@test "roxctl-development helm output central-services --rhacs --image-defaults=development  should respect --rhacs flag, display a warning, and use redhat.io registry" {
   run roxctl-development helm output central-services --rhacs --image-defaults=development --output-dir "$out_dir"
   assert_success
+  assert_line "Warning: '--rhacs' has priority over '--image-defaults'"
   assert_output --partial "Written Helm chart central-services to directory"
-  # TODO(RS-380): change assertions to
-  # assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
-  assert_helm_template_central_registry "$out_dir" 'docker.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+}
+
+@test "roxctl-development helm output central-services --rhacs --image-defaults=stackrox.io should respect --rhacs flag, display a warning, and use registry.redhat.io registry" {
+  run roxctl-development helm output central-services --rhacs --image-defaults=stackrox.io --output-dir "$out_dir"
+  assert_success
+  assert_line "Warning: '--rhacs' has priority over '--image-defaults'"
+  assert_output --partial "Written Helm chart central-services to directory"
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
 }

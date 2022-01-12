@@ -23,8 +23,7 @@ teardown() {
   run roxctl-release helm output central-services --rhacs --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-  # TODO(RS-346): Ensure that we have a proper registry address here: 'registry.redhat.io' vs 'registry.redhat.io-short'
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io-short' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --image-defaults=stackrox.io should use stackrox.io registry" {
@@ -45,4 +44,12 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
   assert_helm_template_central_registry "$out_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
+}
+
+@test "roxctl-release helm output central-services --rhacs --image-defaults=stackrox.io should respect --rhacs flag, display a warning, and use redhat.io registry" {
+  run roxctl-release helm output central-services --rhacs --image-defaults=stackrox.io --output-dir "$out_dir"
+  assert_success
+  assert_line "Warning: '--rhacs' has priority over '--image-defaults'"
+  assert_output --partial "Written Helm chart central-services to directory"
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
 }
