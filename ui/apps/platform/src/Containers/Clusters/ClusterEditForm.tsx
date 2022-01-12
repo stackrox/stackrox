@@ -13,7 +13,7 @@ type ClusterEditFormProps = {
     centralVersion: string;
     selectedCluster: Cluster;
     managerType: ClusterManagerType;
-    handleChange: () => void;
+    handleChange: (any) => void;
     handleChangeLabels: (labels) => void;
     isLoading: boolean;
 };

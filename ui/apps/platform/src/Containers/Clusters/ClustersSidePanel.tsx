@@ -29,6 +29,7 @@ import {
     wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
+import { Cluster, ClusterManagerType } from './clusterTypes';
 
 function fetchCentralEnv() {
     return fetchKernelSupportAvailable().then((kernelSupportAvailable) => {
@@ -53,6 +54,11 @@ const validate = (values) => {
     return errors;
 };
 
+type MessageState = {
+    type: 'warn' | 'error';
+    message: JSX.Element | string;
+};
+
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const metadata = useMetadata();
 
@@ -66,14 +72,16 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     };
 
     const { isDarkMode } = useTheme();
-    const [selectedCluster, setSelectedCluster] = useState(envAwareClusterDefault);
+    const [selectedCluster, setSelectedCluster] = useState<Partial<Cluster> | null>(
+        envAwareClusterDefault
+    );
     const [centralEnv, setCentralEnv] = useState(centralEnvDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [loadingCounter, setLoadingCounter] = useState(0);
-    const [messageState, setMessageState] = useState(null);
+    const [messageState, setMessageState] = useState<MessageState | null>(null);
     const [isBlocked, setIsBlocked] = useState(false);
     const [pollingCount, setPollingCount] = useState(0);
-    const [pollingDelay, setPollingDelay] = useState(null);
+    const [pollingDelay, setPollingDelay] = useState<number | null>(null);
     const [submissionError, setSubmissionError] = useState('');
     const [isDownloadingBundle, setIsDownloadingBundle] = useState(false);
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
@@ -88,10 +96,10 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         setPollingDelay(null);
     }
 
-    function managerType(cluster) {
+    function managerType(cluster: Partial<Cluster> | null): ClusterManagerType {
         return cluster?.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN'
             ? 'MANAGER_TYPE_HELM_CHART'
-            : cluster.managedBy;
+            : cluster?.managedBy ?? 'MANAGER_TYPE_UNKNOWN';
     }
 
     useEffect(
@@ -238,7 +246,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         if (wizardStep === wizardSteps.FORM) {
             setMessageState(null);
             setSubmissionError('');
-            saveCluster(selectedCluster)
+            saveCluster(selectedCluster as Cluster)
                 .then((response) => {
                     const newId = response.response.result.cluster; // really is nested like this
                     const clusterWithId = { ...selectedCluster, id: newId };
@@ -267,16 +275,18 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     function onDownload() {
         setSubmissionError('');
         setIsDownloadingBundle(true);
-        downloadClusterYaml(selectedCluster.id, createUpgraderSA)
-            .catch((error) => {
-                setSubmissionError(
-                    error?.response?.data?.message ||
-                        'We could not download the configuration files.'
-                );
-            })
-            .finally(() => {
-                setIsDownloadingBundle(false);
-            });
+        if (selectedCluster?.id) {
+            downloadClusterYaml(selectedCluster.id, createUpgraderSA)
+                .catch((error) => {
+                    setSubmissionError(
+                        error?.response?.data?.message ||
+                            'We could not download the configuration files.'
+                    );
+                })
+                .finally(() => {
+                    setIsDownloadingBundle(false);
+                });
+        }
     }
 
     /**
@@ -346,7 +356,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                         <ClusterEditForm
                             centralEnv={centralEnv}
                             centralVersion={metadata.version}
-                            selectedCluster={selectedCluster}
+                            selectedCluster={selectedCluster as Cluster}
                             managerType={managerType(selectedCluster)}
                             handleChange={onChange}
                             handleChangeLabels={handleChangeLabels}
@@ -364,7 +374,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                 clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
                                 managerType={managerType(selectedCluster)}
                             />
-                            {!!selectedCluster.id && (
+                            {!!selectedCluster?.id && (
                                 <DownloadHelmValues
                                     clusterId={selectedCluster.id}
                                     description={
