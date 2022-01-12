@@ -32,6 +32,9 @@ function PolicyScopeForm({ clusters }) {
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
 
+    const hasAuditLogEventSource = values.eventSource === 'AUDIT_LOG_EVENT';
+    const hasBuildLifecycle = values.lifecycleStages.includes('BUILD');
+
     function addNewInclusionScope() {
         if (scope.length < MAX_INCLUSION_SCOPES) {
             setFieldValue('scope', [...scope, {}]);
@@ -72,9 +75,7 @@ function PolicyScopeForm({ clusters }) {
             .catch(() => {
                 // TODO
             });
-    }, []);
 
-    React.useEffect(() => {
         fetchDeployments()
             .then((response) => {
                 const deploymentList = response.map((item) => item.deployment as ListDeployment);
@@ -122,6 +123,7 @@ function PolicyScopeForm({ clusters }) {
                                     index={index}
                                     clusters={clusters}
                                     onDelete={() => deleteInclusionScope(index)}
+                                    hasAuditLogEventSource={hasAuditLogEventSource}
                                 />
                             </GridItem>
                         ))}
@@ -158,6 +160,7 @@ function PolicyScopeForm({ clusters }) {
                                     clusters={clusters}
                                     deployments={deployments}
                                     onDelete={() => deleteExclusionDeploymentScope(index)}
+                                    hasAuditLogEventSource={hasAuditLogEventSource}
                                 />
                             </GridItem>
                         ))}
@@ -188,6 +191,7 @@ function PolicyScopeForm({ clusters }) {
                                 variant={SelectVariant.typeaheadMulti}
                                 selections={excludedImageNames}
                                 onSelect={handleChangeMultiSelect}
+                                isDisabled={hasAuditLogEventSource || !hasBuildLifecycle}
                                 onClear={() => setFieldValue('excludedImageNames', [])}
                                 placeholderText="Select images to exclude"
                             >

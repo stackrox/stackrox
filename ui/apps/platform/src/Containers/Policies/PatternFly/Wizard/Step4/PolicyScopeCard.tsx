@@ -28,6 +28,7 @@ type PolicyScopeCardProps = {
     deployments?: ListDeployment[];
     index: number;
     onDelete: () => void;
+    hasAuditLogEventSource: boolean;
 };
 
 function PolicyScopeCard({
@@ -37,6 +38,7 @@ function PolicyScopeCard({
     deployments = [],
     index,
     onDelete,
+    hasAuditLogEventSource = false,
 }: PolicyScopeCardProps): React.ReactElement {
     const [field, , helper] = useField(name);
     const [isClusterSelectOpen, setIsClusterSelectOpen] = useState(false);
@@ -128,7 +130,7 @@ function PolicyScopeCard({
                         <FlexItem className="pf-u-pl-md">
                             <FormGroup label="Namespace" fieldId={`${name}-namespace`}>
                                 <TextInput
-                                    value={value.namespace}
+                                    value={value.namespace || scope?.namespace}
                                     type="text"
                                     onChange={handleChangeNamespace}
                                     placeholder="Provide a namespace"
@@ -146,6 +148,7 @@ function PolicyScopeCard({
                                         isOpen={isDeploymentSelectOpen}
                                         selections={value.name}
                                         placeholderText="Select a deployment"
+                                        isDisabled={hasAuditLogEventSource}
                                     >
                                         {deployments.map((deployment) => (
                                             <SelectOption
@@ -170,12 +173,14 @@ function PolicyScopeCard({
                                         type="text"
                                         onChange={handleChangeLabelKey}
                                         placeholder="Label key"
+                                        isDisabled={hasAuditLogEventSource}
                                     />
                                     <TextInput
                                         value={value.label?.value || scope?.label?.value}
                                         type="text"
                                         onChange={handleChangeLabelValue}
                                         placeholder="Label value"
+                                        isDisabled={hasAuditLogEventSource}
                                     />
                                 </Flex>
                             </FormGroup>
