@@ -8,6 +8,7 @@ import {
     List,
     ListItem,
     Title,
+    Divider,
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
@@ -26,6 +27,7 @@ import {
     getExcludedImageNames,
 } from '../policies.utils';
 import PolicySeverityLabel from '../PolicySeverityLabel';
+import BooleanPolicyLogicSection from '../Wizard/Step3/BooleanPolicyLogicSection';
 
 import ExcludedDeployment from './ExcludedDeployment';
 import Notifier from './Notifier';
@@ -166,6 +168,16 @@ function PolicyOverview({ clusters, notifiers, policy }: PolicyOverviewProps): R
                     </List>
                 </>
             )}
+            <Title headingLevel="h3" className="pf-u-pt-md">
+                MITRE ATT&CK
+            </Title>
+            <Divider component="div" />
+            <div>mitre attack stuff goes here</div>
+            <Title headingLevel="h3" className="pf-u-pt-md">
+                Policy criteria
+            </Title>
+            <Divider component="div" />
+            <BooleanPolicyLogicSection readOnly />
         </>
     );
 }

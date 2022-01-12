@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Flex, FlexItem, Spinner, Title } from '@patternfly/react-core';
+import { Alert, Flex, FlexItem, Spinner, Title, Divider } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
 import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService';
@@ -83,7 +83,8 @@ function ReviewPolicyForm(): ReactElement {
                 className="review-policy"
             >
                 <Title headingLevel="h2">Review policy</Title>
-                <div className="pf-u-mb-md pf-u-mt-sm">Review policy settings and violations.</div>
+                <div>Review policy settings and violations.</div>
+                <Divider component="div" />
                 <PolicyOverview clusters={[]} notifiers={[]} policy={values} />
             </Flex>
             <Flex

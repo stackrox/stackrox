@@ -23,9 +23,10 @@ import PolicySectionDropTarget from './PolicySectionDropTarget';
 type PolicySectionProps = {
     sectionIndex: number;
     descriptors: Descriptor[];
+    readOnly?: boolean;
 };
 
-function PolicySection({ sectionIndex, descriptors }: PolicySectionProps) {
+function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySectionProps) {
     const [isEditingName, setIsEditingName] = React.useState(false);
     const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
@@ -42,7 +43,7 @@ function PolicySection({ sectionIndex, descriptors }: PolicySectionProps) {
     }
 
     return (
-        <Card isFlat isCompact className="pf-u-w-66">
+        <Card isFlat isCompact className={`${!readOnly ? 'pf-u-w-66' : ''}`}>
             <CardHeader className="pf-u-p-0">
                 <CardTitle className="pf-u-display-flex pf-u-align-self-stretch">
                     <Flex
@@ -60,28 +61,30 @@ function PolicySection({ sectionIndex, descriptors }: PolicySectionProps) {
                                     onChange={onEditSectionName}
                                 />
                             ) : (
-                                <>{sectionName || 'New Section'}</>
+                                <div className="pf-u-py-sm">{sectionName || 'New Section'}</div>
                             )}
                         </FlexItem>
                     </Flex>
                 </CardTitle>
-                <CardActions hasNoOffset>
-                    <Button
-                        variant="plain"
-                        className="pf-u-px-sm"
-                        onClick={() => setIsEditingName(!isEditingName)}
-                    >
-                        {isEditingName ? <CheckIcon /> : <PencilAltIcon />}
-                    </Button>
-                    <Divider component="div" isVertical />
-                    <Button
-                        variant="plain"
-                        className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
-                        onClick={onDeleteSection}
-                    >
-                        <TrashIcon />
-                    </Button>
-                </CardActions>
+                {!readOnly && (
+                    <CardActions hasNoOffset>
+                        <Button
+                            variant="plain"
+                            className="pf-u-px-sm"
+                            onClick={() => setIsEditingName(!isEditingName)}
+                        >
+                            {isEditingName ? <CheckIcon /> : <PencilAltIcon />}
+                        </Button>
+                        <Divider component="div" isVertical />
+                        <Button
+                            variant="plain"
+                            className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
+                            onClick={onDeleteSection}
+                        >
+                            <TrashIcon />
+                        </Button>
+                    </CardActions>
+                )}
             </CardHeader>
             <Divider component="div" />
             <CardBody>
@@ -98,11 +101,17 @@ function PolicySection({ sectionIndex, descriptors }: PolicySectionProps) {
                                 descriptor={descriptor}
                                 groupIndex={groupIndex}
                                 sectionIndex={sectionIndex}
+                                readOnly={readOnly}
                             />
                         )
                     );
                 })}
-                <PolicySectionDropTarget sectionIndex={sectionIndex} descriptors={descriptors} />
+                {!readOnly && (
+                    <PolicySectionDropTarget
+                        sectionIndex={sectionIndex}
+                        descriptors={descriptors}
+                    />
+                )}
             </CardBody>
         </Card>
     );
