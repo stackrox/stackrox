@@ -380,6 +380,7 @@ function launch_central {
 }
 
 function launch_sensor {
+    set -x
     local k8s_dir="$1"
     local common_dir="${k8s_dir}/../common"
 
@@ -510,4 +511,5 @@ function launch_sensor {
     fi
 
     echo
+    set +x
 }
