@@ -12,12 +12,12 @@ import (
 
 // All flavor names are used as valid values for the roxctl '--image-defaults' parameter
 const (
-	// FlavorDevelopment is the name of development flavor
-	FlavorDevelopment string = "development"
-	// FlavorStackRoxIO is the name of release flavor using the stackrox.io container registry
-	FlavorStackRoxIO string = "stackrox.io"
-	// FlavorRHACS is the name of release flavor using the redhat.io container registry
-	// FlavorRHACS string = "rhacs" // TODO(RS-380): uncomment to enable rhacs tenant
+	// ImageDefaultsFlavorDevelopment is the name of development flavor
+	ImageDefaultsFlavorDevelopment string = "development"
+	// ImageDefaultsFlavorStackRoxIO is the name of release flavor using the stackrox.io container registry
+	ImageDefaultsFlavorStackRoxIO string = "stackrox.io"
+	// ImageDefaultsFlavorRHACS is the name of release flavor using the redhat.io container registry
+	// ImageDefaultsFlavorRHACS string = "rhacs" // TODO(RS-380): uncomment to enable rhacs tenant
 )
 
 var (
@@ -171,11 +171,11 @@ func GetImageFlavorByRoxctlFlag(flag string) (ImageFlavor, error) {
 	switch flag {
 	case "":
 		return GetImageFlavorByBuildType(), nil
-	case FlavorDevelopment:
+	case ImageDefaultsFlavorDevelopment:
 		return DevelopmentBuildImageFlavor(), nil
-	case FlavorStackRoxIO:
+	case ImageDefaultsFlavorStackRoxIO:
 		return StackRoxIOReleaseImageFlavor(), nil
-	// case FlavorRHACS: // TODO(RS-380): Uncomment to enable rhacs flavor
+	// case ImageDefaultsFlavorRHACS: // TODO(RS-380): Uncomment to enable rhacs flavor
 	// 	return RHACSReleaseImageFlavor(), nil
 	default:
 		return ImageFlavor{}, fmt.Errorf("invalid value '%s'", flag)
