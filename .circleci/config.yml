@@ -2898,10 +2898,13 @@ jobs:
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
 
       - run:
-          name: Retag collector to '-rcd'
+          name: Retag collector to 'MAIN_TAG-rcd'
           command: |
             MAIN_TAG="$(make --quiet tag)"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}" "quay.io/rhacs-eng/collector:${MAIN_TAG}-rcd"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+            # 'collector:$MAIN_TAG' may be not available yet at this stage, beacuse it runs parallel to a job that creates it
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}" "quay.io/rhacs-eng/collector:${MAIN_TAG}-rcd"
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
