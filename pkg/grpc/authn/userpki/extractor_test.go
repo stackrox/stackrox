@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/cloudflare/cfssl/helpers"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,9 +39,9 @@ func TestExtractAttributes(t *testing.T) {
 	}
 	ci := requestinfo.ExtractCertInfo(userA)
 	values := ExtractAttributes(ci)
-	a.ElementsMatch(values["email"], []string{"usera@stackrox.io"})
-	a.ElementsMatch(values["groups"], []string{"GroupA"})
-	a.ElementsMatch(values["name"], []string{"UserA"})
+	a.ElementsMatch(values[authproviders.EmailAttribute], []string{"usera@stackrox.io"})
+	a.ElementsMatch(values[authproviders.GroupAttribute], []string{"GroupA"})
+	a.ElementsMatch(values[authproviders.NameAttribute], []string{"UserA"})
 
 	a.ElementsMatch(values["DN"], []string{"CN=UserA,OU=GroupA,O=Stackrox,C=US"})
 }

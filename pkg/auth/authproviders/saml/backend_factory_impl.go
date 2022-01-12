@@ -176,9 +176,9 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 }
 
 func (f *factory) GetAvailableAttributes() []string {
-	return []string{authproviders.UseridRuleAttribute,
-		authproviders.NameRuleAttribute,
-		authproviders.EmailRuleAttribute}
+	return []string{authproviders.UseridAttribute,
+		authproviders.NameAttribute,
+		authproviders.EmailAttribute}
 }
 
 func filterBackendsByOrigin(req *http.Request, backends []*backendImpl) []*backendImpl {

@@ -114,9 +114,12 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 		if typ == basic.TypeName {
 			continue
 		}
+
+		attributes := factory.GetAvailableAttributes()
+		sort.Strings(attributes)
 		supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderType{
 			Type:                typ,
-			AvailableAttributes: factory.GetAvailableAttributes(),
+			AvailableAttributes: attributes,
 		})
 	}
 	return &v1.AvailableProviderTypesResponse{

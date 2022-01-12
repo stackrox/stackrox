@@ -71,10 +71,10 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 }
 
 func (f *factory) GetAvailableAttributes() []string {
-	return []string{authproviders.UseridRuleAttribute,
-		authproviders.NameRuleAttribute,
-		authproviders.GroupRuleAttribute,
-		authproviders.EmailRuleAttribute}
+	return []string{authproviders.UseridAttribute,
+		authproviders.NameAttribute,
+		authproviders.GroupAttribute,
+		authproviders.EmailAttribute}
 }
 
 // NewFactoryFactory is a method to return an authproviders.BackendFactory that contains a reference to the

@@ -76,5 +76,5 @@ func (f *factory) ResolveProviderAndClientState(state string) (string, string, e
 }
 
 func (f *factory) GetAvailableAttributes() []string {
-	panic("shouldn't be in the list of available providers")
+	return []string{}
 }

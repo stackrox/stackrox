@@ -63,9 +63,8 @@ func (f *factory) ResolveProviderAndClientState(state string) (providerID string
 }
 
 func (f *factory) GetAvailableAttributes() []string {
-	return []string{authproviders.UseridRuleAttribute,
-		authproviders.NameRuleAttribute,
-		authproviders.EmailRuleAttribute}
+	return []string{authproviders.UseridAttribute,
+		authproviders.EmailAttribute}
 }
 
 // NewFactory is a method to return an authproviders.BackendFactory that contains a reference to the

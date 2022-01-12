@@ -97,13 +97,13 @@ func ExtractAttributes(userCerts ...requestinfo.CertInfo) map[string][]string {
 
 	for _, userCert := range userCerts {
 		// these are the canonical stackrox attributes we use in the UI
-		output.add("userid", userID(userCert))
-		output.add("name", userCert.Subject.CommonName)
-		output.add("email", userCert.EmailAddresses...)
-		output.add("groups", userCert.Subject.OrganizationalUnit...)
+		output.add(authproviders.UseridAttribute, userID(userCert))
+		output.add(authproviders.NameAttribute, userCert.Subject.CommonName)
+		output.add(authproviders.EmailAttribute, userCert.EmailAddresses...)
+		output.add(authproviders.GroupAttribute, userCert.Subject.OrganizationalUnit...)
 
 		// standard LDAP-like attribute naming for external systems
-		output["CN"] = output["name"]
+		output["CN"] = output[authproviders.NameAttribute]
 		output.add("C", userCert.Subject.Country...)
 		output.add("O", userCert.Subject.Organization...)
 		output.add("OU", userCert.Subject.OrganizationalUnit...)
