@@ -95,7 +95,7 @@ func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.I
 	if clusterCollectorImage == nil && imageFlavor.IsImageDefaultMain(clusterMainImage) {
 		collectorImageFull = &storage.ImageName{
 			Registry: imageFlavor.CollectorRegistry,
-			Remote: imageFlavor.CollectorImageName,
+			Remote:   imageFlavor.CollectorImageName,
 		}
 	} else if clusterCollectorImage == nil {
 		collectorImageFull = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorImageName)
