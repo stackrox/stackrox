@@ -12,13 +12,6 @@ teardown() {
   rm -rf "$out_dir"
 }
 
-@test "roxctl-release central generate k8s should use stackrox.io registry" {
-  run roxctl-release central generate k8s hostpath --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Wrote central bundle to"
-  assert_components_registry "$out_dir/central" 'stackrox.io' 'main'
-}
-
 @test "roxctl-release helm output central-services should use stackrox.io registry" {
   run roxctl-release helm output central-services --output-dir "$out_dir"
   assert_success
