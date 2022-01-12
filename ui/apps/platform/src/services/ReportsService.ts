@@ -2,6 +2,7 @@ import { ReportConfiguration } from 'types/report.proto';
 import axios from './instance';
 
 const reportUrl = '/v1/report';
+const reportServiceUrl = `${reportUrl}/run`;
 const reportConfigurationsUrl = `${reportUrl}/configurations`;
 
 export function fetchReports(): Promise<ReportConfiguration[]> {
@@ -37,4 +38,8 @@ export function saveReport(report: ReportConfiguration): Promise<ReportConfigura
 
 export function deleteReport(reportId: string): Promise<Record<string, never>> {
     return axios.delete(`${reportConfigurationsUrl}/${reportId}`);
+}
+
+export function runReport(reportId: string): Promise<Record<string, never>> {
+    return axios.post(`${reportServiceUrl}/${reportId}`);
 }

@@ -18,13 +18,12 @@ import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
 import { vulnManagementReportsPath } from 'routePaths';
-import { fetchReports, deleteReport } from 'services/ReportsService';
+import { fetchReports, deleteReport, runReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
 
 function ReportTablePage(): ReactElement {
-    const [isActionsOpen, setIsActionsOpen] = useState(false);
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
 
@@ -43,6 +42,16 @@ function ReportTablePage(): ReactElement {
             .catch(() => {
                 // TODO: show error message on failure
             });
+    }
+
+    function onRunReports(reportIds) {
+        const runPromises = reportIds.map((id) => runReport(id));
+
+        // Note: errors are handled and displayed down at the call site,
+        //       ui/apps/platform/src/Containers/VulnMgmt/Reports/VulnMgmtReportTablePage.tsx
+        return Promise.all(runPromises).then(() => {
+            refreshReportList();
+        });
     }
 
     function onDeleteReports(reportIds) {
@@ -111,6 +120,7 @@ function ReportTablePage(): ReactElement {
                         throw new Error('Function not implemented.');
                     }}
                     columns={columns}
+                    onRunReports={onRunReports}
                     onDeleteReports={onDeleteReports}
                 />
             ) : (

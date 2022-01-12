@@ -38,6 +38,7 @@ type AlertInfo = {
     title: string;
     variant: AlertVariant;
     key: number;
+    timeout?: number | boolean;
 };
 
 type ReportingTablePanelProps = {
@@ -52,6 +53,7 @@ type ReportingTablePanelProps = {
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
     columns: TableColumn[];
+    onRunReports: (reportIds: string[]) => Promise<void>; // return value not used
     onDeleteReports: (reportIds: string[]) => Promise<void>; // return value not used
 };
 
@@ -71,6 +73,7 @@ function ReportingTablePanel({
     activeSortDirection,
     setActiveSortDirection,
     columns,
+    onRunReports,
     onDeleteReports,
 }: ReportingTablePanelProps): ReactElement {
     const [alerts, setAlerts] = React.useState<AlertInfo[]>([]);
@@ -117,6 +120,33 @@ function ReportingTablePanel({
         setDeletingReportIds(ids);
     }
 
+    function onClickRun(ids) {
+        setAlerts([]);
+
+        onRunReports(ids)
+            .then(() => {
+                const message = 'The report has been queued to run.';
+                const alertInfo = {
+                    title: message,
+                    variant: AlertVariant.success,
+                    key: new Date().getTime(),
+                    timeout: 6000,
+                };
+                setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                const alertInfo = {
+                    title:
+                        `Could not run report: ${message}` ||
+                        'An unknown error occurred while triggering a report run',
+                    variant: AlertVariant.danger,
+                    key: new Date().getTime(),
+                };
+                setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
+            });
+    }
+
     function onConfirmDeletingReportIds() {
         setAlerts([]);
 
@@ -128,14 +158,15 @@ function ReportingTablePanel({
             .catch((error) => {
                 const message = getAxiosErrorMessage(error);
                 const alertInfo = {
-                    title: message || 'An unknown error occurred while deleting',
+                    title:
+                        `Could not delete report: ${message}` ||
+                        'An unknown error occurred while deleting',
                     variant: AlertVariant.danger,
                     key: new Date().getTime(),
                 };
                 setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
 
                 setDeletingReportIds([]);
-                throw error;
             });
     }
 
@@ -157,8 +188,19 @@ function ReportingTablePanel({
                         aria-relevant="additions text"
                         aria-atomic="false"
                     >
-                        {alerts.map(({ title, variant, key }) => (
-                            <Alert isInline variant={variant} title={title} key={key} />
+                        {alerts.map(({ title, variant, key, timeout }) => (
+                            <Alert
+                                isInline
+                                variant={variant}
+                                title={title}
+                                key={key}
+                                timeout={timeout}
+                                onTimeout={() => {
+                                    setAlerts((prevAlerts) => {
+                                        return prevAlerts.filter((alert) => alert.key !== key);
+                                    });
+                                }}
+                            />
                         ))}
                     </AlertGroup>
                 </PageSection>
@@ -242,6 +284,15 @@ function ReportingTablePanel({
                                     ),
                                     onClick: () => {},
                                 });
+                            }
+
+                            // Run option comes second
+                            actionItems.push({
+                                title: <div>Run report now</div>,
+                                onClick: () => onClickRun([report.id]),
+                            });
+
+                            if (hasWriteAccessForVulnerabilityReports) {
                                 actionItems.push({
                                     title: (
                                         <div className="pf-u-danger-color-100">Delete report</div>
