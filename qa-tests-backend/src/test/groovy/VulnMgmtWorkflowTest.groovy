@@ -8,6 +8,7 @@ import org.junit.experimental.categories.Category
 import services.FeatureFlagService
 import services.VulnRequestService
 import spock.lang.Unroll
+import util.Helpers
 
 class VulnMgmtWorkflowTest extends BaseSpecification {
 
@@ -83,6 +84,8 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         cleanup:
         if (approve) {
             VulnRequestService.undoReq(id)
+             // Allow propagation of CVE suppression and invalidation of cache
+             Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         }
 
         where:
