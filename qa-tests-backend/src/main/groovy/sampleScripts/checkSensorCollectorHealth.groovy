@@ -1,9 +1,14 @@
+package sampleScripts
+
 import common.Constants
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import util.ApplicationHealth
 import util.Env
 
+// Get a cluster client. Assumes you have a working kube configuration. Relies on:
+// CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent
+//   `deploy/{k8s,openshift}/central-deploy` dir
 OrchestratorMain client = OrchestratorType.create(
         Env.mustGetOrchestratorType(),
         Constants.ORCHESTRATOR_NAMESPACE
