@@ -11,21 +11,10 @@ import (
 )
 
 var (
-	log              = logging.LoggerForModule()
-	imageDefaultsMap = map[string]func() ImageFlavor{
-		"": func() ImageFlavor {
-			if buildinfo.ReleaseBuild {
-				return StackRoxIOReleaseImageFlavor()
-			}
-			return DevelopmentBuildImageFlavor()
-		},
-		"development": DevelopmentBuildImageFlavor,
-		"stackrox.io": StackRoxIOReleaseImageFlavor,
-		// "rhacs": RHACSReleaseImageFlavor, // TODO(RS-380): uncomment to enable rhacs flavor
-	}
+	log                = logging.LoggerForModule()
 	validImageDefaults = func() []string {
-		result := make([]string, 0, len(imageDefaultsMap))
-		for key := range imageDefaultsMap {
+		result := make([]string, 0, len(imageDefaultsMap()))
+		for key := range imageDefaultsMap() {
 			result = append(result, key)
 		}
 		return result
@@ -175,9 +164,23 @@ func GetImageFlavorFromEnv() ImageFlavor {
 	return ImageFlavor{}
 }
 
+// imageDefaultsMap maps the value of roxctl's '--image-defaults' parameter to a (function returing) flavor
+func imageDefaultsMap() map[string]func() ImageFlavor {
+	m := make(map[string]func() ImageFlavor)
+	if buildinfo.ReleaseBuild {
+		m[""] = StackRoxIOReleaseImageFlavor
+	} else {
+		m[""] = DevelopmentBuildImageFlavor
+		m["development"] = DevelopmentBuildImageFlavor
+	}
+	m["stackrox.io"] = StackRoxIOReleaseImageFlavor
+	// m["rhacs"] = RHACSReleaseImageFlavor // TODO(RS-380): uncomment to enable rhacs flavor
+	return m
+}
+
 // GetImageFlavorByRoxctlFlag returns flavor object based on the value of --image-defaults parameter in roxctl
 func GetImageFlavorByRoxctlFlag(flag string) (ImageFlavor, error) {
-	if fn, ok := imageDefaultsMap[flag]; ok {
+	if fn, ok := imageDefaultsMap()[flag]; ok {
 		return fn(), nil
 	}
 	return ImageFlavor{}, fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", flag, strings.Join(validImageDefaults, ", "))
