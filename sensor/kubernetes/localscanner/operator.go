@@ -20,45 +20,45 @@ import (
 )
 
 const (
-	issueCertificatesTimeout            = 2 * time.Minute
-	fetchSecretsTimeout                 = 2 * time.Minute
-	updateSecretsTimeout                = 2 * time.Minute
-	refreshSecretsMaxNumAttempts        = uint(5)
-	refreshSecretAttemptWaitTime        = 5 * time.Minute
+	issueCertificatesTimeout               = 2 * time.Minute
+	fetchSecretsTimeout                    = 2 * time.Minute
+	updateSecretsTimeout                   = 2 * time.Minute
+	refreshSecretsMaxNumAttempts           = uint(5)
+	refreshSecretAttemptWaitTime           = 5 * time.Minute
 	refreshSecretAllAttemptsFailedWaitTime = 2 * time.Hour
-	localScannerCredentialsSecretName   = "scanner-local-tls"
-	localScannerDBCredentialsSecretName = "scanner-db-local-tls"
+	localScannerCredentialsSecretName      = "scanner-local-tls"
+	localScannerDBCredentialsSecretName    = "scanner-db-local-tls"
 )
 
 var (
-	log             = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // NewLocalScannerOperator creates a Sensor component that maintains the local Scanner TLS certificates
 // up to date. FIXME rename?
-func NewLocalScannerOperator (k8sClient kubernetes.Interface, sensorNamespace string) common.SensorComponent {
+func NewLocalScannerOperator(k8sClient kubernetes.Interface, sensorNamespace string) common.SensorComponent {
 	return &localscannerOperatorImpl{
 		sensorNamespace: sensorNamespace,
-		secretsClient: k8sClient.CoreV1().Secrets(sensorNamespace),
-		ctx: context.Background(),
-		responsesC: make(chan *central.MsgFromSensor),
+		secretsClient:   k8sClient.CoreV1().Secrets(sensorNamespace),
+		ctx:             context.Background(),
+		responsesC:      make(chan *central.MsgFromSensor),
 	}
 }
 
 type localscannerOperatorImpl struct {
-	sensorNamespace						 string
+	sensorNamespace                      string
 	secretsClient                        corev1.SecretInterface
 	numLocalScannerSecretRefreshAttempts uint
 	refreshTimer                         *time.Timer
 	ctx                                  context.Context
-	responsesC      chan *central.MsgFromSensor
+	responsesC                           chan *central.MsgFromSensor
 }
 
 func (o localscannerOperatorImpl) Start() error {
 	log.Info("starting local scanner operator.")
 
 	if err := o.scheduleLocalScannerSecretsRefresh(); err != nil {
-		return errors.Wrapf(err, "failure scheduling local scanner secrets refresh")
+		return errors.Wrap(err, "failure scheduling local scanner secrets refresh")
 	}
 
 	log.Info("local scanner operator started.")
@@ -83,7 +83,7 @@ func (o localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) error
 		certs := m.IssueLocalScannerCertsResponse
 		nextTimeToRefresh, err := o.refreshLocalScannerSecrets(certs)
 		if err == nil {
-			log.Infof("successfully refreshed local Scanner credential secrets %s and %s, " +
+			log.Infof("successfully refreshed local Scanner credential secrets %s and %s, "+
 				"will refresh again in %s",
 				localScannerCredentialsSecretName, localScannerDBCredentialsSecretName, nextTimeToRefresh)
 			o.numLocalScannerSecretRefreshAttempts = 0
@@ -97,7 +97,7 @@ func (o localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) error
 		if o.numLocalScannerSecretRefreshAttempts < refreshSecretsMaxNumAttempts {
 			o.doScheduleLocalScannerSecretsRefresh(refreshSecretAttemptWaitTime)
 		} else {
-			err = errors.Wrapf(err, "Failed to refresh local Scanner credential secrets after %d attempts, " +
+			err = errors.Wrapf(err, "Failed to refresh local Scanner credential secrets after %d attempts, "+
 				"will wait %s and restart the retry cycle",
 				refreshSecretsMaxNumAttempts, refreshSecretAllAttemptsFailedWaitTime)
 			o.numLocalScannerSecretRefreshAttempts = 0
@@ -135,6 +135,7 @@ func (o *localscannerOperatorImpl) doScheduleLocalScannerSecretsRefresh(timeToRe
 	o.refreshTimer = time.AfterFunc(timeToRefresh, func() {
 		if err := o.issueScannerCertificates(); err != nil {
 			// FIXME log and treat as o.numLocalScannerSecretRefreshAttempts >= refreshSecretsMaxNumAttempts
+			log.Error("FIXME")
 		}
 	})
 }
@@ -224,10 +225,6 @@ func (o *localscannerOperatorImpl) refreshLocalScannerSecrets(certificates *cent
 		return 0, err
 	}
 
-	if err != nil {
-		// FIXME wrap
-		return 0, err
-	}
 	updateLocalScannerSecret(localScannerCredsSecret, certificates.ScannerCerts)
 	updateLocalScannerSecret(localScannerDBCredsSecret, certificates.ScannerDbCerts)
 
