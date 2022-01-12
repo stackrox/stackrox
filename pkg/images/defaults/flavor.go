@@ -10,18 +10,26 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-// All flavor names are used as valid values for the roxctl '--image-defaults' parameter
-const (
-	// ImageDefaultsFlavorDevelopment is the name of development flavor
-	ImageDefaultsFlavorDevelopment string = "development"
-	// ImageDefaultsFlavorStackRoxIO is the name of release flavor using the stackrox.io container registry
-	ImageDefaultsFlavorStackRoxIO string = "stackrox.io"
-	// ImageDefaultsFlavorRHACS is the name of release flavor using the redhat.io container registry
-	// ImageDefaultsFlavorRHACS string = "rhacs" // TODO(RS-380): uncomment to enable rhacs tenant
-)
-
 var (
-	log            = logging.LoggerForModule()
+	log              = logging.LoggerForModule()
+	imageDefaultsMap = map[string]func() ImageFlavor{
+		"": func() ImageFlavor {
+			if buildinfo.ReleaseBuild {
+				return StackRoxIOReleaseImageFlavor()
+			}
+			return DevelopmentBuildImageFlavor()
+		},
+		"development": DevelopmentBuildImageFlavor,
+		"stackrox.io": StackRoxIOReleaseImageFlavor,
+		// "rhacs": RHACSReleaseImageFlavor, // TODO(RS-380): uncomment to enable rhacs flavor
+	}
+	validImageDefaults = func() []string {
+		result := make([]string, 0, len(imageDefaultsMap))
+		for key := range imageDefaultsMap {
+			result = append(result, key)
+		}
+		return result
+	}()
 	imageFlavorMap = map[string]func() ImageFlavor{
 		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
 		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
@@ -168,18 +176,10 @@ func GetImageFlavorFromEnv() ImageFlavor {
 
 // GetImageFlavorByRoxctlFlag returns flavor object based on the value of --image-defaults parameter in roxctl
 func GetImageFlavorByRoxctlFlag(flag string) (ImageFlavor, error) {
-	switch flag {
-	case "":
-		return GetImageFlavorByBuildType(), nil
-	case ImageDefaultsFlavorDevelopment:
-		return DevelopmentBuildImageFlavor(), nil
-	case ImageDefaultsFlavorStackRoxIO:
-		return StackRoxIOReleaseImageFlavor(), nil
-	// case ImageDefaultsFlavorRHACS: // TODO(RS-380): Uncomment to enable rhacs flavor
-	// 	return RHACSReleaseImageFlavor(), nil
-	default:
-		return ImageFlavor{}, fmt.Errorf("invalid value '%s'", flag)
+	if fn, ok := imageDefaultsMap[flag]; ok {
+		return fn(), nil
 	}
+	return ImageFlavor{}, fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", flag, strings.Join(validImageDefaults, ", "))
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
