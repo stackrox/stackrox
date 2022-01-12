@@ -123,7 +123,7 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 	}
 }
 
-func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) charts.MetaValues {
+func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) *charts.MetaValues {
 	envVars := make(map[string]string)
 	if devbuild.IsEnabled() {
 		for _, feature := range features.Flags {
