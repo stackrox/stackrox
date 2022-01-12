@@ -16,8 +16,11 @@ LABEL name="main" \
       summary="The StackRox Kubernetes Security Platform" \
       description="This image contains components required to operate the StackRox Kubernetes Security Platform."
 
+ARG ROX_IMAGE_FLAVOR
+
 ENV PATH="/stackrox:$PATH" \
-    ROX_ROXCTL_IN_MAIN_IMAGE="true"
+    ROX_ROXCTL_IN_MAIN_IMAGE="true" \
+    ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
 COPY scripts /stackrox/

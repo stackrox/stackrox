@@ -132,7 +132,7 @@ setImageFlavor: &setImageFlavor
   run:
     name: Set ROX_IMAGE_FLAVOR
     command: |
-      FLAVOR="development_build"
+      FLAVOR="${ROX_IMAGE_FLAVOR:-development_build}"
       # Use 'stackrox_io_release' flavor on release and RC builds
       if [[ "${CIRCLE_TAG}" =~ ^[0-9]+(\.[0-9]+)?\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
         FLAVOR="stackrox_io_release"
@@ -2174,6 +2174,8 @@ jobs:
   go-unit-tests:
     executor: custom
     resource_class: large
+    environment:
+      ROX_IMAGE_FLAVOR: development_build
     steps:
       - pre-go-unit-tests
       - run:

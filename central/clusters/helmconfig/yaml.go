@@ -56,7 +56,7 @@ func (h helmConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flavor := defaults.GetImageFlavorByBuildType()
+	flavor := defaults.GetImageFlavorFromEnv()
 	config, err := helmConfig.FromCluster(cluster, flavor)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "deriving Helm configuration for cluster"))
