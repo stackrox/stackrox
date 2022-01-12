@@ -93,30 +93,18 @@ func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collect
 func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) (*storage.ImageName, *storage.ImageName) {
 	var collectorImageFull, collectorImageSlim *storage.ImageName
 	if clusterCollectorImage == nil && imageFlavor.IsImageDefaultMain(clusterMainImage) {
-		// Use default values for collector full/slim if no collector image is specified and main image is default
 		collectorImageFull = &storage.ImageName{
 			Registry: imageFlavor.CollectorRegistry,
-			Remote:   imageFlavor.CollectorImageName,
-			Tag:      imageFlavor.CollectorImageTag,
-		}
-		collectorImageSlim = &storage.ImageName{
-			Remote: imageFlavor.CollectorSlimImageName,
-			Tag:    imageFlavor.CollectorSlimImageTag,
+			Remote: imageFlavor.CollectorImageName,
 		}
 	} else if clusterCollectorImage == nil {
-		// Derive collector full/slim from custom main image
 		collectorImageFull = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorImageName)
-		collectorImageFull.Tag = imageFlavor.CollectorImageTag
-
-		collectorImageSlim = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorSlimImageName)
-		collectorImageSlim.Tag = imageFlavor.CollectorSlimImageTag
 	} else {
-		// Derive collector slim from a custom collector full
 		collectorImageFull = clusterCollectorImage.Clone()
-		collectorImageFull.Tag = imageFlavor.CollectorImageTag
-		collectorImageSlim = deriveImageWithNewName(collectorImageFull, imageFlavor.CollectorSlimImageName)
-		collectorImageSlim.Tag = imageFlavor.CollectorSlimImageTag
 	}
+	collectorImageFull.Tag = imageFlavor.CollectorImageTag
+	collectorImageSlim = deriveImageWithNewName(collectorImageFull, imageFlavor.CollectorSlimImageName)
+	collectorImageSlim.Tag = imageFlavor.CollectorSlimImageTag
 	return collectorImageFull, collectorImageSlim
 }
 
