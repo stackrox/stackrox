@@ -2,6 +2,7 @@ package localscanner
 
 import (
 	"context"
+	"crypto/x509"
 	"math/rand"
 	"time"
 
@@ -54,7 +55,7 @@ type localscannerOperatorImpl struct {
 	responsesC                           chan *central.MsgFromSensor
 }
 
-func (o localscannerOperatorImpl) Start() error {
+func (o *localscannerOperatorImpl) Start() error {
 	log.Info("starting local scanner operator.")
 
 	if err := o.scheduleLocalScannerSecretsRefresh(); err != nil {
@@ -66,38 +67,37 @@ func (o localscannerOperatorImpl) Start() error {
 	return nil
 }
 
-func (o localscannerOperatorImpl) Stop(err error) {
+func (o *localscannerOperatorImpl) Stop(err error) {
 	if o.refreshTimer != nil {
 		o.refreshTimer.Stop()
 	}
 	log.Info("local scanner operator stopped.")
 }
 
-func (o localscannerOperatorImpl) Capabilities() []centralsensor.SensorCapability {
+func (o *localscannerOperatorImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.LocalScannerCredentialsRefresh}
 }
 
-func (o localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (o *localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_IssueLocalScannerCertsResponse:
 		certs := m.IssueLocalScannerCertsResponse
-		nextTimeToRefresh, err := o.refreshLocalScannerSecrets(certs)
-		if err == nil {
-			log.Infof("successfully refreshed local Scanner credential secrets %s and %s, "+
-				"will refresh again in %s",
-				localScannerCredentialsSecretName, localScannerDBCredentialsSecretName, nextTimeToRefresh)
+		nextTimeToRefresh, refreshErr := o.refreshLocalScannerSecrets(certs)
+		if refreshErr == nil {
+			log.Infof("successfully refreshed local Scanner credential secrets %s and %s",
+				localScannerCredentialsSecretName, localScannerDBCredentialsSecretName)
 			o.numLocalScannerSecretRefreshAttempts = 0
 			o.doScheduleLocalScannerSecretsRefresh(nextTimeToRefresh)
 			return nil
 		}
 		// note centralReceiverImpl just logs the error
-		err = errors.Wrapf(err, "Attempt %d to refresh local Scanner credential secrets, will retry in %s",
+		err := errors.Wrapf(refreshErr, "attempt %d to refresh local Scanner credential secrets, will retry in %s",
 			o.numLocalScannerSecretRefreshAttempts, refreshSecretAttemptWaitTime)
 		o.numLocalScannerSecretRefreshAttempts++
-		if o.numLocalScannerSecretRefreshAttempts < refreshSecretsMaxNumAttempts {
+		if o.numLocalScannerSecretRefreshAttempts <= refreshSecretsMaxNumAttempts {
 			o.doScheduleLocalScannerSecretsRefresh(refreshSecretAttemptWaitTime)
 		} else {
-			err = errors.Wrapf(err, "Failed to refresh local Scanner credential secrets after %d attempts, "+
+			err = errors.Wrapf(refreshErr, "Failed to refresh local Scanner credential secrets after %d attempts, "+
 				"will wait %s and restart the retry cycle",
 				refreshSecretsMaxNumAttempts, refreshSecretAllAttemptsFailedWaitTime)
 			o.numLocalScannerSecretRefreshAttempts = 0
@@ -110,7 +110,7 @@ func (o localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) error
 	}
 }
 
-func (o localscannerOperatorImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (o *localscannerOperatorImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return o.responsesC
 }
 
@@ -132,6 +132,7 @@ func (o *localscannerOperatorImpl) scheduleLocalScannerSecretsRefresh() error {
 }
 
 func (o *localscannerOperatorImpl) doScheduleLocalScannerSecretsRefresh(timeToRefresh time.Duration) {
+	log.Infof("local scanner certificates scheduled to be refreshed in %s", timeToRefresh)
 	o.refreshTimer = time.AfterFunc(timeToRefresh, func() {
 		if err := o.issueScannerCertificates(); err != nil {
 			// FIXME log and treat as o.numLocalScannerSecretRefreshAttempts >= refreshSecretsMaxNumAttempts
@@ -149,18 +150,10 @@ func getScannerSecretsDuration(localScannerCredsSecret, localScannerDBCredsSecre
 	return scannerDuration
 }
 
-func getScannerSecretDuration(scannerSecret *v1.Secret) time.Duration {
-	scannerCertsData := scannerSecret.Data
-	scannerCertBytes := scannerCertsData[mtls.ServiceCertFileName]
-	scannerCert, err := helpers.ParseCertificatePEM(scannerCertBytes)
-	if err != nil {
-		// Note this also covers a secret with no certificates stored, which should be refreshed immediately.
-		return 0
-	}
-
+func getScannerSecretDurationFromCertificate(scannerCert *x509.Certificate) time.Duration {
 	certValidityDurationSecs := scannerCert.NotAfter.Sub(scannerCert.NotBefore).Seconds()
-	durationBeforeRenewalAttempt :=
-		time.Duration(certValidityDurationSecs/2) - time.Duration(rand.Intn(int(certValidityDurationSecs/10)))
+	durationBeforeRenewalAttempt := time.Second *
+		(time.Duration(certValidityDurationSecs/2) - time.Duration(rand.Intn(int(certValidityDurationSecs/10))))
 	certRenewalTime := scannerCert.NotBefore.Add(durationBeforeRenewalAttempt)
 	timeToRefresh := time.Until(certRenewalTime)
 	if timeToRefresh.Seconds() <= 0 {
@@ -168,6 +161,20 @@ func getScannerSecretDuration(scannerSecret *v1.Secret) time.Duration {
 		return 0
 	}
 	return timeToRefresh
+}
+
+func getScannerSecretDuration(scannerSecret *v1.Secret) time.Duration {
+	scannerCertsData := scannerSecret.Data
+	scannerCertBytes := scannerCertsData[mtls.ServiceCertFileName]
+	scannerCert, err := helpers.ParseCertificatePEM(scannerCertBytes)
+	if err != nil {
+		// Note this also covers a secret with no certificates stored, which should be refreshed immediately.
+		log.Warnf("failure parsing certificate for secret %s, will refresh secret immediately %v",
+			scannerSecret.GetName(), err)
+		return 0
+	}
+
+	return getScannerSecretDurationFromCertificate(scannerCert)
 }
 
 func (o *localscannerOperatorImpl) issueScannerCertificates() error {
@@ -185,6 +192,7 @@ func (o *localscannerOperatorImpl) issueScannerCertificates() error {
 	}
 	select {
 	case o.responsesC <- msg:
+		log.Infof("Request to issue local Scanner certificates sent to Central succesfully: %v", msg)
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
