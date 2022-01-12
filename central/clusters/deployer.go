@@ -93,7 +93,7 @@ func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collect
 func determineCollectorImages(mainImage, collectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) (*storage.ImageName, *storage.ImageName) {
 	var collectorImageFull, collectorImageSlim *storage.ImageName
 	if collectorImage == nil && imageFlavor.IsImageDefaultMain(mainImage) {
-		// Use default values for collector full/slim if no collector image is specified and main image is main
+		// Use default values for collector full/slim if no collector image is specified and main image is default
 		collectorImageFull = &storage.ImageName{
 			Registry: imageFlavor.CollectorRegistry,
 			Remote:   imageFlavor.CollectorImageName,
