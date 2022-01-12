@@ -344,7 +344,7 @@ func sendAdmissionControllerRequests(ctx context.Context, clusterClient v1.Clust
 		admissionControllerConfig := &storage.AdmissionControllerConfig{}
 		admissionControllerConfig.Enabled = true
 		admissionControllerConfig.TimeoutSeconds = 999
-		flavor := defaults.GetImageFlavorByBuildType()
+		flavor := defaults.GetImageFlavorFromEnv()
 		cluster := &storage.Cluster{
 			Id:                  "",
 			Name:                "prod cluster",

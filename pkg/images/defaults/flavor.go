@@ -2,10 +2,27 @@ package defaults
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version"
+)
+
+var (
+	log            = logging.LoggerForModule()
+	imageFlavorMap = map[string]func() ImageFlavor{
+		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
+		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
+	}
+	validImageFlavors = func() []string {
+		result := make([]string, 0, len(imageFlavorMap))
+		for key := range imageFlavorMap {
+			result = append(result, key)
+		}
+		return result
+	}()
 )
 
 // ChartRepo contains information about where the Helm charts are published.
@@ -103,11 +120,41 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 
 // GetImageFlavorByBuildType returns the flavor based on build type (development or release). Release builds use StackroxIO
 // flavor and development builds use development flavor.
+// TODO(RS-380): Remove this function
 func GetImageFlavorByBuildType() ImageFlavor {
 	if buildinfo.ReleaseBuild {
 		return StackRoxIOReleaseImageFlavor()
 	}
 	return DevelopmentBuildImageFlavor()
+}
+
+// GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR).
+// This function should be used only where this environment variable is set.
+// Providing development_build flavor on a release build binary will cause the application to panic.
+// We set ROX_IMAGE_FLAVOR in main and operator container images and so the code which executes in Central and operator
+// can rely on GetImageFlavorFromEnv. Any code that is executed outside these images should not use this function or at
+// least you should exercise great caution and check the context if ROX_IMAGE_FLAVOR is available (or make it so). For
+// example, roxctl should not rely on this function because it is a standalone cli that can be run in any environment.
+// roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
+// provide a command-line argument.
+func GetImageFlavorFromEnv() ImageFlavor {
+	envValue := strings.ToLower(strings.TrimSpace(imageFlavorEnv()))
+
+	if buildinfo.ReleaseBuild && envValue == imageFlavorDevelopment {
+		// Release product build using development image repositories is likely a misconfiguration. We don't want to
+		// accidentally go out with development images into release.
+		log.Panicf("Cannot use %s image flavor in release build", envValue)
+	}
+
+	if fn, ok := imageFlavorMap[envValue]; ok {
+		return fn()
+	}
+
+	// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
+	// build-time constant.
+	log.Panicf("Unexpected image flavor value in %s: '%s'. Expecting one of the following: %v.",
+		envValue, imageFlavorEnvName, validImageFlavors)
+	return ImageFlavor{}
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.

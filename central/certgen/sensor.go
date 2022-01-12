@@ -42,7 +42,7 @@ func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster,
 		return nil, nil, errors.Errorf("could not generate certs: %v", err)
 	}
 
-	imageFlavor := defaults.GetImageFlavorByBuildType()
+	imageFlavor := defaults.GetImageFlavorFromEnv()
 	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, &imageFlavor, clusters.RenderOptions{})
 	if err != nil {
 		return nil, nil, err

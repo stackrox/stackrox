@@ -1,20 +1,13 @@
 import React from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 
-import { selectors } from 'reducers';
-import { getHasReadPermission, getHasReadWritePermission } from 'reducers/roles';
+import usePermissions from 'hooks/usePermissions';
 import { policiesBasePathPatternFly } from 'routePaths';
 import { SearchFilter } from 'types/search';
 
 import { getSearchStringForFilter, parsePoliciesSearchString } from './policies.utils';
 import PoliciesTablePage from './Table/PoliciesTablePage';
 import PolicyPage from './PolicyPage';
-
-const permissionsSelector = createStructuredSelector({
-    userRolePermissions: selectors.getUserRolePermissions,
-});
 
 function PoliciesPage() {
     /*
@@ -34,9 +27,9 @@ function PoliciesPage() {
     const { pageAction, searchFilter } = parsePoliciesSearchString(search);
     const { policyId } = useParams();
 
-    const { userRolePermissions } = useSelector(permissionsSelector);
-    const hasReadAccessForPolicy = getHasReadPermission('Policy', userRolePermissions);
-    const hasWriteAccessForPolicy = getHasReadWritePermission('Policy', userRolePermissions);
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForPolicy = hasReadAccess('Policy');
+    const hasWriteAccessForPolicy = hasReadWriteAccess('Policy');
 
     function handleChangeSearchFilter(changedSearchFilter: SearchFilter) {
         // Browser history has only the most recent search filter.
