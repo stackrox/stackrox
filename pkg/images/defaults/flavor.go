@@ -82,9 +82,10 @@ type ImageFlavor struct {
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
-		MainRegistry:           "docker.io/stackrox",
-		MainImageName:          "main",
-		MainImageTag:           v.MainVersion,
+		MainRegistry:  "docker.io/stackrox",
+		MainImageName: "main",
+		MainImageTag:  v.MainVersion,
+
 		CollectorRegistry:      "docker.io/stackrox",
 		CollectorImageName:     "collector",
 		CollectorImageTag:      v.CollectorVersion + "-latest",
