@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
@@ -46,10 +47,11 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	MainImage      string
-	ScannerImage   string
-	ScannerDBImage string
-	ImageFlavor    string
+	MainImage       string
+	ScannerImage    string
+	ScannerDBImage  string
+	ImageFlavorName string
+	ImageFlavor     *defaults.ImageFlavor
 }
 
 // PersistenceType describes the type of persistence

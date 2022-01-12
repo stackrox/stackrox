@@ -176,8 +176,11 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 		return nil, err
 	}
 
-	// TODO(RS-396): roxctl should depend on its own mechanism to determine flavor (e.g. command line argument)
-	flavor := defaults.GetImageFlavorByBuildType()
+	flavor, err := defaults.GetImageFlavorByRoxctlFlag(config.K8sConfig.ImageFlavorName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "invalid image-defaults: '%s'", config.K8sConfig.ImageFlavorName)
+	}
+
 	files, err := renderer.Render(config, flavor)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not render files")
@@ -288,7 +291,6 @@ func Command() *cobra.Command {
 		c.PersistentFlags().MarkHidden("with-config-file"))
 
 	c.AddCommand(interactive())
-
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())
 	return c

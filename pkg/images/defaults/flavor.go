@@ -12,12 +12,12 @@ import (
 
 // All flavor names are used as valid values for the roxctl '--image-defaults' parameter
 const (
-  // FlavorDevelopment is the name of development flavor
-  FlavorDevelopment string = "development"
-  // FlavorStackRoxIO is the name of release flavor using the stackrox.io container registry
-  FlavorStackRoxIO string = "stackrox.io"
-  // FlavorRHACS is the name of release flavor using the redhat.io container registry
-  // FlavorRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
+	// FlavorDevelopment is the name of development flavor
+	FlavorDevelopment string = "development"
+	// FlavorStackRoxIO is the name of release flavor using the stackrox.io container registry
+	FlavorStackRoxIO string = "stackrox.io"
+	// FlavorRHACS is the name of release flavor using the redhat.io container registry
+	// FlavorRHACS string = "rhacs" // TODO(RS-380): uncomment to enable rhacs tenant
 )
 
 var (
@@ -33,6 +33,7 @@ var (
 		}
 		return result
 	}()
+)
 
 // ChartRepo contains information about where the Helm charts are published.
 type ChartRepo struct {
@@ -46,9 +47,6 @@ type ImagePullSecrets struct {
 
 // ImageFlavor represents default settings for pulling images.
 type ImageFlavor struct {
-	// RoxctlFlavorID is a value that identifies this flavor for the --image-defaults parameter passed to roxctl
-	RoxctlFlavorID string
-
 	// MainRegistry is a registry for all images except of collector.
 	MainRegistry  string
 	MainImageName string
@@ -76,7 +74,6 @@ type ImageFlavor struct {
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
-		RoxctlFlavorID:         FlavorDevelopment,
 		MainRegistry:           "docker.io/stackrox",
 		MainImageName:          "main",
 		MainImageTag:           v.MainVersion,
@@ -105,10 +102,9 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		RoxctlFlavorID: FlavorStackRoxIO,
-		MainRegistry:   "stackrox.io",
-		MainImageName:  "main",
-		MainImageTag:   v.MainVersion,
+		MainRegistry:  "stackrox.io",
+		MainImageName: "main",
+		MainImageTag:  v.MainVersion,
 
 		CollectorRegistry:      "collector.stackrox.io",
 		CollectorImageName:     "collector",
@@ -168,6 +164,22 @@ func GetImageFlavorFromEnv() ImageFlavor {
 	log.Panicf("Unexpected image flavor value in %s: '%s'. Expecting one of the following: %v.",
 		envValue, imageFlavorEnvName, validImageFlavors)
 	return ImageFlavor{}
+}
+
+// GetImageFlavorByRoxctlFlag returns flavor object based on the value of --image-defaults parameter in roxctl
+func GetImageFlavorByRoxctlFlag(flag string) (ImageFlavor, error) {
+	switch flag {
+	case "":
+		return GetImageFlavorByBuildType(), nil
+	case FlavorDevelopment:
+		return DevelopmentBuildImageFlavor(), nil
+	case FlavorStackRoxIO:
+		return StackRoxIOReleaseImageFlavor(), nil
+	// case FlavorRHACS: // TODO(RS-380): Uncomment to enable rhacs flavor
+	// 	return RHACSReleaseImageFlavor(), nil
+	default:
+		return ImageFlavor{}, fmt.Errorf("invalid value '%s'", flag)
+	}
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
