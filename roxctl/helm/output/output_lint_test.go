@@ -80,7 +80,7 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 }
 
 func (s *HelmChartTestSuite) TestHelmLint() {
-	flavorsToTest := []string{flavorStackRoxIO}
+	flavorsToTest := []string{flavorStackRoxIO, flavorRHACS}
 	if !buildinfo.ReleaseBuild {
 		flavorsToTest = append(flavorsToTest, flavorDevelopment)
 	}
@@ -93,7 +93,7 @@ func (s *HelmChartTestSuite) TestHelmLint() {
 		}
 		for _, rhacs := range []bool{false, true} {
 			s.Run(fmt.Sprintf("%s-rhacs-%t", chartName, rhacs), func() {
-				testChartLint(s.T(), chartName, rhacs, "") // TODO(RS-380): Use RHACS as the new default
+				testChartLint(s.T(), chartName, rhacs, flavorRHACS)
 			})
 		}
 	}
