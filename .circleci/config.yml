@@ -2868,7 +2868,16 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - *setImageFlavor
+
+      - run:
+          name: Set image flavor to release
+          # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly setting CIRCLE_TAG value.
+          # Therefore, we need to tell main image that it should use image defaults as for the release build, otherwise
+          # the code resolving image flavor would panic due to release build combined with development images.
+          # Setting the release image flavor is fine because the image registry gets overridden anyway, but it has an
+          # implication that scanner, scanner-db and collector images should have the same image tags as main image.
+          # For this we retag those images in one of the steps below.
+          command: cci-export ROX_IMAGE_FLAVOR "stackrox_io_release"
 
       - restore-npm-deps-cache
       - fetch-ui-deps
@@ -2897,6 +2906,19 @@ jobs:
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             QUAY_REPO="rhacs-eng"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
+
+      - run:
+          # We do this because release image flavor is set. Why - look for comments above.
+          name: Retag scanner, scanner-db and collector images with '-rcd' suffix
+          command: |
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "quay.io/rhacs-eng/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "quay.io/rhacs-eng/collector:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
