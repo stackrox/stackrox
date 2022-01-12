@@ -49,6 +49,7 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
 	}
+
 	_, err = io.Copy(scannerDefsFile, r)
 	if err != nil {
 		return errors.Wrap(err, "copying scanner defs zip out")
