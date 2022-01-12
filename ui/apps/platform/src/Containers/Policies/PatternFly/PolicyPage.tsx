@@ -10,6 +10,7 @@ import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
+import { preFormatExclusionField } from 'Containers/Policies/PatternFly/policies.utils';
 
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
@@ -48,6 +49,8 @@ const initialPolicy: Policy = {
     exclusions: [],
     scope: [],
     enforcementActions: [],
+    excludedImageNames: [],
+    excludedDeploymentScopes: [],
     SORT_name: '', // For internal use only.
     SORT_lifecycleStage: '', // For internal use only.
     SORT_enforcement: false, // For internal use only.
@@ -104,7 +107,10 @@ function PolicyPage({
             setIsLoading(true);
             getPolicy(policyId)
                 .then((data) => {
-                    setPolicy(pageAction === 'clone' ? clonePolicy(data) : data);
+                    const formattedPolicy = preFormatExclusionField(data);
+                    setPolicy(
+                        pageAction === 'clone' ? clonePolicy(formattedPolicy) : formattedPolicy
+                    );
                 })
                 .catch((error) => {
                     setPolicy(initialPolicy);
@@ -145,7 +151,7 @@ function PolicyPage({
             ) : (
                 policyError || // TODO ROX-8487: Improve PolicyPage when request fails
                 (pageAction ? (
-                    <PolicyWizard pageAction={pageAction} policy={policy} />
+                    <PolicyWizard pageAction={pageAction} policy={policy} clusters={clusters} />
                 ) : (
                     <PolicyDetail
                         clusters={clusters}

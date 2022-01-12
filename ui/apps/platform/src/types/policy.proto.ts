@@ -34,6 +34,8 @@ export type Policy = {
     exclusions: PolicyExclusion[];
     scope: PolicyScope[];
     enforcementActions: EnforcementAction[];
+    excludedImageNames: string[]; // For internal use only.
+    excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
     SORT_name: string; // For internal use only.
     SORT_lifecycleStage: string; // For internal use only.
     SORT_enforcement: boolean; // For internal use only.
