@@ -27,8 +27,9 @@ type BackendFactory interface {
 	// MergeConfig un-does the effects of RedactConfig. It is called on newCfg submitted by a user.
 	// It should restore secrets missing from newCfg (if any) by copying them back from oldCfg (loaded from storage).
 	MergeConfig(newCfg, oldCfg map[string]string) map[string]string
-	// GetAvailableAttributes returns user attributes which can be used in auth provider rule of this auth provider type.
-	// Returned result would be subset of 4 potential attributes: "userid", "name", "email" and "groups"
+	// GetAvailableAttributes returns user attribute keys that this provider 
+	// can set. This is useful, for example, for knowing which attribute-based
+	// rules make sense for this auth provider.
 	GetAvailableAttributes() []string
 }
 
