@@ -6,13 +6,13 @@ import ClusterSummary from './Components/ClusterSummary';
 import StaticConfigurationSection from './StaticConfigurationSection';
 import DynamicConfigurationSection from './DynamicConfigurationSection';
 import ClusterLabelsTable from './ClusterLabelsTable';
-import { CentralEnv, Cluster } from './clusterTypes';
+import { CentralEnv, Cluster, ClusterManagerType } from './clusterTypes';
 
 type ClusterEditFormProps = {
     centralEnv: CentralEnv;
     centralVersion: string;
     selectedCluster: Cluster;
-    managerType: string;
+    managerType: ClusterManagerType;
     handleChange: () => void;
     handleChangeLabels: (labels) => void;
     isLoading: boolean;
