@@ -454,6 +454,7 @@ checkToRunSeparateRaceConditionTestPipe: &checkToRunSeparateRaceConditionTestPip
   check-to-run:
     run-on-master: true
     run-on-tags: true
+    label: ci-race-tests
 
 version: 2.1
 
