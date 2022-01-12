@@ -1,14 +1,20 @@
 {{- include "srox.init" . -}}
 
+{{- if eq $._rox.env.openshift 4 }}
+
+{{- $configMapName := printf "injected-cabundle-%s" .Release.Name }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: "injected-cabundle-{{ .Release.Name }}"
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "configmap" "injected-cabundle-{{ .Release.Name }}") | nindent 4 }}
+    {{- include "srox.labels" (list . "configmap" $configMapName) | nindent 4 }}
     "config.openshift.io/inject-trusted-cabundle": "true"
   annotations:
-    {{- include "srox.annotations" (list . "configmap" "injected-cabundle-{{ .Release.Name }}") | nindent 4 }}
+    {{- include "srox.annotations" (list . "configmap" $configMapName) | nindent 4 }}
     "helm.sh/hook": "pre-install,pre-upgrade"
     "helm.sh/resource-policy": keep
+
+{{- end }}

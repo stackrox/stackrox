@@ -143,16 +143,11 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
-        {{- if ._rox.env.openshift }}
-        - name: trusted-ca-volume
-          mountPath: /etc/pki/injected-ca-trust/
-          readOnly: true
-        {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
         {{- end }}
-        {{- if ._rox.env.openshift }}
+        {{- if eq ._rox.env.openshift 4 }}
         - name: trusted-ca-volume
           mountPath: /etc/pki/injected-ca-trust/
           readOnly: true
@@ -204,20 +199,11 @@ spec:
           name: central-endpoints
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
-      {{- if ._rox.env.openshift }}
-      - name: trusted-ca-volume
-        configMap:
-          name: injected-trusted-ca
-          items:
-            - key: ca-bundle.crt
-              path: tls-ca-bundle.pem
-          optional: true
-      {{- end }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}
       {{- end }}
-      {{- if ._rox.env.openshift }}
+      {{- if eq ._rox.env.openshift 4 }}
       - name: trusted-ca-volume
         configMap:
           name: "injected-cabundle-{{ .Release.Name }}"

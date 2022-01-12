@@ -1,0 +1,7 @@
+tests:
+- name: "Injected CA bundle has no data"
+  expect: |
+    .configmaps["injected-cabundle-stackrox-central-services"].stringData | assertThat(. == null)
+- name: "Injected CA bundle has a proper label"
+  expect: |
+    .configmaps["injected-cabundle-stackrox-central-services"].metadata.labels["config.openshift.io/inject-trusted-cabundle"] | assertThat(. == "true")

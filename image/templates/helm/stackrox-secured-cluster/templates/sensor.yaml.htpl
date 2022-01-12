@@ -144,7 +144,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
           readOnly: true
         [<- end >]
-        {{- if ._rox.env.openshift }}
+        {{- if eq ._rox.env.openshift 4 }}
         - name: trusted-ca-volume
           mountPath: /etc/pki/injected-ca-trust/
           readOnly: true
@@ -182,7 +182,7 @@ spec:
           secretName: helm-effective-cluster-name
           optional: true
       [<- end >]
-      {{- if ._rox.env.openshift }}
+      {{- if eq ._rox.env.openshift 4 }}
       - name: trusted-ca-volume
         configMap:
           name: "injected-cabundle-{{ .Release.Name }}"
