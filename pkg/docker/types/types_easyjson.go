@@ -5575,4 +5575,3 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 	}
 	out.RawByte('}')
 }
-//lint:file-ignore SA4006 This is a generated file
