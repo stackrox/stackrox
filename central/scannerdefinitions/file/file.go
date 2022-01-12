@@ -59,6 +59,7 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	}
 
 	// No longer need the file descriptor, so release it.
+	// Closing here, as it is possible Close updates the mtime.
 	err = scannerDefsFile.Close()
 	if err != nil {
 		return errors.Wrap(err, "closing temp scanner defs file")
