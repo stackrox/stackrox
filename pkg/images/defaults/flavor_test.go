@@ -46,10 +46,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		"stackrox.io": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
 		},
-		// TODO(RS-380): Add test for RHACS flavor when available
-		// "rhacs": {
-		//	 expectedFlavor: RHACS
-		// },
+		"rhacs": {
+			expectedFlavor: RHACSReleaseImageFlavor(),
+		},
 		"wrong_value": {
 			shouldPanicAlways: true,
 		},

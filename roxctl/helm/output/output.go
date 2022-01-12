@@ -27,7 +27,7 @@ const (
 var allowedFlavors set.StringSet
 
 func init() {
-	allowedFlavors = set.NewStringSet(flavorStackRoxIO)
+	allowedFlavors = set.NewStringSet(flavorStackRoxIO, flavorRHACS)
 	if !buildinfo.ReleaseBuild {
 		allowedFlavors.Add(flavorDevelopment)
 	}
