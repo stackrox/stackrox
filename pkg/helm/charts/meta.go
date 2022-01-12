@@ -10,7 +10,6 @@ import (
 // MetaValuesKey exists exclusively to protect MetaValues from losing typing and becoming exchangeable with
 // map[string]interface{}. By doing this we get the opportunity to more reliably trace MetaValues usage throughout the
 // codebase.
-// TODO(RS-379): Switch MetaValues to be struct and get rid of MetaValuesKey.
 
 // MetaValues are the values to be passed to the StackRox chart templates.
 type MetaValues struct {

@@ -39,7 +39,7 @@ var (
 
 type element struct {
 	name string
-	get  func(vals charts.MetaValues) ([]byte, error) // TODO: lvm change to this?
+	get  func(vals charts.MetaValues) ([]byte, error)
 }
 
 // Name returns the name of the element
