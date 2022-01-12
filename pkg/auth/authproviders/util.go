@@ -10,7 +10,7 @@ import (
 
 // User identity attributes.
 const (
-	GroupAttribute  = "groups"
+	GroupsAttribute = "groups"
 	EmailAttribute  = "email"
 	UseridAttribute = "userid"
 	NameAttribute   = "name"

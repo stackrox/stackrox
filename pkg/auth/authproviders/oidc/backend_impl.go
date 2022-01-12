@@ -596,7 +596,7 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 
 	// If using non-standard group information add them.
 	if len(userInfo.Groups) > 0 {
-		claim.Attributes[authproviders.GroupAttribute] = userInfo.Groups
+		claim.Attributes[authproviders.GroupsAttribute] = userInfo.Groups
 	}
 	return claim
 }

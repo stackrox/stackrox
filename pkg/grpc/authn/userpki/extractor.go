@@ -100,7 +100,7 @@ func ExtractAttributes(userCerts ...requestinfo.CertInfo) map[string][]string {
 		output.add(authproviders.UseridAttribute, userID(userCert))
 		output.add(authproviders.NameAttribute, userCert.Subject.CommonName)
 		output.add(authproviders.EmailAttribute, userCert.EmailAddresses...)
-		output.add(authproviders.GroupAttribute, userCert.Subject.OrganizationalUnit...)
+		output.add(authproviders.GroupsAttribute, userCert.Subject.OrganizationalUnit...)
 
 		// standard LDAP-like attribute naming for external systems
 		output["CN"] = output[authproviders.NameAttribute]

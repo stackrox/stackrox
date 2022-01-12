@@ -73,7 +73,7 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 func (f *factory) GetAvailableAttributes() []string {
 	return []string{authproviders.UseridAttribute,
 		authproviders.NameAttribute,
-		authproviders.GroupAttribute,
+		authproviders.GroupsAttribute,
 		authproviders.EmailAttribute}
 }
 

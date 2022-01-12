@@ -145,7 +145,7 @@ func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthRe
 	attributes := map[string][]string{
 		authproviders.UseridAttribute: {id.UserID},
 		authproviders.NameAttribute:   {id.Username},
-		authproviders.GroupAttribute:  id.Groups,
+		authproviders.GroupsAttribute: id.Groups,
 	}
 
 	return &authproviders.AuthResponse{
