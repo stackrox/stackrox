@@ -63,11 +63,10 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 			assert.NotEmpty(t, metaVals.ChartRepo.URL)
 			assert.NotNil(t, metaVals.ImagePullSecrets)
 
-			versions := metaVals.Versions
-			assert.NotEmpty(t, versions.ChartVersion)
-			assert.NotEmpty(t, versions.MainVersion)
+			assert.NotEmpty(t, metaVals.Versions.ChartVersion)
+			assert.NotEmpty(t, metaVals.Versions.MainVersion)
 			// TODO: replace this with the check of the scanner tag once we migrate to it instead of version.
-			assert.NotEmpty(t, versions.ScannerVersion)
+			assert.NotEmpty(t, metaVals.Versions.ScannerVersion)
 		})
 	}
 }
