@@ -706,7 +706,7 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
 
         // TODO remove this line -- osward
-        new ECRRegistryIntegration()    | { [useAssumeRole: true,]
+        new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
         }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "bad string on purpose"
 
         new ECRRegistryIntegration()    | { [useAssumeRole: true,]
