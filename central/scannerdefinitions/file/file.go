@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const tempFilePattern = "scanner-defs-download-*"
@@ -49,6 +50,8 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
 	}
+	// Close the file in case of error.
+	defer utils.IgnoreError(scannerDefsFile.Close)
 
 	_, err = io.Copy(scannerDefsFile, r)
 	if err != nil {
