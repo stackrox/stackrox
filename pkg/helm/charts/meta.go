@@ -7,9 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-// MetaValuesKey exists exclusively to protect MetaValues from losing typing and becoming exchangeable with
-// map[string]interface{}. By doing this we get the opportunity to more reliably trace MetaValues usage throughout the
-// codebase.
 
 // MetaValues are the values to be passed to the StackRox chart templates.
 type MetaValues struct {
