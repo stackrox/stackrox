@@ -500,7 +500,7 @@ parameters:
 
 orbs:
   win: circleci/windows@2.2.0
-  ci-artifacts: stackrox/ci-artifacts-orb@0.0.11
+  ci-artifacts: stackrox/ci-artifacts-orb@0.1.0
 
 executors:
   custom:
