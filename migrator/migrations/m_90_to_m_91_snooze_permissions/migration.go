@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -35,6 +36,10 @@ func init() {
 }
 
 func updateVulnSnoozePermissions(databases *types.Databases) error {
+	if !features.VulnRiskManagement.Enabled() {
+		return nil
+	}
+
 	it := databases.RocksDB.NewIterator(readOpts)
 	defer it.Close()
 

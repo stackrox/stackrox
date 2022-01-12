@@ -49,6 +49,7 @@ function PolicyCriteriaFieldSubInput({
         return () => setValue((Number(value) + step).toFixed(1));
     }
 
+    /* eslint-disable default-case */
     switch (subComponent.type) {
         case 'text':
             return (
@@ -93,9 +94,8 @@ function PolicyCriteriaFieldSubInput({
                     </Select>
                 </FormGroup>
             );
-        default:
-            throw new Error(`Unknown field type: ${subComponent.type}`);
     }
+    /* eslint-enable default-case */
 }
 
 export default PolicyCriteriaFieldSubInput;
