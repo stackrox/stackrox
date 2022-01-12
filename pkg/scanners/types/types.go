@@ -29,7 +29,7 @@ type ImageScanner interface {
 }
 
 // ImageVulnerabilityGetter is a scanner which can retrieve vulnerabilities
-// which exist, given image components and scan notes for the given image.
+// which exist in the given image components and the scan notes for the given image.
 type ImageVulnerabilityGetter interface {
 	GetVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (*storage.ImageScan, error)
 }

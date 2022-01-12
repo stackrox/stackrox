@@ -14,5 +14,5 @@ var (
 
 	// ScannerEndpoint is used to communicate the scanner endpoint to other services in the same cluster.
 	// This is typically used for Sensor to communicate with a local Scanner-slim's gRPC server.
-	ScannerEndpoint = RegisterSetting("ROX_SCANNER_ENDPOINT", WithDefault("scanner.stackrox.svc:8443"))
+	ScannerEndpoint = RegisterSetting("ROX_SCANNER_GRPC_ENDPOINT", WithDefault("scanner.stackrox.svc:8443"))
 )

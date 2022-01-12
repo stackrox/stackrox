@@ -50,10 +50,22 @@ type enricherImpl struct {
 }
 
 func (e *enricherImpl) EnrichWithVulnerabilities(ctx EnrichmentContext, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
+	// Attempt to short-circuit before checking scanners.
+	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
+		return EnrichmentResult{
+			ScanResult: ScanNotDone,
+		}, nil
+	}
+	if e.populateFromCache(ctx, image) {
+		return EnrichmentResult{
+			ImageUpdated: true,
+			ScanResult:   ScanSucceeded,
+		}, nil
+	}
+
 	scanners := e.integrations.ScannerSet()
 	if scanners.IsEmpty() {
 		return EnrichmentResult{
-			ImageUpdated: false,
 			ScanResult:   ScanNotDone,
 		}, errors.New("no image scanners are integrated")
 	}
@@ -66,10 +78,9 @@ func (e *enricherImpl) EnrichWithVulnerabilities(ctx EnrichmentContext, image *s
 				continue
 			}
 
-			res, err := e.enrichWithVulnerabilities(ctx, scanner.Name(), scanner.DataSource(), vulnScanner, image, components, notes)
+			res, err := e.enrichWithVulnerabilities(scanner.Name(), scanner.DataSource(), vulnScanner, image, components, notes)
 			if err != nil {
 				return EnrichmentResult{
-					ImageUpdated: false,
 					ScanResult:   ScanNotDone,
 				}, errors.Wrapf(err, "retrieving image vulnerabilities from %s [%s]", scanner.Name(), scanner.Type())
 			}
@@ -82,21 +93,12 @@ func (e *enricherImpl) EnrichWithVulnerabilities(ctx EnrichmentContext, image *s
 	}
 
 	return EnrichmentResult{
-		ImageUpdated: false,
 		ScanResult:   ScanNotDone,
 	}, errors.New("no image vulnerability retrievers are integrated")
 }
 
-func (e *enricherImpl) enrichWithVulnerabilities(ctx EnrichmentContext, scannerName string, dataSource *storage.DataSource,
-	scanner scannerTypes.ImageVulnerabilityGetter, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (ScanResult, error) {
-	// Attempt to short-circuit before checking scanners.
-	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
-		return ScanNotDone, nil
-	}
-	if e.populateFromCache(ctx, image) {
-		return ScanSucceeded, nil
-	}
-
+func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource *storage.DataSource, scanner scannerTypes.ImageVulnerabilityGetter,
+	image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (ScanResult, error) {
 	scanStartTime := time.Now()
 	scan, err := scanner.GetVulnerabilities(image, components, notes)
 	e.metrics.SetImageVulnerabilityRetrievalTime(scanStartTime, scannerName, err)
