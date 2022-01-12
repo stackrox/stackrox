@@ -4,13 +4,14 @@ import { Link } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
-    Flex,
-    FlexItem,
     PageSection,
     PageSectionVariants,
     Text,
     TextContent,
     Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
@@ -23,6 +24,7 @@ import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
 
 function ReportTablePage(): ReactElement {
+    const [isActionsOpen, setIsActionsOpen] = useState(false);
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
 
@@ -57,49 +59,36 @@ function ReportTablePage(): ReactElement {
         <>
             <PageSection variant={PageSectionVariants.light}>
                 <PageTitle title="Vulnerability Management - Reports" />
-                <Flex
-                    alignItems={{
-                        default: 'alignItemsFlexStart',
-                        md: 'alignItemsCenter',
-                    }}
-                    direction={{ default: 'column', md: 'row' }}
-                    flexWrap={{ default: 'nowrap' }}
-                    spaceItems={{ default: 'spaceItemsXl' }}
-                >
-                    <FlexItem grow={{ default: 'grow' }}>
-                        <TextContent>
-                            <Title headingLevel="h1">Vulnerability reporting</Title>
-                            <Text component="p">
-                                Configure reports, define resource scopes, and assign distribution
-                                lists to report on vulnerabilities across the organization.
-                            </Text>
-                        </TextContent>
-                    </FlexItem>
-                    {hasVulnReportWriteAccess && (
-                        <FlexItem
-                            align={{
-                                default: 'alignLeft',
-                                md: 'alignRight',
-                                lg: 'alignRight',
-                                xl: 'alignRight',
-                                '2xl': 'alignRight',
-                            }}
-                        >
-                            <Button
-                                variant={ButtonVariant.primary}
-                                isInline
-                                component={(props) => (
-                                    <Link
-                                        {...props}
-                                        to={`${vulnManagementReportsPath}?action=create`}
-                                    />
-                                )}
-                            >
-                                Create report
-                            </Button>
-                        </FlexItem>
-                    )}
-                </Flex>
+                <Toolbar inset={{ default: 'insetNone' }}>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <TextContent>
+                                <Title headingLevel="h1">Vulnerability reporting</Title>
+                                <Text component="p">
+                                    Configure reports, define resource scopes, and assign
+                                    distribution lists to report on vulnerabilities across the
+                                    organization.
+                                </Text>
+                            </TextContent>
+                        </ToolbarItem>
+                        {hasVulnReportWriteAccess && (
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <Button
+                                    variant={ButtonVariant.primary}
+                                    isInline
+                                    component={(props) => (
+                                        <Link
+                                            {...props}
+                                            to={`${vulnManagementReportsPath}?action=create`}
+                                        />
+                                    )}
+                                >
+                                    Create report
+                                </Button>
+                            </ToolbarItem>
+                        )}
+                    </ToolbarContent>
+                </Toolbar>
             </PageSection>
             {reports.length > 0 ? (
                 <VulnMgmtReportTablePanel
