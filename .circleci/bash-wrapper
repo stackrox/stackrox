@@ -31,12 +31,12 @@ cci-export() {
     # export __CCI_EXPORT_FOO_VALUE=bar
     # export FOO="${FOO:-"${__CCI_EXPORT_FOO_VALUE}"}"'
     # export __CCI_EXPORT_BAZ_VALUE=baz
-    # export BAZ="${BAZ:-"${__BAZ_VALUE}"}"'
+    # export BAZ="${BAZ:-"${__CCI_EXPORT_BAZ_VALUE}"}"'
 
     shadow_key="__CCI_EXPORT_${key}_VALUE"
 
     # Remove all lines starting with:
-    # export __VAR_VALUE=
+    # export __CCI_EXPORT_VAR_VALUE=
     # export VAR=
     # for the same exported variable (VAR), to 'forget' about past cci-export calls,
     # otherwise the first call to cci-export would define a default value for the variable, so that
