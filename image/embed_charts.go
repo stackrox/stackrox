@@ -275,7 +275,7 @@ func (i *Image) getSensorChart(values charts.MetaValues, certs *sensor.Certs) (*
 		})
 	}
 
-	if certOnly := values.CertsOnly; !certOnly {
+	if !values.CertsOnly {
 		scriptFiles, err := i.addScripts(values)
 		if err != nil {
 			return nil, err
