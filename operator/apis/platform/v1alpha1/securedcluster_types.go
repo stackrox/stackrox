@@ -66,7 +66,7 @@ type SecuredClusterSpec struct {
 	// Settings for the local Scanner component, which is responsible for vulnerability scanning of container
 	// images stored in a cluster-local image repository.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Local Scanner Component Settings"
-	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
+	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Allows you to specify additional trusted Root CAs.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8
@@ -299,6 +299,59 @@ const (
 func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
 	return &c
 }
+
+// Note the following struct should mostly match ScannerComponentSpec.
+
+// LocalScannerComponentSpec defines settings for the local "scanner" component.
+type LocalScannerComponentSpec struct {
+	// TODO(ROX-8825): What is the customer-facing name for local scanner?
+	// If you do not want to deploy the Local Red Hat Advanced Cluster Security Scanner, you can disable it here
+	// (not recommended).
+	// If you do so, all the settings in this section will have no effect.
+	//+kubebuilder:default=AutoSense
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
+	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
+
+	// Settings pertaining to the analyzer deployment, such as for autoscaling.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	Analyzer *ScannerAnalyzerComponent `json:"analyzer,omitempty"`
+
+	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	DB *DeploymentSpec `json:"db,omitempty"`
+}
+
+// GetAnalyzer returns the analyzer component even if receiver is nil
+func (s *LocalScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
+	if s == nil {
+		return nil
+	}
+	return s.Analyzer
+}
+
+// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
+func (s *LocalScannerComponentSpec) IsEnabled() bool {
+	// TODO(ROX-8921): take Central existence into account
+	if s == nil || s.ScannerComponent == nil {
+		return true // enabled by default
+	}
+	return *s.ScannerComponent == LocalScannerComponentEnabled || *s.ScannerComponent == LocalScannerComponentAutoSense
+}
+
+// LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
+//+kubebuilder:validation:Enum=AutoSense;Enabled;Disabled
+type LocalScannerComponentPolicy string
+
+const (
+	// LocalScannerComponentAutoSense means that scanner should be installed,
+	// unless there is a Central resource in the same namespace.
+	// In that case typically a central scanner will be deployed as a component of Central.
+	LocalScannerComponentAutoSense LocalScannerComponentPolicy = "AutoSense"
+	// LocalScannerComponentEnabled means that scanner should be installed.
+	LocalScannerComponentEnabled LocalScannerComponentPolicy = "Enabled"
+	// LocalScannerComponentDisabled means that scanner should not be installed.
+	LocalScannerComponentDisabled LocalScannerComponentPolicy = "Disabled"
+)
 
 // -------------------------------------------------------------
 // Status

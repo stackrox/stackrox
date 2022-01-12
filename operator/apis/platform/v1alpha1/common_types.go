@@ -110,52 +110,6 @@ type LocalSecretReference struct {
 	Name string `json:"name"`
 }
 
-// ScannerComponentSpec defines settings for the "scanner" component.
-type ScannerComponentSpec struct {
-	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-	// (not recommended).
-	// If you do so, all the settings in this section will have no effect.
-	//+kubebuilder:validation:Default=Enabled
-	//+kubebuilder:default=Enabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
-	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
-
-	// Settings pertaining to the analyzer deployment, such as for autoscaling.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
-	Analyzer *ScannerAnalyzerComponent `json:"analyzer,omitempty"`
-
-	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
-	DB *DeploymentSpec `json:"db,omitempty"`
-}
-
-// GetAnalyzer returns the analyzer component even if receiver is nil
-func (s *ScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
-	if s == nil {
-		return nil
-	}
-	return s.Analyzer
-}
-
-// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
-func (s *ScannerComponentSpec) IsEnabled() bool {
-	if s == nil || s.ScannerComponent == nil {
-		return true // enabled by default
-	}
-	return *s.ScannerComponent == ScannerComponentEnabled
-}
-
-// ScannerComponentPolicy is a type for values of spec.scannerSpec.scannerComponent.
-//+kubebuilder:validation:Enum=Enabled;Disabled
-type ScannerComponentPolicy string
-
-const (
-	// ScannerComponentEnabled means that scanner should be installed.
-	ScannerComponentEnabled ScannerComponentPolicy = "Enabled"
-	// ScannerComponentDisabled means that scanner should not be installed.
-	ScannerComponentDisabled ScannerComponentPolicy = "Disabled"
-)
-
 // ScannerAnalyzerComponent describes the analyzer component
 type ScannerAnalyzerComponent struct {
 	// Controls the number of analyzer replicas and autoscaling.
@@ -202,7 +156,7 @@ type ScannerAnalyzerScaling struct {
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 }
 
-// AutoScalingPolicy is a type for values of spec.scanner.replicas.autoScaling.
+// AutoScalingPolicy is a type for values of spec.scanner.analyzer.replicas.autoScaling.
 //+kubebuilder:validation:Enum=Enabled;Disabled
 type AutoScalingPolicy string
 
