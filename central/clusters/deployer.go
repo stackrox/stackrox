@@ -90,9 +90,9 @@ func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collect
 // derived from full instead. For example:
 // collector full image: "custom.registry.io/collector" => collector slim image: "custom.registry.io/collector-slim"
 // returned images are: (collectorFull, collectorSlim)
-func determineCollectorImages(mainImage, collectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) (*storage.ImageName, *storage.ImageName) {
+func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) (*storage.ImageName, *storage.ImageName) {
 	var collectorImageFull, collectorImageSlim *storage.ImageName
-	if collectorImage == nil && imageFlavor.IsImageDefaultMain(mainImage) {
+	if clusterCollectorImage == nil && imageFlavor.IsImageDefaultMain(clusterMainImage) {
 		// Use default values for collector full/slim if no collector image is specified and main image is default
 		collectorImageFull = &storage.ImageName{
 			Registry: imageFlavor.CollectorRegistry,
@@ -103,16 +103,16 @@ func determineCollectorImages(mainImage, collectorImage *storage.ImageName, imag
 			Remote: imageFlavor.CollectorSlimImageName,
 			Tag:    imageFlavor.CollectorSlimImageTag,
 		}
-	} else if collectorImage == nil {
+	} else if clusterCollectorImage == nil {
 		// Derive collector full/slim from custom main image
-		collectorImageFull = deriveImageWithNewName(mainImage, imageFlavor.CollectorImageName)
+		collectorImageFull = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorImageName)
 		collectorImageFull.Tag = imageFlavor.CollectorImageTag
 
-		collectorImageSlim = deriveImageWithNewName(mainImage, imageFlavor.CollectorSlimImageName)
+		collectorImageSlim = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorSlimImageName)
 		collectorImageSlim.Tag = imageFlavor.CollectorSlimImageTag
 	} else {
 		// Derive collector slim from a custom collector full
-		collectorImageFull = collectorImage.Clone()
+		collectorImageFull = clusterCollectorImage.Clone()
 		collectorImageFull.Tag = imageFlavor.CollectorImageTag
 		collectorImageSlim = deriveImageWithNewName(collectorImageFull, imageFlavor.CollectorSlimImageName)
 		collectorImageSlim.Tag = imageFlavor.CollectorSlimImageTag
