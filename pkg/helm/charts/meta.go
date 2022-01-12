@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-
 // MetaValues are the values to be passed to the StackRox chart templates.
 type MetaValues struct {
 	Versions                         version.Versions
