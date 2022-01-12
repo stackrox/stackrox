@@ -64,6 +64,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		reconciler.SkipDependentWatches(true),
 		reconciler.WithMaxReleaseHistory(maxReleaseHistorySize),
 		reconciler.WithMarkFailedAfter(markReleaseFailedAfter),
+		reconciler.SkipSchemeSetup(true),
 	}
 	reconcilerOpts = append(reconcilerOpts, extraOpts...)
 
@@ -72,7 +73,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		return errors.Wrapf(err, "unable to create %s reconciler", gvk)
 	}
 
-	if err := r.SetupWithManager(mgr, reconciler.SetupOpts{DisableSetupScheme: true}); err != nil {
+	if err := r.SetupWithManager(mgr); err != nil {
 		return errors.Wrapf(err, "unable to setup %s reconciler", gvk)
 	}
 	return nil
