@@ -3514,11 +3514,6 @@ jobs:
             cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
 
       - run:
-          name: Setup prerequisites for Bats tests
-          command: |
-            source tests/e2e/run.sh
-            install_yq
-      - run:
           name: Run roxctl Bats tests
           command: |
             source tests/e2e/run.sh
