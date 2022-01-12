@@ -198,7 +198,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// even if we weren't able to enrich it
 	}
 
-	// asynchronously upsert images as this rpc should be performant
+	// asynchronously upsert the image, as this rpc should be performant
 	if img.GetId() != "" {
 		go s.saveImage(img.Clone())
 	}
@@ -313,7 +313,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		return nil, err
 	}
 
-	// asynchronously upsert images as this rpc should be performant
+	// asynchronously upsert the image, as this rpc should be performant
 	go s.saveImage(img.Clone())
 
 	// These modify the image object.
