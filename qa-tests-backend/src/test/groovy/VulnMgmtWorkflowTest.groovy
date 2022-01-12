@@ -83,6 +83,8 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         cleanup:
         if (approve) {
             VulnRequestService.undoReq(id)
+            // Allow propagation of CVE suppression and invalidation of cache
+            Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
         }
 
         where:
