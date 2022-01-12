@@ -253,11 +253,10 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	assert.NotEmpty(t, fields.CollectorSlimImageTag)
 	assert.NotEmpty(t, fields.CollectorFullImageTag)
 
-	versions := fields.Versions
-	assert.NotEmpty(t, versions.ChartVersion)
-	assert.NotEmpty(t, versions.MainVersion)
-	assert.NotEmpty(t, versions.CollectorVersion)
-	assert.NotEmpty(t, versions.ScannerVersion)
+	assert.NotEmpty(t, fields.Versions.ChartVersion)
+	assert.NotEmpty(t, fields.Versions.MainVersion)
+	assert.NotEmpty(t, fields.Versions.CollectorVersion)
+	assert.NotEmpty(t, fields.Versions.ScannerVersion)
 
 	chartRepo := fields.ChartRepo
 	assert.NotEmpty(t, chartRepo.URL)
