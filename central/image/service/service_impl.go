@@ -172,6 +172,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	if err := internalScanSemaphore.Acquire(ctx, 1); err != nil {
 		return nil, errors.Wrapf(err, "error acquiring semaphore")
 	}
+	defer internalScanSemaphore.Release(1)
 
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
