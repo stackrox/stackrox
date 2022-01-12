@@ -219,9 +219,6 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
 		return ScanNotDone, nil
 	}
-	if e.populateFromCache(ctx, image) {
-		return ScanSucceeded, nil
-	}
 	if ctx.FetchOpt == NoExternalMetadata {
 		return ScanNotDone, nil
 	}
@@ -279,23 +276,6 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 		}
 	}
 	return ScanNotDone, errorList.ToError()
-}
-
-func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, image *storage.Image) bool {
-	if ctx.FetchOpt == ForceRefetch || ctx.FetchOpt == ForceRefetchScansOnly {
-		return false
-	}
-	ref := getRef(image)
-	scanValue := e.scanCache.Get(ref)
-	if scanValue == nil {
-		e.metrics.IncrementScanCacheMiss()
-		return false
-	}
-
-	e.metrics.IncrementScanCacheHit()
-	image.Scan = scanValue.(*storage.ImageScan).Clone()
-	FillScanStats(image)
-	return true
 }
 
 func normalizeVulnerabilities(scan *storage.ImageScan) {
