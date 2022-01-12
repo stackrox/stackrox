@@ -1,6 +1,7 @@
 import { useApolloClient, useQuery } from '@apollo/client';
 import { useEffect, useState } from 'react';
 import { fetchVulnRequests } from 'services/VulnerabilityRequestsService';
+import queryService from 'utils/queryService';
 import {
     GetImageVulnerabilitiesData,
     GetImageVulnerabilitiesVars,
@@ -32,7 +33,16 @@ function useImageVulnerabilities({ imageId, vulnsQuery, pagination }) {
     useEffect(() => {
         if (vulnsData) {
             const cves = vulnsData.image.vulns.map((vuln) => vuln.cve).join(',');
-            const vulnRequestsQuery = vulnsData.image.vulns.length ? `CVE:${cves}` : '';
+            const queryObj = vulnsData.image.vulns.length
+                ? {
+                      CVE: cves,
+                      'Expired Request': 'false',
+                  }
+                : {};
+            const vulnRequestsQuery = queryService.objectToWhereClause(
+                queryObj,
+                encodeURIComponent('+')
+            );
             fetchVulnRequests({ query: vulnRequestsQuery })
                 .then((vulnRequests) => {
                     const { vulns } = vulnsData.image;

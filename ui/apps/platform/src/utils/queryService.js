@@ -44,7 +44,7 @@ function objectToWhereClause(query, delimiter = '+') {
             const queryValue = needsExactMatch ? `"${flatValue}"` : flatValue;
             return `${acc}${key}:${queryValue}${delimiter}`;
         }, '')
-        .slice(0, -1);
+        .slice(0, -delimiter.length);
 }
 
 function entityContextToQueryObject(entityContext) {
