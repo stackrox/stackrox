@@ -278,13 +278,9 @@ include make/protogen.mk
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
 	@easyjson -pkg pkg/docker/types/types.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/types_easyjson.go
 	@easyjson -pkg pkg/docker/types/container.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/container_easyjson.go
 	@easyjson -pkg pkg/docker/types/image.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
 	@easyjson -pkg pkg/compliance/compress/compress.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/compliance/compress/compress_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
