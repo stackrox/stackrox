@@ -8,7 +8,9 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -20,26 +22,33 @@ func InjectTrustedCAConfigMapExtension(k8s client.Client) extensions.ReconcileEx
 		key := client.ObjectKey{Namespace: obj.GetNamespace(), Name: "injected-cabundle-" + obj.GetName()}
 		if err := k8s.Get(ctx, key, configMap); err != nil {
 			if apiErrors.IsNotFound(err) {
-				// Ignore missing ConfigMap.
+				configMap = makeConfigMap(&key)
+				if err := controllerutil.SetControllerReference(obj, configMap, nil); err != nil {
+					return errors.Wrapf(err, "cannot set configMap %s controller", key.Name)
+				}
+				if err := k8s.Create(ctx, configMap); err != nil {
+					return errors.Wrapf(err, "cannot create configMap %s", key.Name)
+				}
 				return nil
 			}
 			return errors.Wrapf(err, "cannot retrieve configMap %s", key.Name)
-		}
-		if err := validate(configMap); err != nil {
-			return err
-		}
-		if controllerutil.SetControllerReference(obj, configMap, nil) == nil {
-			if err := k8s.Update(ctx, configMap); err != nil {
-				return errors.Wrapf(err, "cannot control configMap %s", key.Name)
-			}
 		}
 		return nil
 	}
 }
 
-func validate(configMap *corev1.ConfigMap) error {
-	if configMap.GetLabels()["config.openshift.io/inject-trusted-cabundle"] != "true" {
-		return errors.Errorf("configMap %s exists, but is not properly labeled", configMap.GetName())
+func makeConfigMap(key *types.NamespacedName) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+			Labels: map[string]string{
+				"config.openshift.io/inject-trusted-cabundle": "true",
+			},
+		},
 	}
-	return nil
 }

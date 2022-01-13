@@ -6,4 +6,3 @@ metadata:
     "config.openshift.io/inject-trusted-cabundle": "true"
   annotations:
     "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/resource-policy": keep

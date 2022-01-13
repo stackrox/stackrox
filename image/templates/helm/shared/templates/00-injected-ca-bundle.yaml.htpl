@@ -1,5 +1,6 @@
 {{- include "srox.init" . -}}
 
+[< if not .Operator >]
 {{- if eq $._rox.env.openshift 4 }}
 
 {{- $configMapName := printf "injected-cabundle-%s" .Release.Name }}
@@ -15,6 +16,6 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "configmap" $configMapName) | nindent 4 }}
     "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/resource-policy": keep
 
 {{- end }}
+[< end >]
