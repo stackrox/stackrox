@@ -63,7 +63,7 @@ const defaultNewClusterType = 'KUBERNETES_CLUSTER';
 const defaultCollectionMethod = 'KERNEL_MODULE';
 
 export const newClusterDefault = {
-    id: null,
+    id: undefined,
     name: '',
     type: defaultNewClusterType,
     mainImage: 'stackrox/main',
@@ -76,7 +76,7 @@ export const newClusterDefault = {
     admissionController: false,
     admissionControllerUpdates: false,
     DEPRECATEDOrchestratorMetadata: null,
-    status: null,
+    status: undefined,
     tolerationsConfig: {
         disabled: false,
     },
@@ -88,8 +88,9 @@ export const newClusterDefault = {
             scanInline: false,
             disableBypass: false,
         },
+        registryOverride: '',
     },
-    healthStatus: null,
+    healthStatus: undefined,
     slimCollector: false,
 };
 

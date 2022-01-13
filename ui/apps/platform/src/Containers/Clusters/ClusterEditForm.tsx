@@ -6,13 +6,14 @@ import ClusterSummary from './Components/ClusterSummary';
 import StaticConfigurationSection from './StaticConfigurationSection';
 import DynamicConfigurationSection from './DynamicConfigurationSection';
 import ClusterLabelsTable from './ClusterLabelsTable';
-import { CentralEnv, Cluster } from './clusterTypes';
+import { CentralEnv, Cluster, ClusterManagerType } from './clusterTypes';
 
 type ClusterEditFormProps = {
     centralEnv: CentralEnv;
     centralVersion: string;
     selectedCluster: Cluster;
-    handleChange: () => void;
+    managerType: ClusterManagerType;
+    handleChange: (any) => void;
     handleChangeLabels: (labels) => void;
     isLoading: boolean;
 };
@@ -21,6 +22,7 @@ function ClusterEditForm({
     centralEnv,
     centralVersion,
     selectedCluster,
+    managerType,
     handleChange,
     handleChangeLabels,
     isLoading,
@@ -28,6 +30,9 @@ function ClusterEditForm({
     if (isLoading) {
         return <Loader />;
     }
+    const isManagerTypeNonConfigurable =
+        managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' ||
+        managerType === 'MANAGER_TYPE_HELM_CHART';
     return (
         <div className="bg-base-200 px-4 w-full">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
@@ -45,6 +50,7 @@ function ClusterEditForm({
             >
                 <StaticConfigurationSection
                     centralEnv={centralEnv}
+                    isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                     handleChange={handleChange}
                     selectedCluster={selectedCluster}
                 />
@@ -54,7 +60,7 @@ function ClusterEditForm({
                         helmConfig={selectedCluster.helmConfig}
                         handleChange={handleChange}
                         clusterType={selectedCluster.type}
-                        managerType={selectedCluster.managedBy}
+                        isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                     />
                     <div className="pt-4">
                         <label htmlFor="labels" className={labelClassName}>
