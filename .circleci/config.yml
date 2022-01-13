@@ -454,6 +454,7 @@ checkToRunSeparateRaceConditionTestPipe: &checkToRunSeparateRaceConditionTestPip
   check-to-run:
     run-on-master: true
     run-on-tags: true
+    label: ci-race-tests
 
 version: 2.1
 
@@ -500,7 +501,7 @@ parameters:
 
 orbs:
   win: circleci/windows@2.2.0
-  ci-artifacts: stackrox/ci-artifacts-orb@0.0.11
+  ci-artifacts: stackrox/ci-artifacts-orb@0.1.0
 
 executors:
   custom:
@@ -510,7 +511,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.21
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.23
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -2868,6 +2869,16 @@ jobs:
       - *restoreGoModCache
       - setup-go-build-env
 
+      - run:
+          name: Set image flavor to release
+          # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly setting CIRCLE_TAG value.
+          # Therefore, we need to tell main image that it should use image defaults as for the release build, otherwise
+          # the code resolving image flavor would panic due to release build combined with development images.
+          # Setting the release image flavor is fine because the image registry gets overridden anyway, but it has an
+          # implication that scanner, scanner-db and collector images should have the same image tags as main image.
+          # For this we retag those images in one of the steps below.
+          command: cci-export ROX_IMAGE_FLAVOR "stackrox_io_release"
+
       - restore-npm-deps-cache
       - fetch-ui-deps
 
@@ -2885,7 +2896,7 @@ jobs:
             make RACE=true CIRCLE_TAG="$(make --quiet tag)" main-image
 
       - run:
-          name: Push new image
+          name: Push new main-image with '-rcd' suffix
           command: |
             TAG="$(make --quiet tag)"
 
@@ -2895,6 +2906,19 @@ jobs:
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             QUAY_REPO="rhacs-eng"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
+
+      - run:
+          # We do this because release image flavor is set. Why - look for comments above.
+          name: Retag scanner, scanner-db and collector images with '-rcd' suffix
+          command: |
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "quay.io/rhacs-eng/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "quay.io/rhacs-eng/collector:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
@@ -3513,11 +3537,6 @@ jobs:
             cci-export "SERVICE_CERT_FILE" "$SERVICE_CERT_FILE"
             cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
 
-      - run:
-          name: Setup prerequisites for Bats tests
-          command: |
-            source tests/e2e/run.sh
-            install_yq
       - run:
           name: Run roxctl Bats tests
           command: |

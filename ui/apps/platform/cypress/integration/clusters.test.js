@@ -310,6 +310,71 @@ describe('Cluster management', () => {
     });
 });
 
+describe('Cluster configuration', () => {
+    withAuth();
+
+    let clusters;
+
+    before(() => {
+        cy.fixture('clusters/health.json').then((response) => {
+            clusters = response.clusters;
+        });
+    });
+
+    beforeEach(() => {
+        cy.intercept('GET', clustersApi.list, {
+            body: { clusters },
+        }).as('GetClusters');
+        cy.visit(clustersUrl);
+        cy.wait(['@GetClusters']);
+    });
+
+    const getCluster = (clusterName) => {
+        const n = clusters.findIndex((cluster) => cluster.name === clusterName);
+        const cluster = clusters[n];
+        cy.intercept('GET', clustersApi.single, {
+            body: { cluster },
+        }).as('GetCluster');
+        cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
+        cy.wait('@GetCluster');
+    };
+
+    const assertConfigurationReadOnly = () => {
+        const form = cy.get('[data-testid="cluster-form"]').children();
+        [
+            'name',
+            'mainImage',
+            'centralApiEndpoint',
+            'collectorImage',
+            'admissionControllerEvents',
+            'admissionController',
+            'admissionControllerUpdates',
+            'tolerationsConfig.disabled',
+            'slimCollector',
+            'dynamicConfig.registryOverride',
+            'dynamicConfig.admissionControllerConfig.enabled',
+            'dynamicConfig.admissionControllerConfig.enforceOnUpdates',
+            'dynamicConfig.admissionControllerConfig.timeoutSeconds',
+            'dynamicConfig.admissionControllerConfig.scanInline',
+            'dynamicConfig.admissionControllerConfig.disableBypass',
+            'dynamicConfig.disableAuditLogs',
+        ].forEach((id) => form.get(`input[id="${id}"]`).should('be.disabled'));
+        ['Select a cluster type', 'Select a runtime option'].forEach((label) =>
+            form.get(`select[aria-label="${label}"]`).should('be.disabled')
+        );
+    };
+
+    it('should be read-only for Helm-based installations', () => {
+        getCluster('alpha-amsterdam-1');
+        assertConfigurationReadOnly();
+    });
+
+    it('should be read-only for unknown manager installations that have a defined Helm config', () => {
+        getCluster('kappa-kilogramme-10');
+        assertConfigurationReadOnly();
+    });
+});
+
 describe('Cluster Health', () => {
     withAuth();
 

@@ -136,10 +136,13 @@ class ECRRegistryIntegration implements ImageIntegration {
                 accessKeyId: Env.mustGetAWSAccessKeyID(),
                 secretAccessKey: Env.mustGetAWSSecretAccessKey(),
                 useIam: false,
-                assumeRoleRoleId: Env.mustGetAWSAssumeRoleRoleID(),
-                assumeRoleTestConditionId: Env.mustGetAWSAssumeRoleTestConditionID(),
                 useAssumeRole: false,
                 useAssumeRoleExternalId: false,
+                assumeRoleAccessKey: Env.mustGetAWSAssumeRoleAccessKeyID(),
+                assumeRoleSecretKey: Env.mustGetAWSAssumeRoleSecretKeyID(),
+                assumeRoleRoleId: Env.mustGetAWSAssumeRoleRoleID(),
+                assumeRoleExternalId: Env.mustGetAWSAssumeRoleExternalID(),
+                assumeRoleTestConditionId: Env.mustGetAWSAssumeRoleTestConditionID(),
         ]
         Map args = defaultArgs + customArgs
 
@@ -149,17 +152,13 @@ class ECRRegistryIntegration implements ImageIntegration {
         }
 
         if (args.useAssumeRole) {
-            args.endpoint = ""
-            args.accessKeyId = Env.mustGetAWSAssumeRoleAccessKeyID()
-            args.secretAccessKey = Env.mustGetAWSAssumeRoleSecretKeyID()
-        }
-
-        if (args.useAssumeRoleExternalId) {
+            args.accessKeyId = args.assumeRoleAccessKey
+            args.secretAccessKey = args.assumeRoleSecretKey
+        } else if (args.useAssumeRoleExternalId) {
             args.useAssumeRole = true
-            args.endpoint = ""
-            args.accessKeyId = Env.mustGetAWSAssumeRoleAccessKeyID()
-            args.secretAccessKey = Env.mustGetAWSAssumeRoleSecretKeyID()
-            args.assumeRoleRoleId = Env.mustGetAWSAssumeRoleExternalID()
+            args.accessKeyId = args.assumeRoleAccessKey
+            args.secretAccessKey = args.assumeRoleSecretKey
+            args.assumeRoleRoleId = args.assumeRoleExternalId
         }
 
         ImageIntegrationOuterClass.ECRConfig.Builder config =

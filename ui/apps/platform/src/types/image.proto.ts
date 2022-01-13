@@ -6,3 +6,14 @@ export type ImageName = {
     tag: string;
     fullName: string;
 };
+
+export type Image = {
+    name: string;
+    priority: string;
+    lastUpdated: string;
+    id: string;
+    fixableCves: number;
+    cves: number;
+    created: string;
+    components: number;
+};

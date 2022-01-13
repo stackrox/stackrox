@@ -29,8 +29,8 @@ export function fetchImagesById(options) {
  *
  * @returns {Promise<Object[], Error>} fulfilled with array of images (as defined in .proto)
  */
-export function fetchImages(options, sortOption, page, pageSize) {
-    const offset = page * pageSize;
+export function fetchImages(options = [], sortOption, page, pageSize) {
+    const offset = page * pageSize || 0;
     const query = searchOptionsToQuery(options);
     const params = queryString.stringify(
         {

@@ -29,6 +29,7 @@ import {
     wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
+import { Cluster, ClusterManagerType } from './clusterTypes';
 
 function fetchCentralEnv() {
     return fetchKernelSupportAvailable().then((kernelSupportAvailable) => {
@@ -53,6 +54,11 @@ const validate = (values) => {
     return errors;
 };
 
+type MessageState = {
+    type: 'warn' | 'error';
+    message: JSX.Element | string;
+};
+
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const metadata = useMetadata();
 
@@ -66,14 +72,16 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     };
 
     const { isDarkMode } = useTheme();
-    const [selectedCluster, setSelectedCluster] = useState(envAwareClusterDefault);
+    const [selectedCluster, setSelectedCluster] = useState<Partial<Cluster> | null>(
+        envAwareClusterDefault
+    );
     const [centralEnv, setCentralEnv] = useState(centralEnvDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [loadingCounter, setLoadingCounter] = useState(0);
-    const [messageState, setMessageState] = useState(null);
+    const [messageState, setMessageState] = useState<MessageState | null>(null);
     const [isBlocked, setIsBlocked] = useState(false);
     const [pollingCount, setPollingCount] = useState(0);
-    const [pollingDelay, setPollingDelay] = useState(null);
+    const [pollingDelay, setPollingDelay] = useState<number | null>(null);
     const [submissionError, setSubmissionError] = useState('');
     const [isDownloadingBundle, setIsDownloadingBundle] = useState(false);
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
@@ -86,6 +94,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         setIsBlocked(false);
         setWizardStep(wizardSteps.FORM);
         setPollingDelay(null);
+    }
+
+    function managerType(cluster: Partial<Cluster> | null): ClusterManagerType {
+        return cluster?.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN'
+            ? 'MANAGER_TYPE_HELM_CHART'
+            : cluster?.managedBy ?? 'MANAGER_TYPE_UNKNOWN';
     }
 
     useEffect(
@@ -125,46 +139,46 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             setPollingDelay(null);
                         }
 
-                        if (
-                            (cluster.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN') ||
-                            cluster.managedBy === 'MANAGER_TYPE_HELM_CHART'
-                        ) {
-                            if (wizardStep === wizardSteps.FORM) {
-                                setMessageState({
-                                    type: 'warn',
-                                    message: (
-                                        <>
-                                            <h3 className="font-700 mb-2">Helm-managed cluster</h3>
-                                            <p>
-                                                Warning: This is a Helm-managed cluster. If you edit
-                                                the cluster using the form below, please ask your
-                                                DevOps team to update the Helm values in source
-                                                control to ensure those changes are not overwritten.
-                                            </p>
-                                        </>
-                                    ),
-                                });
-                            }
-                        }
-
-                        if (cluster.managedBy === 'MANAGER_TYPE_KUBERNETES_OPERATOR') {
-                            if (wizardStep === wizardSteps.FORM) {
-                                setMessageState({
-                                    type: 'warn',
-                                    message: (
-                                        <>
-                                            <h3 className="font-700 mb-2">
-                                                Operator-managed cluster
-                                            </h3>
-                                            <p>
-                                                This is an operator-managed cluster. The settings of
-                                                operator-managed clusters cannot be changed here and
-                                                must instead be changed by updating its custom
-                                                resource definition (CRD).
-                                            </p>
-                                        </>
-                                    ),
-                                });
+                        if (wizardStep === wizardSteps.FORM) {
+                            switch (managerType(cluster)) {
+                                case 'MANAGER_TYPE_HELM_CHART':
+                                    setMessageState({
+                                        type: 'warn',
+                                        message: (
+                                            <>
+                                                <h3 className="font-700 mb-2">
+                                                    Helm-managed cluster
+                                                </h3>
+                                                <p>
+                                                    This is an Helm-managed cluster. The settings of
+                                                    Helm-managed clusters cannot be changed here,
+                                                    please ask your DevOps team to change the
+                                                    settings by updating the Helm values.
+                                                </p>
+                                            </>
+                                        ),
+                                    });
+                                    break;
+                                case 'MANAGER_TYPE_KUBERNETES_OPERATOR':
+                                    setMessageState({
+                                        type: 'warn',
+                                        message: (
+                                            <>
+                                                <h3 className="font-700 mb-2">
+                                                    Operator-managed cluster
+                                                </h3>
+                                                <p>
+                                                    This is an operator-managed cluster. The
+                                                    settings of operator-managed clusters cannot be
+                                                    changed here and must instead be changed by
+                                                    updating its custom resource definition (CRD).
+                                                </p>
+                                            </>
+                                        ),
+                                    });
+                                    break;
+                                default:
+                                    break;
                             }
                         }
                     })
@@ -232,36 +246,13 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         if (wizardStep === wizardSteps.FORM) {
             setMessageState(null);
             setSubmissionError('');
-            saveCluster(selectedCluster)
+            saveCluster(selectedCluster as Cluster)
                 .then((response) => {
                     const newId = response.response.result.cluster; // really is nested like this
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);
 
                     setWizardStep(wizardSteps.DEPLOYMENT);
-                    if (
-                        (clusterWithId.helmConfig &&
-                            clusterWithId.managedBy === 'MANAGER_TYPE_UNKNOWN') ||
-                        clusterWithId.managedBy === 'MANAGER_TYPE_HELM_CHART'
-                    ) {
-                        setMessageState({
-                            type: 'error',
-                            message: (
-                                <>
-                                    <h3 className="font-700 mb-2">Helm-managed cluster</h3>
-                                    <p className="mb-2">
-                                        Warning: This is a Helm-managed cluster. If you edit the
-                                        cluster using the form below, please ask your DevOps team to
-                                        update the Helm values in source control to ensure those
-                                        changes are not overwritten.
-                                    </p>
-                                    <pre className="bg-base-700 inline-block p-2 rounded text-base-200">
-                                        $ helm upgrade -f myvalues.yaml
-                                    </pre>
-                                </>
-                            ),
-                        });
-                    }
 
                     if (!selectedCluster?.healthStatus?.lastContact) {
                         setPollingDelay(clusterDetailPollingInterval);
@@ -284,16 +275,18 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     function onDownload() {
         setSubmissionError('');
         setIsDownloadingBundle(true);
-        downloadClusterYaml(selectedCluster.id, createUpgraderSA)
-            .catch((error) => {
-                setSubmissionError(
-                    error?.response?.data?.message ||
-                        'We could not download the configuration files.'
-                );
-            })
-            .finally(() => {
-                setIsDownloadingBundle(false);
-            });
+        if (selectedCluster?.id) {
+            downloadClusterYaml(selectedCluster.id, createUpgraderSA)
+                .catch((error) => {
+                    setSubmissionError(
+                        error?.response?.data?.message ||
+                            'We could not download the configuration files.'
+                    );
+                })
+                .finally(() => {
+                    setIsDownloadingBundle(false);
+                });
+        }
     }
 
     /**
@@ -363,7 +356,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                         <ClusterEditForm
                             centralEnv={centralEnv}
                             centralVersion={metadata.version}
-                            selectedCluster={selectedCluster}
+                            selectedCluster={selectedCluster as Cluster}
+                            managerType={managerType(selectedCluster)}
                             handleChange={onChange}
                             handleChangeLabels={handleChangeLabels}
                             isLoading={loadingCounter > 0}
@@ -378,9 +372,9 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                 onFileDownload={onDownload}
                                 isDownloadingBundle={isDownloadingBundle}
                                 clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
-                                managerType={selectedCluster.managedBy}
+                                managerType={managerType(selectedCluster)}
                             />
-                            {!!selectedCluster.id && (
+                            {!!selectedCluster?.id && (
                                 <DownloadHelmValues
                                     clusterId={selectedCluster.id}
                                     description={
