@@ -36,7 +36,7 @@ func imageDefaultsMap() map[string]func() defaults.ImageFlavor {
 
 // GetImageFlavorByRoxctlFlag returns flavor object based on the value of --image-defaults parameter in roxctl
 func GetImageFlavorByRoxctlFlag(flag string) (defaults.ImageFlavor, error) {
-	if fn, ok := imageDefaultsMap()[flag]; ok || flag == "" {
+	if fn, ok := imageDefaultsMap()[flag]; ok {
 		return fn(), nil
 	}
 	return defaults.ImageFlavor{}, fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", flag, strings.Join(validImageDefaults, ", "))
