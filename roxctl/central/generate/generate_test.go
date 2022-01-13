@@ -53,11 +53,11 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 		K8sConfig: &renderer.K8sConfig{
 			AppName: "someApp",
 			CommonConfig: renderer.CommonConfig{
-				MainImage:       flavor.MainImage(),
-				ScannerImage:    flavor.ScannerImage(),
-				ScannerDBImage:  flavor.ScannerDBImage(),
-				ImageFlavorName: flavorName,
+				MainImage:      flavor.MainImage(),
+				ScannerImage:   flavor.ScannerImage(),
+				ScannerDBImage: flavor.ScannerDBImage(),
 			},
+			ImageFlavorName:  flavorName,
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			OfflineMode:      false,
 		},

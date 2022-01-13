@@ -46,10 +46,9 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	MainImage       string
-	ScannerImage    string
-	ScannerDBImage  string
-	ImageFlavorName string
+	MainImage      string
+	ScannerImage   string
+	ScannerDBImage string
 }
 
 // PersistenceType describes the type of persistence
@@ -79,6 +78,9 @@ func (m PersistenceType) String() string {
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
+
+	// ImageFlavorName is the name of the flavor selected by the user with CLI parameters
+	ImageFlavorName string
 
 	// K8s Application name
 	AppName string
