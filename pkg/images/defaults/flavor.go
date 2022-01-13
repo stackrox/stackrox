@@ -11,14 +11,7 @@ import (
 )
 
 var (
-	log                = logging.LoggerForModule()
-	validImageDefaults = func() []string {
-		result := make([]string, 0, len(imageDefaultsMap()))
-		for key := range imageDefaultsMap() {
-			result = append(result, key)
-		}
-		return result
-	}()
+	log            = logging.LoggerForModule()
 	imageFlavorMap = map[string]func() ImageFlavor{
 		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
 		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
@@ -162,28 +155,6 @@ func GetImageFlavorFromEnv() ImageFlavor {
 	log.Panicf("Unexpected image flavor value in %s: '%s'. Expecting one of the following: %v.",
 		envValue, imageFlavorEnvName, validImageFlavors)
 	return ImageFlavor{}
-}
-
-// imageDefaultsMap maps the value of roxctl's '--image-defaults' parameter to a (function returing) flavor
-func imageDefaultsMap() map[string]func() ImageFlavor {
-	m := make(map[string]func() ImageFlavor)
-	if buildinfo.ReleaseBuild {
-		m[""] = StackRoxIOReleaseImageFlavor
-	} else {
-		m[""] = DevelopmentBuildImageFlavor
-		m["development"] = DevelopmentBuildImageFlavor
-	}
-	m["stackrox.io"] = StackRoxIOReleaseImageFlavor
-	// m["rhacs"] = RHACSReleaseImageFlavor // TODO(RS-380): uncomment to enable rhacs flavor
-	return m
-}
-
-// GetImageFlavorByRoxctlFlag returns flavor object based on the value of --image-defaults parameter in roxctl
-func GetImageFlavorByRoxctlFlag(flag string) (ImageFlavor, error) {
-	if fn, ok := imageDefaultsMap()[flag]; ok {
-		return fn(), nil
-	}
-	return ImageFlavor{}, fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", flag, strings.Join(validImageDefaults, ", "))
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
