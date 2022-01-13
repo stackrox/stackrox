@@ -40,6 +40,7 @@ func (s *localScannerSuite) TearDownTest() {
 func (s *localScannerSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
 	s.Require().NoError(err)
+	s.envIsolator.Setenv(featureFlag.EnvVar(), "true")
 }
 
 func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
