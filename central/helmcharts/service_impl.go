@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	pkgCharts "github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc"
 )
@@ -63,8 +64,10 @@ func (s *service) serveChart(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	flavor := defaults.GetImageFlavorFromEnv()
+
 	// Render template files.
-	renderedChartFiles, err := helmImage.LoadAndInstantiateChartTemplate(chartPathPrefix, pkgCharts.DefaultMetaValues())
+	renderedChartFiles, err := helmImage.LoadAndInstantiateChartTemplate(chartPathPrefix, pkgCharts.GetMetaValuesForFlavor(flavor))
 	if err != nil {
 		http.Error(w, errors.Wrapf(err, "loading and instantiating %s helmtpl", chartName).Error(), http.StatusInternalServerError)
 		return

@@ -24,6 +24,7 @@ import {
     systemHealthPath,
 } from 'routePaths';
 
+import usePermissions from 'hooks/usePermissions';
 import LeftNavItem from './LeftNavItem';
 
 const platformConfigurationPaths = [
@@ -37,6 +38,7 @@ const platformConfigurationPaths = [
 
 function NavigationSideBar(): ReactElement {
     const location: Location = useLocation();
+    const { hasReadAccess } = usePermissions();
 
     const isVulnRiskManagementEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
@@ -44,10 +46,14 @@ function NavigationSideBar(): ReactElement {
     const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
-    if (isVulnReportingEnabled) {
+    if (
+        isVulnRiskManagementEnabled &&
+        (hasReadAccess('VulnerabilityManagementRequests') ||
+            hasReadAccess('VulnerabilityManagementApprovals'))
+    ) {
         vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
     }
-    if (isVulnReportingEnabled) {
+    if (isVulnReportingEnabled && hasReadAccess('VulnerabilityReports')) {
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }
 

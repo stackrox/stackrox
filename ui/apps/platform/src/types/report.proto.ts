@@ -7,9 +7,7 @@ export type ReportConfiguration = {
     type: ReportType;
     vulnReportFilters: VulnerabilityReportFilters;
     scopeId: string;
-    notifierConfig: {
-        emailConfig: EmailNotifierConfiguration;
-    };
+    emailConfig: EmailNotifierConfiguration;
     schedule: Schedule;
     runStatus?: ReportLastRunStatus;
 };
@@ -31,7 +29,7 @@ export type VulnerabilityReportFilters = {
     severities: VulnerabilitySeverity[];
 };
 
-export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE';
+export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE' | 'UNSET';
 
 export type EmailNotifierConfiguration = {
     notifierId: string;
@@ -42,7 +40,8 @@ export type Schedule = {
     intervalType: IntervalType;
     hour: number;
     minute: number;
-    interval: Interval;
+    daysOfWeek?: DaysOfWeek;
+    daysOfMonth?: DaysOfMonth;
 };
 
 export type IntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
@@ -56,15 +55,4 @@ export type DaysOfWeek = {
 // Only 1st and 15th of the month allowed for vuln report scheduling (API validations will be done)
 export type DaysOfMonth = {
     days: string[]; // int32
-};
-
-type FixabilityType = 'FIXABLE' | 'NOT_FIXABLE';
-
-export type VulnerabilityReportFiltersMappedValues = Omit<
-    VulnerabilityReportFilters,
-    'fixability'
-> & { fixabilityMappedValues: FixabilityType[] };
-
-export type ReportConfigurationMappedValues = Omit<ReportConfiguration, 'vulnReportFilters'> & {
-    vulnReportFiltersMappedValues: VulnerabilityReportFiltersMappedValues;
 };

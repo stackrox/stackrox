@@ -165,9 +165,9 @@ func (s *serviceImpl) GetResources(context.Context, *v1.Empty) (*v1.GetResources
 // GetMyPermissions returns the permissions for a user based on the context.
 func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
 	// Get the perms from the current user context.
-	id := authn.IdentityFromContext(ctx)
-	if id == nil {
-		return nil, errorhelpers.ErrNoCredentials
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return &v1.GetPermissionsResponse{
 		ResourceToAccess: id.Permissions(),

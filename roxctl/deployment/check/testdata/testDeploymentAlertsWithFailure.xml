@@ -1,0 +1,20 @@
+<testsuite name="deployment-check" tests="6" failures="1" skipped="5" errors="0">
+  <testcase name="policy 4" classname="">
+    <failure>- testing multiple alert violation messages 1&#xA;- testing multiple alert violation messages 2&#xA;- testing multiple alert violation messages 3</failure>
+  </testcase>
+  <testcase name="policy 8" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 2" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 5" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 6" classname="">
+    <skipped></skipped>
+  </testcase>
+  <testcase name="policy 7" classname="">
+    <skipped></skipped>
+  </testcase>
+</testsuite>

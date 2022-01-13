@@ -287,6 +287,11 @@ chart and their default values:
 |`createUpgraderServiceAccount`| Specify `true` to create the `sensor-upgrader` account. By default, the StackRox Kubernetes Security Platform creates a service account called `sensor-upgrader` in each secured cluster. This account is highly privileged but is only used during upgrades. If you don’t create this account, you will have to complete future upgrades manually if the Sensor doesn’t have enough permissions. See [Enable automatic upgrades for secured clusters](https://help.stackrox.com/docs/configure-stackrox/enable-automatic-upgrades/) for more information.|`false` |
 |`createSecrets`| Specify `false` to skip the orchestrator secret creation for the sensor, collector, and admission controller. | `true` |
 |`customize`|Modern interface for specifying custom metadata for resources, including labels, annotations and environment variables. See below for more information.|`{}`|
+[</*
+ROX-8778: workaround for single customer. These options are not publicly documented, and are not supported by our CRDs.
+|collector.disableSELinuxOptions|Set it to `true` to disable all SELinux options for the security context of Collector's Compliance container|`null`|
+|collector.seLinuxOptionsType| Value for `type` in the SELinux options for the security context of Collector's Compliance container. This has no effect if `collector.disableSELinuxOptions` is set to `true`. `|`container_runtime_t`|
+ */>]
 
 The following table lists some advanced parameters, and you'll only need them in
 non-standard environments:

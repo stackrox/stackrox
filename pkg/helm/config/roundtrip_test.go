@@ -16,35 +16,14 @@ import (
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 var (
-	// TODO(RS-381): reuse common test MetaValues in this test.
-	metaValues = charts.MetaValues{
-		"Versions": version.Versions{
-			ChartVersion:     "50.0.60-gac5d043be8",
-			CollectorVersion: "1.2.3",
-			MainVersion:      "3.0.50.x-60-gac5d043be8",
-			ScannerVersion:   "2.5.0",
-		},
-		"MainRegistry":          defaults.MainImageRegistry(),
-		"ImageRemote":           "main",
-		"CollectorRegistry":     defaults.CollectorImageRegistry(),
-		"CollectorImageRemote":  "collector",
-		"CollectorFullImageTag": "1.2.3-latest",
-		"CollectorSlimImageTag": "1.2.3-slim",
-		"RenderMode":            "",
-		"ChartRepo": charts.ChartRepo{
-			URL: "https://charts.stackrox.io",
-		},
-	}
-
 	installOpts = helmUtil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      "stackrox-secured-cluster-services",
@@ -86,7 +65,7 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving chart template")
 	}
-	ch, err := tpl.InstantiateAndLoad(metaValues)
+	ch, err := tpl.InstantiateAndLoad(charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(h.T())))
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating chart")
 	}
@@ -170,7 +149,7 @@ func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 	cluster.Name = clusterName
 
 	// Derive a new Helm config from the `Cluster` proto.
-	derivedHelmCfg, err := FromCluster(cluster)
+	derivedHelmCfg, err := FromCluster(cluster, flavorUtils.MakeImageFlavorForTest(h.T()))
 	h.Require().NoError(err, "deriving Helm config for cluster")
 
 	diff := maputil.DiffGenericMap(helmCfg, derivedHelmCfg)

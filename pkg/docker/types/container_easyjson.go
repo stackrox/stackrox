@@ -1466,4 +1466,3 @@ func easyjson1dbef17bEncodeGithubComStackroxRoxPkgDockerTypes2(out *jwriter.Writ
 	}
 	out.RawByte('}')
 }
-//lint:file-ignore SA4006 This is a generated file

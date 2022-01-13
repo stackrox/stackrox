@@ -61,7 +61,7 @@ const CommentThread = ({
 
     let content = (
         <Bullseye>
-            <Spinner />
+            <Spinner isSVG />
         </Bullseye>
     );
     if (!isLoading) {

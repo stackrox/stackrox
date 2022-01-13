@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -50,9 +49,6 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state
 	id, err := p.basicAuthMgr.IdentityForCreds(ctx, username, password, nil)
 	if err != nil {
 		return nil, "", authproviders.CreateError("failed to authenticate", err)
-	}
-	if len(id.Roles()) == 0 {
-		return nil, "", errorhelpers.GenericNoValidRole()
 	}
 
 	return &authproviders.AuthResponse{
@@ -104,7 +100,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 
 	// If logging in via basic auth, the identity extractor of the request pipeline should already have validated our
 	// identity.
-	identity := authn.IdentityFromContext(r.Context())
+	identity := authn.IdentityFromContextOrNil(r.Context())
 	if identity != nil {
 		if basicAuthIdentity, ok := identity.(basic.Identity); ok {
 			authResp := &authproviders.AuthResponse{

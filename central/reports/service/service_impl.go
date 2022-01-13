@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
@@ -21,7 +22,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.VulnerabilityReports), permissions.View(resources.Notifier), permissions.View(resources.Role), permissions.View(resources.Image)): {
-			"/v1.ReportService/RunReports",
+			"/v1.ReportService/RunReport",
 		},
 	})
 )
@@ -51,9 +52,13 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 func (s *serviceImpl) RunReport(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
 	rc, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
-	if !found || err != nil {
-		return &v1.Empty{}, err
+	if err != nil {
+		return &v1.Empty{}, errors.Wrapf(err, "error finding report configuration %s", id)
 	}
+	if !found {
+		return &v1.Empty{}, errors.Errorf("unable to find report configuration %s", id)
+	}
+
 	if err := s.manager.RunReport(ctx, rc); err != nil {
 		return &v1.Empty{}, err
 	}

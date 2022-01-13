@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -35,11 +36,17 @@ var (
 	defaultDeploymentCheckHeaders = []string{
 		"POLICY", "SEVERITY", "BREAKS DEPLOY", "DEPLOYMENT", "DESCRIPTION", "VIOLATION", "REMEDIATION",
 	}
-
+	defaultJunitJSONPathExpressions = map[string]string{
+		printers.JUnitTestCasesExpressionKey:            "results.#.violatedPolicies.#.name",
+		printers.JUnitFailedTestCasesExpressionKey:      "results.#.violatedPolicies.#(failingCheck==~true)#.name",
+		printers.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
+		printers.JUnitFailedTestCaseErrMsgExpressionKey: "results.#.violatedPolicies.#(failingCheck==~true)#.violation.@list",
+	}
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders, defaultDeploymentCheckJSONPathExpression),
 		printer.NewJSONPrinterFactory(false, false),
+		printer.NewJUnitPrinterFactory("deployment-check", defaultJunitJSONPathExpressions),
 	}
 )
 

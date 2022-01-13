@@ -30,7 +30,7 @@ function DownloadCLIDropdown({ hasBuild }) {
                 >
                     {isCLIDownloading ? (
                         <Bullseye>
-                            <Spinner size="md" />
+                            <Spinner isSVG size="md" />
                         </Bullseye>
                     ) : (
                         'Download CLI'

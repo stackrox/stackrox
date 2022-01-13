@@ -19,7 +19,7 @@ func init() {
 	)
 }
 
-//AddAlertTags adds tags to an alert
+// AddAlertTags adds tags to an alert
 func (resolver *Resolver) AddAlertTags(ctx context.Context, args struct {
 	ResourceID graphql.ID
 	Tags       []string
@@ -35,7 +35,7 @@ func (resolver *Resolver) AddAlertTags(ctx context.Context, args struct {
 	return tags, nil
 }
 
-//RemoveAlertTags removes tags from an alert
+// RemoveAlertTags removes tags from an alert
 func (resolver *Resolver) RemoveAlertTags(ctx context.Context, args struct {
 	ResourceID graphql.ID
 	Tags       []string
@@ -51,7 +51,7 @@ func (resolver *Resolver) RemoveAlertTags(ctx context.Context, args struct {
 	return true, nil
 }
 
-//BulkAddAlertTags adds tags to multi-alerts
+// BulkAddAlertTags adds tags to multi-alerts
 func (resolver *Resolver) BulkAddAlertTags(ctx context.Context, args struct {
 	ResourceIDs []graphql.ID
 	Tags        []string

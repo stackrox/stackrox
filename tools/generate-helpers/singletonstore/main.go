@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 
 	. "github.com/dave/jennifer/jen"
 	"github.com/spf13/cobra"
@@ -81,7 +83,22 @@ func generate(props *operations.GeneratorProperties) error {
 	generateStruct(f)
 	generateMethods(f, implementations...)
 
-	return f.Save("store.go")
+	if err := f.Save("store.go"); err != nil {
+		return err
+	}
+	if props.GenerateMockStore {
+		if props.MockgenWrapperExecutablePath == "" {
+			return errors.New("mockgen-wrapper path not specified")
+		}
+		cmd := exec.Command(props.MockgenWrapperExecutablePath)
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, "GOFILE=store.go")
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("couldn't exec mockgen-wrapper: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func main() {
@@ -101,6 +118,9 @@ func main() {
 	utils.Must(c.MarkFlagRequired("bucket"))
 
 	c.Flags().BoolVar(&props.AddInsteadOfUpsert, "add-instead-of-upsert", false, "if the flag is set an Add method will be generated and no Upsert method will be generated")
+
+	c.Flags().BoolVar(&props.GenerateMockStore, "generate-mock-store", false, "whether to generate a mock for the store")
+	c.Flags().StringVar(&props.MockgenWrapperExecutablePath, "mockgen-executable-path", "", "path to mockgen-wrapper executable")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.HumanName == "" {

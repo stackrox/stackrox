@@ -2,11 +2,9 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
@@ -505,7 +503,8 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 		return "", err
 	}
 	if len(results) == 0 {
-		return "", errors.Wrap(nil, fmt.Sprintf("No matching service accounts found for deployment id: %s", resolver.Id(ctx)))
+		log.Debugf("no matching service accounts found for deployment id: %s", resolver.Id(ctx))
+		return "", nil
 	}
 	return results[0].ID, nil
 }

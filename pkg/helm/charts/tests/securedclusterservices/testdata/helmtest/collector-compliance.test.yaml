@@ -1,0 +1,57 @@
+name: "test collector compliance container"
+defs: |
+  def compliance:
+    container(.daemonsets.collector; "compliance");
+tests:
+- name: "test securityContext"
+  tests:
+  - name: "by default seLinuxOptions are enabled and use container_runtime_t as container runtime"
+    expect: |
+      compliance | .securityContext.seLinuxOptions.type | assertThat(. == "container_runtime_t")
+  - name: "value collector.disableSELinuxOptions can be used to disable all SELinux options"
+    values:
+      collector:
+        disableSELinuxOptions: true
+    expect: |
+      compliance | .securityContext.seLinuxOptions | assertThat(. == null)
+  - name: "flag collector.disableSELinuxOptions can be used to disable all SELinux options"
+    set:
+      collector.disableSELinuxOptions: true
+    expect: |
+      compliance | .securityContext.seLinuxOptions | assertThat(. == null)
+  - name: "value collector.disableSELinuxOptions can be used to enable SELinux options"
+    values:
+      collector:
+        disableSELinuxOptions: false
+    expect: |
+      compliance | .securityContext.seLinuxOptions | assertThat(. != null)
+  - name: "flag collector.disableSELinuxOptions can be used to enable SELinux options"
+    set:
+      collector.disableSELinuxOptions: false
+    expect: |
+      compliance | .securityContext.seLinuxOptions | assertThat(. != null)
+  - name: "value collector.seLinuxOptionsType can be used to customize the container runtime"
+    values:
+      collector:
+        seLinuxOptionsType: foo
+    expect: |
+      compliance | .securityContext.seLinuxOptions.type | assertThat(. == "foo")
+  - name: "flag collector.seLinuxOptionsType can be used to customize the container runtime"
+    set:
+      collector.seLinuxOptionsType: foo
+      collector.disableSELinuxOptions: false
+    expect: |
+      compliance | .securityContext.seLinuxOptions.type | assertThat(. == "foo")
+  - name: "value collector.seLinuxOptionsType is ignored when collector.disableSELinuxOptions is set"
+    values:
+      collector:
+        seLinuxOptionsType: foo
+        disableSELinuxOptions: true
+    expect: |
+      compliance | .securityContext.seLinuxOptions | assertThat(. == null)
+  - name: "flag collector.seLinuxOptionsType is ignored when collector.disableSELinuxOptions is set"
+    set:
+      collector.seLinuxOptionsType: foo
+      collector.disableSELinuxOptions: true
+    expect: |
+      compliance | .securityContext.seLinuxOptions | assertThat(. == null)

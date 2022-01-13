@@ -41,7 +41,7 @@ const (
 	operatorsForbidden
 )
 
-//RuntimeFieldType is the type of a runtime policy criteria field
+// RuntimeFieldType is the type of a runtime policy criteria field
 type RuntimeFieldType string
 
 const (

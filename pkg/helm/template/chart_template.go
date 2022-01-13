@@ -58,6 +58,14 @@ func (t *ChartTemplate) GetElements() []element {
 	return t.elements
 }
 
+// InitTemplate instantiates Go text template with a given name and a common set of extra functions.
+// This template should be used for processing .htpl and .sh files, i.e. for things around Helm charts that Helm
+// templating alone can't provide us.
+func InitTemplate(name string) *template.Template {
+	// TODO(RS-400): switch to .Delims("[<", ">]") in all templates and do it here.
+	return template.New(name).Funcs(sprig.TxtFuncMap()).Funcs(extraFuncMap)
+}
+
 // Load loads a chart template from a set of files. If a file named `.helmtplignore` is
 // part of the specified files, it is parsed as an ignorefile with the same syntax (and rule
 // semantics) as the .helmignore files.
@@ -75,7 +83,7 @@ func Load(files []*loader.BufferedFile) (*ChartTemplate, error) {
 		data := file.Data
 
 		if stringutils.ConsumeSuffix(&elem.name, TemplateFileSuffix) {
-			tpl, err := template.New(elem.name).Delims("[<", ">]").Funcs(sprig.TxtFuncMap()).Funcs(extraFuncMap).Parse(string(data))
+			tpl, err := InitTemplate(elem.name).Delims("[<", ">]").Parse(string(data))
 			if err != nil {
 				return nil, errors.Wrapf(err, "parsing template file %s", file.Name)
 			}

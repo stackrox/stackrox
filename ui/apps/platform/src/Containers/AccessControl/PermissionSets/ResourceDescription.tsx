@@ -1,7 +1,9 @@
 import React, { ReactElement } from 'react';
 
+import { ResourceName } from 'types/roleResources';
+
 // First draft of description fields for possible future request from backend.
-const resourceDescriptions: Record<string, string> = {
+const resourceDescriptions: Record<ResourceName, string> = {
     APIToken: 'Read: View API tokens. Write: Add or revoke API tokens.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
     AllComments:
@@ -93,6 +95,7 @@ function ResourceDescription({ resource }: ResourceDescriptionProps): ReactEleme
                     <strong>Read</strong>: {description.slice(6, writeIndex)}
                 </p>
                 <p>
+                    {/* eslint-disable-next-line @typescript-eslint/restrict-plus-operands */}
                     <strong>Write</strong>: {description.slice(writeIndex + 8)}
                 </p>
             </>

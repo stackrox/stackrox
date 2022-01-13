@@ -15,12 +15,27 @@ import (
 
 // Validate validates a cluster object
 func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
+	errorList := ValidatePartial(cluster)
+
+	// Here go all other server-side checks
+	if _, err := reference.ParseAnyReference(cluster.GetMainImage()); err != nil {
+		errorList.AddError(errors.Wrapf(err, "invalid main image '%s'", cluster.GetMainImage()))
+	}
+
+	return errorList
+}
+
+// ValidatePartial partially validates a cluster object.
+// Some fields are allowed to be left empty for the server to complete with default values.
+func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	errorList := errorhelpers.NewErrorList("Cluster Validation")
 	if cluster.GetName() == "" {
 		errorList.AddString("Cluster name is required")
 	}
-	if _, err := reference.ParseAnyReference(cluster.GetMainImage()); err != nil {
-		errorList.AddError(errors.Wrapf(err, "invalid main image '%s'", cluster.GetMainImage()))
+	if cluster.GetMainImage() != "" {
+		if _, err := reference.ParseAnyReference(cluster.GetMainImage()); err != nil {
+			errorList.AddError(errors.Wrapf(err, "invalid main image '%s'", cluster.GetMainImage()))
+		}
 	}
 	if cluster.GetCollectorImage() != "" {
 		ref, err := reference.ParseAnyReference(cluster.GetCollectorImage())

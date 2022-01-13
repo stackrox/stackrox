@@ -139,7 +139,6 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 }
 
 func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *storage.ReportConfiguration) error {
-	// Check role request correctness.
 	if config.GetName() == "" {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration name empty")
 	}

@@ -29,7 +29,7 @@ export function getAxiosErrorMessage(error: unknown): string {
 
             if (error.request instanceof XMLHttpRequest) {
                 // No response was received for the request.
-                return error.request.statusText;
+                return error.request.statusText || error.message;
             }
         }
 

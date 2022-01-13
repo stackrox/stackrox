@@ -1745,8 +1745,8 @@ github.com/prometheus/common v0.9.1/go.mod h1:yhUN8i9wzaXS3w1O07YhxHEBxD+W35wd8b
 github.com/prometheus/common v0.10.0/go.mod h1:Tlit/dnDKsSWFlCLTWaA1cyBgKHSMdTB80sz/V91rCo=
 github.com/prometheus/common v0.18.0/go.mod h1:U+gB1OBLb1lF3O42bTCL+FK18tX9Oar16Clt/msog/s=
 github.com/prometheus/common v0.26.0/go.mod h1:M7rCNAaPfAosfx8veZJCuw84e35h3Cfd9VFqTh1DIvc=
-github.com/prometheus/common v0.30.0 h1:JEkYlQnpzrzQFxi6gnukFPdQ+ac82oRhzMcIduJu/Ug=
-github.com/prometheus/common v0.30.0/go.mod h1:vu+V0TpY+O6vW9J44gczi3Ap/oXXR10b+M/gUGO4Hls=
+github.com/prometheus/common v0.32.1 h1:hWIdL3N2HoUx3B8j3YN9mWor0qhY/NlEKZEaXxuIRh4=
+github.com/prometheus/common v0.32.1/go.mod h1:vu+V0TpY+O6vW9J44gczi3Ap/oXXR10b+M/gUGO4Hls=
 github.com/prometheus/procfs v0.0.0-20180125133057-cb4147076ac7/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/prometheus/procfs v0.0.0-20181204211112-1dc9a6cbc91a/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
@@ -1926,8 +1926,8 @@ github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q6
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7 h1:F4Gq3G5G07HQ/ECrg/+EQxFBmCTcq9ZDyLPI5LaDUKI=
 github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7/go.mod h1:faUw9vx/mA7ql41Ftlst5MYar2DT3nnS6oK94lbaW0g=
-github.com/stackrox/helm-operator v0.0.8-0.20210927052144-bbfc3e124f11 h1:E3Lkuv2/UsWpI2giQXnMh30X2Muc1Xf/4TgDuHijKhg=
-github.com/stackrox/helm-operator v0.0.8-0.20210927052144-bbfc3e124f11/go.mod h1:u5rkZgJvT0MfanZCoq/lCqY+3Ixr+CbPxYNnhvsggHg=
+github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3 h1:O96olg7oQXTbQUbXdrDPkrT9WjesGI+3bq5H8cjmsxo=
+github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3/go.mod h1:u5rkZgJvT0MfanZCoq/lCqY+3Ixr+CbPxYNnhvsggHg=
 github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89 h1:h3Z1bazS+4RWhzDk4L3B/jN4DL0UAZCDCx7UfQ6T5jg=
 github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89/go.mod h1:+BKUQnSVJqDJr4sa8zmCKyQ/UOjJuy/frPEyZnTrigY=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab h1:77xJmm1YkqbgrQzHI3C4MyPckWL+PYRLWakQRC6Mzj8=
@@ -1936,8 +1936,8 @@ github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5 h1:0
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5/go.mod h1:GEtZ9DYAzmOtyqQPCJCEIzXJ7NcrHbMy6ZPJbcyfmLM=
 github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56 h1:D2wYiy+hcKy8qZAg9SxSWfZgbvmEgD9AdV0g0lJqGZ0=
 github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56/go.mod h1:AIeN7k60Q/kcW9aeiMpA0PY8CU3zsrLV0UhIksolMn4=
-github.com/stackrox/scanner v0.0.0-20211214023301-55ee93adca37 h1:XRSG0THUUfZojIpwEkscfc7AaU76l1CFBibzX+4Obms=
-github.com/stackrox/scanner v0.0.0-20211214023301-55ee93adca37/go.mod h1:DxQRXuuHfgvLOCBkhwX67Q6qO/6MkKizEBXdnhKudkQ=
+github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d h1:AugbkBwG2hVTam/UG0k+/GcjNMLMDd8/au9ke2NnOtY=
+github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d/go.mod h1:DxQRXuuHfgvLOCBkhwX67Q6qO/6MkKizEBXdnhKudkQ=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
@@ -2695,8 +2695,8 @@ golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
-golang.stackrox.io/grpc-http1 v0.2.3 h1:JA8LahLPUv2HIo+9V30UsDhSF8i/+Kcp0X+MdcVAi6w=
-golang.stackrox.io/grpc-http1 v0.2.3/go.mod h1:lIwQSucTm7oGZpp1jUkVRqpTdPMAGfPN8GUo1yfHPbw=
+golang.stackrox.io/grpc-http1 v0.2.4 h1:jHaWKZZezwljBRKP7JC9iDdSuAjpmJt9rzKLAInRpxg=
+golang.stackrox.io/grpc-http1 v0.2.4/go.mod h1:lIwQSucTm7oGZpp1jUkVRqpTdPMAGfPN8GUo1yfHPbw=
 gomodules.xyz/jsonpatch/v2 v2.0.1/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
 gomodules.xyz/jsonpatch/v2 v2.1.0/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
 gomodules.xyz/jsonpatch/v2 v2.2.0 h1:4pT439QV83L+G9FkcCriY6EkpcK6r6bK+A5FBUMI7qY=

@@ -697,13 +697,20 @@ class IntegrationsTest extends BaseSpecification {
         "invalid endpoint"
 
         new ECRRegistryIntegration()    | { [registryId: '0123456789',]
-        }       | StatusRuntimeException | /InvalidParameterException/ | "incorrect registry ID"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "incorrect registry ID"
         new ECRRegistryIntegration()    | { [region: 'nowhere',]
         }       | StatusRuntimeException | /valid region/ | "incorrect region"
         new ECRRegistryIntegration()    | { [accessKeyId: Env.mustGetAWSAccessKeyID() + "OOPS",]
         }       | StatusRuntimeException | /UnrecognizedClientException/ | "incorrect key"
         new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
+
+        new ECRRegistryIntegration()    | { [useAssumeRole: true,]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole with endpoint set"
+        new ECRRegistryIntegration()    | { [useAssumeRole: true, assumeRoleRoleId: "OOPS", endpoint: "",]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole with incorrect role"
+        new ECRRegistryIntegration()    | { [useAssumeRoleExternalId: true, assumeRoleExternalId: "OOPS", endpoint: "",]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole external ID with incorrect external ID"
 
         new QuayImageIntegration()      | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |

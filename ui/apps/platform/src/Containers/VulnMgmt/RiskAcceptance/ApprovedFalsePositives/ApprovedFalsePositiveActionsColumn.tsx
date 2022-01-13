@@ -8,11 +8,13 @@ export type ApprovedFalsePositiveActionsColumnProps = {
     setRequestsToBeAssessed: React.Dispatch<
         React.SetStateAction<ApprovedFalsePositiveRequestsToBeAssessed>
     >;
+    canReobserveCVE: boolean;
 };
 
 function ApprovedFalsePositiveActionsColumn({
     row,
     setRequestsToBeAssessed,
+    canReobserveCVE,
 }: ApprovedFalsePositiveActionsColumnProps): ReactElement {
     const items = [
         {
@@ -22,9 +24,10 @@ function ApprovedFalsePositiveActionsColumn({
                 setRequestsToBeAssessed({
                     type: 'FALSE_POSITIVE',
                     action: 'UNDO',
-                    requests: [row],
+                    requestIDs: [row.id],
                 });
             },
+            isDisabled: !canReobserveCVE,
         },
     ];
     return <ActionsColumn items={items} />;

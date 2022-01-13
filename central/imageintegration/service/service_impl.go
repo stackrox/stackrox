@@ -98,7 +98,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 		return nil, err
 	}
 
-	identity := authn.IdentityFromContext(ctx)
+	identity := authn.IdentityFromContextOrNil(ctx)
 	if identity != nil {
 		svc := identity.Service()
 		if svc != nil && svc.GetType() == storage.ServiceType_SENSOR_SERVICE {

@@ -46,6 +46,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	vulnReqManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager"
 	vulnReqService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -99,6 +100,7 @@ type Resolver struct {
 	mitreStore                  mitreDataStore.MitreAttackReadOnlyDataStore
 	vulnReqMgr                  vulnReqManager.Manager
 	vulnReqService              vulnReqService.Service
+	vulnReqStore                vulnReqDataStore.DataStore
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -145,6 +147,7 @@ func New() *Resolver {
 		mitreStore:                  mitreDataStore.Singleton(),
 		vulnReqMgr:                  vulnReqManager.Singleton(),
 		vulnReqService:              vulnReqService.Singleton(),
+		vulnReqStore:                vulnReqDataStore.Singleton(),
 	}
 	return resolver
 }

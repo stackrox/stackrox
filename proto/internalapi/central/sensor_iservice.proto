@@ -51,6 +51,7 @@ message MsgToSensor {
         NetworkBaselineSync            network_baseline_sync              = 13;
         AuditLogSync                   audit_log_sync                     = 14;
         ReprocessDeployment            reprocess_deployment               = 15;
+        InvalidateImageCache           invalidate_image_cache             = 16;
     }
 }
 
@@ -63,10 +64,19 @@ message AuditLogStatusInfo {
 }
 
 message ReprocessDeployment {
-    // Sensor stores deployments, hence no need to send the full deployment. The sensor image cache is
-    // invalidated by this message.
+    // Sensor stores deployments, hence no need to send the full deployment. Note that the sensor image cache is not
+    // invalidated by this message. `InvalidateImageCache` message must be sent before this message to pull new image scan.
 
     repeated string  deployment_ids = 1;
+}
+
+message InvalidateImageCache {
+    message ImageKey {
+        string image_id        = 1;
+        string image_full_name = 2;
+    }
+
+    repeated ImageKey image_keys = 1;
 }
 
 service SensorService {

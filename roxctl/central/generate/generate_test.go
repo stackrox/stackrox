@@ -9,8 +9,8 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/renderer"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,15 +34,16 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
+	flavor := flavorUtils.MakeImageFlavorForTest(t)
 	config := renderer.Config{
 		Version:     version.GetMainVersion(),
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &renderer.K8sConfig{
 			AppName: "someApp",
 			CommonConfig: renderer.CommonConfig{
-				MainImage:      defaults.MainImage(),
-				ScannerImage:   defaults.ScannerImage(),
-				ScannerDBImage: defaults.ScannerDBImage(),
+				MainImage:      flavor.MainImage(),
+				ScannerImage:   flavor.ScannerImage(),
+				ScannerDBImage: flavor.ScannerDBImage(),
 			},
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			OfflineMode:      false,

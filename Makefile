@@ -140,7 +140,7 @@ $(PROTOLOCK_BIN): deps
 ## Style ##
 ###########
 .PHONY: style
-style: golangci-lint roxvet blanks newlines validateimports check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
 
 # staticcheck is useful, but extremely computationally intensive on some people's machines.
 # Therefore, to allow people to continue running `make style`, staticcheck is not run along with
@@ -225,11 +225,6 @@ fast-migrator-build:
 	@echo "+ $@"
 	$(GOBUILD) migrator
 
-.PHONY: validateimports
-validateimports:
-	@echo "+ $@"
-	@go run $(BASE_DIR)/tools/validateimports/verify.go $(shell go list -e ./...)
-
 .PHONY: check-service-protos
 check-service-protos:
 	@echo "+ $@"
@@ -283,13 +278,9 @@ include make/protogen.mk
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
 	@easyjson -pkg pkg/docker/types/types.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/types_easyjson.go
 	@easyjson -pkg pkg/docker/types/container.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/container_easyjson.go
 	@easyjson -pkg pkg/docker/types/image.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
 	@easyjson -pkg pkg/compliance/compress/compress.go
-    @echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/compress_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
@@ -297,9 +288,9 @@ clean-easyjson-srcs:
 	@find . -name '*_easyjson.go' -exec rm {} \;
 
 .PHONY: go-generated-srcs
-go-generated-srcs: deps go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
-	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
+	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x ./...
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"

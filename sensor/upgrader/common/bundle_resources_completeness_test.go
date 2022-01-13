@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ var (
 //   of the chart can be helpful. It's often sufficient to include an extra "---" document separator before the
 //   start of the object definition.
 // - If the false positive cannot be suppressed using the above methods, you can add it to the above
-//   gvksExcludedFromCompletenessTest list to explicitly suppress it in this test.
+//   ExcludedFromCompletenessTest list to explicitly suppress it in this test.
 func TestBundleResourcesComplete(t *testing.T) {
 	featureFlags := make(map[string]interface{})
 	for _, ff := range features.Flags {
@@ -45,13 +46,14 @@ func TestBundleResourcesComplete(t *testing.T) {
 			MainVersion:      "3.0.49.0",
 			CollectorVersion: "1.2.3",
 		},
-		"MainRegistry":          "stackrox.io", // TODO: custom?
-		"ImageRemote":           "main",
-		"CollectorRegistry":     "collector.stackrox.io",
-		"CollectorImageRemote":  "collector",
-		"CollectorSlimImageTag": "1.2.3-slim",
-		"CollectorFullImageTag": "1.2.3",
-		"ChartRepo": charts.ChartRepo{
+		"MainRegistry":             "stackrox.io", // TODO: custom?
+		"ImageRemote":              "main",
+		"CollectorRegistry":        "collector.stackrox.io",
+		"CollectorFullImageRemote": "collector",
+		"CollectorSlimImageRemote": "collector",
+		"CollectorSlimImageTag":    "1.2.3-slim",
+		"CollectorFullImageTag":    "1.2.3",
+		"ChartRepo": defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
 		"KubectlOutput": true,

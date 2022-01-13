@@ -1,7 +1,8 @@
 package mtls
 
 type issueOptions struct {
-	namespace string
+	namespace     string
+	signerProfile string
 }
 
 func (o *issueOptions) apply(opts []IssueCertOption) {
@@ -17,5 +18,20 @@ type IssueCertOption func(o *issueOptions)
 func WithNamespace(namespace string) IssueCertOption {
 	return func(o *issueOptions) {
 		o.namespace = namespace
+	}
+}
+
+// WithValidityExpiringInHours requests certificates with validity expiring in the order of hours.
+// This option is suitable for issuing init bundles which cannot be revoked.
+func WithValidityExpiringInHours() IssueCertOption {
+	return func(o *issueOptions) {
+		o.signerProfile = ephemeralProfileWithExpirationInHours
+	}
+}
+
+// WithValidityExpiringInDays requests certificates with validity expiring in the order of days.
+func WithValidityExpiringInDays() IssueCertOption {
+	return func(o *issueOptions) {
+		o.signerProfile = ephemeralProfileWithExpirationInDays
 	}
 }

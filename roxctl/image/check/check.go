@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
@@ -37,10 +38,17 @@ var (
 	defaultImageCheckHeaders = []string{
 		"POLICY", "SEVERITY", "BREAKS BUILD", "DESCRIPTION", "VIOLATION", "REMEDIATION",
 	}
+	defaultJunitJSONPathExpressions = map[string]string{
+		printers.JUnitTestCasesExpressionKey:            "results.#.violatedPolicies.#.name",
+		printers.JUnitFailedTestCasesExpressionKey:      "results.#.violatedPolicies.#(failingCheck==~true)#.name",
+		printers.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
+		printers.JUnitFailedTestCaseErrMsgExpressionKey: "results.#.violatedPolicies.#(failingCheck==~true)#.violation.@list",
+	}
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(defaultImageCheckHeaders, defaultImageCheckJSONPathExpression),
 		printer.NewJSONPrinterFactory(false, false),
+		printer.NewJUnitPrinterFactory("image-check", defaultJunitJSONPathExpressions),
 	}
 )
 

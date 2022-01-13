@@ -15,6 +15,9 @@ import {
 
 import useTabs from 'hooks/patternfly/useTabs';
 
+import { vulnManagementPath } from 'routePaths';
+import usePermissions from 'hooks/usePermissions';
+import NotFoundMessage from 'Components/NotFoundMessage';
 import PendingApprovals from './PendingApprovals';
 import ApprovedDeferrals from './ApprovedDeferrals';
 import ApprovedFalsePositives from './ApprovedFalsePositives';
@@ -33,6 +36,21 @@ const TAB_LABELS = {
 
 function RiskAcceptancePage(): ReactElement {
     const { activeKeyTab, onSelectTab } = useTabs({ defaultTab: TABS.PENDING_APPROVALS });
+    const { hasReadAccess } = usePermissions();
+
+    if (
+        !hasReadAccess('VulnerabilityManagementRequests') ||
+        !hasReadAccess('VulnerabilityManagementApprovals')
+    ) {
+        return (
+            <NotFoundMessage
+                title="404: Not found"
+                message="This page doesn't exist, return to Vulnerability Management"
+                actionText="Go to Vulnerability Management"
+                url={vulnManagementPath}
+            />
+        );
+    }
 
     return (
         <>

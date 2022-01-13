@@ -12,9 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
 )
+
+var log = logging.LoggerForModule()
 
 // NewExtractor returns a new token-based identity extractor.
 func NewExtractor(roleStore permissions.RoleStore, tokenValidator tokens.Validator) authn.IdentityExtractor {
@@ -37,7 +39,8 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "token validation failed")
+		log.Warnf("Token validation failed: %v", err)
+		return nil, errors.New("token validation failed")
 	}
 
 	// All tokens should have a source.
@@ -85,22 +88,20 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read roles")
 	}
-	if len(resolvedRoles) == 0 {
-		return nil, utils.Should(errors.New("none of the roles referenced by the token were found"))
-	}
-
+	// Ensure there are no invalid roles listed in the token.
+	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
 	var email string
 	if token.ExternalUser != nil {
 		email = token.ExternalUser.Email
 	}
 
-	attributes := map[string][]string{"role": permissionsUtils.RoleNames(resolvedRoles), "name": {token.Name}}
+	attributes := map[string][]string{"role": permissionsUtils.RoleNames(filteredRoles), "name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("auth-token:%s", token.ID),
 		username:      email,
 		friendlyName:  token.Subject,
 		fullName:      token.Name,
-		resolvedRoles: authn.FilterOutNoneRole(resolvedRoles),
+		resolvedRoles: filteredRoles,
 		expiry:        token.Expiry(),
 		attributes:    attributes,
 		authProvider:  authProvider,
@@ -126,6 +127,7 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		Attributes: token.Claims.ExternalUser.Attributes,
 	}
 
+	// We expect `FromUserDescriptor()` to filter out invalid roles.
 	resolvedRoles, err := roleMapper.FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")

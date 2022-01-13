@@ -28,7 +28,7 @@ describe('Risk search to new policy', () => {
         ).should('contain.text', 'NET_BIND_SERVICE');
     });
 
-    it('should create a policy with a numeric comparison criterion, like CPU Cores Limit', () => {
+    it('should create a policy with a numeric comparison criterion, like CPU cores limit', () => {
         navigateToPolicy(`${riskUrl}?s[CPU%20Cores%20Limit]=2`);
 
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first`).should(
@@ -49,7 +49,7 @@ describe('Risk search to new policy', () => {
 
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first .uppercase`).should(
             'include.text',
-            'Disallowed Dockerfile line:'
+            'Disallowed dockerfile line:'
         );
         cy.get(
             `${policySelectors.booleanPolicySection.policyFieldCard}:first .react-select__single-value`
@@ -61,7 +61,7 @@ describe('Risk search to new policy', () => {
 
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first .uppercase`).should(
             'include.text',
-            'Disallowed Dockerfile line:'
+            'Disallowed dockerfile line:'
         );
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first input:last`).should(
             'contain.value',

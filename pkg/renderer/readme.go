@@ -5,7 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
 	"github.com/stackrox/rox/pkg/roxctl"
+	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -105,10 +107,13 @@ func instructions(c Config, mode mode) (string, error) {
 		return "", errors.Errorf("invalid deployment format %v", c.K8sConfig.DeploymentFormat)
 	}
 
-	data, err := executeRawTemplate([]byte(template), &c)
+	tpl, err := helmTemplate.InitTemplate("temp").Parse(template)
 	if err != nil {
-		utils.Should(err)
-		return "", err
+		return "", utils.Should(err)
+	}
+	data, err := templates.ExecuteToBytes(tpl, &c)
+	if err != nil {
+		return "", utils.Should(err)
 	}
 
 	instructions := string(data)

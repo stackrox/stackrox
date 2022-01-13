@@ -11,7 +11,8 @@ import (
 // Split splits the input image into a set of parts.
 func Split(image *storage.Image, withComponents bool) ImageParts {
 	parts := ImageParts{
-		image: image.Clone(),
+		image:         image.Clone(),
+		imageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
 	// These need to be called in order.
@@ -19,13 +20,11 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 	if withComponents {
 		parts.children = splitComponents(parts)
 	}
-	parts.imageCVEEdges = generateImageToCVEEdges(parts)
 
 	// Clear components in the top level image.
 	if parts.image.GetScan() != nil {
 		parts.image.Scan.Components = nil
 	}
-
 	return parts
 }
 
@@ -39,7 +38,7 @@ func splitComponents(parts ImageParts) []ComponentParts {
 		cp := ComponentParts{}
 		cp.component = generateImageComponent(component)
 		cp.edge = generateImageComponentEdge(parts.image, cp.component, component)
-		cp.children = splitCVEs(parts.image.GetScan().GetOperatingSystem(), cp, component)
+		cp.children = splitCVEs(parts, cp, component)
 
 		ret = append(ret, cp)
 	}
@@ -47,13 +46,15 @@ func splitComponents(parts ImageParts) []ComponentParts {
 	return ret
 }
 
-func splitCVEs(os string, component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
+func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	for _, cve := range embedded.GetVulns() {
 		cp := CVEParts{}
-		cp.cve = converter.EmbeddedCVEToProtoCVE(os, cve)
+		cp.cve = converter.EmbeddedCVEToProtoCVE(parts.image.GetScan().GetOperatingSystem(), cve)
 		cp.edge = generateComponentCVEEdge(component.component, cp.cve, cve)
-
+		if _, ok := parts.imageCVEEdges[cp.cve.GetId()]; !ok {
+			parts.imageCVEEdges[cp.cve.GetId()] = generateImageCVEEdge(parts.image.GetId(), cp.cve, cve)
+		}
 		ret = append(ret, cp)
 	}
 
@@ -103,25 +104,13 @@ func generateImageComponentEdge(image *storage.Image, converted *storage.ImageCo
 	return ret
 }
 
-func generateImageToCVEEdges(parts ImageParts) map[string]*storage.ImageCVEEdge {
-	imageCVEEdges := make(map[string]*storage.ImageCVEEdge)
-	for _, componentParts := range parts.children {
-		for _, cveParts := range componentParts.children {
-			if _, ok := imageCVEEdges[cveParts.cve.GetId()]; !ok {
-				imageCVEEdges[cveParts.cve.GetId()] = &storage.ImageCVEEdge{
-					Id:    edges.EdgeID{ParentID: parts.image.GetId(), ChildID: cveParts.cve.GetId()}.ToString(),
-					State: getVulnState(cveParts.cve),
-				}
-
-			}
-		}
+func generateImageCVEEdge(imageID string, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
+	ret := &storage.ImageCVEEdge{
+		Id:    edges.EdgeID{ParentID: imageID, ChildID: convertedCVE.GetId()}.ToString(),
+		State: embedded.GetState(),
 	}
-	return imageCVEEdges
-}
-
-func getVulnState(cve *storage.CVE) storage.VulnerabilityState {
-	if cve.GetSuppressed() {
-		return storage.VulnerabilityState_DEFERRED
+	if ret.GetState() != storage.VulnerabilityState_OBSERVED {
+		return ret
 	}
-	return storage.VulnerabilityState_OBSERVED
+	return ret
 }

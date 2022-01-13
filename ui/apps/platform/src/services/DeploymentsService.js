@@ -24,8 +24,8 @@ function shouldHideOrchestratorComponents() {
  *
  * @returns {Promise<Object[], Error>} fulfilled with array of deployments (as defined in .proto)
  */
-export function fetchDeployments(options, sortOption, page, pageSize) {
-    const offset = page * pageSize;
+export function fetchDeployments(options = [], sortOption, page, pageSize) {
+    const offset = page * pageSize || 0;
     let searchOptions = options;
     if (shouldHideOrchestratorComponents()) {
         searchOptions = [...options, ...orchestratorComponentOption];

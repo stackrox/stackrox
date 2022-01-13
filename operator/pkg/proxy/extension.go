@@ -14,19 +14,17 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/client-go/kubernetes"
-	coreV1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ReconcileProxySecretExtension returns a reconcile extension that ensures that a proxy secret exists.
-func ReconcileProxySecretExtension(k8sClient kubernetes.Interface, proxyEnv map[string]string) extensions.ReconcileExtension {
+func ReconcileProxySecretExtension(client ctrlClient.Client, proxyEnv map[string]string) extensions.ReconcileExtension {
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), _ logr.Logger) error {
-		secretsClient := k8sClient.CoreV1().Secrets(obj.GetNamespace())
 		if obj.GetDeletionTimestamp() != nil {
-			return deleteProxyEnvSecret(ctx, obj, secretsClient)
+			return deleteProxyEnvSecret(ctx, obj, client)
 		}
 
-		return reconcileProxySecret(ctx, obj, proxyEnv, statusUpdater, secretsClient)
+		return reconcileProxySecret(ctx, obj, proxyEnv, statusUpdater, client)
 	}
 }
 
@@ -34,12 +32,12 @@ func getProxyEnvSecretName(obj k8sutil.Object) string {
 	return strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind + "-" + obj.GetName() + "-proxy-env")
 }
 
-func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars map[string]string, statusUpdater func(extensions.UpdateStatusFunc), secretsClient coreV1.SecretInterface) error {
+func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars map[string]string, statusUpdater func(extensions.UpdateStatusFunc), client ctrlClient.Client) error {
 	var err error
 	if len(proxyEnvVars) == 0 {
-		err = deleteProxyEnvSecret(ctx, obj, secretsClient)
+		err = deleteProxyEnvSecret(ctx, obj, client)
 	} else {
-		err = updateProxyEnvSecret(ctx, obj, secretsClient, proxyEnvVars)
+		err = updateProxyEnvSecret(ctx, obj, client, proxyEnvVars)
 	}
 
 	if err != nil {
@@ -67,9 +65,10 @@ func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars 
 	return nil
 }
 
-func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, secretsClient coreV1.SecretInterface) error {
-	existingSecret, err := secretsClient.Get(ctx, getProxyEnvSecretName(obj), metav1.GetOptions{})
-	if err != nil {
+func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client) error {
+	existingSecret := &corev1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: obj.GetNamespace(), Name: getProxyEnvSecretName(obj)}
+	if err := client.Get(ctx, key, existingSecret); err != nil {
 		if apiErrors.IsNotFound(err) {
 			return nil
 		}
@@ -80,14 +79,15 @@ func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, secretsClient
 		return nil // don't touch a secret we don't own
 	}
 
-	return utils.DeleteExact(ctx, secretsClient, existingSecret)
+	return utils.DeleteExact(ctx, client, existingSecret)
 }
 
-func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, secretsClient coreV1.SecretInterface, proxyEnvVars map[string]string) error {
+func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, proxyEnvVars map[string]string) error {
 	secretName := getProxyEnvSecretName(obj)
 
-	secret, err := secretsClient.Get(ctx, secretName, metav1.GetOptions{})
-	if err != nil {
+	secret := &corev1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: obj.GetNamespace(), Name: secretName}
+	if err := client.Get(ctx, key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return err
 		}
@@ -121,9 +121,7 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, secretsClient
 	secret.StringData = proxyEnvVars
 
 	if secret.ResourceVersion == "" {
-		_, err := secretsClient.Create(ctx, secret, metav1.CreateOptions{})
-		return err
+		return client.Create(ctx, secret)
 	}
-	_, err = secretsClient.Update(ctx, secret, metav1.UpdateOptions{})
-	return err
+	return client.Update(ctx, secret)
 }

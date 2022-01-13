@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -46,7 +47,8 @@ type zipHandler struct {
 }
 
 func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions, certs sensor.Certs) ([]*zip.File, error) {
-	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, renderOpts)
+	imageFlavor := defaults.GetImageFlavorFromEnv()
+	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, &imageFlavor, renderOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}
@@ -88,9 +90,9 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	identity := authn.IdentityFromContext(r.Context())
-	if identity == nil {
-		httputil.WriteGRPCStyleError(w, codes.Unauthenticated, errors.New("no identity in context"))
+	identity, err := authn.IdentityFromContext(r.Context())
+	if err != nil {
+		httputil.WriteError(w, err)
 		return
 	}
 

@@ -9,7 +9,9 @@ scripts/
 [<- if .CertsOnly >]
 scripts/
 !/*.yaml
-!templates/*-secret.yaml
+!templates/admission-controller-secret.yaml
+!templates/sensor-secret.yaml
+!templates/collector-secret.yaml
 !templates/_*.tpl
 templates/*
 [<- end >]
@@ -18,4 +20,9 @@ templates/*
 feature-flag-values.yaml
 [< end >]
 *.swp
+[< if not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
 templates/keep.yaml
+templates/*scanner*
+internal/scanner-config-shape.yaml
+config-templates/scanner/
+[< end >]

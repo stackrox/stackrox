@@ -84,21 +84,6 @@ func TestDiscreteRuntimeSections(t *testing.T) {
 			},
 			pass: false,
 		},
-		//{
-		//	name: "deploy time fields",
-		//	policy: &storage.Policy{
-		//		PolicySections: []*storage.PolicySection{
-		//			{
-		//				PolicyGroups: []*storage.PolicyGroup{
-		//					{
-		//						FieldName: fieldnames.ImageTag,
-		//					},
-		//				},
-		//			},
-		//		},
-		//	},
-		//	pass: false,
-		//},
 		{
 			name: "deploy time and runtime fields",
 			policy: &storage.Policy{

@@ -433,6 +433,26 @@ func (d *deployCheckTestSuite) TestCheck_CSVOutput() {
 	d.runOutputTests(cases, csvPrinter, true)
 }
 
+func (d *deployCheckTestSuite) TestCheck_JunitOutput() {
+	cases := map[string]outputFormatTest{
+		"should not fail with non failing enforcement actions": {
+			alerts:         testDeploymentAlertsWithoutFailure,
+			expectedOutput: "testDeploymentAlertsWithoutFailure.xml",
+		},
+		"should fail with failing enforcement actions": {
+			alerts:         testDeploymentAlertsWithFailure,
+			expectedOutput: "testDeploymentAlertsWithFailure.xml",
+			shouldFail:     true,
+			error:          policy.ErrBreakingPolicies,
+		},
+	}
+
+	csvPrinter, err := printer.NewJUnitPrinterFactory(
+		"deployment-check", defaultJunitJSONPathExpressions).CreatePrinter("junit")
+	d.Require().NoError(err)
+	d.runOutputTests(cases, csvPrinter, true)
+}
+
 func (d *deployCheckTestSuite) TestCheck_LegacyJSONOutput() {
 	cases := map[string]outputFormatTest{
 		"should render legacy JSON output and return no error with non failing alerts": {

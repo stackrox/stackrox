@@ -5,7 +5,7 @@ import (
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/helm/charts/tests"
+	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
@@ -14,7 +14,7 @@ func TestWithHelmtest(t *testing.T) {
 	helmImage := image.GetDefaultImage()
 	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 	require.NoError(t, err, "error retrieving chart template")
-	ch, err := tpl.InstantiateAndLoad(tests.DefaultTestMetaValues(t))
+	ch, err := tpl.InstantiateAndLoad(metaUtil.MakeMetaValuesForTest(t))
 	require.NoError(t, err, "error instantiating chart")
 
 	suite, err := helmTest.NewLoader("testdata/helmtest").LoadSuite()

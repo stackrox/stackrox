@@ -172,7 +172,7 @@ func (s *service) FetchCertificate(ctx context.Context, req *sensor.FetchCertifi
 	}
 
 	var requestingServiceIdentity *storage.ServiceIdentity
-	if id := authn.IdentityFromContext(ctx); id != nil {
+	if id := authn.IdentityFromContextOrNil(ctx); id != nil {
 		requestingServiceIdentity = id.Service()
 	}
 	// If the request is made with a valid service cert with a matching type, we do not need to go through the

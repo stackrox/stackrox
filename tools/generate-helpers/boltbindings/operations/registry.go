@@ -19,6 +19,9 @@ type GeneratorProperties struct {
 	GetExists    bool
 	DeleteExists bool
 	Cache        bool
+
+	GenerateMockStore            bool
+	MockgenWrapperExecutablePath string
 }
 
 // methodGenerator generates an interface and implementation for a specific kind of DB operation.

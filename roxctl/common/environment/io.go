@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-//IO holds information about io streams used within commands of roxctl
+// IO holds information about io streams used within commands of roxctl
 type IO struct {
 	// In = os.Stdin
 	In io.Reader

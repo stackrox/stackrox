@@ -26,7 +26,7 @@ setup_client_CA_auth_provider() {
     require_environment "CLIENT_CA_PATH"
 
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-        central userpki create test-userpki -r None -c "$CLIENT_CA_PATH"
+        central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
 }
 
 setup_generated_certs_for_test() {

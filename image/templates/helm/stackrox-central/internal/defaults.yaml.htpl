@@ -18,8 +18,8 @@ defaults:
     exposeMonitoring: false
 
     image:
-      name: main
-      tag: [< required "" .Versions.MainVersion >]
+      name: [< required "" .ImageRemote >]
+      tag: [< required "" .ImageTag >]
 
     resources:
       requests:
@@ -58,8 +58,8 @@ defaults:
         cpu: "2000m"
 
     image:
-      name: scanner
-      tag: [< required "" .Versions.ScannerVersion >]
+      name: [< required "" .ScannerImageRemote >]
+      tag: [< required "" .ScannerImageTag >]
 
     dbResources:
       limits:
@@ -70,8 +70,8 @@ defaults:
         memory: "200Mi"
 
     dbImage:
-      name: scanner-db
-      tag: [< required "" .Versions.ScannerVersion >]
+      name: [< required "" .ScannerDBImageRemote >]
+      tag: [< required "" .ScannerDBImageTag >]
 
   system:
     createSCCs: [< not .Operator >]

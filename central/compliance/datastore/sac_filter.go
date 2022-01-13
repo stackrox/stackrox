@@ -20,7 +20,7 @@ var (
 )
 
 // SacFilter provides the filtering abilities needed by the compliance datastore.
-//go:generate mockgen-wrapper SacFilter
+//go:generate mockgen-wrapper
 type SacFilter interface {
 	FilterRunResults(ctx context.Context, results *storage.ComplianceRunResults) (*storage.ComplianceRunResults, error)
 	FilterBatchResults(ctx context.Context, results map[compliance.ClusterStandardPair]types.ResultsWithStatus) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
@@ -99,7 +99,6 @@ func (ds *sacFilterImpl) FilterBatchResults(ctx context.Context, batchResults ma
 }
 
 // Helper functions that filter objects.
-////////////////////////////////////////
 
 func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.StringSet) (set.StringSet, error) {
 	resourceScopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)

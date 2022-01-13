@@ -156,7 +156,7 @@ func (c *cscc) Close(ctx context.Context) error {
 	return nil
 }
 
-//AlertNotify takes in an alert and generates the notification
+// AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	if alert.GetImage() != nil {
 		return errors.New("CSCC integration can only handle alerts for deployments and resources")

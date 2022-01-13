@@ -132,7 +132,7 @@ setImageFlavor: &setImageFlavor
   run:
     name: Set ROX_IMAGE_FLAVOR
     command: |
-      FLAVOR="development_build"
+      FLAVOR="${ROX_IMAGE_FLAVOR:-development_build}"
       # Use 'stackrox_io_release' flavor on release and RC builds
       if [[ "${CIRCLE_TAG}" =~ ^[0-9]+(\.[0-9]+)?\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
         FLAVOR="stackrox_io_release"
@@ -454,6 +454,7 @@ checkToRunSeparateRaceConditionTestPipe: &checkToRunSeparateRaceConditionTestPip
   check-to-run:
     run-on-master: true
     run-on-tags: true
+    label: ci-race-tests
 
 version: 2.1
 
@@ -493,10 +494,14 @@ parameters:
   rox_license_key:
     type: string
     default: ""
+  ci_machine_image:
+    type: string
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
+    default: "ubuntu-2004:202111-02"
 
 orbs:
   win: circleci/windows@2.2.0
-  ci-artifacts: stackrox/ci-artifacts-orb@0.0.11
+  ci-artifacts: stackrox/ci-artifacts-orb@0.1.0
 
 executors:
   custom:
@@ -506,7 +511,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.20
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.21
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -2138,7 +2143,7 @@ commands:
               gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION \
               create << parameters.cluster-name >>-"${CIRCLE_WORKFLOW_ID:0:7}" "${GCP_PROJECT}" openshift.ci.rox.systems
             docker cp openshift-4-automation:/data $PWD/<< parameters.cluster-name >>
-          no_output_timeout: 45m
+          no_output_timeout: 60m
 
 jobs:
   ###
@@ -2169,6 +2174,9 @@ jobs:
 
   go-unit-tests:
     executor: custom
+    resource_class: large
+    environment:
+      ROX_IMAGE_FLAVOR: development_build
     steps:
       - pre-go-unit-tests
       - run:
@@ -2179,6 +2187,7 @@ jobs:
 
   go-unit-tests-release:
     executor: custom
+    resource_class: large
     environment:
       ROX_IMAGE_FLAVOR: stackrox_io_release
     steps:
@@ -2229,7 +2238,7 @@ jobs:
 
   style-checks:
     executor: custom
-    resource_class: large
+    resource_class: xlarge
     steps:
       - checkout
 
@@ -2259,10 +2268,9 @@ jobs:
 
   check-generated-files-up-to-date:
     executor: custom
-    resource_class: small
+    resource_class: medium
     steps:
       - checkout
-
       - *restoreGoModCache
       - setup-go-build-env
       - run:
@@ -2271,7 +2279,8 @@ jobs:
           command: |
             git ls-files --others --exclude-standard >/tmp/untracked
             make proto-generated-srcs
-            make go-generated-srcs
+            # Print the timestamp along with each new line of output, so we can track how long each command takes
+            make go-generated-srcs 2>&1 | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
             git diff --exit-code HEAD
             { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
             if [[ -s /tmp/untracked-new ]]; then
@@ -2284,7 +2293,6 @@ jobs:
           name: Ensure that all TODO references to fixed tickets are gone
           command: |
             .circleci/check-pr-fixes.sh
-
       - run:
           name: Ensure that there are no TODO references that the developer has marked as blocking a merge
           command: |
@@ -2445,7 +2453,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -2605,7 +2612,7 @@ jobs:
 
   pre-build-cli:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
@@ -2656,12 +2663,13 @@ jobs:
       - cleanup-clusters-on-fail
 
   pre-build-go-binaries:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
-      - GOPATH: /home/circleci/go
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.2.17
+      GOPATH: /home/circleci/go
+      KOPS_AUTOMATION_VERSION: 0.0.9
+      EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
       - checkout
@@ -2672,7 +2680,6 @@ jobs:
           command: |
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
-            sudo cp .circleci/bash.env /etc/bash.env
       - run:
           name: Install Go
           command: |
@@ -2687,7 +2694,6 @@ jobs:
       - *restoreGoBuildBinaryCache
       - setup-dep-env:
           docker-login: true
-
       - run:
           name: Build the main Go binaries
           command: |
@@ -2722,7 +2728,7 @@ jobs:
 
   build:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
@@ -2846,7 +2852,7 @@ jobs:
     executor: custom
     resource_class: large
     steps:
-      - checkout
+      - checkout-with-submodules
       - *checkToRunSeparateRaceConditionTestPipe
 
       - run:
@@ -2862,6 +2868,16 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
+
+      - run:
+          name: Set image flavor to release
+          # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly setting CIRCLE_TAG value.
+          # Therefore, we need to tell main image that it should use image defaults as for the release build, otherwise
+          # the code resolving image flavor would panic due to release build combined with development images.
+          # Setting the release image flavor is fine because the image registry gets overridden anyway, but it has an
+          # implication that scanner, scanner-db and collector images should have the same image tags as main image.
+          # For this we retag those images in one of the steps below.
+          command: cci-export ROX_IMAGE_FLAVOR "stackrox_io_release"
 
       - restore-npm-deps-cache
       - fetch-ui-deps
@@ -2880,7 +2896,7 @@ jobs:
             make RACE=true CIRCLE_TAG="$(make --quiet tag)" main-image
 
       - run:
-          name: Push new image
+          name: Push new main-image with '-rcd' suffix
           command: |
             TAG="$(make --quiet tag)"
 
@@ -2890,6 +2906,19 @@ jobs:
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             QUAY_REPO="rhacs-eng"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
+
+      - run:
+          # We do this because release image flavor is set. Why - look for comments above.
+          name: Retag scanner, scanner-db and collector images with '-rcd' suffix
+          command: |
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "quay.io/rhacs-eng/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "quay.io/rhacs-eng/collector:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
@@ -2960,6 +2989,7 @@ jobs:
 
   provision-gke-api-nongroovy-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -2971,6 +3001,7 @@ jobs:
 
   provision-gke-ui-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-label-to-skip-tests:
@@ -2981,6 +3012,7 @@ jobs:
 
   provision-gke-api-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
       - GCP_IMAGE_TYPE: "COS"
       - POD_SECURITY_POLICIES: "true"
@@ -2995,6 +3027,7 @@ jobs:
 
   provision-gke-kernel-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3009,6 +3042,7 @@ jobs:
 
   provision-gke-api-upgrade-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3023,7 +3057,7 @@ jobs:
 
   build-scale-monitoring-and-mock-server:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
@@ -3066,6 +3100,7 @@ jobs:
 
   provision-gke-api-scale-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -3077,7 +3112,8 @@ jobs:
           machine-type: e2-standard-8
 
   provision-openshift-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-tests
@@ -3088,7 +3124,8 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   provision-openshift-crio-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-crio-tests
@@ -3101,6 +3138,7 @@ jobs:
 
   provision-eks-api-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
@@ -3155,7 +3193,8 @@ jobs:
           when: on_fail
 
   provision-kops-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
     steps:
@@ -3220,6 +3259,7 @@ jobs:
 
   provision-aks-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -3270,6 +3310,7 @@ jobs:
 
   provision-openshift-4-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-to-run:
@@ -3317,6 +3358,7 @@ jobs:
 
   provision-openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
     - checkout
     - check-to-run:
@@ -3360,6 +3402,7 @@ jobs:
 
   provision-openshift-4-6-operator-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
     - checkout
     - check-to-run:
@@ -3404,6 +3447,7 @@ jobs:
 
   provision-race-condition-tests:
     executor: custom
+    resource_class: small
     environment:
       GCP_IMAGE_TYPE: "COS"
       POD_SECURITY_POLICIES: "true"
@@ -3434,7 +3478,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - SENSOR_HELM_DEPLOY: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_ACTIVE_VULN_MANAGEMENT: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
       - ROX_VULN_RISK_MANAGEMENT: true
@@ -3493,6 +3536,21 @@ jobs:
             cci-export "SERVICE_CA_FILE" "$SERVICE_CA_FILE"
             cci-export "SERVICE_CERT_FILE" "$SERVICE_CERT_FILE"
             cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
+
+      - run:
+          name: Setup prerequisites for Bats tests
+          command: |
+            source tests/e2e/run.sh
+            install_yq
+      - run:
+          name: Run roxctl Bats tests
+          command: |
+            source tests/e2e/run.sh
+            MAIN_TAG=$(make --quiet tag) \
+              run_roxctl_bats_tests "roxctl-test-output"
+
+      - store-test-results-and-artifacts:
+          path: roxctl-test-output
 
       - run:
           name: Run roxctl tests
@@ -3653,7 +3711,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -3683,7 +3740,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -3846,7 +3902,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - SENSOR_HELM_DEPLOY: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -3872,7 +3927,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
 
@@ -3899,7 +3953,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -3991,7 +4044,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4100,7 +4152,6 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4141,7 +4192,6 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4170,6 +4220,7 @@ jobs:
 
   openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
     - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
@@ -4240,6 +4291,7 @@ jobs:
 
   openshift-4-6-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
     - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
     - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
@@ -4368,7 +4420,6 @@ jobs:
       ROX_NETWORK_DETECTION_BLOCKED_FLOWS: "true"
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
-      ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: "true"
       IS_RACE_BUILD: "true"
       ROX_VULN_RISK_MANAGEMENT: "true"
 
@@ -4634,7 +4685,7 @@ jobs:
 
   provision-openshift-rosa-api-e2e-tests:
     executor: custom
-    resource_class: large
+    resource_class: small
     steps:
       - checkout
       - check-to-run:
@@ -4667,7 +4718,7 @@ jobs:
 
   provision-openshift-aro-api-e2e-tests:
     executor: custom
-    resource_class: large
+    resource_class: small
     steps:
       - checkout
       - check-to-run:

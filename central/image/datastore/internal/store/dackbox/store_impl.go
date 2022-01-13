@@ -144,13 +144,13 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 func (b *storeImpl) GetImageMetadata(id string) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
-	branch, err := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
 	}
-	defer branch.Discard()
+	defer txn.Discard()
 
-	image, err = b.readImageMetadata(branch, id)
+	image, err = b.readImageMetadata(txn, id)
 	if err != nil {
 		return nil, false, err
 	}
@@ -337,8 +337,8 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 	if scanUpdated {
 		if features.VulnRiskManagement.Enabled() {
 			childKeys := make([][]byte, 0, len(parts.imageCVEEdges))
-			for _, cve := range parts.imageCVEEdges {
-				childKeys = append(childKeys, cveDackBox.KeyFunc(cve))
+			for cve := range parts.imageCVEEdges {
+				childKeys = append(childKeys, cveDackBox.BucketHandler.GetKey(cve))
 			}
 			childKeys = append(childKeys, componentKeys...)
 			dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), childKeys)

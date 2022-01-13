@@ -1,7 +1,6 @@
 import common.Constants
 import groups.BAT
 import groups.SensorBounceNext
-import io.fabric8.kubernetes.api.model.Pod
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
@@ -12,7 +11,6 @@ import objects.GCRImageIntegration
 import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ClusterService
-import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.PolicyService
 import spock.lang.Retry
@@ -21,11 +19,7 @@ import spock.lang.Timeout
 import spock.lang.Unroll
 import util.Helpers
 import util.Timer
-
-import org.junit.Assume
-
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.locks.ReentrantLock
+import util.ChaosMonkey
 
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
@@ -45,8 +39,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     private final static String LATEST_TAG = "Latest tag"
     private final static String SEVERITY = "Fixable Severity at least Important"
-
-    static final private String ADMISSION_CONTROLLER_APP_NAME = "admission-control"
 
     static final private Deployment GCR_NGINX_DEPLOYMENT = new Deployment()
             .setName(GCR_NGINX)
@@ -92,7 +84,7 @@ class AdmissionControllerTest extends BaseSpecification {
         // https://stack-rox.atlassian.net/browse/ROX-7026 - Disable ChaosMonkey
         // // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
         // // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
-        // chaosMonkey = new ChaosMonkey(1, 10L)
+        // chaosMonkey = new ChaosMonkey(orchestrator, 1, 10L)
         // chaosMonkey.waitForEffect()
     }
 
@@ -164,11 +156,6 @@ class AdmissionControllerTest extends BaseSpecification {
     @Category([BAT])
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
-        // Skip test for now until ROX-8739 is fixed to determine why first deployment create is not blocked.
-        // Scheduled for 68.0.
-        Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_VULN_RISK_MANAGEMENT"))
-
-        and:
          "Create policy looking for a specific CVE"
         // We don't want to block on SEVERITY
         Services.updatePolicyEnforcement(
@@ -395,7 +382,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Start a chaos monkey thread that kills _all_ ready admission control replicas with a short grace period"
-        def killAllChaosMonkey = new ChaosMonkey(0, 1L)
+        def killAllChaosMonkey = new ChaosMonkey(orchestrator, 0, 1L)
 
         then:
         "Verify deployment can be created"
@@ -439,78 +426,6 @@ class AdmissionControllerTest extends BaseSpecification {
         }
         if (!deleted) {
             println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
-        }
-    }
-
-    class ChaosMonkey {
-        def stopFlag = new AtomicBoolean()
-        def lock = new ReentrantLock()
-        def effectCond = lock.newCondition()
-
-        Thread thread
-
-        ChaosMonkey(int minReadyReplicas, Long gracePeriod) {
-            def pods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
-            assert pods.size() > 0, "There are no ${ADMISSION_CONTROLLER_APP_NAME} pods. " +
-                "Did you enable ADMISSION_CONTROLLER when deploying?"
-
-            thread = Thread.start {
-                while (!stopFlag.get()) {
-                    // Get the current ready, non-deleted pod replicas
-                    def admCtrlPods = new ArrayList<Pod>(orchestrator.getPods(
-                            Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME))
-                    admCtrlPods.removeIf { !it?.status?.containerStatuses[0]?.ready }
-
-                    if (admCtrlPods.size() <= minReadyReplicas) {
-                        lock.lock()
-                        effectCond.signalAll()
-                        lock.unlock()
-                    }
-
-                    admCtrlPods.removeIf { it?.metadata?.deletionTimestamp as boolean }
-
-                    // If there are more than the minimum number of ready replicas, randomly pick some to delete
-                    if (admCtrlPods.size() > minReadyReplicas) {
-                        Collections.shuffle(admCtrlPods)
-                        def podsToDelete = admCtrlPods.drop(minReadyReplicas)
-                        podsToDelete.forEach {
-                            orchestrator.deletePod(it.metadata.namespace, it.metadata.name, gracePeriod)
-                        }
-                    }
-                    Helpers.sleepWithRetryBackoff(1000)
-                }
-            }
-        }
-
-        void stop() {
-            stopFlag.set(true)
-            thread.join()
-        }
-
-        def waitForEffect() {
-            lock.lock()
-            effectCond.await()
-            lock.unlock()
-        }
-
-        void waitForReady() {
-            def allReady = false
-            while (!allReady) {
-                Helpers.sleepWithRetryBackoff(1000)
-
-                def admCtrlPods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
-                if (admCtrlPods.size() < 3) {
-                    continue
-                }
-                allReady = true
-                for (def pod : admCtrlPods) {
-                    if (!pod.status?.containerStatuses[0]?.ready) {
-                        allReady = false
-                        break
-                    }
-                }
-            }
-            printlnDated "ChaosMonkey: All admission control pod replicas ready"
         }
     }
 

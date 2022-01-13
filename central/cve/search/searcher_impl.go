@@ -8,7 +8,7 @@ import (
 	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
 	clusterCVEEdgeSAC "github.com/stackrox/rox/central/clustercveedge/sac"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	"github.com/stackrox/rox/central/cve/cveedge"
+	"github.com/stackrox/rox/central/cve/edgefields"
 	"github.com/stackrox/rox/central/cve/index"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
@@ -155,7 +155,9 @@ func formatSearcher(graphProvider graph.Provider,
 		nodeSearcher,
 		deploymentSearcher,
 		clusterSearcher)
-	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), cveSAC.GetSACFilter())
+	filteredSearcher := filtered.Searcher(
+		edgefields.HandleSnoozeSearchQuery(edgefields.HandleCVEEdgeSearchQuery(compoundSearcher)),
+		cveSAC.GetSACFilter())
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, filteredSearcher)
 	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

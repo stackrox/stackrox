@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
+import io.fabric8.kubernetes.api.model.Deployment as K8sDeployment
 import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.EnvVarBuilder
@@ -177,8 +178,10 @@ class Kubernetes implements OrchestratorMain {
     }
 
     boolean updateDeploymentNoWait(Deployment deployment) {
-        if (deployments.inNamespace(deployment.namespace).withName(deployment.name).get()) {
-            println "Deployment ${deployment.name} found in namespace ${deployment.namespace}. Updating..."
+        K8sDeployment k8sdeployment = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
+        if (k8sdeployment) {
+            println "Deployment ${deployment.name} with version ${k8sdeployment.metadata.resourceVersion} " +
+                    "found in namespace ${deployment.namespace}. Updating..."
         } else {
             println "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
         }
@@ -1851,7 +1854,7 @@ class Kubernetes implements OrchestratorMain {
 
         try {
             client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            println "Told the orchestrator to create " + deployment.name
+            println "Told the orchestrator to createOrReplace " + deployment.name
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
             }

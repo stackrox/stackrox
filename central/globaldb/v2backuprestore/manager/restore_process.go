@@ -92,7 +92,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 		StartTime: types.TimestampNow(),
 	}
 
-	if identity := authn.IdentityFromContext(ctx); identity != nil {
+	if identity := authn.IdentityFromContextOrNil(ctx); identity != nil {
 		metadata.InitiatingUserName = identity.User().GetUsername()
 	}
 

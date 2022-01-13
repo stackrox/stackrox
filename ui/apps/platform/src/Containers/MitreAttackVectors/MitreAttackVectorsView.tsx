@@ -55,7 +55,7 @@ function MitreAttackVectorsView({ policyId }: MitreAttackVectorsViewProps): Reac
         return (
             <Flex className="pf-u-my-md" justifyContent={{ default: 'justifyContentCenter' }}>
                 <FlexItem>
-                    <Spinner />
+                    <Spinner isSVG />
                 </FlexItem>
             </Flex>
         );

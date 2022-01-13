@@ -55,6 +55,11 @@ func NewErrNotAuthorized(explanation string) error {
 	return fmt.Errorf("%w: %s", ErrNotAuthorized, explanation)
 }
 
+// NewErrNoCredentials wraps ErrNoCredentials into an explanation.
+func NewErrNoCredentials(explanation string) error {
+	return fmt.Errorf("%w: %s", ErrNoCredentials, explanation)
+}
+
 // NewErrInvariantViolation wraps ErrInvariantViolation into an explanation.
 func NewErrInvariantViolation(explanation string) error {
 	return fmt.Errorf("%w: %s", ErrInvariantViolation, explanation)

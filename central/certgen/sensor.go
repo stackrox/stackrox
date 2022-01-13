@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
 	pkgZip "github.com/stackrox/rox/pkg/zip"
 )
@@ -41,7 +42,8 @@ func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster,
 		return nil, nil, errors.Errorf("could not generate certs: %v", err)
 	}
 
-	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, clusters.RenderOptions{})
+	imageFlavor := defaults.GetImageFlavorFromEnv()
+	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, &imageFlavor, clusters.RenderOptions{})
 	if err != nil {
 		return nil, nil, err
 	}

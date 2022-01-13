@@ -493,6 +493,11 @@ func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ Raw
 	return &activeStateResolver{root: evr.root, state: state, activeComponentIDs: ids}, nil
 }
 
+// VulnerabilityState return the effective state of this vulnerability (observed, deferred or marked as false positive).
+func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(ctx context.Context) string {
+	return evr.data.GetState().String()
+}
+
 func (evr *EmbeddedVulnerabilityResolver) getDeploymentBaseQuery(ctx context.Context) (*v1.Query, error) {
 	imageQuery := evr.vulnQuery()
 	results, err := evr.root.ImageDataStore.Search(ctx, imageQuery)

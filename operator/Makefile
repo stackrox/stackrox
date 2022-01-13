@@ -73,7 +73,7 @@ TEST_NAMESPACE ?= stackrox-operator
 ENABLE_WEBHOOKS ?= false
 
 # Set 'development_build' as default ROX_IMAGE_FLAVOR, so that developers can use the Makefile locally.
-# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
+# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
 # ROX_IMAGE_FLAVOR valid values are: development_build, stackrox_io_release, rhacs_release.
 ROX_IMAGE_FLAVOR ?= development_build
 
@@ -137,10 +137,6 @@ CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
-CLIENT_GEN=$(PROJECT_DIR)/bin/client-gen
-client-gen: ## Download client-gen locally if necessary
-	$(call go-get-tool,$(CLIENT_GEN),k8s.io/code-generator/cmd/client-gen@v0.20.4)
-
 KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
@@ -175,7 +171,7 @@ opm: ## Download opm.
 
 ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
-        $(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 GET_GITHUB_RELEASE_FN = get_github_release() { \
 	[ -f $${1} ] || { \
@@ -209,11 +205,10 @@ parent-proto-generate: ## Make sure ../generated directory has up-to-date conten
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-generate: parent-proto-generate controller-gen client-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations, as well as the client code.
+generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-	$(CLIENT_GEN) --input-base="github.com/stackrox/rox/operator/apis" --input="platform/v1alpha1" --clientset-name="stackrox" --output-package="github.com/stackrox/rox/operator/pkg/clientset" --fake-clientset --go-header-file="hack/boilerplate.go.txt"
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
-	go fmt ./apis/... ./pkg/clientset/...
+	go fmt ./apis/...
 
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -338,7 +333,7 @@ upgrade-via-olm: kuttl
 # Commands to enter local Python virtual environment and get needed dependencies there.
 ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip setuptools ;\
+	pip3 install --upgrade pip==21.3.1 setuptools==60.2.0 ;\
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle

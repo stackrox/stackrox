@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/stackrox/rox/tools/dontprintferr"
-	"github.com/stackrox/rox/tools/filepathwalk"
-	"github.com/stackrox/rox/tools/invalidoutputroxctl"
-	"github.com/stackrox/rox/tools/needlessformat"
-	"github.com/stackrox/rox/tools/protoclone"
-	"github.com/stackrox/rox/tools/regexes"
-	"github.com/stackrox/rox/tools/storedprotos/storeinterface"
-	"github.com/stackrox/rox/tools/uncheckederrors"
-	"github.com/stackrox/rox/tools/uncheckedifassign"
-	"github.com/stackrox/rox/tools/unusedroxctlargs"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/invalidoutputroxctl"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/needlessformat"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/protoclone"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/regexes"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckederrors"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/validateimports"
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
@@ -26,5 +27,6 @@ func main() {
 		unusedroxctlargs.Analyzer,
 		invalidoutputroxctl.Analyzer,
 		filepathwalk.Analyzer,
+		validateimports.Analyzer,
 	)
 }

@@ -4,7 +4,7 @@ go 1.16
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20211214023301-55ee93adca37
+require github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d
 
 require (
 	cloud.google.com/go v0.94.1
@@ -87,7 +87,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.30.0
+	github.com/prometheus/common v0.32.1
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.1
 	github.com/sergi/go-diff v1.2.0
@@ -115,7 +115,7 @@ require (
 	golang.org/x/sys v0.0.0-20210908233432-aa78b53d3365
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 	golang.org/x/tools v0.1.5
-	golang.stackrox.io/grpc-http1 v0.2.3
+	golang.stackrox.io/grpc-http1 v0.2.4
 	google.golang.org/api v0.57.0
 	google.golang.org/genproto v0.0.0-20210903162649-d08c68adba83
 	google.golang.org/grpc v1.40.0
@@ -144,7 +144,7 @@ replace (
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5
-	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20210927052144-bbfc3e124f11
+	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 
 	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.

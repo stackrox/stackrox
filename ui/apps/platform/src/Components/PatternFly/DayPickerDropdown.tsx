@@ -28,7 +28,7 @@ function DayPickerDropdown({
         isOpen: isDaySelectOpen,
         onToggle: onToggleDaySelect,
         onSelect: onSelectDay,
-    } = useMultiSelect(handleDaySelect, value);
+    } = useMultiSelect(handleDaySelect, value, false);
 
     function handleDaySelect(selection) {
         handleSelect(fieldId, selection);
@@ -37,33 +37,33 @@ function DayPickerDropdown({
     const selectOptions =
         intervalType === 'WEEKLY'
             ? [
-                  <SelectOption key="sunday" value="1">
+                  <SelectOption key="sunday" value={1}>
                       Monday
                   </SelectOption>,
-                  <SelectOption key="tuesday" value="2">
+                  <SelectOption key="tuesday" value={2}>
                       Tuesday
                   </SelectOption>,
-                  <SelectOption key="wednesday" value="3">
+                  <SelectOption key="wednesday" value={3}>
                       Wednesday
                   </SelectOption>,
-                  <SelectOption key="thursday" value="4">
+                  <SelectOption key="thursday" value={4}>
                       Thursday
                   </SelectOption>,
-                  <SelectOption key="friday" value="5">
+                  <SelectOption key="friday" value={5}>
                       Friday
                   </SelectOption>,
-                  <SelectOption key="saturday" value="6">
+                  <SelectOption key="saturday" value={6}>
                       Saturday
                   </SelectOption>,
-                  <SelectOption key="sunday" value="0">
+                  <SelectOption key="sunday" value={0}>
                       Sunday
                   </SelectOption>,
               ]
             : [
-                  <SelectOption key="first" value="1">
+                  <SelectOption key="first" value={1}>
                       The first of the month
                   </SelectOption>,
-                  <SelectOption key="middle" value="16">
+                  <SelectOption key="middle" value={15}>
                       The middle of the month
                   </SelectOption>,
               ];
@@ -78,7 +78,7 @@ function DayPickerDropdown({
                 selections={value}
                 isOpen={isDaySelectOpen}
                 isDisabled={!isEditable}
-                placeholderText="Select Days"
+                placeholderText={value.length ? 'Selected days' : 'Select days'}
             >
                 {selectOptions}
             </Select>

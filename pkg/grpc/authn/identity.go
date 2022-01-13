@@ -14,7 +14,7 @@ import (
 type Identity interface {
 	UID() string
 	FriendlyName() string
-	//FullName could be empty
+	// FullName could be empty
 	FullName() string
 
 	User() *storage.UserInfo

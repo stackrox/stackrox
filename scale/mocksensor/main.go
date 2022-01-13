@@ -17,10 +17,10 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -344,11 +344,12 @@ func sendAdmissionControllerRequests(ctx context.Context, clusterClient v1.Clust
 		admissionControllerConfig := &storage.AdmissionControllerConfig{}
 		admissionControllerConfig.Enabled = true
 		admissionControllerConfig.TimeoutSeconds = 999
+		flavor := defaults.GetImageFlavorFromEnv()
 		cluster := &storage.Cluster{
 			Id:                  "",
 			Name:                "prod cluster",
 			Type:                1,
-			MainImage:           defaults.MainImageRepo(),
+			MainImage:           flavor.MainImageNoTag(),
 			CollectorImage:      "",
 			CentralApiEndpoint:  "central.stackrox:443",
 			CollectionMethod:    0,

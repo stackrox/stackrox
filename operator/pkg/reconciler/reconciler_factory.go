@@ -60,7 +60,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		reconciler.WithChart(*chart),
 		reconciler.WithGroupVersionKind(gvk),
 		reconciler.WithValueTranslator(translator),
-		//TODO(ROX-7362): re-evaluate enabling depended watches
+		// TODO(ROX-7362): re-evaluate enabling depended watches
 		reconciler.SkipDependentWatches(true),
 		reconciler.WithMaxReleaseHistory(maxReleaseHistorySize),
 		reconciler.WithMarkFailedAfter(markReleaseFailedAfter),

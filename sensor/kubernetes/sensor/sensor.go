@@ -81,7 +81,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing cluster ID from service certificate")
 		}
-		if certClusterID == centralsensor.InitCertClusterID {
+		if centralsensor.IsInitCertClusterID(certClusterID) {
 			return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
 		}
 	}
@@ -138,7 +138,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	if features.VulnRiskManagement.Enabled() {
-		components = append(components, reprocessor.NewHandler(policyDetector))
+		components = append(components, reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache))
 	}
 
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()

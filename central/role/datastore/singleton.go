@@ -132,10 +132,10 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 		idSuffix:    "vulnreporter",
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: []permissions.ResourceWithAccess{
-			permissions.View(resources.VulnerabilityReports),   //required for vuln report configurations
+			permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
 			permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
-			permissions.View(resources.Role),                   //required for scopes
-			permissions.View(resources.Image),                  //required to gather CVE data for the report
+			permissions.View(resources.Role),                   // required for scopes
+			permissions.View(resources.Image),                  // required to gather CVE data for the report
 			permissions.View(resources.Notifier),               // required for vuln report configurations
 			permissions.Modify(resources.Notifier),             // required for vuln report configurations
 

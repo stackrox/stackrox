@@ -97,14 +97,12 @@ function PolicyMetadataFormSection(): ReactElement {
                         fieldId="policy-description"
                         label="Description"
                         className="pf-u-pt-md"
-                        isRequired
                     >
                         <TextArea
                             id={field.name}
                             name={field.name}
                             value={field.value}
                             onChange={onChange}
-                            isRequired
                         />
                     </FormGroup>
                 )}
@@ -116,14 +114,12 @@ function PolicyMetadataFormSection(): ReactElement {
                         fieldId="policy-rationale"
                         label="Rationale"
                         className="pf-u-pt-md"
-                        isRequired
                     >
                         <TextArea
                             id={field.name}
                             name={field.name}
                             value={field.value}
                             onChange={onChange}
-                            isRequired
                         />
                     </FormGroup>
                 )}
@@ -135,14 +131,12 @@ function PolicyMetadataFormSection(): ReactElement {
                         fieldId="policy-guidance"
                         label="Guidance"
                         className="pf-u-pt-md"
-                        isRequired
                     >
                         <TextArea
                             id={field.name}
                             name={field.name}
                             value={field.value}
                             onChange={onChange}
-                            isRequired
                         />
                     </FormGroup>
                 )}

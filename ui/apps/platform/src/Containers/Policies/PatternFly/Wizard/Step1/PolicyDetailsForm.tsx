@@ -3,6 +3,7 @@ import { Title, Divider, Flex, FlexItem } from '@patternfly/react-core';
 
 import PolicyMetadataFormSection from './PolicyMetadataFormSection';
 import AttachNotifiersFormSection from './AttachNotifiersFormSection';
+import MitreAttackVectorsFormSection from './MitreAttackVectorsFormSection';
 
 function PolicyDetailsForm(): ReactElement {
     return (
@@ -22,7 +23,8 @@ function PolicyDetailsForm(): ReactElement {
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <FlexItem>mitre attack stuff will go here</FlexItem>
+            <Title headingLevel="h2">MITRE ATT&amp;CK</Title>
+            <MitreAttackVectorsFormSection />
         </div>
     );
 }

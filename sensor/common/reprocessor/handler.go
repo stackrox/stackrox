@@ -5,9 +5,12 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 )
 
 var (
@@ -20,16 +23,20 @@ type Handler interface {
 }
 
 // NewHandler returns a new instance of a deployment reprocessor.
-func NewHandler(detector detector.Detector) Handler {
+func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector detector.Detector, imageCache expiringcache.Cache) Handler {
 	return &handlerImpl{
-		detector: detector,
-		stopSig:  concurrency.NewErrorSignal(),
+		admCtrlSettingsMgr: admCtrlSettingsMgr,
+		detector:           detector,
+		imageCache:         imageCache,
+		stopSig:            concurrency.NewErrorSignal(),
 	}
 }
 
 type handlerImpl struct {
-	detector detector.Detector
-	stopSig  concurrency.ErrorSignal
+	admCtrlSettingsMgr admissioncontroller.SettingsManager
+	detector           detector.Detector
+	imageCache         expiringcache.Cache
+	stopSig            concurrency.ErrorSignal
 }
 
 func (h *handlerImpl) Start() error {
@@ -47,10 +54,16 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	req := msg.GetReprocessDeployment()
-	if req == nil {
-		return nil
+	switch {
+	case msg.GetReprocessDeployment() != nil:
+		return h.reprocessDeployments(msg.GetReprocessDeployment())
+	case msg.GetInvalidateImageCache() != nil:
+		return h.invalidateImageCache(msg.GetInvalidateImageCache())
 	}
+	return nil
+}
+
+func (h *handlerImpl) reprocessDeployments(req *central.ReprocessDeployment) error {
 	log.Debug("Received request to reprocess deployments from Central")
 
 	select {
@@ -58,6 +71,24 @@ func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill re-process deployment(s) request")
 	default:
 		go h.detector.ReprocessDeployments(req.GetDeploymentIds()...)
+	}
+	return nil
+}
+
+func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) error {
+	log.Debug("Received request to invalidate image caches")
+
+	select {
+	case <-h.stopSig.Done():
+		return errors.Wrap(h.stopSig.Err(), "could not fulfill invalidate image cache request")
+	default:
+		h.admCtrlSettingsMgr.FlushCache()
+		for _, image := range req.GetImageKeys() {
+			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
+				ID:   image.GetImageId(),
+				Name: image.GetImageFullName(),
+			})
+		}
 	}
 	return nil
 }
