@@ -76,9 +76,9 @@ function PolicyScopeForm({ clusters }) {
                 // TODO
             });
 
-        fetchDeployments()
+        fetchDeployments([], {}, 0, 0)
             .then((response) => {
-                const deploymentList = response.map((item) => item.deployment as ListDeployment);
+                const deploymentList = response.map((item) => item.deployment);
                 setDeployments(deploymentList);
             })
             .catch(() => {
