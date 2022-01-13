@@ -84,6 +84,11 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 	default:
 		h.admCtrlSettingsMgr.FlushCache()
 		for _, image := range req.GetImageKeys() {
+			// For new images the image ID may not be present since the image is not saved in Central DB.
+			// Hence, flush the entries having keys with no ID as well.
+			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
+				Name: image.GetImageFullName(),
+			})
 			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
 				ID:   image.GetImageId(),
 				Name: image.GetImageFullName(),
