@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	buildTestutils "github.com/stackrox/rox/pkg/buildinfo/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -42,7 +41,6 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	testutils.SetExampleVersion(t)
 	buildTestutils.SetBuildTimestamp(t, time.Now())
 
-	flavor := flavorUtils.MakeImageFlavorForTest(t)
 	flavorName := defaults.ImageFlavorNameDevelopmentBuild
 	if buildinfo.ReleaseBuild {
 		flavorName = defaults.ImageFlavorNameStackRoxIORelease
@@ -51,12 +49,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 		Version:     version.GetMainVersion(),
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &renderer.K8sConfig{
-			AppName: "someApp",
-			CommonConfig: renderer.CommonConfig{
-				MainImage:      flavor.MainImage(),
-				ScannerImage:   flavor.ScannerImage(),
-				ScannerDBImage: flavor.ScannerDBImage(),
-			},
+			AppName:          "someApp",
 			ImageFlavorName:  flavorName,
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			OfflineMode:      false,
