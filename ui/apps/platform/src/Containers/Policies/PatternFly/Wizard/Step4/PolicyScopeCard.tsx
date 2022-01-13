@@ -92,7 +92,7 @@ function PolicyScopeCard({
     return (
         <Card>
             <CardHeader className="pf-u-p-0">
-                <CardTitle className="pf-u-pl-md">
+                <CardTitle className="pf-u-pl-lg">
                     {type} scope {index + 1}
                 </CardTitle>
                 <CardActions hasNoOffset>
@@ -110,7 +110,7 @@ function PolicyScopeCard({
             <CardBody>
                 <Form>
                     <Flex direction={{ default: 'column' }}>
-                        <FlexItem className="pf-u-pl-md">
+                        <FlexItem>
                             <FormGroup label="Cluster" fieldId={`${name}-cluster`}>
                                 <Select
                                     onToggle={() => setIsClusterSelectOpen(!isClusterSelectOpen)}
@@ -127,7 +127,7 @@ function PolicyScopeCard({
                                 </Select>
                             </FormGroup>
                         </FlexItem>
-                        <FlexItem className="pf-u-pl-md">
+                        <FlexItem>
                             <FormGroup label="Namespace" fieldId={`${name}-namespace`}>
                                 <TextInput
                                     value={value.namespace || scope?.namespace}
@@ -138,7 +138,7 @@ function PolicyScopeCard({
                             </FormGroup>
                         </FlexItem>
                         {type === 'exclusion' && (
-                            <FlexItem className="pf-u-pl-md">
+                            <FlexItem>
                                 <FormGroup label="Deployment" fieldId={`${name}-deployment`}>
                                     <Select
                                         onToggle={() =>
@@ -162,7 +162,7 @@ function PolicyScopeCard({
                                 </FormGroup>
                             </FlexItem>
                         )}
-                        <FlexItem className="pf-u-pl-md">
+                        <FlexItem>
                             <FormGroup label="Label" fieldId={`${name}-label`}>
                                 <Flex
                                     direction={{ default: 'row' }}
