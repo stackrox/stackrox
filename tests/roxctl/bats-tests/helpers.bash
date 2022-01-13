@@ -175,5 +175,5 @@ run_invalid_flavor_value_test() {
   fi
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
-  assert_output --regexp "invalid value of '--image-defaults=.*', allowed values:"
+  assert_output --regexp "invalid value of '--image-defaults'.* allowed values are"
 }

@@ -64,10 +64,6 @@ teardown() {
   run_invalid_flavor_value_test roxctl-release k8s '--image-defaults' 'development'
 }
 
-@test "roxctl-release roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
-  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' 'stackrox.io' "--image-defaults="
-}
-
 # RELEASE / OPENSHIFT
 
 @test "roxctl-release central generate openshift should use docker.io registry" {
@@ -113,8 +109,4 @@ teardown() {
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=development should fail" {
   run_invalid_flavor_value_test roxctl-release openshift '--image-defaults' 'development'
-}
-
-@test "roxctl-release roxctl central generate openshift --image-defaults='' should behave as if --image-defaults would not be used" {
-  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' 'stackrox.io' "--image-defaults="
 }

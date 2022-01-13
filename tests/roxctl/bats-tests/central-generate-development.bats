@@ -64,10 +64,6 @@ teardown() {
   run_image_defaults_registry_test roxctl-development k8s 'docker.io' 'docker.io' '--image-defaults' 'development'
 }
 
-@test "roxctl-development roxctl central generate k8s --image-defaults='' should behave as if --image-defaults would not be used" {
-  run_image_defaults_registry_test roxctl-development k8s 'docker.io' 'docker.io' "--image-defaults="
-}
-
 # DEV / OPENSHIFT
 
 @test "roxctl-development central generate openshift should use docker.io registry" {
@@ -113,8 +109,4 @@ teardown() {
 
 @test "roxctl-development roxctl central generate openshift --image-defaults=development should use docker.io registry" {
   run_image_defaults_registry_test roxctl-development openshift 'docker.io' 'docker.io' '--image-defaults' 'development'
-}
-
-@test "roxctl-development roxctl central generate openshift --image-defaults='' should behave as if --image-defaults would not be used" {
-  run_image_defaults_registry_test roxctl-development openshift 'docker.io' 'docker.io' "--image-defaults="
 }
