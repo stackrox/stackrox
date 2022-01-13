@@ -181,6 +181,7 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 	if err != nil {
 		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("'--image-defaults': %v", err))
 	}
+	config.K8sConfig.ImageFlavor = &flavor
 
 	files, err := renderer.Render(config, flavor)
 	if err != nil {
