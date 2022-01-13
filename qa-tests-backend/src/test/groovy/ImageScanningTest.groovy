@@ -570,11 +570,11 @@ class ImageScanningTest extends BaseSpecification {
         testName                      | integration | deleteAutoRegistry | source                     |
                 imageIntegrationConfig
         "ecr-iam"                     | "ecr"       | false              | /^ecr$/                    |
-                { -> ECRRegistryIntegration.createCustomIntegration(useIam: true) }
+                { -> ECRRegistryIntegration.createCustomIntegration(useIam: true, endpoint: "") }
         "ecr-assume-role"             | "ecr"       | false              | /^ecr$/                    |
-                { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRole: true) }
+                { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRole: true, endpoint: "") }
         "ecr-assume-role-external-id" | "ecr"       | false              | /^ecr$/                    |
-                { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRoleExternalId: true) }
+                { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRoleExternalId: true, endpoint: "") }
         "ecr-auto"                    | "ecr"       | false              | source(".*.amazonaws.com") |
                 null
         "ecr-auto-and-config"         | "ecr"       | false              | /^ecr$/                    |

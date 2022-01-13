@@ -12,6 +12,7 @@ import {
     PolicyEventSource,
     PolicyExcludedDeployment,
     PolicyExclusion,
+    Policy,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -229,4 +230,39 @@ export function getLabelAndNotifierIdsForTypes(
 export function getClusterName(clusters: Cluster[], clusterId: string): string {
     const cluster = clusters.find(({ id }) => id === clusterId);
     return cluster?.name ?? clusterId;
+}
+
+export function preFormatExclusionField(policy): Policy {
+    const { exclusions } = policy;
+    const clientPolicy: Policy = { ...policy };
+
+    clientPolicy.excludedImageNames =
+        exclusions.filter((o) => !!o.image?.name).map((o) => o.image.name as string) ?? [];
+
+    clientPolicy.excludedDeploymentScopes = exclusions
+        .filter((o) => !!o.deployment?.name || !!o.deployment?.scope)
+        .map((o) => o.deployment as PolicyExcludedDeployment);
+
+    return clientPolicy;
+}
+
+export function postFormatExclusionField(policy): Policy {
+    const serverPolicy: Policy = { ...policy };
+    serverPolicy.exclusions = [];
+
+    const { excludedDeploymentScopes } = policy;
+    if (excludedDeploymentScopes && excludedDeploymentScopes.length) {
+        serverPolicy.exclusions = serverPolicy.exclusions.concat(
+            excludedDeploymentScopes.map((deployment) => ({ deployment }))
+        );
+    }
+
+    const { excludedImageNames } = policy;
+    if (excludedImageNames && excludedImageNames.length > 0) {
+        serverPolicy.exclusions = serverPolicy.exclusions.concat(
+            excludedImageNames.map((name) => ({ image: { name } }))
+        );
+    }
+
+    return serverPolicy;
 }
