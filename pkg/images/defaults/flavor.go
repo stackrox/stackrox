@@ -12,14 +12,14 @@ import (
 )
 
 type imageFlavorDescriptor struct {
-	// ImageFlavorName is a value for both ROX_IMAGE_FLAVOR and for --image-defaults argument in roxctl.
-	ImageFlavorName string
-	// IsAllowedInReleaseBuild sets if given image flavor can (true) or shall not (false) be available when
+	// imageFlavorName is a value for both ROX_IMAGE_FLAVOR and for --image-defaults argument in roxctl.
+	imageFlavorName string
+	// isAllowedInReleaseBuild sets if given image flavor can (true) or shall not (false) be available when
 	// buildinfo.ReleaseBuild is true.
-	IsAllowedInReleaseBuild bool
-	// ConstructorFunc is a function that creates and populates the ImageFlavor struct according to selected
+	isAllowedInReleaseBuild bool
+	// constructorFunc is a function that creates and populates the ImageFlavor struct according to selected
 	// ImageFlavorName.
-	ConstructorFunc func() ImageFlavor
+	constructorFunc func() ImageFlavor
 }
 
 var (
@@ -28,14 +28,14 @@ var (
 	// allImageFlavors describes all available image flavors.
 	allImageFlavors = []imageFlavorDescriptor{
 		{
-			ImageFlavorName:         ImageFlavorNameDevelopmentBuild,
-			IsAllowedInReleaseBuild: false,
-			ConstructorFunc:         DevelopmentBuildImageFlavor,
+			imageFlavorName:         ImageFlavorNameDevelopmentBuild,
+			isAllowedInReleaseBuild: false,
+			constructorFunc:         DevelopmentBuildImageFlavor,
 		},
 		{
-			ImageFlavorName:         ImageFlavorNameStackRoxIORelease,
-			IsAllowedInReleaseBuild: true,
-			ConstructorFunc:         StackRoxIOReleaseImageFlavor,
+			imageFlavorName:         ImageFlavorNameStackRoxIORelease,
+			isAllowedInReleaseBuild: true,
+			constructorFunc:         StackRoxIOReleaseImageFlavor,
 		},
 	}
 
@@ -43,7 +43,7 @@ var (
 	imageFlavorMap = func() map[string]imageFlavorDescriptor {
 		result := make(map[string]imageFlavorDescriptor, len(allImageFlavors))
 		for _, f := range allImageFlavors {
-			result[f.ImageFlavorName] = f
+			result[f.imageFlavorName] = f
 		}
 		return result
 	}()
@@ -157,8 +157,8 @@ func GetImageFlavorByBuildType() ImageFlavor {
 func GetAllowedImageFlavorNames(isReleaseBuild bool) []string {
 	result := make([]string, 0, len(allImageFlavors))
 	for _, f := range allImageFlavors {
-		if f.IsAllowedInReleaseBuild || !isReleaseBuild {
-			result = append(result, f.ImageFlavorName)
+		if f.isAllowedInReleaseBuild || !isReleaseBuild {
+			result = append(result, f.imageFlavorName)
 		}
 	}
 	return result
@@ -188,7 +188,7 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 		return ImageFlavor{}, err
 	}
 	f := imageFlavorMap[flavorName]
-	return f.ConstructorFunc(), nil
+	return f.constructorFunc(), nil
 }
 
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR).
