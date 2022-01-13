@@ -84,8 +84,11 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags
-	allowedFlavsStr := "('" + strings.Join(GetValidImageDefaults(buildinfo.ReleaseBuild), "', '") + "')"
-	flagWrap.StringVar(&k8sConfig.ImageFlavorName, "image-defaults", "", "default container registry for container images "+allowedFlavsStr)
+	defaultFlav, _ := GetImageFlavorByRoxctlFlag("", buildinfo.ReleaseBuild)
+	helpStr := fmt.Sprintf("default container registry for container images ('%s') (default %s)",
+		strings.Join(GetValidImageDefaults(buildinfo.ReleaseBuild), "', '"),
+		defaultFlav.RoxctlImageDefaultsFlag)
+	flagWrap.StringVar(&k8sConfig.ImageFlavorName, "image-defaults", "", helpStr)
 
 	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "", "main image to use", "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")

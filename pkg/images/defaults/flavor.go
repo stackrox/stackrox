@@ -37,6 +37,9 @@ type ImagePullSecrets struct {
 
 // ImageFlavor represents default settings for pulling images.
 type ImageFlavor struct {
+	// RoxctlImageDefaultsFlag specifies value of the --image-defaults parameter for roxctl {helm output, central generate} that would enable this flavor
+	RoxctlImageDefaultsFlag string
+
 	// MainRegistry is a registry for all images except of collector.
 	MainRegistry  string
 	MainImageName string
@@ -64,9 +67,10 @@ type ImageFlavor struct {
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
-		MainRegistry:  "docker.io/stackrox",
-		MainImageName: "main",
-		MainImageTag:  v.MainVersion,
+		RoxctlImageDefaultsFlag: "development",
+		MainRegistry:            "docker.io/stackrox",
+		MainImageName:           "main",
+		MainImageTag:            v.MainVersion,
 
 		CollectorRegistry:      "docker.io/stackrox",
 		CollectorImageName:     "collector",
@@ -93,9 +97,10 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		MainRegistry:  "stackrox.io",
-		MainImageName: "main",
-		MainImageTag:  v.MainVersion,
+		RoxctlImageDefaultsFlag: "stackrox.io",
+		MainRegistry:            "stackrox.io",
+		MainImageName:           "main",
+		MainImageTag:            v.MainVersion,
 
 		CollectorRegistry:      "collector.stackrox.io",
 		CollectorImageName:     "collector",

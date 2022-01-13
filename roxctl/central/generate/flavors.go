@@ -23,7 +23,7 @@ func GetValidImageDefaults(isRelease bool) []string {
 func imageDefaultsMap(isRelease bool) map[string]func() defaults.ImageFlavor {
 	m := make(map[string]func() defaults.ImageFlavor)
 	if isRelease {
-		m[""] = defaults.StackRoxIOReleaseImageFlavor
+		m[""] = defaults.StackRoxIOReleaseImageFlavor // TODO(RS-380): set default to RHACS
 	} else {
 		m[""] = defaults.DevelopmentBuildImageFlavor
 		m["development"] = defaults.DevelopmentBuildImageFlavor
