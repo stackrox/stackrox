@@ -128,18 +128,6 @@ getECRDockerPullPassword: &getECRDockerPullPassword
       cci-export AWS_ECR_DOCKER_PULL_PASSWORD "${PASS}"
       exit 0
 
-setImageFlavor: &setImageFlavor
-  run:
-    name: Set ROX_IMAGE_FLAVOR
-    command: |
-      FLAVOR="${ROX_IMAGE_FLAVOR:-development_build}"
-      # Use 'stackrox.io' flavor on release and RC builds
-      if [[ "${CIRCLE_TAG}" =~ ^[0-9]+(\.[0-9]+)?\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
-        FLAVOR="stackrox.io"
-      fi
-      echo "Setting image flavor: '$FLAVOR' for CIRCLE_TAG: '$CIRCLE_TAG'"
-      cci-export ROX_IMAGE_FLAVOR "$FLAVOR"
-
 refreshAlpineBaseImage: &refreshAlpineBaseImage
   run:
     name: Refresh base image
@@ -869,6 +857,20 @@ commands:
             if .circleci/pr_has_label.sh "ci-release-build"; then
               cci-export GOTAGS release
             fi
+
+  set-image-flavor:
+    steps:
+      - run:
+          name: Set ROX_IMAGE_FLAVOR
+          command: |
+            FLAVOR="${ROX_IMAGE_FLAVOR:-development_build}"
+            # Use 'stackrox.io' image flavor on builds that define GOTAGS=release which shall include the actual
+            # release builds.
+            if [[ "$(make --quiet gotags)" == "release" ]]; then
+              FLAVOR="stackrox.io"
+            fi
+            echo "Setting ROX_IMAGE_FLAVOR to '$FLAVOR' for CIRCLE_TAG '$CIRCLE_TAG'"
+            cci-export ROX_IMAGE_FLAVOR "$FLAVOR"
 
   setup-dep-env:
     parameters:
@@ -2751,7 +2753,7 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - *setImageFlavor
+      - set-image-flavor
 
       - run:
           name: Generate OSS notice
@@ -2877,7 +2879,7 @@ jobs:
           # Setting the release image flavor is fine because the image registry gets overridden anyway, but it has an
           # implication that scanner, scanner-db and collector images should have the same image tags as main image.
           # For this we retag those images in one of the steps below.
-          command: cci-export ROX_IMAGE_FLAVOR "stackrox_io_release"
+          command: cci-export ROX_IMAGE_FLAVOR "stackrox.io"
 
       - restore-npm-deps-cache
       - fetch-ui-deps
@@ -2946,7 +2948,7 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - *setImageFlavor
+      - set-image-flavor
 
       - run:
           name: Build Operator Bundle image
