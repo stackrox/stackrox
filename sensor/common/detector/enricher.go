@@ -90,7 +90,7 @@ func (e *enricher) getImageFromCache(key imagecacheutils.ImageCacheKey) (*storag
 
 func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageChanResult {
 	key := imagecacheutils.GetImageCacheKey(ci)
-
+	log.Errorf("image cache key from provider %v", key)
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if ci.GetNotPullable() {
 		if strings.Contains(ci.GetName().GetFullName(), "log4j") || strings.Contains(ci.GetName().GetFullName(), "nginx") {
