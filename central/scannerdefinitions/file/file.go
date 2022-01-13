@@ -50,11 +50,20 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
 	}
+	// Close the file in case of error.
 	defer utils.IgnoreError(scannerDefsFile.Close)
 
 	_, err = io.Copy(scannerDefsFile, r)
 	if err != nil {
 		return errors.Wrap(err, "copying scanner defs zip out")
+	}
+
+	// No longer need the file descriptor, so release it.
+	// Closing here, as it is possible Close updates the mtime
+	// (for example: the data is not flushed until Close is called).
+	err = scannerDefsFile.Close()
+	if err != nil {
+		return errors.Wrap(err, "closing temp scanner defs file")
 	}
 
 	err = os.Chtimes(scannerDefsFile.Name(), time.Now(), modifiedTime)
