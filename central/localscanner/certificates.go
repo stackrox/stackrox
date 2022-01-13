@@ -12,7 +12,7 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
-// IssueLocalScannerCerts issue certificates for Local scaner.
+// IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
 func IssueLocalScannerCerts(namespace string, clusterID string) (*central.IssueLocalScannerCertsResponse, error) {
 	if namespace == "" {
 		return nil, errors.New("namespace is required to issue the certificates for the local scanner")
@@ -40,7 +40,7 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*central.IssueL
 func localScannerCertificatesFor(serviceType storage.ServiceType, namespace string, clusterID string) (*central.LocalScannerCertificates, error) {
 	certificates, err := generateServiceCertMap(serviceType, namespace, clusterID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error generating certificate for service %s", serviceType)
+		return nil, errors.Wrapf(err, "generating certificate for service %s", serviceType)
 	}
 
 	return &central.LocalScannerCertificates{
