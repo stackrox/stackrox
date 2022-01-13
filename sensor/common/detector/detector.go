@@ -366,7 +366,6 @@ func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
 
 	for _, deploymentID := range deploymentIDs {
 		d.deduper.removeDeployment(deploymentID)
-		d.markDeploymentForProcessing(deploymentID)
 	}
 }
 
