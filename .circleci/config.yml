@@ -133,9 +133,9 @@ setImageFlavor: &setImageFlavor
     name: Set ROX_IMAGE_FLAVOR
     command: |
       FLAVOR="${ROX_IMAGE_FLAVOR:-development_build}"
-      # Use 'stackrox_io_release' flavor on release and RC builds
+      # Use 'stackrox.io' flavor on release and RC builds
       if [[ "${CIRCLE_TAG}" =~ ^[0-9]+(\.[0-9]+)?\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
-        FLAVOR="stackrox_io_release"
+        FLAVOR="stackrox.io"
       fi
       echo "Setting image flavor: '$FLAVOR' for CIRCLE_TAG: '$CIRCLE_TAG'"
       cci-export ROX_IMAGE_FLAVOR "$FLAVOR"
@@ -2188,7 +2188,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      ROX_IMAGE_FLAVOR: stackrox_io_release
+      ROX_IMAGE_FLAVOR: stackrox.io
     steps:
       - pre-go-unit-tests
       - run:

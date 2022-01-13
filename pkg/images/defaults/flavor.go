@@ -113,7 +113,7 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 	}
 }
 
-// StackRoxIOReleaseImageFlavor returns image values for `stackrox_io_release` flavor.
+// StackRoxIOReleaseImageFlavor returns image values for `stackrox.io` flavor.
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{

@@ -6,7 +6,7 @@ const (
 	imageFlavorEnvName = "ROX_IMAGE_FLAVOR"
 
 	// ImageFlavorNameDevelopmentBuild is a name for image flavor (image defaults) for development builds.
-	ImageFlavorNameDevelopmentBuild = "development"
+	ImageFlavorNameDevelopmentBuild = "development_build"
 	// ImageFlavorNameStackRoxIORelease is a name for image flavor (image defaults) for images released to stackrox.io.
 	ImageFlavorNameStackRoxIORelease = "stackrox.io"
 	// TODO(RS-380): add this flavor:

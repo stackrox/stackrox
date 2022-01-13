@@ -39,7 +39,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		shouldPanicOnRelease bool
 		shouldPanicAlways    bool
 	}{
-		"development": {
+		"development_build": {
 			expectedFlavor:       DevelopmentBuildImageFlavor(),
 			shouldPanicOnRelease: true,
 		},
@@ -47,7 +47,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
 		},
 		// TODO(RS-380): Add test for RHACS flavor when available
-		// "rhacs_release": {
+		// "rhacs": {
 		//	 expectedFlavor: RHACS
 		// },
 		"wrong_value": {
@@ -83,9 +83,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 		expectedErrorNonRelease string
 		expectedErrorRelease    string
 	}{
-		"development": {
+		"development_build": {
 			expectedFlavor:       DevelopmentBuildImageFlavor(),
-			expectedErrorRelease: "unexpected value 'development'",
+			expectedErrorRelease: "unexpected value 'development_build'",
 		},
 		"stackrox.io": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
@@ -126,8 +126,8 @@ func TestGetAllowedImageFlavorNames(t *testing.T) {
 		isRelease bool
 		want      []string
 	}{
-		{"development", false, []string{"development", "stackrox.io"}}, // TODO(RS-380): add rhacs
-		{"release", true, []string{"stackrox.io"}},                     // TODO(RS-380): add rhacs
+		{"development", false, []string{"development_build", "stackrox.io"}}, // TODO(RS-380): add rhacs
+		{"release", true, []string{"stackrox.io"}},                           // TODO(RS-380): add rhacs
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
