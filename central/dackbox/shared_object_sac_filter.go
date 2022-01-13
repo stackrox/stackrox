@@ -196,7 +196,8 @@ func (f *combinedSAC) noSACApply(ctx context.Context, from ...string) ([]int, bo
 }
 
 func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]int, bool, error) {
-	if !sac.IsContextSACEnabled(ctx) {
+	// TODO(ROX-9134): consider re-enabling for Unrestricted scope
+	if false {
 		filteredIndices, all := f.noSACApply(ctx, from...)
 		return filteredIndices, all, nil
 	}
