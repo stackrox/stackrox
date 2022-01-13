@@ -4,7 +4,7 @@ import (
 	"embed"
 	"encoding/base64"
 
-	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -13,14 +13,15 @@ const (
 
 var (
 	//go:embed files/red-hat-acs-logo-rgb.png
-	logoFS embed.FS
+	logoFS     embed.FS
+	logoBase64 = func() string {
+		bytes, err := logoFS.ReadFile(logoFile)
+		utils.Must(err)
+		return base64.StdEncoding.EncodeToString(bytes)
+	}()
 )
 
-// GetLogo reads and returns the logo bytes in base64 encoded string.
-func GetLogo() (string, error) {
-	bytes, err := logoFS.ReadFile(logoFile)
-	if err != nil {
-		return "", errors.Wrapf(err, "could not read logo from %q", logoFile)
-	}
-	return base64.StdEncoding.EncodeToString(bytes), nil
+// GetLogoBase64 returns the logo bytes in base64 encoded string.
+func GetLogoBase64() string {
+	return logoBase64
 }

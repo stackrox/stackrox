@@ -202,7 +202,7 @@ func (s *scheduler) runReports() {
 		case <-s.stoppedSig.Done():
 			return
 		case req := <-s.reportsToRun:
-			log.Infof("Executing report %s at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
+			log.Infof("Executing report '%s' at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
 			err := s.sendReportResults(req)
 			if err != nil {
 				log.Errorf("error executing report %s: %s", req.ReportConfig.GetName(), err)

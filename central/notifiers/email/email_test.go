@@ -24,6 +24,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 		Attachments: map[string][]byte{
 			"attachment1.zip": attachBuf.Bytes(),
 		},
+		EmbedLogo: true,
 	}
 
 	msgBytes := msg.Bytes()
@@ -51,10 +52,11 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 
 func TestEmailMsgNoAttachments(t *testing.T) {
 	msg := &message{
-		To:      "foo@stackrox.com, bar@stackrox.com",
-		From:    "xyz@stackrox.com",
-		Subject: "Test Email",
-		Body:    "How you doin'?",
+		To:        "foo@stackrox.com, bar@stackrox.com",
+		From:      "xyz@stackrox.com",
+		Subject:   "Test Email",
+		Body:      "How you doin'?",
+		EmbedLogo: false,
 	}
 
 	msgBytes := msg.Bytes()
