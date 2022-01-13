@@ -706,11 +706,11 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
 
         new ECRRegistryIntegration()    | { [useAssumeRole: true,]
-        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole cannot be done"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole with endpoint set"
         new ECRRegistryIntegration()    | { [useAssumeRole: true, assumeRoleRoleId: "OOPS", endpoint: "",]
-        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "not authorized to perform: sts:AssumeRole"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole with incorrect role"
         new ECRRegistryIntegration()    | { [useAssumeRoleExternalId: true, assumeRoleExternalId: "OOPS", endpoint: "",]
-        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "not authorized to perform: sts:AssumeRole"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole external ID with incorrect external ID"
 
         new QuayImageIntegration()      | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
