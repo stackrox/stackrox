@@ -511,7 +511,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.21
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.23
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -3537,11 +3537,6 @@ jobs:
             cci-export "SERVICE_CERT_FILE" "$SERVICE_CERT_FILE"
             cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
 
-      - run:
-          name: Setup prerequisites for Bats tests
-          command: |
-            source tests/e2e/run.sh
-            install_yq
       - run:
           name: Run roxctl Bats tests
           command: |
