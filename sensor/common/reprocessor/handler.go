@@ -86,6 +86,9 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 		imgStr := " "
 		for _, image := range req.GetImageKeys() {
 			key := imagecacheutils.ImageCacheKey{
+				Name: image.GetImageFullName(),
+			}
+			key := imagecacheutils.ImageCacheKey{
 				ID:   image.GetImageId(),
 				Name: image.GetImageFullName(),
 			}
