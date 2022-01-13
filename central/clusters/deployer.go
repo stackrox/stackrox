@@ -113,8 +113,10 @@ func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.I
 // base image. For example:
 // base image: "quay.io/namespace/main" => another: "quay.io/namespace/another"
 func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.ImageName {
+	// TODO(RS-387): check if this split is still needed. Since we are not consistent in how we split the image, configured image names might have namespaces
+	imageNameWithoutNamespace := name[strings.IndexRune(name, '/') + 1:]
 	baseRemote := baseImage.GetRemote()
-	remote := baseRemote[:strings.IndexRune(baseRemote, '/')+1] + name
+	remote := baseRemote[:strings.IndexRune(baseRemote, '/')+1] + imageNameWithoutNamespace
 	return &storage.ImageName{
 		Registry: baseImage.Registry,
 		Remote:   remote,

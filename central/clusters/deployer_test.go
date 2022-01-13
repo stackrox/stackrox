@@ -90,6 +90,12 @@ func (s *deployerTestSuite) Test_deriveImageWithNewName() {
 			expectedRegistry:   "my.registry.io",
 			expectedRepository: "stackrox/imageA",
 		},
+		"my.registry.io/stackrox/imageB": {
+			baseImage:          ImageWithSingleNamespace,
+			targetImageName:    "company/imageB",
+			expectedRegistry:   "my.registry.io",
+			expectedRepository: "stackrox/imageB",
+		},
 	}
 
 	for name, testCase := range cases {
