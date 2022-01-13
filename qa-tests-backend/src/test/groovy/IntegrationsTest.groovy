@@ -642,7 +642,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Category(Integration)
     def "Verify improper #imageIntegration.name() integration - #testAspect"() {
         Assume.assumeTrue(imageIntegration.isTestable())
 
@@ -704,10 +704,6 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /UnrecognizedClientException/ | "incorrect key"
         new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
-
-        // TODO remove this line -- osward
-        new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
-        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "bad string on purpose"
 
         new ECRRegistryIntegration()    | { [useAssumeRole: true,]
         }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole cannot be done"
