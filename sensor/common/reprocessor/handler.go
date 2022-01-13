@@ -83,6 +83,10 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill invalidate image cache request")
 	default:
 		h.admCtrlSettingsMgr.FlushCache()
+		if len(req.GetImageKeys()) == 0 {
+			h.imageCache.RemoveAll()
+			return nil
+		}
 		for _, image := range req.GetImageKeys() {
 			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
 				ID:   image.GetImageId(),
