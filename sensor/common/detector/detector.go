@@ -365,13 +365,7 @@ func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
 	defer d.deploymentDetectionLock.Unlock()
 
 	for _, deploymentID := range deploymentIDs {
-		deployment := d.deploymentStore.Get(deploymentID)
-		if deployment == nil {
-			continue
-		}
-
-		d.markDeploymentForProcessing(deploymentID)
-		go d.enricher.blockingScan(deployment, central.ResourceAction_UPDATE_RESOURCE)
+		d.deduper.removeDeployment(deploymentID)
 	}
 }
 
