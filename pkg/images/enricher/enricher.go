@@ -108,7 +108,6 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		metadataCache:   metadataCache,
 
 		asyncRateLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
-		scanCache:        scanCache,
 
 		metrics: newMetrics(subsystem),
 	}

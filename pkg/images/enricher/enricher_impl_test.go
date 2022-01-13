@@ -374,7 +374,6 @@ func TestCVESuppression(t *testing.T) {
 		integrationHealthReporter: mockReporter,
 		metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:             expiringcache.NewExpiringCache(1 * time.Minute),
-		scanCache:                 expiringcache.NewExpiringCache(1 * time.Minute),
 		metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
