@@ -321,23 +321,6 @@ type LocalScannerComponentSpec struct {
 	DB *DeploymentSpec `json:"db,omitempty"`
 }
 
-// GetAnalyzer returns the analyzer component even if receiver is nil
-func (s *LocalScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
-	if s == nil {
-		return nil
-	}
-	return s.Analyzer
-}
-
-// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
-func (s *LocalScannerComponentSpec) IsEnabled() bool {
-	// TODO(ROX-8921): take Central existence into account
-	if s == nil || s.ScannerComponent == nil {
-		return true // enabled by default
-	}
-	return *s.ScannerComponent == LocalScannerComponentEnabled || *s.ScannerComponent == LocalScannerComponentAutoSense
-}
-
 // LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
 //+kubebuilder:validation:Enum=AutoSense;Enabled;Disabled
 type LocalScannerComponentPolicy string

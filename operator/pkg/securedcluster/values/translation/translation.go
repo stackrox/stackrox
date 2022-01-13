@@ -105,9 +105,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
 
-	if sc.Spec.Scanner != nil {
-		v.AddChild("scanner", translation.GetScannerComponentValues(sc.Spec.Scanner))
-	}
+	v.AddChild("scanner", t.getLocalScannerComponentValues(ctx, sc.Spec.Scanner, sc.Namespace))
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 	v.AddChild("customize", &customize)
@@ -299,9 +297,41 @@ func (t Translator) getComplianceContainerValues(compliance *platform.ContainerS
 	return &cv
 }
 
+func (t Translator) getLocalScannerComponentValues(ctx context.Context, s *platform.LocalScannerComponentSpec, namespace string) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+
+	switch *s.ScannerComponent {
+	case platform.LocalScannerComponentAutoSense:
+		siblingCentralPresent, err := t.isSiblingCentralPresent(ctx, namespace)
+		if err != nil {
+			sv.SetError(err)
+		} else {
+			sv.SetBoolValue("disable", siblingCentralPresent)
+		}
+	case platform.LocalScannerComponentDisabled:
+		sv.SetBoolValue("disable", true)
+	case platform.LocalScannerComponentEnabled:
+		sv.SetBoolValue("disable", false)
+	default:
+		return sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *s.ScannerComponent))
+	}
+
+	translation.SetScannerAnalyzerValues(&sv, s.Analyzer)
+	translation.SetScannerDBValues(&sv, s.DB)
+
+	return &sv
+}
+
 // Sets defaults that might not be applied on the resource due to ROX-8046.
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
+	if sc.Spec.Scanner == nil {
+		sc.Spec.Scanner = &platform.LocalScannerComponentSpec{}
+	}
+	if sc.Spec.Scanner.ScannerComponent == nil {
+		defaultScanner := platform.LocalScannerComponentAutoSense
+		sc.Spec.Scanner.ScannerComponent = &defaultScanner
+	}
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}
@@ -311,6 +341,14 @@ func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 	if sc.Spec.AdmissionControl.ListenOnUpdates == nil {
 		sc.Spec.AdmissionControl.ListenOnUpdates = pointers.Bool(true)
 	}
+}
+
+func (t Translator) isSiblingCentralPresent(ctx context.Context, namespace string) (bool, error) {
+	list := &platform.CentralList{}
+	if err := t.client.List(ctx, list, client.InNamespace(namespace)); err != nil {
+		return false, errors.Wrapf(err, "cannot list centrals in namespace %q", namespace)
+	}
+	return len(list.Items) > 0, nil
 }
 
 func getMetaValues(sc platform.SecuredCluster) *translation.ValuesBuilder {

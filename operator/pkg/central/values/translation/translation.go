@@ -68,7 +68,7 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	v.AddChild("central", getCentralComponentValues(centralSpec))
 
 	if c.Spec.Scanner != nil {
-		v.AddChild("scanner", translation.GetScannerComponentValues(c.Spec.Scanner))
+		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
 	}
 
 	v.AddChild("customize", &customize)
@@ -149,4 +149,24 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		cv.AddChild("exposure", &exposure)
 	}
 	return &cv
+}
+
+func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+
+	if s.ScannerComponent != nil {
+		switch *s.ScannerComponent {
+		case platform.ScannerComponentDisabled:
+			sv.SetBoolValue("disable", true)
+		case platform.ScannerComponentEnabled:
+			sv.SetBoolValue("disable", false)
+		default:
+			return sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *s.ScannerComponent))
+		}
+	}
+
+	translation.SetScannerAnalyzerValues(&sv, s.GetAnalyzer())
+	translation.SetScannerDBValues(&sv, s.DB)
+
+	return &sv
 }

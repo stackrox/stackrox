@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -42,7 +43,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	u, err := toUnstructured(sc)
 	require.NoError(t, err)
 
-	translator := Translator{client: newFakeClientWithInitBundle()}
+	translator := Translator{client: newFakeClientWithInitBundle(t)}
 	vals, err := translator.Translate(context.Background(), u)
 	require.NoError(t, err)
 
@@ -55,7 +56,7 @@ func TestTranslate(t *testing.T) {
 		sc     platform.SecuredCluster
 	}
 
-	scannerComponentPolicy := platform.ScannerComponentEnabled
+	scannerComponentPolicy := platform.LocalScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
 
 	scannerReplicas := int32(7)
@@ -69,7 +70,7 @@ func TestTranslate(t *testing.T) {
 	}{
 		"minimal spec": {
 			args: args{
-				client: newFakeClientWithInitBundle(),
+				client: newFakeClientWithInitBundle(t),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
@@ -89,11 +90,68 @@ func TestTranslate(t *testing.T) {
 					"listenOnCreates": true,
 					"listenOnUpdates": true,
 				},
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+			},
+		},
+		"local scanner autosense suppression": {
+			args: args{
+				client: newFakeClientWithInitBundleAndCentral(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+				"scanner": map[string]interface{}{
+					"disable": true,
+				},
+			},
+		},
+		"local scanner autosense no suppression": {
+			args: args{
+				client: newFakeClientWithInitBundle(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
 			},
 		},
 		"complete spec": {
 			args: args{
-				client: newFakeClientWithInitBundle(),
+				client: newFakeClientWithInitBundle(t),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-secured-cluster",
@@ -174,7 +232,7 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 						},
-						Scanner: &platform.ScannerComponentSpec{
+						Scanner: &platform.LocalScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
 							Analyzer: &platform.ScannerAnalyzerComponent{
 								Scaling: &platform.ScannerAnalyzerScaling{
@@ -446,11 +504,31 @@ func toUnstructured(sc platform.SecuredCluster) (*unstructured.Unstructured, err
 	return &unstructured.Unstructured{Object: obj}, nil
 }
 
-func newFakeClientWithInitBundle() client.Client {
-	return fake.NewClientBuilder().WithObjects(
+func newFakeClientBuilder(t *testing.T) *fake.ClientBuilder {
+	sch := runtime.NewScheme()
+	require.NoError(t, platform.AddToScheme(sch))
+	require.NoError(t, scheme.AddToScheme(sch))
+	return fake.NewClientBuilder().WithScheme(sch)
+}
+
+func newFakeClientWithInitBundle(t *testing.T) client.Client {
+	return newFakeClientBuilder(t).WithObjects(
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
 		createSecret(admissionControlTLSSecretName)).Build()
+}
+
+func newFakeClientWithInitBundleAndCentral(t *testing.T) client.Client {
+	return newFakeClientBuilder(t).WithObjects(
+		createSecret(sensorTLSSecretName),
+		createSecret(collectorTLSSecretName),
+		createSecret(admissionControlTLSSecretName),
+		&platform.Central{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "a-central",
+				Namespace: "stackrox",
+			},
+		}).Build()
 }
 
 func createSecret(name string) *v1.Secret {

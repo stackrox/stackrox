@@ -128,23 +128,10 @@ func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder
 	return &v
 }
 
-// GetScannerComponentValues converts platform.ScannerComponentSpec to a *ValuesBuilder.
-func GetScannerComponentValues(s *platform.ScannerComponentSpec) *ValuesBuilder {
-	sv := NewValuesBuilder()
-
-	if s.ScannerComponent != nil {
-		switch *s.ScannerComponent {
-		case platform.ScannerComponentDisabled:
-			sv.SetBoolValue("disable", true)
-		case platform.ScannerComponentEnabled:
-			sv.SetBoolValue("disable", false)
-		default:
-			return sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *s.ScannerComponent))
-		}
-	}
-
-	if s.GetAnalyzer().GetScaling() != nil {
-		scaling := s.GetAnalyzer().GetScaling()
+// SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
+func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
+	if analyzer.GetScaling() != nil {
+		scaling := analyzer.GetScaling()
 		sv.SetInt32("replicas", scaling.Replicas)
 
 		autoscaling := NewValuesBuilder()
@@ -155,7 +142,7 @@ func GetScannerComponentValues(s *platform.ScannerComponentSpec) *ValuesBuilder 
 			case platform.ScannerAutoScalingEnabled:
 				autoscaling.SetBoolValue("disable", false)
 			default:
-				return autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
+				autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
 			}
 		}
 		autoscaling.SetInt32("minReplicas", scaling.MinReplicas)
@@ -163,17 +150,18 @@ func GetScannerComponentValues(s *platform.ScannerComponentSpec) *ValuesBuilder 
 		sv.AddChild("autoscaling", &autoscaling)
 	}
 
-	if s.GetAnalyzer() != nil {
-		sv.SetStringMap("nodeSelector", s.GetAnalyzer().NodeSelector)
-		sv.AddChild(ResourcesKey, GetResources(s.GetAnalyzer().Resources))
-		sv.AddAllFrom(GetTolerations(TolerationsKey, s.GetAnalyzer().DeploymentSpec.Tolerations))
+	if analyzer != nil {
+		sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
+		sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
+		sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
 	}
+}
 
-	if s.DB != nil {
-		sv.SetStringMap("dbNodeSelector", s.DB.NodeSelector)
-		sv.AddChild("dbResources", GetResources(s.DB.Resources))
-		sv.AddAllFrom(GetTolerations("dbTolerations", s.DB.Tolerations))
+// SetScannerDBValues sets values in "sb" based on "db".
+func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
+	if db != nil {
+		sv.SetStringMap("dbNodeSelector", db.NodeSelector)
+		sv.AddChild("dbResources", GetResources(db.Resources))
+		sv.AddAllFrom(GetTolerations("dbTolerations", db.Tolerations))
 	}
-
-	return &sv
 }

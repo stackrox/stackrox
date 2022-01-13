@@ -193,5 +193,4 @@ func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent() (bool, e
 		return false, errors.Wrapf(err, "cannot list securedclusters in namespace %q", namespace)
 	}
 	return len(list.Items) > 0, nil
-
 }
