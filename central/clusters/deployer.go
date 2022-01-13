@@ -91,7 +91,7 @@ func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collect
 // collector full image: "custom.registry.io/collector" => collector slim image: "custom.registry.io/collector-slim"
 // returned images are: (collectorFull, collectorSlim)
 func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) (*storage.ImageName, *storage.ImageName) {
-	var collectorImageFull, collectorImageSlim *storage.ImageName
+	var collectorImageFull *storage.ImageName
 	if clusterCollectorImage == nil && imageFlavor.IsImageDefaultMain(clusterMainImage) {
 		collectorImageFull = &storage.ImageName{
 			Registry: imageFlavor.CollectorRegistry,
@@ -103,7 +103,7 @@ func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.I
 		collectorImageFull = clusterCollectorImage.Clone()
 	}
 	collectorImageFull.Tag = imageFlavor.CollectorImageTag
-	collectorImageSlim = deriveImageWithNewName(collectorImageFull, imageFlavor.CollectorSlimImageName)
+	collectorImageSlim := deriveImageWithNewName(collectorImageFull, imageFlavor.CollectorSlimImageName)
 	collectorImageSlim.Tag = imageFlavor.CollectorSlimImageTag
 	return collectorImageFull, collectorImageSlim
 }
@@ -114,7 +114,7 @@ func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.I
 // base image: "quay.io/namespace/main" => another: "quay.io/namespace/another"
 func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.ImageName {
 	// TODO(RS-387): check if this split is still needed. Since we are not consistent in how we split the image, configured image names might have namespaces
-	imageNameWithoutNamespace := name[strings.IndexRune(name, '/') + 1:]
+	imageNameWithoutNamespace := name[strings.IndexRune(name, '/')+1:]
 	baseRemote := baseImage.GetRemote()
 	remote := baseRemote[:strings.IndexRune(baseRemote, '/')+1] + imageNameWithoutNamespace
 	return &storage.ImageName{
