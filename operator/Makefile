@@ -72,10 +72,10 @@ TEST_NAMESPACE ?= stackrox-operator
 # to your manager process.
 ENABLE_WEBHOOKS ?= false
 
-# Set 'development_build' as default ROX_IMAGE_FLAVOR, so that developers can use the Makefile locally.
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
 # ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
-ROX_IMAGE_FLAVOR ?= development_build
+# Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
+ROX_IMAGE_FLAVOR ?= $(shell $(MAKE) --quiet --no-print-directory -C .. image-flavor)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -118,6 +118,9 @@ help: ## Display this help.
 
 tag: ## Print the correct operator version (== image tag).
 	@echo $(VERSION)
+
+image-flavor: ## Print the current image flavor.
+	@echo $(ROX_IMAGE_FLAVOR)
 
 # `everything` and `all` are separate targets.
 # `everything` pushes images. `all` is the default target that's executed when you simply run `make` without arguments.

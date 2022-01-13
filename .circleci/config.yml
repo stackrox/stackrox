@@ -858,20 +858,6 @@ commands:
               cci-export GOTAGS release
             fi
 
-  set-image-flavor:
-    steps:
-      - run:
-          name: Set ROX_IMAGE_FLAVOR
-          command: |
-            FLAVOR="${ROX_IMAGE_FLAVOR:-development_build}"
-            # Use 'stackrox.io' image flavor on builds that define GOTAGS=release which shall include the actual
-            # release builds.
-            if [[ "$(make --quiet gotags)" == "release" ]]; then
-              FLAVOR="stackrox.io"
-            fi
-            echo "Setting ROX_IMAGE_FLAVOR to '$FLAVOR' for CIRCLE_TAG '$CIRCLE_TAG'"
-            cci-export ROX_IMAGE_FLAVOR "$FLAVOR"
-
   setup-dep-env:
     parameters:
       docker-login:
@@ -2753,7 +2739,6 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - set-image-flavor
 
       - run:
           name: Generate OSS notice
@@ -2871,16 +2856,6 @@ jobs:
       - *restoreGoModCache
       - setup-go-build-env
 
-      - run:
-          name: Set image flavor to release
-          # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly setting CIRCLE_TAG value.
-          # Therefore, we need to tell main image that it should use image defaults as for the release build, otherwise
-          # the code resolving image flavor would panic due to release build combined with development images.
-          # Setting the release image flavor is fine because the image registry gets overridden anyway, but it has an
-          # implication that scanner, scanner-db and collector images should have the same image tags as main image.
-          # For this we retag those images in one of the steps below.
-          command: cci-export ROX_IMAGE_FLAVOR "stackrox.io"
-
       - restore-npm-deps-cache
       - fetch-ui-deps
 
@@ -2910,7 +2885,9 @@ jobs:
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
 
       - run:
-          # We do this because release image flavor is set. Why - look for comments above.
+          # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly set CIRCLE_TAG value.
+          # This results in the release image flavor set. Release image flavor expects unified image tags for collector,
+          # scanner and scanner-db images. Here we ensure that such images with unified tags exist.
           name: Retag scanner, scanner-db and collector images with '-rcd' suffix
           command: |
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
@@ -2948,7 +2925,6 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - set-image-flavor
 
       - run:
           name: Build Operator Bundle image
