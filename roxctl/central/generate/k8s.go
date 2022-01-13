@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -84,11 +85,14 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags
-	defaultFlav, _ := GetImageFlavorByRoxctlFlag("", buildinfo.ReleaseBuild)
-	helpStr := fmt.Sprintf("default container registry for container images ('%s') (default %s)",
-		strings.Join(GetValidImageDefaults(buildinfo.ReleaseBuild), "', '"),
-		defaultFlav.RoxctlImageDefaultsFlag)
-	flagWrap.StringVar(&k8sConfig.ImageFlavorName, "image-defaults", "", helpStr)
+	imageFlavorHelpStr := fmt.Sprintf("default source of container images (%v); it controls image repositories from where to download StackRox images",
+		strings.Join(defaults.GetAllowedImageFlavorNames(buildinfo.ReleaseBuild), ", "))
+	// TODO(RS-380): switch here to RHACS flavor
+	imageFlavorDefault := defaults.ImageFlavorNameStackRoxIORelease
+	if !buildinfo.ReleaseBuild {
+		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
+	}
+	flagWrap.StringVar(&k8sConfig.ImageFlavorName, "image-defaults", imageFlavorDefault, imageFlavorHelpStr)
 
 	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "", "main image to use", "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")

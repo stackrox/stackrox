@@ -1,12 +1,14 @@
 package defaults
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,11 +39,11 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		shouldPanicOnRelease bool
 		shouldPanicAlways    bool
 	}{
-		"development_build": {
+		"development": {
 			expectedFlavor:       DevelopmentBuildImageFlavor(),
 			shouldPanicOnRelease: true,
 		},
-		"stackrox_io_release": {
+		"stackrox.io": {
 			expectedFlavor: StackRoxIOReleaseImageFlavor(),
 		},
 		// TODO(RS-380): Add test for RHACS flavor when available
@@ -71,6 +73,66 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 
 			flavor := GetImageFlavorFromEnv()
 			s.Equal(testCase.expectedFlavor, flavor)
+		})
+	}
+}
+
+func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
+	testCases := map[string]struct {
+		expectedFlavor          ImageFlavor
+		expectedErrorNonRelease string
+		expectedErrorRelease    string
+	}{
+		"development": {
+			expectedFlavor:       DevelopmentBuildImageFlavor(),
+			expectedErrorRelease: "unexpected value 'development'",
+		},
+		"stackrox.io": {
+			expectedFlavor: StackRoxIOReleaseImageFlavor(),
+		},
+		// TODO(RS-380): Add test for RHACS flavor when available
+		"wrong_value": {
+			expectedErrorRelease:    "unexpected value 'wrong_value'",
+			expectedErrorNonRelease: "unexpected value 'wrong_value'",
+		},
+		"": {
+			expectedErrorRelease:    "unexpected value ''",
+			expectedErrorNonRelease: "unexpected value ''",
+		},
+	}
+
+	for flavorName, testCase := range testCases {
+		for _, isRelease := range []bool{false, true} {
+			expectedError := testCase.expectedErrorNonRelease
+			if isRelease {
+				expectedError = testCase.expectedErrorRelease
+			}
+			s.Run(fmt.Sprintf("'%s'@isRelease=%t", flavorName, isRelease), func() {
+				flavor, err := GetImageFlavorByName(flavorName, isRelease)
+				if expectedError != "" {
+					s.Require().Error(err)
+					s.Contains(err.Error(), expectedError)
+				} else {
+					s.Equal(testCase.expectedFlavor, flavor)
+				}
+			})
+		}
+	}
+}
+
+func TestGetAllowedImageFlavorNames(t *testing.T) {
+	tests := []struct {
+		name      string
+		isRelease bool
+		want      []string
+	}{
+		{"development", false, []string{"development", "stackrox.io"}}, // TODO(RS-380): add rhacs
+		{"release", true, []string{"stackrox.io"}},                     // TODO(RS-380): add rhacs
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetAllowedImageFlavorNames(tt.isRelease)
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
