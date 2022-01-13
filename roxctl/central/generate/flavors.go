@@ -4,22 +4,20 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 )
 
-var (
-	validImageDefaults = func() []string {
-		m := imageDefaultsMap(buildinfo.ReleaseBuild)
-		result := make([]string, 0, len(m))
-		for key := range m {
-			if key != "" {
-				result = append(result, key)
-			}
+// GetValidImageDefaults returns valid possible values of the `--image-defaults` parameter
+func GetValidImageDefaults(isRelease bool) []string {
+	m := imageDefaultsMap(isRelease)
+	result := make([]string, 0, len(m))
+	for key := range m {
+		if key != "" {
+			result = append(result, key)
 		}
-		return result
-	}()
-)
+	}
+	return result
+}
 
 // imageDefaultsMap maps the value of roxctl's '--image-defaults' parameter to a (function returing) flavor
 func imageDefaultsMap(isRelease bool) map[string]func() defaults.ImageFlavor {
@@ -40,5 +38,5 @@ func GetImageFlavorByRoxctlFlag(flag string, isRelease bool) (defaults.ImageFlav
 	if fn, ok := imageDefaultsMap(isRelease)[flag]; ok {
 		return fn(), nil
 	}
-	return defaults.ImageFlavor{}, fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", flag, strings.Join(validImageDefaults, ", "))
+	return defaults.ImageFlavor{}, fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", flag, strings.Join(GetValidImageDefaults(isRelease), ", "))
 }

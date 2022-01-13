@@ -47,3 +47,23 @@ func TestGetImageFlavorByRoxctlFlag(t *testing.T) {
 		})
 	}
 }
+
+func TestGetValidImageDefaults(t *testing.T) {
+	testbuildinfo.SetForTest(t)
+	testutils.SetExampleVersion(t)
+	tests := []struct {
+		name      string
+		isRelease bool
+		want      []string
+	}{
+		{"development", false, []string{"development", "stackrox.io"}}, // TODO(RS-380): add rhacs
+		{"release", true, []string{"stackrox.io"}},                     // TODO(RS-380): add rhacs
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetValidImageDefaults(tt.isRelease)
+			assert.EqualValues(t, tt.want, got)
+		})
+	}
+}
