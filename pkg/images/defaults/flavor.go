@@ -168,17 +168,12 @@ func GetAllowedImageFlavorNames(isReleaseBuild bool) []string {
 // (release==true, development==false), returns nil otherwise.
 func CheckImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
 	valids := GetAllowedImageFlavorNames(isReleaseBuild)
-	contains := false
 	for _, v := range valids {
-		if v == imageFlavorName {
-			contains = true
-			break
+		if imageFlavorName == v {
+			return nil
 		}
 	}
-	if !contains {
-		return errors.Errorf("unexpected value '%s', allowed values are %v", imageFlavorName, valids)
-	}
-	return nil
+	return errors.Errorf("unexpected value '%s', allowed values are %v", imageFlavorName, valids)
 }
 
 // GetImageFlavorByName returns ImageFlavor struct created for the provided flavorName if the name is valid, otherwise
