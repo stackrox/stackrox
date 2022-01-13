@@ -157,11 +157,11 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         assert VulnRequestService.getVulnReq(vulnReq.getId()) != null && (violations == null || violations.size() == 0)
 
         cleanup:
+        VulnRequestService.undoReq(vulnReq.getId())
         if (policyId) {
             PolicyService.deletePolicy(policyId)
         }
         orchestrator.deleteDeployment(CVE_DEPLOYMENT)
-        VulnRequestService.undoReq(vulnReq.getId())
 
         where:
         "Data inputs are:"
@@ -233,11 +233,11 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         assert orchestrator.createDeploymentNoWait(CVE_DEPLOYMENT_FOR_ENFORCE)
 
         cleanup:
+        VulnRequestService.undoReq(vulnReq.getId())
         if (policyId) {
             PolicyService.deletePolicy(policyId)
         }
         orchestrator.deleteDeployment(CVE_DEPLOYMENT_FOR_ENFORCE)
-        VulnRequestService.undoReq(vulnReq.getId())
 
         where:
         "Data inputs are:"
