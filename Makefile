@@ -278,13 +278,9 @@ include make/protogen.mk
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
 	@easyjson -pkg pkg/docker/types/types.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/types_easyjson.go
 	@easyjson -pkg pkg/docker/types/container.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/container_easyjson.go
 	@easyjson -pkg pkg/docker/types/image.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
 	@easyjson -pkg pkg/compliance/compress/compress.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/compliance/compress/compress_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
@@ -294,7 +290,7 @@ clean-easyjson-srcs:
 .PHONY: go-generated-srcs
 go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
-	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate -v -x ./...
+	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x ./...
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"

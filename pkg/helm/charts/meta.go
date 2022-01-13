@@ -21,11 +21,16 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 		"Versions":                 imageFlavor.Versions,
 		"MainRegistry":             imageFlavor.MainRegistry,
 		"ImageRemote":              imageFlavor.MainImageName,
+		"ImageTag":                 imageFlavor.MainImageTag,
 		"CollectorRegistry":        imageFlavor.CollectorRegistry,
 		"CollectorFullImageRemote": imageFlavor.CollectorImageName,
 		"CollectorSlimImageRemote": imageFlavor.CollectorSlimImageName,
 		"CollectorFullImageTag":    imageFlavor.CollectorImageTag,
 		"CollectorSlimImageTag":    imageFlavor.CollectorSlimImageTag,
+		"ScannerImageRemote":       imageFlavor.ScannerImageName,
+		"ScannerImageTag":          imageFlavor.ScannerImageTag,
+		"ScannerDBImageRemote":     imageFlavor.ScannerDBImageName,
+		"ScannerDBImageTag":        imageFlavor.ScannerDBImageTag,
 		"RenderMode":               "",
 		"ChartRepo":                imageFlavor.ChartRepo,
 		"ImagePullSecrets":         imageFlavor.ImagePullSecrets,
@@ -41,18 +46,23 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 
 // RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
 func RHACSMetaValues() MetaValues {
-	// TODO: remove once RHACS flavor is added to `images` package
+	// TODO(RS-380): remove once RHACS flavor is added to `images` package
 	flavor := defaults.GetImageFlavorByBuildType()
 	metaValues := MetaValues{
 		"Versions": flavor.Versions,
 		// TODO(RS-380): these registries will change once we have the RHACS flavor. For now they will remain hardcoded here.
 		"MainRegistry":             "registry.redhat.io/rh-acs",
 		"ImageRemote":              "main",
+		"ImageTag":                 flavor.MainImageTag,
 		"CollectorRegistry":        "registry.redhat.io/rh-acs",
 		"CollectorFullImageRemote": "collector",
 		"CollectorSlimImageRemote": "collector",
 		"CollectorFullImageTag":    flavor.CollectorImageTag,
 		"CollectorSlimImageTag":    flavor.CollectorSlimImageTag,
+		"ScannerImageRemote":       flavor.ScannerImageName,
+		"ScannerImageTag":          flavor.ScannerImageTag,
+		"ScannerDBImageRemote":     flavor.ScannerDBImageName,
+		"ScannerDBImageTag":        flavor.ScannerDBImageTag,
 		"RenderMode":               "",
 		"ChartRepo": defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",

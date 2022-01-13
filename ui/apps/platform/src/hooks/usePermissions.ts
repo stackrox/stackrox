@@ -2,7 +2,8 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
-import { Access, ResourceName } from 'types/role.proto';
+import { Access } from 'types/role.proto';
+import { ResourceName } from 'types/roleResources';
 
 type UsePermissionsResponse = {
     hasNoAccess: (resourceName: ResourceName) => boolean;

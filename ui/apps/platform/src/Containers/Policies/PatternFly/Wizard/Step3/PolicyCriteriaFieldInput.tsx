@@ -55,6 +55,7 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps): R
         setIsSelectOpen(!isSelectOpen);
     }
 
+    /* eslint-disable default-case */
     switch (descriptor.type) {
         case 'text':
             return (
@@ -150,9 +151,8 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps): R
                     ))}
                 </>
             );
-        default:
-            throw new Error(`Unknown field type: ${descriptor.type}`);
     }
+    /* eslint-enable default-case */
 }
 
 export default PolicyCriteriaFieldInput;

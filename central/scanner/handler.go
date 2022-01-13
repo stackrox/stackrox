@@ -74,7 +74,7 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 	}
 	dbPassword := []byte(renderer.CreatePassword())
 
-	flavor := defaults.GetImageFlavorByBuildType()
+	flavor := defaults.GetImageFlavorFromEnv()
 	config := renderer.Config{
 		ClusterType: clusterType,
 		K8sConfig: &renderer.K8sConfig{

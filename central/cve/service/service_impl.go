@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,12 +28,24 @@ import (
 
 var (
 	// TODO: Change the resource to CVE once SAC is in place
-	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
-			"/v1.CVEService/SuppressCVEs",
-			"/v1.CVEService/UnsuppressCVEs",
-		},
-	})
+	authorizer = func() authz.Authorizer {
+		if features.VulnRiskManagement.Enabled() {
+			return perrpc.FromMap(map[authz.Authorizer][]string{
+				and.And(
+					user.With(permissions.Modify(resources.VulnerabilityManagementRequests)),
+					user.With(permissions.Modify(resources.VulnerabilityManagementApprovals))): {
+					"/v1.CVEService/SuppressCVEs",
+					"/v1.CVEService/UnsuppressCVEs",
+				},
+			})
+		}
+		return perrpc.FromMap(map[authz.Authorizer][]string{
+			user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
+				"/v1.CVEService/SuppressCVEs",
+				"/v1.CVEService/UnsuppressCVEs",
+			},
+		})
+	}()
 )
 
 // serviceImpl provides APIs for cves.

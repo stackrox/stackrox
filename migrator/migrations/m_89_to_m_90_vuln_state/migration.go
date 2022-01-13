@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/dackboxhelpers"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -34,6 +35,10 @@ func init() {
 }
 
 func updateImageCVEEdgesWithVulnState(databases *types.Databases) error {
+	if !features.VulnRiskManagement.Enabled() {
+		return nil
+	}
+
 	suppressedCVEs, err := getSuppressedCVEs(databases.RocksDB)
 	if err != nil {
 		return err
