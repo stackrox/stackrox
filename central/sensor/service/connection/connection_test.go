@@ -40,7 +40,6 @@ func (s *testSuite) TearDownTest() {
 func (s *testSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
 	s.Require().NoError(err)
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
 }
 
 type mockServer struct {
@@ -124,6 +123,10 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 }
 
 func (s *testSuite) TestIssueLocalScannerCerts() {
+	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
+	if !features.LocalImageScanning.Enabled() {
+		s.T().Skip()
+	}
 	testCases := map[string]struct {
 		clusterID  string
 		shouldFail bool

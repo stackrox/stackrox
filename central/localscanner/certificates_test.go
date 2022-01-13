@@ -40,7 +40,6 @@ func (s *localScannerSuite) TearDownTest() {
 func (s *localScannerSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
 	s.Require().NoError(err)
-	s.envIsolator.Setenv(featureFlag.EnvVar(), "true")
 }
 
 func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
@@ -119,6 +118,10 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 }
 
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
+	s.envIsolator.Setenv(featureFlag.EnvVar(), "true")
+	if !featureFlag.Enabled() {
+		s.T().Skip()
+	}
 	testCases := map[string]struct {
 		namespace  string
 		shouldFail bool
