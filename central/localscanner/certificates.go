@@ -6,7 +6,12 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+)
+
+var (
+	featureFlag = features.LocalImageScanning
 )
 
 // secretDataMap represents data stored as part of a secret.
@@ -14,6 +19,9 @@ type secretDataMap = map[string][]byte
 
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
 func IssueLocalScannerCerts(namespace string, clusterID string) (*central.IssueLocalScannerCertsResponse, error) {
+	if !featureFlag.Enabled() {
+		return nil, errors.Errorf("feature '%s' is disabled", featureFlag.Name())
+	}
 	if namespace == "" {
 		return nil, errors.New("namespace is required to issue the certificates for the local scanner")
 	}
