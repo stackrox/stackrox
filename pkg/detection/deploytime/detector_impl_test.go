@@ -13,7 +13,7 @@ import (
 )
 
 func TestDeploytimeDetector(t *testing.T) {
-suite.Run(t, new(DeploytimeDetectorTestSuite))
+	suite.Run(t, new(DeploytimeDetectorTestSuite))
 }
 
 type DeploytimeDetectorTestSuite struct {

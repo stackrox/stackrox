@@ -28,13 +28,12 @@ func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployme
 			policyNames = policyNames + c.Policy().GetName() + " || "
 			return nil
 		})
-		//log.Errorf("Running deploy time detect for %s with policies %s", deployment.GetName(), policyNames)
 		log.Errorf("Running deploy time detect for %s", deployment.GetName())
 	}
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
 		if deployment.GetName() == "vulnerable-deploy-enforce" {
 			if compiled.Policy().GetName() == "e2e-vuln-DEFERRED-enforce" || compiled.Policy().GetName() == "e2e-vuln-FALSE_POSITIVE-enforce" {
-				log.Errorf("[Detect] Deploy: %s, Policy: %s, Disabled: %s", deployment.GetName(), compiled.Policy().GetName(), compiled.Policy().GetDisabled())
+				log.Errorf("[Detect] Deploy: %s, Policy: %s, Disabled: %v", deployment.GetName(), compiled.Policy().GetName(), compiled.Policy().GetDisabled())
 			}
 		}
 		if compiled.Policy().GetDisabled() {

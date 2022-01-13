@@ -137,44 +137,18 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
 
-        and:
-        "Requests and vulns currently in DB"
-
-        def reqs = VulnRequestService.listVulnRequests()
-        reqs.getRequestInfosList().forEach {
-            if (it.getCves().getIds(0) == cve) {
-                println "${it.getCves().getIdsList().toString()} -- ${it.getTargetState()} -- ${it.getStatus()} -- expired? ${it.getExpired()}"
-            }
-        }
-        def q = SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${NGINX_1_10_2_IMAGE}").build()
-        def listImgs = ImageService.getImages(q)
-        if (listImgs != null && listImgs.size() > 0) {
-            def imgId = listImgs.first().getId()
-            def img = ImageService.getImage(imgId, true)
-            img.getScan().getComponentsList().forEach {
-                it.getVulnsList().forEach {
-                    if (it.getCve() == cve) {
-                        println "${it.getCve()} -- Suppressed? ${it.getSuppressed()} -- State: ${it.getState()}"
-                    }
-                }
-            }
-        } else {
-            println "No image found"
-        }
-
         when:
         "CVE is deferred/marked as FP"
         def vulnReq = createPendingVulnRequest(requestType, cve, requestScope)
-
-        // Approve
         VulnRequestService.approveRequest(vulnReq.getId(), "approved")
-
         // Maximum time to wait for propagation to sensor
         Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
 
         and:
         "A deployment with an image with the CVE is deployed"
         orchestrator.createDeployment(CVE_DEPLOYMENT)
+        // CVE needs to be saved into the DB
+        Helpers.sleepWithRetryBackoff(1000)
 
         then:
         "Policy shouldn't cause a violation"
@@ -215,36 +189,11 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
                 createCVEPolicy("e2e-vuln-${requestType}-enforce", cve, true)
         )
         assert policyId
-
-        and:
-        "Requests and vulns currently in DB"
-
-        def reqs = VulnRequestService.listVulnRequests()
-        reqs.getRequestInfosList().forEach {
-            if (it.getCves().getIds(0) == cve) {
-                println "${it.getCves().getIdsList().toString()} -- ${it.getTargetState()} -- ${it.getStatus()} -- expired? ${it.getExpired()}"
-            }
-        }
-        def q = SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Image:${NGINX_1_10_2_IMAGE}").build()
-        def listImgs = ImageService.getImages(q)
-        if (listImgs != null && listImgs.size() > 0) {
-            def imgId = listImgs.first().getId()
-            def img = ImageService.getImage(imgId, true)
-            img.getScan().getComponentsList().forEach {
-                it.getVulnsList().forEach {
-                    if (it.getCve() == cve) {
-                        println "${it.getCve()} -- Suppressed? ${it.getSuppressed()} -- State: ${it.getState()}"
-                    }
-                }
-            }
-        } else {
-            println "No image found"
-        }
+        // Maximum time to wait for propagation to sensor
+        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
 
         and:
         "Deployment is scaled to zero due to policy enforcement"
-        // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
         orchestrator.createDeploymentNoWait(CVE_DEPLOYMENT_FOR_ENFORCE)
 
         def replicaCount = orchestrator.getDeploymentReplicaCount(CVE_DEPLOYMENT_FOR_ENFORCE)
@@ -274,7 +223,6 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         when:
         "CVE is deferred/marked as FP"
         def vulnReq = createPendingVulnRequest(requestType, cve, VulnRequestService.globalScope())
-
         // Approve
         VulnRequestService.approveRequest(vulnReq.getId(), "approved")
         // Maximum time to wait for propagation to sensor
