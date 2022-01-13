@@ -113,7 +113,6 @@ func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.I
 // base image. For example:
 // base image: "quay.io/namespace/main" => another: "quay.io/namespace/another"
 func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.ImageName {
-	// This handles the case where there is no namespace. e.g. stackrox.io/NAME:tag
 	baseRemote := baseImage.GetRemote()
 	remote := baseRemote[:strings.IndexRune(baseRemote, '/')+1] + name
 	return &storage.ImageName{
