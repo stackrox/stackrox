@@ -6,12 +6,16 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	buildTestutils "github.com/stackrox/rox/pkg/buildinfo/testutils"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -34,6 +38,9 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
+	testutils.SetExampleVersion(t)
+	buildTestutils.SetBuildTimestamp(t, time.Now())
+
 	flavor := flavorUtils.MakeImageFlavorForTest(t)
 	config := renderer.Config{
 		Version:     version.GetMainVersion(),
@@ -41,9 +48,10 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 		K8sConfig: &renderer.K8sConfig{
 			AppName: "someApp",
 			CommonConfig: renderer.CommonConfig{
-				MainImage:      flavor.MainImage(),
-				ScannerImage:   flavor.ScannerImage(),
-				ScannerDBImage: flavor.ScannerDBImage(),
+				MainImage:       flavor.MainImage(),
+				ScannerImage:    flavor.ScannerImage(),
+				ScannerDBImage:  flavor.ScannerDBImage(),
+				ImageFlavorName: defaults.ImageFlavorNameDevelopmentBuild,
 			},
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			OfflineMode:      false,
