@@ -128,15 +128,15 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
-			resp, err := IssueLocalScannerCerts(tc.namespace, clusterID)
+			certs, err := IssueLocalScannerCerts(tc.namespace, clusterID)
 			if tc.shouldFail {
 				s.Require().Error(err)
 				return
 			}
 			s.Require().NoError(err)
 			for _, certs := range []*central.LocalScannerCertificates{
-				resp.GetScannerCerts(),
-				resp.GetScannerDbCerts(),
+				certs.GetScannerCerts(),
+				certs.GetScannerDbCerts(),
 			} {
 				s.Require().NotNil(certs)
 				s.Assert().NotEmpty(certs.GetCa())

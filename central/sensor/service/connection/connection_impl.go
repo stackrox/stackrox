@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/localscanner"
@@ -239,14 +240,28 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 
 func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Context, request *central.IssueLocalScannerCertsRequest) error {
 	namespace := request.GetNamespace()
-	certs, err := localscanner.IssueLocalScannerCerts(namespace, c.clusterID)
-	errMsgTemplate := "Error issuing local Scanner certificates for cluster with ID %s and namespace %s"
-	if err != nil {
-		return errors.Wrapf(err, errMsgTemplate, c.clusterID, namespace)
+	certificates, err := localscanner.IssueLocalScannerCerts(namespace, c.clusterID)
+	errMsg := fmt.Sprintf("issuing local Scanner certificates for cluster with ID %s and namespace %s",
+		c.clusterID, namespace)
+	response := &central.IssueLocalScannerCertsResponse{
+		Response: &central.IssueLocalScannerCertsResponse_Certificates{
+			Certificates: certificates,
+		},
 	}
-	err = c.InjectMessage(ctx, &central.MsgToSensor{Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{IssueLocalScannerCertsResponse: certs}})
 	if err != nil {
-		return errors.Wrapf(err, errMsgTemplate, c.clusterID, namespace)
+		response = &central.IssueLocalScannerCertsResponse{
+			Response: &central.IssueLocalScannerCertsResponse_Error{
+				Error: &central.LocalScannerCertsIssueError{
+					Message: fmt.Sprintf("%s: %s", errMsg, err.Error()),
+				},
+			},
+		}
+	}
+	err = c.InjectMessage(ctx, &central.MsgToSensor{
+		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{IssueLocalScannerCertsResponse: response},
+	})
+	if err != nil {
+		return errors.Wrap(err, errMsg)
 	}
 	return nil
 }

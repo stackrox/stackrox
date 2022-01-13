@@ -18,7 +18,7 @@ var (
 type secretDataMap = map[string][]byte
 
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
-func IssueLocalScannerCerts(namespace string, clusterID string) (*central.IssueLocalScannerCertsResponse, error) {
+func IssueLocalScannerCerts(namespace string, clusterID string) (*central.LocalScannerCertificateSet, error) {
 	if !featureFlag.Enabled() {
 		return nil, errors.Errorf("feature '%s' is disabled", featureFlag.Name())
 	}
@@ -39,7 +39,7 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*central.IssueL
 		return nil, certIssueError
 	}
 
-	return &central.IssueLocalScannerCertsResponse{
+	return &central.LocalScannerCertificateSet{
 		ScannerCerts:   scannerCertificates,
 		ScannerDbCerts: scannerDBCertificates,
 	}, nil

@@ -12,12 +12,23 @@ message LocalScannerCertificates {
   bytes key  = 3;
 }
 
+message LocalScannerCertificateSet {
+  LocalScannerCertificates scanner_certs    = 1;
+  LocalScannerCertificates scanner_db_certs = 2;
+}
+
+message LocalScannerCertsIssueError {
+  string message = 1;
+}
+
 message IssueLocalScannerCertsRequest {
   string namespace = 1;
 }
 
 message IssueLocalScannerCertsResponse {
-  LocalScannerCertificates scanner_certs    = 1;
-  LocalScannerCertificates scanner_db_certs = 2;
+  oneof response {
+      LocalScannerCertificateSet certificates = 1;
+      LocalScannerCertsIssueError error = 2;
+  }
 }
 
