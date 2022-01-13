@@ -640,6 +640,10 @@ else
 endif
 endif
 
+.PHONY: gotags
+gotags:
+	@echo $(GOTAGS)
+
 .PHONY: ossls-audit
 ossls-audit: deps
 	ossls version
