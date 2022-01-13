@@ -45,6 +45,12 @@ function PolicyBehaviorForm() {
                     'lifecycleStages',
                     values.lifecycleStages.filter((stage) => stage !== lifecycleStage)
                 );
+                if (lifecycleStage === 'RUNTIME') {
+                    setFieldValue('eventSource', 'NOT_APPLICABLE');
+                }
+                if (lifecycleStage === 'BUILD') {
+                    setFieldValue('excludedImageNames', []);
+                }
                 onEnforcementActionChangeHandler(lifecycleStage)(false);
             }
         };
@@ -66,6 +72,24 @@ function PolicyBehaviorForm() {
                 );
             }
         };
+    }
+
+    function auditLogEventSourceChangeHandler() {
+        setFieldValue('eventSource', 'AUDIT_LOG_EVENT');
+        setFieldValue('excludedImageNames', []);
+        values.scope.forEach(({ label, ...rest }, idx) => {
+            if (label) {
+                setFieldValue(`scope[${idx}]`, { ...rest });
+            }
+        });
+        values.excludedDeploymentScopes.forEach(({ scope }, idx) => {
+            const { label, ...rest } = scope || {};
+            setFieldValue(`excludedDeploymentScopes[${idx}]`, {
+                scope: {
+                    ...rest,
+                },
+            });
+        });
     }
 
     function hasEnforcementForLifecycle(lifecycleStage: LifecycleStage) {
@@ -152,7 +176,7 @@ function PolicyBehaviorForm() {
                             isChecked={values.eventSource === 'AUDIT_LOG_EVENT'}
                             id="policy-event-source-audit-logs"
                             name="eventSource"
-                            onChange={() => setFieldValue('eventSource', 'AUDIT_LOG_EVENT')}
+                            onChange={auditLogEventSourceChangeHandler}
                             isDisabled={!values.lifecycleStages.includes('RUNTIME')}
                         />
                     </Flex>

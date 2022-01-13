@@ -4,22 +4,24 @@ import { FormikProvider, useFormik } from 'formik';
 import { Wizard, Breadcrumb, Title, BreadcrumbItem, Divider } from '@patternfly/react-core';
 
 import { Policy } from 'types/policy.proto';
+import { Cluster } from 'types/cluster.proto';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
-
 import { getValidationSchema } from './policyValidationSchemas';
 import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
 import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
+import PolicyScopeForm from './Step4/PolicyScopeForm';
 import ReviewPolicyForm from './Step5/ReviewPolicyForm';
 
 type PolicyWizardProps = {
     pageAction: ExtendedPageAction;
     policy: Policy;
+    clusters: Cluster[];
 };
 
-function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
+function PolicyWizard({ pageAction, policy, clusters }: PolicyWizardProps): ReactElement {
     const history = useHistory();
     const [stepId, setStepId] = useState(1);
     const [stepIdReached, setStepIdReached] = useState(1);
@@ -103,7 +105,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                         {
                             id: 4,
                             name: 'Policy scope',
-                            component: <div>PolicyScopeForm</div>,
+                            component: <PolicyScopeForm clusters={clusters} />,
                             canJumpTo: stepIdReached >= 4,
                             enableNext: isValid,
                         },
