@@ -3,6 +3,7 @@ import { Title, Flex, FlexItem, Divider, Button } from '@patternfly/react-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
+
 import {
     policyConfigurationDescriptor,
     networkDetectionDescriptor,
@@ -73,13 +74,8 @@ function PolicyCriteriaForm() {
                                     descriptors={descriptor}
                                 />
                                 {sectionIndex !== values.policySections.length && (
-                                    <Flex
-                                        direction={{ default: 'column' }}
-                                        alignSelf={{ default: 'alignSelfCenter' }}
-                                    >
-                                        <Divider component="div" />
+                                    <Flex alignSelf={{ default: 'alignSelfCenter' }}>
                                         <FlexItem>or</FlexItem>
-                                        <Divider component="div" />
                                     </Flex>
                                 )}
                             </React.Fragment>
