@@ -42,27 +42,19 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 		return errors.Wrap(err, "creating subdirectory for scanner defs")
 	}
 
-	// Write the contents of r into a temporary destination to prevent us from holding the lock
+	// Write the contents of r into a temporary destination to prevent us from having to hold a lock
 	// while reading from r. The reader may be dependent on the network, and we do not want to
 	// lock while depending on something as unpredictable as the network.
-	// Rename is only guaranteed to be atomic inside the same directory.
+	// Rename is guaranteed to be atomic inside the same directory.
 	scannerDefsFile, err := os.CreateTemp(dir, tempFilePattern)
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
 	}
-	// Close the file in case of error.
 	defer utils.IgnoreError(scannerDefsFile.Close)
 
 	_, err = io.Copy(scannerDefsFile, r)
 	if err != nil {
 		return errors.Wrap(err, "copying scanner defs zip out")
-	}
-
-	// No longer need the file descriptor, so release it.
-	// Closing here, as it is possible Close updates the mtime.
-	err = scannerDefsFile.Close()
-	if err != nil {
-		return errors.Wrap(err, "closing temp scanner defs file")
 	}
 
 	err = os.Chtimes(scannerDefsFile.Name(), time.Now(), modifiedTime)
@@ -95,6 +87,7 @@ func (file *File) Open() (*os.File, time.Time, error) {
 	var succeeded bool
 	defer func() {
 		if !succeeded {
+			// Release the file descriptor, as there was an error.
 			utils.IgnoreError(f.Close)
 		}
 	}()

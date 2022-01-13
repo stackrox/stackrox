@@ -44,7 +44,7 @@ func TestUpdate(t *testing.T) {
 	// Should definitely fetch.
 	mustSetModTime(t, filePath, nov23)
 	require.NoError(t, u.doUpdate())
-	assert.NotEqual(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
+	assert.True(t, lastUpdatedTime.UTC().After(mustGetModTime(t, filePath)))
 	assert.True(t, mustGetModTime(t, filePath).After(nov23.UTC()))
 	assertOnFileExistence(t, filePath, true)
 }
