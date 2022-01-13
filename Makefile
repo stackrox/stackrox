@@ -12,8 +12,8 @@ endif
 # ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
 # The value is assigned as following:
 # 1. Use environment variable if provided.
-# 2. If makefile variable GOTAGS is equal to "release", use "stackrox_io-release" as value.
-# 3. Otherwise set it to "development_build" by default so that developers can use the Makefile locally.
+# 2. If makefile variable GOTAGS is equal to "release", use "stackrox_io-release".
+# 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
 ROX_IMAGE_FLAVOR ?= $(shell [[ "$(GOTAGS)" == "release" ]] && echo "stackrox_io_release" || echo "development_build")
 
 # Compute the tag of the build image based on the contents of the tracked files in
