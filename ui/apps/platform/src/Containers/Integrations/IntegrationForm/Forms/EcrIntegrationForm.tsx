@@ -198,7 +198,7 @@ function EcrIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Registry Account ID"
+                        label="Registry ID"
                         isRequired
                         fieldId="config.ecr.registryId"
                         touched={touched}
