@@ -85,15 +85,13 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 		h.admCtrlSettingsMgr.FlushCache()
 		imgStr := " "
 		for _, image := range req.GetImageKeys() {
-			key := imagecacheutils.ImageCacheKey{
+			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
 				Name: image.GetImageFullName(),
-			}
-			key := imagecacheutils.ImageCacheKey{
+			})
+			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
 				ID:   image.GetImageId(),
 				Name: image.GetImageFullName(),
-			}
-			log.Errorf("image cache from central %v", key)
-			h.imageCache.Remove(key)
+			})
 			imgStr = imgStr + " || " + image.GetImageFullName()
 		}
 
