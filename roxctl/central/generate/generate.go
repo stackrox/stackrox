@@ -175,7 +175,7 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 		return nil, err
 	}
 
-	flavor, err := GetImageFlavorByRoxctlFlag(config.K8sConfig.ImageFlavorName)
+	flavor, err := GetImageFlavorByRoxctlFlag(config.K8sConfig.ImageFlavorName, buildinfo.ReleaseBuild)
 	if err != nil {
 		return nil, err
 	}

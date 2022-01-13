@@ -10,8 +10,9 @@ import (
 
 var (
 	validImageDefaults = func() []string {
-		result := make([]string, 0, len(imageDefaultsMap()))
-		for key := range imageDefaultsMap() {
+		m := imageDefaultsMap(buildinfo.ReleaseBuild)
+		result := make([]string, 0, len(m))
+		for key := range m {
 			if key != "" {
 				result = append(result, key)
 			}
@@ -21,9 +22,9 @@ var (
 )
 
 // imageDefaultsMap maps the value of roxctl's '--image-defaults' parameter to a (function returing) flavor
-func imageDefaultsMap() map[string]func() defaults.ImageFlavor {
+func imageDefaultsMap(isRelease bool) map[string]func() defaults.ImageFlavor {
 	m := make(map[string]func() defaults.ImageFlavor)
-	if buildinfo.ReleaseBuild {
+	if isRelease {
 		m[""] = defaults.StackRoxIOReleaseImageFlavor
 	} else {
 		m[""] = defaults.DevelopmentBuildImageFlavor
@@ -35,8 +36,8 @@ func imageDefaultsMap() map[string]func() defaults.ImageFlavor {
 }
 
 // GetImageFlavorByRoxctlFlag returns flavor object based on the value of --image-defaults parameter in roxctl
-func GetImageFlavorByRoxctlFlag(flag string) (defaults.ImageFlavor, error) {
-	if fn, ok := imageDefaultsMap()[flag]; ok {
+func GetImageFlavorByRoxctlFlag(flag string, isRelease bool) (defaults.ImageFlavor, error) {
+	if fn, ok := imageDefaultsMap(isRelease)[flag]; ok {
 		return fn(), nil
 	}
 	return defaults.ImageFlavor{}, fmt.Errorf("invalid value of '--image-defaults=%s', allowed values: %s", flag, strings.Join(validImageDefaults, ", "))
