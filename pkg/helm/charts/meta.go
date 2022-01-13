@@ -54,7 +54,7 @@ type MetaValues struct {
 }
 
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
-func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
+func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 	metaValues := MetaValues{
 		Versions:                 imageFlavor.Versions,
 		MainRegistry:             imageFlavor.MainRegistry,
@@ -80,7 +80,7 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 	if !buildinfo.ReleaseBuild {
 		metaValues.FeatureFlags = getFeatureFlags()
 	}
-	return metaValues
+	return &metaValues
 }
 
 func getFeatureFlags() map[string]interface{} {

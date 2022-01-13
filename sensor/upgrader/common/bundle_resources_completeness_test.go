@@ -40,7 +40,7 @@ func TestBundleResourcesComplete(t *testing.T) {
 	for _, ff := range features.Flags {
 		featureFlags[ff.EnvVar()] = ff.Enabled()
 	}
-	metaValues := charts.MetaValues{
+	metaValues := &charts.MetaValues{
 		Versions: version.Versions{
 			ChartVersion:     "1.0.0",
 			MainVersion:      "3.0.49.0",

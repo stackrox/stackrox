@@ -48,7 +48,7 @@ func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster,
 		return nil, nil, err
 	}
 
-	rendered, err := renderer.RenderSensorTLSSecretsOnly(*fields, &certs)
+	rendered, err := renderer.RenderSensorTLSSecretsOnly(fields, &certs)
 	if err != nil {
 		return nil, nil, err
 	}

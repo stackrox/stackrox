@@ -14,15 +14,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func getCollectorFull(fields charts.MetaValues) string {
+func getCollectorFull(fields *charts.MetaValues) string {
 	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorFullImageRemote, fields.CollectorFullImageTag)
 }
 
-func getCollectorSlim(fields charts.MetaValues) string {
+func getCollectorSlim(fields *charts.MetaValues) string {
 	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorSlimImageRemote, fields.CollectorSlimImageTag)
 }
 
-func getMain(fields charts.MetaValues) string {
+func getMain(fields *charts.MetaValues) string {
 	return fmt.Sprintf("%s/%s:%s", fields.MainRegistry, fields.ImageRemote, fields.ImageTag)
 }
 
@@ -201,9 +201,9 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(c.expectedMain, getMain(*fields), "Main image does not match")
-				s.Equal(c.expectedCollectorFullRef, getCollectorFull(*fields), "Collector full image does not match")
-				s.Equal(c.expectedCollectorSlimRef, getCollectorSlim(*fields), "Collector slim image does not match")
+				s.Equal(c.expectedMain, getMain(fields), "Main image does not match")
+				s.Equal(c.expectedCollectorFullRef, getCollectorFull(fields), "Collector full image does not match")
+				s.Equal(c.expectedCollectorSlimRef, getCollectorSlim(fields), "Collector slim image does not match")
 			}
 		})
 	}
