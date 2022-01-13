@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -178,7 +179,7 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 
 	flavor, err := defaults.GetImageFlavorByName(config.K8sConfig.ImageFlavorName, buildinfo.ReleaseBuild)
 	if err != nil {
-		return nil, errors.Wrap(err, "invalid value of '--image-defaults'")
+		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("'--image-defaults': %v", err))
 	}
 
 	files, err := renderer.Render(config, flavor)
