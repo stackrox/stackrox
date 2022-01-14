@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -169,9 +170,11 @@ func (s *serviceImpl) saveImage(img *storage.Image) {
 
 // ScanImage handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	t := time.Now()
 	if err := internalScanSemaphore.Acquire(ctx, 1); err != nil {
 		return nil, errors.Wrapf(err, "error acquiring semaphore")
 	}
+	log.Infof("Took %d ms to get semaphore", time.Since(t).Milliseconds())
 	defer internalScanSemaphore.Release(1)
 
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
