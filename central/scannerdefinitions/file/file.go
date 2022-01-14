@@ -14,7 +14,7 @@ import (
 const tempFilePattern = "scanner-defs-download-*"
 
 // File is a wrapper around a file path
-// which exposes an Open and Write API.
+// which exposes a thread-safe Open and Write API.
 type File struct {
 	path string
 }
@@ -33,7 +33,7 @@ func (file *File) Path() string {
 
 // Write writes the contents of r into the path represented by the given file.
 // The file's modified time is set to the given modifiedTime.
-// Write is thread-safe, as it simply calls rename().
+// Write is thread-safe.
 func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	dir := filepath.Dir(file.path)
 
@@ -45,7 +45,6 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	// Write the contents of r into a temporary destination to prevent us from having to hold a lock
 	// while reading from r. The reader may be dependent on the network, and we do not want to
 	// lock while depending on something as unpredictable as the network.
-	// Rename is guaranteed to be atomic inside the same directory.
 	scannerDefsFile, err := os.CreateTemp(dir, tempFilePattern)
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
@@ -55,7 +54,7 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 
 	_, err = io.Copy(scannerDefsFile, r)
 	if err != nil {
-		return errors.Wrap(err, "copying scanner defs zip out")
+		return errors.Wrapf(err, "writing scanner defs zip to temporary file %q", scannerDefsFile.Name())
 	}
 
 	// No longer need the file descriptor, so release it.
@@ -73,9 +72,10 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 
 	// Note: os.Rename does not alter the file's modified time,
 	// so there is no need to call os.Chtimes here.
+	// Rename is guaranteed to be atomic inside the same directory.
 	err = os.Rename(scannerDefsFile.Name(), file.path)
 	if err != nil {
-		return errors.Wrap(err, "renaming scanner defs file")
+		return errors.Wrap(err, "renaming temporary scanner defs file to final location")
 	}
 
 	return nil
@@ -83,9 +83,11 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 
 // Open opens the file at the given path and returns the contents and modified time.
 // If the file does not exist, it is *not* an error. In this case, nil is returned.
-// Open is thread-safe, as Write simply calls rename().
 // It is the caller's responsibility to close the returned file.
+// Open is thread-safe.
 func (file *File) Open() (*os.File, time.Time, error) {
+	// This is thread-safe due to the semantics of rename().
+	// See the manpage for more information: https://linux.die.net/man/3/rename
 	f, err := os.Open(file.path)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		return nil, time.Time{}, nil
