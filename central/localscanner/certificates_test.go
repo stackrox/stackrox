@@ -109,10 +109,7 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 		s.Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName, tc.service)
 
 		certAlternativeNames := cert.DNSNames
-		s.Equal(len(tc.expectedAlternativeNames), len(certAlternativeNames), tc.service)
-		for _, name := range tc.expectedAlternativeNames {
-			s.Contains(certAlternativeNames, name, tc.service)
-		}
+		s.ElementsMatch(tc.expectedAlternativeNames, certAlternativeNames, tc.service)
 		s.Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter, tc.service)
 	}
 }
