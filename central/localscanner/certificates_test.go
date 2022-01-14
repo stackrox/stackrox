@@ -62,9 +62,9 @@ func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
 			s.Require().NoError(err, tc.service)
 		}
 		expectedFiles := []string{"ca.pem", "cert.pem", "key.pem"}
-		s.Assert().Equal(len(expectedFiles), len(certMap))
+		s.Equal(len(expectedFiles), len(certMap))
 		for _, key := range expectedFiles {
-			s.Assert().Contains(certMap, key, tc.service)
+			s.Contains(certMap, key, tc.service)
 		}
 	}
 }
@@ -80,7 +80,7 @@ func (s *localScannerSuite) TestValidateServiceCertificate() {
 		s.Require().NoError(err, serviceType)
 		validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
 		s.Require().NoError(err, serviceType)
-		s.Assert().NoError(certgen.VerifyServiceCert(certMap, validatingCA, serviceType, ""), serviceType)
+		s.NoError(certgen.VerifyServiceCert(certMap, validatingCA, serviceType, ""), serviceType)
 	}
 }
 
@@ -104,17 +104,17 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 
 		subject := cert.Subject
 		certOUs := subject.OrganizationalUnit
-		s.Assert().Equal(1, len(certOUs), tc.service)
-		s.Assert().Equal(tc.expectOU, certOUs[0], tc.service)
+		s.Equal(1, len(certOUs), tc.service)
+		s.Equal(tc.expectOU, certOUs[0], tc.service)
 
-		s.Assert().Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName, tc.service)
+		s.Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName, tc.service)
 
 		certAlternativeNames := cert.DNSNames
-		s.Assert().Equal(len(tc.expectedAlternativeNames), len(certAlternativeNames), tc.service)
+		s.Equal(len(tc.expectedAlternativeNames), len(certAlternativeNames), tc.service)
 		for _, name := range tc.expectedAlternativeNames {
-			s.Assert().Contains(certAlternativeNames, name, tc.service)
+			s.Contains(certAlternativeNames, name, tc.service)
 		}
-		s.Assert().Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter, tc.service)
+		s.Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter, tc.service)
 	}
 }
 
@@ -126,7 +126,7 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCertsFeatureFlagDisabled
 
 	_, err := IssueLocalScannerCerts(namespace, clusterID)
 
-	s.Assert().Error(err)
+	s.Error(err)
 }
 
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
@@ -154,9 +154,9 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 				certs.GetScannerDbCerts(),
 			} {
 				s.Require().NotNil(certs)
-				s.Assert().NotEmpty(certs.GetCa())
-				s.Assert().NotEmpty(certs.GetCert())
-				s.Assert().NotEmpty(certs.GetKey())
+				s.NotEmpty(certs.GetCa())
+				s.NotEmpty(certs.GetCert())
+				s.NotEmpty(certs.GetKey())
 			}
 		})
 	}

@@ -73,12 +73,12 @@ func (s *testSuite) TestGetPolicySyncMsgFromPolicies() {
 	}
 
 	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{policy})
-	s.Assert().NoError(err)
+	s.NoError(err)
 
 	policySync := msg.GetPolicySync()
-	s.Assert().NotNil(policySync)
-	s.Assert().NotEmpty(policySync.Policies)
-	s.Assert().Equal(sensorVersion.String(), policySync.Policies[0].GetPolicyVersion())
+	s.NotNil(policySync)
+	s.NotEmpty(policySync.Policies)
+	s.Equal(sensorVersion.String(), policySync.Policies[0].GetPolicyVersion())
 }
 
 func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
@@ -110,16 +110,16 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 
-	s.Assert().NoError(sensorMockConn.Run(ctx, server, caps))
+	s.NoError(sensorMockConn.Run(ctx, server, caps))
 
 	for _, msg := range server.sentList {
 		if syncMsg := msg.GetAuditLogSync(); syncMsg != nil {
-			s.Assert().Equal(auditLogState, syncMsg.GetNodeAuditLogFileStates())
+			s.Equal(auditLogState, syncMsg.GetNodeAuditLogFileStates())
 			return
 		}
 	}
 
-	s.Assert().FailNow("Audit log sync message was not sent")
+	s.FailNow("Audit log sync message was not sent")
 }
 
 func (s *testSuite) TestIssueLocalScannerCerts() {
@@ -153,15 +153,15 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 			}
 
 			go func() {
-				s.Assert().NoError(sensorMockConn.handleMessage(ctx, request))
+				s.NoError(sensorMockConn.handleMessage(ctx, request))
 			}()
 
 			select {
 			case msgToSensor := <-sendC:
 				if tc.shouldFail {
-					s.Assert().NotNil(msgToSensor.GetIssueLocalScannerCertsResponse().GetError())
+					s.NotNil(msgToSensor.GetIssueLocalScannerCertsResponse().GetError())
 				} else {
-					s.Assert().NotNil(msgToSensor.GetIssueLocalScannerCertsResponse().GetCertificates())
+					s.NotNil(msgToSensor.GetIssueLocalScannerCertsResponse().GetCertificates())
 				}
 			case <-ctx.Done():
 				s.Fail(ctx.Err().Error())
