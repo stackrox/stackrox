@@ -218,7 +218,7 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 	case *central.MsgFromSensor_TelemetryDataResponse:
 		return c.telemetryCtrl.ProcessTelemetryDataResponse(m.TelemetryDataResponse)
 	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
-		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
+		return c.processIssueLocalScannerCertsRequest(ctx)
 	case *central.MsgFromSensor_Event:
 		// Special case the reprocess deployment because its fields are already set
 		if msg.GetEvent().GetReprocessDeployment() != nil {
@@ -238,8 +238,8 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 	return c.eventPipeline.Run(ctx, msg, c)
 }
 
-func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Context, request *central.IssueLocalScannerCertsRequest) error {
-	namespace := request.GetNamespace()
+func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Context) error {
+	namespace := c.sensorHello.GetDeploymentIdentification().GetAppNamespace()
 	certificates, err := localscanner.IssueLocalScannerCerts(namespace, c.clusterID)
 	errMsg := fmt.Sprintf("issuing local Scanner certificates for cluster with ID %s and namespace %q",
 		c.clusterID, namespace)

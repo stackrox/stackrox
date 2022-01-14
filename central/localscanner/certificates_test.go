@@ -136,14 +136,16 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 	}
 	testCases := map[string]struct {
 		namespace  string
+		clusterID  string
 		shouldFail bool
 	}{
-		"no parameter missing": {namespace, false},
-		"namespace missing":    {"", true},
+		"no parameter missing": {namespace: namespace, clusterID: clusterID, shouldFail: false},
+		"namespace missing":    {namespace: "", clusterID: clusterID, shouldFail: true},
+		"clusterID missing":    {namespace: namespace, clusterID: "", shouldFail: true},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
-			certs, err := IssueLocalScannerCerts(tc.namespace, clusterID)
+			certs, err := IssueLocalScannerCerts(tc.namespace, tc.clusterID)
 			if tc.shouldFail {
 				s.Require().Error(err)
 				return

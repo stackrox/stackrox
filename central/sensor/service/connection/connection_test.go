@@ -127,12 +127,15 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 	if !features.LocalImageScanning.Enabled() {
 		s.T().Skip()
 	}
+	namespace, clusterID := "namespace", "clusterID"
 	testCases := map[string]struct {
+		namespace  string
 		clusterID  string
 		shouldFail bool
 	}{
-		"empty cluster id":     {"", true},
-		"non empty cluster id": {"clusterID", false},
+		"no parameter missing": {namespace: namespace, clusterID: clusterID, shouldFail: false},
+		"namespace missing":    {namespace: "", clusterID: clusterID, shouldFail: true},
+		"clusterID missing":    {namespace: namespace, clusterID: "", shouldFail: true},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -141,14 +144,18 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 				clusterID: tc.clusterID,
 				sendC:     sendC,
 				stopSig:   concurrency.NewErrorSignal(),
+				sensorHello: &central.SensorHello{
+					DeploymentIdentification: &storage.SensorDeploymentIdentification{
+						AppNamespace: tc.namespace,
+					},
+				},
 			}
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 			defer cancel()
-			namespace := "namespace"
 			request := &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
-					IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{Namespace: namespace},
+					IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{},
 				},
 			}
 

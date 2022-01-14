@@ -21,9 +21,7 @@ message LocalScannerCertsIssueError {
   string message = 1;
 }
 
-message IssueLocalScannerCertsRequest {
-  string namespace = 1;
-}
+message IssueLocalScannerCertsRequest {}
 
 message IssueLocalScannerCertsResponse {
   oneof response {
