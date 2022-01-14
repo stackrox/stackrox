@@ -1,16 +1,18 @@
-package scheduler
+package common
 
 import (
 	"archive/zip"
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 // This formatter is tightly coupled to the report query. The end goal is to use the CSVPrinter in roxctl, but
@@ -29,6 +31,7 @@ var (
 		"Component Upgrade",
 		"Severity",
 		"Discovered At",
+		"Reference",
 	}
 )
 
@@ -38,6 +41,7 @@ type vulnObj struct {
 	FixedByVersion    string        `json:"fixedByVersion,omitempty"`
 	IsFixable         bool          `json:"isFixable,omitempty"`
 	DiscoveredAtImage *graphql.Time `json:"discoveredAtImage,omitempty"`
+	Link              string        `json:"link,omitempty"`
 }
 
 type compObj struct {
@@ -57,12 +61,13 @@ type depObj struct {
 	Images         []*imgObj        `json:"images,omitempty"`
 }
 
-type result struct {
+// Result is the query results of running a single cvefields query and scope query combination
+type Result struct {
 	Deployments []*depObj `json:"deployments,omitempty"`
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data
-func Format(results []result) (*bytes.Buffer, error) {
+func Format(results []Result) (*bytes.Buffer, error) {
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
 
 	for _, r := range results {
@@ -79,8 +84,9 @@ func Format(results []result) (*bytes.Buffer, error) {
 							v.Cve,
 							strconv.FormatBool(v.IsFixable),
 							v.FixedByVersion,
-							v.Severity,
-							v.DiscoveredAtImage.Format(time.RFC822),
+							strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
+							v.DiscoveredAtImage.Time.Format("January 02, 2006"),
+							v.Link,
 						})
 					}
 				}

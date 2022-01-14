@@ -19,6 +19,7 @@ import (
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -177,6 +178,7 @@ type message struct {
 	Subject     string
 	Body        string
 	Attachments map[string][]byte
+	EmbedLogo   bool
 }
 
 func (m message) Bytes() []byte {
@@ -193,10 +195,23 @@ func (m message) Bytes() []byte {
 	if len(m.Attachments) > 0 {
 		buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", boundary))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+	}
+
+	if m.EmbedLogo {
+		buf.WriteString("Content-Type: image/png; name=logo.png\r\n")
+		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
+		buf.WriteString("Content-Disposition: inline; filename=logo.png\r\n")
+		buf.WriteString("Content-ID: <logo.png>\r\n")
+		buf.WriteString("X-Attachment-Id: logo.png\r\n")
+		buf.WriteString(fmt.Sprintf("%s\r\n", common.GetLogoBase64()))
+		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+		buf.WriteString("Content-Type: text/html; charset=\"utf-8\"\r\n\r\n")
+		buf.WriteString("<img src=\"cid:logo.png\" width=\"20%\" height=\"20%\"><br><br>")
+		buf.WriteString(fmt.Sprintf("<div>%s</div>\r\n", m.Body))
 	} else {
 		buf.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
+		buf.WriteString(fmt.Sprintf("%s\r\n", m.Body))
 	}
-	buf.WriteString(fmt.Sprintf("%s\r\n", m.Body))
 
 	for k, v := range m.Attachments {
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
@@ -206,8 +221,6 @@ func (m message) Bytes() []byte {
 		buf.WriteString(base64.StdEncoding.EncodeToString(v))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 	}
-	buf.WriteString("--")
-
 	return buf.Bytes()
 }
 
@@ -268,13 +281,17 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 	}
 
 	msg := message{
-		To:      strings.Join(recipients, ","),
-		From:    from,
-		Subject: fmt.Sprintf("RHACS Vulnerability Report for %s", time.Now().Format("02-January-2006")),
-		Body:    messageText,
-		Attachments: map[string][]byte{
+		To:        strings.Join(recipients, ","),
+		From:      from,
+		Subject:   fmt.Sprintf("Red Hat Image Vulnerability Report for %s", time.Now().Format("02-January-2006")),
+		Body:      messageText,
+		EmbedLogo: true,
+	}
+
+	if zippedReportData != nil {
+		msg.Attachments = map[string][]byte{
 			fmt.Sprintf("RHACS_Vulnerability_Report_%s.zip", time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
-		},
+		}
 	}
 	return e.send(ctx, &msg)
 }
@@ -311,10 +328,11 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 	}
 
 	msg := message{
-		To:      recipient,
-		From:    from,
-		Subject: subject,
-		Body:    body,
+		To:        recipient,
+		From:      from,
+		Subject:   subject,
+		Body:      body,
+		EmbedLogo: false,
 	}
 	return e.send(ctx, &msg)
 }

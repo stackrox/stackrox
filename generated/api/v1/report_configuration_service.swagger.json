@@ -96,37 +96,6 @@
         "tags": [
           "ReportConfigurationService"
         ]
-      },
-      "put": {
-        "summary": "PutReportConfigutarion updates a report configuration",
-        "operationId": "ReportConfigurationService_UpdateReportConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1UpdateReportConfigurationRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ReportConfigurationService"
-        ]
       }
     },
     "/v1/report/configurations/{id}": {
@@ -181,6 +150,43 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportConfigurationService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateReportConfiguration updates a report configuration",
+        "operationId": "ReportConfigurationService_UpdateReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateReportConfigurationRequest"
+            }
           }
         ],
         "tags": [
@@ -481,6 +487,9 @@
     "v1UpdateReportConfigurationRequest": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
         "reportConfig": {
           "$ref": "#/definitions/storageReportConfiguration"
         }
