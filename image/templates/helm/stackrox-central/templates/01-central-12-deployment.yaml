@@ -147,11 +147,7 @@ spec:
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
         {{- end }}
-        {{- if eq ._rox.env.openshift 4 }}
-        - name: trusted-ca-volume
-          mountPath: /etc/pki/injected-ca-trust/
-          readOnly: true
-        {{- end }}
+        {{- include "srox.injectedCAbundleMount" . | nindent 8 }}
       volumes:
       - name: varlog
         emptyDir: {}
@@ -203,12 +199,4 @@ spec:
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}
       {{- end }}
-      {{- if eq ._rox.env.openshift 4 }}
-      - name: trusted-ca-volume
-        configMap:
-          name: "injected-cabundle-{{ .Release.Name }}"
-          items:
-            - key: ca-bundle.crt
-              path: tls-ca-bundle.pem
-          optional: true
-      {{- end }}
+      {{- include "srox.injectedCAbundle" . | nindent 6 }}

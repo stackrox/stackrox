@@ -104,11 +104,7 @@ spec:
             - name: additional-cas
               mountPath: /usr/local/share/ca-certificates/
               readOnly: true
-            {{- if eq ._rox.env.openshift 4 }}
-            - name: trusted-ca-volume
-              mountPath: /etc/pki/injected-ca-trust/
-              readOnly: true
-            {{- end }}
+            {{- include "srox.injectedCAbundleMount" . | nindent 12 }}
       volumes:
         - name: certs
           secret:
@@ -139,15 +135,7 @@ spec:
           secret:
             secretName: additional-ca-sensor
             optional: true
-        {{- if eq ._rox.env.openshift 4 }}
-        - name: trusted-ca-volume
-          configMap:
-            name: "injected-cabundle-{{ .Release.Name }}"
-            items:
-              - key: ca-bundle.crt
-                path: tls-ca-bundle.pem
-            optional: true
-        {{- end }}
+      {{- include "srox.injectedCAbundle" . | nindent 6 }}
 ---
 
 apiVersion: v1
