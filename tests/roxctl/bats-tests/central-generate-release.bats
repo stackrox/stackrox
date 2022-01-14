@@ -19,8 +19,8 @@ teardown() {
 
 # RELEASE / K8S
 
-@test "roxctl-release central generate k8s should use docker.io registry" {
-  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' 'stackrox.io'
+@test "roxctl-release central generate k8s should use registry.redhat.io registry" {
+  run_image_defaults_registry_test roxctl-release k8s 'registry.redhat.io' 'registry.redhat.io'
 }
 
 @test "roxctl-release central generate k8s should respect customly-provided images" {
@@ -56,7 +56,6 @@ teardown() {
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=rhacs should use registry.redhat.io registry" {
-  skip "RHACS flavor not ready yet" # TODO(RS-380): remove this line
   run_image_defaults_registry_test roxctl-release k8s 'registry.redhat.io' 'registry.redhat.io' '--image-defaults' 'rhacs'
 }
 
@@ -66,8 +65,8 @@ teardown() {
 
 # RELEASE / OPENSHIFT
 
-@test "roxctl-release central generate openshift should use docker.io registry" {
-  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' 'stackrox.io'
+@test "roxctl-release central generate openshift should use registry.redhat.io registry" {
+  run_image_defaults_registry_test roxctl-release openshift 'registry.redhat.io' 'registry.redhat.io'
 }
 
 @test "roxctl-release central generate openshift should respect customly-provided images" {
@@ -103,7 +102,6 @@ teardown() {
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=rhacs should use registry.redhat.io registry" {
-  skip "RHACS flavor not ready yet" # TODO(RS-380): remove this line
   run_image_defaults_registry_test roxctl-release openshift 'registry.redhat.io' 'registry.redhat.io' '--image-defaults' 'rhacs'
 }
 
