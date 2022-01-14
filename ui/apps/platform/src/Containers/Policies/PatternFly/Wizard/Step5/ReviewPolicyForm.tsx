@@ -1,12 +1,12 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Flex, FlexItem, Spinner, Title } from '@patternfly/react-core';
+import { Alert, Flex, FlexItem, Spinner, Title, Divider } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
 import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import PolicyOverview from '../../Detail/PolicyOverview';
+import PolicyDetailContent from '../../Detail/PolicyDetailContent';
 import PreviewViolations from './PreviewViolations';
 
 import './ReviewPolicyForm.css';
@@ -83,8 +83,9 @@ function ReviewPolicyForm(): ReactElement {
                 className="review-policy"
             >
                 <Title headingLevel="h2">Review policy</Title>
-                <div className="pf-u-mb-md pf-u-mt-sm">Review policy settings and violations.</div>
-                <PolicyOverview clusters={[]} notifiers={[]} policy={values} />
+                <div>Review policy settings and violations.</div>
+                <Divider component="div" />
+                <PolicyDetailContent clusters={[]} notifiers={[]} policy={values} />
             </Flex>
             <Flex
                 flex={{ default: 'flex_1' }}
