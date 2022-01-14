@@ -90,13 +90,19 @@ func (s *deployerTestSuite) Test_deriveImageWithNewName() {
 			expectedRegistry:   "my.registry.io",
 			expectedRepository: "stackrox/imageA",
 		},
+		"my.registry.io/stackrox/imageB": {
+			baseImage:          ImageWithSingleNamespace,
+			targetImageName:    "company/imageB",
+			expectedRegistry:   "my.registry.io",
+			expectedRepository: "stackrox/imageB",
+		},
 	}
 
 	for name, testCase := range cases {
 		s.Run(name, func() {
-			actualRegistry, actualRepository := deriveImageWithNewName(testCase.baseImage, testCase.targetImageName)
-			s.Equal(testCase.expectedRegistry, actualRegistry)
-			s.Equal(testCase.expectedRepository, actualRepository)
+			img := deriveImageWithNewName(testCase.baseImage, testCase.targetImageName)
+			s.Equal(testCase.expectedRegistry, img.Registry)
+			s.Equal(testCase.expectedRepository, img.Remote)
 		})
 	}
 }
@@ -138,11 +144,17 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			expectedCollectorFullRef: defaultCollectorFullImage,
 			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
-		"custom main image / no collector": {
+		"custom main image (with namespace) / no collector": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", ""),
 			expectedMain:             fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.MainImageName, flavor.MainImageTag),
 			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
+		"custom main image (without namespace) / no collector": {
+			cluster:                  makeTestCluster("example.io/main", ""),
+			expectedMain:             fmt.Sprintf("example.io/%s:%s", flavor.MainImageName, flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"custom main and collector images": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
