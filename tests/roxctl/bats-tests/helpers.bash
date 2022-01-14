@@ -153,9 +153,6 @@ run_no_rhacs_flag_test() {
   local roxctl_bin="$1"
   local orch="$2"
 
-  if [[ " ${extra_params[*]} " =~ --image-defaults ]]; then
-    skip_unless_image_defaults "$roxctl_bin" "$orch"
-  fi
   run "$roxctl_bin" central generate --rhacs "$orch" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
