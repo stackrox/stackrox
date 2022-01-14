@@ -167,8 +167,7 @@ func getScannerSecretDurationFromCertificate(scannerCert *x509.Certificate) time
 }
 
 func getScannerSecretDuration(scannerSecret *v1.Secret) time.Duration {
-	scannerCertsData := scannerSecret.Data
-	scannerCertBytes := scannerCertsData[mtls.ServiceCertFileName]
+	scannerCertBytes := scannerSecret.Data[mtls.ServiceCertFileName]
 	scannerCert, err := helpers.ParseCertificatePEM(scannerCertBytes)
 	if err != nil {
 		// Note this also covers a secret with no certificates stored, which should be refreshed immediately.
