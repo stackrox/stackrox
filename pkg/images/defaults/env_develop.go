@@ -8,9 +8,11 @@ import (
 )
 
 var (
-	SetRoxImageFlavorEnv func() = func() {
+	setRoxImageFlavorEnv = func() {
 		if _, found := os.LookupEnv(imageFlavorEnvName); !found {
-			os.Setenv(imageFlavorEnvName, "development_build")
+			if os.Setenv(imageFlavorEnvName, "development_build") != nil {
+				log.Panicf("Could not set %s", imageFlavorEnvName)
+			}
 		}
 	}
 )

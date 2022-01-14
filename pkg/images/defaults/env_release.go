@@ -4,5 +4,5 @@
 package defaults
 
 var (
-	SetRoxImageFlavorEnv func() = func() {}
+	setRoxImageFlavorEnv = func() {}
 )
