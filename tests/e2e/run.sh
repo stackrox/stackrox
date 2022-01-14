@@ -116,6 +116,7 @@ prepare_for_endpoints_test() {
 
 run_roxctl_bats_tests() {
     info "Running Bats e2e tests on development roxctl"
+    rm -f "$TEST_ROOT/tmp/roxctl-bats/bin/roxctl-release" "$TEST_ROOT/tmp/roxctl-bats/bin/roxctl-dev"
     "$TEST_ROOT/tests/roxctl/bats-runner.sh" "${1:-roxctl-test-output}" "$TEST_ROOT/tests/roxctl/bats-tests/"
 }
 
