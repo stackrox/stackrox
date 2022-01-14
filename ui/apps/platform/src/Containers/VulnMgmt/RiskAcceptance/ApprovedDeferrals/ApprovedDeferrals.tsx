@@ -27,14 +27,15 @@ function ApprovedDeferrals(): ReactElement {
         );
     }
 
-    const rows = data?.results || [];
+    const rows = data?.vulnerabilityRequests || [];
+    const itemCount = data?.vulnerabilityRequestsCount || 0;
 
     return (
         <ApprovedDeferralsTable
             rows={rows}
             updateTable={refetchQuery}
-            isLoading={isLoading} // @TODO: When backend puts "vulnerabilityRequestsCount" into GraphQL, use that
-            itemCount={rows.length}
+            isLoading={isLoading}
+            itemCount={itemCount}
             page={page}
             perPage={perPage}
             onSetPage={onSetPage}
