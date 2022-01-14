@@ -196,7 +196,7 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 // roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
 // provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
-	f, err := GetImageFlavorByName(strings.ToLower(strings.TrimSpace(imageFlavorEnv())), buildinfo.ReleaseBuild)
+	f, err := GetImageFlavorByName(strings.TrimSpace(imageFlavorEnv()), buildinfo.ReleaseBuild)
 	if err != nil {
 		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
 		// build-time constant.
