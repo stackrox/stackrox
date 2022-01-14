@@ -36,6 +36,17 @@ const (
 )
 
 func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) error {
+	// Ensure that default values are taken from the flavor if not provided explicitly in the parameteres
+	if c.K8sConfig.MainImage == "" {
+		c.K8sConfig.MainImage = imageFlavor.MainImage()
+	}
+	if c.K8sConfig.ScannerImage == "" {
+		c.K8sConfig.ScannerImage = imageFlavor.ScannerImage()
+	}
+	if c.K8sConfig.ScannerDBImage == "" {
+		c.K8sConfig.ScannerDBImage = imageFlavor.ScannerDBImage()
+	}
+
 	// Make all items in SecretsByteMap base64 encoded
 	c.SecretsBase64Map = make(map[string]string)
 	for k, v := range c.SecretsByteMap {

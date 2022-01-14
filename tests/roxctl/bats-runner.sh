@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+if (( $# != 2 )); then
+  echo >&2 "Error: bats-runner.sh requires 2 arguments: bats-runner.sh <test_output> <tests>"
+  exit 1
+fi
+
 TESTS_OUTPUT="${1:-roxctl-test-output}"
 BATS_TESTS="${2:-tests/roxctl/bats-tests}"
 echo "Using Bats version: $(bats --version)"

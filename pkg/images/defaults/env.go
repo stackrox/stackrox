@@ -5,10 +5,12 @@ import "github.com/stackrox/rox/pkg/env"
 const (
 	imageFlavorEnvName = "ROX_IMAGE_FLAVOR"
 
-	imageFlavorDevelopment = "development_build"
-	imageFlavorStackroxIO  = "stackrox_io_release"
+	// ImageFlavorNameDevelopmentBuild is a name for image flavor (image defaults) for development builds.
+	ImageFlavorNameDevelopmentBuild = "development_build"
+	// ImageFlavorNameStackRoxIORelease is a name for image flavor (image defaults) for images released to stackrox.io.
+	ImageFlavorNameStackRoxIORelease = "stackrox.io"
 	// TODO(RS-380): add this flavor:
-	// imageFlavorRHACS       = "rhacs_release"
+	// ImageFlavorNameRHACSRelease       = "rhacs"
 )
 
 var (

@@ -10,7 +10,7 @@ endif
 
 # Set 'development_build' as default ROX_IMAGE_FLAVOR, so that developers can use the Makefile locally.
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox_io_release, rhacs_release.
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
 ROX_IMAGE_FLAVOR ?= development_build
 
 # Compute the tag of the build image based on the contents of the tracked files in

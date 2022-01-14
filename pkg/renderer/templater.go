@@ -79,6 +79,9 @@ func (m PersistenceType) String() string {
 type K8sConfig struct {
 	CommonConfig
 
+	// ImageFlavorName is the name of the flavor selected by the user with CLI parameters
+	ImageFlavorName string
+
 	// K8s Application name
 	AppName string
 

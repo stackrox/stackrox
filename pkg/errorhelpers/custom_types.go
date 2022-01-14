@@ -69,3 +69,8 @@ func NewErrInvariantViolation(explanation string) error {
 func NewErrInvalidArgs(explanation string) error {
 	return fmt.Errorf("%w: %s", ErrInvalidArgs, explanation)
 }
+
+// NewErrInvalidArgsf wraps ErrInvalidArgs into a formatted explanation.
+func NewErrInvalidArgsf(format string, args ...interface{}) error {
+	return fmt.Errorf("%w: %s", ErrInvalidArgs, fmt.Sprintf(format, args...))
+}
