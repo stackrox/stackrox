@@ -358,6 +358,9 @@ cli: cli-build
 	chmod u+w $(GOPATH)/bin/roxctl
 
 cli-linux: build-prep
+# TODO: remove these debug prints
+	@echo "GOTAGS makefile '$(GOTAGS)', env '$${GOTAGS}'"
+	@echo "ROX_IMAGE_FLAVOR makefile '$(ROX_IMAGE_FLAVOR)', env '$${ROX_IMAGE_FLAVOR}'"
 	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
 
 cli-darwin: build-prep
