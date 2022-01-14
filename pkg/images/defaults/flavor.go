@@ -153,7 +153,7 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	}
 }
 
-// RHACSReleaseImageFlavor returns image values for `rhacs_release` flavor.
+// RHACSReleaseImageFlavor returns image values for `rhacs` flavor.
 func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
