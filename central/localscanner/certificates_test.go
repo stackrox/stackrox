@@ -103,7 +103,7 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 
 		subject := cert.Subject
 		certOUs := subject.OrganizationalUnit
-		s.Equal(1, len(certOUs), tc.service)
+		s.Require().Len(certOUs, 1, tc.service)
 		s.Equal(tc.expectOU, certOUs[0], tc.service)
 
 		s.Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName, tc.service)
