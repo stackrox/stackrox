@@ -53,18 +53,19 @@ func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
 	}
 
 	for _, tc := range testCases {
-		certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
-		if tc.expectError {
-			s.Require().Error(err, tc.service)
-			continue
-		} else {
-			s.Require().NoError(err, tc.service)
-		}
-		expectedFiles := []string{"ca.pem", "cert.pem", "key.pem"}
-		s.Len(certMap, len(expectedFiles))
-		for _, key := range expectedFiles {
-			s.Contains(certMap, key, tc.service)
-		}
+		s.Run(tc.service.String(), func() {
+			certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
+			if tc.expectError {
+				s.Require().Error(err)
+				return
+			}
+			s.Require().NoError(err)
+			expectedFiles := []string{"ca.pem", "cert.pem", "key.pem"}
+			s.Len(certMap, len(expectedFiles))
+			for _, key := range expectedFiles {
+				s.Contains(certMap, key)
+			}
+		})
 	}
 }
 
@@ -75,11 +76,13 @@ func (s *localScannerSuite) TestValidateServiceCertificate() {
 	}
 
 	for _, serviceType := range testCases {
-		certMap, err := generateServiceCertMap(serviceType, namespace, clusterID)
-		s.Require().NoError(err, serviceType)
-		validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
-		s.Require().NoError(err, serviceType)
-		s.NoError(certgen.VerifyServiceCert(certMap, validatingCA, serviceType, ""), serviceType)
+		s.Run(serviceType.String(), func() {
+			certMap, err := generateServiceCertMap(serviceType, namespace, clusterID)
+			s.Require().NoError(err)
+			validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
+			s.Require().NoError(err)
+			s.NoError(certgen.VerifyServiceCert(certMap, validatingCA, serviceType, ""))
+		})
 	}
 }
 
@@ -96,21 +99,23 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 	}
 
 	for _, tc := range testCases {
-		certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
-		s.Require().NoError(err, tc.service)
-		cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
-		s.Require().NoError(err, tc.service)
+		s.Run(tc.service.String(), func() {
+			certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
+			s.Require().NoError(err)
+			cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
+			s.Require().NoError(err)
 
-		subject := cert.Subject
-		certOUs := subject.OrganizationalUnit
-		s.Require().Len(certOUs, 1, tc.service)
-		s.Equal(tc.expectOU, certOUs[0], tc.service)
+			subject := cert.Subject
+			certOUs := subject.OrganizationalUnit
+			s.Require().Len(certOUs, 1)
+			s.Equal(tc.expectOU, certOUs[0])
 
-		s.Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName, tc.service)
+			s.Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName)
 
-		certAlternativeNames := cert.DNSNames
-		s.ElementsMatch(tc.expectedAlternativeNames, certAlternativeNames, tc.service)
-		s.Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter, tc.service)
+			certAlternativeNames := cert.DNSNames
+			s.ElementsMatch(tc.expectedAlternativeNames, certAlternativeNames)
+			s.Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter)
+		})
 	}
 }
 
