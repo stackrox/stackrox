@@ -76,7 +76,7 @@ func (s *testSuite) TestGetPolicySyncMsgFromPolicies() {
 	s.NoError(err)
 
 	policySync := msg.GetPolicySync()
-	s.NotNil(policySync)
+	s.Require().NotNil(policySync)
 	s.NotEmpty(policySync.Policies)
 	s.Equal(sensorVersion.String(), policySync.Policies[0].GetPolicyVersion())
 }
