@@ -179,7 +179,7 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 
 	flavor, err := defaults.GetImageFlavorByName(config.K8sConfig.ImageFlavorName, buildinfo.ReleaseBuild)
 	if err != nil {
-		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("'--image-defaults': %v", err))
+		return nil, errorhelpers.NewErrInvalidArgsf("'--image-defaults': %v", err)
 	}
 
 	files, err := renderer.Render(config, flavor)
