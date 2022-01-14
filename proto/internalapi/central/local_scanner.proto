@@ -10,11 +10,14 @@ message LocalScannerCertsIssueError {
   string message = 1;
 }
 
-message IssueLocalScannerCertsRequest {}
+message IssueLocalScannerCertsRequest {
+  string request_id = 1;
+}
 
 message IssueLocalScannerCertsResponse {
+  string request_id = 1;
   oneof response {
-      storage.TypedServiceCertificateSet certificates = 1;
-      LocalScannerCertsIssueError error = 2;
+      storage.TypedServiceCertificateSet certificates = 2;
+      LocalScannerCertsIssueError error = 3;
   }
 }

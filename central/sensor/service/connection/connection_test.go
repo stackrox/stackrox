@@ -127,15 +127,17 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 	if !features.LocalImageScanning.Enabled() {
 		s.T().Skip()
 	}
-	namespace, clusterID := "namespace", "clusterID"
+	namespace, clusterID, requestID := "namespace", "clusterID", "requestID"
 	testCases := map[string]struct {
+		requestID  string
 		namespace  string
 		clusterID  string
 		shouldFail bool
 	}{
-		"no parameter missing": {namespace: namespace, clusterID: clusterID, shouldFail: false},
-		"namespace missing":    {namespace: "", clusterID: clusterID, shouldFail: true},
-		"clusterID missing":    {namespace: namespace, clusterID: "", shouldFail: true},
+		"no parameter missing": {requestID: requestID, namespace: namespace, clusterID: clusterID, shouldFail: false},
+		"requestID missing":    {requestID: "", namespace: namespace, clusterID: clusterID, shouldFail: true},
+		"namespace missing":    {requestID: requestID, namespace: "", clusterID: clusterID, shouldFail: true},
+		"clusterID missing":    {requestID: requestID, namespace: namespace, clusterID: "", shouldFail: true},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -155,7 +157,9 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 			defer cancel()
 			request := &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
-					IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{},
+					IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
+						RequestId: tc.requestID,
+					},
 				},
 			}
 
@@ -166,10 +170,12 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 
 			select {
 			case msgToSensor := <-sendC:
+				response := msgToSensor.GetIssueLocalScannerCertsResponse()
+				s.Equal(tc.requestID, response.GetRequestId())
 				if tc.shouldFail {
-					s.NotNil(msgToSensor.GetIssueLocalScannerCertsResponse().GetError())
+					s.NotNil(response.GetError())
 				} else {
-					s.NotNil(msgToSensor.GetIssueLocalScannerCertsResponse().GetCertificates())
+					s.NotNil(response.GetCertificates())
 				}
 			case <-ctx.Done():
 				s.Fail(ctx.Err().Error())
