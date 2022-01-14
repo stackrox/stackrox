@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// TODO need to ask about this value
 const maxRunTimeViolationsPerAlert = 40
 
 var (
@@ -80,13 +79,9 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 // notifyRuntimeAlerts sends alerts for all runtime events that occur
 func (d *alertManagerImpl) notifyRuntimeAlerts(ctx context.Context, currentAlerts []*storage.Alert) {
 	for _, alert := range currentAlerts {
-		log.Errorf("osward -- alert lifecycle stage %s", alert.GetLifecycleStage())
-		log.Errorf("osward --  %s %s", storage.LifecycleStage_RUNTIME, storage.LifecycleStage_RUNTIME.String())
 		if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
-			log.Errorf("osward --  lifecycle stage was not runtime")
 			continue
 		}
-
 		d.notifier.ProcessAlert(ctx, alert)
 	}
 }
