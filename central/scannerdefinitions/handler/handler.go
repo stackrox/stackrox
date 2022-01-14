@@ -2,6 +2,8 @@ package handler
 
 import (
 	"archive/zip"
+	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -63,7 +65,7 @@ type httpHandler struct {
 	lock          sync.Mutex
 	updaters      map[string]*requestedUpdater
 	onlineVulnDir string
-	offlineFile   *file.Metadata
+	offlineFile   *file.File
 }
 
 // New creates a new http.Handler to handle vulnerability data.
@@ -90,20 +92,8 @@ func (h *httpHandler) initializeOfflineVulnDump(vulnDefsDir string) {
 	if vulnDefsDir == "" {
 		vulnDefsDir = filepath.Join(migrations.DBMountPath(), definitionsBaseDir)
 	}
-	offlinePath := filepath.Join(vulnDefsDir, offlineScannerDefsName)
 
-	// Check if the offline file already exists and set the modified time.
-	var lastModifiedTime *time.Time
-	f, err := os.Stat(offlinePath)
-	// If there is an error reading the file, treat it like the file does not exist.
-	// If it does exist, read its modified time.
-	if err == nil {
-		log.Info("Found uploaded scanner definitions file")
-		t := f.ModTime()
-		lastModifiedTime = &t
-	}
-
-	h.offlineFile = file.NewMetadata(offlinePath, lastModifiedTime)
+	h.offlineFile = file.New(filepath.Join(vulnDefsDir, offlineScannerDefsName))
 }
 
 func (h *httpHandler) initializeUpdaters(cleanupInterval, cleanupAge *time.Duration) {
@@ -130,10 +120,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	uuid := r.URL.Query().Get(`uuid`)
 	if !h.online || uuid == "" {
 		// Default to the offline dump.
-		h.offlineFile.RLock()
-		defer h.offlineFile.RUnlock()
-
-		h.serveFileNoLock(w, r, h.offlineFile.GetPath())
+		serveFile(w, r, h.offlineFile.Path())
 		return
 	}
 
@@ -143,36 +130,46 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	// Serve the more recent of the requested file and the manually uploaded definitions.
 
-	serveFile := u.file
-	unusedFile := h.offlineFile
-
-	serveFile.RLock()
-	unusedFile.RLock()
-	if unusedFile.GetLastModifiedTime().After(serveFile.GetLastModifiedTime()) {
-		serveFile, unusedFile = unusedFile, serveFile
+	onlineF, onlineModTime, err := u.file.Open()
+	if err != nil {
+		writeErrorForFile(w, err, u.file.Path())
+		return
 	}
-	unusedFile.RUnlock()
-	defer serveFile.RUnlock()
+	defer utils.IgnoreError(onlineF.Close)
 
-	h.serveFileNoLock(w, r, serveFile.GetPath())
+	offlineF, offlineModTime, err := h.offlineFile.Open()
+	if err != nil {
+		writeErrorForFile(w, err, h.offlineFile.Path())
+		return
+	}
+	defer utils.IgnoreError(offlineF.Close)
+
+	f, modTime := onlineF, onlineModTime
+	if offlineModTime.After(onlineModTime) {
+		f, modTime = offlineF, offlineModTime
+	}
+
+	serveContent(w, r, f.Name(), modTime, f)
 }
 
-func (h *httpHandler) serveFileNoLock(w http.ResponseWriter, r *http.Request, path string) {
-	basePath := filepath.Base(path)
-
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("No scanner definitions found"))
-			return
-		}
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "couldn't stat file %s: %v", basePath, err)
+func writeErrorForFile(w http.ResponseWriter, err error, path string) {
+	if errors.Is(err, fs.ErrNotExist) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("No scanner definitions found"))
 		return
 	}
 
-	log.Debugf("Serving vulnerability definitions from %s", basePath)
-	http.ServeFile(w, r, path)
+	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read file %s: %v", filepath.Base(path), err)
+}
+
+func serveFile(w http.ResponseWriter, r *http.Request, name string) {
+	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
+	http.ServeFile(w, r, name)
+}
+
+func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, content io.ReadSeeker) {
+	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
+	http.ServeContent(w, r, name, modTime, content)
 }
 
 // getUpdater gets or creates the updater for the scanner definitions
@@ -188,7 +185,7 @@ func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
 
 		h.updaters[uuid] = &requestedUpdater{
 			updater: newUpdater(
-				file.NewMetadata(filePath, nil),
+				file.New(filePath),
 				client,
 				strings.Join([]string{scannerUpdateDomain, uuid, scannerUpdateURLSuffix}, "/"),
 				h.interval,
@@ -217,7 +214,7 @@ func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
 	defer utils.IgnoreError(r.Close)
 
 	// POST requests only update the offline feed.
-	if err := file.Write(h.offlineFile, r, zipF.Modified); err != nil {
+	if err := h.offlineFile.Write(r, zipF.Modified); err != nil {
 		return errors.Wrap(err, "writing scanner definitions")
 	}
 
