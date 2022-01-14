@@ -35,7 +35,7 @@ var (
 
 // SetupReconcilerWithManager creates and registers a new helm reconciler to the given controller manager.
 func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix image.ChartPrefix, translator values.Translator, extraOpts ...reconciler.Option) error {
-	metaVals := charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor())
+	metaVals := charts.GetMetaValuesForFlavor(defaults.GetImageFlavorFromEnv())
 	if !buildinfo.ReleaseBuild {
 		metaVals["MainRegistry"] = mainRegistryOverride.Setting()
 		metaVals["CollectorRegistry"] = collectorRegistryOverride.Setting()
