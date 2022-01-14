@@ -248,7 +248,7 @@ func setScannerCerts(scannerSecret, scannerDBSecert *v1.Secret, certificates *st
 	return nil
 }
 
-// When any of the secrets is missing this returns and err such that k8sErrors.IsNotFound(err) is true
+// When any of the secrets is missing this returns an err such that k8sErrors.IsNotFound(err) is true
 // On success it returns the duration after which the secrets should be refreshed
 func (i *localScannerTLSIssuerImpl) refreshLocalScannerSecrets(issueCertsResponse *central.IssueLocalScannerCertsResponse) (time.Duration, error) {
 	localScannerCredsSecret, localScannerDBCredsSecret, err := i.fetchLocalScannerSecrets()
