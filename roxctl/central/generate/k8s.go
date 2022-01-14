@@ -94,11 +94,12 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	}
 	flagWrap.StringVar(&k8sConfig.ImageFlavorName, "image-defaults", imageFlavorDefault, imageFlavorHelpStr)
 
-	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "", "main image to use", "central")
+	// TODO(RS-418): restore default image names or update argument description
+	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "", "main image to use (if unset, the default will be used)", "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
 
-	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", "", "Scanner image to use", "scanner")
-	flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", "", "Scanner DB image to use", "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", "", "Scanner image to use (if unset, the default will be used)", "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", "", "Scanner DB image to use (if unset, the default will be used)", "scanner")
 
 	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
 
