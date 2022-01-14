@@ -1,5 +1,6 @@
 package env
 
 var (
-	ScanRateLimit = RegisterIntegerSetting("ROX_SCAN_INTERNAL_RATE_LIMIT", 100)
+	// ScanRateLimit sets the rate limit on the ImageScanInternal endpoint
+	ScanRateLimit = RegisterIntegerSetting("ROX_SCAN_INTERNAL_RATE_LIMIT", 20)
 )
