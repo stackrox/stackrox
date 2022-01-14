@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -73,11 +74,11 @@ func (s *embedTestSuite) TestLoadChartDefaultValues() {
 }
 
 func (s *embedTestSuite) TestLoadChartRHACSValues() {
-	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.RHACSMetaValues())
+	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()))
 	s.Require().NoError(err)
 	s.Equal("stackrox-central-services", chart.Name())
 
-	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.RHACSMetaValues())
+	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()))
 	s.Require().NoError(err)
 	s.Equal("stackrox-secured-cluster-services", chart.Name())
 }

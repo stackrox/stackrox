@@ -76,7 +76,7 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 	flavor := flavorUtils.MakeImageFlavorForTest(t)
 	cases := map[string]MetaValues{
 		"default": GetMetaValuesForFlavor(flavor),
-		"rhacs":   RHACSMetaValues(),
+		"rhacs":   GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()),
 	}
 	for n, c := range cases {
 		t.Run(n, func(t *testing.T) {

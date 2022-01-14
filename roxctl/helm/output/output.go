@@ -21,7 +21,7 @@ import (
 const (
 	flavorDevelopment string = "development"
 	flavorStackRoxIO  string = "stackrox.io"
-	// flavorRHACS       string = "rhacs" // TODO(RS-380): Uncomment to enable rhacs flavor
+	flavorRHACS       string = "rhacs"
 )
 
 var allowedFlavors set.StringSet
@@ -35,15 +35,17 @@ func init() {
 
 func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
 	if rhacs {
-		return charts.RHACSMetaValues()
+		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor())
 	}
 	switch strings.ToLower(flavor) {
 	case flavorStackRoxIO:
 		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
 	case flavorDevelopment:
 		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
+	case flavorRHACS:
+		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor())
 	default:
-		return charts.RHACSMetaValues()
+		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor())
 	}
 }
 
