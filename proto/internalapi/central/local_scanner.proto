@@ -7,9 +7,9 @@ import "storage/service_identity.proto";
 package central;
 
 message LocalScannerCertificates {
-  bytes ca   = 1;
-  bytes cert = 2;
-  bytes key  = 3;
+  bytes ca_pem   = 1;
+  bytes cert_pem = 2;
+  bytes key_pem  = 3;
 }
 
 message LocalScannerCertificateSet {

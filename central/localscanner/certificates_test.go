@@ -154,9 +154,9 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 				certs.GetScannerDbCerts(),
 			} {
 				s.Require().NotNil(certs)
-				s.NotEmpty(certs.GetCa())
-				s.NotEmpty(certs.GetCert())
-				s.NotEmpty(certs.GetKey())
+				s.NotEmpty(certs.GetCaPem())
+				s.NotEmpty(certs.GetCertPem())
+				s.NotEmpty(certs.GetKeyPem())
 			}
 		})
 	}
