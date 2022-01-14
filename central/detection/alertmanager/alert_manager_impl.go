@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+// TODO need to ask about this value
 const maxRunTimeViolationsPerAlert = 40
 
 var (
@@ -33,6 +34,7 @@ type alertManagerImpl struct {
 	runtimeDetector runtime.Detector
 }
 
+// getDeploymentIDsFromAlerts returns a set of deployment IDs for given lists of alerts
 func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 	s := set.NewStringSet()
 	for _, slice := range alertSlices {
@@ -45,7 +47,11 @@ func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 	return s
 }
 
+// AlertAndNotify is the main function that implements the AlertManager interface
 func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (set.StringSet, error) {
+	// rox-7233: runtime alerts always get triggered, so we send them before merging
+	d.notifyRuntimeAlerts(ctx, currentAlerts)
+
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
@@ -71,7 +77,21 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	return modifiedDeployments, nil
 }
 
-// UpdateBatch updates all of the alerts in the datastore.
+// notifyRuntimeAlerts sends alerts for all runtime events that occur
+func (d *alertManagerImpl) notifyRuntimeAlerts(ctx context.Context, currentAlerts []*storage.Alert) {
+	for _, alert := range currentAlerts {
+		log.Errorf("osward -- alert lifecycle stage %s", alert.GetLifecycleStage())
+		log.Errorf("osward --  %s %s", storage.LifecycleStage_RUNTIME, storage.LifecycleStage_RUNTIME.String())
+		if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
+			log.Errorf("osward --  lifecycle stage was not runtime")
+			continue
+		}
+
+		d.notifier.ProcessAlert(ctx, alert)
+	}
+}
+
+// updateBatch updates all alerts in the datastore.
 func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error updating alerts: ")
 	for _, existingAlert := range alertsToMark {
@@ -80,7 +100,7 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 	return errList.ToError()
 }
 
-// MarkAlertsStale marks all of the input alerts stale in the input datastore.
+// markAlertsStale marks all input alerts stale in the input datastore.
 func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
 	for _, existingAlert := range alertsToMark {
@@ -129,10 +149,12 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 	return false
 }
 
-// NotifyAndUpdateBatch runs the notifier on the input alerts then stores them.
+// notifyAndUpdateBatch runs the notifier on the input alerts then stores them.
 func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	for _, existingAlert := range alertsToMark {
-		if d.shouldDebounceNotification(ctx, existingAlert) {
+		if (d.shouldDebounceNotification(ctx, existingAlert)) ||
+			// rox-7233: runtime alerts always get triggered, so we send them before merging
+			(existingAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME) {
 			continue
 		}
 		d.notifier.ProcessAlert(ctx, existingAlert)
