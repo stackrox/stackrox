@@ -148,11 +148,14 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
-		localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace),
 	}
 
 	if features.VulnRiskManagement.Enabled() {
 		components = append(components, reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache))
+	}
+
+	if !features.LocalImageScanning.Enabled() {
+		components = append(components, localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace))
 	}
 
 	if admCtrlSettingsMgr != nil {
