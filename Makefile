@@ -14,7 +14,7 @@ endif
 # 1. Use environment variable if provided.
 # 2. If makefile variable GOTAGS is equal to "release", use "stackrox_io_release".
 # 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
-ROX_IMAGE_FLAVOR ?= $(shell [[ "$(GOTAGS)" == "$(RELEASE_GOTAGS)" ]] && echo "stackrox_io_release" || echo "development_build")
+ROX_IMAGE_FLAVOR ?= $(shell [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]] && echo "stackrox_io_release" || echo "development_build")
 
 # Compute the tag of the build image based on the contents of the tracked files in
 # build. This ensures that we build it if and only if necessary, pulling from DockerHub
