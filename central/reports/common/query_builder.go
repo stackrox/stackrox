@@ -1,4 +1,4 @@
-package scheduler
+package common
 
 import (
 	"fmt"
@@ -10,9 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-type reportQuery struct {
-	cveFieldsQuery string
-	scopeQueries   []string
+// ReportQuery encapsulates the cve specific fields query, and the resource scope
+// queries to be used in a report generation run
+type ReportQuery struct {
+	CveFieldsQuery string
+	ScopeQueries   []string
 }
 
 type queryBuilder struct {
@@ -37,7 +39,7 @@ func NewVulnReportQueryBuilder(clusters []*storage.Cluster,
 }
 
 // BuildQuery builds scope and cve filtering queries for vuln reporting
-func (q *queryBuilder) BuildQuery() (*reportQuery, error) {
+func (q *queryBuilder) BuildQuery() (*ReportQuery, error) {
 	scopeQueries, err := q.buildScopeQueries()
 	if err != nil {
 		return nil, err
@@ -46,7 +48,7 @@ func (q *queryBuilder) BuildQuery() (*reportQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &reportQuery{
+	return &ReportQuery{
 		cveQuery,
 		scopeQueries,
 	}, nil

@@ -24,6 +24,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 		Attachments: map[string][]byte{
 			"attachment1.zip": attachBuf.Bytes(),
 		},
+		EmbedLogo: true,
 	}
 
 	msgBytes := msg.Bytes()
@@ -38,17 +39,24 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
 	assert.Contains(t, msgStr, "Content-Disposition: attachment; filename=attachment1.zip\r\n")
 
+	assert.Contains(t, msgStr, "Content-Type: image/png; name=logo.png\r\n")
+	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
+	assert.Contains(t, msgStr, "Content-Disposition: inline; filename=logo.png\r\n")
+	assert.Contains(t, msgStr, "Content-ID: <logo.png>\r\n")
+	assert.Contains(t, msgStr, "X-Attachment-Id: logo.png\r\n")
+
 	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
-	assert.Contains(t, msgStr, "How you doin'?\r\n")
+	assert.Contains(t, msgStr, "<div>How you doin'?</div>\r\n")
 
 }
 
 func TestEmailMsgNoAttachments(t *testing.T) {
 	msg := &message{
-		To:      "foo@stackrox.com, bar@stackrox.com",
-		From:    "xyz@stackrox.com",
-		Subject: "Test Email",
-		Body:    "How you doin'?",
+		To:        "foo@stackrox.com, bar@stackrox.com",
+		From:      "xyz@stackrox.com",
+		Subject:   "Test Email",
+		Body:      "How you doin'?",
+		EmbedLogo: false,
 	}
 
 	msgBytes := msg.Bytes()
