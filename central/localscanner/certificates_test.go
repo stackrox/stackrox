@@ -61,7 +61,7 @@ func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
 			s.Require().NoError(err, tc.service)
 		}
 		expectedFiles := []string{"ca.pem", "cert.pem", "key.pem"}
-		s.Equal(len(expectedFiles), len(certMap))
+		s.Len(certMap, len(expectedFiles))
 		for _, key := range expectedFiles {
 			s.Contains(certMap, key, tc.service)
 		}
