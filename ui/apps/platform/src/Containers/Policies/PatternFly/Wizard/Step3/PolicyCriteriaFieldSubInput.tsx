@@ -4,17 +4,17 @@ import { TextInput, NumberInput, FormGroup, Select, SelectOption } from '@patter
 
 import { SubComponent } from 'Containers/Policies/Wizard/Form/descriptors';
 
-type FieldProps = {
+type PolicyCriteriaFieldSubInputProps = {
     subComponent: SubComponent;
-    readOnly: boolean;
+    readOnly?: boolean;
     name: string;
 };
 
 function PolicyCriteriaFieldSubInput({
     subComponent,
-    readOnly,
+    readOnly = false,
     name,
-}: FieldProps): React.ReactElement {
+}: PolicyCriteriaFieldSubInputProps): React.ReactElement {
     const [field, , helper] = useField(name);
     const [isSelectOpen, setIsSelectOpen] = React.useState(false);
     const { value } = field;

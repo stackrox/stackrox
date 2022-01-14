@@ -12,7 +12,7 @@ import {
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
-import PolicySection from './PolicySection';
+import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
 import './PolicyCriteriaForm.css';
 
@@ -66,20 +66,7 @@ function PolicyCriteriaForm() {
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
                     >
-                        {values.policySections.map((_, sectionIndex) => (
-                            // eslint-disable-next-line react/no-array-index-key
-                            <React.Fragment key={sectionIndex}>
-                                <PolicySection
-                                    sectionIndex={sectionIndex}
-                                    descriptors={descriptor}
-                                />
-                                {sectionIndex !== values.policySections.length && (
-                                    <Flex alignSelf={{ default: 'alignSelfCenter' }}>
-                                        <FlexItem>or</FlexItem>
-                                    </Flex>
-                                )}
-                            </React.Fragment>
-                        ))}
+                        <BooleanPolicyLogicSection />
                     </Flex>
                 </FlexItem>
                 <Divider component="div" isVertical />

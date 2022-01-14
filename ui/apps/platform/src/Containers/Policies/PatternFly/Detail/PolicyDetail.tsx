@@ -16,11 +16,11 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarItem,
+    Divider,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import MitreAttackVectors from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
 import useToasts from 'hooks/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
@@ -29,7 +29,7 @@ import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import PolicyOverview from './PolicyOverview';
+import PolicyDetailContent from './PolicyDetailContent';
 
 function formatUpdateDisabledStateAction(disabled: boolean) {
     return disabled ? 'Enable policy' : 'Disable policy';
@@ -239,15 +239,8 @@ function PolicyDetail({
             <Title headingLevel="h2" className="pf-u-mb-md">
                 Policy overview
             </Title>
-            <PolicyOverview clusters={clusters} policy={policy} notifiers={notifiers} />
-            <Title headingLevel="h2" className="pf-u-mt-md">
-                MITRE ATT&amp;CK
-            </Title>
-            <MitreAttackVectors policyId={id} />
-            <Title headingLevel="h2" className="pf-u-mb-md">
-                Policy criteria
-            </Title>
-            TODO
+            <Divider component="div" className="pf-u-pb-md" />
+            <PolicyDetailContent clusters={clusters} policy={policy} notifiers={notifiers} />
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }) => (
                     <Alert
