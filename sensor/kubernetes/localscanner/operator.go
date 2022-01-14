@@ -83,8 +83,8 @@ func (o *localscannerOperatorImpl) Capabilities() []centralsensor.SensorCapabili
 func (o *localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_IssueLocalScannerCertsResponse:
-		certs := m.IssueLocalScannerCertsResponse
-		nextTimeToRefresh, refreshErr := o.refreshLocalScannerSecrets(certs)
+		issueCertsResponse := m.IssueLocalScannerCertsResponse
+		nextTimeToRefresh, refreshErr := o.refreshLocalScannerSecrets(issueCertsResponse)
 		if refreshErr == nil {
 			log.Infof("successfully refreshed local Scanner credential secrets %s and %s",
 				localScannerCredentialsSecretName, localScannerDBCredentialsSecretName)
@@ -183,10 +183,11 @@ func getScannerSecretDuration(scannerSecret *v1.Secret) time.Duration {
 func (o *localscannerOperatorImpl) issueScannerCertificates() error {
 	ctx, cancel := context.WithTimeout(o.ctx, issueCertificatesTimeout)
 	defer cancel()
+	requestID := uuid.NewV4().String() // FIXME validate response has the same request ID
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
 			IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
-				RequestId: uuid.NewV4().String(),
+				RequestId: requestID,
 			},
 		},
 	}
