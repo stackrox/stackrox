@@ -1,6 +1,6 @@
 /* eslint-disable no-void */
 import React, { useState, ReactElement } from 'react';
-import { useHistory, Link } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import {
     ActionList,
     ActionListItem,
@@ -23,7 +23,6 @@ import {
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 
-import { vulnManagementReportsPath } from 'routePaths';
 import SelectSingle from 'Components/SelectSingle';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
@@ -91,6 +90,10 @@ function VulnMgmtReportForm({
         } catch (error) {
             setMessage({ message: getAxiosErrorMessage(error), isError: true });
         }
+    }
+
+    function cancelEdit() {
+        history.goBack();
     }
 
     function onChange(value, event) {
@@ -326,12 +329,7 @@ function VulnMgmtReportForm({
                         </Button>
                     </ActionListItem>
                     <ActionListItem>
-                        <Button
-                            variant={ButtonVariant.link}
-                            component={(props) => (
-                                <Link {...props} to={vulnManagementReportsPath} />
-                            )}
-                        >
+                        <Button variant={ButtonVariant.link} onClick={cancelEdit}>
                             Cancel
                         </Button>
                     </ActionListItem>
