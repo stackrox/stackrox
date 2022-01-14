@@ -37,6 +37,11 @@ var (
 			isAllowedInReleaseBuild: true,
 			constructorFunc:         StackRoxIOReleaseImageFlavor,
 		},
+		{
+			imageFlavorName:         ImageFlavorNameRHACSRelease,
+			isAllowedInReleaseBuild: true,
+			constructorFunc:         RHACSReleaseImageFlavor,
+		},
 	}
 
 	// imageFlavorMap contains allImageFlavors keyed by ImageFlavorName.
@@ -137,6 +142,34 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
 		ScannerDBImageTag:      v.ScannerVersion,
+
+		ChartRepo: ChartRepo{
+			URL: "https://charts.stackrox.io",
+		},
+		ImagePullSecrets: ImagePullSecrets{
+			AllowNone: false,
+		},
+		Versions: v,
+	}
+}
+
+// RHACSReleaseImageFlavor returns image values for `rhacs_release` flavor.
+func RHACSReleaseImageFlavor() ImageFlavor {
+	v := version.GetAllVersionsUnified()
+	return ImageFlavor{
+		MainRegistry:           "registry.redhat.io/advanced-cluster-security",
+		MainImageName:          "rhacs-rhel8-main",
+		MainImageTag:           v.MainVersion,
+		CollectorRegistry:      "registry.redhat.io/advanced-cluster-security",
+		CollectorImageName:     "rhacs-rhel8-collector",
+		CollectorImageTag:      v.CollectorVersion,
+		CollectorSlimImageName: "rhacs-rhel8-collector-slim",
+		CollectorSlimImageTag:  v.CollectorVersion,
+
+		ScannerImageName:   "rhacs-rhel8-scanner",
+		ScannerImageTag:    v.ScannerVersion,
+		ScannerDBImageName: "rhacs-rhel8-scanner-db",
+		ScannerDBImageTag:  v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
