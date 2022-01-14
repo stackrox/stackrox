@@ -122,7 +122,7 @@ func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
 // Each node is representing a column value and can be associated with a specific column.
 // Each children on the node is related data of another column, i.e. a sub-array.
 type columnTree struct {
-	rootNode *columnNode
+	rootNode      *columnNode
 	originalQuery string // not sure we need this right here
 }
 
@@ -130,7 +130,7 @@ type columnTree struct {
 func newColumnTree(query string) *columnTree {
 	return &columnTree{
 		originalQuery: query,
-		rootNode: &columnNode{root: true, columnIndex: -1},
+		rootNode:      &columnNode{root: true, columnIndex: -1},
 	}
 }
 
@@ -139,15 +139,15 @@ func newColumnTree(query string) *columnTree {
 // The dimension of a columnNode specifies the dimension within the result array, the relatedIndex is used to highlight
 // the relationship with other data.
 type columnNode struct {
-	value string // each value right now is expected to be represented as string
-	children []*columnNode
-	dimension int // whether the resulted array was one dimensional, two-dimensional etc.
-	query string // original query which resulted in the value. Will be used when inserting values to check whether the subpath matches
-	columnIndex int
+	value        string // each value right now is expected to be represented as string
+	children     []*columnNode
+	dimension    int    // whether the resulted array was one dimensional, two-dimensional etc.
+	query        string // original query which resulted in the value. Will be used when inserting values to check whether the subpath matches
+	columnIndex  int
 	relatedIndex int // this basically is the index in the lower dimension to which the
 	// value is related to.
 	index int
-	root bool // specified when the node is a root node
+	root  bool // specified when the node is a root node
 }
 
 func constructColumnTree(result gjson.Result, originalQuery string) *columnTree {
@@ -177,7 +177,7 @@ func (ct *columnTree) CreateColumns() [][]string {
 	// Get the number of queries. Each query represents a column.
 	numberOfQueries := getNumberOfQueries(ct.originalQuery)
 	columns := make([][]string, 0, numberOfQueries)
-	for columnIndex:= 0; columnIndex < numberOfQueries; columnIndex++ {
+	for columnIndex := 0; columnIndex < numberOfQueries; columnIndex++ {
 		// For each query, the query ID == columnID on the node. Retrieve all values for the specific columnID
 		// and auto expand, if required, the values already.
 		// The values need to be merged based on their index.
@@ -188,15 +188,15 @@ func (ct *columnTree) CreateColumns() [][]string {
 }
 
 type queryResult struct {
-	query string
-	result gjson.Result
+	query         string
+	result        gjson.Result
 	originalIndex int
-	dimension int
+	dimension     int
 }
 
 func getQueryResults(result gjson.Result, originalQuery string) []queryResult {
 	q := strings.TrimSuffix(originalQuery, "}")
-	q = strings.TrimPrefix( q, "{")
+	q = strings.TrimPrefix(q, "{")
 	queries := strings.Split(q, ",")
 	queryIndex := 0
 
@@ -205,10 +205,10 @@ func getQueryResults(result gjson.Result, originalQuery string) []queryResult {
 	result.ForEach(func(key, value gjson.Result) bool {
 		query := queries[queryIndex]
 		res = append(res, queryResult{
-			query:     query,
-			result:    value,
+			query:         query,
+			result:        value,
 			originalIndex: queryIndex,
-			dimension: getDimensionFromQuery(query),
+			dimension:     getDimensionFromQuery(query),
 		})
 		queryIndex++
 		return true
@@ -218,7 +218,7 @@ func getQueryResults(result gjson.Result, originalQuery string) []queryResult {
 
 func getNumberOfQueries(query string) int {
 	q := strings.TrimSuffix(query, "}")
-	q = strings.TrimPrefix( q, "{")
+	q = strings.TrimPrefix(q, "{")
 	queries := strings.Split(q, ",")
 	return len(queries)
 }
@@ -226,14 +226,15 @@ func getNumberOfQueries(query string) int {
 func getDimensionFromQuery(query string) int {
 	return strings.Count(query, "#")
 }
+
 // isRelatedQuery checks whether relatedQuery is a relatedQuery to query
 func isRelatedQuery(relatedQuery, query string) bool {
 	// related queries are substrings and not equal. If they are equal, return false
-	if relatedQuery == query  {
+	if relatedQuery == query {
 		return false
 	}
 	// we need to trim everything after the last "." for comparison, since the access object will certainly be different
-	if idx := strings.LastIndex(query, "."); idx != - 1 {
+	if idx := strings.LastIndex(query, "."); idx != -1 {
 		query = query[:idx]
 	}
 	return strings.Contains(relatedQuery, query)
@@ -245,12 +246,11 @@ func getColumnNodesPerQuery(query string, result gjson.Result, dimension int, co
 	}
 	if !result.IsArray() {
 		return []*columnNode{{
-			value:     result.String(),
-			children:  nil,
-			dimension: dimension,
+			value:       result.String(),
+			children:    nil,
+			dimension:   dimension,
 			columnIndex: columnIndex,
-			query:     query,
-
+			query:       query,
 		}}
 	}
 
@@ -260,13 +260,13 @@ func getColumnNodesPerQuery(query string, result gjson.Result, dimension int, co
 
 	for i, v := range values {
 		nodes = append(nodes, &columnNode{
-			value:     v,
-			children:  nil,
-			dimension: dimension,
-			query:     query,
-			columnIndex: columnIndex,
+			value:        v,
+			children:     nil,
+			dimension:    dimension,
+			query:        query,
+			columnIndex:  columnIndex,
 			relatedIndex: indices[i],
-			index: i,
+			index:        i,
 		})
 	}
 
@@ -288,9 +288,9 @@ func getValuesAndIndices(value gjson.Result, values []string, lastIndex int, ind
 				lastIndex++
 			}
 
-			if currentDimension:= getDimension(value); currentDimension == dimension  {
+			if currentDimension := getDimension(value); currentDimension == dimension {
 				count = true
-				if currentDimension <=2  {
+				if currentDimension <= 2 {
 					lastIndex++
 				}
 			} else if dimension == 0 {

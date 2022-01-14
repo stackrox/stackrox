@@ -219,7 +219,6 @@ func TestCsvPrinter_ReadCSVOutputWithCommentedHeaders_Failure(t *testing.T) {
 	assert.True(t, strings.HasPrefix(strings.Join(records[0], ","), ";"))
 }
 
-
 func TestCsvPrinter(t *testing.T) {
 	type vulnObj struct {
 		Name string `json:"vulnName"`
