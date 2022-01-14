@@ -72,12 +72,12 @@ func setMainOverride(mainImage *storage.ImageName, metaValues *charts.MetaValues
 }
 
 // setCollectorOverrideToMetaValues adds collector image values to meta values as defined in the provided *storage.ImageName objects.
-func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collectorSlimImage *storage.ImageName, metaValues charts.MetaValues) {
-	metaValues["CollectorRegistry"] = collectorImage.Registry
-	metaValues["CollectorFullImageRemote"] = collectorImage.Remote
-	metaValues["CollectorSlimImageRemote"] = collectorSlimImage.Remote
-	metaValues["CollectorFullImageTag"] = collectorImage.Tag
-	metaValues["CollectorSlimImageTag"] = collectorSlimImage.Tag
+func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collectorSlimImage *storage.ImageName, metaValues *charts.MetaValues) {
+	metaValues.CollectorRegistry = collectorImage.Registry
+	metaValues.CollectorFullImageRemote = collectorImage.Remote
+	metaValues.CollectorSlimImageRemote = collectorSlimImage.Remote
+	metaValues.CollectorFullImageTag = collectorImage.Tag
+	metaValues.CollectorSlimImageTag = collectorSlimImage.Tag
 }
 
 // determineCollectorImages is used to derive collector slim and full images from provided main and collector values.
