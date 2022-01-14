@@ -14,15 +14,15 @@ import { SearchFilter } from 'types/search';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SelectSingle from 'Components/SelectSingle';
 
-export type VulnerabilityRequestSearchFilterProps = {
+export type PendingApprovalsSearchFilterProps = {
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
 };
 
-function VulnerabilityRequestSearchFilter({
+function PendingApprovalsSearchFilter({
     searchFilter,
     setSearchFilter,
-}: VulnerabilityRequestSearchFilterProps): ReactElement {
+}: PendingApprovalsSearchFilterProps): ReactElement {
     const [selectedAttribute, setSelectedAttribute] = useState<string>('');
     const [inputValue, setInputValue] = useState<string>('');
 
@@ -112,4 +112,4 @@ function VulnerabilityRequestSearchFilter({
     );
 }
 
-export default VulnerabilityRequestSearchFilter;
+export default PendingApprovalsSearchFilter;
