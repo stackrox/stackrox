@@ -152,8 +152,9 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 				},
 			}
 
+			handleDoneErrSig := concurrency.NewErrorSignal()
 			go func() {
-				s.NoError(sensorMockConn.handleMessage(ctx, request))
+				handleDoneErrSig.SignalWithError(sensorMockConn.handleMessage(ctx, request))
 			}()
 
 			select {
@@ -166,6 +167,10 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 			case <-ctx.Done():
 				s.Fail(ctx.Err().Error())
 			}
+
+			handleErr, ok := handleDoneErrSig.WaitUntil(ctx)
+			s.Require().True(ok)
+			s.NoError(handleErr)
 		})
 	}
 }
