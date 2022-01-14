@@ -22,8 +22,15 @@ function PolicyDetailsForm(): ReactElement {
                     <AttachNotifiersFormSection />
                 </FlexItem>
             </Flex>
-            <Divider component="div" />
+            <Divider component="div" className="pf-u-pb-md" />
             <Title headingLevel="h2">MITRE ATT&amp;CK</Title>
+            <div className="pf-u-pt-sm">
+                MITRE ATT&CK is a globally-accessible knowledge base of adversary tactics and
+                techniques based on real-world observations. The ATT&CK knowledge base is used as a
+                foundation for the development of specific threat models and methodologies in the
+                private sector, in government, and in the cybersecurity product and service
+                community.
+            </div>
             <MitreAttackVectorsFormSection />
         </div>
     );

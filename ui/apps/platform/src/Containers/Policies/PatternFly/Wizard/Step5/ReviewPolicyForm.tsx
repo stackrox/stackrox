@@ -6,7 +6,7 @@ import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService'
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import PolicyOverview from '../../Detail/PolicyOverview';
+import PolicyDetailContent from '../../Detail/PolicyDetailContent';
 import PreviewViolations from './PreviewViolations';
 
 import './ReviewPolicyForm.css';
@@ -85,7 +85,7 @@ function ReviewPolicyForm(): ReactElement {
                 <Title headingLevel="h2">Review policy</Title>
                 <div>Review policy settings and violations.</div>
                 <Divider component="div" />
-                <PolicyOverview clusters={[]} notifiers={[]} policy={values} />
+                <PolicyDetailContent clusters={[]} notifiers={[]} policy={values} />
             </Flex>
             <Flex
                 flex={{ default: 'flex_1' }}
