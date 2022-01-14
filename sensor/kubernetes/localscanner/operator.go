@@ -201,7 +201,7 @@ func (o *localscannerOperatorImpl) issueScannerCertificates() error {
 	}
 	select {
 	case o.responsesC <- msg:
-		log.Infof("Request to issue local Scanner certificates sent to Central succesfully: %v", msg)
+		log.Debugf("Request to issue local Scanner certificates sent to Central succesfully: %v", msg)
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -225,7 +225,7 @@ func (o *localscannerOperatorImpl) fetchLocalScannerSecrets() (*v1.Secret, *v1.S
 	return localScannerCredsSecret, localScannerDBCredsSecret, nil
 }
 
-func updateLocalScannerSecret(scannerSecret, scannerDBSecert *v1.Secret, certificates *storage.TypedServiceCertificateSet) error {
+func setScannerCerts(scannerSecret, scannerDBSecert *v1.Secret, certificates *storage.TypedServiceCertificateSet) error {
 	// FIXME: validate all fields present
 	for _, cert := range certificates.GetServiceCerts() {
 		switch cert.GetServiceType() {
@@ -264,7 +264,7 @@ func (o *localscannerOperatorImpl) refreshLocalScannerSecrets(issueCertsResponse
 		return 0, errors.New(issueCertsResponse.GetError().GetMessage())
 	}
 
-	if err := updateLocalScannerSecret(localScannerCredsSecret, localScannerDBCredsSecret, issueCertsResponse.GetCertificates()); err != nil {
+	if err := setScannerCerts(localScannerCredsSecret, localScannerDBCredsSecret, issueCertsResponse.GetCertificates()); err != nil {
 		// FIXME wrap
 		return 0, err
 	}
