@@ -21,7 +21,7 @@ roxctl-development() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    make "cli-${_uname}" GOTAGS=''
+    GOTAGS='' make "cli-${_uname}" GOTAGS=''
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   "${tmp_roxctl}/roxctl-dev" "$@"
@@ -32,7 +32,7 @@ roxctl-release() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    make "cli-${_uname}" GOTAGS='release'
+    GOTAGS='release' make "cli-${_uname}" GOTAGS='release'
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   "${tmp_roxctl}/roxctl-release" "$@"
