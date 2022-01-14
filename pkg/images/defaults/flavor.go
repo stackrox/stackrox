@@ -164,26 +164,14 @@ func GetAllowedImageFlavorNames(isReleaseBuild bool) []string {
 	return result
 }
 
-// CheckImageFlavorName returns error if image flavor name is unknown or not allowed for the selected type of build
-// (release==true, development==false), returns nil otherwise.
-func CheckImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
-	valids := GetAllowedImageFlavorNames(isReleaseBuild)
-	for _, v := range valids {
-		if imageFlavorName == v {
-			return nil
-		}
-	}
-	return errors.Errorf("unexpected value '%s', allowed values are %v", imageFlavorName, valids)
-}
-
 // GetImageFlavorByName returns ImageFlavor struct created for the provided flavorName if the name is valid, otherwise
 // it returns an error.
 func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, error) {
-	if err := CheckImageFlavorName(flavorName, isReleaseBuild); err != nil {
-		return ImageFlavor{}, err
+	valids := GetAllowedImageFlavorNames(isReleaseBuild)
+	if fn, ok := imageFlavorMap[flavorName]; ok {
+		return fn.constructorFunc(), nil
 	}
-	f := imageFlavorMap[flavorName]
-	return f.constructorFunc(), nil
+	return ImageFlavor{}, errors.Errorf("unexpected value '%s', allowed values are %v", flavorName, valids)
 }
 
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR).
