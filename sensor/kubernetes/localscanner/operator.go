@@ -9,9 +9,11 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -106,6 +108,7 @@ func (o *localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) erro
 		return err
 
 	default:
+		// FIXME return err
 		return nil
 	}
 }
@@ -178,15 +181,12 @@ func getScannerSecretDuration(scannerSecret *v1.Secret) time.Duration {
 }
 
 func (o *localscannerOperatorImpl) issueScannerCertificates() error {
-	// We only support local Scanner running on the same namespace as Sensor.
-	localScannerNamespace := o.sensorNamespace
-
 	ctx, cancel := context.WithTimeout(o.ctx, issueCertificatesTimeout)
 	defer cancel()
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
 			IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
-				Namespace: localScannerNamespace,
+				RequestId: uuid.NewV4().String(),
 			},
 		},
 	}
@@ -216,25 +216,49 @@ func (o *localscannerOperatorImpl) fetchLocalScannerSecrets() (*v1.Secret, *v1.S
 	return localScannerCredsSecret, localScannerDBCredsSecret, nil
 }
 
-func updateLocalScannerSecret(secret *v1.Secret, certificates *central.LocalScannerCertificates) {
-	secret.Data = map[string][]byte{
-		mtls.ServiceCertFileName: certificates.Cert,
-		mtls.CACertFileName:      certificates.Ca,
-		mtls.ServiceKeyFileName:  certificates.Key,
+func updateLocalScannerSecret(scannerSecret, scannerDBSecert *v1.Secret, certificates *storage.TypedServiceCertificateSet) error {
+	// FIXME: validate all fields present
+	for _, cert := range certificates.GetServiceCerts() {
+		switch cert.GetServiceType() {
+		case storage.ServiceType_SCANNER_SERVICE:
+			scannerSecret.Data = map[string][]byte{
+				mtls.ServiceCertFileName: cert.GetCert().GetCertPem(),
+				mtls.CACertFileName:      certificates.GetCaPem(),
+				mtls.ServiceKeyFileName:  cert.GetCert().GetKeyPem(),
+			}
+		case storage.ServiceType_SCANNER_DB_SERVICE:
+			scannerDBSecert.Data = map[string][]byte{
+				mtls.ServiceCertFileName: cert.GetCert().GetCertPem(),
+				mtls.CACertFileName:      certificates.GetCaPem(),
+				mtls.ServiceKeyFileName:  cert.GetCert().GetKeyPem(),
+			}
+
+		default:
+			return errors.New("FIXME")
+		}
 	}
+
+	return nil
 }
 
 // When any of the secrets is missing this returns and err such that k8sErrors.IsNotFound(err) is true
 // On success it returns the duration after which the secrets should be refreshed
-func (o *localscannerOperatorImpl) refreshLocalScannerSecrets(certificates *central.IssueLocalScannerCertsResponse) (time.Duration, error) {
+func (o *localscannerOperatorImpl) refreshLocalScannerSecrets(issueCertsResponse *central.IssueLocalScannerCertsResponse) (time.Duration, error) {
 	localScannerCredsSecret, localScannerDBCredsSecret, err := o.fetchLocalScannerSecrets()
 	if err != nil {
 		// FIXME wrap
 		return 0, err
 	}
 
-	updateLocalScannerSecret(localScannerCredsSecret, certificates.ScannerCerts)
-	updateLocalScannerSecret(localScannerDBCredsSecret, certificates.ScannerDbCerts)
+	if issueCertsResponse.GetError() != nil {
+		// FIXME Wrap
+		return 0, errors.New(issueCertsResponse.GetError().GetMessage())
+	}
+
+	if err := updateLocalScannerSecret(localScannerCredsSecret, localScannerDBCredsSecret, issueCertsResponse.GetCertificates()); err != nil {
+		// FIXME wrap
+		return 0, err
+	}
 
 	ctx, cancel := context.WithTimeout(o.ctx, updateSecretsTimeout)
 	defer cancel()
