@@ -29,3 +29,18 @@ enum ServiceType {
     SCANNER_DB_SERVICE        = 10;
     ADMISSION_CONTROL_SERVICE = 11;
 }
+
+message ServiceCertificate {
+    bytes cert_pem = 1;
+    bytes key_pem  = 2;
+}
+
+message TypedServiceCertificate {
+    ServiceType service_type = 1;
+    ServiceCertificate cert  = 2;
+}
+
+message TypedServiceCertificateSet {
+    bytes ca_pem   = 1;
+    repeated TypedServiceCertificate service_certs = 2;
+}

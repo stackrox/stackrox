@@ -3,7 +3,6 @@ package localscanner
 import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/features"
@@ -14,7 +13,7 @@ import (
 type secretDataMap = map[string][]byte
 
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
-func IssueLocalScannerCerts(namespace string, clusterID string) (*central.LocalScannerCertificateSet, error) {
+func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
 	if !features.LocalImageScanning.Enabled() {
 		return nil, errors.Errorf("feature '%s' is disabled", features.LocalImageScanning.Name())
 	}
@@ -23,11 +22,11 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*central.LocalS
 	}
 
 	var certIssueError error
-	scannerCertificates, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_SERVICE, namespace, clusterID)
+	caPem, scannerCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_SERVICE, namespace, clusterID)
 	if err != nil {
 		certIssueError = multierror.Append(certIssueError, err)
 	}
-	scannerDBCertificates, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_DB_SERVICE, namespace, clusterID)
+	_, scannerDBCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_DB_SERVICE, namespace, clusterID)
 	if err != nil {
 		certIssueError = multierror.Append(certIssueError, err)
 	}
@@ -35,23 +34,29 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*central.LocalS
 		return nil, certIssueError
 	}
 
-	return &central.LocalScannerCertificateSet{
-		ScannerCerts:   scannerCertificates,
-		ScannerDbCerts: scannerDBCertificates,
+	return &storage.TypedServiceCertificateSet{
+		CaPem: caPem,
+		ServiceCerts: []*storage.TypedServiceCertificate{
+			scannerCertificate,
+			scannerDBCertificate,
+		},
 	}, nil
 }
 
-func localScannerCertificatesFor(serviceType storage.ServiceType, namespace string, clusterID string) (*central.LocalScannerCertificates, error) {
+func localScannerCertificatesFor(serviceType storage.ServiceType, namespace string, clusterID string) (caPem []byte, cert *storage.TypedServiceCertificate, err error) {
 	certificates, err := generateServiceCertMap(serviceType, namespace, clusterID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "generating certificate for service %s", serviceType)
+		return nil, nil, errors.Wrapf(err, "generating certificate for service %s", serviceType)
 	}
-
-	return &central.LocalScannerCertificates{
-		CaPem:   certificates[mtls.CACertFileName],
-		CertPem: certificates[mtls.ServiceCertFileName],
-		KeyPem:  certificates[mtls.ServiceKeyFileName],
-	}, nil
+	caPem = certificates[mtls.CACertFileName]
+	cert = &storage.TypedServiceCertificate{
+		ServiceType: serviceType,
+		Cert: &storage.ServiceCertificate{
+			CertPem: certificates[mtls.ServiceCertFileName],
+			KeyPem:  certificates[mtls.ServiceKeyFileName],
+		},
+	}
+	return
 }
 
 func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {

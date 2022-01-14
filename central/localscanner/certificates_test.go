@@ -7,7 +7,6 @@ import (
 
 	"github.com/cloudflare/cfssl/helpers"
 	testutilsMTLS "github.com/stackrox/rox/central/testutils/mtls"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/features"
@@ -151,14 +150,13 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 				return
 			}
 			s.Require().NoError(err)
-			for _, certs := range []*central.LocalScannerCertificates{
-				certs.GetScannerCerts(),
-				certs.GetScannerDbCerts(),
-			} {
-				s.Require().NotNil(certs)
-				s.NotEmpty(certs.GetCaPem())
-				s.NotEmpty(certs.GetCertPem())
-				s.NotEmpty(certs.GetKeyPem())
+			s.Require().NotNil(certs.GetCaPem())
+			s.Require().NotEmpty(certs.GetServiceCerts())
+			for _, cert := range certs.ServiceCerts {
+				s.Contains([]storage.ServiceType{storage.ServiceType_SCANNER_SERVICE,
+					storage.ServiceType_SCANNER_DB_SERVICE}, cert.GetServiceType())
+				s.NotEmpty(cert.GetCert().GetCertPem())
+				s.NotEmpty(cert.GetCert().GetKeyPem())
 			}
 		})
 	}

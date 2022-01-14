@@ -6,17 +6,6 @@ import "storage/service_identity.proto";
 
 package central;
 
-message LocalScannerCertificates {
-  bytes ca_pem   = 1;
-  bytes cert_pem = 2;
-  bytes key_pem  = 3;
-}
-
-message LocalScannerCertificateSet {
-  LocalScannerCertificates scanner_certs    = 1;
-  LocalScannerCertificates scanner_db_certs = 2;
-}
-
 message LocalScannerCertsIssueError {
   string message = 1;
 }
@@ -25,8 +14,7 @@ message IssueLocalScannerCertsRequest {}
 
 message IssueLocalScannerCertsResponse {
   oneof response {
-      LocalScannerCertificateSet certificates = 1;
+      storage.TypedServiceCertificateSet certificates = 1;
       LocalScannerCertsIssueError error = 2;
   }
 }
-
