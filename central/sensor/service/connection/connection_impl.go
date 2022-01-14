@@ -241,7 +241,7 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Context, request *central.IssueLocalScannerCertsRequest) error {
 	namespace := request.GetNamespace()
 	certificates, err := localscanner.IssueLocalScannerCerts(namespace, c.clusterID)
-	errMsg := fmt.Sprintf("issuing local Scanner certificates for cluster with ID %s and namespace %s",
+	errMsg := fmt.Sprintf("issuing local Scanner certificates for cluster with ID %s and namespace %q",
 		c.clusterID, namespace)
 	response := &central.IssueLocalScannerCertsResponse{
 		Response: &central.IssueLocalScannerCertsResponse_Certificates{
