@@ -181,16 +181,6 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 	}
 }
 
-// GetImageFlavorByBuildType returns the flavor based on build type (development or release). Release builds use StackroxIO
-// flavor and development builds use development flavor.
-// TODO(RS-380): Remove this function
-func GetImageFlavorByBuildType() ImageFlavor {
-	if buildinfo.ReleaseBuild {
-		return StackRoxIOReleaseImageFlavor()
-	}
-	return DevelopmentBuildImageFlavor()
-}
-
 // GetAllowedImageFlavorNames returns a string slice with all accepted image flavor names for the given
 // release/development state.
 func GetAllowedImageFlavorNames(isReleaseBuild bool) []string {

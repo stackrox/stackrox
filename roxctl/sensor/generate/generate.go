@@ -91,9 +91,9 @@ func fullClusterCreation(timeout time.Duration) error {
 	id, err := createCluster(ctx, service)
 
 	// Backward compatibility: if the central hasn't accepted the provided cluster
-	// then fill the default values as before and try again.
+	// then fill default values as RHACS.
 	if isLegacyValidationError(err) {
-		flavor := defaults.GetImageFlavorByBuildType()
+		flavor := defaults.RHACSReleaseImageFlavor()
 		fmt.Fprintf(os.Stderr, `WARNING: Running older version of central.
  Can't rely on central configuration to determine default values. Using %s as main registry.`, flavor.MainRegistry)
 
