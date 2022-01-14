@@ -118,7 +118,9 @@ type reportEmailFormat struct {
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report configurations
-func New() Scheduler {
+func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
+	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDatastore.DataStore, roleDS roleDataStore.DataStore,
+	notificationProcessor processor.Processor) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 
@@ -129,12 +131,12 @@ func New() Scheduler {
 	s := &scheduler{
 		reportConfigToEntryIDs: make(map[string]cron.EntryID),
 		cron:                   cronScheduler,
-		reportConfigDatastore:  reportConfigDS.Singleton(),
-		notifierDatastore:      notifierDataStore.Singleton(),
-		clusterDatastore:       clusterDataStore.Singleton(),
-		namespaceDatastore:     namespaceDatastore.Singleton(),
-		roleDatastore:          roleDataStore.Singleton(),
-		notificationProcessor:  processor.Singleton(),
+		reportConfigDatastore:  reportConfigDS,
+		notifierDatastore:      notifierDS,
+		clusterDatastore:       clusterDS,
+		namespaceDatastore:     namespaceDS,
+		roleDatastore:          roleDS,
+		notificationProcessor:  notificationProcessor,
 		reportsToRun:           make(chan *ReportRequest, 100),
 		Schema:                 ourSchema,
 
@@ -144,17 +146,8 @@ func New() Scheduler {
 	return s
 }
 
-func (s *scheduler) reportClosure(reportConfigID string) func() {
+func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
 	return func() {
-		reportConfig, found, err := s.reportConfigDatastore.GetReportConfiguration(context.Background(), reportConfigID)
-		if !found {
-			log.Errorf("report config %s not found", reportConfigID)
-			return
-		}
-		if err != nil {
-			log.Errorf("error getting report config %s: %s", reportConfigID, err)
-			return
-		}
 		log.Infof("Submitting report request for '%s' at %v", reportConfig.GetName(), time.Now().Format(time.RFC850))
 		s.SubmitReport(&ReportRequest{
 			ReportConfig: reportConfig,
@@ -168,7 +161,7 @@ func (s *scheduler) UpsertReportSchedule(cronSpec string, reportConfig *storage.
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	entryID, err := s.cron.AddFunc(cronSpec, s.reportClosure(reportConfig.GetId()))
+	entryID, err := s.cron.AddFunc(cronSpec, s.reportClosure(reportConfig))
 	if err != nil {
 		return err
 	}
