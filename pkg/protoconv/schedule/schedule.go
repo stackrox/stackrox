@@ -20,7 +20,6 @@ func ConvertToCronTab(schedule *storage.Schedule) (string, error) {
 	hours := schedule.GetHour()
 	minutes := schedule.GetMinute()
 
-	// TODO: @khushboo biweekly not supported yet.
 	switch schedule.GetIntervalType() {
 	case storage.Schedule_MONTHLY:
 		daysOfMonth := schedule.GetDaysOfMonth().GetDays()

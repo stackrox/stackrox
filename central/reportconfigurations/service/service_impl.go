@@ -85,17 +85,16 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.P
 	if err := s.validateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
 		return nil, err
 	}
-
-	if err := s.manager.Upsert(ctx, request.GetReportConfig()); err != nil {
-		return nil, err
-	}
-
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, request.GetReportConfig())
 	if err != nil {
 		return nil, err
 	}
 
 	createdReportConfig, _, err := s.reportConfigStore.GetReportConfiguration(ctx, id)
+	if err := s.manager.Upsert(ctx, createdReportConfig); err != nil {
+		return nil, err
+	}
+
 	return &v1.PostReportConfigurationResponse{
 		ReportConfig: createdReportConfig,
 	}, err

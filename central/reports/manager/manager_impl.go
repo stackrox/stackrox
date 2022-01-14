@@ -40,7 +40,6 @@ func (m *managerImpl) Upsert(ctx context.Context, reportConfig *storage.ReportCo
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
 	cronTab, err := schedule.ConvertToCronTab(reportConfig.GetSchedule())
 	if err != nil {
 		return err
