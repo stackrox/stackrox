@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -117,9 +118,20 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 	}
 }
 
+func (s *localScannerSuite) TestServiceIssueLocalScannerCertsFeatureFlagDisabled() {
+	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
+	if features.LocalImageScanning.Enabled() {
+		s.T().Skip()
+	}
+
+	_, err := IssueLocalScannerCerts(namespace, clusterID)
+
+	s.Assert().Error(err)
+}
+
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
-	s.envIsolator.Setenv(featureFlag.EnvVar(), "true")
-	if !featureFlag.Enabled() {
+	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
+	if !features.LocalImageScanning.Enabled() {
 		s.T().Skip()
 	}
 	testCases := map[string]struct {
