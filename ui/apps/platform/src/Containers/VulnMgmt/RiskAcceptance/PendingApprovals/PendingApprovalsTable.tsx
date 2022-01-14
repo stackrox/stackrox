@@ -250,11 +250,11 @@ function PendingApprovalsTable({
                                     isSelected: allRowsSelected,
                                 }}
                             />
-                            <Th>Requested Entity</Th>
-                            <Th>Requested Action</Th>
+                            <Th>Requested entity</Th>
+                            <Th>Requested action</Th>
                             <Th>Expires</Th>
                             <Th modifier="fitContent">Scope</Th>
-                            <Th>Impacted Entities</Th>
+                            <Th>Impacted entities</Th>
                             <Th>Comments</Th>
                             <Th>Requestor</Th>
                         </Tr>
@@ -273,8 +273,8 @@ function PendingApprovalsTable({
                                             isSelected: selected[rowIndex],
                                         }}
                                     />
-                                    <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
-                                    <Td dataLabel="Requested Action">
+                                    <Td dataLabel="Requested entity">{row.cves.ids[0]}</Td>
+                                    <Td dataLabel="Requested action">
                                         <VulnRequestedAction
                                             targetState={row.targetState}
                                             requestStatus={row.status}
