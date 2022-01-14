@@ -76,7 +76,7 @@ function ReportingTablePanel({
     onRunReports,
     onDeleteReports,
 }: ReportingTablePanelProps): ReactElement {
-    const [alerts, setAlerts] = React.useState<AlertInfo[]>([]);
+    const [alerts, setAlerts] = useState<AlertInfo[]>([]);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
     const { userRolePermissions } = useSelector(permissionsSelector);
     const hasWriteAccessForVulnerabilityReports = getHasReadWritePermission(

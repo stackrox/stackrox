@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -46,8 +45,8 @@ type VulnMgmtReportDetailProps = {
 function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactElement {
     const history = useHistory();
 
-    const [alert, setAlert] = React.useState<AlertProps | null>(null);
-    const [deleteConfirmationText, setDeleteConfirmationText] = React.useState('');
+    const [alert, setAlert] = useState<AlertProps | null>(null);
+    const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     const [isActionsOpen, setIsActionsOpen] = useState(false);
 
     const { hasReadWriteAccess } = usePermissions();
@@ -62,7 +61,7 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
         );
     }
     dropdownItems.push(
-        <DropdownItem key="Delete report" component="button" onClick={onRunReport}>
+        <DropdownItem key="Run report now" component="button" onClick={onRunReport}>
             Run report now
         </DropdownItem>
     );
@@ -94,13 +93,22 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
     function onRunReport() {
         setAlert(null);
 
-        void runReport(report.id).then(() => {
-            setAlert({
-                variant: AlertVariant.success,
-                title: 'The report has been queued to run.',
-                timeout: 6000,
+        runReport(report.id)
+            .then(() => {
+                setAlert({
+                    variant: AlertVariant.success,
+                    title: 'The report has been queued to run.',
+                    timeout: 6000,
+                });
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                setAlert({
+                    title: 'Could not run report:',
+                    children: message || 'An unknown error occurred while triggering a report run',
+                    variant: AlertVariant.danger,
+                });
             });
-        });
     }
 
     function initiateDeleteReport() {
@@ -110,23 +118,23 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
     }
 
     function onConfirmDeleteReport() {
-        void deleteReport(report.id)
+        deleteReport(report.id)
             .then(() => {
-                setDeleteConfirmationText('');
                 history.replace({
                     pathname: vulnManagementReportsPath,
                 });
             })
             .catch((error) => {
-                setDeleteConfirmationText('');
-
                 const message = getAxiosErrorMessage(error);
                 setAlert({
-                    title:
-                        `Could not delete report: ${message}` ||
-                        'An unknown error occurred while deleting',
+                    title: 'Could not delete report',
+                    children: message || 'An unknown error occurred while deleting',
                     variant: AlertVariant.danger,
                 });
+            })
+            .finally(() => {
+                // close modal on both success or failure
+                setDeleteConfirmationText('');
             });
     }
 
