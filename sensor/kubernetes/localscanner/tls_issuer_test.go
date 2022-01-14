@@ -9,14 +9,14 @@ import (
 )
 
 func TestHandler(t *testing.T) {
-	suite.Run(t, new(operatorSuite))
+	suite.Run(t, new(tlsIssuerSuite))
 }
 
-type operatorSuite struct {
+type tlsIssuerSuite struct {
 	suite.Suite
 }
 
-func (s *operatorSuite) TestGetScannerSecretDurationFromCertificate() {
+func (s *tlsIssuerSuite) TestGetScannerSecretDurationFromCertificate() {
 	now := time.Now()
 	afterOffset := 2 * 24 * time.Hour
 	scannerCert := &x509.Certificate{
@@ -24,5 +24,5 @@ func (s *operatorSuite) TestGetScannerSecretDurationFromCertificate() {
 		NotAfter:  now.Add(afterOffset),
 	}
 	certDuration := getScannerSecretDurationFromCertificate(scannerCert)
-	s.Assert().LessOrEqual(certDuration, afterOffset/2)
+	s.LessOrEqual(certDuration, afterOffset/2)
 }

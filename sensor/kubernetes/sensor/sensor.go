@@ -148,7 +148,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
-		localscanner.NewLocalScannerOperator(client.Kubernetes(), sensorNamespace),
+		localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace),
 	}
 
 	if features.VulnRiskManagement.Enabled() {

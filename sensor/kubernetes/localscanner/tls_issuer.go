@@ -37,10 +37,9 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// NewLocalScannerOperator creates a Sensor component that maintains the local Scanner TLS certificates
-// up to date. FIXME rename?
-func NewLocalScannerOperator(k8sClient kubernetes.Interface, sensorNamespace string) common.SensorComponent {
-	return &localscannerOperatorImpl{
+// NewLocalScannerTLSIssuer creates a Sensor component that maintains the local Scanner TLS certificates
+func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace string) common.SensorComponent {
+	return &localScannerTLSIssuerImpl{
 		sensorNamespace: sensorNamespace,
 		secretsClient:   k8sClient.CoreV1().Secrets(sensorNamespace),
 		ctx:             context.Background(),
@@ -48,7 +47,7 @@ func NewLocalScannerOperator(k8sClient kubernetes.Interface, sensorNamespace str
 	}
 }
 
-type localscannerOperatorImpl struct {
+type localScannerTLSIssuerImpl struct {
 	sensorNamespace                      string
 	secretsClient                        corev1.SecretInterface
 	numLocalScannerSecretRefreshAttempts uint
@@ -57,53 +56,52 @@ type localscannerOperatorImpl struct {
 	responsesC                           chan *central.MsgFromSensor
 }
 
-func (o *localscannerOperatorImpl) Start() error {
-	log.Info("starting local scanner operator.")
+func (i *localScannerTLSIssuerImpl) Start() error {
+	log.Info("starting local scanner TLS issuer.")
 
-	if err := o.scheduleLocalScannerSecretsRefresh(); err != nil {
+	if err := i.scheduleLocalScannerSecretsRefresh(); err != nil {
 		return errors.Wrap(err, "failure scheduling local scanner secrets refresh")
 	}
 
-	log.Info("local scanner operator started.")
+	log.Info("local scanner TLS issuer started.")
 
 	return nil
 }
 
-func (o *localscannerOperatorImpl) Stop(err error) {
-	if o.refreshTimer != nil {
-		o.refreshTimer.Stop()
+func (i *localScannerTLSIssuerImpl) Stop(err error) {
+	if i.refreshTimer != nil {
+		i.refreshTimer.Stop()
 	}
-	log.Info("local scanner operator stopped.")
+	log.Info("local scanner TLS issuer stopped.")
 }
 
-func (o *localscannerOperatorImpl) Capabilities() []centralsensor.SensorCapability {
+func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.LocalScannerCredentialsRefresh}
 }
 
-func (o *localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_IssueLocalScannerCertsResponse:
-		issueCertsResponse := m.IssueLocalScannerCertsResponse
-		nextTimeToRefresh, refreshErr := o.refreshLocalScannerSecrets(issueCertsResponse)
+		nextTimeToRefresh, refreshErr := i.refreshLocalScannerSecrets(m.IssueLocalScannerCertsResponse)
 		if refreshErr == nil {
 			log.Infof("successfully refreshed local Scanner credential secrets %s and %s",
 				localScannerCredentialsSecretName, localScannerDBCredentialsSecretName)
-			o.numLocalScannerSecretRefreshAttempts = 0
-			o.doScheduleLocalScannerSecretsRefresh(nextTimeToRefresh)
+			i.numLocalScannerSecretRefreshAttempts = 0
+			i.doScheduleLocalScannerSecretsRefresh(nextTimeToRefresh)
 			return nil
 		}
 		// note centralReceiverImpl just logs the error
 		err := errors.Wrapf(refreshErr, "attempt %d to refresh local Scanner credential secrets, will retry in %s",
-			o.numLocalScannerSecretRefreshAttempts, refreshSecretAttemptWaitTime)
-		o.numLocalScannerSecretRefreshAttempts++
-		if o.numLocalScannerSecretRefreshAttempts <= refreshSecretsMaxNumAttempts {
-			o.doScheduleLocalScannerSecretsRefresh(refreshSecretAttemptWaitTime)
+			i.numLocalScannerSecretRefreshAttempts, refreshSecretAttemptWaitTime)
+		i.numLocalScannerSecretRefreshAttempts++
+		if i.numLocalScannerSecretRefreshAttempts <= refreshSecretsMaxNumAttempts {
+			i.doScheduleLocalScannerSecretsRefresh(refreshSecretAttemptWaitTime)
 		} else {
 			err = errors.Wrapf(refreshErr, "Failed to refresh local Scanner credential secrets after %d attempts, "+
 				"will wait %s and restart the retry cycle",
 				refreshSecretsMaxNumAttempts, refreshSecretAllAttemptsFailedWaitTime)
-			o.numLocalScannerSecretRefreshAttempts = 0
-			o.doScheduleLocalScannerSecretsRefresh(refreshSecretAllAttemptsFailedWaitTime)
+			i.numLocalScannerSecretRefreshAttempts = 0
+			i.doScheduleLocalScannerSecretsRefresh(refreshSecretAllAttemptsFailedWaitTime)
 		}
 		return err
 
@@ -113,15 +111,15 @@ func (o *localscannerOperatorImpl) ProcessMessage(msg *central.MsgToSensor) erro
 	}
 }
 
-func (o *localscannerOperatorImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	return o.responsesC
+func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+	return i.responsesC
 }
 
-func (o *localscannerOperatorImpl) scheduleLocalScannerSecretsRefresh() error {
-	localScannerCredsSecret, localScannerDBCredsSecret, fetchErr := o.fetchLocalScannerSecrets()
+func (i *localScannerTLSIssuerImpl) scheduleLocalScannerSecretsRefresh() error {
+	localScannerCredsSecret, localScannerDBCredsSecret, fetchErr := i.fetchLocalScannerSecrets()
 	if k8sErrors.IsNotFound(fetchErr) {
 		log.Warnf("some local scanner secret is missing, "+
-			"operator will not maintain any local scanner secret fresh : %v", fetchErr)
+			"TLS issuer will not maintain any local scanner secret fresh : %v", fetchErr)
 		return nil
 	}
 	if fetchErr != nil {
@@ -130,14 +128,14 @@ func (o *localscannerOperatorImpl) scheduleLocalScannerSecretsRefresh() error {
 	}
 
 	// if certificates are already expired this refreshes immediately.
-	o.doScheduleLocalScannerSecretsRefresh(getScannerSecretsDuration(localScannerCredsSecret, localScannerDBCredsSecret))
+	i.doScheduleLocalScannerSecretsRefresh(getScannerSecretsDuration(localScannerCredsSecret, localScannerDBCredsSecret))
 	return nil
 }
 
-func (o *localscannerOperatorImpl) doScheduleLocalScannerSecretsRefresh(timeToRefresh time.Duration) {
+func (i *localScannerTLSIssuerImpl) doScheduleLocalScannerSecretsRefresh(timeToRefresh time.Duration) {
 	log.Infof("local scanner certificates scheduled to be refreshed in %s", timeToRefresh)
-	o.refreshTimer = time.AfterFunc(timeToRefresh, func() {
-		if err := o.issueScannerCertificates(); err != nil {
+	i.refreshTimer = time.AfterFunc(timeToRefresh, func() {
+		if err := i.issueScannerCertificates(); err != nil {
 			// FIXME log and treat as o.numLocalScannerSecretRefreshAttempts >= refreshSecretsMaxNumAttempts
 			log.Error("FIXME")
 		}
@@ -170,7 +168,7 @@ func getScannerSecretDuration(scannerSecret *v1.Secret) time.Duration {
 	scannerCertBytes := scannerSecret.Data[mtls.ServiceCertFileName]
 	var (
 		scannerCert *x509.Certificate
-		err error
+		err         error
 	)
 	if len(scannerCertBytes) == 0 {
 		err = errors.Errorf("empty certificate for secret %s, will refresh secret immediately",
@@ -188,8 +186,8 @@ func getScannerSecretDuration(scannerSecret *v1.Secret) time.Duration {
 	return getScannerSecretDurationFromCertificate(scannerCert)
 }
 
-func (o *localscannerOperatorImpl) issueScannerCertificates() error {
-	ctx, cancel := context.WithTimeout(o.ctx, issueCertificatesTimeout)
+func (i *localScannerTLSIssuerImpl) issueScannerCertificates() error {
+	ctx, cancel := context.WithTimeout(i.ctx, issueCertificatesTimeout)
 	defer cancel()
 	requestID := uuid.NewV4().String() // FIXME validate response has the same request ID
 	msg := &central.MsgFromSensor{
@@ -200,7 +198,7 @@ func (o *localscannerOperatorImpl) issueScannerCertificates() error {
 		},
 	}
 	select {
-	case o.responsesC <- msg:
+	case i.responsesC <- msg:
 		log.Debugf("Request to issue local Scanner certificates sent to Central succesfully: %v", msg)
 		return nil
 	case <-ctx.Done():
@@ -208,16 +206,16 @@ func (o *localscannerOperatorImpl) issueScannerCertificates() error {
 	}
 }
 
-func (o *localscannerOperatorImpl) fetchLocalScannerSecrets() (*v1.Secret, *v1.Secret, error) {
-	ctx, cancel := context.WithTimeout(o.ctx, fetchSecretsTimeout)
+func (i *localScannerTLSIssuerImpl) fetchLocalScannerSecrets() (*v1.Secret, *v1.Secret, error) {
+	ctx, cancel := context.WithTimeout(i.ctx, fetchSecretsTimeout)
 	defer cancel()
 
 	// FIXME multierror
-	localScannerCredsSecret, err := o.secretsClient.Get(ctx, localScannerCredentialsSecretName, metav1.GetOptions{})
+	localScannerCredsSecret, err := i.secretsClient.Get(ctx, localScannerCredentialsSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "for secret %s", localScannerCredentialsSecretName)
 	}
-	localScannerDBCredsSecret, err := o.secretsClient.Get(ctx, localScannerDBCredentialsSecretName, metav1.GetOptions{})
+	localScannerDBCredsSecret, err := i.secretsClient.Get(ctx, localScannerDBCredentialsSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "for secret %s", localScannerDBCredentialsSecretName)
 	}
@@ -252,8 +250,8 @@ func setScannerCerts(scannerSecret, scannerDBSecert *v1.Secret, certificates *st
 
 // When any of the secrets is missing this returns and err such that k8sErrors.IsNotFound(err) is true
 // On success it returns the duration after which the secrets should be refreshed
-func (o *localscannerOperatorImpl) refreshLocalScannerSecrets(issueCertsResponse *central.IssueLocalScannerCertsResponse) (time.Duration, error) {
-	localScannerCredsSecret, localScannerDBCredsSecret, err := o.fetchLocalScannerSecrets()
+func (i *localScannerTLSIssuerImpl) refreshLocalScannerSecrets(issueCertsResponse *central.IssueLocalScannerCertsResponse) (time.Duration, error) {
+	localScannerCredsSecret, localScannerDBCredsSecret, err := i.fetchLocalScannerSecrets()
 	if err != nil {
 		// FIXME wrap
 		return 0, err
@@ -269,15 +267,15 @@ func (o *localscannerOperatorImpl) refreshLocalScannerSecrets(issueCertsResponse
 		return 0, err
 	}
 
-	ctx, cancel := context.WithTimeout(o.ctx, updateSecretsTimeout)
+	ctx, cancel := context.WithTimeout(i.ctx, updateSecretsTimeout)
 	defer cancel()
 	// FIXME do a loop, and apply pattern elsewhere
-	localScannerCredsSecret, err = o.secretsClient.Update(ctx, localScannerCredsSecret, metav1.UpdateOptions{})
+	localScannerCredsSecret, err = i.secretsClient.Update(ctx, localScannerCredsSecret, metav1.UpdateOptions{})
 	if err != nil {
 		// FIXME wrap
 		return 0, err
 	}
-	localScannerDBCredsSecret, err = o.secretsClient.Update(ctx, localScannerDBCredsSecret, metav1.UpdateOptions{})
+	localScannerDBCredsSecret, err = i.secretsClient.Update(ctx, localScannerDBCredsSecret, metav1.UpdateOptions{})
 	if err != nil {
 		// FIXME wrap
 		return 0, err
