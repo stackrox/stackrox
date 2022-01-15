@@ -460,6 +460,12 @@ test-prep:
 
 .PHONY: go-unit-tests
 go-unit-tests: build-prep test-prep
+# TODO: remove these
+	@echo "GOTAGS are: in makefile '$(GOTAGS)', in env '$${GOTAGS}'"
+	@echo "CI is: in makefile '$(CI)', in env '$${CI}'"
+	@echo "CIRCLE_TAG is: in makefile '$(CIRCLE_TAG)', in env '$${CIRCLE_TAG}'"
+	@echo "ROX_IMAGE_FLAVOR is: in makefile '$(ROX_IMAGE_FLAVOR)', in env '$${ROX_IMAGE_FLAVOR}'"
+
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
