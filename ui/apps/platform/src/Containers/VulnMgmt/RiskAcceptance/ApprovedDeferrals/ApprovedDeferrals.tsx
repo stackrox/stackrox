@@ -8,15 +8,14 @@ import ApprovedDeferralsTable from './ApprovedDeferralsTable';
 
 function ApprovedDeferrals(): ReactElement {
     const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
-    let modifiedSearchObject = { ...searchFilter };
-    if (!modifiedSearchObject['Request Status']) {
-        modifiedSearchObject['Request Status'] = ['APPROVED'];
-    }
-    modifiedSearchObject = {
-        ...modifiedSearchObject,
+    const modifiedSearchObject = {
+        ...searchFilter,
         'Expired Request': 'false',
         'Requested Vulnerability State': 'DEFERRED',
     };
+    if (!modifiedSearchObject['Request Status']) {
+        modifiedSearchObject['Request Status'] = ['APPROVED'];
+    }
     const query = queryService.objectToWhereClause(modifiedSearchObject);
 
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
