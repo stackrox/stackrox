@@ -32,7 +32,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/couchbase/moss v0.1.0 // indirect
 	github.com/couchbase/vellum v1.0.2 // indirect
-	github.com/dave/jennifer v1.4.1
+	github.com/dave/jennifer v1.5.0
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dexidp/dex v0.0.0-20210917061239-f0186ff2651e
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -46,7 +46,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.2.2
 	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -109,12 +109,12 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	golang.org/x/net v0.0.0-20210902165921-8d991716f632
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210908233432-aa78b53d3365
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
-	golang.org/x/tools v0.1.5
+	golang.org/x/tools v0.1.8
 	golang.stackrox.io/grpc-http1 v0.2.4
 	google.golang.org/api v0.57.0
 	google.golang.org/genproto v0.0.0-20210903162649-d08c68adba83
