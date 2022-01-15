@@ -19,12 +19,12 @@ docker tag "$image" "$arch_image"
 
 # Try pushing image a few times for the case when quay.io has issues such as "unknown blob"
 pushed=false
-for i in {1..3}; do
+for i in {1..5}; do
   if docker push "$arch_image"; then
     pushed=true
     break
   else
-    sleep 5
+    sleep 10
   fi
 done
 [[ "$pushed" == "true" ]]
