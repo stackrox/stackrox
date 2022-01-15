@@ -3070,8 +3070,8 @@ jobs:
 
             QUAY_REPO="rhacs-eng"
             for img in scale grpc-server; do
-              docker push "docker.io/stackrox/${img}:${TAG}" | cat
-              docker push "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
+              ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/${img}:${TAG}" | cat
+              ./scripts/ci/push-as-manifest-list.sh "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
             done
 
       - cleanup-clusters-on-fail
