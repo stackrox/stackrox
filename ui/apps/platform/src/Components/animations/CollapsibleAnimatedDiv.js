@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const variants = {
-    open: { height: 'auto' },
-    collapsed: { height: 0 },
+    open: { opacity: 1, height: 'auto' },
+    collapsed: { opacity: 0, height: 0 },
 };
 
 const transition = {
@@ -14,17 +14,19 @@ const transition = {
 function CollapsibleAnimatedDiv({ dataTestId, defaultOpen, isOpen, children }) {
     return (
         <AnimatePresence initial={defaultOpen}>
-            <motion.div
-                data-testid={dataTestId}
-                className="overflow-hidden"
-                initial="collapsed"
-                animate={isOpen ? 'open' : 'collapsed'}
-                exit="collapsed"
-                variants={variants}
-                transition={transition}
-            >
-                {children}
-            </motion.div>
+            {isOpen && (
+                <motion.div
+                    data-testid={dataTestId}
+                    key="content"
+                    initial="collapsed"
+                    animate="open"
+                    exit="collapsed"
+                    variants={variants}
+                    transition={transition}
+                >
+                    {children}
+                </motion.div>
+            )}
         </AnimatePresence>
     );
 }
