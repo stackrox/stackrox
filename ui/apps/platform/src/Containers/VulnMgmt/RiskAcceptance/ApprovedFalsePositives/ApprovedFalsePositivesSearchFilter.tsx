@@ -38,7 +38,7 @@ function ApprovedFalsePositivesSearchFilter({
                 id="requestIDSearchInput"
                 type="search"
                 aria-label="request id search input"
-                placeholder="Filter by Request ID"
+                placeholder="Filter by request ID"
                 onChange={handleInputChange}
                 value={inputValue}
             />
