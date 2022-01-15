@@ -425,12 +425,14 @@ index-build: opm bundle-post-process ## Build Index (a.k.a. Catalog) image with 
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the operator.
-	docker push ${IMG}
+# Use push-as-manifest-list.sh here to make sure manifests for the operator image are created. The script also retries on error.
+# We're not using push-as-manifest-list.sh for pushing other two images because they are independent from architecture.
+	../scripts/ci/push-as-manifest-list.sh "$(IMG)"
 
 .PHONY: docker-push-bundle
 docker-push-bundle: ## Push docker image with the bundle.
-	docker push ${BUNDLE_IMG}
+	docker push "$(BUNDLE_IMG)"
 
 .PHONY: docker-push-index
 docker-push-index: ## Push docker image with the index.
-	docker push ${INDEX_IMG}
+	docker push "$(INDEX_IMG)"
