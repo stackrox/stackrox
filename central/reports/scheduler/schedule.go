@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -78,7 +80,7 @@ var (
 
 // Scheduler maintains the schedules for reports
 type Scheduler interface {
-	UpsertReportSchedule(cronSpec string, reportConfig *storage.ReportConfiguration) error
+	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
 	RemoveReportSchedule(reportConfigID string)
 	SubmitReport(request *ReportRequest)
 	Start()
@@ -157,10 +159,13 @@ func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) fun
 	}
 }
 
-func (s *scheduler) UpsertReportSchedule(cronSpec string, reportConfig *storage.ReportConfiguration) error {
+func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-
+	cronSpec, err := schedule.ConvertToCronTab(reportConfig.GetSchedule())
+	if err != nil {
+		return err
+	}
 	entryID, err := s.cron.AddFunc(cronSpec, s.reportClosure(reportConfig))
 	if err != nil {
 		return err
@@ -224,7 +229,10 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 			LastRunTime:  timestamp.Now().GogoProtobuf(),
 			ErrorMsg:     "",
 		}
-		req.ReportConfig.LastSuccessfulRunTime = timestamp.Now().GogoProtobuf()
+		req.ReportConfig.LastSuccessfulRunTime = types.TimestampNow()
+	}
+	if err = s.UpsertReportSchedule(req.ReportConfig); err != nil {
+		return err
 	}
 	return s.reportConfigDatastore.UpdateReportConfiguration(req.Ctx, req.ReportConfig)
 }
@@ -262,23 +270,24 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return errors.Errorf("incorrect notifier type in report config '%s'", rc.GetName())
 	}
 
+	// Get the results of running the report query
 	reportData, err := s.getReportData(req.Ctx, reportQuery)
 	if err != nil {
 		return err
 	}
 
-	var zippedCSVData *bytes.Buffer
+	// Format results into CSV
+	zippedCSVData, emptyReport, err := common.Format(reportData)
+	if err != nil {
+		return errors.Wrap(err, "error formatting the report data")
+	}
+	// If it is an empty report, do not send an attachment in the final notification email and the email body
+	// will indicate that no vulns were found
 	var messageText string
-
-	if len(reportData) == 0 {
+	if emptyReport {
 		zippedCSVData = nil
 		messageText = noVulnsFoundEmailTemplate
 	} else {
-		zippedCSVData, err = common.Format(reportData)
-		if err != nil {
-			return errors.Wrap(err, "error formatting the report data")
-		}
-
 		messageText, err = formatMessage(rc)
 		if err != nil {
 			return errors.Wrap(err, "error formatting the report email text")

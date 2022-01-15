@@ -66,10 +66,10 @@ type Result struct {
 	Deployments []*depObj `json:"deployments,omitempty"`
 }
 
-// Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data
-func Format(results []Result) (*bytes.Buffer, error) {
+// Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
+// a flag if the report is empty or not
+func Format(results []Result) (*bytes.Buffer, bool, error) {
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
-
 	for _, r := range results {
 		for _, d := range r.Deployments {
 			for _, i := range d.Images {
@@ -94,26 +94,27 @@ func Format(results []Result) (*bytes.Buffer, error) {
 		}
 	}
 
+	isEmpty := csvWriter.IsEmpty()
 	var buf bytes.Buffer
 	err := csvWriter.WriteBytes(&buf)
 	if err != nil {
-		return &bytes.Buffer{}, errors.Wrap(err, "error creating csv report")
+		return &bytes.Buffer{}, isEmpty, errors.Wrap(err, "error creating csv report")
 	}
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
 	zipFile, err := zipWriter.Create(fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006")))
 	if err != nil {
-		return &bytes.Buffer{}, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return &bytes.Buffer{}, isEmpty, errors.Wrap(err, "unable to create a zip file of the vuln report")
 
 	}
 	_, err = zipFile.Write(buf.Bytes())
 	if err != nil {
-		return &bytes.Buffer{}, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return &bytes.Buffer{}, isEmpty, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
 	err = zipWriter.Close()
 	if err != nil {
-		return &bytes.Buffer{}, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return &bytes.Buffer{}, isEmpty, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
-	return &zipBuf, nil
+	return &zipBuf, isEmpty, nil
 }
