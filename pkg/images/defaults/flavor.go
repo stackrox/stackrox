@@ -193,9 +193,9 @@ func GetAllowedImageFlavorNames(isReleaseBuild bool) []string {
 	return result
 }
 
-// checkImageFlavorName returns error if image flavor name is unknown or not allowed for the selected type of build
+// CheckImageFlavorName returns error if image flavor name is unknown or not allowed for the selected type of build
 // (release==true, development==false), returns nil otherwise.
-func checkImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
+func CheckImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
 	valids := GetAllowedImageFlavorNames(isReleaseBuild)
 	for _, v := range valids {
 		if imageFlavorName == v {
@@ -208,7 +208,7 @@ func checkImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
 // GetImageFlavorByName returns ImageFlavor struct created for the provided flavorName if the name is valid, otherwise
 // it returns an error.
 func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, error) {
-	if err := checkImageFlavorName(flavorName, isReleaseBuild); err != nil {
+	if err := CheckImageFlavorName(flavorName, isReleaseBuild); err != nil {
 		return ImageFlavor{}, err
 	}
 	f := imageFlavorMap[flavorName]
