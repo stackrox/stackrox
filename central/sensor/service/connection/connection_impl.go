@@ -251,8 +251,8 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 	if requestID == "" {
 		err = errors.New("requestID is required to issue the certificates for the local scanner")
 	} else {
-		certificates, issueErr := localscanner.IssueLocalScannerCerts(namespace, clusterID)
-		err = issueErr
+		var certificates *storage.TypedServiceCertificateSet
+		certificates, err = localscanner.IssueLocalScannerCerts(namespace, clusterID)
 		response = &central.IssueLocalScannerCertsResponse{
 			RequestId: requestID,
 			Response: &central.IssueLocalScannerCertsResponse_Certificates{
