@@ -18,18 +18,12 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-const (
-	flavorDevelopment string = "development"
-	flavorStackRoxIO  string = "stackrox.io"
-	flavorRHACS       string = "rhacs"
-)
-
 var allowedFlavors set.StringSet
 
 func init() {
-	allowedFlavors = set.NewStringSet(flavorStackRoxIO, flavorRHACS)
+	allowedFlavors = set.NewStringSet(defaults.ImageFlavorNameStackRoxIORelease, defaults.ImageFlavorNameRHACSRelease)
 	if !buildinfo.ReleaseBuild {
-		allowedFlavors.Add(flavorDevelopment)
+		allowedFlavors.Add(defaults.ImageFlavorNameDevelopmentBuild)
 	}
 }
 
@@ -38,11 +32,11 @@ func getMetaValues(flavor string, rhacs, release bool) charts.MetaValues {
 		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor())
 	}
 	switch strings.ToLower(flavor) {
-	case flavorStackRoxIO:
+	case defaults.ImageFlavorNameStackRoxIORelease:
 		return charts.GetMetaValuesForFlavor(defaults.StackRoxIOReleaseImageFlavor())
-	case flavorDevelopment:
+	case defaults.ImageFlavorNameDevelopmentBuild:
 		return charts.GetMetaValuesForFlavor(defaults.DevelopmentBuildImageFlavor())
-	case flavorRHACS:
+	case defaults.ImageFlavorNameRHACSRelease:
 		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor())
 	default:
 		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor())
@@ -65,9 +59,9 @@ func defaultFlavor(flavor string) string {
 		return flavor
 	}
 	if buildinfo.ReleaseBuild {
-		return flavorStackRoxIO
+		return defaults.ImageFlavorNameStackRoxIORelease
 	}
-	return flavorDevelopment
+	return defaults.ImageFlavorNameDevelopmentBuild
 }
 
 func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string) error {

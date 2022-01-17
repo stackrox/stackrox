@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"github.com/stretchr/testify/assert"
@@ -46,16 +47,16 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 	tests := []testCase{
 		{"", true, false}, // '--rhacs' but no '--image-defaults'
 		{"dummy", true, true},
-		{flavorStackRoxIO, true, false},
+		{defaults.ImageFlavorNameStackRoxIORelease, true, false},
 		{"", false, false}, // no '--rhacs' and no '--image-defaults'
 		{"dummy", false, true},
-		{flavorStackRoxIO, false, false},
+		{defaults.ImageFlavorNameStackRoxIORelease, false, false},
 	}
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
 		tests = append(tests,
-			testCase{flavorDevelopment, true, false},
-			testCase{flavorDevelopment, false, false},
+			testCase{defaults.ImageFlavorNameDevelopmentBuild, true, false},
+			testCase{defaults.ImageFlavorNameDevelopmentBuild, false, false},
 		)
 	}
 
@@ -80,9 +81,9 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 }
 
 func (s *HelmChartTestSuite) TestHelmLint() {
-	flavorsToTest := []string{flavorStackRoxIO, flavorRHACS}
+	flavorsToTest := []string{defaults.ImageFlavorNameStackRoxIORelease, defaults.ImageFlavorNameRHACSRelease}
 	if !buildinfo.ReleaseBuild {
-		flavorsToTest = append(flavorsToTest, flavorDevelopment)
+		flavorsToTest = append(flavorsToTest, defaults.ImageFlavorNameDevelopmentBuild)
 	}
 
 	for chartName := range common.ChartTemplates {
@@ -93,7 +94,7 @@ func (s *HelmChartTestSuite) TestHelmLint() {
 		}
 		for _, rhacs := range []bool{false, true} {
 			s.Run(fmt.Sprintf("%s-rhacs-%t", chartName, rhacs), func() {
-				testChartLint(s.T(), chartName, rhacs, flavorRHACS)
+				testChartLint(s.T(), chartName, rhacs, defaults.ImageFlavorNameRHACSRelease)
 			})
 		}
 	}
