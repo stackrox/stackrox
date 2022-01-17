@@ -73,10 +73,12 @@ type ImageFlavor struct {
 	CollectorSlimImageName string
 	CollectorSlimImageTag  string
 
-	ScannerImageName   string
-	ScannerImageTag    string
-	ScannerDBImageName string
-	ScannerDBImageTag  string
+	ScannerImageName       string
+	ScannerSlimImageName   string
+	ScannerImageTag        string
+	ScannerDBImageName     string
+	ScannerDBSlimImageName string
+	ScannerDBImageTag      string
 
 	ChartRepo        ChartRepo
 	ImagePullSecrets ImagePullSecrets
@@ -98,10 +100,12 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		CollectorSlimImageName: "collector",
 		CollectorSlimImageTag:  v.CollectorVersion + "-slim",
 
-		ScannerImageName:   "scanner",
-		ScannerImageTag:    v.ScannerVersion,
-		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  v.ScannerVersion,
+		ScannerImageName:       "scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        v.ScannerVersion,
+		ScannerDBImageName:     "scanner-db",
+		ScannerDBSlimImageName: "scanner-db-slim",
+		ScannerDBImageTag:      v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -127,10 +131,12 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		CollectorSlimImageName: "collector-slim",
 		CollectorSlimImageTag:  v.CollectorVersion,
 
-		ScannerImageName:   "scanner",
-		ScannerImageTag:    v.ScannerVersion,
-		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  v.ScannerVersion,
+		ScannerImageName:       "scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        v.ScannerVersion,
+		ScannerDBImageName:     "scanner-db",
+		ScannerDBSlimImageName: "scanner-db-slim",
+		ScannerDBImageTag:      v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
