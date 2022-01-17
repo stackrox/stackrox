@@ -22,16 +22,18 @@ cci-export() {
 
     # Use export with default value in the following form
     # export __CCI_EXPORT_FOO_VALUE=bar
-    # export FOO="${FOO:-"${__CCI_EXPORT_FOO_VALUE}"}"'
+    # export FOO="${FOO-"${__CCI_EXPORT_FOO_VALUE}"}"'
     # for the following reasons:
-    # - Using Bash default value (FOO=${FOO:-"${__CCI_EXPORT_FOO_VALUE}"})  - so that variables already set in the environment are not overwritten by `$BASH_ENV`
-    # - Using a variable holding the default value (__CCI_EXPORT_FOO_VALUE=value) - so that multiline values (e.g., certificates) are correctly escaped
+    # - Using Bash default value (FOO=${FOO-"${__CCI_EXPORT_FOO_VALUE}"}) - so that variables already set in the
+    #   environment are not overwritten by `$BASH_ENV` (including variables set to empty string).
+    # - Using a variable holding the default value (__CCI_EXPORT_FOO_VALUE=value) - so that multiline values (e.g.
+    #   certificates) are correctly escaped.
     #
     # An example of BASH_ENV contents:
     # export __CCI_EXPORT_FOO_VALUE=bar
-    # export FOO="${FOO:-"${__CCI_EXPORT_FOO_VALUE}"}"'
+    # export FOO="${FOO-"${__CCI_EXPORT_FOO_VALUE}"}"'
     # export __CCI_EXPORT_BAZ_VALUE=baz
-    # export BAZ="${BAZ:-"${__CCI_EXPORT_BAZ_VALUE}"}"'
+    # export BAZ="${BAZ-"${__CCI_EXPORT_BAZ_VALUE}"}"'
 
     shadow_key="__CCI_EXPORT_${key}_VALUE"
 
@@ -53,7 +55,7 @@ cci-export() {
 
     printf "export %s=%q\n" "$shadow_key" "$value" >> "$BASH_ENV"
     # shellcheck disable=SC2016 # we must produce literal ${} symbols
-    printf 'export %s="${%s:-"${%s}"}"\n' "$key" "$key" "$shadow_key" >> "$BASH_ENV"
+    printf 'export %s="${%s-"${%s}"}"\n' "$key" "$key" "$shadow_key" >> "$BASH_ENV"
   fi
 }
 
