@@ -312,11 +312,12 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
 
 	// Updated alerts should all notify
-	if env.NotifyOnEveryRuntimeEvent() {
-		for range alerts {
-			suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
-		}
-	}
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+	//if env.NotifyOnEveryRuntimeEvent() {
+	//for range alerts {
+	//	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+	//}
+	//}
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 
