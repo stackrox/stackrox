@@ -170,7 +170,7 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 	fields := getDefaultMetaValues(t)
 	fields.CertsOnly = true
 
-	manifestsBytes, err := RenderSensorTLSSecretsOnly(fields, certs)
+	manifestsBytes, err := RenderSensorTLSSecretsOnly(*fields, certs)
 	require.NoError(t, err)
 	d := yaml.NewDecoder(bytes.NewReader(manifestsBytes))
 

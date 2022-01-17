@@ -35,7 +35,7 @@ func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) (
 	// Currently, we rely on Go to copy the struct as it is passed by value, not by pointer.
 	values.CertsOnly = true
 
-	ch := helmImage.GetSensorChart(values, certs)
+	ch := helmImage.GetSensorChart(&values, certs)
 
 	m, err := helmUtil.Render(ch, nil, helmUtil.Options{})
 	if err != nil {
