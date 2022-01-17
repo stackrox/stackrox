@@ -36,7 +36,7 @@ teardown() {
 @test "roxctl-release helm output central-services --image-defaults=development_build should fail" {
   run roxctl-release helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_failure
-  assert_output --partial "invalid value of '--image-defaults=development_build', allowed values:"
+  assert_output --partial "invalid value of '--image-defaults=development_build', unexpected value 'development_build', allowed values are"
 }
 
 @test "roxctl-release helm output central-services --image-defaults='' should behave as if --image-defaults would not be used" {
