@@ -185,6 +185,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		scopeStr  string
 		scopeJSON string
 		scope     *storage.SimpleAccessScope
+		SQLQuery  string
 		expected  *ScopeTree
 		hasError  bool
 		detail    v1.ComputeEffectiveAccessScopeRequest_Detail
@@ -210,6 +211,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeStr:  "",
 			scopeJSON: `{}`,
 			scope:     nil,
+			SQLQuery:  `WHERE false`, // this could be excluded before making request to DB
 			expected: &ScopeTree{
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
@@ -246,6 +248,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `∅ => { }`,
 			scopeStr:  "",
 			scopeJSON: `{}`,
+			SQLQuery:  `WHERE false`, // this could be excluded before making request to DB
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -286,6 +289,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `cluster.labels: ∅ => { }`,
 			scopeStr:  "",
 			scopeJSON: `{}`,
+			SQLQuery:  `WHERE false`, // this could be excluded before making request to DB
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -332,6 +336,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `cluster: "Arrakis" => { "Arrakis::*" }`,
 			scopeStr:  "Arrakis::*",
 			scopeJSON: `{"Arrakis":["*"]}`,
+			SQLQuery:  `WHERE cluster = 'Arrakis'`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -375,6 +380,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `cluster: "Arrakis" => { "Arrakis::*" }`,
 			scopeStr:  "Arrakis::*",
 			scopeJSON: `{"Arrakis":["*"]}`,
+			SQLQuery:  `WHERE cluster = 'Arrakis'`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -400,6 +406,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `cluster.labels: focus in (melange) => { "Arrakis::*" }`,
 			scopeStr:  "Arrakis::*",
 			scopeJSON: `{"Arrakis":["*"]}`,
+			SQLQuery:  `WHERE cluster = 'Arrakis'`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -443,6 +450,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace: "Arrakis::Atreides" => { "Arrakis::Atreides" }`,
 			scopeStr:  "Arrakis::Atreides",
 			scopeJSON: `{"Arrakis":["Atreides"]}`,
+			SQLQuery:  `WHERE cluster = 'Arrakis' AND namespace = 'Atreides'`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -491,6 +499,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus in (melange) => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
 			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
+			SQLQuery:  `WHERE cluster = 'Arrakis' AND namespace IN ('Atreides', 'Harkonnen')`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -534,6 +543,10 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus in (transportation) => { "Earth::Skunk Works", "Arrakis::Spacing Guild" }`,
 			scopeStr:  "Arrakis::Spacing Guild, Earth::Skunk Works",
 			scopeJSON: `{"Arrakis":["Spacing Guild"],"Earth":["Skunk Works"]}`,
+			SQLQuery: `WHERE
+				(cluster = 'Earth' AND namespace = 'Skunk Works')
+				OR
+				(cluster = 'Arrakis' AND namespace = 'Spacing Guild')`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -577,6 +590,10 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus in (transportation, applied_research), region in (NA, dune_universe) => { "Earth::Skunk Works", "Earth::JPL", "Arrakis::Spacing Guild" }`,
 			scopeStr:  "Arrakis::Spacing Guild, Earth::{JPL, Skunk Works}",
 			scopeJSON: `{"Earth":["JPL","Skunk Works"],"Arrakis":["Spacing Guild"]}`,
+			SQLQuery: `WHERE
+				(cluster = 'Earth' AND namespace IN ('Skunk Works', 'JPL'))
+				OR
+				(cluster = 'Arrakis' AND namespace = 'Spacing Guild')`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -627,6 +644,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus notin (physics, melange), clearance, !founded => { "Earth::Skunk Works" }`,
 			scopeStr:  "Earth::Skunk Works",
 			scopeJSON: `{"Earth":["Skunk Works"]}`,
+			SQLQuery:  `WHERE cluster = 'Earth' AND namespace = 'Skunk Works'`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -678,6 +696,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus in (transportation), region in (NA) OR region in (EU) OR founded in (1949) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN" }`,
 			scopeStr:  "Earth::{CERN, Fraunhofer, Skunk Works}",
 			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"]}`,
+			SQLQuery:  `WHERE cluster = 'Earth' AND namespace IN ('Skunk Works', 'Fraunhofer', 'CERN')`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -730,6 +749,10 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace: "Earth::Skunk Works" OR cluster.labels: focus in (melange) OR namespace.labels: region in (EU) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN", "Arrakis::*" }`,
 			scopeStr:  "Arrakis::*, Earth::{CERN, Fraunhofer, Skunk Works}",
 			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"],"Arrakis":["*"]}`,
+			SQLQuery: `WHERE
+				(cluster = 'Earth' AND namespace IN ('Skunk Works', 'Fraunhofer', 'CERN'))
+				OR
+				(cluster = 'Arrakis')`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -780,6 +803,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
 			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
+			SQLQuery:  `WHERE cluster = 'Arrakis' AND namespace IN ('Atreides', 'Harkonnen')`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -815,6 +839,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
 			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
+			SQLQuery:  `WHERE cluster = 'Arrakis' AND namespace IN ('Atreides', 'Harkonnen'))`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
