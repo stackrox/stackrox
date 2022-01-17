@@ -46,7 +46,7 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 	}
 	tests := []testCase{
 		{flavor: "", rhacs: true}, // '--rhacs' but no '--image-defaults'
-		{flavor: "dummy", rhacs: true, wantErr: true},
+		{flavor: "dummy", rhacs: true, wantErr: false},
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true},
 		{flavor: "", rhacs: false}, // no '--rhacs' and no '--image-defaults'
 		{flavor: "dummy", rhacs: false, wantErr: true},

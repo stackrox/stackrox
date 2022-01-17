@@ -16,10 +16,13 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func getMetaValues(flavorName string, rhacs, release bool) (charts.MetaValues, error) {
+func getMetaValues(flavorName string, rhacs, release bool ) (charts.MetaValues, error) {
 	if rhacs {
+		fmt.Fprintln(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'")
 		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()), nil
 	}
+
+	flavorName = defaultFlavor(flavorName)
 	imageFlavor, err := defaults.GetImageFlavorByName(flavorName, release)
 	if err != nil {
 		return charts.MetaValues{}, errors.Wrapf(err, "invalid value of '--image-defaults=%s'", flavorName)
@@ -39,30 +42,11 @@ func defaultFlavor(flavor string) string {
 	return defaults.ImageFlavorNameDevelopmentBuild
 }
 
-// TODO(RS-419): Check if we still need an exclusive validateFlavorFlags function. We can ignore imageFlavor if --rhacs
-// is passed and move this logic to getMetaValues to handle errors once. GetImageFlavorByName already checks if
-// imageFlavor value is valid.
-func validateFlavorFlags(rhacs bool, imageFlavor string) error {
-	if rhacs && imageFlavor != "" {
-		fmt.Fprintln(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'")
-	}
-
-	if err := defaults.CheckImageFlavorName(imageFlavor, buildinfo.ReleaseBuild); err != nil && imageFlavor != "" {
-		return errors.Wrapf(err, "invalid value of '--image-defaults=%s'", imageFlavor)
-	}
-
-	return nil
-}
-
 func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
-	}
-
-	if err := validateFlavorFlags(rhacs, imageFlavor); err != nil {
-		return err
 	}
 
 	metaVals, err := getMetaValues(defaultFlavor(imageFlavor), rhacs, buildinfo.ReleaseBuild)
