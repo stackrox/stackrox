@@ -1,6 +1,7 @@
 package image
 
 import (
+	"fmt"
 	"io/fs"
 	"path"
 	"path/filepath"
@@ -63,15 +64,16 @@ func (s *embedTestSuite) TestChartTemplatesAvailable() {
 }
 
 func (s *embedTestSuite) TestLoadChartForFlavor() {
-	testCases := map[string]defaults.ImageFlavor{
-		"testFlavor":  flavorUtils.MakeImageFlavorForTest(s.T()),
-		"development": defaults.DevelopmentBuildImageFlavor(),
-		"stackrox_io": defaults.StackRoxIOReleaseImageFlavor(),
-		"rhacs":       defaults.RHACSReleaseImageFlavor(),
+	testCases := []defaults.ImageFlavor{
+		flavorUtils.MakeImageFlavorForTest(s.T()),
+		defaults.DevelopmentBuildImageFlavor(),
+		defaults.StackRoxIOReleaseImageFlavor(),
+		defaults.RHACSReleaseImageFlavor(),
 	}
 
-	for name, flavor := range testCases {
-		s.Run(name, func() {
+	for _, flavor := range testCases {
+		testName := fmt.Sprintf("Image Flavor %s", flavor.MainRegistry)
+		s.Run(testName, func() {
 			chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.GetMetaValuesForFlavor(flavor))
 			s.Require().NoError(err)
 			s.Equal("stackrox-central-services", chart.Name())

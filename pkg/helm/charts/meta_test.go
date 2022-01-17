@@ -1,6 +1,7 @@
 package charts
 
 import (
+	"fmt"
 	"testing"
 	"text/template"
 
@@ -72,13 +73,14 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 		restorer.Restore()
 	}()
 
-	cases := map[string]defaults.ImageFlavor{
-		"development": defaults.DevelopmentBuildImageFlavor(),
-		"stackrox_io": defaults.StackRoxIOReleaseImageFlavor(),
-		"rhacs":       defaults.RHACSReleaseImageFlavor(),
+	cases := []defaults.ImageFlavor{
+		defaults.DevelopmentBuildImageFlavor(),
+		defaults.StackRoxIOReleaseImageFlavor(),
+		defaults.RHACSReleaseImageFlavor(),
 	}
-	for n, flavor := range cases {
-		t.Run(n, func(t *testing.T) {
+	for _, flavor := range cases {
+		testName := fmt.Sprintf("Image Flavor %s", flavor.MainRegistry)
+		t.Run(testName, func(t *testing.T) {
 			metaVals := GetMetaValuesForFlavor(flavor)
 			assert.NotEmpty(t, metaVals["MainRegistry"])
 			assert.NotEmpty(t, metaVals["ImageRemote"])
