@@ -175,7 +175,7 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 			URL: "https://mirror.openshift.com/pub/rhacs/charts",
 		},
 		ImagePullSecrets: ImagePullSecrets{
-			AllowNone: false,
+			AllowNone: true,
 		},
 		Versions: v,
 	}
