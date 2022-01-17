@@ -53,8 +53,6 @@ func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
 	}
 
 	for _, tc := range testCases {
-		// TODO(ROX-8730): just in case this is racy
-		tc := tc
 		s.Run(tc.service.String(), func() {
 			certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
 			if tc.expectError {
@@ -78,8 +76,6 @@ func (s *localScannerSuite) TestValidateServiceCertificate() {
 	}
 
 	for _, serviceType := range testCases {
-		// TODO(ROX-8730): just in case this is racy
-		serviceType := serviceType
 		s.Run(serviceType.String(), func() {
 			certMap, err := generateServiceCertMap(serviceType, namespace, clusterID)
 			s.Require().NoError(err)
@@ -103,8 +99,6 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 	}
 
 	for _, tc := range testCases {
-		// TODO(ROX-8730): just in case this is racy
-		tc := tc
 		s.Run(tc.service.String(), func() {
 			certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
 			s.Require().NoError(err)
@@ -151,8 +145,6 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 		"clusterID missing":    {namespace: namespace, clusterID: "", shouldFail: true},
 	}
 	for tcName, tc := range testCases {
-		// TODO(ROX-8730): just in case this is racy
-		tc := tc
 		s.Run(tcName, func() {
 			certs, err := IssueLocalScannerCerts(tc.namespace, tc.clusterID)
 			if tc.shouldFail {

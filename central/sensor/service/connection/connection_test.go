@@ -140,8 +140,6 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 		"clusterID missing":    {requestID: requestID, namespace: namespace, clusterID: "", shouldFail: true},
 	}
 	for tcName, tc := range testCases {
-		// TODO(ROX-8730): just in case this is racy
-		tc := tc
 		s.Run(tcName, func() {
 			sendC := make(chan *central.MsgToSensor)
 			sensorMockConn := &sensorConnection{
