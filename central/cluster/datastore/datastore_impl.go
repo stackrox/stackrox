@@ -904,8 +904,11 @@ func addDefaults(cluster *storage.Cluster) error {
 	if cluster.CollectorImage == "" {
 		cluster.CollectorImage = flavor.CollectorImageNoTag()
 	}
-	if cluster.MainImage == "" {
+	if cluster.GetMainImage() == "" {
 		cluster.MainImage = flavor.MainImage()
+	}
+	if cluster.GetCentralApiEndpoint() == "" {
+		cluster.CentralApiEndpoint = "central.stackrox:443"
 	}
 	return nil
 }
