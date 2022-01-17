@@ -172,7 +172,7 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		ScannerDBImageTag:  v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
-			URL: "https://charts.stackrox.io",
+			URL: "https://mirror.openshift.com/pub/rhacs/charts",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: false,
