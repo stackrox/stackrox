@@ -31,8 +31,8 @@ import DenyFalsePositiveModal from './DenyFalsePositiveModal';
 import CancelVulnRequestModal from './CancelVulnRequestModal';
 import DeferralExpirationDate from '../DeferralExpirationDate';
 import ImpactedEntities from '../ImpactedEntities';
-import VulnerabilityRequestSearchFilter from '../VulnerabilityRequestSearchFilter';
-import VulnerabilityRequestSearchResults from '../VulnerabilityRequestSearchResults';
+import PendingApprovalsSearchFilter from './PendingApprovalsSearchFilter';
+import SearchFilterResults from '../SearchFilterResults';
 
 export type PendingApprovalsTableProps = {
     rows: VulnerabilityRequest[];
@@ -117,7 +117,7 @@ function PendingApprovalsTable({
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
-                        <VulnerabilityRequestSearchFilter
+                        <PendingApprovalsSearchFilter
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
                         />
@@ -227,7 +227,7 @@ function PendingApprovalsTable({
                 <Toolbar>
                     <ToolbarContent>
                         <ToolbarItem>
-                            <VulnerabilityRequestSearchResults
+                            <SearchFilterResults
                                 searchFilter={searchFilter}
                                 setSearchFilter={setSearchFilter}
                             />
