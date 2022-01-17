@@ -56,7 +56,7 @@ func localScannerCertificatesFor(serviceType storage.ServiceType, namespace stri
 			KeyPem:  certificates[mtls.ServiceKeyFileName],
 		},
 	}
-	return
+	return caPem, cert, err
 }
 
 func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
