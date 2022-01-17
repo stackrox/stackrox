@@ -22,24 +22,17 @@ func getMetaValues(flavorName string, rhacs, release bool) (charts.MetaValues, e
 		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()), nil
 	}
 
-	flavorName = defaultFlavor(flavorName)
+	if buildinfo.ReleaseBuild && flavorName == "" {
+		// TODO(RS-419): change default flavor to be RHACS
+		flavorName = defaults.ImageFlavorNameStackRoxIORelease
+	} else if flavorName == "" {
+		flavorName = defaults.ImageFlavorNameDevelopmentBuild
+	}
 	imageFlavor, err := defaults.GetImageFlavorByName(flavorName, release)
 	if err != nil {
 		return charts.MetaValues{}, errors.Wrapf(err, "invalid value of '--image-defaults=%s'", flavorName)
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
-}
-
-// defaultFlavor provides default flavor for calls without --image-defaults
-func defaultFlavor(flavor string) string {
-	if flavor != "" {
-		return flavor
-	}
-	if buildinfo.ReleaseBuild {
-		// TODO(RS-419): change default flavor to be RHACS
-		return defaults.ImageFlavorNameStackRoxIORelease
-	}
-	return defaults.ImageFlavorNameDevelopmentBuild
 }
 
 func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string) error {
