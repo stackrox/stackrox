@@ -2,39 +2,25 @@ import React, { ReactElement, useState } from 'react';
 import {
     Button,
     ButtonVariant,
-    Form,
     Modal,
     ModalVariant,
-    Radio,
-    TextArea,
     Title,
     TitleSizes,
 } from '@patternfly/react-core';
-import { useFormik } from 'formik';
-import * as yup from 'yup';
 
-import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
+import AccessScopeForm from 'Containers/AccessControl/AccessScopes/AccessScopeForm';
+import { accessScopeNew } from 'Containers/AccessControl/AccessScopes/AccessScopes';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { AccessScope } from 'services/AccessScopesService';
 
 export type ScopeFormValues = {
     imageAppliesTo: string;
     comment: string;
 };
 
-// TODO remove
-const IMAGE_APPLIES_TO = {
-    ALL_TAGS_WITHIN_IMAGE: 'All tags within image',
-    ONLY_THIS_IMAGE_TAG: 'Only this image tag',
-};
-// TODO end remove
-
-const validationSchema = yup.object().shape({
-    imageAppliesTo: yup.string().trim().required('An image scope is required'),
-    comment: yup.string().trim().required('A deferral rationale is required'),
-});
-
 export type ScopeFormModalProps = {
+    accessScopes: AccessScope[];
     isOpen: boolean;
     onSendRequest: (values: ScopeFormValues) => Promise<FormResponseMessage>;
     onCompleteRequest: () => void;
@@ -42,54 +28,25 @@ export type ScopeFormModalProps = {
 };
 
 function ScopeFormModal({
+    accessScopes = [],
     isOpen,
     onSendRequest,
     onCompleteRequest,
     onCancelScopeModal,
 }: ScopeFormModalProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
-    const formik = useFormik<ScopeFormValues>({
-        initialValues: {
-            imageAppliesTo: '',
-            comment: '',
-        },
-        validationSchema,
-        onSubmit: (values: ScopeFormValues) => {
-            const response = onSendRequest(values);
-            return response;
-        },
-    });
-
-    function onChange(value, event) {
-        return formik.setFieldValue(event.target.id, value);
-    }
-
-    function onImageAppliesToOnChange(_, event) {
-        return formik.setFieldValue('imageAppliesTo', event.target.value);
-    }
 
     function onHandleSubmit() {
-        setMessage(null);
-        formik
-            .submitForm()
-            .then(() => {
-                setMessage(null);
-                formik.resetForm();
-                onCompleteRequest();
-            })
-            .catch((response) => {
-                const error = new Error(response.message);
-                setMessage({
-                    message: getAxiosErrorMessage(error),
-                    isError: true,
-                });
-            });
+        console.log('onHandleSubmit');
     }
 
     function onCancelHandler() {
         setMessage(null);
-        formik.resetForm();
         onCancelScopeModal();
+    }
+
+    function placeholderPromiseHandler() {
+        return Promise.resolve(null);
     }
 
     const title = 'Create resource scope';
@@ -107,7 +64,7 @@ function ScopeFormModal({
 
     return (
         <Modal
-            variant={ModalVariant.large}
+            variant={ModalVariant.default}
             header={header}
             isOpen={isOpen}
             onClose={onCancelHandler}
@@ -116,71 +73,26 @@ function ScopeFormModal({
                     key="save-scope"
                     variant={ButtonVariant.primary}
                     onClick={onHandleSubmit}
-                    isDisabled={formik.isSubmitting || !formik.dirty || !formik.isValid}
-                    isLoading={formik.isSubmitting}
+                    isDisabled={false}
+                    isLoading={false}
                 >
                     Save resource scope
                 </Button>,
-                <Button
-                    key="cancel-modal"
-                    variant={ButtonVariant.link}
-                    onClick={onCancelHandler}
-                    isDisabled={formik.isSubmitting}
-                >
+                <Button key="cancel-modal" variant={ButtonVariant.link} onClick={onCancelHandler}>
                     Cancel
                 </Button>,
             ]}
         >
             <FormMessage message={message} />
-            <div className="pf-u-pb-md">
-                CVEs will be marked as deferred after approval by your security lead.
-            </div>
-            <Form>
-                <FormLabelGroup
-                    label="What should the deferral apply to?"
-                    isRequired
-                    fieldId="imageAppliesTo"
-                    touched={formik.touched}
-                    errors={formik.errors}
-                >
-                    <Radio
-                        id="appliesToAllTagsWithinImage"
-                        name="imageAppliesTo"
-                        label={IMAGE_APPLIES_TO.ALL_TAGS_WITHIN_IMAGE}
-                        value={IMAGE_APPLIES_TO.ALL_TAGS_WITHIN_IMAGE}
-                        isChecked={
-                            formik.values.imageAppliesTo === IMAGE_APPLIES_TO.ALL_TAGS_WITHIN_IMAGE
-                        }
-                        onChange={onImageAppliesToOnChange}
-                    />
-                    <Radio
-                        id="appliesToOnlyThisImage"
-                        name="imageAppliesTo"
-                        label={IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_TAG}
-                        value={IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_TAG}
-                        isChecked={
-                            formik.values.imageAppliesTo === IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_TAG
-                        }
-                        onChange={onImageAppliesToOnChange}
-                    />
-                </FormLabelGroup>
-                <FormLabelGroup
-                    label="Scope rationale"
-                    isRequired
-                    fieldId="comment"
-                    touched={formik.touched}
-                    errors={formik.errors}
-                >
-                    <TextArea
-                        isRequired
-                        type="text"
-                        id="comment"
-                        value={formik.values.comment}
-                        onChange={onChange}
-                        onBlur={formik.handleBlur}
-                    />
-                </FormLabelGroup>
-            </Form>
+            <AccessScopeForm
+                isActionable
+                action="create"
+                accessScope={accessScopeNew}
+                accessScopes={accessScopes}
+                handleCancel={onCancelHandler}
+                handleEdit={onCancelHandler}
+                handleSubmit={placeholderPromiseHandler}
+            />
         </Modal>
     );
 }

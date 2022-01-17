@@ -31,7 +31,7 @@ import AccessScopesList from './AccessScopesList';
 
 import './AccessScopes.css';
 
-const accessScopeNew: AccessScope = {
+export const accessScopeNew: AccessScope = {
     id: '',
     name: '',
     description: '',

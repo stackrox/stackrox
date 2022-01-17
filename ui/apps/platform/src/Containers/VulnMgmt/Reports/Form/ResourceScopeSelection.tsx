@@ -94,6 +94,7 @@ function ResourceScopeSelection({
                 </FlexItem>
             </Flex>
             <ScopeFormModal
+                accessScopes={resourceScopes}
                 isOpen={isScopeModalOpen}
                 onSendRequest={placeholderPromiseHandler}
                 onCompleteRequest={placeholderHandler}
