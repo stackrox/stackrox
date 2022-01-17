@@ -29,7 +29,7 @@ func getSensorChartFile(filename string, data []byte) (*zip.File, bool) {
 }
 
 // RenderSensorTLSSecretsOnly renders just the TLS secrets from the sensor helm chart, concatenated into one YAML file.
-func RenderSensorTLSSecretsOnly(values *charts.MetaValues, certs *sensor.Certs) ([]byte, error) {
+func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) ([]byte, error) {
 	helmImage := image.GetDefaultImage()
 	// Caution: changing `CertsOnly` on `values` shall not affect callers of this function.
 	// Currently, we rely on Go to copy the struct as it is passed by value, not by pointer.
