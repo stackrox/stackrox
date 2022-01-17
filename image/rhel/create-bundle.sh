@@ -86,6 +86,17 @@ cp -p "${INPUT_ROOT}/bin/admission-control" "${bundle_root}/stackrox/bin/"
 cp -pr "${INPUT_ROOT}/THIRD_PARTY_NOTICES"  "${bundle_root}/"
 cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 
+mkdir -p "${bundle_root}/go/bin"
+if [[ "$DEBUG_BUILD" == "yes" ]]; then
+  tmpdir="$(mktemp -d)"
+  (
+    cd "${tmpdir}"
+    GOBIN="${tmpdir}" go install github.com/go-delve/delve/cmd/dlv@latest
+    mv "${tmpdir}/dlv" "${bundle_root}/go/bin"
+  )
+  rm -rf "${tmpdir}"
+fi
+
 # Extract data from data container image
 extract_from_image "${DATA_IMAGE}" "/stackrox-data" "${bundle_root}/stackrox/static-data/"
 extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
