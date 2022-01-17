@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -73,24 +72,25 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 		restorer.Restore()
 	}()
 
-	flavor := flavorUtils.MakeImageFlavorForTest(t)
-	cases := map[string]MetaValues{
-		"default": GetMetaValuesForFlavor(flavor),
-		"rhacs":   GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()),
+	cases := map[string]defaults.ImageFlavor{
+		"development": defaults.DevelopmentBuildImageFlavor(),
+		"stackrox_io": defaults.StackRoxIOReleaseImageFlavor(),
+		"rhacs":   defaults.RHACSReleaseImageFlavor(),
 	}
-	for n, c := range cases {
+	for n, flavor := range cases {
 		t.Run(n, func(t *testing.T) {
-			assert.NotEmpty(t, c["MainRegistry"])
-			assert.NotEmpty(t, c["ImageRemote"])
-			assert.NotEmpty(t, c["CollectorRegistry"])
-			assert.NotEmpty(t, c["CollectorFullImageRemote"])
-			assert.NotEmpty(t, c["CollectorSlimImageRemote"])
-			assert.NotEmpty(t, c["CollectorFullImageTag"])
-			assert.NotEmpty(t, c["CollectorSlimImageTag"])
-			assert.NotEmpty(t, (c["ChartRepo"].(defaults.ChartRepo)).URL)
-			assert.NotNil(t, c["ImagePullSecrets"])
+			metaVals := GetMetaValuesForFlavor(flavor)
+			assert.NotEmpty(t, metaVals["MainRegistry"])
+			assert.NotEmpty(t, metaVals["ImageRemote"])
+			assert.NotEmpty(t, metaVals["CollectorRegistry"])
+			assert.NotEmpty(t, metaVals["CollectorFullImageRemote"])
+			assert.NotEmpty(t, metaVals["CollectorSlimImageRemote"])
+			assert.NotEmpty(t, metaVals["CollectorFullImageTag"])
+			assert.NotEmpty(t, metaVals["CollectorSlimImageTag"])
+			assert.NotEmpty(t, (metaVals["ChartRepo"].(defaults.ChartRepo)).URL)
+			assert.NotNil(t, metaVals["ImagePullSecrets"])
 
-			versions := c["Versions"].(version.Versions)
+			versions := metaVals["Versions"].(version.Versions)
 			assert.NotEmpty(t, versions.ChartVersion)
 			assert.NotEmpty(t, versions.MainVersion)
 			// TODO: replace this with the check of the scanner tag once we migrate to it instead of version.
