@@ -9,6 +9,7 @@ import (
 	testutilsMTLS "github.com/stackrox/rox/central/testutils/mtls"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -52,18 +53,19 @@ func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
 	}
 
 	for _, tc := range testCases {
-		certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
-		if tc.expectError {
-			s.Require().Error(err, tc.service)
-			continue
-		} else {
-			s.Require().NoError(err, tc.service)
-		}
-		expectedFiles := []string{"ca.pem", "cert.pem", "key.pem"}
-		s.Assert().Equal(len(expectedFiles), len(certMap))
-		for _, key := range expectedFiles {
-			s.Assert().Contains(certMap, key, tc.service)
-		}
+		s.Run(tc.service.String(), func() {
+			certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
+			if tc.expectError {
+				s.Require().Error(err)
+				return
+			}
+			s.Require().NoError(err)
+			expectedFiles := []string{"ca.pem", "cert.pem", "key.pem"}
+			s.Len(certMap, len(expectedFiles))
+			for _, key := range expectedFiles {
+				s.Contains(certMap, key)
+			}
+		})
 	}
 }
 
@@ -74,11 +76,13 @@ func (s *localScannerSuite) TestValidateServiceCertificate() {
 	}
 
 	for _, serviceType := range testCases {
-		certMap, err := generateServiceCertMap(serviceType, namespace, clusterID)
-		s.Require().NoError(err, serviceType)
-		validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
-		s.Require().NoError(err, serviceType)
-		s.Assert().NoError(certgen.VerifyServiceCert(certMap, validatingCA, serviceType, ""), serviceType)
+		s.Run(serviceType.String(), func() {
+			certMap, err := generateServiceCertMap(serviceType, namespace, clusterID)
+			s.Require().NoError(err)
+			validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
+			s.Require().NoError(err)
+			s.NoError(certgen.VerifyServiceCert(certMap, validatingCA, serviceType, ""))
+		})
 	}
 }
 
@@ -95,23 +99,67 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 	}
 
 	for _, tc := range testCases {
-		certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
-		s.Require().NoError(err, tc.service)
-		cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
-		s.Require().NoError(err, tc.service)
+		s.Run(tc.service.String(), func() {
+			certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
+			s.Require().NoError(err)
+			cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
+			s.Require().NoError(err)
 
-		subject := cert.Subject
-		certOUs := subject.OrganizationalUnit
-		s.Assert().Equal(1, len(certOUs), tc.service)
-		s.Assert().Equal(tc.expectOU, certOUs[0], tc.service)
+			subject := cert.Subject
+			certOUs := subject.OrganizationalUnit
+			s.Require().Len(certOUs, 1)
+			s.Equal(tc.expectOU, certOUs[0])
 
-		s.Assert().Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName, tc.service)
+			s.Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName)
 
-		certAlternativeNames := cert.DNSNames
-		s.Assert().Equal(len(tc.expectedAlternativeNames), len(certAlternativeNames), tc.service)
-		for _, name := range tc.expectedAlternativeNames {
-			s.Assert().Contains(certAlternativeNames, name, tc.service)
-		}
-		s.Assert().Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter, tc.service)
+			certAlternativeNames := cert.DNSNames
+			s.ElementsMatch(tc.expectedAlternativeNames, certAlternativeNames)
+			s.Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter)
+		})
+	}
+}
+
+func (s *localScannerSuite) TestServiceIssueLocalScannerCertsFeatureFlagDisabled() {
+	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
+	if features.LocalImageScanning.Enabled() {
+		s.T().Skip()
+	}
+
+	_, err := IssueLocalScannerCerts(namespace, clusterID)
+
+	s.Error(err)
+}
+
+func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
+	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
+	if !features.LocalImageScanning.Enabled() {
+		s.T().Skip()
+	}
+	testCases := map[string]struct {
+		namespace  string
+		clusterID  string
+		shouldFail bool
+	}{
+		"no parameter missing": {namespace: namespace, clusterID: clusterID, shouldFail: false},
+		"namespace missing":    {namespace: "", clusterID: clusterID, shouldFail: true},
+		"clusterID missing":    {namespace: namespace, clusterID: "", shouldFail: true},
+	}
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			certs, err := IssueLocalScannerCerts(tc.namespace, tc.clusterID)
+			if tc.shouldFail {
+				s.Require().Error(err)
+				return
+			}
+			s.Require().NoError(err)
+			s.Require().NotNil(certs.GetCaPem())
+			s.Require().NotEmpty(certs.GetServiceCerts())
+			for _, cert := range certs.ServiceCerts {
+				s.Contains([]storage.ServiceType{storage.ServiceType_SCANNER_SERVICE,
+					storage.ServiceType_SCANNER_DB_SERVICE}, cert.GetServiceType())
+				s.NotEmpty(cert.GetCert().GetCertPem())
+				s.NotEmpty(cert.GetCert().GetKeyPem())
+			}
+		})
 	}
 }
