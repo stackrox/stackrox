@@ -97,9 +97,6 @@ registry_regex() {
     stackrox.io)
       echo "stackrox\.io/$component:$version"
       ;;
-    registry.redhat.io-short)
-      echo "registry\.redhat\.io/rh-acs/$component:$version"
-      ;;
     registry.redhat.io)
       echo "registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-$component:$version"
       ;;
