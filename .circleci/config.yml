@@ -2165,6 +2165,7 @@ jobs:
     resource_class: large
     environment:
       ROX_IMAGE_FLAVOR: development_build
+      NOTIFY_EVERY_RUNTIME_EVENT: true
     steps:
       - pre-go-unit-tests
       - run:
@@ -2178,6 +2179,7 @@ jobs:
     resource_class: large
     environment:
       ROX_IMAGE_FLAVOR: stackrox.io
+      NOTIFY_EVERY_RUNTIME_EVENT: true
     steps:
       - pre-go-unit-tests
       - run:

@@ -311,7 +311,12 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
 
-	// Updated alerts don't notify
+	// Updated alerts should all notify
+	if env.NotifyOnEveryRuntimeEvent() {
+		for range alerts {
+			suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+		}
+	}
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 
@@ -342,7 +347,12 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
 
-	// Updated alerts don't notify
+	// Updated alerts should all notify
+	if env.NotifyOnEveryRuntimeEvent() {
+		for range alerts {
+			suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+		}
+	}
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 
@@ -371,7 +381,12 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
 
-	// Updated alerts don't notify
+	// Updated alerts should all notify
+	if env.NotifyOnEveryRuntimeEvent() {
+		for range alerts {
+			suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+		}
+	}
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 

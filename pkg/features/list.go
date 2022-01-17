@@ -41,4 +41,6 @@ var (
 
 	// LocalImageScanning enables OpenShift local-image scanning.
 	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", false)
+
+	//NotifyEveryRuntimeEvent = registerFeature("Enable runtime notifications for every event", "NOTIFY_EVERY_RUNTIME_EVENT", true)
 )
