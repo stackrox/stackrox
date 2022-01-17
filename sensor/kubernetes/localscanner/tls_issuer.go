@@ -35,6 +35,7 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+	_ common.SensorComponent = (*localScannerTLSIssuerImpl)(nil)
 )
 
 // NewLocalScannerTLSIssuer creates a Sensor component that maintains the local Scanner TLS certificates
