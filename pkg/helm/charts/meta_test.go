@@ -75,7 +75,7 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 	cases := map[string]defaults.ImageFlavor{
 		"development": defaults.DevelopmentBuildImageFlavor(),
 		"stackrox_io": defaults.StackRoxIOReleaseImageFlavor(),
-		"rhacs":   defaults.RHACSReleaseImageFlavor(),
+		"rhacs":       defaults.RHACSReleaseImageFlavor(),
 	}
 	for n, flavor := range cases {
 		t.Run(n, func(t *testing.T) {

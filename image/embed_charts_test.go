@@ -64,10 +64,10 @@ func (s *embedTestSuite) TestChartTemplatesAvailable() {
 
 func (s *embedTestSuite) TestLoadChartForFlavor() {
 	testCases := map[string]defaults.ImageFlavor{
-		"testFlavor": flavorUtils.MakeImageFlavorForTest(s.T()),
+		"testFlavor":  flavorUtils.MakeImageFlavorForTest(s.T()),
 		"development": defaults.DevelopmentBuildImageFlavor(),
 		"stackrox_io": defaults.StackRoxIOReleaseImageFlavor(),
-		"rhacs": defaults.RHACSReleaseImageFlavor(),
+		"rhacs":       defaults.RHACSReleaseImageFlavor(),
 	}
 
 	for name, flavor := range testCases {
