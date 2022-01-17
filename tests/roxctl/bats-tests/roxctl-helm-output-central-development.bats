@@ -22,12 +22,6 @@ teardown() {
   assert_success
 }
 
-@test "roxctl-development helm output should raise warning when both --rhacs and --image-defaults flags are used" {
-  run roxctl-development helm output central-services --rhacs --image-defaults="stackrox.io" --output-dir "$out_dir"
-  assert_success
-  assert_line "Warning: '--rhacs' has priority over '--image-defaults'"
-}
-
 @test "roxctl-development helm output central-services should use docker.io registry" {
   run roxctl-development helm output central-services --output-dir "$out_dir"
   assert_success
