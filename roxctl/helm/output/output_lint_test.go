@@ -45,18 +45,20 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 		wantErr bool
 	}
 	tests := []testCase{
-		{"", true, false}, // '--rhacs' but no '--image-defaults'
-		{"dummy", true, true},
-		{defaults.ImageFlavorNameStackRoxIORelease, true, false},
-		{"", false, false}, // no '--rhacs' and no '--image-defaults'
-		{"dummy", false, true},
-		{defaults.ImageFlavorNameStackRoxIORelease, false, false},
+		{flavor: "", rhacs: true}, // '--rhacs' but no '--image-defaults'
+		{flavor: "dummy", rhacs: true, wantErr: true},
+		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true},
+		{flavor: "", rhacs: false}, // no '--rhacs' and no '--image-defaults'
+		{flavor: "dummy", rhacs: false, wantErr: true},
+		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
+		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
+		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: true},
 	}
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
 		tests = append(tests,
-			testCase{defaults.ImageFlavorNameDevelopmentBuild, true, false},
-			testCase{defaults.ImageFlavorNameDevelopmentBuild, false, false},
+			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true},
+			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
 		)
 	}
 
