@@ -3,6 +3,10 @@
 
 package defaults
 
+import (
+	"github.com/stackrox/rox/pkg/env"
+)
+
 var (
-	setRoxImageFlavorEnv = func() {}
+	imageFlavorSetting = env.RegisterSetting(imageFlavorEnvName)
 )
