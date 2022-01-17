@@ -37,7 +37,9 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 
 	baseValues := getBaseMetaValues(c, imageFlavor.Versions, &opts)
 	setMainOverride(mainImage, baseValues)
-	setCollectorOverride(mainImage, collectorImage, imageFlavor, baseValues)
+
+	collectorFull, collectorSlim := determineCollectorImages(mainImage, collectorImage, imageFlavor)
+	setCollectorOverrideToMetaValues(collectorFull, collectorSlim, baseValues)
 
 	return baseValues, nil
 }
@@ -69,7 +71,16 @@ func setMainOverride(mainImage *storage.ImageName, metaValues charts.MetaValues)
 	metaValues["ImageTag"] = mainImage.Tag
 }
 
-// setCollectorOverride adds collector full and slim image reference to meta values object.
+// setCollectorOverrideToMetaValues adds collector image values to meta values as defined in the provided *storage.ImageName objects.
+func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collectorSlimImage *storage.ImageName, metaValues charts.MetaValues) {
+	metaValues["CollectorRegistry"] = collectorImage.Registry
+	metaValues["CollectorFullImageRemote"] = collectorImage.Remote
+	metaValues["CollectorSlimImageRemote"] = collectorSlimImage.Remote
+	metaValues["CollectorFullImageTag"] = collectorImage.Tag
+	metaValues["CollectorSlimImageTag"] = collectorSlimImage.Tag
+}
+
+// determineCollectorImages is used to derive collector slim and full images from provided main and collector values.
 // The collector repository defined in the cluster object can be passed from roxctl or as direct
 // input in the UI when creating a new secured cluster. If no value is provided, the collector image
 // will be derived from the main image. For example:
@@ -78,52 +89,38 @@ func setMainOverride(mainImage *storage.ImageName, metaValues charts.MetaValues)
 // current image flavor has different image names for collector slim and full: collector slim has to be
 // derived from full instead. For example:
 // collector full image: "custom.registry.io/collector" => collector slim image: "custom.registry.io/collector-slim"
-func setCollectorOverride(mainImage, collectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor, metaValues charts.MetaValues) {
-	if collectorImage != nil {
-		// Use provided collector image and derive collector slim
-		metaValues["CollectorRegistry"] = collectorImage.Registry
-		metaValues["CollectorFullImageRemote"] = collectorImage.Remote
-		_, derivedName := deriveImageWithNewName(collectorImage, imageFlavor.CollectorSlimImageName)
-		log.Infof("Derived collector slim image from collector full as: %s/%s", collectorImage.Registry, derivedName)
-		metaValues["CollectorSlimImageRemote"] = derivedName
-	} else {
-		if imageFlavor.IsImageDefaultMain(mainImage) {
-			// Use all defaults from imageFlavor
-			metaValues["CollectorRegistry"] = imageFlavor.CollectorRegistry
-			metaValues["CollectorFullImageRemote"] = imageFlavor.CollectorImageName
-			metaValues["CollectorSlimImageRemote"] = imageFlavor.CollectorSlimImageName
-		} else {
-			// Derive collector values from main image
-			derivedRegistry, derivedName := deriveImageWithNewName(mainImage, imageFlavor.CollectorImageName)
-			log.Infof("Derived collector full image from main as: %s/%s", derivedRegistry, derivedName)
-			metaValues["CollectorRegistry"] = derivedRegistry
-			metaValues["CollectorFullImageRemote"] = derivedName
-			_, derivedName = deriveImageWithNewName(mainImage, imageFlavor.CollectorSlimImageName)
-			log.Infof("Derived collector slim image from collector full as: %s/%s", derivedRegistry, derivedName)
-			metaValues["CollectorSlimImageRemote"] = derivedName
+// returned images are: (collectorFull, collectorSlim)
+func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) (*storage.ImageName, *storage.ImageName) {
+	var collectorImageFull *storage.ImageName
+	if clusterCollectorImage == nil && imageFlavor.IsImageDefaultMain(clusterMainImage) {
+		collectorImageFull = &storage.ImageName{
+			Registry: imageFlavor.CollectorRegistry,
+			Remote:   imageFlavor.CollectorImageName,
 		}
+	} else if clusterCollectorImage == nil {
+		collectorImageFull = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorImageName)
+	} else {
+		collectorImageFull = clusterCollectorImage.Clone()
 	}
-	metaValues["CollectorFullImageTag"] = imageFlavor.CollectorImageTag
-	metaValues["CollectorSlimImageTag"] = imageFlavor.CollectorSlimImageTag
+	collectorImageFull.Tag = imageFlavor.CollectorImageTag
+	collectorImageSlim := deriveImageWithNewName(collectorImageFull, imageFlavor.CollectorSlimImageName)
+	collectorImageSlim.Tag = imageFlavor.CollectorSlimImageTag
+	return collectorImageFull, collectorImageSlim
 }
 
 // deriveImageWithNewName returns registry and repository values derived from a base image.
 // Slices base image taking into account image namespace and returns values for new image in the same repository as
 // base image. For example:
 // base image: "quay.io/namespace/main" => another: "quay.io/namespace/another"
-// Return values are split as ("quay.io", "namespace/another")
-func deriveImageWithNewName(baseImage *storage.ImageName, name string) (string, string) {
-	registry := baseImage.Registry
-
-	// This handles the case where there is no namespace. e.g. stackrox.io/NAME:tag
-	var remote string
-	if slashIdx := strings.IndexRune(baseImage.GetRemote(), '/'); slashIdx == -1 {
-		remote = name
-	} else {
-		remote = baseImage.GetRemote()[:slashIdx] + "/" + name
+func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.ImageName {
+	// TODO(RS-387): check if this split is still needed. Since we are not consistent in how we split the image, configured image names might have namespaces
+	imageNameWithoutNamespace := name[strings.IndexRune(name, '/')+1:]
+	baseRemote := baseImage.GetRemote()
+	remote := baseRemote[:strings.IndexRune(baseRemote, '/')+1] + imageNameWithoutNamespace
+	return &storage.ImageName{
+		Registry: baseImage.Registry,
+		Remote:   remote,
 	}
-
-	return registry, remote
 }
 
 func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) charts.MetaValues {

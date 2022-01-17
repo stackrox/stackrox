@@ -18,7 +18,7 @@
 {{/*
     Calculate the fingerprint of the input config.
    */}}
-{{ $configFP := printf "%s-%d" (.Values | toJson | sha256sum) .Release.Revision }}
+{{ $configFP := (.Values | toJson | sha256sum) }}
 
 {{/*
     Initial Setup

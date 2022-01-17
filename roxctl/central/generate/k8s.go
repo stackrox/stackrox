@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -82,17 +83,23 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	c.AddCommand(hostPathVolume())
 	c.AddCommand(noVolume())
 
-	// TODO(RS-396): set empty defaults on `central generate`. Defaults should not depend on env variable.
-	flavor := defaults.GetImageFlavorByBuildType()
-
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
-
 	// Adds k8s specific flags
-	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", flavor.MainImage(), "main image to use", "central")
+	imageFlavorHelpStr := fmt.Sprintf("default container images settings (%v); it controls repositories from where to download StackRox images, image names and tags format",
+		strings.Join(defaults.GetAllowedImageFlavorNames(buildinfo.ReleaseBuild), ", "))
+	// TODO(RS-380): switch here to RHACS flavor
+	imageFlavorDefault := defaults.ImageFlavorNameStackRoxIORelease
+	if !buildinfo.ReleaseBuild {
+		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
+	}
+	flagWrap.StringVar(&k8sConfig.ImageFlavorName, "image-defaults", imageFlavorDefault, imageFlavorHelpStr)
+
+	// TODO(RS-418): restore default image names or update argument description
+	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "", "main image to use (if unset, the default will be used)", "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
 
-	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", flavor.ScannerImage(), "Scanner image to use", "scanner")
-	flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", flavor.ScannerDBImage(), "Scanner DB image to use", "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", "", "Scanner image to use (if unset, the default will be used)", "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", "", "Scanner DB image to use (if unset, the default will be used)", "scanner")
 
 	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
 

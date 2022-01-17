@@ -21,7 +21,7 @@ roxctl-development() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    GOTAGS='' make "cli-${_uname}"
+    make "cli-${_uname}" GOTAGS=''
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   "${tmp_roxctl}/roxctl-dev" "$@"
@@ -32,7 +32,7 @@ roxctl-release() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    GOTAGS='release' make "cli-${_uname}"
+    make "cli-${_uname}" GOTAGS='release'
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   "${tmp_roxctl}/roxctl-release" "$@"
@@ -175,5 +175,5 @@ run_invalid_flavor_value_test() {
   fi
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
-  assert_output --regexp "invalid value of '--image-defaults=.*', allowed values:"
+  assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
 }

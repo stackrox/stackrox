@@ -72,10 +72,10 @@ TEST_NAMESPACE ?= stackrox-operator
 # to your manager process.
 ENABLE_WEBHOOKS ?= false
 
-# Set 'development_build' as default ROX_IMAGE_FLAVOR, so that developers can use the Makefile locally.
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox_io_release, rhacs_release.
-ROX_IMAGE_FLAVOR ?= development_build
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
+# Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
+ROX_IMAGE_FLAVOR ?= $(shell $(MAKE) --quiet --no-print-directory -C .. image-flavor)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -118,6 +118,9 @@ help: ## Display this help.
 
 tag: ## Print the correct operator version (== image tag).
 	@echo $(VERSION)
+
+image-flavor: ## Print the current image flavor.
+	@echo $(ROX_IMAGE_FLAVOR)
 
 # `everything` and `all` are separate targets.
 # `everything` pushes images. `all` is the default target that's executed when you simply run `make` without arguments.
@@ -422,12 +425,14 @@ index-build: opm bundle-post-process ## Build Index (a.k.a. Catalog) image with 
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the operator.
-	docker push ${IMG}
+# Use push-as-manifest-list.sh here to make sure manifests for the operator image are created. The script also retries on error.
+# We're not using push-as-manifest-list.sh for pushing other two images because they are independent from architecture.
+	../scripts/ci/push-as-manifest-list.sh "$(IMG)"
 
 .PHONY: docker-push-bundle
 docker-push-bundle: ## Push docker image with the bundle.
-	docker push ${BUNDLE_IMG}
+	docker push "$(BUNDLE_IMG)"
 
 .PHONY: docker-push-index
 docker-push-index: ## Push docker image with the index.
-	docker push ${INDEX_IMG}
+	docker push "$(INDEX_IMG)"

@@ -4,22 +4,46 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version"
 )
 
+type imageFlavorDescriptor struct {
+	// imageFlavorName is a value for both ROX_IMAGE_FLAVOR and for --image-defaults argument in roxctl.
+	imageFlavorName string
+	// isAllowedInReleaseBuild sets if given image flavor can (true) or shall not (false) be available when
+	// buildinfo.ReleaseBuild is true.
+	isAllowedInReleaseBuild bool
+	// constructorFunc is a function that creates and populates the ImageFlavor struct according to selected
+	// ImageFlavorName.
+	constructorFunc func() ImageFlavor
+}
+
 var (
-	log            = logging.LoggerForModule()
-	imageFlavorMap = map[string]func() ImageFlavor{
-		imageFlavorDevelopment: DevelopmentBuildImageFlavor,
-		imageFlavorStackroxIO:  StackRoxIOReleaseImageFlavor,
+	log = logging.LoggerForModule()
+
+	// allImageFlavors describes all available image flavors.
+	allImageFlavors = []imageFlavorDescriptor{
+		{
+			imageFlavorName:         ImageFlavorNameDevelopmentBuild,
+			isAllowedInReleaseBuild: false,
+			constructorFunc:         DevelopmentBuildImageFlavor,
+		},
+		{
+			imageFlavorName:         ImageFlavorNameStackRoxIORelease,
+			isAllowedInReleaseBuild: true,
+			constructorFunc:         StackRoxIOReleaseImageFlavor,
+		},
 	}
-	validImageFlavors = func() []string {
-		result := make([]string, 0, len(imageFlavorMap))
-		for key := range imageFlavorMap {
-			result = append(result, key)
+
+	// imageFlavorMap contains allImageFlavors keyed by ImageFlavorName.
+	imageFlavorMap = func() map[string]imageFlavorDescriptor {
+		result := make(map[string]imageFlavorDescriptor, len(allImageFlavors))
+		for _, f := range allImageFlavors {
+			result[f.imageFlavorName] = f
 		}
 		return result
 	}()
@@ -49,10 +73,12 @@ type ImageFlavor struct {
 	CollectorSlimImageName string
 	CollectorSlimImageTag  string
 
-	ScannerImageName   string
-	ScannerImageTag    string
-	ScannerDBImageName string
-	ScannerDBImageTag  string
+	ScannerImageName       string
+	ScannerSlimImageName   string
+	ScannerImageTag        string
+	ScannerDBImageName     string
+	ScannerDBSlimImageName string
+	ScannerDBImageTag      string
 
 	ChartRepo        ChartRepo
 	ImagePullSecrets ImagePullSecrets
@@ -74,10 +100,12 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		CollectorSlimImageName: "collector",
 		CollectorSlimImageTag:  v.CollectorVersion + "-slim",
 
-		ScannerImageName:   "scanner",
-		ScannerImageTag:    v.ScannerVersion,
-		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  v.ScannerVersion,
+		ScannerImageName:       "scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        v.ScannerVersion,
+		ScannerDBImageName:     "scanner-db",
+		ScannerDBSlimImageName: "scanner-db-slim",
+		ScannerDBImageTag:      v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -89,7 +117,7 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 	}
 }
 
-// StackRoxIOReleaseImageFlavor returns image values for `stackrox_io_release` flavor.
+// StackRoxIOReleaseImageFlavor returns image values for `stackrox.io` flavor.
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
@@ -103,10 +131,12 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		CollectorSlimImageName: "collector-slim",
 		CollectorSlimImageTag:  v.CollectorVersion,
 
-		ScannerImageName:   "scanner",
-		ScannerImageTag:    v.ScannerVersion,
-		ScannerDBImageName: "scanner-db",
-		ScannerDBImageTag:  v.ScannerVersion,
+		ScannerImageName:       "scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        v.ScannerVersion,
+		ScannerDBImageName:     "scanner-db",
+		ScannerDBSlimImageName: "scanner-db-slim",
+		ScannerDBImageTag:      v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -128,6 +158,40 @@ func GetImageFlavorByBuildType() ImageFlavor {
 	return DevelopmentBuildImageFlavor()
 }
 
+// GetAllowedImageFlavorNames returns a string slice with all accepted image flavor names for the given
+// release/development state.
+func GetAllowedImageFlavorNames(isReleaseBuild bool) []string {
+	result := make([]string, 0, len(allImageFlavors))
+	for _, f := range allImageFlavors {
+		if f.isAllowedInReleaseBuild || !isReleaseBuild {
+			result = append(result, f.imageFlavorName)
+		}
+	}
+	return result
+}
+
+// checkImageFlavorName returns error if image flavor name is unknown or not allowed for the selected type of build
+// (release==true, development==false), returns nil otherwise.
+func checkImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
+	valids := GetAllowedImageFlavorNames(isReleaseBuild)
+	for _, v := range valids {
+		if imageFlavorName == v {
+			return nil
+		}
+	}
+	return errors.Errorf("unexpected value '%s', allowed values are %v", imageFlavorName, valids)
+}
+
+// GetImageFlavorByName returns ImageFlavor struct created for the provided flavorName if the name is valid, otherwise
+// it returns an error.
+func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, error) {
+	if err := checkImageFlavorName(flavorName, isReleaseBuild); err != nil {
+		return ImageFlavor{}, err
+	}
+	f := imageFlavorMap[flavorName]
+	return f.constructorFunc(), nil
+}
+
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR).
 // This function should be used only where this environment variable is set.
 // Providing development_build flavor on a release build binary will cause the application to panic.
@@ -138,23 +202,13 @@ func GetImageFlavorByBuildType() ImageFlavor {
 // roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
 // provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
-	envValue := strings.ToLower(strings.TrimSpace(imageFlavorEnv()))
-
-	if buildinfo.ReleaseBuild && envValue == imageFlavorDevelopment {
-		// Release product build using development image repositories is likely a misconfiguration. We don't want to
-		// accidentally go out with development images into release.
-		log.Panicf("Cannot use %s image flavor in release build", envValue)
+	f, err := GetImageFlavorByName(strings.TrimSpace(imageFlavorEnv()), buildinfo.ReleaseBuild)
+	if err != nil {
+		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
+		// build-time constant.
+		log.Panicf("Incorrect image flavor in environment variable %s: %s", imageFlavorEnvName, err)
 	}
-
-	if fn, ok := imageFlavorMap[envValue]; ok {
-		return fn()
-	}
-
-	// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
-	// build-time constant.
-	log.Panicf("Unexpected image flavor value in %s: '%s'. Expecting one of the following: %v.",
-		envValue, imageFlavorEnvName, validImageFlavors)
-	return ImageFlavor{}
+	return f
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.

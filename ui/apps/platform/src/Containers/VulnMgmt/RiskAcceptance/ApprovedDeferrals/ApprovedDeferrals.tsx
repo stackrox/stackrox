@@ -1,14 +1,26 @@
-import React, { ReactElement } from 'react';
-import { Bullseye, Spinner } from '@patternfly/react-core';
+import React, { ReactElement, useState } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
+import queryService from 'utils/queryService';
+import { SearchFilter } from 'types/search';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedDeferralsTable from './ApprovedDeferralsTable';
 
 function ApprovedDeferrals(): ReactElement {
+    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
+    const modifiedSearchObject = {
+        ...searchFilter,
+        'Expired Request': 'false',
+        'Requested Vulnerability State': 'DEFERRED',
+    };
+    if (!modifiedSearchObject['Request Status']) {
+        modifiedSearchObject['Request Status'] = ['APPROVED'];
+    }
+    const query = queryService.objectToWhereClause(modifiedSearchObject);
+
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { isLoading, data, refetchQuery } = useVulnerabilityRequests({
-        query: 'Request Status:APPROVED+Requested Vulnerability State:DEFERRED+Expired Request:false',
+        query,
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
@@ -19,22 +31,17 @@ function ApprovedDeferrals(): ReactElement {
         },
     });
 
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner isSVG size="sm" />
-            </Bullseye>
-        );
-    }
-
-    const rows = data?.results || [];
+    const rows = data?.vulnerabilityRequests || [];
+    const itemCount = data?.vulnerabilityRequestsCount || 0;
 
     return (
         <ApprovedDeferralsTable
             rows={rows}
             updateTable={refetchQuery}
-            isLoading={isLoading} // @TODO: When backend puts "vulnerabilityRequestsCount" into GraphQL, use that
-            itemCount={rows.length}
+            isLoading={isLoading}
+            itemCount={itemCount}
+            searchFilter={searchFilter}
+            setSearchFilter={setSearchFilter}
             page={page}
             perPage={perPage}
             onSetPage={onSetPage}

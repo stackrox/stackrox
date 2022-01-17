@@ -8,10 +8,13 @@ ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
-# Set 'development_build' as default ROX_IMAGE_FLAVOR, so that developers can use the Makefile locally.
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox_io_release, rhacs_release.
-ROX_IMAGE_FLAVOR ?= development_build
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
+# The value is assigned as following:
+# 1. Use environment variable if provided.
+# 2. If makefile variable GOTAGS is contains "release", use "stackrox.io".
+# 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
+ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
 
 # Compute the tag of the build image based on the contents of the tracked files in
 # build. This ensures that we build it if and only if necessary, pulling from DockerHub
@@ -639,6 +642,10 @@ else
 	@echo $(TAG)
 endif
 endif
+
+.PHONY: image-flavor
+image-flavor:
+	@echo $(ROX_IMAGE_FLAVOR)
 
 .PHONY: ossls-audit
 ossls-audit: deps

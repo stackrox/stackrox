@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -27,17 +28,29 @@ func assertOnFileExistence(t *testing.T, path string, shouldExist bool) {
 }
 
 func TestUpdate(t *testing.T) {
-	lastUpdatedTime := time.Now().Add(time.Minute)
-	fileMetadata := file.NewMetadata(filepath.Join(t.TempDir(), "dump.zip"), &lastUpdatedTime)
-	u := newUpdater(fileMetadata, &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
+	filePath := filepath.Join(t.TempDir(), "dump.zip")
+	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
+	// Should fetch first time.
+	require.NoError(t, u.doUpdate())
+	assertOnFileExistence(t, filePath, true)
+
+	lastUpdatedTime := time.Now().Add(time.Hour)
+	mustSetModTime(t, filePath, lastUpdatedTime)
 	// Should not fetch since it can't be updated in a time in the future.
 	require.NoError(t, u.doUpdate())
-	assert.Equal(t, lastUpdatedTime.UTC(), u.file.GetLastModifiedTime())
-	assertOnFileExistence(t, u.file.GetPath(), false)
+	assert.Equal(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
+	assertOnFileExistence(t, filePath, true)
 
 	// Should definitely fetch.
-	fileMetadata.SetLastModifiedTime(nov23)
+	mustSetModTime(t, filePath, nov23)
 	require.NoError(t, u.doUpdate())
-	assert.True(t, u.file.GetLastModifiedTime().After(nov23.UTC()))
-	assertOnFileExistence(t, u.file.GetPath(), true)
+	assert.True(t, lastUpdatedTime.UTC().After(mustGetModTime(t, filePath)))
+	assert.True(t, mustGetModTime(t, filePath).After(nov23.UTC()))
+	assertOnFileExistence(t, filePath, true)
+}
+
+func mustGetModTime(t *testing.T, path string) time.Time {
+	fi, err := os.Stat(path)
+	require.NoError(t, err)
+	return fi.ModTime().UTC()
 }

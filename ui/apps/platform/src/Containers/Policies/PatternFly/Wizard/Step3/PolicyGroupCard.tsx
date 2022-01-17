@@ -18,6 +18,7 @@ import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaFieldValue from './PolicyCriteriaFieldValue';
 import AndOrOperatorField from './AndOrOperatorField';
+import './PolicyGroupCard.css';
 
 type PolicyGroupCardProps = {
     descriptor: Descriptor;
@@ -75,9 +76,11 @@ function PolicyGroupCard({
             <Card isFlat isCompact>
                 <CardHeader className="pf-u-p-0">
                     <CardTitle className="pf-u-pl-md">
-                        <Flex alignItems={{ default: 'alignItemsCenter' }}>{headerText}:</Flex>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-u-py-sm">
+                            {headerText}:
+                        </Flex>
                     </CardTitle>
-                    <CardActions hasNoOffset>
+                    <CardActions hasNoOffset className="policy-group-card">
                         {descriptor.negatedName && (
                             <>
                                 <Divider component="div" isVertical />
@@ -86,17 +89,22 @@ function PolicyGroupCard({
                                     isChecked={group.negate}
                                     onChange={handleNegate}
                                     id={`${group.fieldName}-negate`}
+                                    isDisabled={readOnly}
                                 />
                             </>
                         )}
-                        <Divider isVertical component="div" />
-                        <Button
-                            variant="plain"
-                            className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
-                            onClick={onDeleteGroup}
-                        >
-                            <TrashIcon />
-                        </Button>
+                        {!readOnly && (
+                            <>
+                                <Divider isVertical component="div" />
+                                <Button
+                                    variant="plain"
+                                    className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
+                                    onClick={onDeleteGroup}
+                                >
+                                    <TrashIcon />
+                                </Button>
+                            </>
+                        )}
                     </CardActions>
                 </CardHeader>
                 <Divider component="div" />
@@ -115,6 +123,7 @@ function PolicyGroupCard({
                                         length={group.values.length}
                                         descriptor={descriptor}
                                         handleRemoveValue={handleRemoveValue(valueIndex)}
+                                        readOnly={readOnly}
                                     />
                                     {/* only show and/or operator if not at end of array */}
                                     {valueIndex !== group.values.length - 1 && (
@@ -147,13 +156,15 @@ function PolicyGroupCard({
                     )}
                 </CardBody>
             </Card>
-            <Flex
-                direction={{ default: 'row' }}
-                className="pf-u-my-sm"
-                justifyContent={{ default: 'justifyContentCenter' }}
-            >
-                — and —
-            </Flex>
+            {(policyGroups.length - 1 !== groupIndex || !readOnly) && (
+                <Flex
+                    direction={{ default: 'row' }}
+                    className="pf-u-my-sm"
+                    justifyContent={{ default: 'justifyContentCenter' }}
+                >
+                    — and —
+                </Flex>
+            )}
         </>
     );
 }

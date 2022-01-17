@@ -13,13 +13,17 @@ import {
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 
-type FieldProps = {
+type PolicyCriteriaFieldInputProps = {
     descriptor: Descriptor;
-    readOnly: boolean;
+    readOnly?: boolean;
     name: string;
 };
 
-function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps): React.ReactElement {
+function PolicyCriteriaFieldInput({
+    descriptor,
+    readOnly = false,
+    name,
+}: PolicyCriteriaFieldInputProps): React.ReactElement {
     const [field, , helper] = useField(name);
     const [isSelectOpen, setIsSelectOpen] = React.useState(false);
     const { value } = field;
