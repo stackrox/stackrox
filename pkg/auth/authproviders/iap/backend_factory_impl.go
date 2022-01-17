@@ -62,7 +62,7 @@ func (f *factory) ResolveProviderAndClientState(state string) (providerID string
 	return state, "", nil
 }
 
-func (f *factory) GetAvailableAttributes() []string {
+func (f *factory) GetSuggestedAttributes() []string {
 	return []string{authproviders.UseridAttribute,
 		authproviders.EmailAttribute}
 }

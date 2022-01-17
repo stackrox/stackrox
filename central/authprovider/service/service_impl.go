@@ -115,11 +115,11 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 			continue
 		}
 
-		attributes := factory.GetAvailableAttributes()
+		attributes := factory.GetSuggestedAttributes()
 		sort.Strings(attributes)
 		supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderType{
 			Type:                typ,
-			AvailableAttributes: attributes,
+			SuggestedAttributes: attributes,
 		})
 	}
 	return &v1.AvailableProviderTypesResponse{

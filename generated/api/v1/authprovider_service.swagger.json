@@ -291,7 +291,7 @@
         "type": {
           "type": "string"
         },
-        "availableAttributes": {
+        "suggestedAttributes": {
           "type": "array",
           "items": {
             "type": "string"

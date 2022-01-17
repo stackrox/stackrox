@@ -70,7 +70,7 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 	return newCfg
 }
 
-func (f *factory) GetAvailableAttributes() []string {
+func (f *factory) GetSuggestedAttributes() []string {
 	return []string{authproviders.UseridAttribute,
 		authproviders.NameAttribute,
 		authproviders.GroupsAttribute,

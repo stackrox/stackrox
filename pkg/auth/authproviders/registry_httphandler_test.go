@@ -421,7 +421,7 @@ type tstAuthProviderBackendFactory struct {
 	err         error
 }
 
-func (f *tstAuthProviderBackendFactory) GetAvailableAttributes() []string {
+func (f *tstAuthProviderBackendFactory) GetSuggestedAttributes() []string {
 	panic("not implemented")
 }
 

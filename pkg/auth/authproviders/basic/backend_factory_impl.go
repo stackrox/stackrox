@@ -75,6 +75,6 @@ func (f *factory) ResolveProviderAndClientState(state string) (string, string, e
 	return providerID, clientState, nil
 }
 
-func (f *factory) GetAvailableAttributes() []string {
+func (f *factory) GetSuggestedAttributes() []string {
 	return []string{}
 }
