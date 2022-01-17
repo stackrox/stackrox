@@ -62,25 +62,25 @@ func (s *embedTestSuite) TestChartTemplatesAvailable() {
 	s.Require().NoError(err, "failed to load secured cluster services chart")
 }
 
-func (s *embedTestSuite) TestLoadChartDefaultValues() {
-	testFlavor := flavorUtils.MakeImageFlavorForTest(s.T())
-	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.GetMetaValuesForFlavor(testFlavor))
-	s.Require().NoError(err)
-	s.Equal("stackrox-central-services", chart.Name())
+func (s *embedTestSuite) TestLoadChartForFlavor() {
+	testCases := map[string]defaults.ImageFlavor{
+		"testFlavor": flavorUtils.MakeImageFlavorForTest(s.T()),
+		"development": defaults.DevelopmentBuildImageFlavor(),
+		"stackrox_io": defaults.StackRoxIOReleaseImageFlavor(),
+		"rhacs": defaults.RHACSReleaseImageFlavor(),
+	}
 
-	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.GetMetaValuesForFlavor(testFlavor))
-	s.Require().NoError(err)
-	s.Equal("stackrox-secured-cluster-services", chart.Name())
-}
+	for name, flavor := range testCases {
+		s.Run(name, func() {
+			chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.GetMetaValuesForFlavor(flavor))
+			s.Require().NoError(err)
+			s.Equal("stackrox-central-services", chart.Name())
 
-func (s *embedTestSuite) TestLoadChartRHACSValues() {
-	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()))
-	s.Require().NoError(err)
-	s.Equal("stackrox-central-services", chart.Name())
-
-	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()))
-	s.Require().NoError(err)
-	s.Equal("stackrox-secured-cluster-services", chart.Name())
+			chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.GetMetaValuesForFlavor(flavor))
+			s.Require().NoError(err)
+			s.Equal("stackrox-secured-cluster-services", chart.Name())
+		})
+	}
 }
 
 func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
