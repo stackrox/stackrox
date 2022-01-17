@@ -33,6 +33,7 @@ func defaultFlavor(flavor string) string {
 		return flavor
 	}
 	if buildinfo.ReleaseBuild {
+		// TODO(RS-419): change default flavor to be RHACS
 		return defaults.ImageFlavorNameStackRoxIORelease
 	}
 	return defaults.ImageFlavorNameDevelopmentBuild
