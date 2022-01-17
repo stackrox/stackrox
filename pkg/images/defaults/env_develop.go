@@ -4,9 +4,18 @@
 package defaults
 
 import (
+	"os"
+
 	"github.com/stackrox/rox/pkg/env"
 )
 
 var (
-	imageFlavorSetting = env.RegisterSetting(imageFlavorEnvName, env.WithDefault(imageFlavorDevelopment))
+	imageFlavorSetting = ensureRoxImageFlavorIsSet()
 )
+
+func ensureRoxImageFlavorIsSet() env.Setting {
+	if _, found := os.LookupEnv(imageFlavorEnvName); !found {
+		return env.RegisterSetting(imageFlavorEnvName, env.WithDefault(imageFlavorDevelopment))
+	}
+	return env.RegisterSetting(imageFlavorEnvName)
+}
