@@ -2169,7 +2169,7 @@ jobs:
       - pre-go-unit-tests
       - run:
           name: Run Go unit tests
-          command: GOTAGS= make go-unit-tests
+          command: make go-unit-tests GOTAGS=''
       - post-go-unit-tests:
           path: go-unit-junit-reports
 
@@ -2182,7 +2182,7 @@ jobs:
       - pre-go-unit-tests
       - run:
           name: Run Go unit tests with release tag
-          command: GOTAGS=release make go-unit-tests
+          command: make go-unit-tests GOTAGS=release
       - post-go-unit-tests:
           path: go-unit-release-junit-reports
 
