@@ -33,10 +33,10 @@ teardown() {
   assert_helm_template_central_registry "$out_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
 
-@test "roxctl-release helm output central-services --image-defaults=development should fail" {
-  run roxctl-release helm output central-services --image-defaults=development --output-dir "$out_dir"
+@test "roxctl-release helm output central-services --image-defaults=development_build should fail" {
+  run roxctl-release helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_failure
-  assert_output --partial "invalid value of '--image-defaults=development', allowed values:"
+  assert_output --partial "invalid value of '--image-defaults=development_build', allowed values:"
 }
 
 @test "roxctl-release helm output central-services --image-defaults='' should behave as if --image-defaults would not be used" {
