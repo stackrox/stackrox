@@ -2445,7 +2445,6 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
-      - NOTIFY_EVERY_RUNTIME_EVENT: true
 
     steps:
       - checkout
