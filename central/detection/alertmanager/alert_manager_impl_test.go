@@ -336,6 +336,9 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	newAlert2 := alerts[0].Clone()
 	newAlert.Violations[0].Message = "new-violation-2"
 
+	// There will be one call to Upsert
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).Return(nil)
+
 	// Updated alert should notify if set to
 	if env.NotifyOnEveryRuntimeEvent() {
 		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
