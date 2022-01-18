@@ -46,47 +46,6 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
 	return metaValues
 }
 
-// RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
-func RHACSMetaValues() MetaValues {
-	// TODO(RS-380): remove once RHACS flavor is added to `images` package
-	flavor := defaults.GetImageFlavorByBuildType()
-	metaValues := MetaValues{
-		"Versions": flavor.Versions,
-		// TODO(RS-380): these registries will change once we have the RHACS flavor. For now they will remain hardcoded here.
-		"MainRegistry":             "registry.redhat.io/rh-acs",
-		"ImageRemote":              "main",
-		"ImageTag":                 flavor.MainImageTag,
-		"CollectorRegistry":        "registry.redhat.io/rh-acs",
-		"CollectorFullImageRemote": "collector",
-		"CollectorSlimImageRemote": "collector",
-		"CollectorFullImageTag":    flavor.CollectorImageTag,
-		"CollectorSlimImageTag":    flavor.CollectorSlimImageTag,
-		"ScannerImageRemote":       flavor.ScannerImageName,
-		"ScannerSlimImageRemote":   flavor.ScannerSlimImageName,
-		"ScannerImageTag":          flavor.ScannerImageTag,
-		"ScannerDBImageRemote":     flavor.ScannerDBImageName,
-		"ScannerDBSlimImageRemote": flavor.ScannerDBSlimImageName,
-		"ScannerDBImageTag":        flavor.ScannerDBImageTag,
-		"RenderMode":               "",
-		"ChartRepo": defaults.ChartRepo{
-			URL: "http://mirror.openshift.com/pub/rhacs/charts",
-		},
-		"ImagePullSecrets": defaults.ImagePullSecrets{
-			AllowNone: true,
-		},
-		"Operator": false,
-	}
-
-	// TODO(RS-380): move or remove this block - this override is done only for the operator
-	if !buildinfo.ReleaseBuild {
-		metaValues["MainRegistry"] = mainRegistryOverride.Setting()
-		metaValues["CollectorRegistry"] = collectorRegistryOverride.Setting()
-		metaValues["FeatureFlags"] = getFeatureFlags()
-	}
-
-	return metaValues
-}
-
 // ToRaw converts MetaValues to map[string]interface{} for use in Go templating.
 // Go templating does not like our MetaValuesKey and prefers to have string as a key in the map.
 // Unfortunately, an attempt to cast MetaValues to map[string]interface{} does not compile, therefore we need to copy

@@ -37,6 +37,11 @@ var (
 			isAllowedInReleaseBuild: true,
 			constructorFunc:         StackRoxIOReleaseImageFlavor,
 		},
+		{
+			imageFlavorName:         ImageFlavorNameRHACSRelease,
+			isAllowedInReleaseBuild: true,
+			constructorFunc:         RHACSReleaseImageFlavor,
+		},
 	}
 
 	// imageFlavorMap contains allImageFlavors keyed by ImageFlavorName.
@@ -148,14 +153,32 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	}
 }
 
-// GetImageFlavorByBuildType returns the flavor based on build type (development or release). Release builds use StackroxIO
-// flavor and development builds use development flavor.
-// TODO(RS-380): Remove this function
-func GetImageFlavorByBuildType() ImageFlavor {
-	if buildinfo.ReleaseBuild {
-		return StackRoxIOReleaseImageFlavor()
+// RHACSReleaseImageFlavor returns image values for `rhacs` flavor.
+func RHACSReleaseImageFlavor() ImageFlavor {
+	v := version.GetAllVersionsUnified()
+	return ImageFlavor{
+		MainRegistry:           "registry.redhat.io/advanced-cluster-security",
+		MainImageName:          "rhacs-rhel8-main",
+		MainImageTag:           v.MainVersion,
+		CollectorRegistry:      "registry.redhat.io/advanced-cluster-security",
+		CollectorImageName:     "rhacs-rhel8-collector",
+		CollectorImageTag:      v.CollectorVersion,
+		CollectorSlimImageName: "rhacs-rhel8-collector-slim",
+		CollectorSlimImageTag:  v.CollectorVersion,
+
+		ScannerImageName:   "rhacs-rhel8-scanner",
+		ScannerImageTag:    v.ScannerVersion,
+		ScannerDBImageName: "rhacs-rhel8-scanner-db",
+		ScannerDBImageTag:  v.ScannerVersion,
+
+		ChartRepo: ChartRepo{
+			URL: "https://mirror.openshift.com/pub/rhacs/charts",
+		},
+		ImagePullSecrets: ImagePullSecrets{
+			AllowNone: true,
+		},
+		Versions: v,
 	}
-	return DevelopmentBuildImageFlavor()
 }
 
 // GetAllowedImageFlavorNames returns a string slice with all accepted image flavor names for the given
@@ -170,9 +193,9 @@ func GetAllowedImageFlavorNames(isReleaseBuild bool) []string {
 	return result
 }
 
-// checkImageFlavorName returns error if image flavor name is unknown or not allowed for the selected type of build
+// CheckImageFlavorName returns error if image flavor name is unknown or not allowed for the selected type of build
 // (release==true, development==false), returns nil otherwise.
-func checkImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
+func CheckImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
 	valids := GetAllowedImageFlavorNames(isReleaseBuild)
 	for _, v := range valids {
 		if imageFlavorName == v {
@@ -185,7 +208,7 @@ func checkImageFlavorName(imageFlavorName string, isReleaseBuild bool) error {
 // GetImageFlavorByName returns ImageFlavor struct created for the provided flavorName if the name is valid, otherwise
 // it returns an error.
 func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, error) {
-	if err := checkImageFlavorName(flavorName, isReleaseBuild); err != nil {
+	if err := CheckImageFlavorName(flavorName, isReleaseBuild); err != nil {
 		return ImageFlavor{}, err
 	}
 	f := imageFlavorMap[flavorName]

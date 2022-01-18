@@ -17,8 +17,9 @@ import {
 import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
+import useTableSort from 'hooks/useTableSort';
 import { vulnManagementReportsPath } from 'routePaths';
-import { fetchReports, deleteReport, runReport } from 'services/ReportsService';
+import { fetchReports, fetchReportsCount, deleteReport, runReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
@@ -27,15 +28,43 @@ function ReportTablePage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
 
-    const [reports, setReports] = useState<ReportConfiguration[]>([]);
+    // Handle changes in the current table page.
+    const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(20);
+    const [reportCount, setReportCount] = useState(0);
+
+    // To handle sort options.
     const columns = VulnMgmtReportTableColumnDescriptor;
+    const defaultSort = {
+        field: 'Report Name',
+        reversed: false,
+    };
+    const {
+        activeSortIndex,
+        setActiveSortIndex,
+        activeSortDirection,
+        setActiveSortDirection,
+        sortOption,
+    } = useTableSort(columns, defaultSort);
+
+    const [reports, setReports] = useState<ReportConfiguration[]>([]);
+
+    useEffect(() => {
+        fetchReportsCount()
+            .then((count) => {
+                setReportCount(count);
+            })
+            .catch((error) => {
+                // TODO
+            });
+    }, []);
 
     useEffect(() => {
         refreshReportList();
-    }, []);
+    }, [currentPage, perPage, sortOption]);
 
     function refreshReportList() {
-        fetchReports()
+        fetchReports([], sortOption, currentPage - 1, perPage)
             .then((reportsResponse) => {
                 setReports(reportsResponse);
             })
@@ -102,23 +131,15 @@ function ReportTablePage(): ReactElement {
             {reports.length > 0 ? (
                 <VulnMgmtReportTablePanel
                     reports={reports}
-                    reportCount={0}
-                    currentPage={0}
-                    setCurrentPage={function (page: number): void {
-                        throw new Error('Function not implemented.');
-                    }}
-                    perPage={0}
-                    setPerPage={function (perPage: number): void {
-                        throw new Error('Function not implemented.');
-                    }}
-                    activeSortIndex={0}
-                    setActiveSortIndex={function (idx: number): void {
-                        throw new Error('Function not implemented.');
-                    }}
-                    activeSortDirection="desc"
-                    setActiveSortDirection={function (dir: string): void {
-                        throw new Error('Function not implemented.');
-                    }}
+                    reportCount={reportCount}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    perPage={perPage}
+                    setPerPage={setPerPage}
+                    activeSortIndex={activeSortIndex}
+                    setActiveSortIndex={setActiveSortIndex}
+                    activeSortDirection={activeSortDirection}
+                    setActiveSortDirection={setActiveSortDirection}
                     columns={columns}
                     onRunReports={onRunReports}
                     onDeleteReports={onDeleteReports}
