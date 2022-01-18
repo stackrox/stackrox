@@ -20,8 +20,8 @@ import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
 import { searchCategories } from 'constants/entityTypes';
 import usePermissions from 'hooks/usePermissions';
+import useSearchOptions from 'hooks/useSearchOptions';
 import useTableSort from 'hooks/useTableSort';
-import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { vulnManagementReportsPath } from 'routePaths';
 import { fetchReports, fetchReportsCount, deleteReport, runReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
@@ -35,12 +35,6 @@ import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
 import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
 
-const searchQueryOptions = {
-    variables: {
-        categories: [searchCategories.REPORT_CONFIGURATIONS],
-    },
-};
-
 type ReportTablePageProps = {
     query: VulnMgmtReportQueryObject;
 };
@@ -49,8 +43,8 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
 
-    const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
-    const searchOptions = (searchData && searchData.searchOptions) || [];
+    const searchOptions = useSearchOptions(searchCategories.REPORT_CONFIGURATIONS) || [];
+
     const pageSearch = query.s;
     const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
     const restSearch = convertToRestSearch(filteredSearch || {});
