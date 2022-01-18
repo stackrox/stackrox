@@ -1,3 +1,5 @@
+#.clusterrolebindings["scanner-system-image-puller"] | assertThat(. == null)
+
 values:
   ca:
     cert: ""
@@ -40,6 +42,26 @@ tests:
     .deployments["scanner"].spec.replicas | assertThat(. == 5)
     .horizontalpodautoscalers["scanner"].spec.minReplicas | assertThat(. == 50)
     .horizontalpodautoscalers["scanner"].spec.maxReplicas | assertThat(. == 100)
+
+- name: "scanner with OpenShift 3 has Image Puller ClusterRole"
+  server:
+    visibleSchemas:
+    - openshift-3.11.0
+  values:
+    env:
+      openshift: 3
+  expect: |
+    .clusterrolebindings["scanner-system-image-puller"] | assertThat(. != null)
+
+- name: "scanner with OpenShift 4 has Image Puller ClusterRole"
+  server:
+    visibleSchemas:
+    - openshift-4.1.0
+  values:
+    env:
+      openshift: 4
+  expect: |
+    .clusterrolebindings["scanner-system-image-puller"] | assertThat(. != null)
 
 - name: "scanner with OpenShift 3 and enabled SCCs"
   server:
