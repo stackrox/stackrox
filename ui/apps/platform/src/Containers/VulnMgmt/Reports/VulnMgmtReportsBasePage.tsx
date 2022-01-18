@@ -16,7 +16,7 @@ function VulnMgmtReportsMainPage(): ReactElement {
         return <VulnMgmtCreateReportPage />;
     }
 
-    return <VulnMgmtReportTablePage />;
+    return <VulnMgmtReportTablePage query={queryObject} />;
 }
 
 export default VulnMgmtReportsMainPage;

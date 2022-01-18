@@ -23,8 +23,14 @@ import { fetchReports, fetchReportsCount, deleteReport, runReport } from 'servic
 import { ReportConfiguration } from 'types/report.proto';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
+import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
 
-function ReportTablePage(): ReactElement {
+type ReportTablePageProps = {
+    query: VulnMgmtReportQueryObject;
+};
+
+function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
+    console.log({ query });
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
 
