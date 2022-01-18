@@ -41,6 +41,14 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		metaVals["CollectorRegistry"] = collectorRegistryOverride.Setting()
 	}
 	metaVals["Operator"] = true
+
+	// TODO: RS-379: Remove casting and simply override value:
+	// metaVals.ImagePullSecrets.AllowNone = true
+	if imagePullSecrets, ok := metaVals["ImagePullSecrets"].(defaults.ImagePullSecrets); ok {
+		imagePullSecrets.AllowNone = true
+		metaVals["ImagePullSecrets"] = imagePullSecrets
+	}
+
 	chart, err := image.GetDefaultImage().LoadChart(chartPrefix, metaVals)
 	if err != nil {
 		return err
