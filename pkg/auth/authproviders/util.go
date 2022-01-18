@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 )
 
-// User identity attributes.
+// Some common user identity attribute keys.
 const (
 	GroupsAttribute = "groups"
 	EmailAttribute  = "email"
