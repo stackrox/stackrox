@@ -334,7 +334,7 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	newAlert := alerts[0].Clone()
 	newAlert.Violations[0].Message = "new-violation"
 	newAlert2 := alerts[0].Clone()
-	newAlert.Violations[0].Message = "new-violation-2"
+	newAlert2.Violations[0].Message = "new-violation-2"
 
 	// There will be one call to Upsert
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).Return(nil)
