@@ -22,6 +22,8 @@ const (
 	TypeName = "saml"
 )
 
+var _ authproviders.BackendFactory = (*factory)(nil)
+
 type factory struct {
 	urlPathPrefix string
 
@@ -171,6 +173,10 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 
 func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
 	return newCfg
+}
+
+func (f *factory) GetSuggestedAttributes() []string {
+	return []string{authproviders.UseridAttribute}
 }
 
 func filterBackendsByOrigin(req *http.Request, backends []*backendImpl) []*backendImpl {

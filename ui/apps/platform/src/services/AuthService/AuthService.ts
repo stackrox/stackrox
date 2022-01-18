@@ -102,8 +102,12 @@ export function fetchLoginAuthProviders(): Promise<{ response: AuthProviderLogin
 export function fetchAvailableProviderTypes(): Promise<{ response: AuthProviderInfo[] }> {
     return axios.get(`${availableProviderTypesUrl}`).then((response) => ({
         response:
-            response?.data?.authProviderTypes.map((curr) => {
-                return { value: curr, label: authProviderLabels[curr] };
+            response?.data?.authProviderTypes.map(({ type, suggestedAttributes }) => {
+                return {
+                    value: type,
+                    ruleAttributes: suggestedAttributes,
+                    label: authProviderLabels[type],
+                };
             }) || [],
     }));
 }

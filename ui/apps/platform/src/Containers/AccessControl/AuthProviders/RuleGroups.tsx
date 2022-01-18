@@ -27,11 +27,10 @@ export type RuleGroupsProps = {
     setFieldValue: (name: string, value: string) => void;
     disabled: boolean | undefined;
     errors?: RuleGroupErrors[];
+    ruleAttributes?: string[];
 };
 
-const ruleKeys = ['userid', 'name', 'email', 'groups'];
-
-function getAugmentedRuleKeys(groups) {
+function getAugmentedRuleKeys(ruleKeys, groups) {
     const newRuleKeys = [...ruleKeys];
 
     groups.forEach((group) => {
@@ -42,7 +41,7 @@ function getAugmentedRuleKeys(groups) {
         }
     });
 
-    return newRuleKeys;
+    return newRuleKeys as string[];
 }
 
 function RuleGroups({
@@ -53,8 +52,9 @@ function RuleGroups({
     roles = [],
     disabled = false,
     errors = [],
+    ruleAttributes = [],
 }: RuleGroupsProps): ReactElement {
-    const augmentedRuleKeys = getAugmentedRuleKeys(groups);
+    const augmentedRuleKeys = getAugmentedRuleKeys(ruleAttributes, groups);
 
     return (
         <FieldArray
