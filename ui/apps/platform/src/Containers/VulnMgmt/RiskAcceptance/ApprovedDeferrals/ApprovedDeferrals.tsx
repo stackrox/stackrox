@@ -17,16 +17,19 @@ function ApprovedDeferrals(): ReactElement {
     if (!modifiedSearchObject['Request Status']) {
         modifiedSearchObject['Request Status'] = ['APPROVED'];
     }
+    const requestID = modifiedSearchObject['Request ID'];
+    delete modifiedSearchObject['Request ID'];
     const query = queryService.objectToWhereClause(modifiedSearchObject);
 
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { isLoading, data, refetchQuery } = useVulnerabilityRequests({
         query,
+        requestID,
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
             sortOption: {
-                field: 'id',
+                field: 'Last Updated',
                 reversed: false,
             },
         },
