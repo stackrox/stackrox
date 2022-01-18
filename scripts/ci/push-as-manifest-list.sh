@@ -18,16 +18,15 @@ arch_image="${image}-amd64"
 docker tag "$image" "$arch_image"
 
 # Try pushing image a few times for the case when quay.io has issues such as "unknown blob"
-pushed=false
+pushed=0
 for i in {1..5}; do
   if docker push "$arch_image"; then
-    pushed=true
+    pushed=1
     break
-  else
-    sleep 10
   fi
+  sleep 10
 done
-[[ "$pushed" == "true" ]]
+(( pushed ))
 
 docker manifest create "$image" "$arch_image"
 
