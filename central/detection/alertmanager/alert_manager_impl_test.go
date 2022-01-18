@@ -311,10 +311,37 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
 
-	// Updated alert should notify if set to
-	if env.NotifyOnEveryRuntimeEvent() {
-		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+	// Updated alert should notify
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+
+	// Add all the policies from the old alerts so that they aren't marked as stale
+	for _, a := range alerts {
+		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
 	}
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
+	suite.NoError(err, "update should succeed")
+}
+
+func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
+	suite.envIsolator.Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
+	alerts := getResourceAlerts()
+	newAlert := alerts[0].Clone()
+	newAlert.Violations[0].Message = "new-violation"
+	newAlert.Tags = []string{"x", "y", "z"}
+
+	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
+	expectedMergedAlert.Tags = []string{"a", "b"}
+
+	// Only the merged alert will be updated.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+
+	// Updated alert should not notify
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 
@@ -339,11 +366,9 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	// There will be one call to Upsert
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).Return(nil)
 
-	// Updated alert should notify if set to
-	if env.NotifyOnEveryRuntimeEvent() {
-		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
-		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert2).Return()
-	}
+	// Updated alert should notify
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert2).Return()
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 
@@ -392,6 +417,38 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	suite.NoError(err, "update should succeed")
 }
 
+func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfMoreThanMaxNoNotify() {
+	suite.envIsolator.Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
+	alerts := getResourceAlerts()
+	newAlert := alerts[0].Clone()
+	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
+	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
+	}
+
+	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
+	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
+	expectedMergedAlert.Tags = []string{"a", "b"}
+
+	// Only the merged alert will be updated.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+
+	// Updated alert should not notify
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+
+	// Add all the policies from the old alerts so that they aren't marked as stale
+	for _, a := range alerts {
+		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+	}
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
+	suite.NoError(err, "update should succeed")
+}
+
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolations() {
 	alerts := getResourceAlerts()
 	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
@@ -407,9 +464,37 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
 
 	// Updated alert should notify if set to
-	if env.NotifyOnEveryRuntimeEvent() {
-		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+
+	// Add all the policies from the old alerts so that they aren't marked as stale
+	for _, a := range alerts {
+		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
 	}
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
+	suite.NoError(err, "update should succeed")
+}
+
+func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolationsNoNotify() {
+	suite.envIsolator.Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
+	alerts := getResourceAlerts()
+	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
+	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
+	}
+	newAlert := alerts[0].Clone()
+	newAlert.Violations[0].Message = "new-violation"
+
+	expectedMergedAlert := newAlert.Clone()
+
+	// Only the merged alert will be updated.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+
+	// Updated alert should not notify
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
 
