@@ -378,7 +378,7 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
-	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert, newAlert2})
 	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
 	suite.NoError(err, "update should succeed")
 }
