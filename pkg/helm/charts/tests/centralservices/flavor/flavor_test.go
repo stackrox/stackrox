@@ -45,6 +45,10 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
 			return defaults.StackRoxIOReleaseImageFlavor()
 		},
+		"rhacs": func() defaults.ImageFlavor {
+			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
+			return defaults.RHACSReleaseImageFlavor()
+		},
 		"custom": func() defaults.ImageFlavor {
 			return customFlavor(t)
 		},

@@ -1,0 +1,13 @@
+tests:
+- name: non slim mode
+  set:
+    collector.slimMode: false
+  expect: |
+    assertMainIs("registry.redhat.io/advanced-cluster-security/rhacs-rhel8-main:3.0.99.0")
+    assertCollectorIs("registry.redhat.io/advanced-cluster-security/rhacs-rhel8-collector:3.0.99.0")
+- name: slim mode
+  set:
+    collector.slimMode: true
+  expect: |
+    assertMainIs("registry.redhat.io/advanced-cluster-security/rhacs-rhel8-main:3.0.99.0")
+    assertCollectorIs("registry.redhat.io/advanced-cluster-security/rhacs-rhel8-collector-slim:3.0.99.0")
