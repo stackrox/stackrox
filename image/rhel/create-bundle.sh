@@ -88,13 +88,7 @@ cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 
 mkdir -p "${bundle_root}/go/bin"
 if [[ "$DEBUG_BUILD" == "yes" ]]; then
-  tmpdir="$(mktemp -d)"
-  (
-    cd "${tmpdir}"
-    GOBIN="${tmpdir}" go install github.com/go-delve/delve/cmd/dlv@latest
-    mv "${tmpdir}/dlv" "${bundle_root}/go/bin"
-  )
-  rm -rf "${tmpdir}"
+  GOBIN="${bundle_root}/go/bin" go install github.com/go-delve/delve/cmd/dlv@latest
 fi
 
 # Extract data from data container image
