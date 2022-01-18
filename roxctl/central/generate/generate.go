@@ -2,7 +2,6 @@ package generate
 
 import (
 	"encoding/pem"
-	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -117,7 +116,7 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	return nil
 }
 
-func createBundle(config renderer.Config) (*zip.Wrapper, error) {
+func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapper, error) {
 	wrapper := zip.NewWrapper()
 
 	if config.ClusterType == storage.ClusterType_GENERIC_CLUSTER {
@@ -166,7 +165,9 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
 
 		if config.K8sConfig.EnableTelemetry {
-			fmt.Fprintln(os.Stderr, "NOTE: Unless run in offline mode, StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.  If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag")
+			logger.InfofLn(`NOTE: Unless run in offline mode,
+ StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.
+  If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag`)
 		}
 		config.Environment[env.InitialTelemetryEnabledEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.EnableTelemetry)
 	}
@@ -194,10 +195,10 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 
 // OutputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(config renderer.Config) error {
-	fmt.Fprint(os.Stderr, "Generating deployment bundle... \n")
+func OutputZip(logger environment.Logger, config renderer.Config) error {
+	logger.InfofLn("Generating deployment bundle...")
 
-	wrapper, err := createBundle(config)
+	wrapper, err := createBundle(logger, config)
 	if err != nil {
 		return err
 	}
@@ -220,12 +221,12 @@ func OutputZip(config renderer.Config) error {
 		}
 	}
 
-	fmt.Fprintln(os.Stderr, "Done!")
-	fmt.Fprintln(os.Stderr)
+	logger.InfofLn("Done!")
+	logger.InfofLn("")
 
 	if outputPath != "" {
-		fmt.Fprintf(os.Stderr, "Wrote central bundle to %q\n", outputPath)
-		fmt.Fprintln(os.Stderr)
+		logger.InfofLn("Wrote central bundle to %q", outputPath)
+		logger.InfofLn("")
 	}
 
 	if err := config.WriteInstructions(os.Stderr); err != nil {
@@ -304,8 +305,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		c.PersistentFlags().MarkHidden("with-config-file"))
 
 	c.AddCommand(centralGenerateCmd.interactive())
-	c.AddCommand(k8s())
-	c.AddCommand(openshift())
+	c.AddCommand(k8s(cliEnvironment))
+	c.AddCommand(openshift(cliEnvironment))
 	return c
 }
 

@@ -2,7 +2,6 @@ package initbundles
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -79,7 +78,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 			return errors.Wrapf(err, "writing init bundle to %s", stringutils.FirstNonEmpty(out.filename, "<stdout>"))
 		}
 		if outFile != os.Stdout {
-			fmt.Fprintf(os.Stderr, "The newly generated init bundle has been written to file %q.\n", outFile.Name())
+			cliEnvironment.Logger().InfofLn("The newly generated init bundle has been written to file %q.\n", outFile.Name())
 			if err := outFile.Close(); err != nil {
 				return errors.Wrapf(err, "closing output file %q", outFile.Name())
 			}

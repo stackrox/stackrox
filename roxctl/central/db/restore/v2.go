@@ -36,6 +36,7 @@ type centralDbRestoreCommand struct {
 	// Properties that are injected or constructed.
 	env     environment.Environment
 	timeout time.Duration
+	confirm func() error
 }
 
 // V2Command defines the new db restore command
@@ -54,9 +55,7 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 				return err
 			}
 			return centralDbRestoreCmd.restore(func(file *os.File, deadline time.Time) error {
-				return centralDbRestoreCmd.restoreV2(func() error {
-					return flags.CheckConfirmation(c)
-				}, file, deadline)
+				return centralDbRestoreCmd.restoreV2(file, deadline)
 			})
 		},
 	}
@@ -72,6 +71,9 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 }
 
 func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string) error {
+	cmd.confirm = func() error {
+		return flags.CheckConfirmation(cbr)
+	}
 	cmd.timeout = flags.Timeout(cbr)
 	if len(args) == 1 {
 		if cmd.file != "" {
@@ -240,8 +242,8 @@ func (cmd *centralDbRestoreCommand) tryRestoreV2(confirm func() error, file *os.
 	return httputil.ResponseToError(resp)
 }
 
-func (cmd *centralDbRestoreCommand) restoreV2(confirm func() error, file *os.File, deadline time.Time) error {
-	err := cmd.tryRestoreV2(confirm, file, deadline)
+func (cmd *centralDbRestoreCommand) restoreV2(file *os.File, deadline time.Time) error {
+	err := cmd.tryRestoreV2(cmd.confirm, file, deadline)
 	if err == ErrV2RestoreNotSupported {
 		err = cmd.restoreV1(file, deadline)
 	}

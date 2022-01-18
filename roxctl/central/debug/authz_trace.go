@@ -20,12 +20,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var (
+const (
 	authzTraceTimeout = 20 * time.Minute
 )
 
-// AuthzTraceCommand allows to download authz trace from Central.
-func AuthzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
+// authzTraceCommand allows to download authz trace from Central.
+func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "authz-trace",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {

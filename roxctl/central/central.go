@@ -31,6 +31,5 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		whoami.Command(cliEnvironment),
 		initbundles.Command(cliEnvironment),
 	)
-
 	return c
 }

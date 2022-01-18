@@ -2,6 +2,7 @@ package restore
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -14,25 +15,40 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type centralRestoreCancelCommand struct {
+	env     environment.Environment
+	confirm func() error
+	timeout time.Duration
+}
+
 func v2RestoreCancelCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "cancel",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return cancelActiveRestore(cliEnvironment, c)
+			return makeCentralRestoreCancelCommand(cliEnvironment, c).cancelActiveRestore()
 		}),
 	}
 	flags.AddForce(c)
-
 	return c
 }
 
-func cancelActiveRestore(cliEnvironment environment.Environment, c *cobra.Command) error {
-	conn, err := cliEnvironment.GRPCConnection()
+func makeCentralRestoreCancelCommand(cliEnvironment environment.Environment, cbr *cobra.Command) *centralRestoreCancelCommand {
+	return &centralRestoreCancelCommand{
+		env:     cliEnvironment,
+		timeout: flags.Timeout(cbr),
+		confirm: func() error {
+			return flags.CheckConfirmation(cbr)
+		},
+	}
+}
+
+func (cmd *centralRestoreCancelCommand) cancelActiveRestore() error {
+	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
 		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), flags.Timeout(c))
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
 	defer cancel()
 
 	dbClient := v1.NewDBServiceClient(conn)
@@ -49,17 +65,17 @@ func cancelActiveRestore(cliEnvironment environment.Environment, c *cobra.Comman
 		return errors.New("No restore process is currently in progress")
 	}
 
-	cliEnvironment.Logger().PrintfLn("Active database restore process information")
-	cliEnvironment.Logger().PrintfLn("===========================================")
-	printStatus(cliEnvironment.Logger(), processStatus)
-	cliEnvironment.Logger().PrintfLn("")
-	cliEnvironment.Logger().PrintfLn("The above restore process will be canceled.")
+	cmd.env.Logger().PrintfLn("Active database restore process information")
+	cmd.env.Logger().PrintfLn("===========================================")
+	printStatus(cmd.env.Logger(), processStatus)
+	cmd.env.Logger().PrintfLn("")
+	cmd.env.Logger().PrintfLn("The above restore process will be canceled.")
 
-	if err := flags.CheckConfirmation(c); err != nil {
+	if err := cmd.confirm(); err != nil {
 		return err
 	}
 
-	ctx, cancel = context.WithTimeout(pkgCommon.Context(), flags.Timeout(c))
+	ctx, cancel = context.WithTimeout(pkgCommon.Context(), cmd.timeout)
 	defer cancel()
 
 	_, err = dbClient.CancelRestoreProcess(ctx, &v1.ResourceByID{

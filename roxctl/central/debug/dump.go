@@ -3,7 +3,6 @@ package debug
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -17,8 +16,8 @@ const (
 	dumpTimeout = 2 * time.Minute
 )
 
-// DumpCommand allows pulling logs, profiles, and metrics
-func DumpCommand(cliEnvironment environment.Environment) *cobra.Command {
+// dumpCommand allows pulling logs, profiles, and metrics
+func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var (
 		withLogs  bool
 		outputDir string
@@ -27,7 +26,7 @@ func DumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "dump",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			fmt.Fprint(os.Stderr, "Retrieving debug metrics. This may take a couple minutes...\n")
+			cliEnvironment.Logger().InfofLn("Retrieving debug metrics. This may take a couple minutes...")
 			return retrieveDump(flags.Timeout(c), withLogs, outputDir)
 		}),
 	}
