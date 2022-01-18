@@ -28,8 +28,8 @@ type BackendFactory interface {
 	// It should restore secrets missing from newCfg (if any) by copying them back from oldCfg (loaded from storage).
 	MergeConfig(newCfg, oldCfg map[string]string) map[string]string
 	// GetSuggestedAttributes returns user attribute keys that this provider
-	// is guaranteed to set. This is useful, for example, for knowing which attribute-based
-	// rules make sense for this auth provider.
+	// is guaranteed to set. This is useful, for example, for knowing which
+	// attribute-based rules make sense for this auth provider.
 	GetSuggestedAttributes() []string
 }
 
