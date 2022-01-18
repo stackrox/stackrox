@@ -16,7 +16,6 @@ export function getExpiresOnValue(expiresOn: ExpiresOn): string | number | undef
     } else if (expiresOn === '90 days') {
         value = addDaysToDate(new Date(), 90);
     } else if (expiresOn === 'Indefinitely') {
-        // @TODO: This should be changed to 0 once Mandar's changes are in
         value = 0;
     }
     return value;
