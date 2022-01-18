@@ -38,6 +38,7 @@ func (rs *RegistryStore) getAllInNamespace(namespace string) map[string]dockerCo
 	rs.mutex.RLock()
 	rs.mutex.RUnlock()
 
+	// Copy the registry to configuration map.
 	for reg, dce := range rs.store[namespace] {
 		regs[reg] = dce
 	}

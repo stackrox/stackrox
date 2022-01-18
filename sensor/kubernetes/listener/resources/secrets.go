@@ -249,23 +249,21 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 		}
 		dockerConfig = dockerConfigJSON.Auths
 	default:
-		utils.Should(errors.New("only Docker Config secrets are allowed"))
+		_ = utils.Should(errors.New("only Docker Config secrets are allowed"))
 		return nil
-	}
-
-	// The default service account comes with credentials to the internal registry.
-	// Check the service account annotation to see if this configuration is from the
-	// default SA.
-	var fromDefaultSA bool
-	if secret.GetAnnotations()[saAnnotation] == defaultSA {
-		fromDefaultSA = true
 	}
 
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
+	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
+	// The default service account always contains an API token.
+	// In OpenShift, the default service account also contains credentials for the
+	// OpenShift Container Registry, which is an internal image registry.
+	fromDefaultSA := secret.GetAnnotations()[saAnnotation] == defaultSA
 	for registry, dce := range dockerConfig {
 		if features.LocalImageScanning.Enabled() {
 			if fromDefaultSA {
+				// Store the registry credentials so Sensor can reach it.
 				s.regStore.addOrUpdateRegistry(secret.GetNamespace(), registry, dce)
 			}
 		}
