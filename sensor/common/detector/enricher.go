@@ -11,10 +11,11 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/scannerclient"
 )
 
 const (
-	scanTimeout = 6 * time.Minute
+	scanTimeout = 10 * time.Minute
 )
 
 type scanResult struct {
@@ -54,11 +55,22 @@ func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.Container
 	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 		Image: ci,
 	})
+
+	img := scannedImage.GetImage()
+
+	// ScanImageInternal may return without error even if it was unable to find the image.
+	// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
+	// image is stored in an internal registry which Sensor can reach.
+	if err == nil && img.GetMetadata() == nil {
+		img, err = scannerclient.ScanImage(ctx, svc, ci)
+	}
+
 	if err != nil {
 		c.image = types.ToImage(ci)
 		return
 	}
-	c.image = scannedImage.GetImage()
+
+	c.image = img
 }
 
 func newEnricher(cache expiringcache.Cache) *enricher {
@@ -113,7 +125,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 
 func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, containerIdx int, ci *storage.ContainerImage) {
 	go func() {
-		// unguarded send (push to channel outside of a select) is allowed because the imageChan is a buffered channel of exact size
+		// unguarded send (push to channel outside a select) is allowed because the imageChan is a buffered channel of exact size
 		imageChan <- e.runScan(containerIdx, ci)
 	}()
 }
@@ -121,6 +133,9 @@ func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, container
 func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 	for idx, container := range deployment.GetContainers() {
+		img := container.GetImage()
+		// Ensure the container image has its namespace populated prior to scanning.
+		img.Namespace = deployment.GetNamespace()
 		e.runImageScanAsync(imageChan, idx, container.GetImage())
 	}
 	images := make([]*storage.Image, len(deployment.GetContainers()))

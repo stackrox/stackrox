@@ -573,6 +573,9 @@
         },
         "notPullable": {
           "type": "boolean"
+        },
+        "namespace": {
+          "type": "string"
         }
       }
     },

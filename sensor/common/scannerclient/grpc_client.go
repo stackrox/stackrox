@@ -59,7 +59,6 @@ func NewGRPCClient(endpoint string) (*Client, error) {
 // 2. Request image analysis from Scanner, directly.
 // 3. Return image analysis results.
 func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*scannerV1.GetImageComponentsResponse, error) {
-
 	// TODO: get image metadata
 
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{

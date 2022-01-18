@@ -64,6 +64,7 @@ type fetchImageResult struct {
 func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img *storage.ContainerImage) (*storage.Image, error) {
 	// Talk to central if we know its endpoint (and the client connection is not shutting down), and if we are not
 	// currently connected to sensor.
+	// Note: we do not support scanning images stored in local registries if we cannot reach Sensor.
 	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
 		// Central route
 		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
@@ -120,6 +121,8 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 
 	scanInline := s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline()
 
+	namespace := deployment.GetNamespace()
+
 	for idx, container := range deployment.GetContainers() {
 		image := container.GetImage()
 		if image.GetId() != "" || scanInline {
@@ -127,9 +130,11 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 			if cachedImage != nil {
 				images[idx] = cachedImage
 			}
-			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
+			// The cached image might be insufficient if it doesn't have a scan, and we want to do inline scans.
 			if ctx != nil && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
 				atomic.AddInt32(&pendingCount, 1)
+				// Ensure the image has its Namespace field, as it may be needed when fetching.
+				image.Namespace = namespace
 				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image)
 			}
 		}

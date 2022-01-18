@@ -57,9 +57,11 @@ message ContainerImage {
     option (gogoproto.goproto_unrecognized) = false;
 
     // These tags maintain backwards compatibility with the previously embedded storage.Image
-    string id = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
-    ImageName name = 1;
-    bool not_pullable  = 10;
+    string    id           = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
+    ImageName name         = 1;
+    bool      not_pullable = 10;
+
+    string    namespace    = 11;
 }
 
 message Container {
