@@ -18,7 +18,6 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
