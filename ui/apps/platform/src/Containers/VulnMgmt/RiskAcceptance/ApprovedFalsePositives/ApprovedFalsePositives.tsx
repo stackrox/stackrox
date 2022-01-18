@@ -1,13 +1,14 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
-import { SearchFilter } from 'types/search';
+import useSearch from 'hooks/useSearch';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedFalsePositivesTable from './ApprovedFalsePositivesTable';
 
 function ApprovedFalsePositives(): ReactElement {
-    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
+    const { searchFilter, setSearchFilter } = useSearch();
+
     let modifiedSearchObject = { ...searchFilter };
     modifiedSearchObject = {
         ...modifiedSearchObject,

@@ -1,13 +1,14 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
-import { SearchFilter } from 'types/search';
+import useSearch from 'hooks/useSearch';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedDeferralsTable from './ApprovedDeferralsTable';
 
 function ApprovedDeferrals(): ReactElement {
-    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
+    const { searchFilter, setSearchFilter } = useSearch();
+
     const modifiedSearchObject = {
         ...searchFilter,
         'Expired Request': 'false',

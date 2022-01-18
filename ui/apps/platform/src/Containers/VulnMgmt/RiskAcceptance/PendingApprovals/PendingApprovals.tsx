@@ -1,19 +1,33 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
-
-import { SearchFilter } from 'types/search';
 import queryService from 'utils/queryService';
+import useSearch from 'hooks/useSearch';
+import { SearchFilter } from 'types/search';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 
-function PendingApprovals(): ReactElement {
-    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
+function setDefaultSearchFields(searchFilter: SearchFilter): SearchFilter {
     let modifiedSearchObject = { ...searchFilter };
     if (!modifiedSearchObject['Request Status']) {
         modifiedSearchObject['Request Status'] = ['Pending', 'APPROVED_PENDING_UPDATE'];
     }
     modifiedSearchObject = { ...modifiedSearchObject, 'Expired Request': 'false' };
+    return modifiedSearchObject;
+}
+
+function PendingApprovals(): ReactElement {
+    const { searchFilter, setSearchFilter } = useSearch();
+
+    const modifiedSearchObject = setDefaultSearchFields(searchFilter);
+    /*
+     * Due to backend limitations with the inability to index on the Request ID,
+     * we must pass the search query for "Request ID" using
+     * a separate GraphQL variable
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const requestID = modifiedSearchObject['Request ID'];
+    delete modifiedSearchObject['Request ID'];
     const query = queryService.objectToWhereClause(modifiedSearchObject);
 
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
