@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
 import {
     Button,
     ButtonVariant,
@@ -13,26 +14,46 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
+import { searchCategories } from 'constants/entityTypes';
 import usePermissions from 'hooks/usePermissions';
 import useTableSort from 'hooks/useTableSort';
+import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { vulnManagementReportsPath } from 'routePaths';
 import { fetchReports, fetchReportsCount, deleteReport, runReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
+import {
+    filterAllowedSearch,
+    convertToRestSearch,
+    convertSortToGraphQLFormat,
+    convertSortToRestFormat,
+} from 'utils/searchUtils';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
 import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
+
+const searchQueryOptions = {
+    variables: {
+        categories: [searchCategories.REPORT_CONFIGURATIONS],
+    },
+};
 
 type ReportTablePageProps = {
     query: VulnMgmtReportQueryObject;
 };
 
 function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
-    console.log({ query });
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+
+    const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
+    const searchOptions = (searchData && searchData.searchOptions) || [];
+    const pageSearch = query.s;
+    const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
+    const restSearch = convertToRestSearch(filteredSearch || {});
 
     // Handle changes in the current table page.
     const [currentPage, setCurrentPage] = useState(1);
@@ -55,7 +76,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
 
     const [reports, setReports] = useState<ReportConfiguration[]>([]);
 
-    useEffect(() => {
+    useDeepCompareEffect(() => {
         fetchReportsCount()
             .then((count) => {
                 setReportCount(count);
@@ -63,14 +84,14 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
             .catch((error) => {
                 // TODO
             });
-    }, []);
+    }, [restSearch]);
 
-    useEffect(() => {
+    useDeepCompareEffect(() => {
         refreshReportList();
-    }, [currentPage, perPage, sortOption]);
+    }, [restSearch, currentPage, perPage, sortOption]);
 
     function refreshReportList() {
-        fetchReports([], sortOption, currentPage - 1, perPage)
+        fetchReports(restSearch || [], sortOption, currentPage - 1, perPage)
             .then((reportsResponse) => {
                 setReports(reportsResponse);
             })
