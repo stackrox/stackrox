@@ -356,8 +356,7 @@ describe('Boolean Policy Logic Section', () => {
                 .should('be.visible');
             cy.get(`${selectors.booleanPolicySection.policyKeyGroupBtn}:first`).click();
             cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:first`).should(
-                'have.class',
-                'overflow-hidden'
+                'not.exist'
             );
         });
 
@@ -367,9 +366,6 @@ describe('Boolean Policy Logic Section', () => {
             cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:first`)
                 .scrollIntoView()
                 .should('be.visible');
-            cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:last`)
-                .scrollIntoView()
-                .should('have.class', 'overflow-hidden');
         });
     });
 
