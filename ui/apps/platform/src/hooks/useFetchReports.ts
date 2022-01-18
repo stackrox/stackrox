@@ -43,7 +43,7 @@ function useFetchReport(
 
         Promise.all<[Promise<ReportConfiguration[] | null>, Promise<number>]>([
             fetchReports(restSearch || [], sortOption, currentPage - 1, perPage),
-            fetchReportsCount(),
+            fetchReportsCount(restSearch || []),
         ])
             .then((data) => {
                 const reportsResponse = data[0];
