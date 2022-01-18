@@ -17,7 +17,7 @@ test_roxctl_cmd() {
   echo "Testing command: roxctl " "$@"
 
   output_dir=$(mktemp -d)
-  cmd=(roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@" --output-dir "$output_dir")
+  cmd=(roxctl --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@" --output-dir "$output_dir")
 
   echo "${cmd[@]}"
 
