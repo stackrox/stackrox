@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sensor-tls
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: collector-tls
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admission-tls
