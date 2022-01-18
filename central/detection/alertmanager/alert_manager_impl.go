@@ -48,9 +48,6 @@ func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 
 // AlertAndNotify is the main function that implements the AlertManager interface
 func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (set.StringSet, error) {
-	// rox-7233: runtime alerts always get triggered, so we send them before merging
-	d.notifyRuntimeAlerts(ctx, currentAlerts)
-
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
@@ -73,22 +70,25 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	if err != nil {
 		return nil, err
 	}
+
+	// rox-7233: runtime alerts always get notifications so send for updated alerts as well
+	d.notifyUpdatedRuntimeAlerts(ctx, updatedAlerts)
+
 	return modifiedDeployments, nil
 }
 
-// notifyRuntimeAlerts sends alerts for all runtime events that occur
-func (d *alertManagerImpl) notifyRuntimeAlerts(ctx context.Context, currentAlerts []*storage.Alert) {
+// notifyUpdatedRuntimeAlerts sends alerts for all updated runtime events that occur
+func (d *alertManagerImpl) notifyUpdatedRuntimeAlerts(ctx context.Context, updatedAlerts []*storage.Alert) {
 	// this env var is for customer configurability to allow time to adapt to the new expected behavior
 	//  planned to be removed in a future release
 	if !env.NotifyOnEveryRuntimeEvent() {
 		return
 	}
 
-	for _, alert := range currentAlerts {
-		if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
-			continue
+	for _, alert := range updatedAlerts {
+		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
+			d.notifier.ProcessAlert(ctx, alert)
 		}
-		d.notifier.ProcessAlert(ctx, alert)
 	}
 }
 
@@ -153,11 +153,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 // notifyAndUpdateBatch runs the notifier on the input alerts then stores them.
 func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	for _, existingAlert := range alertsToMark {
-		if (d.shouldDebounceNotification(ctx, existingAlert)) ||
-			// rox-7233: runtime alerts always get triggered, so we send them before merging
-			// this env var is for customer configurability to allow time to adapt to the new expected behavior
-			//  planned to be removed in a future release
-			(env.NotifyOnEveryRuntimeEvent() && existingAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME) {
+		if d.shouldDebounceNotification(ctx, existingAlert) {
 			continue
 		}
 		d.notifier.ProcessAlert(ctx, existingAlert)
