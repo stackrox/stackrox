@@ -193,7 +193,7 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 }
 
 // secretDispatcher handles secret resource events.
-type secretDispatcher struct{
+type secretDispatcher struct {
 	regStore *RegistryStore
 }
 
