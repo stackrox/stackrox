@@ -4,6 +4,7 @@ import { Alert, ListAlert } from 'Containers/Violations/PatternFly/types/violati
 
 import axios from './instance';
 import searchOptionsToQuery from './searchOptionsToQuery';
+import { RestSortOption } from './sortOption';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -13,11 +14,6 @@ export type RestSearchOption = {
     label?: string;
     type?: string; // for example, 'categoryOption'
     value: string | string[];
-};
-
-export type RestSortOption = {
-    field: string;
-    reversed: boolean;
 };
 
 // TODO import Severity from PoliciesService when it is TypeScript.

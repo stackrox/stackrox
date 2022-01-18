@@ -1,15 +1,47 @@
+import queryString from 'qs';
+
 import { ReportConfiguration } from 'types/report.proto';
+import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
+import { RestSortOption } from 'services/sortOption';
 import axios from './instance';
 
 const reportUrl = '/v1/report';
 const reportServiceUrl = `${reportUrl}/run`;
 const reportConfigurationsUrl = `${reportUrl}/configurations`;
 
-export function fetchReports(): Promise<ReportConfiguration[]> {
+export function fetchReports(
+    options: RestSearchOption[] = [],
+    sortOption: RestSortOption,
+    page: number,
+    pageSize: number
+): Promise<ReportConfiguration[]> {
+    const offset = page * pageSize;
+    const searchOptions: RestSearchOption[] = [...options];
+    const query = searchOptionsToQuery(searchOptions);
+    const queryObject: Record<string, string | Record<string, number | string | RestSortOption>> = {
+        pagination: {
+            offset,
+            limit: pageSize,
+            sortOption,
+        },
+    };
+    if (query) {
+        queryObject.query = query;
+    }
+    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
+    return axios
+        .get<{ reportConfigs: ReportConfiguration[] }>(`${reportConfigurationsUrl}?${params}`)
+        .then((response) => {
+            return response.data.reportConfigs;
+        });
+}
+
+// TODO: need a way to get total reports count properly
+export function fetchReportsCount(): Promise<number> {
     return axios
         .get<{ reportConfigs: ReportConfiguration[] }>(reportConfigurationsUrl)
         .then((response) => {
-            return response.data.reportConfigs;
+            return response.data.reportConfigs.length;
         });
 }
 

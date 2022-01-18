@@ -11,7 +11,7 @@ const VulnMgmtReportTableColumnDescriptor = [
     {
         Header: 'Report',
         accessor: 'report.name',
-        sortField: 'Report',
+        sortField: 'Report Name',
         Cell: ({ original }) => {
             const url = `${vulnManagementReportsPath}/${original.id as string}`;
             return (
