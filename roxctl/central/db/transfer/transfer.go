@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/vbauerster/mpb/v4"
 )
 
@@ -60,7 +61,7 @@ func (r *progressWatchReader) GetLastActivityTime() time.Time {
 }
 
 // ViaHTTP transfers a file via HTTP, showing a progress indicator, if possible.
-func ViaHTTP(req *http.Request, client *http.Client, earliestDeadline time.Time, idleTimeout time.Duration) (*http.Response, error) {
+func ViaHTTP(req *http.Request, client common.RoxctlHTTPClient, earliestDeadline time.Time, idleTimeout time.Duration) (*http.Response, error) {
 	totalLen := req.ContentLength
 	name := "Uploading..."
 	if req.Body == nil {

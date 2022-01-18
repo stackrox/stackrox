@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 type output struct {
@@ -19,11 +20,11 @@ type output struct {
 	filename string
 }
 
-func generateInitBundle(name string, outputs []output) error {
+func generateInitBundle(cliEnvironment environment.Environment, name string, outputs []output) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
 	defer cancel()
 
-	conn, err := common.GetGRPCConnection()
+	conn, err := cliEnvironment.GRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -62,7 +63,7 @@ func generateInitBundle(name string, outputs []output) error {
 
 	meta := resp.GetMeta()
 
-	fmt.Fprintf(os.Stderr, `Successfully generated new init bundle.
+	cliEnvironment.Logger().InfofLn(`Successfully generated new init bundle.
 
   Name:       %s
   Created at: %v
@@ -86,14 +87,14 @@ func generateInitBundle(name string, outputs []output) error {
 		files[i] = nil
 	}
 
-	fmt.Fprintln(os.Stderr, `
+	cliEnvironment.Logger().InfofLn(`
 Note: The init bundle needs to be stored securely, since it contains secrets.
       It is not possible to retrieve previously generated init bundles.`)
 	return nil
 }
 
 // generateCommand implements the command for generating new init bundles.
-func generateCommand() *cobra.Command {
+func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputFile string
 	var secretsOutputFile string
 
@@ -126,7 +127,7 @@ func generateCommand() *cobra.Command {
 			if len(outputs) == 0 {
 				return errors.New("No output files specified with --output or --output-secrets (for stdout, specify '-')")
 			}
-			return generateInitBundle(name, outputs)
+			return generateInitBundle(cliEnvironment, name, outputs)
 		},
 	}
 	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the newly generated init bundle in Helm configuration form (- for stdout)")

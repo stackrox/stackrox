@@ -25,4 +25,7 @@ type Environment interface {
 
 	// ColorWriter returns io.Writer that colorize bytes and writes them to InputOutput().Out
 	ColorWriter() io.Writer
+
+	// ConnectNames returns the endpoint and (SNI) server name
+	ConnectNames() (string, string, error)
 }

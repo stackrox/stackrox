@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
@@ -17,7 +18,7 @@ const (
 )
 
 // DumpCommand allows pulling logs, profiles, and metrics
-func DumpCommand() *cobra.Command {
+func DumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var (
 		withLogs  bool
 		outputDir string

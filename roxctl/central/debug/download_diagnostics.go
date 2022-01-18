@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
@@ -18,7 +19,7 @@ const (
 )
 
 // DownloadDiagnosticsCommand allows downloading the diagnostics bundle.
-func DownloadDiagnosticsCommand() *cobra.Command {
+func DownloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
 	var clusters []string
 	var since string

@@ -4,11 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -20,10 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/probeupload"
-	common2 "github.com/stackrox/rox/pkg/roxctl/common"
+	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
-	"github.com/stackrox/rox/roxctl/common"
 )
 
 const (
@@ -55,8 +52,8 @@ func analyzePackageFile(pkg *zip.Reader) (map[string]*zip.File, bool) {
 	return probeFiles, hasUnrecognized
 }
 
-func retrieveExistingProbeFiles(probeFilesInPackage map[string]*zip.File) ([]*v1.ProbeUploadManifest_File, error) {
-	conn, err := common.GetGRPCConnection()
+func (cmd *collectorSPUploadCommand) retrieveExistingProbeFiles(probeFilesInPackage map[string]*zip.File) ([]*v1.ProbeUploadManifest_File, error) {
+	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to establish a gRPC connection to Central")
 	}
@@ -68,7 +65,7 @@ func retrieveExistingProbeFiles(probeFilesInPackage map[string]*zip.File) ([]*v1
 		req.FilesToCheck = append(req.FilesToCheck, probeFileName)
 	}
 
-	ctx, cancel := context.WithTimeout(common2.Context(), grpcTimeout)
+	ctx, cancel := context.WithTimeout(common.Context(), grpcTimeout)
 	defer cancel()
 
 	resp, err := probeUploadClient.GetExistingProbes(ctx, req)
@@ -118,7 +115,7 @@ func buildUploadManifest(probeFilesInPackage map[string]*zip.File, existingFiles
 	return mf, ioutils.ChainReadersLazy(readerFuncs...), nonOverwrittenFiles
 }
 
-func doFileUpload(manifest *v1.ProbeUploadManifest, data io.Reader) error {
+func (cmd *collectorSPUploadCommand) doFileUpload(manifest *v1.ProbeUploadManifest, data io.Reader) error {
 	totalSize, err := probeupload.AnalyzeManifest(manifest)
 	if err != nil {
 		return utils.Should(errors.Wrap(err, "generated invalid manifest"))
@@ -134,7 +131,12 @@ func doFileUpload(manifest *v1.ProbeUploadManifest, data io.Reader) error {
 	manifestLen := len(manifestBytes)
 	uploadDataSize := totalSize + int64(manifestLen)
 
-	req, err := common.NewHTTPRequestWithAuth(http.MethodPost, "/api/extensions/probeupload", uploadData)
+	httpClient, err := cmd.env.HTTPClient(0)
+	if err != nil {
+		return errors.Wrap(err, "failed to instantiate an HTTP client")
+	}
+
+	req, err := httpClient.NewReq(http.MethodPost, "/api/extensions/probeupload", uploadData)
 	if err != nil {
 		return errors.Wrap(err, "failed to instantiate HTTP request")
 	}
@@ -144,12 +146,7 @@ func doFileUpload(manifest *v1.ProbeUploadManifest, data io.Reader) error {
 	urlParams.Set("manifestLen", strconv.Itoa(manifestLen))
 	req.URL.RawQuery = urlParams.Encode()
 
-	httpClient, err := common.GetHTTPClient(0)
-	if err != nil {
-		return errors.Wrap(err, "failed to instantiate an HTTP client")
-	}
-
-	fmt.Fprintf(os.Stderr, "Uploading %d files from support package ...\n", len(manifest.GetFiles()))
+	cmd.env.Logger().InfofLn("Uploading %d files from support package ...\n", len(manifest.GetFiles()))
 	resp, err := transfer.ViaHTTP(req, httpClient, time.Now(), uploadIdleTimeout)
 	if err != nil {
 		return errors.Wrap(err, "HTTP transport error while uploading collector support files")
@@ -160,12 +157,12 @@ func doFileUpload(manifest *v1.ProbeUploadManifest, data io.Reader) error {
 		return errors.Wrap(err, "server returned an error response")
 	}
 
-	fmt.Fprintf(os.Stderr, "Successfully uploaded %d files from support package.\n", len(manifest.GetFiles()))
+	cmd.env.Logger().InfofLn("Successfully uploaded %d files from support package.\n", len(manifest.GetFiles()))
 	return nil
 }
 
-func uploadFilesFromPackage(packageFile string, overwrite bool) error {
-	zipFile, err := zip.OpenReader(packageFile)
+func (cmd *collectorSPUploadCommand) uploadFilesFromPackage() error {
+	zipFile, err := zip.OpenReader(cmd.packageFile)
 	if err != nil {
 		return errors.Wrap(err, "opening support package file")
 	}
@@ -174,41 +171,41 @@ func uploadFilesFromPackage(packageFile string, overwrite bool) error {
 	probeFiles, hasUnrecognized := analyzePackageFile(&zipFile.Reader)
 
 	if hasUnrecognized {
-		fmt.Fprintln(os.Stderr, "Warning: The given support package contains unrecognized files. This may indicate data corruption.")
-		fmt.Fprintln(os.Stderr, "         If you have obtained this support package from an official site, contact StackRox support.")
+		cmd.env.Logger().WarnfLn("Warning: The given support package contains unrecognized files. This may indicate data corruption.")
+		cmd.env.Logger().WarnfLn("         If you have obtained this support package from an official site, contact StackRox support.")
 	}
 
 	if len(probeFiles) == 0 {
 		return errors.New("the given support package contains no relevant files")
 	}
 
-	existingFiles, err := retrieveExistingProbeFiles(probeFiles)
+	existingFiles, err := cmd.retrieveExistingProbeFiles(probeFiles)
 	if err != nil {
 		return err
 	}
 
-	manifest, data, nonOverwrittenFiles := buildUploadManifest(probeFiles, existingFiles, overwrite)
+	manifest, data, nonOverwrittenFiles := buildUploadManifest(probeFiles, existingFiles, cmd.overwrite)
 	defer utils.IgnoreError(data.Close)
 	if len(manifest.GetFiles()) > 0 {
-		if err := doFileUpload(manifest, data); err != nil {
+		if err := cmd.doFileUpload(manifest, data); err != nil {
 			return err
 		}
 	} else {
-		fmt.Fprintln(os.Stderr, "All relevant files from this support package are already present. Nothing to do.")
+		cmd.env.Logger().InfofLn("All relevant files from this support package are already present. Nothing to do.")
 	}
 
 	if len(nonOverwrittenFiles) > 0 {
-		fmt.Fprintf(os.Stderr, "Warning: there were %d file(s) present in the support package that were already present on the server, yet modified.\n", len(nonOverwrittenFiles))
+		cmd.env.Logger().WarnfLn("Warning: there were %d file(s) present in the support package that were already present on the server, yet modified.", len(nonOverwrittenFiles))
 		i := 0
 		for _, omittedFile := range nonOverwrittenFiles {
 			if i >= 2 {
-				fmt.Fprintf(os.Stderr, " - and %d other(s)\n", len(nonOverwrittenFiles)-i)
+				cmd.env.Logger().WarnfLn(" - and %d other(s)", len(nonOverwrittenFiles)-i)
 				break
 			}
 			i++
-			fmt.Fprintf(os.Stderr, " - %s\n", omittedFile.Name)
+			cmd.env.Logger().WarnfLn(" - %s", omittedFile.Name)
 		}
-		fmt.Fprintln(os.Stderr, "Re-run this command with the --overwrite flag to overwrite these files on the server.")
+		cmd.env.Logger().WarnfLn("Re-run this command with the --overwrite flag to overwrite these files on the server.")
 	}
 
 	return nil

@@ -25,7 +25,7 @@ func externalVolume() *cobra.Command {
 	c := volumeCommand("pvc")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		cfg.External = external
-		if err := validateConfig(cfg); err != nil {
+		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
 		return OutputZip(cfg)
@@ -40,7 +40,7 @@ func externalVolume() *cobra.Command {
 func noVolume() *cobra.Command {
 	c := volumeCommand("none")
 	c.RunE = func(c *cobra.Command, args []string) error {
-		if err := validateConfig(cfg); err != nil {
+		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
 		return OutputZip(cfg)
@@ -54,7 +54,7 @@ func hostPathVolume() *cobra.Command {
 	c := volumeCommand("hostpath")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		cfg.HostPath = hostpath
-		if err := validateConfig(cfg); err != nil {
+		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
 		return OutputZip(cfg)

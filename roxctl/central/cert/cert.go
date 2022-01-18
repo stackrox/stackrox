@@ -1,6 +1,7 @@
 package cert
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -8,33 +9,51 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
+type centralCertCommand struct {
+	// Properties that are bound to cobra flags.
+	filename string
+
+	// Properties that are injected or constructed.
+	env     environment.Environment
+	timeout time.Duration
+}
+
 // Command defines the cert command tree
-func Command() *cobra.Command {
-	var filename string
-	cmd := &cobra.Command{
+func Command(cliEnvironment environment.Environment) *cobra.Command {
+	centralCertCommand := &centralCertCommand{env: cliEnvironment}
+	cbr := &cobra.Command{
 		Use: "cert",
-		RunE: util.RunENoArgs(func(*cobra.Command) error {
-			return certs(filename)
+		RunE: util.RunENoArgs(func(cmd *cobra.Command) error {
+			if err := centralCertCommand.construct(cmd); err != nil {
+				return err
+			}
+			return centralCertCommand.certs()
 		}),
 	}
 
-	cmd.Flags().StringVar(&filename, "output", "-", "Filename to output PEM certificate to; '-' for stdout")
-	return cmd
+	cbr.Flags().StringVar(&centralCertCommand.filename, "output", "-", "Filename to output PEM certificate to; '-' for stdout")
+	return cbr
 }
 
-func certs(filename string) error {
+func (cmd *centralCertCommand) construct(cbr *cobra.Command) error {
+	cmd.timeout = flags.Timeout(cbr)
+	return nil
+}
+
+func (cmd *centralCertCommand) certs() error {
 	// Parse out the endpoint and server name for connecting to.
-	endpoint, serverName, err := common.ConnectNames()
+	endpoint, serverName, err := cmd.env.ConnectNames()
 	if err != nil {
 		return err
 	}
@@ -45,7 +64,9 @@ func certs(filename string) error {
 		InsecureSkipVerify: skipTLSValidation(),
 		ServerName:         serverName,
 	}
-	conn, err := tlsutils.DialContext(pkgCommon.Context(), "tcp", endpoint, &config)
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
+	defer cancel()
+	conn, err := tlsutils.DialContext(ctx, "tcp", endpoint, &config)
 	if err != nil {
 		return err
 	}
@@ -60,13 +81,13 @@ func certs(filename string) error {
 	// "File" to output PEM certificate to.
 	var handle io.WriteCloser
 
-	switch filename {
+	switch cmd.filename {
 	case "-":
 		// Default to STDOUT.
 		handle = os.Stdout
 	default:
 		// Open the given filename.
-		handle, err = os.Create(filename)
+		handle, err = os.Create(cmd.filename)
 		if err != nil {
 			return err
 		}
