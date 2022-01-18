@@ -19,18 +19,20 @@ function DeferralExpirationDate({
 }: DeferralExpirationDateProps): ReactElement {
     let expirationDate = '';
     if (targetState === 'FALSE_POSITIVE') {
-        expirationDate = '-';
-    }
-    // if "updatedDeferralReq" is not passed then default to "deferralReq"
-    const { expiresWhenFixed, expiresOn } =
-        requestStatus === 'APPROVED_PENDING_UPDATE' && updatedDeferralReq
-            ? updatedDeferralReq
-            : deferralReq;
-    if (expiresWhenFixed) {
-        expirationDate = 'when fixed';
-    }
-    if (expiresOn) {
-        expirationDate = getDate(expiresOn);
+        expirationDate = 'Never';
+    } else {
+        // if "updatedDeferralReq" is not passed then default to "deferralReq"
+        const { expiresWhenFixed, expiresOn } =
+            requestStatus === 'APPROVED_PENDING_UPDATE' && updatedDeferralReq
+                ? updatedDeferralReq
+                : deferralReq;
+        if (expiresWhenFixed) {
+            expirationDate = 'When fixed';
+        } else if (expiresOn) {
+            expirationDate = getDate(expiresOn);
+        } else {
+            expirationDate = 'Never';
+        }
     }
     return <div>{expirationDate}</div>;
 }

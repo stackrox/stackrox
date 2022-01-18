@@ -411,12 +411,12 @@ sensor-kubernetes-build:
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
 ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
-	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --name builder $(BUILD_IMAGE) make main-build-nodeps
+	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --name builder $(BUILD_IMAGE) make main-build-nodeps
 	docker cp $(GOPATH) builder:/
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
 else
-	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 endif
 
 .PHONY: main-build-nodeps
@@ -527,7 +527,7 @@ main-image: all-builds
 	make docker-build-main-image
 
 $(CURDIR)/image/rhel/bundle.tar.gz:
-	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz

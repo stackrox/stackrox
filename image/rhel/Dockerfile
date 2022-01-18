@@ -30,6 +30,7 @@ COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/ui/ /ui/
 COPY --from=extracted_bundle /bundle/usr/local/bin/ldb /usr/local/bin/
 COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
+COPY --from=extracted_bundle /bundle/go/ /go/
 
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \
@@ -40,10 +41,10 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     dnf upgrade -y && \
     dnf install -y lz4 bzip2 /tmp/snappy.rpm && \
     dnf clean all && \
-    rm -rf /var/cache/dnf && \
     rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
     # by the script `save-dir-contents` during the image build. The directory
     # contents are then restored by the script `restore-all-dir-contents`
