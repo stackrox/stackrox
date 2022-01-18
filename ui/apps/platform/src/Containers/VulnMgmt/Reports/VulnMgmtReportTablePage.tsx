@@ -27,19 +27,12 @@ import usePermissions from 'hooks/usePermissions';
 import useSearchOptions from 'hooks/useSearchOptions';
 import useFetchReports from 'hooks/useFetchReports';
 import useTableSort from 'hooks/useTableSort';
-import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { vulnManagementReportsPath } from 'routePaths';
 import { deleteReport, runReport } from 'services/ReportsService';
 import { filterAllowedSearch } from 'utils/searchUtils';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
 import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
-
-const searchQueryOptions = {
-    variables: {
-        categories: [searchCategories.REPORT_CONFIGURATIONS],
-    },
-};
 
 type ReportTablePageProps = {
     query: VulnMgmtReportQueryObject;
