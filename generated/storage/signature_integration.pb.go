@@ -24,12 +24,12 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type SignatureIntegration struct {
-	Id                           string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                         string                          `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	SignatureVerificationConfigs []*SignatureVerificationConfigs `protobuf:"bytes,3,rep,name=signature_verification_configs,json=signatureVerificationConfigs,proto3" json:"signature_verification_configs,omitempty"`
-	XXX_NoUnkeyedLiteral         struct{}                        `json:"-"`
-	XXX_unrecognized             []byte                          `json:"-"`
-	XXX_sizecache                int32                           `json:"-"`
+	Id                          string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                        string                          `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	SignatureVerificationConfig []*SignatureVerificationConfigs `protobuf:"bytes,3,rep,name=signature_verification_config,json=signatureVerificationConfig,proto3" json:"signature_verification_config,omitempty"`
+	XXX_NoUnkeyedLiteral        struct{}                        `json:"-"`
+	XXX_unrecognized            []byte                          `json:"-"`
+	XXX_sizecache               int32                           `json:"-"`
 }
 
 func (m *SignatureIntegration) Reset()         { *m = SignatureIntegration{} }
@@ -79,9 +79,9 @@ func (m *SignatureIntegration) GetName() string {
 	return ""
 }
 
-func (m *SignatureIntegration) GetSignatureVerificationConfigs() []*SignatureVerificationConfigs {
+func (m *SignatureIntegration) GetSignatureVerificationConfig() []*SignatureVerificationConfigs {
 	if m != nil {
-		return m.SignatureVerificationConfigs
+		return m.SignatureVerificationConfig
 	}
 	return nil
 }
@@ -96,22 +96,22 @@ func (m *SignatureIntegration) Clone() *SignatureIntegration {
 	cloned := new(SignatureIntegration)
 	*cloned = *m
 
-	if m.SignatureVerificationConfigs != nil {
-		cloned.SignatureVerificationConfigs = make([]*SignatureVerificationConfigs, len(m.SignatureVerificationConfigs))
-		for idx, v := range m.SignatureVerificationConfigs {
-			cloned.SignatureVerificationConfigs[idx] = v.Clone()
+	if m.SignatureVerificationConfig != nil {
+		cloned.SignatureVerificationConfig = make([]*SignatureVerificationConfigs, len(m.SignatureVerificationConfig))
+		for idx, v := range m.SignatureVerificationConfig {
+			cloned.SignatureVerificationConfig[idx] = v.Clone()
 		}
 	}
 	return cloned
 }
 
 type SignatureVerificationConfigs struct {
-	// Types that are valid to be assigned to SignatureConfig:
+	// Types that are valid to be assigned to Config:
 	//	*SignatureVerificationConfigs_PublicKey
-	SignatureConfig      isSignatureVerificationConfigs_SignatureConfig `protobuf_oneof:"SignatureConfig"`
-	XXX_NoUnkeyedLiteral struct{}                                       `json:"-"`
-	XXX_unrecognized     []byte                                         `json:"-"`
-	XXX_sizecache        int32                                          `json:"-"`
+	Config               isSignatureVerificationConfigs_Config `protobuf_oneof:"config"`
+	XXX_NoUnkeyedLiteral struct{}                              `json:"-"`
+	XXX_unrecognized     []byte                                `json:"-"`
+	XXX_sizecache        int32                                 `json:"-"`
 }
 
 func (m *SignatureVerificationConfigs) Reset()         { *m = SignatureVerificationConfigs{} }
@@ -147,19 +147,19 @@ func (m *SignatureVerificationConfigs) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SignatureVerificationConfigs proto.InternalMessageInfo
 
-type isSignatureVerificationConfigs_SignatureConfig interface {
-	isSignatureVerificationConfigs_SignatureConfig()
+type isSignatureVerificationConfigs_Config interface {
+	isSignatureVerificationConfigs_Config()
 	MarshalTo([]byte) (int, error)
 	Size() int
-	Clone() isSignatureVerificationConfigs_SignatureConfig
+	Clone() isSignatureVerificationConfigs_Config
 }
 
 type SignatureVerificationConfigs_PublicKey struct {
 	PublicKey *CosignPublicKeyVerification `protobuf:"bytes,1,opt,name=public_key,json=publicKey,proto3,oneof" json:"public_key,omitempty"`
 }
 
-func (*SignatureVerificationConfigs_PublicKey) isSignatureVerificationConfigs_SignatureConfig() {}
-func (m *SignatureVerificationConfigs_PublicKey) Clone() isSignatureVerificationConfigs_SignatureConfig {
+func (*SignatureVerificationConfigs_PublicKey) isSignatureVerificationConfigs_Config() {}
+func (m *SignatureVerificationConfigs_PublicKey) Clone() isSignatureVerificationConfigs_Config {
 	if m == nil {
 		return nil
 	}
@@ -170,15 +170,15 @@ func (m *SignatureVerificationConfigs_PublicKey) Clone() isSignatureVerification
 	return cloned
 }
 
-func (m *SignatureVerificationConfigs) GetSignatureConfig() isSignatureVerificationConfigs_SignatureConfig {
+func (m *SignatureVerificationConfigs) GetConfig() isSignatureVerificationConfigs_Config {
 	if m != nil {
-		return m.SignatureConfig
+		return m.Config
 	}
 	return nil
 }
 
 func (m *SignatureVerificationConfigs) GetPublicKey() *CosignPublicKeyVerification {
-	if x, ok := m.GetSignatureConfig().(*SignatureVerificationConfigs_PublicKey); ok {
+	if x, ok := m.GetConfig().(*SignatureVerificationConfigs_PublicKey); ok {
 		return x.PublicKey
 	}
 	return nil
@@ -201,8 +201,8 @@ func (m *SignatureVerificationConfigs) Clone() *SignatureVerificationConfigs {
 	cloned := new(SignatureVerificationConfigs)
 	*cloned = *m
 
-	if m.SignatureConfig != nil {
-		cloned.SignatureConfig = m.SignatureConfig.Clone()
+	if m.Config != nil {
+		cloned.Config = m.Config.Clone()
 	}
 	return cloned
 }
@@ -293,27 +293,27 @@ func init() {
 }
 
 var fileDescriptor_b3165e7a4c19e14a = []byte{
-	// 306 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x51, 0x5f, 0x4a, 0xc3, 0x30,
-	0x18, 0x5f, 0x3a, 0x51, 0xf6, 0x4d, 0x14, 0xc3, 0x84, 0xaa, 0xa3, 0x8c, 0xa9, 0xb0, 0xa7, 0x0e,
-	0xe7, 0xf0, 0x00, 0x1b, 0x03, 0xc5, 0x17, 0xa9, 0xe0, 0x83, 0x2f, 0x35, 0xcb, 0xb2, 0x10, 0xa6,
-	0xc9, 0x48, 0x32, 0xd9, 0x6e, 0xe2, 0x0d, 0xbc, 0x8a, 0x8f, 0x1e, 0x41, 0xea, 0x45, 0x64, 0xe9,
-	0xda, 0x0e, 0x84, 0xbe, 0x7d, 0x7c, 0xbf, 0xbf, 0xc9, 0x07, 0xe7, 0xc6, 0x2a, 0x4d, 0x38, 0xeb,
-	0x1a, 0xc1, 0x25, 0xb1, 0x0b, 0xcd, 0x62, 0x21, 0x2d, 0xe3, 0x9a, 0x58, 0xa1, 0x64, 0x38, 0xd7,
-	0xca, 0x2a, 0xbc, 0xb7, 0x21, 0x9d, 0x36, 0xb8, 0xe2, 0xca, 0xed, 0xba, 0xeb, 0x29, 0x85, 0xdb,
-	0x9f, 0x08, 0x1a, 0x8f, 0x99, 0xfc, 0xae, 0x50, 0xe3, 0x03, 0xf0, 0xc4, 0xc4, 0x47, 0x2d, 0xd4,
-	0xa9, 0x45, 0x9e, 0x98, 0x60, 0x0c, 0x3b, 0x92, 0xbc, 0x31, 0xdf, 0x73, 0x1b, 0x37, 0xe3, 0x19,
-	0x04, 0x45, 0xf4, 0x3b, 0xd3, 0x62, 0x2a, 0xa8, 0x53, 0xc7, 0x54, 0xc9, 0xa9, 0xe0, 0xc6, 0xaf,
-	0xb6, 0xaa, 0x9d, 0x7a, 0xef, 0x32, 0xdc, 0x94, 0x08, 0xf3, 0xa8, 0xa7, 0x2d, 0xf6, 0x30, 0x25,
-	0x47, 0x4d, 0x53, 0x82, 0xb6, 0x97, 0xd0, 0x2c, 0x53, 0xe3, 0x11, 0xc0, 0x7c, 0x31, 0x7e, 0x15,
-	0x34, 0x9e, 0xb1, 0x95, 0x2b, 0x5e, 0xef, 0x5d, 0xe4, 0xc1, 0x43, 0xb5, 0x36, 0x7f, 0x70, 0x84,
-	0x7b, 0xb6, 0xda, 0x36, 0xb8, 0xad, 0x44, 0xb5, 0x79, 0x06, 0x0c, 0x8e, 0xe0, 0x30, 0x8f, 0x49,
-	0xad, 0xdb, 0x2f, 0x70, 0x56, 0x22, 0xff, 0xf7, 0x53, 0x57, 0x70, 0x5c, 0x14, 0x89, 0xc7, 0xc4,
-	0xb0, 0x9b, 0x7e, 0xcc, 0x24, 0xf5, 0xbd, 0x56, 0xb5, 0xb3, 0x1f, 0xe1, 0x22, 0xcb, 0x41, 0x23,
-	0x49, 0x07, 0xfd, 0xaf, 0x24, 0x40, 0xdf, 0x49, 0x80, 0x7e, 0x92, 0x00, 0x7d, 0xfc, 0x06, 0x15,
-	0x38, 0x11, 0x2a, 0x34, 0x96, 0xd0, 0x99, 0x56, 0xcb, 0xf4, 0x54, 0xd9, 0x53, 0x9e, 0xb3, 0x8b,
-	0x8e, 0x77, 0xdd, 0xfe, 0xfa, 0x2f, 0x00, 0x00, 0xff, 0xff, 0xfd, 0xb8, 0x9d, 0x76, 0x08, 0x02,
-	0x00, 0x00,
+	// 305 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x2e, 0x2e, 0xc9, 0x2f,
+	0x4a, 0x4c, 0x4f, 0xd5, 0x2f, 0xce, 0x4c, 0xcf, 0x4b, 0x2c, 0x29, 0x2d, 0x4a, 0x8d, 0xcf, 0xcc,
+	0x2b, 0x49, 0x4d, 0x2f, 0x4a, 0x2c, 0xc9, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17,
+	0x62, 0x87, 0x2a, 0x92, 0x12, 0x49, 0xcf, 0x4f, 0xcf, 0x07, 0x8b, 0xe9, 0x83, 0x58, 0x10, 0x69,
+	0xa5, 0xa5, 0x8c, 0x5c, 0x22, 0xc1, 0x30, 0xed, 0x9e, 0x08, 0xdd, 0x42, 0x7c, 0x5c, 0x4c, 0x99,
+	0x29, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0x9c, 0x41, 0x4c, 0x99, 0x29, 0x42, 0x42, 0x5c, 0x2c, 0x79,
+	0x89, 0xb9, 0xa9, 0x12, 0x4c, 0x60, 0x11, 0x30, 0x5b, 0x28, 0x93, 0x4b, 0x16, 0x61, 0x75, 0x59,
+	0x6a, 0x51, 0x66, 0x5a, 0x66, 0x32, 0x58, 0x77, 0x7c, 0x72, 0x7e, 0x5e, 0x5a, 0x66, 0xba, 0x04,
+	0xb3, 0x02, 0xb3, 0x06, 0xb7, 0x91, 0xaa, 0x1e, 0xd4, 0x0d, 0x7a, 0x70, 0x9b, 0xc2, 0x90, 0x14,
+	0x3b, 0x83, 0xd5, 0x16, 0x07, 0x49, 0x17, 0xe3, 0x96, 0x55, 0xca, 0xe7, 0x92, 0xc1, 0xa7, 0x59,
+	0xc8, 0x95, 0x8b, 0xab, 0xa0, 0x34, 0x29, 0x27, 0x33, 0x39, 0x3e, 0x3b, 0xb5, 0x12, 0xec, 0x6c,
+	0x6e, 0x23, 0x15, 0xb8, 0xbd, 0xce, 0xf9, 0x20, 0xb3, 0x03, 0xc0, 0x0a, 0xbc, 0x53, 0x2b, 0x91,
+	0x0d, 0xf0, 0x60, 0x08, 0xe2, 0x2c, 0x80, 0x49, 0x38, 0x71, 0x70, 0xb1, 0x41, 0x9c, 0xae, 0x94,
+	0xc0, 0x25, 0x8d, 0x47, 0x17, 0x46, 0xf0, 0x18, 0x72, 0x89, 0x22, 0xec, 0x8f, 0x4f, 0x4a, 0x2c,
+	0x4e, 0x35, 0x33, 0x89, 0x4f, 0xcd, 0x4b, 0x96, 0x60, 0x52, 0x60, 0xd6, 0xe0, 0x09, 0x12, 0x42,
+	0x58, 0x01, 0x96, 0x72, 0xcd, 0x4b, 0x76, 0x32, 0x39, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39,
+	0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x67, 0x3c, 0x96, 0x63, 0xe0, 0x92, 0xcc, 0xcc, 0xd7, 0x2b, 0x2e,
+	0x49, 0x4c, 0xce, 0x2e, 0xca, 0xaf, 0x80, 0xc4, 0x0f, 0xcc, 0x07, 0x51, 0xb0, 0x68, 0x4c, 0x62,
+	0x03, 0x8b, 0x1b, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x49, 0xe5, 0x64, 0xd3, 0xfd, 0x01, 0x00,
+	0x00,
 }
 
 func (m *SignatureIntegration) Marshal() (dAtA []byte, err error) {
@@ -340,10 +340,10 @@ func (m *SignatureIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.SignatureVerificationConfigs) > 0 {
-		for iNdEx := len(m.SignatureVerificationConfigs) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.SignatureVerificationConfig) > 0 {
+		for iNdEx := len(m.SignatureVerificationConfig) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.SignatureVerificationConfigs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.SignatureVerificationConfig[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -395,11 +395,11 @@ func (m *SignatureVerificationConfigs) MarshalToSizedBuffer(dAtA []byte) (int, e
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.SignatureConfig != nil {
+	if m.Config != nil {
 		{
-			size := m.SignatureConfig.Size()
+			size := m.Config.Size()
 			i -= size
-			if _, err := m.SignatureConfig.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Config.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -496,8 +496,8 @@ func (m *SignatureIntegration) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovSignatureIntegration(uint64(l))
 	}
-	if len(m.SignatureVerificationConfigs) > 0 {
-		for _, e := range m.SignatureVerificationConfigs {
+	if len(m.SignatureVerificationConfig) > 0 {
+		for _, e := range m.SignatureVerificationConfig {
 			l = e.Size()
 			n += 1 + l + sovSignatureIntegration(uint64(l))
 		}
@@ -514,8 +514,8 @@ func (m *SignatureVerificationConfigs) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.SignatureConfig != nil {
-		n += m.SignatureConfig.Size()
+	if m.Config != nil {
+		n += m.Config.Size()
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -658,7 +658,7 @@ func (m *SignatureIntegration) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SignatureVerificationConfigs", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SignatureVerificationConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -685,8 +685,8 @@ func (m *SignatureIntegration) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.SignatureVerificationConfigs = append(m.SignatureVerificationConfigs, &SignatureVerificationConfigs{})
-			if err := m.SignatureVerificationConfigs[len(m.SignatureVerificationConfigs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.SignatureVerificationConfig = append(m.SignatureVerificationConfig, &SignatureVerificationConfigs{})
+			if err := m.SignatureVerificationConfig[len(m.SignatureVerificationConfig)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -774,7 +774,7 @@ func (m *SignatureVerificationConfigs) Unmarshal(dAtA []byte) error {
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.SignatureConfig = &SignatureVerificationConfigs_PublicKey{v}
+			m.Config = &SignatureVerificationConfigs_PublicKey{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
