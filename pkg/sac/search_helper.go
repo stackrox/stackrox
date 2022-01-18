@@ -105,6 +105,16 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 		return searcher.Search(q)
 	}
 
+	/////////////////////////////////////////////////////// SAC ///////////////////////////////////////////////////////
+	/*
+		1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
+		2. For every role get it's effective access scope (EAS)
+		3. Merge all EAS into a single tree
+		4. Generate where clause from merged EASes
+		5. Append clause to SQL query
+	*/
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	// Make sure the cluster and perhaps namespace fields are part of the returned fields.
 	fieldQB := search.NewQueryBuilder()
 	for _, fieldLabel := range h.resultsChecker.SearchFieldLabels() {
