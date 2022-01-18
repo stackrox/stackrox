@@ -87,7 +87,7 @@ export type DeferVulnerabilityRequest = {
     comment: string;
     scope: Scope;
     expiresWhenFixed?: boolean;
-    expiresOn?: string;
+    expiresOn?: string | number;
 };
 
 export const DEFER_VULNERABILITY = gql`
