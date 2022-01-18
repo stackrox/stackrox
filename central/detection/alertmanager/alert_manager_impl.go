@@ -78,7 +78,8 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 
 // notifyRuntimeAlerts sends alerts for all runtime events that occur
 func (d *alertManagerImpl) notifyRuntimeAlerts(ctx context.Context, currentAlerts []*storage.Alert) {
-	// this is added for customer configurability to allow them time to change their workflow, to be removed
+	// this env var is for customer configurability to allow time to adapt to the new expected behavior
+	//  planned to be removed in a future release
 	if !env.NotifyOnEveryRuntimeEvent() {
 		return
 	}
@@ -154,7 +155,8 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMar
 	for _, existingAlert := range alertsToMark {
 		if (d.shouldDebounceNotification(ctx, existingAlert)) ||
 			// rox-7233: runtime alerts always get triggered, so we send them before merging
-			// env var check is added for customer configurability to allow them time to change their workflow, to be removed
+			// this env var is for customer configurability to allow time to adapt to the new expected behavior
+			//  planned to be removed in a future release
 			(env.NotifyOnEveryRuntimeEvent() && existingAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME) {
 			continue
 		}

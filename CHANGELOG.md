@@ -14,7 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The default policy to detect Log4Shell vulnerability has been updated to also detect CVE-2021-45046 and the remediation has been updated to reflect the latest guidance by the Apache Logging security team.
 - Prior to this release, CVEs could be snoozed using global write access on `Images`. Starting this release, requests to snooze CVEs can be created only using `VulnerabilityManagementRequests` global write access and requests can be approved only using `VulnerabilityManagementApprovals` global write access. Roles with write access on `Images`, created prior to this release, are provided with both the newly added permissions. We recommend updating the roles to only include the least amount of resources required for each role. All new roles must be explicitly supplied with `VulnerabilityManagementRequests` and/or `VulnerabilityManagementApprovals` permissions in order to use CVE snoozing functionality.
 - Editing the cluster configuration in the UI is now disabled for Helm-based installations.
-- Notifications are now sent for every runtime policy violation when configured. If this change causes issue there is a workaround to disable for the time being that is planned to be phased out.
+- Notifications, if configured, will be sent for every runtime policy violation. If this change causes issue, setting the environment variable `NOTIFY_EVERY_RUNTIME_EVENT` to `false` will restore back to previous expected behavior. Please note that the environment variable will be phased out by a release in the near future.
 
 ## [67.2]
 
