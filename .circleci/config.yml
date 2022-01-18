@@ -326,45 +326,6 @@ storeMonitoringMetrics: &storeMonitoringMetrics
     path: monitoring/grafana/rawmetrics.zip
     destination: monitoring-metrics.zip
 
-benchmarkDashboard: &benchmarkDashboard
-  run:
-    name: Benchmark dashboard queries
-
-    command: |
-      ./scripts/ci/bench-and-graph.sh .*Dashboard ./scale/tests/
-
-storeDashBenchImages: &storeDashBenchImages
-  ci-artifacts/store:
-    path: monitoring/grafana/captures
-    destination: monitoring-images-dashboard-bench
-
-benchmarkCompliance: &benchmarkCompliance
-  run:
-    name: Benchmark compliance queries
-
-    command: |
-      ./scale/mocksensor/launch_mock_sensor.sh scale-test --node-interval=10ms --max-nodes=500 --deployment-interval=10ms --max-deployments=1000
-      # allow enough time for all the deployments to be processed
-      sleep 400
-      ./scripts/ci/bench-and-graph.sh .*Compliance ./scale/tests/
-
-storeComplianceBenchImages: &storeComplianceBenchImages
-  ci-artifacts/store:
-    path: monitoring/grafana/captures
-    destination: monitoring-images-compliance-bench
-
-benchmarkDryRunPolicies: &benchmarkDryRunPolicies
-  run:
-    name: Benchmark dry run policies
-
-    command: |
-      ./scripts/ci/bench-and-graph.sh .*DryRunPolicies ./scale/tests
-
-storeDryRunBenchImages: &storeDryRunBenchImages
-  ci-artifacts/store:
-    path: monitoring/grafana/captures
-    destination: monitoring-images-dryrun-bench
-
 storeQALogs: &storeQALogs
   ci-artifacts/store:
     path: /tmp/qa-tests-backend-logs
