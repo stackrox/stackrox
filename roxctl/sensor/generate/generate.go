@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -91,9 +92,15 @@ func fullClusterCreation(timeout time.Duration) error {
 	id, err := createCluster(ctx, service)
 
 	// Backward compatibility: if the central hasn't accepted the provided cluster
-	// then fill the default values as before and try again.
+	// then fill default values as RHACS.
 	if isLegacyValidationError(err) {
-		flavor := defaults.GetImageFlavorByBuildType()
+		var flavor defaults.ImageFlavor
+		if buildinfo.ReleaseBuild {
+			flavor = defaults.RHACSReleaseImageFlavor()
+		} else {
+			flavor = defaults.DevelopmentBuildImageFlavor()
+		}
+
 		fmt.Fprintf(os.Stderr, `WARNING: Running older version of central.
  Can't rely on central configuration to determine default values. Using %s as main registry.`, flavor.MainRegistry)
 

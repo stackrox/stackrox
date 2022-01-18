@@ -56,7 +56,6 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate k8s --image-defaults=rhacs should use registry.redhat.io registry" {
-  skip "RHACS flavor not ready yet" # TODO(RS-380): remove this line
   run_image_defaults_registry_test roxctl-development k8s 'registry.redhat.io' 'registry.redhat.io' '--image-defaults' 'rhacs'
 }
 
@@ -103,7 +102,6 @@ teardown() {
 }
 
 @test "roxctl-development roxctl central generate openshift --image-defaults=rhacs should use registry.redhat.io registry" {
-  skip "RHACS flavor not ready yet" # TODO(RS-380): remove this line
   run_image_defaults_registry_test roxctl-development openshift 'registry.redhat.io' 'registry.redhat.io' '--image-defaults' 'rhacs'
 }
 

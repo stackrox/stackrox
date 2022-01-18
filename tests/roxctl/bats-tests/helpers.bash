@@ -97,9 +97,6 @@ registry_regex() {
     stackrox.io)
       echo "stackrox\.io/$component:$version"
       ;;
-    registry.redhat.io-short)
-      echo "registry\.redhat\.io/rh-acs/$component:$version"
-      ;;
     registry.redhat.io)
       echo "registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-$component:$version"
       ;;
@@ -113,12 +110,6 @@ registry_regex() {
       fail "ERROR: unknown registry-slug: '$registry_slug'"
       ;;
   esac
-}
-
-skip_unless_image_defaults() {
-  bin="${1:-roxctl}"
-  orch="${2:-k8s}"
-  grep -- "--image-defaults" <("$bin" central generate "$orch" -h) || skip "because roxctl generate $orch does not support --image-defaults flag yet"
 }
 
 # Central-generate
@@ -139,9 +130,6 @@ run_image_defaults_registry_test() {
 
   [[ -n "$out_dir" ]] || fail "out_dir is unset"
 
-  if [[ " ${extra_params[*]} " =~ --image-defaults ]]; then
-    skip_unless_image_defaults "$roxctl_bin" "$orch"
-  fi
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$out_dir"
   assert_success
   assert_components_registry "$out_dir/central" "$expected_main_registry" 'main'
@@ -153,9 +141,6 @@ run_no_rhacs_flag_test() {
   local roxctl_bin="$1"
   local orch="$2"
 
-  if [[ " ${extra_params[*]} " =~ --image-defaults ]]; then
-    skip_unless_image_defaults "$roxctl_bin" "$orch"
-  fi
   run "$roxctl_bin" central generate --rhacs "$orch" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --partial "unknown flag: --rhacs"
@@ -170,9 +155,6 @@ run_invalid_flavor_value_test() {
   local orch="$1"; shift;
   local extra_params=("${@}")
 
-  if [[ " ${extra_params[*]} " =~ --image-defaults ]]; then
-    skip_unless_image_defaults "$roxctl_bin" "$orch"
-  fi
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"

@@ -900,7 +900,7 @@ func addDefaults(cluster *storage.Cluster) error {
 	if acConfig.GetTimeoutSeconds() == 0 {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
 	}
-	flavor := defaults.GetImageFlavorByBuildType()
+	flavor := defaults.GetImageFlavorFromEnv()
 	if cluster.CollectorImage == "" {
 		cluster.CollectorImage = flavor.CollectorImageNoTag()
 	}

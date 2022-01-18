@@ -9,8 +9,8 @@ const (
 	ImageFlavorNameDevelopmentBuild = "development_build"
 	// ImageFlavorNameStackRoxIORelease is a name for image flavor (image defaults) for images released to stackrox.io.
 	ImageFlavorNameStackRoxIORelease = "stackrox.io"
-	// TODO(RS-380): add this flavor:
-	// ImageFlavorNameRHACSRelease       = "rhacs"
+	// ImageFlavorNameRHACSRelease is a name for image flavor (image defaults) for images released to registry.redhat.io.
+	ImageFlavorNameRHACSRelease = "rhacs"
 )
 
 var (

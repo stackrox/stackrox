@@ -1,4 +1,4 @@
-package charts
+package reconciler
 
 import "github.com/stackrox/rox/pkg/env"
 
