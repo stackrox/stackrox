@@ -477,7 +477,7 @@
           "items": {
             "type": "string"
           },
-          "description": "If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors."
+          "description": "If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.\nPlease use cluster_id instead."
         },
         "categories": {
           "type": "array",

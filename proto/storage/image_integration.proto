@@ -13,7 +13,8 @@ message ImageIntegration {
     string name                                  = 2;
     string type                                  = 3;
     // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
-    repeated string clusters                     = 5;
+    // Please use cluster_id instead.
+    repeated string clusters                     = 5 [deprecated = true];
     repeated ImageIntegrationCategory categories = 6;
 
     oneof IntegrationConfig {

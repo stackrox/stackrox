@@ -163,7 +163,7 @@ func (s *serviceImpl) saveImage(img *storage.Image) {
 	}
 }
 
-// ScanImage handles an image request from Sensor
+// ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
@@ -172,11 +172,11 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		if err != nil {
 			return nil, err
 		}
-		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
+		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
+		// Otherwise, fetch it from the DB.
 		if exists {
-			utils.FilterSuppressedCVEsNoClone(img)
 			return &v1.ScanImageInternalResponse{
-				Image: utils.StripCVEDescriptions(img),
+				Image: sanitizeImage(img),
 			}, nil
 		}
 	}
@@ -196,16 +196,23 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// even if we weren't able to enrich it
 	}
 
-	// asynchronously upsert images as this rpc should be performant
+	// asynchronously upsert the image, as this rpc should be performant
 	if img.GetId() != "" {
 		go s.saveImage(img.Clone())
 	}
 
-	// This modifies the image object
-	utils.FilterSuppressedCVEsNoClone(img)
 	return &v1.ScanImageInternalResponse{
-		Image: utils.StripCVEDescriptions(img),
+		Image: sanitizeImage(img),
 	}, nil
+}
+
+// sanitizeImage prepares the image for responses.
+// The passed in image is modified.
+// Returns the passed in image.
+func sanitizeImage(img *storage.Image) *storage.Image {
+	utils.FilterSuppressedCVEsNoClone(img)
+	utils.StripCVEDescriptionsNoClone(img)
+	return img
 }
 
 // ScanImage scans an image and returns the result
@@ -232,6 +239,14 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		utils.FilterSuppressedCVEsNoClone(img)
 	}
 	return img, nil
+}
+
+// GetImageVulnerabilitiesInternal retrieves the vulnerabilities related to the image
+// specified by the given components and scan notes.
+// This is meant to be called by Sensor or Admission Controller.
+// TODO(ROX-8401): Implement me.
+func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.GetImageVulnerabilitiesInternalResponse, error) {
+	return nil, nil
 }
 
 // DeleteImages deletes images based on query

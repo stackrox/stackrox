@@ -6,6 +6,8 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "api/v1/search_service.proto";
 import "api/v1/empty.proto";
+import "scanner/api/v1/component.proto";
+import "scanner/api/v1/note.proto";
 import "storage/image.proto";
 import "storage/deployment.proto";
 
@@ -37,6 +39,18 @@ message ScanImageInternalRequest {
 }
 
 message ScanImageInternalResponse {
+    storage.Image image = 1;
+}
+
+message GetImageVulnerabilitiesInternalRequest {
+    string                  image_id   = 1;
+    storage.ImageName       image_name = 2;
+    storage.ImageMetadata   metadata   = 3;
+    scannerV1.Components    components = 4;
+    repeated scannerV1.Note notes      = 5;
+}
+
+message GetImageVulnerabilitiesInternalResponse {
     storage.Image image = 1;
 }
 
@@ -119,8 +133,12 @@ service ImageService {
         };
     }
 
-    // ScanImageInternal is used solely by the Sensor to send scan requests
+    // ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
     rpc ScanImageInternal (ScanImageInternalRequest) returns (ScanImageInternalResponse);
+
+    // GetImageVulnerabilities is used solely by the Sensor and Admission Controller to send
+    // vulnerability matching requests.
+    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (GetImageVulnerabilitiesInternalResponse);
 
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
