@@ -38,6 +38,7 @@ type ReportTablePageProps = {
 };
 
 function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
+    console.log({ query });
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
 
