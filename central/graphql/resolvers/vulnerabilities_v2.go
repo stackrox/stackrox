@@ -883,7 +883,7 @@ func (resolver *cVEResolver) EffectiveVulnerabilityRequest(ctx context.Context) 
 
 func effectiveVulnerabilityRequest(ctx context.Context, resolver *Resolver, cve string) (*VulnerabilityRequestResolver, error) {
 	var imageID string
-	scope, hasScope := scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES)
+	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
 		imageID = scope.ID
 	}
