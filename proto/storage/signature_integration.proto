@@ -8,8 +8,8 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message SignatureIntegration {
-  string                               id                              = 1;
-  string                               name                            = 2;
+  string id    = 1;
+  string name  = 2;
 
   repeated SignatureVerificationConfig signature_verification_configs  = 3;
 }
@@ -21,6 +21,6 @@ message SignatureVerificationConfig {
 }
 
 message CosignPublicKeyVerification {
-  string         id                     = 1;
-  repeated bytes public_keys_base64_enc = 2;
+  string          id                     = 1;
+  repeated string public_keys_base64_enc = 2;
 }

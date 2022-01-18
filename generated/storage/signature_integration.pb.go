@@ -209,7 +209,7 @@ func (m *SignatureVerificationConfig) Clone() *SignatureVerificationConfig {
 
 type CosignPublicKeyVerification struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	PublicKeysBase64Enc  [][]byte `protobuf:"bytes,2,rep,name=public_keys_base64_enc,json=publicKeysBase64Enc,proto3" json:"public_keys_base64_enc,omitempty"`
+	PublicKeysBase64Enc  []string `protobuf:"bytes,2,rep,name=public_keys_base64_enc,json=publicKeysBase64Enc,proto3" json:"public_keys_base64_enc,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -255,7 +255,7 @@ func (m *CosignPublicKeyVerification) GetId() string {
 	return ""
 }
 
-func (m *CosignPublicKeyVerification) GetPublicKeysBase64Enc() [][]byte {
+func (m *CosignPublicKeyVerification) GetPublicKeysBase64Enc() []string {
 	if m != nil {
 		return m.PublicKeysBase64Enc
 	}
@@ -273,11 +273,8 @@ func (m *CosignPublicKeyVerification) Clone() *CosignPublicKeyVerification {
 	*cloned = *m
 
 	if m.PublicKeysBase64Enc != nil {
-		cloned.PublicKeysBase64Enc = make([][]byte, len(m.PublicKeysBase64Enc))
-		for idx, v := range m.PublicKeysBase64Enc {
-			cloned.PublicKeysBase64Enc[idx] = make([]byte, len(v))
-			copy(cloned.PublicKeysBase64Enc[idx], v)
-		}
+		cloned.PublicKeysBase64Enc = make([]string, len(m.PublicKeysBase64Enc))
+		copy(cloned.PublicKeysBase64Enc, m.PublicKeysBase64Enc)
 	}
 	return cloned
 }
@@ -308,11 +305,11 @@ var fileDescriptor_b3165e7a4c19e14a = []byte{
 	0x6c, 0x64, 0x6b, 0x9d, 0xf3, 0x41, 0x66, 0x07, 0x80, 0x15, 0x78, 0xa7, 0x56, 0x22, 0xeb, 0xf7,
 	0x60, 0x08, 0xe2, 0x2c, 0x80, 0x49, 0x38, 0x71, 0x70, 0xb1, 0x41, 0x9c, 0xae, 0x94, 0xc4, 0x25,
 	0x8d, 0x47, 0x17, 0x46, 0xf0, 0x18, 0x73, 0x89, 0x21, 0xec, 0x2f, 0x8e, 0x4f, 0x4a, 0x2c, 0x4e,
-	0x35, 0x33, 0x89, 0x4f, 0xcd, 0x4b, 0x96, 0x60, 0x52, 0x60, 0xd6, 0xe0, 0x09, 0x12, 0x86, 0xdb,
+	0x35, 0x33, 0x89, 0x4f, 0xcd, 0x4b, 0x96, 0x60, 0x52, 0x60, 0xd6, 0xe0, 0x0c, 0x12, 0x86, 0xdb,
 	0x51, 0xec, 0x04, 0x96, 0x73, 0xcd, 0x4b, 0x76, 0x32, 0x39, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23,
 	0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x67, 0x3c, 0x96, 0x63, 0xe0, 0x92, 0xcc, 0xcc, 0xd7, 0x2b,
 	0x2e, 0x49, 0x4c, 0xce, 0x2e, 0xca, 0xaf, 0x80, 0xc4, 0x10, 0xcc, 0x0f, 0x51, 0xb0, 0x88, 0x4c,
-	0x62, 0x03, 0x8b, 0x1b, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0xf5, 0xeb, 0xd9, 0xd7, 0xff, 0x01,
+	0x62, 0x03, 0x8b, 0x1b, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x47, 0xce, 0xa5, 0x3e, 0xff, 0x01,
 	0x00, 0x00,
 }
 
@@ -546,8 +543,8 @@ func (m *CosignPublicKeyVerification) Size() (n int) {
 		n += 1 + l + sovSignatureIntegration(uint64(l))
 	}
 	if len(m.PublicKeysBase64Enc) > 0 {
-		for _, b := range m.PublicKeysBase64Enc {
-			l = len(b)
+		for _, s := range m.PublicKeysBase64Enc {
+			l = len(s)
 			n += 1 + l + sovSignatureIntegration(uint64(l))
 		}
 	}
@@ -863,7 +860,7 @@ func (m *CosignPublicKeyVerification) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PublicKeysBase64Enc", wireType)
 			}
-			var byteLen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowSignatureIntegration
@@ -873,23 +870,23 @@ func (m *CosignPublicKeyVerification) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthSignatureIntegration
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return ErrInvalidLengthSignatureIntegration
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PublicKeysBase64Enc = append(m.PublicKeysBase64Enc, make([]byte, postIndex-iNdEx))
-			copy(m.PublicKeysBase64Enc[len(m.PublicKeysBase64Enc)-1], dAtA[iNdEx:postIndex])
+			m.PublicKeysBase64Enc = append(m.PublicKeysBase64Enc, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
