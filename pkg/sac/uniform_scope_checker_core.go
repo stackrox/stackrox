@@ -35,3 +35,10 @@ func (s uniformScopeCheckerCore) TryAllowed() TryAllowedResult {
 func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
 	return nil
 }
+
+func (s uniformScopeCheckerCore) SqlQuery(_ context.Context) (string, error) {
+	if s {
+		return "where false", nil
+	}
+	return "", nil
+}

@@ -30,3 +30,7 @@ func (c OneStepSCC) PerformChecks(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (c OneStepSCC) SqlQuery(_ context.Context) (string, error) {
+	panic("Implement me!")
+}

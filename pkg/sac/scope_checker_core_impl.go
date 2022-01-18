@@ -87,6 +87,10 @@ func (scc *ScopeCheckerCoreImpl) PerformChecks(ctx context.Context) error {
 	return scc.reqTracker.PerformChecks(ctx)
 }
 
+func (scc *ScopeCheckerCoreImpl) SqlQuery(_ context.Context) (string, error) {
+	panic("Implement me!")
+}
+
 // SetState sets the Allow/Deny/Unknown state of this ScopeCheckerCore, it should only be called by RootScopeCheckerCore
 func (scc *ScopeCheckerCoreImpl) SetState(state TryAllowedResult) {
 	scc.atomicStoreState(state)

@@ -45,3 +45,7 @@ func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerC
 	}
 	return denyAllScopeCheckerCore
 }
+
+func (c allowFixedScopesCheckerCore) SqlQuery(_ context.Context) (string, error) {
+	panic("Implement me!")
+}

@@ -28,3 +28,7 @@ func ErrorAccessScopeCheckerCore(err error) ScopeCheckerCore {
 		err: err,
 	}
 }
+
+func (s errScopeCheckerCore) SqlQuery(_ context.Context) (string, error) {
+	return "", s.err
+}
