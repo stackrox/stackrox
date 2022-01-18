@@ -59,6 +59,13 @@ function getNewAuthProviderTitle(type, availableProviderTypes) {
     return `Add new ${selectedType?.label as string} auth provider`;
 }
 
+function getRuleAttributes(type, availableProviderTypes) {
+    return (
+        (availableProviderTypes.find(({ value }) => value === type)?.ruleAttributes as string[]) ||
+        []
+    );
+}
+
 function testModeSupported(provider) {
     return provider.type === 'auth0' || provider.type === 'oidc' || provider.type === 'saml';
 }
@@ -225,6 +232,8 @@ function AuthProviderForm({
         action === 'create'
             ? getNewAuthProviderTitle(selectedAuthProvider.type, availableProviderTypes)
             : selectedAuthProvider.name;
+
+    const ruleAttributes = getRuleAttributes(selectedAuthProvider.type, availableProviderTypes);
 
     return (
         <Form>
@@ -437,6 +446,7 @@ function AuthProviderForm({
                             setFieldValue={setFieldValue}
                             disabled={isViewing}
                             errors={errors?.groups as RuleGroupErrors[]}
+                            ruleAttributes={ruleAttributes}
                         />
                     </FormSection>
                 </FormSection>

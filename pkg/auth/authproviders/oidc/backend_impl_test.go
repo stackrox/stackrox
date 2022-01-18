@@ -160,9 +160,9 @@ func TestBackend(t *testing.T) {
 		FullName: suppliedClaims.name,
 		Email:    suppliedClaims.email,
 		Attributes: map[string][]string{
-			"email":  {suppliedClaims.email},
-			"name":   {suppliedClaims.name},
-			"userid": {suppliedClaims.uid},
+			authproviders.EmailAttribute:  {suppliedClaims.email},
+			authproviders.NameAttribute:   {suppliedClaims.name},
+			authproviders.UseridAttribute: {suppliedClaims.uid},
 		},
 	}
 

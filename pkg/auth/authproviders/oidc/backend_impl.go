@@ -585,18 +585,18 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	// Add all fields as attributes.
 	claim.Attributes = make(map[string][]string)
 	if claim.UserID != "" {
-		claim.Attributes["userid"] = []string{claim.UserID}
+		claim.Attributes[authproviders.UseridAttribute] = []string{claim.UserID}
 	}
 	if claim.FullName != "" {
-		claim.Attributes["name"] = []string{claim.FullName}
+		claim.Attributes[authproviders.NameAttribute] = []string{claim.FullName}
 	}
 	if claim.Email != "" {
-		claim.Attributes["email"] = []string{claim.Email}
+		claim.Attributes[authproviders.EmailAttribute] = []string{claim.Email}
 	}
 
 	// If using non-standard group information add them.
 	if len(userInfo.Groups) > 0 {
-		claim.Attributes["groups"] = userInfo.Groups
+		claim.Attributes[authproviders.GroupsAttribute] = userInfo.Groups
 	}
 	return claim
 }

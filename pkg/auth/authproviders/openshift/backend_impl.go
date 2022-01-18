@@ -143,9 +143,9 @@ func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthRe
 	// OpenShift doesn't provide emails in their users API response, see
 	// https://docs.openshift.com/container-platform/4.9/rest_api/user_and_group_apis/user-user-openshift-io-v1.html
 	attributes := map[string][]string{
-		"userid": {id.UserID},
-		"name":   {id.Username},
-		"groups": id.Groups,
+		authproviders.UseridAttribute: {id.UserID},
+		authproviders.NameAttribute:   {id.Username},
+		authproviders.GroupsAttribute: id.Groups,
 	}
 
 	return &authproviders.AuthResponse{

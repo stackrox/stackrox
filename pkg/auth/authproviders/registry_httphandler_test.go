@@ -421,6 +421,10 @@ type tstAuthProviderBackendFactory struct {
 	err         error
 }
 
+func (f *tstAuthProviderBackendFactory) GetSuggestedAttributes() []string {
+	panic("not implemented")
+}
+
 func (f *tstAuthProviderBackendFactory) registerProcessResponse(providerID string, clientState string, err error) {
 	f.providerID = providerID
 	f.clientState = clientState

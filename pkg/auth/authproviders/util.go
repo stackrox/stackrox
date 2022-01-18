@@ -8,6 +8,14 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 )
 
+// Some common user identity attribute keys.
+const (
+	GroupsAttribute = "groups"
+	EmailAttribute  = "email"
+	UseridAttribute = "userid"
+	NameAttribute   = "name"
+)
+
 // AllUIEndpoints returns all UI endpoints for a given auth provider, with the default UI endpoint first.
 func AllUIEndpoints(providerProto *storage.AuthProvider) []string {
 	if providerProto.GetUiEndpoint() == "" {
