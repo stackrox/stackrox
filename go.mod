@@ -127,9 +127,9 @@ require (
 	helm.sh/helm/v3 v3.7.1
 	k8s.io/api v0.23.1
 	k8s.io/apimachinery v0.23.1
-	k8s.io/apiserver v0.22.2
+	k8s.io/apiserver v0.23.1
 	k8s.io/client-go v0.23.1
-	k8s.io/kubectl v0.22.2
+	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.23.1
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
 	sigs.k8s.io/controller-runtime v0.10.2
