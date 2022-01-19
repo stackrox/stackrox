@@ -23,8 +23,9 @@ function PendingApprovalsSearchFilter({
     searchFilter,
     setSearchFilter,
 }: PendingApprovalsSearchFilterProps): ReactElement {
+    const requestID = (searchFilter['Request ID'] as string) || '';
     const [selectedAttribute, setSelectedAttribute] = useState<string>('');
-    const [inputValue, setInputValue] = useState<string>('');
+    const [inputValue, setInputValue] = useState<string>(requestID);
 
     function handleSelectedAttribute(_, value: string) {
         setSelectedAttribute(value);
