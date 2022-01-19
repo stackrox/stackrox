@@ -98,7 +98,7 @@ registry_regex() {
       echo "stackrox\.io/$component:$version"
       ;;
     registry.redhat.io)
-      echo "registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-$component:$version"
+      echo "registry\.redhat\.io/advanced-cluster-security/rhacs-$component-rhel8:$version"
       ;;
     example.com)
       echo "example\.com/$component:$version"
