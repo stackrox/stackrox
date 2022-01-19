@@ -40,13 +40,13 @@ require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
+	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
 	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fatih/color v1.12.0
-	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v1.2.0
+	github.com/go-logr/logr v1.2.2
 	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -54,7 +54,8 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.2
 	github.com/google/go-cmp v0.5.6
-	github.com/googleapis/gnostic v0.5.5
+	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/googleapis/gnostic v0.5.6
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
@@ -77,15 +78,15 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.16.0
+	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/gomega v1.17.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/operator-sdk v0.19.4
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.12.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.32.1
 	github.com/russellhaering/gosaml2 v0.6.0
@@ -107,13 +108,14 @@ require (
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
-	go.uber.org/zap v1.19.0
+	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	golang.org/x/net v0.0.0-20211209124913-491a49abca63
+	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210908233432-aa78b53d3365
-	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
 	golang.org/x/tools v0.1.6-0.20210820212750-d4cc65f0b2ff
 	golang.stackrox.io/grpc-http1 v0.2.4
 	google.golang.org/api v0.57.0
@@ -126,13 +128,18 @@ require (
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
 	k8s.io/api v0.23.1
+	k8s.io/apiextensions-apiserver v0.23.1 // indirect
 	k8s.io/apimachinery v0.23.1
 	k8s.io/apiserver v0.23.1
 	k8s.io/client-go v0.23.1
+	k8s.io/klog/v2 v2.40.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20220114203427-a0453230fd26 // indirect
 	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.23.1
-	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
-	sigs.k8s.io/controller-runtime v0.10.2
+	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
+	sigs.k8s.io/controller-runtime v0.11.0
+	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -142,6 +149,9 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
+
+	//https://github.com/google/gnostic/issues/262#issuecomment-973143614
+	github.com/googleapis/gnostic v0.5.6 => github.com/googleapis/gnostic v0.5.5
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5
 	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3
