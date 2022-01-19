@@ -175,5 +175,5 @@ has_not_default_flavor_warning() {
 }
 
 has_flag_collision_warning() {
-  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: flag '--rhacs' collides with '--image-defaults=(stackrox.io|development_build)'. Remove '--rhacs' flag"
+  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: flag '--rhacs' collides with '--image-defaults=(stackrox.io|development_build|rhacs)'. Remove '--rhacs' flag"
 }

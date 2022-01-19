@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -18,27 +19,23 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func handleRhacsFlag(rhacs bool, flavorName string, cliEnvironment environment.Environment) (*charts.MetaValues, error) {
+func handleRhacsWarnings(rhacs, imageFlavorProvided bool, cliEnvironment environment.Environment) {
 	if rhacs {
 		cliEnvironment.Logger().WarnfLn("'--rhacs' is deprecated in favor of '--image-defaults=rhacs'")
-		if flavorName == "" || flavorName == defaults.ImageFlavorNameRHACSRelease {
-			return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()), nil
-		}
-		return nil, fmt.Errorf("flag '--rhacs' collides with '--image-defaults=%s'. Remove '--rhacs' flag", flavorName)
-	}
-	if flavorName == "" {
+	} else if !imageFlavorProvided {
 		cliEnvironment.Logger().WarnfLn("images are taken from 'registry.redhat.io'. Use '--image-defaults=stackrox.io' to restore previous behavior")
 	}
-	return nil, nil
 }
 
-func getMetaValues(flavorName string, rhacs, release bool, cliEnvironment environment.Environment) (*charts.MetaValues, error) {
-	if returnMeta, err := handleRhacsFlag(rhacs, flavorName, cliEnvironment); err != nil {
-		return nil, errorhelpers.NewErrInvalidArgs(err.Error())
-	} else if returnMeta != nil {
-		return returnMeta, err
+func getMetaValues(flavorName string, imageFlavorProvided, rhacs, release bool, cliEnvironment environment.Environment) (*charts.MetaValues, error) {
+	handleRhacsWarnings(rhacs, imageFlavorProvided, cliEnvironment)
+	if rhacs {
+		if imageFlavorProvided {
+			return nil, errorhelpers.NewErrInvalidArgsf("flag '--rhacs' collides with '--image-defaults=%s'. Remove '--rhacs' flag", flavorName)
+		}
+		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()), nil
 	}
-	if flavorName == "" {
+	if !imageFlavorProvided {
 		flavorName = defaults.ImageFlavorNameRHACSRelease
 		if !buildinfo.ReleaseBuild {
 			flavorName = defaults.ImageFlavorNameDevelopmentBuild
@@ -51,16 +48,11 @@ func getMetaValues(flavorName string, rhacs, release bool, cliEnvironment enviro
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
 
-func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string, cliEnvironment environment.Environment) error {
+func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, metaVals *charts.MetaValues, debug bool, debugChartPath string) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
-	}
-
-	metaVals, err := getMetaValues(imageFlavor, rhacs, buildinfo.ReleaseBuild, cliEnvironment)
-	if err != nil {
-		return err
 	}
 
 	if outputDir == "" {
@@ -108,6 +100,31 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 	return nil
 }
 
+type flavorParams struct {
+	rhacs     bool
+	flavor    string
+	flavorSet bool
+}
+
+func getFlavorChoices(flags *pflag.FlagSet) (flavorParams, error) {
+	fp := flavorParams{}
+	if flags != nil {
+		rhacs, err := flags.GetBool("rhacs")
+		if err != nil {
+			return fp, nil
+		}
+		fp.rhacs = rhacs
+		flavor, err := flags.GetString("image-defaults")
+		if err != nil {
+			return fp, nil
+		}
+		fp.flavor = flavor
+		fp.flavorSet = flags.Changed("image-defaults")
+		return fp, nil
+	}
+	return fp, errors.New("unable to parse flags")
+}
+
 // Command for writing Helm Chart.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
@@ -124,7 +141,15 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				return errors.New("incorrect number of arguments, see --help for usage information")
 			}
 			chartName := args[0]
-			return outputHelmChart(chartName, outputDir, removeOutputDir, rhacs, imageFlavor, debug, debugChartPath, cliEnvironment)
+			fp, err := getFlavorChoices(cmd.Flags())
+			if err != nil {
+				return errors.Wrap(errorhelpers.ErrInvalidArgs, "cannot process command arguments")
+			}
+			metaVals, err := getMetaValues(fp.flavor, fp.flavorSet, fp.rhacs, buildinfo.ReleaseBuild, cliEnvironment)
+			if err != nil {
+				return err
+			}
+			return outputHelmChart(chartName, outputDir, removeOutputDir, metaVals, debug, debugChartPath)
 		},
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")

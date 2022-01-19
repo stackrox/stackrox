@@ -80,15 +80,14 @@ teardown() {
   run roxctl-development helm output central-services --rhacs --image-defaults=stackrox.io --output-dir "$out_dir"
   assert_failure
   has_deprecation_warning
+  has_flag_collision_warning
   has_not_default_flavor_warning
-  assert_line --partial "flag '--rhacs' collides with '--image-defaults=stackrox.io'. Remove '--rhacs' flag"
 }
 
-@test "roxctl-development helm output central-services --rhacs --image-defaults=rhacs should use redhat.io registry and display deprecation warning" {
+@test "roxctl-development helm output central-services --rhacs --image-defaults=rhacs should return error about --rhacs colliding with --image-defaults" {
   run roxctl-development helm output central-services --rhacs --image-defaults=rhacs --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart central-services to directory"
+  assert_failure
   has_deprecation_warning
+  has_flag_collision_warning
   has_not_default_flavor_warning
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
 }

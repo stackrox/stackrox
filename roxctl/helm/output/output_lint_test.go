@@ -42,19 +42,22 @@ func TestHelmLint(t *testing.T) {
 
 func (s *HelmChartTestSuite) TestHelmOutput() {
 	type testCase struct {
-		flavor  string
-		rhacs   bool
-		wantErr bool
+		flavor         string
+		flavorProvided bool
+		rhacs          bool
+		wantErr        bool
 	}
 	tests := []testCase{
-		{flavor: "", rhacs: true},                                                       // '--rhacs' but no '--image-defaults'
+		{flavor: "", flavorProvided: false, rhacs: true},                                // '--rhacs' but no '--image-defaults'
+		{flavor: "", flavorProvided: true, rhacs: true, wantErr: true},                  // error: collision of --rhacs and --image-defults
 		{flavor: "dummy", rhacs: true, wantErr: true},                                   // any flavor (even invalid) has priority over --rhacs
-		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true}, // error: collision of --rhacs and non-empty --image-defults
-		{flavor: "", rhacs: false},                                                      // no '--rhacs' and no '--image-defaults'
+		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true}, // error: collision of --rhacs and --image-defults
+		{flavor: "", flavorProvided: false, rhacs: false},                               // no '--rhacs' and no '--image-defaults'
+		{flavor: "", flavorProvided: true, rhacs: false, wantErr: true},                 // error: collision of --rhacs and --image-defults
 		{flavor: "dummy", rhacs: false, wantErr: true},
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
-		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: true},
+		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: true, wantErr: true},
 	}
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
@@ -75,10 +78,16 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 					_ = os.RemoveAll(outputDir)
 				})
 				require.NoError(s.T(), err)
-				err = outputHelmChart(chartName, outputDir, true, tt.rhacs, tt.flavor, false, "", env)
+				if tt.flavor != "" {
+					tt.flavorProvided = true
+				}
+				metaVals, metaValsErr := getMetaValues(tt.flavor, tt.flavorProvided, tt.rhacs, buildinfo.ReleaseBuild, env)
+				err = outputHelmChart(chartName, outputDir, true, metaVals, false, "")
 				if tt.wantErr {
+					assert.Error(s.T(), metaValsErr)
 					assert.Error(s.T(), err)
 				} else {
+					assert.NoError(s.T(), metaValsErr)
 					assert.NoError(s.T(), err)
 				}
 			})
@@ -117,7 +126,13 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 
 	testIO, _, _, _ := environment.TestIO()
 	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
-	err = outputHelmChart(chartName, outputDir, true, rhacs, imageFlavor, noDebug, noDebugChartPath, env)
+
+	if rhacs && imageFlavor != "" {
+		t.Skipf("invalid parameter combination for this test")
+	}
+	metaVals, metaValsErr := getMetaValues(imageFlavor, imageFlavor != "", rhacs, buildinfo.ReleaseBuild, env)
+	require.NoErrorf(t, metaValsErr, "failed to getMetaValues for chart %s", chartName)
+	err = outputHelmChart(chartName, outputDir, true, metaVals, noDebug, noDebugChartPath)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {

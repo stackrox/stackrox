@@ -50,12 +50,10 @@ teardown() {
   assert_line --regexp "ERROR:[[:space:]]+invalid arguments: '--image-defaults': unexpected value 'development_build', allowed values are \[stackrox.io rhacs\]"
 }
 
-@test "roxctl-release helm output central-services --image-defaults='' should behave as if --image-defaults would not be used" {
+@test "roxctl-release helm output central-services --image-defaults='' should fail with unexpected value of --image-defaults" {
   run roxctl-release helm output central-services --image-defaults='' --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart central-services to directory"
-  has_default_flavor_warning
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  assert_failure
+  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: '--image-defaults': unexpected value '', allowed values are \[stackrox.io rhacs\]"
 }
 
 @test "roxctl-release helm output central-services --rhacs --image-defaults=stackrox.io should return error about --rhacs colliding with --image-defaults" {
@@ -68,9 +66,8 @@ teardown() {
 
 @test "roxctl-release helm output central-services --rhacs --image-defaults=rhacs should use redhat.io registry and display deprecation warning" {
   run roxctl-release helm output central-services --rhacs --image-defaults=rhacs --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart central-services to directory"
+  assert_failure
   has_deprecation_warning
   has_not_default_flavor_warning
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  has_flag_collision_warning
 }

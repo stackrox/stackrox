@@ -15,7 +15,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Editing the cluster configuration in the UI is now disabled for Helm-based installations.
 - For `roxctl helm output` and `roxctl central generate`:
   - Added a new parameter `--image-defaults` that allows selecting the default registry from which container images will be taken for deploying central and scanner.
-  - Deprecated parameter `--rhacs` in favor of `--image-defaults`
+  - Deprecated parameter `--rhacs` in favor of `--image-defaults` (using both parameters results in an error)
 - Default behavior of `roxctl helm output` results now in using container images from `registry.redhat.io` instead of from `stackrox.io`
 
 ## [67.2]
