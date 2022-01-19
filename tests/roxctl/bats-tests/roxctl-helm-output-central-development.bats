@@ -29,7 +29,7 @@ teardown() {
 @test "roxctl-development helm output help-text should state default value for --image-defaults flag" {
   run roxctl-development helm output central-services -h
   assert_success
-  assert_line --partial "default container registry for container images (default: \"development_build\")"
+  assert_line --partial "default container registry for container images (default \"development_build\")"
 }
 
 @test "roxctl-development helm output central-services should use docker.io registry" {

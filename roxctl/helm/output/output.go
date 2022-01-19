@@ -165,8 +165,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	if !buildinfo.ReleaseBuild {
 		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
 	}
-	// Leave the third param as "", because it allows us to detect whether the user has used this flag or left it empty
-	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", "", fmt.Sprintf("default container registry for container images (default: \"%s\")", imageFlavorDefault))
+	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", imageFlavorDefault, "default container registry for container images")
 
 	return c
 }
