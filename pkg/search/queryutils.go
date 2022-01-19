@@ -87,10 +87,10 @@ func AddAsConjunction(toAdd *v1.Query, addTo *v1.Query) (*v1.Query, error) {
 	case *v1.Query_Conjunction:
 		typedQ.Conjunction.Queries = append(typedQ.Conjunction.Queries, toAdd)
 		return addTo, nil
-	case *v1.Query_BaseQuery:
+	case *v1.Query_BaseQuery, *v1.Query_Disjunction:
 		return ConjunctionQuery(toAdd, addTo), nil
 	default:
-		return nil, errors.New("cannot add to a non-nil, non-conjunction, non-base query")
+		return nil, errors.New("cannot add to a non-nil, non-conjunction/disjunction, non-base query")
 	}
 }
 
