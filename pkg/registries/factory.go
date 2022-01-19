@@ -28,27 +28,35 @@ type Factory interface {
 
 type creatorWrapper func() (string, func(integration *storage.ImageIntegration) (types.Registry, error))
 
+var allCreatorFuncs = []creatorWrapper{
+	artifactRegistryFactory.Creator,
+	artifactoryFactory.Creator,
+	dockerFactory.Creator,
+	dtrFactory.Creator,
+	ecrFactory.Creator,
+	googleFactory.Creator,
+	quayFactory.Creator,
+	tenableFactory.Creator,
+	nexusFactory.Creator,
+	azureFactory.Creator,
+	rhelFactory.Creator,
+	ibmFactory.Creator,
+}
+
 // NewFactory creates a new scanner factory.
-func NewFactory() Factory {
+func NewFactory(opts ...FactoryOption) Factory {
+	var o factoryOption
+	for _, opt := range opts {
+		opt.apply(&o)
+	}
+
 	reg := &factoryImpl{
 		creators: make(map[string]Creator),
 	}
 
-	// Add registries to factory.
-	//////////////////////////////
-	creatorFuncs := []creatorWrapper{
-		artifactRegistryFactory.Creator,
-		artifactoryFactory.Creator,
-		dockerFactory.Creator,
-		dtrFactory.Creator,
-		ecrFactory.Creator,
-		googleFactory.Creator,
-		quayFactory.Creator,
-		tenableFactory.Creator,
-		nexusFactory.Creator,
-		azureFactory.Creator,
-		rhelFactory.Creator,
-		ibmFactory.Creator,
+	creatorFuncs := allCreatorFuncs
+	if len(o.creatorFuncs) > 0 {
+		creatorFuncs = o.creatorFuncs
 	}
 
 	for _, creatorFunc := range creatorFuncs {
