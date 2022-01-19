@@ -144,15 +144,21 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			expectedCollectorFullRef: defaultCollectorFullImage,
 			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
+		"custom registry with default main image name / no collector": {
+			cluster:                  makeTestCluster("quay.io/rhacs/"+flavor.MainImageName, ""),
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.MainImageName, flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
 		"custom main image (with namespace) / no collector": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", ""),
-			expectedMain:             fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.MainImageName, flavor.MainImageTag),
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
 			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"custom main image (without namespace) / no collector": {
 			cluster:                  makeTestCluster("example.io/main", ""),
-			expectedMain:             fmt.Sprintf("example.io/%s:%s", flavor.MainImageName, flavor.MainImageTag),
+			expectedMain:             fmt.Sprintf("example.io/main:%s", flavor.MainImageTag),
 			expectedCollectorFullRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 			expectedCollectorSlimRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
@@ -227,6 +233,7 @@ func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 	flavorCases := map[string]defaults.ImageFlavor{
 		"development": defaults.DevelopmentBuildImageFlavor(),
 		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
+		"rhacs":       defaults.RHACSReleaseImageFlavor(),
 	}
 
 	for name, flavor := range flavorCases {
