@@ -12,10 +12,15 @@ import {
     TextContent,
     Title,
 } from '@patternfly/react-core';
+import { Switch, Route, useHistory, useLocation, Redirect } from 'react-router-dom';
 
-import useTabs from 'hooks/patternfly/useTabs';
-
-import { vulnManagementPath } from 'routePaths';
+import {
+    dashboardPath,
+    vulnManagementApprovedDeferralsPath,
+    vulnManagementApprovedFalsePositivesPath,
+    vulnManagementPath,
+    vulnManagementPendingApprovalsPath,
+} from 'routePaths';
 import usePermissions from 'hooks/usePermissions';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PendingApprovals from './PendingApprovals';
@@ -34,9 +39,51 @@ const TAB_LABELS = {
     APPROVED_FALSE_POSITIVES: 'Approved False Positives',
 };
 
+function getActiveKeyTab(pathname: string) {
+    if (pathname === vulnManagementPendingApprovalsPath) {
+        return TABS.PENDING_APPROVALS;
+    }
+    if (pathname === vulnManagementApprovedDeferralsPath) {
+        return TABS.APPROVED_DEFERRALS;
+    }
+    if (pathname === vulnManagementApprovedFalsePositivesPath) {
+        return TABS.APPROVED_FALSE_POSITIVES;
+    }
+    return null;
+}
+
+function TabContentList({ activeKeyTab }): ReactElement {
+    return (
+        <>
+            <TabContent
+                eventKey={TABS.PENDING_APPROVALS}
+                id={TABS.PENDING_APPROVALS}
+                hidden={activeKeyTab !== TABS.PENDING_APPROVALS}
+            >
+                <PendingApprovals />
+            </TabContent>
+            <TabContent
+                eventKey={TABS.APPROVED_DEFERRALS}
+                id={TABS.APPROVED_DEFERRALS}
+                hidden={activeKeyTab !== TABS.APPROVED_DEFERRALS}
+            >
+                <ApprovedDeferrals />
+            </TabContent>
+            <TabContent
+                eventKey={TABS.APPROVED_FALSE_POSITIVES}
+                id={TABS.APPROVED_FALSE_POSITIVES}
+                hidden={activeKeyTab !== TABS.APPROVED_FALSE_POSITIVES}
+            >
+                <ApprovedFalsePositives />
+            </TabContent>
+        </>
+    );
+}
+
 function RiskAcceptancePage(): ReactElement {
-    const { activeKeyTab, onSelectTab } = useTabs({ defaultTab: TABS.PENDING_APPROVALS });
     const { hasReadAccess } = usePermissions();
+    const history = useHistory();
+    const location = useLocation();
 
     if (
         !hasReadAccess('VulnerabilityManagementRequests') ||
@@ -50,6 +97,24 @@ function RiskAcceptancePage(): ReactElement {
                 url={vulnManagementPath}
             />
         );
+    }
+
+    const activeKeyTab = getActiveKeyTab(location.pathname);
+
+    if (!activeKeyTab) {
+        return <Redirect to={vulnManagementPendingApprovalsPath} />;
+    }
+
+    function onSelectTab(_, eventKey) {
+        if (eventKey === TABS.PENDING_APPROVALS) {
+            history.push(vulnManagementPendingApprovalsPath);
+        } else if (eventKey === TABS.APPROVED_DEFERRALS) {
+            history.push(vulnManagementApprovedDeferralsPath);
+        } else if (eventKey === TABS.APPROVED_FALSE_POSITIVES) {
+            history.push(vulnManagementApprovedFalsePositivesPath);
+        } else {
+            history.push(dashboardPath);
+        }
     }
 
     return (
@@ -91,27 +156,23 @@ function RiskAcceptancePage(): ReactElement {
                     />
                 </Tabs>
             </div>
-            <TabContent
-                eventKey={TABS.PENDING_APPROVALS}
-                id={TABS.PENDING_APPROVALS}
-                hidden={activeKeyTab !== TABS.PENDING_APPROVALS}
-            >
-                <PendingApprovals />
-            </TabContent>
-            <TabContent
-                eventKey={TABS.APPROVED_DEFERRALS}
-                id={TABS.APPROVED_DEFERRALS}
-                hidden={activeKeyTab !== TABS.APPROVED_DEFERRALS}
-            >
-                <ApprovedDeferrals />
-            </TabContent>
-            <TabContent
-                eventKey={TABS.APPROVED_FALSE_POSITIVES}
-                id={TABS.APPROVED_FALSE_POSITIVES}
-                hidden={activeKeyTab !== TABS.APPROVED_FALSE_POSITIVES}
-            >
-                <ApprovedFalsePositives />
-            </TabContent>
+            <Switch>
+                <Route
+                    exact
+                    path={vulnManagementPendingApprovalsPath}
+                    render={() => <TabContentList activeKeyTab={activeKeyTab} />}
+                />
+                <Route
+                    exact
+                    path={vulnManagementApprovedDeferralsPath}
+                    render={() => <TabContentList activeKeyTab={activeKeyTab} />}
+                />
+                <Route
+                    exact
+                    path={vulnManagementApprovedFalsePositivesPath}
+                    render={() => <TabContentList activeKeyTab={activeKeyTab} />}
+                />
+            </Switch>
         </>
     );
 }
