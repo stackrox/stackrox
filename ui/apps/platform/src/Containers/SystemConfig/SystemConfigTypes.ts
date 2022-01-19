@@ -15,6 +15,7 @@ export type PrivateConfig = {
         resolvedDeployRetentionDurationDays: number;
     };
     imageRetentionDurationDays: number;
+    expiredVulnReqRetentionDurationDays: number;
 };
 
 export type PublicConfig = {
