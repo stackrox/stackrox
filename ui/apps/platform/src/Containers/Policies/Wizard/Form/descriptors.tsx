@@ -993,6 +993,28 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         canBooleanLogic: false,
     },
+    {
+        label: 'Replicas',
+        name: 'Replicas',
+        longName: 'Replicas',
+        category: policyCriteriaCategories.DEPLOYMENT_METADATA,
+        type: 'group',
+        subComponents: [
+            {
+                type: 'select',
+                options: equalityOptions,
+                subpath: 'key',
+            },
+            {
+                type: 'number',
+                placeholder: '# of replicas',
+                min: 0,
+                step: 1,
+                subpath: 'value',
+            },
+        ],
+        canBooleanLogic: true,
+    },
 ];
 
 export const auditLogDescriptor: Descriptor[] = [

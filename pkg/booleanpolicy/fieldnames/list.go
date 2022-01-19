@@ -47,6 +47,7 @@ var (
 	ProcessName                   = newFieldName("Process Name")
 	ProcessUID                    = newFieldName("Process UID")
 	ReadOnlyRootFS                = newFieldName("Read-Only Root Filesystem")
+	Replicas                      = newFieldName("Replicas")
 	RequiredAnnotation            = newFieldName("Required Annotation")
 	RequiredImageLabel            = newFieldName("Required Image Label")
 	RequiredLabel                 = newFieldName("Required Label")

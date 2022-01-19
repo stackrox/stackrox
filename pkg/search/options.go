@@ -130,6 +130,7 @@ var (
 	Privileged                    = newFieldLabel("Privileged")
 	ProcessTag                    = newFieldLabel("Process Tag")
 	ReadOnlyRootFilesystem        = newFieldLabel("Read Only Root Filesystem")
+	Replicas                      = newFieldLabel("Replicas")
 	SecretID                      = newFieldLabel("Secret ID")
 	SecretName                    = newFieldLabel("Secret")
 	SecretPath                    = newFieldLabel("Secret Path")

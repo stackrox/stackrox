@@ -31,6 +31,7 @@ const (
 	ProcessBaselineKey              = "processBaseline"
 	RbacKey                         = "rbac"
 	ReadOnlyRootFSKey               = "readOnlyRootFS"
+	ReplicasKey                     = "replicas"
 	RequiredAnnotationKey           = "requiredAnnotation"
 	RequiredImageLabelKey           = "requiredImageLabel"
 	RequiredLabelKey                = "requiredLabel"
@@ -70,6 +71,7 @@ func init() {
 	registerFunc(ProcessBaselineKey, processBaselinePrinter)
 	registerFunc(RbacKey, rbacPrinter)
 	registerFunc(ReadOnlyRootFSKey, readOnlyRootFSPrinter)
+	registerFunc(ReplicasKey, replicasPrinter)
 	registerFunc(RequiredAnnotationKey, requiredAnnotationPrinter)
 	registerFunc(RequiredImageLabelKey, requiredImageLabelPrinter)
 	registerFunc(RequiredLabelKey, requiredLabelPrinter)
