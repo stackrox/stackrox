@@ -19,12 +19,14 @@ func AddToIndex() UpserterOption {
 	}
 }
 
-// AddToIndexIfFeatureEnabled indexes the object after insert if provided feature flag is enabled. It operates lazily, so things may not be in the index right away.
-func AddToIndexIfFeatureEnabled(featureFlag features.FeatureFlag) UpserterOption {
-	if !featureFlag.Enabled() {
-		return func(rc *upserterImpl) {}
+// AddToIndexIfAnyFeaturesEnabled indexes the object after insert if provided feature flag is enabled. It operates lazily, so things may not be in the index right away.
+func AddToIndexIfAnyFeaturesEnabled(featureFlags []features.FeatureFlag) UpserterOption {
+	for _, f := range featureFlags {
+		if f.Enabled() {
+			return func(rc *upserterImpl) {
+				rc.addToIndex = true
+			}
+		}
 	}
-	return func(rc *upserterImpl) {
-		rc.addToIndex = true
-	}
+	return func(rc *upserterImpl) {}
 }

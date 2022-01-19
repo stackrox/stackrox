@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -40,11 +39,7 @@ func (m *managerImpl) Upsert(ctx context.Context, reportConfig *storage.ReportCo
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	cronTab, err := schedule.ConvertToCronTab(reportConfig.GetSchedule())
-	if err != nil {
-		return err
-	}
-	if err := m.scheduler.UpsertReportSchedule(cronTab, reportConfig); err != nil {
+	if err := m.scheduler.UpsertReportSchedule(reportConfig); err != nil {
 		return err
 	}
 	return nil

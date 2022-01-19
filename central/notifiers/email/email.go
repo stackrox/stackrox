@@ -192,12 +192,10 @@ func (m message) Bytes() []byte {
 	writer := multipart.NewWriter(buf)
 	boundary := writer.Boundary()
 
-	if len(m.Attachments) > 0 {
+	if m.EmbedLogo {
 		buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", boundary))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
-	}
 
-	if m.EmbedLogo {
 		buf.WriteString("Content-Type: image/png; name=logo.png\r\n")
 		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
 		buf.WriteString("Content-Disposition: inline; filename=logo.png\r\n")

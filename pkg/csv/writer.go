@@ -41,6 +41,11 @@ func (c *GenericWriter) AddValue(value Value) {
 	c.values = append(c.values, value)
 }
 
+// IsEmpty returns true if there are no values.
+func (c *GenericWriter) IsEmpty() bool {
+	return len(c.values) == 0
+}
+
 // WriteBytes writes out csv header and values to the provided buffer
 func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) error {
 	cw := csv.NewWriter(buf)

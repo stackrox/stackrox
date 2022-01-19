@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -56,32 +57,31 @@ func (q *queryBuilder) BuildQuery() (*ReportQuery, error) {
 
 func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 	vulnReportFilters := q.vulnFilters
-	var conjuncts []*v1.Query
+	var conjuncts []string
 
 	switch vulnReportFilters.GetFixability() {
 	case storage.VulnerabilityReportFilters_BOTH:
 		break
 	case storage.VulnerabilityReportFilters_FIXABLE:
-		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStrings(search.Fixable, "true").ProtoQuery())
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStrings(search.Fixable, "true").Query())
 	case storage.VulnerabilityReportFilters_NOT_FIXABLE:
-		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStrings(search.Fixable, "false").ProtoQuery())
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStrings(search.Fixable, "false").Query())
 	}
 
-	sevQueries := make([]*v1.Query, len(vulnReportFilters.GetSeverities()))
+	severities := make([]string, 0, len(vulnReportFilters.GetSeverities()))
 	for _, severity := range vulnReportFilters.GetSeverities() {
-		sevQueries = append(sevQueries, search.NewQueryBuilder().AddStrings(search.Severity, severity.String()).ProtoQuery())
+		severities = append(severities, severity.String())
 	}
-	if len(sevQueries) > 0 {
-		conjuncts = append(conjuncts, search.DisjunctionQuery(sevQueries...))
+	if len(severities) > 0 {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStrings(search.Severity, severities...).Query())
 	}
 
 	if vulnReportFilters.SinceLastReport {
-		reportLastSuccessfulRunTs := fmt.Sprintf("<%s", q.lastSuccessfulRunTime)
-		conjuncts = append(conjuncts, search.NewQueryBuilder().
-			AddGenericTypeLinkedFields([]search.FieldLabel{search.FirstImageOccurrenceTimestamp},
-				[]interface{}{reportLastSuccessfulRunTs}).ProtoQuery())
+		reportLastSuccessfulRunTs := fmt.Sprintf(">=%s", q.lastSuccessfulRunTime.Format("01/02/2006 3:04:05 PM MST"))
+		tsQ := search.NewQueryBuilder().AddStrings(search.FirstImageOccurrenceTimestamp, reportLastSuccessfulRunTs).Query()
+		conjuncts = append(conjuncts, tsQ)
 	}
-	return search.ConjunctionQuery(conjuncts...).String(), nil
+	return strings.Join(conjuncts, "+"), nil
 }
 
 func (q *queryBuilder) buildScopeQueries() ([]string, error) {
