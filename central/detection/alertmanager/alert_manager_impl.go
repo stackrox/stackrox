@@ -80,7 +80,7 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 // notifyUpdatedRuntimeAlerts sends alerts for all updated runtime events that occur
 func (d *alertManagerImpl) notifyUpdatedRuntimeAlerts(ctx context.Context, updatedAlerts []*storage.Alert) {
 	// this env var is for customer configurability to allow time to adapt to the new expected behavior
-	//  planned to be removed in a future release
+	//  planned to be removed in a future release (See ROX-8989)
 	if !env.NotifyOnEveryRuntimeEvent() {
 		return
 	}
