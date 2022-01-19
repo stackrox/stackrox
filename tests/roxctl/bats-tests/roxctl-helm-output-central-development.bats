@@ -51,7 +51,7 @@ teardown() {
 @test "roxctl-development helm output central-services --image-defaults=dummy should fail" {
   run roxctl-development helm output central-services --image-defaults=dummy --output-dir "$out_dir"
   assert_failure
-  assert_output --partial "invalid value of '--image-defaults"
+  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: '--image-defaults': unexpected value 'dummy', allowed values are \[development_build stackrox.io rhacs\]"
 }
 
 @test "roxctl-development helm output central-services --image-defaults=stackrox.io should use stackrox.io registry" {
@@ -73,7 +73,7 @@ teardown() {
   assert_failure
   has_deprecation_warning
   has_not_default_flavor_warning
-  assert_line --partial "flag '--rhacs' collides with '--image-defaults=development_build'. Remove '--rhacs' flag"
+  has_flag_collision_warning
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=stackrox.io should return error about --rhacs colliding with --image-defaults" {

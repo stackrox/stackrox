@@ -47,7 +47,7 @@ teardown() {
 @test "roxctl-release helm output central-services --image-defaults=development_build should fail" {
   run roxctl-release helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_failure
-  assert_output --partial "invalid value of '--image-defaults=development_build': unexpected value 'development_build', allowed values are"
+  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: '--image-defaults': unexpected value 'development_build', allowed values are \[stackrox.io rhacs\]"
 }
 
 @test "roxctl-release helm output central-services --image-defaults='' should behave as if --image-defaults would not be used" {
@@ -63,7 +63,7 @@ teardown() {
   assert_failure
   has_deprecation_warning
   has_not_default_flavor_warning
-  assert_line --partial "flag '--rhacs' collides with '--image-defaults=stackrox.io'. Remove '--rhacs' flag"
+  has_flag_collision_warning
 }
 
 @test "roxctl-release helm output central-services --rhacs --image-defaults=rhacs should use redhat.io registry and display deprecation warning" {

@@ -18,35 +18,35 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func handleRhacsFlag(flavorName string) error {
-	if flavorName == "" || flavorName == defaults.ImageFlavorNameRHACSRelease {
-		return nil
-	}
-	return fmt.Errorf("flag '--rhacs' collides with '--image-defaults=%s'. Remove '--rhacs' flag", flavorName)
-}
-
-func getMetaValues(inputFlavorName string, rhacs, release bool, cliEnvironment environment.Environment) (*charts.MetaValues, error) {
-	if !rhacs && inputFlavorName == "" {
-		cliEnvironment.Logger().WarnfLn("images are taken from 'registry.redhat.io'. Use '--image-defaults=stackrox.io' to restore previous behavior")
-	}
+func handleRhacsFlag(rhacs bool, flavorName string, cliEnvironment environment.Environment) (*charts.MetaValues, error) {
 	if rhacs {
 		cliEnvironment.Logger().WarnfLn("'--rhacs' is deprecated in favor of '--image-defaults=rhacs'")
-		if err := handleRhacsFlag(inputFlavorName); err != nil {
-			return nil, errorhelpers.NewErrInvalidArgsf("'--image-defaults': %v", err)
+		if flavorName == "" || flavorName == defaults.ImageFlavorNameRHACSRelease {
+			return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()), nil
 		}
-		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()), nil
+		return nil, fmt.Errorf("flag '--rhacs' collides with '--image-defaults=%s'. Remove '--rhacs' flag", flavorName)
 	}
+	if flavorName == "" {
+		cliEnvironment.Logger().WarnfLn("images are taken from 'registry.redhat.io'. Use '--image-defaults=stackrox.io' to restore previous behavior")
+	}
+	return nil, nil
+}
 
-	flavorName := defaults.ImageFlavorNameRHACSRelease
-	if !buildinfo.ReleaseBuild {
-		flavorName = defaults.ImageFlavorNameDevelopmentBuild
+func getMetaValues(flavorName string, rhacs, release bool, cliEnvironment environment.Environment) (*charts.MetaValues, error) {
+	if returnMeta, err := handleRhacsFlag(rhacs, flavorName, cliEnvironment); err != nil {
+		return nil, errorhelpers.NewErrInvalidArgs(err.Error())
+	} else if returnMeta != nil {
+		return returnMeta, err
 	}
-	if inputFlavorName != "" {
-		flavorName = inputFlavorName
+	if flavorName == "" {
+		flavorName = defaults.ImageFlavorNameRHACSRelease
+		if !buildinfo.ReleaseBuild {
+			flavorName = defaults.ImageFlavorNameDevelopmentBuild
+		}
 	}
 	imageFlavor, err := defaults.GetImageFlavorByName(flavorName, release)
 	if err != nil {
-		return nil, errors.Wrapf(err, "invalid value of '--image-defaults=%s'", flavorName)
+		return nil, errorhelpers.NewErrInvalidArgsf("'--image-defaults': %v", err)
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }

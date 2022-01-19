@@ -169,6 +169,11 @@ flavor_warning_regexp="WARN:[[:space:]]+images are taken from 'registry.redhat.i
 has_default_flavor_warning() {
   assert_line --regexp "$flavor_warning_regexp"
 }
+
 has_not_default_flavor_warning() {
   refute_line --regexp "$flavor_warning_regexp"
+}
+
+has_flag_collision_warning() {
+  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: flag '--rhacs' collides with '--image-defaults=(stackrox.io|development_build)'. Remove '--rhacs' flag"
 }
