@@ -28,6 +28,7 @@ import { getHasReadWritePermission } from 'reducers/roles';
 import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import ReportsSearchFilter from './Components/ReportsSearchFilter';
 
 export type ActionItem = {
     title: string | ReactElement;
@@ -210,6 +211,9 @@ function ReportingTablePanel({
                 alignSelf={{ default: 'alignSelfCenter' }}
                 fullWidth={{ default: 'fullWidth' }}
             >
+                <FlexItem data-testid="reports-bulk-actions-dropdown">
+                    <ReportsSearchFilter searchFilter={{}} setSearchFilter={() => {}} />
+                </FlexItem>
                 <FlexItem data-testid="reports-bulk-actions-dropdown">
                     <BulkActionsDropdown isDisabled={!hasSelections}>
                         <DropdownItem key="delete" component="button" onClick={onDeleteSelected}>
