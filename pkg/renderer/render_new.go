@@ -90,9 +90,9 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 	}
 
 	metaVals := charts.GetMetaValuesForFlavor(imageFlavor)
-	metaVals["RenderMode"] = mode.String()
+	metaVals.RenderMode = mode.String()
 	// Modify metaVals depending on deployment format:
-	metaVals["KubectlOutput"] = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL
+	metaVals.KubectlOutput = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL
 
 	chartFiles, err := chTpl.InstantiateRaw(metaVals)
 	if err != nil {

@@ -114,14 +114,14 @@ func (i *Image) getChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.Cha
 	return chartTpl, nil
 }
 
-func (i *Image) mustGetSensorChart(values charts.MetaValues, certs *sensor.Certs) *chart.Chart {
+func (i *Image) mustGetSensorChart(values *charts.MetaValues, certs *sensor.Certs) *chart.Chart {
 	ch, err := i.getSensorChart(values, certs)
 	utils.CrashOnError(err)
 	return ch
 }
 
 // GetSensorChart returns the Helm chart for sensor
-func (i *Image) GetSensorChart(values charts.MetaValues, certs *sensor.Certs) *chart.Chart {
+func (i *Image) GetSensorChart(values *charts.MetaValues, certs *sensor.Certs) *chart.Chart {
 	return i.mustGetSensorChart(values, certs)
 }
 
@@ -153,7 +153,7 @@ var (
 
 // LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from an embed.FS, and instantiates
 // it, using default chart values.
-func (i *Image) LoadAndInstantiateChartTemplate(chartPrefixPath ChartPrefix, metaVals charts.MetaValues) ([]*loader.BufferedFile, error) {
+func (i *Image) LoadAndInstantiateChartTemplate(chartPrefixPath ChartPrefix, metaVals *charts.MetaValues) ([]*loader.BufferedFile, error) {
 	chartTplFiles, err := i.getChartFiles(chartPrefixPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystems", chartPrefixPath)
@@ -234,7 +234,7 @@ func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
 }
 
 // LoadChart loads the given Helm chart template and renders it as a Helm chart
-func (i *Image) LoadChart(chartPrefix ChartPrefix, metaValues charts.MetaValues) (*chart.Chart, error) {
+func (i *Image) LoadChart(chartPrefix ChartPrefix, metaValues *charts.MetaValues) (*chart.Chart, error) {
 	renderedChartFiles, err := i.LoadAndInstantiateChartTemplate(chartPrefix, metaValues)
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading and instantiating embedded chart %q failed", chartPrefix)
@@ -257,7 +257,7 @@ func (i *Image) GetSensorChartTemplate() (*helmTemplate.ChartTemplate, error) {
 	return helmTemplate.Load(chartTplFiles)
 }
 
-func (i *Image) getSensorChart(values charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {
+func (i *Image) getSensorChart(values *charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {
 	chartTpl, err := i.GetSensorChartTemplate()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading sensor chart template")
@@ -275,7 +275,7 @@ func (i *Image) getSensorChart(values charts.MetaValues, certs *sensor.Certs) (*
 		})
 	}
 
-	if certOnly, _ := values["CertsOnly"].(bool); !certOnly {
+	if !values.CertsOnly {
 		scriptFiles, err := i.addScripts(values)
 		if err != nil {
 			return nil, err
@@ -287,20 +287,19 @@ func (i *Image) getSensorChart(values charts.MetaValues, certs *sensor.Certs) (*
 	return loader.LoadFiles(renderedFiles)
 }
 
-func (i *Image) addScripts(values charts.MetaValues) ([]*loader.BufferedFile, error) {
-	if values["ClusterType"] == storage.ClusterType_KUBERNETES_CLUSTER.String() {
+func (i *Image) addScripts(values *charts.MetaValues) ([]*loader.BufferedFile, error) {
+	if values.ClusterType == storage.ClusterType_KUBERNETES_CLUSTER.String() {
 		return i.scripts(values, k8sScriptsFileMap)
-	} else if values["ClusterType"] == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values["ClusterType"] == storage.ClusterType_OPENSHIFT4_CLUSTER.String() {
+	} else if values.ClusterType == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values.ClusterType == storage.ClusterType_OPENSHIFT4_CLUSTER.String() {
 		return i.scripts(values, osScriptsFileMap)
 	} else {
 		return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",
-			values["ClusterName"])
+			values.ClusterName)
 	}
 }
 
-func (i *Image) scripts(values charts.MetaValues, filenameMap map[string]string) ([]*loader.BufferedFile, error) {
+func (i *Image) scripts(values *charts.MetaValues, filenameMap map[string]string) ([]*loader.BufferedFile, error) {
 	var chartFiles []*loader.BufferedFile
-	valuesRaw := values.ToRaw()
 	for srcFile, dstFile := range filenameMap {
 		fileData, err := AssetFS.ReadFile(srcFile)
 		if err != nil {
@@ -310,7 +309,7 @@ func (i *Image) scripts(values charts.MetaValues, filenameMap map[string]string)
 		if err != nil {
 			return nil, err
 		}
-		data, err := templates.ExecuteToBytes(t, valuesRaw)
+		data, err := templates.ExecuteToBytes(t, values)
 		if err != nil {
 			return nil, err
 		}
