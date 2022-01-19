@@ -106,6 +106,7 @@ func (m *SignatureIntegration) Clone() *SignatureIntegration {
 }
 
 type SignatureVerificationConfig struct {
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to Config:
 	//	*SignatureVerificationConfig_PublicKey
 	Config               isSignatureVerificationConfig_Config `protobuf_oneof:"config"`
@@ -155,7 +156,7 @@ type isSignatureVerificationConfig_Config interface {
 }
 
 type SignatureVerificationConfig_PublicKey struct {
-	PublicKey *CosignPublicKeyVerification `protobuf:"bytes,1,opt,name=public_key,json=publicKey,proto3,oneof" json:"public_key,omitempty"`
+	PublicKey *CosignPublicKeyVerification `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3,oneof" json:"public_key,omitempty"`
 }
 
 func (*SignatureVerificationConfig_PublicKey) isSignatureVerificationConfig_Config() {}
@@ -175,6 +176,13 @@ func (m *SignatureVerificationConfig) GetConfig() isSignatureVerificationConfig_
 		return m.Config
 	}
 	return nil
+}
+
+func (m *SignatureVerificationConfig) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
 }
 
 func (m *SignatureVerificationConfig) GetPublicKey() *CosignPublicKeyVerification {
@@ -208,7 +216,6 @@ func (m *SignatureVerificationConfig) Clone() *SignatureVerificationConfig {
 }
 
 type CosignPublicKeyVerification struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	PublicKeysBase64Enc  []string `protobuf:"bytes,2,rep,name=public_keys_base64_enc,json=publicKeysBase64Enc,proto3" json:"public_keys_base64_enc,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -247,13 +254,6 @@ func (m *CosignPublicKeyVerification) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_CosignPublicKeyVerification proto.InternalMessageInfo
-
-func (m *CosignPublicKeyVerification) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
 
 func (m *CosignPublicKeyVerification) GetPublicKeysBase64Enc() []string {
 	if m != nil {
@@ -300,16 +300,16 @@ var fileDescriptor_b3165e7a4c19e14a = []byte{
 	0x89, 0xb9, 0xa9, 0x12, 0x4c, 0x60, 0x11, 0x30, 0x5b, 0x28, 0x8b, 0x4b, 0x0e, 0x61, 0x75, 0x59,
 	0x6a, 0x51, 0x66, 0x5a, 0x66, 0x32, 0x58, 0x77, 0x7c, 0x72, 0x7e, 0x5e, 0x5a, 0x66, 0x7a, 0xb1,
 	0x04, 0xb3, 0x02, 0xb3, 0x06, 0xb7, 0x91, 0x8a, 0x1e, 0xd4, 0x11, 0x7a, 0x70, 0xab, 0xc2, 0x90,
-	0x54, 0x3b, 0x83, 0x15, 0x07, 0xc9, 0x14, 0xe3, 0x96, 0x2c, 0x56, 0xca, 0xe3, 0x92, 0xc6, 0xa3,
-	0x59, 0xc8, 0x95, 0x8b, 0xab, 0xa0, 0x34, 0x29, 0x27, 0x33, 0x39, 0x3e, 0x3b, 0xb5, 0x12, 0xec,
-	0x6c, 0x64, 0x6b, 0x9d, 0xf3, 0x41, 0x66, 0x07, 0x80, 0x15, 0x78, 0xa7, 0x56, 0x22, 0xeb, 0xf7,
-	0x60, 0x08, 0xe2, 0x2c, 0x80, 0x49, 0x38, 0x71, 0x70, 0xb1, 0x41, 0x9c, 0xae, 0x94, 0xc4, 0x25,
-	0x8d, 0x47, 0x17, 0x46, 0xf0, 0x18, 0x73, 0x89, 0x21, 0xec, 0x2f, 0x8e, 0x4f, 0x4a, 0x2c, 0x4e,
-	0x35, 0x33, 0x89, 0x4f, 0xcd, 0x4b, 0x96, 0x60, 0x52, 0x60, 0xd6, 0xe0, 0x0c, 0x12, 0x86, 0xdb,
-	0x51, 0xec, 0x04, 0x96, 0x73, 0xcd, 0x4b, 0x76, 0x32, 0x39, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23,
-	0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x67, 0x3c, 0x96, 0x63, 0xe0, 0x92, 0xcc, 0xcc, 0xd7, 0x2b,
-	0x2e, 0x49, 0x4c, 0xce, 0x2e, 0xca, 0xaf, 0x80, 0xc4, 0x10, 0xcc, 0x0f, 0x51, 0xb0, 0x88, 0x4c,
-	0x62, 0x03, 0x8b, 0x1b, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x47, 0xce, 0xa5, 0x3e, 0xff, 0x01,
+	0x54, 0x3b, 0x83, 0x15, 0x07, 0xc9, 0x14, 0xe3, 0x96, 0x2c, 0x56, 0xaa, 0xe3, 0x92, 0xc6, 0xa3,
+	0x19, 0xc3, 0xb9, 0xae, 0x5c, 0x5c, 0x05, 0xa5, 0x49, 0x39, 0x99, 0xc9, 0xf1, 0xd9, 0xa9, 0x95,
+	0x60, 0x47, 0x23, 0x3b, 0xc3, 0x39, 0x1f, 0x64, 0x57, 0x00, 0x58, 0x81, 0x77, 0x6a, 0x25, 0xb2,
+	0x79, 0x1e, 0x0c, 0x41, 0x9c, 0x05, 0x30, 0x09, 0x27, 0x0e, 0x2e, 0x36, 0x88, 0x57, 0x94, 0x82,
+	0xb8, 0xa4, 0xf1, 0xe8, 0x12, 0x32, 0xe6, 0x12, 0x43, 0xd8, 0x57, 0x1c, 0x9f, 0x94, 0x58, 0x9c,
+	0x6a, 0x66, 0x12, 0x9f, 0x9a, 0x97, 0x2c, 0xc1, 0xa4, 0xc0, 0xac, 0xc1, 0x19, 0x24, 0x0c, 0x37,
+	0xb3, 0xd8, 0x09, 0x2c, 0xe7, 0x9a, 0x97, 0xec, 0x64, 0x72, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47,
+	0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0xce, 0x78, 0x2c, 0xc7, 0xc0, 0x25, 0x99, 0x99, 0xaf, 0x57,
+	0x5c, 0x92, 0x98, 0x9c, 0x5d, 0x94, 0x5f, 0x01, 0x89, 0x21, 0x98, 0x9b, 0xa3, 0x60, 0x11, 0x99,
+	0xc4, 0x06, 0x16, 0x37, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x8f, 0x32, 0x6f, 0x71, 0xff, 0x01,
 	0x00, 0x00,
 }
 
@@ -401,6 +401,13 @@ func (m *SignatureVerificationConfig) MarshalToSizedBuffer(dAtA []byte) (int, er
 			}
 		}
 	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintSignatureIntegration(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -421,7 +428,7 @@ func (m *SignatureVerificationConfig_PublicKey) MarshalToSizedBuffer(dAtA []byte
 			i = encodeVarintSignatureIntegration(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0xa
+		dAtA[i] = 0x12
 	}
 	return len(dAtA) - i, nil
 }
@@ -457,13 +464,6 @@ func (m *CosignPublicKeyVerification) MarshalToSizedBuffer(dAtA []byte) (int, er
 			i--
 			dAtA[i] = 0x12
 		}
-	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = encodeVarintSignatureIntegration(dAtA, i, uint64(len(m.Id)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -511,6 +511,10 @@ func (m *SignatureVerificationConfig) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovSignatureIntegration(uint64(l))
+	}
 	if m.Config != nil {
 		n += m.Config.Size()
 	}
@@ -538,10 +542,6 @@ func (m *CosignPublicKeyVerification) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Id)
-	if l > 0 {
-		n += 1 + l + sovSignatureIntegration(uint64(l))
-	}
 	if len(m.PublicKeysBase64Enc) > 0 {
 		for _, s := range m.PublicKeysBase64Enc {
 			l = len(s)
@@ -740,6 +740,38 @@ func (m *SignatureVerificationConfig) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSignatureIntegration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSignatureIntegration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PublicKey", wireType)
 			}
 			var msglen int
@@ -824,38 +856,6 @@ func (m *CosignPublicKeyVerification) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CosignPublicKeyVerification: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSignatureIntegration
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSignatureIntegration
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSignatureIntegration
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Id = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PublicKeysBase64Enc", wireType)

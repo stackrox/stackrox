@@ -15,12 +15,13 @@ message SignatureIntegration {
 }
 
 message SignatureVerificationConfig {
+  string id  = 1;
+
   oneof config {
-    CosignPublicKeyVerification public_key = 1;
+    CosignPublicKeyVerification public_key = 2;
   }
 }
 
 message CosignPublicKeyVerification {
-  string          id                     = 1;
   repeated string public_keys_base64_enc = 2;
 }
