@@ -100,29 +100,20 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, m
 	return nil
 }
 
-type flavorParams struct {
-	rhacs     bool
-	flavor    string
-	flavorSet bool
-}
-
-func getFlavorChoices(flags *pflag.FlagSet) (flavorParams, error) {
-	fp := flavorParams{}
+func getFlavorChoices(flags *pflag.FlagSet) (flavorValue string, flavorProvided, rhacs bool) {
 	if flags != nil {
 		rhacs, err := flags.GetBool("rhacs")
 		if err != nil {
-			return fp, nil
+			panic(err)
 		}
-		fp.rhacs = rhacs
-		flavor, err := flags.GetString("image-defaults")
+		flavorValue, err := flags.GetString("image-defaults")
 		if err != nil {
-			return fp, nil
+			panic(err)
 		}
-		fp.flavor = flavor
-		fp.flavorSet = flags.Changed("image-defaults")
-		return fp, nil
+		flavorProvided = flags.Changed("image-defaults")
+		return flavorValue, flavorProvided, rhacs
 	}
-	return fp, errors.New("unable to parse flags")
+	panic("unable to parse flags")
 }
 
 // Command for writing Helm Chart.
@@ -141,11 +132,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				return errors.New("incorrect number of arguments, see --help for usage information")
 			}
 			chartName := args[0]
-			fp, err := getFlavorChoices(cmd.Flags())
-			if err != nil {
-				return errors.Wrap(errorhelpers.ErrInvalidArgs, "cannot process command arguments")
-			}
-			metaVals, err := getMetaValues(fp.flavor, fp.flavorSet, fp.rhacs, buildinfo.ReleaseBuild, cliEnvironment)
+			flavorValue, flavorProvided, rhacs := getFlavorChoices(cmd.Flags())
+			metaVals, err := getMetaValues(flavorValue, flavorProvided, rhacs, buildinfo.ReleaseBuild, cliEnvironment)
 			if err != nil {
 				return err
 			}
