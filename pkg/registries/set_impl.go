@@ -2,6 +2,7 @@ package registries
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -13,6 +14,16 @@ type setImpl struct {
 
 	factory      Factory
 	integrations map[string]types.ImageRegistry
+}
+
+// TODO: delete me
+func (e *setImpl) String() string {
+	regs := make([]string, 0, len(e.integrations))
+	for _, integ := range e.integrations {
+		regs = append(regs, integ.Name())
+	}
+
+	return strings.Join(regs, ", ")
 }
 
 func sortIntegrations(integrations []types.ImageRegistry) {
