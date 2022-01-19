@@ -76,7 +76,10 @@ function PolicyGroupCard({
             <Card isFlat isCompact>
                 <CardHeader className="pf-u-p-0">
                     <CardTitle className="pf-u-pl-md">
-                        <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-u-py-sm">
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            className="pf-u-py-sm pf-u-text-wrap-on-sm"
+                        >
                             {headerText}:
                         </Flex>
                     </CardTitle>
