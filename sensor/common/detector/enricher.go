@@ -71,6 +71,7 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate limited, backoff and try again.
 				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
+					log.Infof("Got too many parallel scans (iamge: %+v). Retrying...", ci)
 					time.Sleep(eb.NextBackOff())
 					continue
 				}
