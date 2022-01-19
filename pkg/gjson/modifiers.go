@@ -14,9 +14,9 @@ type CustomModifier = func(json, arg string) string
 var boolReplaceRegex = regexp.MustCompile(`.@boolReplace.*(})`)
 var listReplaceRegex = regexp.MustCompile(`.@list`)
 
-// modifieresRegexp provides a list of regex expressions that match all custom modifier prefixes for
+// modifiersRegexp provides a list of regex expressions that match all custom modifier prefixes for
 // sanitizing of queries.
-func modifieresRegexp() []*regexp.Regexp {
+func modifiersRegexp() []*regexp.Regexp {
 	return []*regexp.Regexp{boolReplaceRegex, listReplaceRegex}
 }
 

@@ -174,15 +174,14 @@ func newColumnTree(query string, numberOfColumns int) *columnTree {
 // The dimension of a columnNode specifies the dimension within the result array, the relatedIndex is used to highlight
 // the relationship with other data.
 type columnNode struct {
-	value        string // each value right now is expected to be represented as string
+	value        string // Value within a column.
 	children     []*columnNode
-	dimension    int    // whether the resulted array was one dimensional, two-dimensional etc.
-	query        string // original query which resulted in the value. Will be used when inserting values to check whether the subpath matches
+	dimension    int    // Dimension of the yielded result.
+	query        string // Original query which resulted in the value. Will be used when inserting values to check whether the subpath matches
 	columnIndex  int
-	relatedIndex int // this basically is the index in the lower dimension to which the
-	// value is related to.
-	index int
-	root  bool // specified when the node is a root node
+	relatedIndex int // This is the index in the lower dimension to which the value is related to.
+	index        int
+	root         bool // Specified when the node is a root node
 }
 
 func constructColumnTree(result gjson.Result, originalQuery string) *columnTree {
@@ -199,7 +198,7 @@ func constructColumnTree(result gjson.Result, originalQuery string) *columnTree 
 	ct := newColumnTree(originalQuery, len(res))
 
 	for _, r := range res {
-		nodes := getColumnNodesPerQuery(r.query, r.result, r.dimension, r.originalIndex)
+		nodes := getColumnNodesForResult(r.query, r.result, r.dimension, r.originalIndex)
 		for _, node := range nodes {
 			ct.rootNode.Insert(node)
 		}
@@ -229,11 +228,15 @@ type queryResult struct {
 	dimension     int
 }
 
+// sanitizeOriginalQuery will remove the trailing curly brackets and custom gjson modifiers from the query string.
+func sanitizeOriginalQuery(originalQuery string) string {
+	sanitizedQuery := strings.TrimSuffix(originalQuery, "}")
+	sanitizedQuery = strings.TrimPrefix(sanitizedQuery, "{")
+	return removeModifierExpressionsFromQuery(sanitizedQuery)
+}
+
 func getQueryResults(result gjson.Result, originalQuery string) []queryResult {
-	q := strings.TrimSuffix(originalQuery, "}")
-	q = strings.TrimPrefix(q, "{")
-	q = removeModifierExpressionsFromQuery(q)
-	queries := strings.Split(q, ",")
+	queries := strings.Split(sanitizeOriginalQuery(originalQuery), ",")
 	queryIndex := 0
 
 	res := make([]queryResult, 0, len(queries))
@@ -252,11 +255,8 @@ func getQueryResults(result gjson.Result, originalQuery string) []queryResult {
 	return res
 }
 
-func getNumberOfQueries(query string) int {
-	q := strings.TrimSuffix(query, "}")
-	q = strings.TrimPrefix(q, "{")
-	q = removeModifierExpressionsFromQuery(q)
-	queries := strings.Split(q, ",")
+func getNumberOfQueries(originalQuery string) int {
+	queries := strings.Split(sanitizeOriginalQuery(originalQuery), ",")
 	return len(queries)
 }
 
@@ -266,23 +266,26 @@ func getDimensionFromQuery(query string) int {
 
 // isRelatedQuery checks whether relatedQuery is a relatedQuery to query
 func isRelatedQuery(relatedQuery, query string) bool {
-	// related queries are substrings and not equal. If they are equal, return false
+	// Related queries are substrings and not equal. If they are equal, return false.
 	if relatedQuery == query {
 		return false
 	}
-	// we need to trim everything after the last "." for comparison, since the access object will certainly be different
+	// We need to trim everything after the last "." for comparison, since the access object will certainly be different.
 	if idx := strings.LastIndex(query, "."); idx != -1 {
 		query = query[:idx]
 	}
 
+	// We need to trim everything after the last "." for comparison, since the access object will certainly be different.
 	if idx := strings.LastIndex(relatedQuery, "."); idx != -1 {
 		relatedQuery = relatedQuery[:idx]
 	}
 
+	// If the relatedQuery and the query are under the same exact object, they are not related.
 	if relatedQuery == query {
 		return false
 	}
 
+	// Go through all object accessors to find a relation. This will short-circuit on the first match.
 	for _, split := range strings.Split(query, ".") {
 		if strings.Contains(relatedQuery, split) {
 			return true
@@ -292,7 +295,7 @@ func isRelatedQuery(relatedQuery, query string) bool {
 	return false
 }
 
-func getColumnNodesPerQuery(query string, result gjson.Result, dimension int, columnIndex int) []*columnNode {
+func getColumnNodesForResult(query string, result gjson.Result, dimension int, columnIndex int) []*columnNode {
 	if result.Type == gjson.Null {
 		return nil
 	}
@@ -351,7 +354,7 @@ func getValuesAndIndices(value gjson.Result, values []string, lastIndex int, ind
 			if currentDimension := getDimension(value); currentDimension == dimension && !count {
 				count = true
 				// Special case: Since the lastIndex is starting with -1, need to count for dimension <=2, otherwise
-				// the result will be lastIndex=-1, which would be invalid
+				// the result will be lastIndex=-1, which would be invalid.
 				if currentDimension <= 2 {
 					lastIndex++
 				}
@@ -389,19 +392,19 @@ func (n *columnNode) isInTheSameDimensionAsChildren(indexOfChildren []int, dimen
 func (n *columnNode) Insert(node *columnNode) bool {
 	// Add the node only if it is related
 	if isRelatedQuery(node.query, n.query) {
-		// Adding the node to a children first if it is related to one. If not, we add it to the current node.
-		if isRelatedToChildren, indexOfChildren := isRelatedOfChildren(node.query, n.children); isRelatedToChildren &&
-			n.isInTheSameDimensionAsChildren(indexOfChildren, n.dimension) {
+		// We are trying to add the node first to children, if the node is related and the dimension is different.
+		if isRelated, relatedChildren := isRelated(node.query, n.children); isRelated &&
+			n.isInTheSameDimensionAsChildren(relatedChildren, n.dimension) {
 			res := false
-			for _, ind := range indexOfChildren {
-				res = n.children[ind].Insert(node)
-				if res {
+			for _, ind := range relatedChildren {
+				if res = n.children[ind].Insert(node); res {
+					// Immediately return after inserting the given node successfully.
 					return res
 				}
 			}
 			return res
 		}
-		// If we are adding to the root node, indices do not matter.
+		// If we are adding to the root node, the related index does not have to be taken into account.
 		if n.index == node.relatedIndex || n.root {
 			n.children = append(n.children, node)
 			return true
@@ -413,19 +416,19 @@ func (n *columnNode) Insert(node *columnNode) bool {
 }
 
 func (ct *columnTree) createColumnFromColumnNodes(columnIndex int) []string {
-	nodes := ct.rootNode.GetNodesWithColumnIndex(columnIndex, []*columnNode{})
+	nodes := ct.rootNode.getNodesWithColumnIndex(columnIndex, []*columnNode{})
 
-	// Sort the nodes by index. This is important to be able to construct the column.
+	// Sort the nodes by index. This is required to keep the order of the duplication, if required.
 	sort.SliceStable(nodes, func(i, j int) bool {
 		return nodes[i].index < nodes[j].index
 	})
 
 	var column []string
 	for _, node := range nodes {
-		amount := node.CountLeafNodes(0)
+		amount := node.countLeafNodes(0)
 
 		// Special case: The node has _all_ other column nodes as children. This means, we need to duplicate the
-		// value not by the amount of leaf nodes, but by the amount of leaf nodes / number of columns.
+		// value not by the amount of leaf nodes, but by the amount of leaf nodes / (number of columns -1).
 		if node.getAmountOfUniqueColumnIDsWithinChildren() == ct.numberOfColumns-1 {
 			amount = amount / (ct.numberOfColumns - 1)
 		}
@@ -435,43 +438,35 @@ func (ct *columnTree) createColumnFromColumnNodes(columnIndex int) []string {
 	return column
 }
 
-// GetNodesWithColumnIndex returns recursively all nodes and children nodes that have a matching column index.
-func (n *columnNode) GetNodesWithColumnIndex(columnIndex int, nodes []*columnNode) []*columnNode {
+// getNodesWithColumnIndex returns recursively all columnNode's that have a matching columnIndex.
+func (n *columnNode) getNodesWithColumnIndex(columnIndex int, nodes []*columnNode) []*columnNode {
 	if n.columnIndex == columnIndex {
 		nodes = append(nodes, n)
 	}
 	for _, child := range n.children {
-		nodes = child.GetNodesWithColumnIndex(columnIndex, nodes)
+		nodes = child.getNodesWithColumnIndex(columnIndex, nodes)
 	}
 
 	return nodes
 }
 
-// CountLeafNodes counts the leaf nodes associated with the current node and its children recursively.
-func (n *columnNode) CountLeafNodes(offset int) int {
+// countLeafNodes counts the leaf nodes associated with the current node and its children recursively.
+func (n *columnNode) countLeafNodes(offset int) int {
 	if len(n.children) == 0 {
 		return offset + 1
 	}
 
 	for _, child := range n.children {
-		offset = child.CountLeafNodes(offset)
+		offset = child.countLeafNodes(offset)
 	}
 
 	return offset
 }
 
-func (n *columnNode) GetAmountOfDifferentColumnsAsChildren(visited map[int]struct{}) map[int]struct{} {
-	if _, exists := visited[n.columnIndex]; !exists {
-		visited[n.columnIndex] = struct{}{}
-	}
-
-	for _, child := range n.children {
-		visited = child.GetAmountOfDifferentColumnsAsChildren(visited)
-	}
-
-	return visited
-}
-
+// getAmountOfUniqueColumnIDsWithinChildren will yield the amount of unique column IDs for each direct children of the
+// columnNode.
+// This can be helpful to detect a special case where all other column IDs are direct children of a node, which needs
+// to be taken into account when calculating the amount of duplication required for that specific value.
 func (n *columnNode) getAmountOfUniqueColumnIDsWithinChildren() int {
 	visited := map[int]struct{}{}
 	for _, child := range n.children {
@@ -482,8 +477,8 @@ func (n *columnNode) getAmountOfUniqueColumnIDsWithinChildren() int {
 	return len(visited)
 }
 
-func isRelatedOfChildren(query string, nodes []*columnNode) (bool, []int) {
-	relatedChildren := []int{}
+func isRelated(query string, nodes []*columnNode) (bool, []int) {
+	var relatedChildren []int
 	match := false
 	for index, node := range nodes {
 		if isRelatedQuery(query, node.query) {
@@ -513,8 +508,10 @@ func countDimension(result gjson.Result, offset int) int {
 	return offset
 }
 
+// removeModifierExpressionsFromQuery is replacing the custom modifier expressions from the gjson query string.
+// If this is not done, it could lead to unexpected behaviors when splitting the query by i.e. the separator ",".
 func removeModifierExpressionsFromQuery(query string) string {
-	regs := modifieresRegexp()
+	regs := modifiersRegexp()
 	for _, r := range regs {
 		query = r.ReplaceAllString(query, "")
 	}

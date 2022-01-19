@@ -17,7 +17,7 @@ func TestColumnNode_Insert(t *testing.T) {
 
 	newNode := &columnNode{
 		value: "abc",
-		query: "test",
+		query: "test.#.matching",
 	}
 	assert.True(t, ct.rootNode.Insert(newNode), "should add node with matching query")
 	require.Len(t, ct.rootNode.children, 1, "should have exactly 1 child node")
@@ -155,7 +155,7 @@ func TestColumnNode_CountLeafNodes(t *testing.T) {
 	nodeWith5Leafs := &columnNode{children: []*columnNode{{}, {}, {}, {}, {}}}
 	ct.rootNode.children = []*columnNode{nodeWith5Leafs, nodeWith2Leafs}
 
-	assert.Equal(t, 7, ct.rootNode.CountLeafNodes(0))
+	assert.Equal(t, 7, ct.rootNode.countLeafNodes(0))
 }
 
 func TestColumnNode_GetNodesWithColumnIndex(t *testing.T) {
@@ -166,5 +166,5 @@ func TestColumnNode_GetNodesWithColumnIndex(t *testing.T) {
 
 	ct.rootNode.children = []*columnNode{nodeWithColumnIndex2Children, nodeWithoutColumnIndex2Children}
 
-	assert.Len(t, ct.rootNode.GetNodesWithColumnIndex(2, nil), 3)
+	assert.Len(t, ct.rootNode.getNodesWithColumnIndex(2, nil), 3)
 }
