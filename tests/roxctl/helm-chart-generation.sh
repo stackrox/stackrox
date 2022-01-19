@@ -27,7 +27,7 @@ test_central_services_chart_generation() {
     local output_dir="$(mktemp -d)"
     local chart_output_dir="$output_dir/chart"
 
-    if OUTPUT="$(roxctl helm output "$chart_name" --output-dir="$chart_output_dir" 2>&1)"; then
+    if OUTPUT="$(roxctl helm output "$chart_name" --image-defaults=development_build --output-dir="$chart_output_dir" 2>&1)"; then
         echo "[OK] 'roxctl helm output $chart_name' succeeded"
     else
         eecho "[FAIL] 'roxctl helm output $chart_name' failed:"

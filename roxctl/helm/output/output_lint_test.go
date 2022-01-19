@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,10 +47,10 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 		wantErr bool
 	}
 	tests := []testCase{
-		{flavor: "", rhacs: true}, // '--rhacs' but no '--image-defaults'
-		{flavor: "dummy", rhacs: true, wantErr: false},
-		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true},
-		{flavor: "", rhacs: false}, // no '--rhacs' and no '--image-defaults'
+		{flavor: "", rhacs: true},                                                       // '--rhacs' but no '--image-defaults'
+		{flavor: "dummy", rhacs: true, wantErr: true},                                   // any flavor (even invalid) has priority over --rhacs
+		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true}, // error: collision of --rhacs and non-empty --image-defults
+		{flavor: "", rhacs: false},                                                      // no '--rhacs' and no '--image-defaults'
 		{flavor: "dummy", rhacs: false, wantErr: true},
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
@@ -57,10 +59,12 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
 		tests = append(tests,
-			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true},
+			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true}, // error: collision of --rhacs and non-empty --image-defults
 			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
 		)
 	}
+	testIO, _, _, _ := environment.TestIO()
+	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
 	for _, tt := range tests {
 		tt := tt
@@ -71,7 +75,7 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 					_ = os.RemoveAll(outputDir)
 				})
 				require.NoError(s.T(), err)
-				err = outputHelmChart(chartName, outputDir, true, tt.rhacs, tt.flavor, false, "")
+				err = outputHelmChart(chartName, outputDir, true, tt.rhacs, tt.flavor, false, "", env)
 				if tt.wantErr {
 					assert.Error(s.T(), err)
 				} else {
@@ -111,7 +115,9 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	})
 	require.NoError(t, err)
 
-	err = outputHelmChart(chartName, outputDir, true, rhacs, imageFlavor, noDebug, noDebugChartPath)
+	testIO, _, _, _ := environment.TestIO()
+	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	err = outputHelmChart(chartName, outputDir, true, rhacs, imageFlavor, noDebug, noDebugChartPath, env)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {
