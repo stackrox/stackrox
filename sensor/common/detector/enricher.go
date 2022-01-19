@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"math/rand"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -11,10 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
-	scanTimeout = 6 * time.Minute
+	scanTimeout             = 6 * time.Minute
+	scanBackOffBaseDuration = 5 * time.Second
+	scanBackOffJitter       = 1 * time.Second
 )
 
 type scanResult struct {
@@ -46,19 +51,36 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
+func getBackoffDuration() time.Duration {
+	jitterAmount := time.Duration(rand.Int63n(scanBackOffJitter.Nanoseconds()*2)) - scanBackOffJitter
+	return scanBackOffBaseDuration + jitterAmount
+}
+
+func scanImage(svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+		Image: ci,
+	})
+}
+
 func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage) {
 	defer c.signal.Signal()
 
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
-	defer cancel()
-	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-		Image: ci,
-	})
-	if err != nil {
-		c.image = types.ToImage(ci)
-		return
+	for {
+		scannedImage, err := scanImage(svc, ci)
+		if err != nil {
+			// If we receive unavailable from the endpoint, then the client is effectively rate limited
+			// backoff and try again
+			if s, ok := status.FromError(err); ok && s.Code() == codes.Unavailable {
+				time.Sleep(getBackoffDuration())
+				continue
+			}
+			c.image = types.ToImage(ci)
+			return
+		}
+		c.image = scannedImage.GetImage()
 	}
-	c.image = scannedImage.GetImage()
 }
 
 func newEnricher(cache expiringcache.Cache) *enricher {

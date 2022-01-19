@@ -8,7 +8,7 @@ import (
 
 // IntegerSetting represents an environment variable which should be parsed into an integer
 type IntegerSetting struct {
-	envVar string
+	envVar       string
 	defaultValue int
 }
 
@@ -38,7 +38,7 @@ func (d *IntegerSetting) IntegerSetting() int {
 // RegisterIntegerSetting globally registers and returns a new integer setting.
 func RegisterIntegerSetting(envVar string, defaultValue int) *IntegerSetting {
 	s := &IntegerSetting{
-		envVar:         envVar,
+		envVar:       envVar,
 		defaultValue: defaultValue,
 	}
 

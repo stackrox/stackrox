@@ -31,10 +31,14 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
 	maxImagesReturned = 1000
+
+	maxSemaphoreWaitTime = 5 * time.Second
 )
 
 var (
@@ -170,11 +174,11 @@ func (s *serviceImpl) saveImage(img *storage.Image) {
 
 // ScanImage handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	t := time.Now()
-	if err := internalScanSemaphore.Acquire(ctx, 1); err != nil {
-		return nil, errors.Wrapf(err, "error acquiring semaphore")
+	semaWaitCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
+	defer cancel()
+	if err := internalScanSemaphore.Acquire(semaWaitCtx, 1); err != nil {
+		return nil, status.Errorf(codes.Unavailable, "unable to acquire image scan semaphore within %.0f seconds. Backoff and retry", maxSemaphoreWaitTime.Seconds())
 	}
-	log.Infof("Took %d ms to get semaphore", time.Since(t).Milliseconds())
 	defer internalScanSemaphore.Release(1)
 
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
