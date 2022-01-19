@@ -54,7 +54,7 @@ function getActiveKeyTab(pathname: string) {
 
 function TabContentList({ activeKeyTab }): ReactElement {
     return (
-        <div key={activeKeyTab}>
+        <>
             <TabContent
                 eventKey={TABS.PENDING_APPROVALS}
                 id={TABS.PENDING_APPROVALS}
@@ -76,7 +76,7 @@ function TabContentList({ activeKeyTab }): ReactElement {
             >
                 <ApprovedFalsePositives />
             </TabContent>
-        </div>
+        </>
     );
 }
 

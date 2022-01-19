@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useLocation, useHistory } from 'react-router-dom';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
@@ -11,17 +10,16 @@ type SearchObject = {
 function useSearch() {
     const history = useHistory();
     const location = useLocation();
-    const searchObject: SearchFilter = getQueryObject<SearchObject>(location.search).search || {};
-    const [searchFilter, setSearchFilter] = useState<SearchFilter>(searchObject);
+    const searchFilter: SearchFilter = getQueryObject<SearchObject>(location.search).search || {};
 
-    useEffect(() => {
+    function setSearchFilter(newSearchFilter) {
         const newSearchString = getQueryString({
-            search: searchFilter,
+            search: newSearchFilter,
         });
         history.replace({
             search: newSearchString,
         });
-    }, [history, searchFilter]);
+    }
 
     return { searchFilter, setSearchFilter };
 }
