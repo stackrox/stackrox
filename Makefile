@@ -189,6 +189,7 @@ ui-lint:
 .PHONY: ci-config-validate
 ci-config-validate:
 	@echo "+ $@"
+	circleci diagnostic > /dev/null 2>&1 # Must first set CIRCLECI_CLI_TOKEN or run circleci setup
 	circleci config validate --org-slug gh/stackrox
 
 .PHONY: staticcheck
