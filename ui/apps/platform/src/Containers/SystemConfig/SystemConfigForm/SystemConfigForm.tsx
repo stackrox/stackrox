@@ -22,8 +22,8 @@ import ColorPicker from 'Components/ColorPicker';
 import { ConfigTelemetryDetailContent } from '../ConfigTelemetryDetailWidget';
 import { PrivateConfig, PublicConfig, TelemetryConfig } from '../SystemConfigTypes';
 import FormSelect from './FormSelect';
-import useFeatureFlagEnabled from "../../../hooks/useFeatureFlagEnabled";
-import {knownBackendFlags} from "../../../utils/featureFlags";
+import useFeatureFlagEnabled from '../../../hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from '../../../utils/featureFlags';
 
 export type SystemConfigFormProps = {
     values: {
@@ -179,26 +179,27 @@ const SystemConfigForm = ({
                                             />
                                         </FormGroup>
                                     </GridItem>
-                                    {isVulnReportingEnabled && (<GridItem>
-                                        <FormGroup
-                                            label="Expired Vulnerability Requests"
-                                            isRequired
-                                            fieldId="privateConfig.expiredVulnReqRetentionDurationDays"
-                                        >
-                                            <TextInput
+                                    {isVulnReportingEnabled && (
+                                        <GridItem>
+                                            <FormGroup
+                                                label="Expired Vulnerability Requests"
                                                 isRequired
-                                                type="number"
-                                                id="privateConfig.expiredVulnReqRetentionDurationDays"
-                                                name="privateConfig.expiredVulnReqRetentionDurationDays"
-                                                value={
-                                                    values?.privateConfig
-                                                        ?.expiredVulnReqRetentionDurationDays
-                                                }
-                                                onChange={onChange}
-                                            />
-                                        </FormGroup>
-                                    </GridItem>
-                                    })
+                                                fieldId="privateConfig.expiredVulnReqRetentionDurationDays"
+                                            >
+                                                <TextInput
+                                                    isRequired
+                                                    type="number"
+                                                    id="privateConfig.expiredVulnReqRetentionDurationDays"
+                                                    name="privateConfig.expiredVulnReqRetentionDurationDays"
+                                                    value={
+                                                        values?.privateConfig
+                                                            ?.expiredVulnReqRetentionDurationDays
+                                                    }
+                                                    onChange={onChange}
+                                                />
+                                            </FormGroup>
+                                        </GridItem>
+                                    )}
                                 </Grid>
                             </FormSection>
                         </CardBody>
