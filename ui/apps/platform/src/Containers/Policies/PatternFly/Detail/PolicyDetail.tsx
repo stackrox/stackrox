@@ -21,7 +21,7 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import useToasts from 'hooks/useToasts';
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
 import { Cluster } from 'types/cluster.proto';
@@ -88,8 +88,9 @@ function PolicyDetail({
             .then(() => {
                 addToast('Successfully exported policy', 'success');
             })
-            .catch(({ response }) => {
-                addToast('Could not export policy', 'danger', response.data.message);
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                addToast('Could not export the policy', 'danger', message);
             })
             .finally(() => {
                 setIsRequesting(false);
@@ -242,7 +243,7 @@ function PolicyDetail({
             <Divider component="div" className="pf-u-pb-md" />
             <PolicyDetailContent clusters={clusters} policy={policy} notifiers={notifiers} />
             <AlertGroup isToast isLiveRegion>
-                {toasts.map(({ key, variant, title, children }) => (
+                {toasts.map(({ key, variant, title, children }: Toast) => (
                     <Alert
                         variant={AlertVariant[variant]}
                         title={title}
@@ -250,7 +251,7 @@ function PolicyDetail({
                         actionClose={
                             <AlertActionCloseButton
                                 title={title}
-                                variantLabel={`${variant as string} alert`}
+                                variantLabel={`${variant} alert`}
                                 onClose={() => removeToast(key)}
                             />
                         }
