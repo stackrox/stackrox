@@ -296,7 +296,9 @@ function PendingApprovalsTable({
                                     </Td>
                                     <Td dataLabel="Impacted entities">
                                         <ImpactedEntities
+                                            deployments={row.deployments}
                                             deploymentCount={row.deploymentCount}
+                                            images={row.images}
                                             imageCount={row.imageCount}
                                         />
                                     </Td>

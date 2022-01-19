@@ -1,29 +1,75 @@
-import { Flex, FlexItem, Label } from '@patternfly/react-core';
+import React, { useState, ReactElement } from 'react';
 import pluralize from 'pluralize';
-import React, { ReactElement } from 'react';
+import { Button, ButtonVariant, Flex, FlexItem, Label } from '@patternfly/react-core';
 
-export type DeferralExpirationDateProps = {
+import entityTypes from 'constants/entityTypes';
+import ImpactedEntitiesModal from './ImpactedEntitiesModal';
+
+export type ImpactedEntitiesProps = {
+    deployments: any;
     deploymentCount: number;
+    images: any;
     imageCount: number;
 };
 
 function ImpactedEntities({
+    deployments,
     deploymentCount,
+    images,
     imageCount,
-}: DeferralExpirationDateProps): ReactElement {
+}: ImpactedEntitiesProps): ReactElement {
+    const [modalTypeOpen, setModalTypeOpen] = useState('');
+
+    function openModal(entityType) {
+        setModalTypeOpen(entityType);
+    }
+
+    function closeModal() {
+        setModalTypeOpen('');
+    }
     return (
-        <Flex spaceItems={{ default: 'spaceItemsMd' }}>
-            <FlexItem>
-                <Label color="blue">
-                    {deploymentCount} {pluralize('deployment', deploymentCount)}
-                </Label>
-            </FlexItem>
-            <FlexItem>
-                <Label color="blue">
-                    {imageCount} {pluralize('image', imageCount)}
-                </Label>
-            </FlexItem>
-        </Flex>
+        <>
+            <Flex spaceItems={{ default: 'spaceItemsMd' }}>
+                <FlexItem>
+                    <Button
+                        variant={ButtonVariant.link}
+                        isInline
+                        onClick={() => {
+                            openModal(entityTypes.DEPLOYMENT);
+                        }}
+                    >
+                        <Label color="blue">
+                            {deploymentCount} {pluralize('deployment', deploymentCount)}
+                        </Label>
+                    </Button>
+                </FlexItem>
+                <FlexItem>
+                    <Button
+                        variant={ButtonVariant.link}
+                        isInline
+                        onClick={() => {
+                            openModal(entityTypes.IMAGE);
+                        }}
+                    >
+                        <Label color="blue">
+                            {imageCount} {pluralize('image', imageCount)}
+                        </Label>
+                    </Button>
+                </FlexItem>
+            </Flex>
+            <ImpactedEntitiesModal
+                entityType={modalTypeOpen}
+                isOpen={modalTypeOpen === entityTypes.DEPLOYMENT}
+                entities={deployments}
+                onClose={closeModal}
+            />
+            <ImpactedEntitiesModal
+                entityType={modalTypeOpen}
+                isOpen={modalTypeOpen === entityTypes.IMAGE}
+                entities={images}
+                onClose={closeModal}
+            />
+        </>
     );
 }
 
