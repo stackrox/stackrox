@@ -30,7 +30,7 @@ func getMetaValues(flavorName string, rhacs, release bool) (*charts.MetaValues, 
 	}
 	imageFlavor, err := defaults.GetImageFlavorByName(flavorName, release)
 	if err != nil {
-		return &charts.MetaValues{}, errors.Wrapf(err, "invalid value of '--image-defaults=%s'", flavorName)
+		return nil, errors.Wrapf(err, "invalid value of '--image-defaults=%s'", flavorName)
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
