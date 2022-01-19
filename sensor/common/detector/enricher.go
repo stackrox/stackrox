@@ -72,6 +72,8 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	eb.MaxInterval = 4 * time.Minute
 	eb.MaxElapsedTime = 0 // Never stop the backoff, leave that decision to the parent context.
 
+	eb.Reset()
+
 	numTries := 0
 
 outer:
