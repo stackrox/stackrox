@@ -21,7 +21,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -37,13 +37,13 @@ var (
 )
 
 // NewTranslator creates a translator
-func NewTranslator(client client.Client) Translator {
+func NewTranslator(client ctrlClient.Client) Translator {
 	return Translator{client: client}
 }
 
 // Translator translates and enriches helm values
 type Translator struct {
-	client client.Client
+	client ctrlClient.Client
 }
 
 // Translate translates and enriches helm values
@@ -122,7 +122,7 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 
 	v.SetBoolValue("createSecrets", false)
 	sensorSecret := &corev1.Secret{}
-	if err := t.client.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: sensorTLSSecretName}, sensorSecret); err != nil {
+	if err := t.client.Get(ctx, ctrlClient.ObjectKey{Namespace: sc.Namespace, Name: sensorTLSSecretName}, sensorSecret); err != nil {
 		return v.SetError(errors.Wrapf(err, "failed reading %q secret", sensorTLSSecretName))
 	}
 
@@ -150,7 +150,7 @@ func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.Sec
 func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.SecuredCluster, secretName string) error {
 	namespace := sc.Namespace
 	secret := &corev1.Secret{}
-	if err := t.client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: secretName}, secret); err != nil {
+	if err := t.client.Get(ctx, ctrlClient.ObjectKey{Namespace: namespace, Name: secretName}, secret); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "init-bundle secret %q does not exist in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", secretName, namespace)
 		}
