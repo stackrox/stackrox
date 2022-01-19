@@ -23,6 +23,7 @@ import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import SearchFilterResults from 'Components/PatternFly/SearchFilterResults';
 import TableCell from 'Components/PatternFly/TableCell';
 import { selectors } from 'reducers';
 import { getHasReadWritePermission } from 'reducers/roles';
@@ -243,6 +244,18 @@ function ReportingTablePanel({
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
+            {Object.keys(searchFilter).length !== 0 && (
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <SearchFilterResults
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
             <Divider component="div" />
             <PageSection isFilled hasOverflowScroll>
                 <TableComposable variant="compact">

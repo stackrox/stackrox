@@ -20,8 +20,11 @@ function ReportsSearchFilter({
     searchFilter,
     setSearchFilter,
 }: ReportsSearchFilterProps): ReactElement {
-    const [selectedAttribute] = useState<string>('Report Name');
-    const [inputValue, setInputValue] = useState<string>('');
+    const [selectedAttribute] = useState('Report Name');
+
+    // TODO: hard-coding input value for now, because initially, only Report Name is searchable
+    const existingReportName = (searchFilter['Report Name'] as string) ?? '';
+    const [inputValue, setInputValue] = useState<string>(existingReportName);
 
     function handleSearchChange(value) {
         const modifiedSearchObject = { ...searchFilter };
@@ -47,6 +50,7 @@ function ReportsSearchFilter({
                             id="reportNameSearchInput"
                             type="search"
                             aria-label="Report name search input"
+                            placeholder="Filter by report name"
                             onChange={handleInputChange}
                             value={inputValue}
                         />

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useEffect, useState, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import React, { useState, ReactElement } from 'react';
+import { Link, useHistory } from 'react-router-dom';
 import {
     Alert,
     AlertVariant,
@@ -28,7 +27,9 @@ import useFetchReports from 'hooks/useFetchReports';
 import useTableSort from 'hooks/useTableSort';
 import { vulnManagementReportsPath } from 'routePaths';
 import { deleteReport, runReport } from 'services/ReportsService';
+import { SearchFilter } from 'types/search';
 import { filterAllowedSearch } from 'utils/searchUtils';
+import { getQueryString } from 'utils/queryStringUtils';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
 import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
@@ -38,6 +39,8 @@ type ReportTablePageProps = {
 };
 
 function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
+    const history = useHistory();
+
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
 
@@ -64,8 +67,14 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
         sortOption,
     } = useTableSort(columns, defaultSort);
 
-    function setSearchFilter(filters: Record<string, string | string[]>) {
-        console.log({ filters });
+    function setSearchFilter(filters: SearchFilter) {
+        const newSearchString = getQueryString({
+            s: filters,
+        });
+
+        history.push({
+            search: newSearchString,
+        });
     }
 
     const { reports, reportCount, error, isLoading, triggerRefresh } = useFetchReports(
