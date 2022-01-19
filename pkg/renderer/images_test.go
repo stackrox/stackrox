@@ -16,15 +16,12 @@ func TestComputeOverrides(t *testing.T) {
 			ref: "stackrox.io/main:1.2.3",
 		},
 		{
+			ref: "stackrox.io/main",
+		},
+		{
 			ref: "stackrox.io/main:4.5.6",
 			expected: map[string]string{
 				"Tag": "4.5.6",
-			},
-		},
-		{
-			ref: "stackrox.io/main",
-			expected: map[string]string{
-				"Tag": "latest",
 			},
 		},
 		{
@@ -164,12 +161,17 @@ func TestComputeOverrides(t *testing.T) {
 func TestConfigureImageOverrides(t *testing.T) {
 	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
 	cases := map[string]struct {
-		configValues         CommonConfig
-		expectedMainRegistry string
+		configValues              CommonConfig
+		expectedMainRegistry      string
+		expectedMainOverride      map[string]string
+		expectedScannerOverride   map[string]string
+		expectedScannerDBOverride map[string]string
 	}{
-		"Override Main Registry": {
+		"Override main registry": {
 			configValues: CommonConfig{
-				MainImage: "quay.io/rhacs/main",
+				MainImage:      "quay.io/rhacs/main:1.2.3",
+				ScannerImage:   "quay.io/rhacs/scanner:2.2.2",
+				ScannerDBImage: "quay.io/rhacs/scanner-db:2.2.2",
 			},
 			expectedMainRegistry: "quay.io/rhacs",
 		},
@@ -180,7 +182,24 @@ func TestConfigureImageOverrides(t *testing.T) {
 				ScannerDBImage: testFlavor.ScannerDBImage(),
 			},
 		},
-		// TODO(RS-397): Cover other overrides in this test cases (e.g. scanner and scanner-db overrides
+		"Override main tag if provided": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/main:99.9.9",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainOverride: map[string]string{
+				"Tag": "99.9.9",
+			},
+		},
+		"Don't override main tag if no tag provided": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/main",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+		},
+		// TODO(RS-397): Cover other overrides in this test cases (e.g. scanner and scanner-db overrides)
 	}
 
 	for name, c := range cases {
@@ -199,12 +218,19 @@ func TestConfigureImageOverrides(t *testing.T) {
 			assert.NotNil(t, config.K8sConfig.ImageOverrides)
 			if c.expectedMainRegistry != "" {
 				assert.Equal(t, c.expectedMainRegistry, config.K8sConfig.ImageOverrides["MainRegistry"])
-			} else {
-				assert.Len(t, config.K8sConfig.ImageOverrides["Main"], 0, "should have no keys in Main map")
-				assert.Len(t, config.K8sConfig.ImageOverrides["Scanner"], 0, "should have no keys in Scanner map")
-				assert.Len(t, config.K8sConfig.ImageOverrides["ScannerDB"], 0, "should have no keys in ScannerDB map")
 			}
 
+			assertOverride(t, config.K8sConfig, c.expectedMainOverride, "Main")
+			assertOverride(t, config.K8sConfig, c.expectedScannerOverride, "Scanner")
+			assertOverride(t, config.K8sConfig, c.expectedScannerDBOverride, "ScannerDB")
 		})
+	}
+}
+
+func assertOverride(t *testing.T, k8sConfig *K8sConfig, expected map[string]string, overrideKey string) {
+	if expected == nil {
+		assert.Len(t, k8sConfig.ImageOverrides[overrideKey], 0, "should have no keys in %s map", overrideKey)
+	} else {
+		assert.EqualValues(t, k8sConfig.ImageOverrides[overrideKey], expected)
 	}
 }

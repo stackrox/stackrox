@@ -10,8 +10,8 @@ import (
 // ComputeImageOverrides takes in a full image reference as well as default registries, names,
 // and tags, and computes the components of the image which are different. I.e., if
 // `fullImageRef` is `<defRegistry>/<defName>:<defTag>`, an empty map is returned; if, for
-// example, only the tag is different, a map containing only the non-default "Tag" is returned
-// etc.
+// example, only the tag is different, a map containing only the non-default "Tag" is returned etc.
+// If the provided image doesn't have a tag, the tag won't show as overridden.
 func ComputeImageOverrides(fullImageRef, defRegistry, defName, defTag string) map[string]string {
 	var remoteAndRepo, tag string
 
@@ -35,10 +35,8 @@ func ComputeImageOverrides(fullImageRef, defRegistry, defName, defTag string) ma
 
 	overrides := map[string]string{}
 
-	if tag == "" {
-		tag = "latest"
-	}
-	if tag != defTag {
+	// Only compute tag override if provided
+	if tag != "" && tag != defTag {
 		overrides["Tag"] = tag
 	}
 	if stringutils.ConsumeSuffix(&remoteAndRepo, "/"+defName) {
