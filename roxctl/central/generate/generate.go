@@ -2,6 +2,7 @@ package generate
 
 import (
 	"encoding/pem"
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -181,7 +182,7 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 
 	flavor, err := defaults.GetImageFlavorByName(config.K8sConfig.ImageFlavorName, buildinfo.ReleaseBuild)
 	if err != nil {
-		return nil, errorhelpers.NewErrInvalidArgsf("'--%s': %v", flags.ImageDefaultsFlagName, err)
+		return nil, fmt.Errorf("%w: '--image-defaults': %v", errorhelpers.ErrInvalidArgs, err)
 	}
 
 	files, err := renderer.Render(config, flavor)
