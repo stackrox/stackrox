@@ -24,7 +24,7 @@ import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestS
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import UpdateDeferralModal from './UpdateDeferralModal';
 import ApprovedDeferralActionsColumn from './ApprovedDeferralActionsColumn';
-import ImpactedEntities from '../ImpactedEntities';
+import ImpactedEntities from '../ImpactedEntities/ImpactedEntities';
 import VulnRequestedAction from '../VulnRequestedAction';
 import DeferralExpirationDate from '../DeferralExpirationDate';
 import ApprovedDeferralsSearchFilter from './ApprovedDeferralsSearchFilter';
