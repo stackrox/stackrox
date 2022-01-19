@@ -63,7 +63,10 @@ var (
 
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
 	atomic.AddInt32(&totalInScanAndSet, 1)
-	defer atomic.AddInt32(&totalInScanAndSet, -1)
+	defer func() {
+		newVal := atomic.AddInt32(&totalInScanAndSet, -1)
+		log.Infof("Decrement total in scan and set. New val: %d", newVal)
+	}()
 	defer c.signal.Signal()
 
 	eb := backoff.NewExponentialBackOff()
