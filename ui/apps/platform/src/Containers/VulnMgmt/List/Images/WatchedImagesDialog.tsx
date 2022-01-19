@@ -197,7 +197,10 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                         <Message type="error">{errorMessage}</Message>
                     </div>
                 )}
-                <div className="flex flex-col leading-normal p-4 text-base-600 w-full">
+                <div
+                    className="flex flex-col leading-normal p-4 text-base-600 w-full overflow-y-auto"
+                    style={{ maxHeight: '200px' }}
+                >
                     <h3 className="font-700 mb-2">Images Currently Being Watched</h3>
                     {currentWatchedImages.length > 0 ? (
                         <ol>{imageList}</ol>
