@@ -1290,3 +1290,9 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 	}
 
 }
+
+func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
+	defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx)
+	suite.NoError(err)
+	suite.Equal(defaults.GetCentralApiEndpoint(), centralEndpoint)
+}

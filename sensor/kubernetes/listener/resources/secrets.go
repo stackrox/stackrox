@@ -192,7 +192,10 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 		if features.LocalImageScanning.Enabled() {
 			if fromDefaultSA {
 				// Store the registry credentials so Sensor can reach it.
-				s.regStore.addOrUpdateRegistry(secret.GetNamespace(), registry, dce)
+				err := s.regStore.upsertRegistry(secret.GetNamespace(), registry, dce)
+				if err != nil {
+					log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
+				}
 			}
 		}
 		ii := dockerConfigToImageIntegration(registry, dce)

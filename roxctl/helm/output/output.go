@@ -16,7 +16,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func getMetaValues(flavorName string, rhacs, release bool) (charts.MetaValues, error) {
+func getMetaValues(flavorName string, rhacs, release bool) (*charts.MetaValues, error) {
 	if rhacs {
 		fmt.Fprintln(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'")
 		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()), nil
@@ -30,7 +30,7 @@ func getMetaValues(flavorName string, rhacs, release bool) (charts.MetaValues, e
 	}
 	imageFlavor, err := defaults.GetImageFlavorByName(flavorName, release)
 	if err != nil {
-		return charts.MetaValues{}, errors.Wrapf(err, "invalid value of '--image-defaults=%s'", flavorName)
+		return nil, errors.Wrapf(err, "invalid value of '--image-defaults=%s'", flavorName)
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }

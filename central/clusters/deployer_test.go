@@ -9,35 +9,21 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	mainRegistryKey             charts.MetaValuesKey = "MainRegistry"
-	imageRemoteKey              charts.MetaValuesKey = "ImageRemote"
-	imageTagKey                 charts.MetaValuesKey = "ImageTag"
-	collectorRegistryKey        charts.MetaValuesKey = "CollectorRegistry"
-	collectorFullImageRemoteKey charts.MetaValuesKey = "CollectorFullImageRemote"
-	collectorSlimImageRemoteKey charts.MetaValuesKey = "CollectorSlimImageRemote"
-	collectorFullImageTagKey    charts.MetaValuesKey = "CollectorFullImageTag"
-	collectorSlimImageTagKey    charts.MetaValuesKey = "CollectorSlimImageTag"
-	versionsKey                 charts.MetaValuesKey = "Versions"
-	chartRepoKey                charts.MetaValuesKey = "ChartRepo"
-)
-
-func getCollectorFull(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorFullImageRemoteKey], fields[collectorFullImageTagKey])
+func getCollectorFull(fields *charts.MetaValues) string {
+	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorFullImageRemote, fields.CollectorFullImageTag)
 }
 
-func getCollectorSlim(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorSlimImageRemoteKey], fields[collectorSlimImageTagKey])
+func getCollectorSlim(fields *charts.MetaValues) string {
+	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorSlimImageRemote, fields.CollectorSlimImageTag)
 }
 
-func getMain(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[mainRegistryKey], fields[imageRemoteKey], fields[imageTagKey])
+func getMain(fields *charts.MetaValues) string {
+	return fmt.Sprintf("%s/%s:%s", fields.MainRegistry, fields.ImageRemote, fields.ImageTag)
 }
 
 type deployerTestSuite struct {
@@ -245,19 +231,17 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	fields, err := FieldsFromClusterAndRenderOpts(makeTestCluster("docker.io/stackrox/main", ""), &testFlavor, RenderOptions{})
 	assert.NoError(t, err)
 
-	assert.NotEmpty(t, fields[mainRegistryKey])
-	assert.NotEmpty(t, fields[imageRemoteKey])
-	assert.NotEmpty(t, fields[collectorRegistryKey])
-	assert.NotEmpty(t, fields[collectorFullImageRemoteKey])
-	assert.NotEmpty(t, fields[collectorSlimImageTagKey])
-	assert.NotEmpty(t, fields[collectorFullImageTagKey])
+	assert.NotEmpty(t, fields.MainRegistry)
+	assert.NotEmpty(t, fields.ImageRemote)
+	assert.NotEmpty(t, fields.CollectorRegistry)
+	assert.NotEmpty(t, fields.CollectorFullImageRemote)
+	assert.NotEmpty(t, fields.CollectorSlimImageTag)
+	assert.NotEmpty(t, fields.CollectorFullImageTag)
 
-	versions := fields[versionsKey].(version.Versions)
-	assert.NotEmpty(t, versions.ChartVersion)
-	assert.NotEmpty(t, versions.MainVersion)
-	assert.NotEmpty(t, versions.CollectorVersion)
-	assert.NotEmpty(t, versions.ScannerVersion)
+	assert.NotEmpty(t, fields.Versions.ChartVersion)
+	assert.NotEmpty(t, fields.Versions.MainVersion)
+	assert.NotEmpty(t, fields.Versions.CollectorVersion)
+	assert.NotEmpty(t, fields.Versions.ScannerVersion)
 
-	chartRepo := fields[chartRepoKey].(defaults.ChartRepo)
-	assert.NotEmpty(t, chartRepo.URL)
+	assert.NotEmpty(t, fields.ChartRepo.URL)
 }

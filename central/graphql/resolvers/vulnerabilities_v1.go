@@ -516,3 +516,8 @@ func (evr *EmbeddedVulnerabilityResolver) vulnQuery() *v1.Query {
 func (evr *EmbeddedVulnerabilityResolver) vulnRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).Query()
 }
+
+// EffectiveVulnerabilityRequest is not implemented for v1.
+func (evr *EmbeddedVulnerabilityResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
+	return nil, nil
+}

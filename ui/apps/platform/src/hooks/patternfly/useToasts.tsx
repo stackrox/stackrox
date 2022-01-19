@@ -1,17 +1,17 @@
-import { ReactElement, useState } from 'react';
+import { ReactNode, useState } from 'react';
 
 type AlertVariantType = 'default' | 'info' | 'success' | 'danger' | 'warning';
 
-type Toast = {
+export type Toast = {
     title: string;
     variant: AlertVariantType;
     key: number;
-    children?: ReactElement;
+    children?: ReactNode;
 };
 
 type UseToasts = {
     toasts: Toast[];
-    addToast: (title, variant?: AlertVariantType, children?: ReactElement) => void;
+    addToast: (title, variant?: AlertVariantType, children?: ReactNode) => void;
     removeToast: (key) => void;
 };
 

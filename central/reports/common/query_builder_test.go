@@ -71,5 +71,5 @@ func TestBuildQuery(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.ElementsMatch(t, []string{"Cluster:remote+Namespace:ns1", "Cluster:secured+Namespace:ns2"}, rq.ScopeQueries)
-	assert.Equal(t, "conjunction:<queries:<base_query:<match_field_query:<field:\"Fixable\" value:\"true\" > > > queries:<disjunction:<queries:<> queries:<> queries:<base_query:<match_field_query:<field:\"Severity\" value:\"CRITICAL_VULNERABILITY_SEVERITY\" > > > queries:<base_query:<match_field_query:<field:\"Severity\" value:\"IMPORTANT_VULNERABILITY_SEVERITY\" > > > > > > ", rq.CveFieldsQuery)
+	assert.Equal(t, "Fixable:true+Severity:CRITICAL_VULNERABILITY_SEVERITY,IMPORTANT_VULNERABILITY_SEVERITY", rq.CveFieldsQuery)
 }

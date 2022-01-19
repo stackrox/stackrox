@@ -33,6 +33,7 @@ type alertManagerImpl struct {
 	runtimeDetector runtime.Detector
 }
 
+// getDeploymentIDsFromAlerts returns a set of deployment IDs for given lists of alerts
 func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 	s := set.NewStringSet()
 	for _, slice := range alertSlices {
@@ -45,6 +46,7 @@ func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 	return s
 }
 
+// AlertAndNotify is the main function that implements the AlertManager interface
 func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (set.StringSet, error) {
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
@@ -68,10 +70,29 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	if err != nil {
 		return nil, err
 	}
+
+	// rox-7233: runtime alerts always get notifications so send for updated alerts as well
+	d.notifyUpdatedRuntimeAlerts(ctx, updatedAlerts)
+
 	return modifiedDeployments, nil
 }
 
-// UpdateBatch updates all of the alerts in the datastore.
+// notifyUpdatedRuntimeAlerts sends alerts for all updated runtime events that occur
+func (d *alertManagerImpl) notifyUpdatedRuntimeAlerts(ctx context.Context, updatedAlerts []*storage.Alert) {
+	// this env var is for customer configurability to allow time to adapt to the new expected behavior
+	//  planned to be removed in a future release (See ROX-8989)
+	if !env.NotifyOnEveryRuntimeEvent() {
+		return
+	}
+
+	for _, alert := range updatedAlerts {
+		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
+			d.notifier.ProcessAlert(ctx, alert)
+		}
+	}
+}
+
+// updateBatch updates all alerts in the datastore.
 func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error updating alerts: ")
 	for _, existingAlert := range alertsToMark {
@@ -80,7 +101,7 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 	return errList.ToError()
 }
 
-// MarkAlertsStale marks all of the input alerts stale in the input datastore.
+// markAlertsStale marks all input alerts stale in the input datastore.
 func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
 	for _, existingAlert := range alertsToMark {
@@ -129,7 +150,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 	return false
 }
 
-// NotifyAndUpdateBatch runs the notifier on the input alerts then stores them.
+// notifyAndUpdateBatch runs the notifier on the input alerts then stores them.
 func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	for _, existingAlert := range alertsToMark {
 		if d.shouldDebounceNotification(ctx, existingAlert) {

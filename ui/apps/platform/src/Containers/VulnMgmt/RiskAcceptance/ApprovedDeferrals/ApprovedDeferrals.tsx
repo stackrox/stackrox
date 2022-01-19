@@ -1,13 +1,14 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
-import { SearchFilter } from 'types/search';
+import useSearch from 'hooks/useSearch';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedDeferralsTable from './ApprovedDeferralsTable';
 
 function ApprovedDeferrals(): ReactElement {
-    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
+    const { searchFilter, setSearchFilter } = useSearch();
+
     const modifiedSearchObject = {
         ...searchFilter,
         'Expired Request': 'false',
@@ -16,16 +17,19 @@ function ApprovedDeferrals(): ReactElement {
     if (!modifiedSearchObject['Request Status']) {
         modifiedSearchObject['Request Status'] = ['APPROVED'];
     }
+    const requestID = modifiedSearchObject['Request ID'];
+    delete modifiedSearchObject['Request ID'];
     const query = queryService.objectToWhereClause(modifiedSearchObject);
 
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { isLoading, data, refetchQuery } = useVulnerabilityRequests({
         query,
+        requestID,
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
             sortOption: {
-                field: 'id',
+                field: 'Last Updated',
                 reversed: false,
             },
         },
