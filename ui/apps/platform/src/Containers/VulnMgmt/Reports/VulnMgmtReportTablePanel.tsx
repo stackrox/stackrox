@@ -6,13 +6,14 @@ import {
     AlertGroup,
     AlertVariant,
     Button,
-    Flex,
-    FlexItem,
+    DropdownItem,
     Divider,
     PageSection,
     PageSectionVariants,
     Pagination,
-    DropdownItem,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
@@ -22,12 +23,15 @@ import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import SearchFilterResults from 'Components/PatternFly/SearchFilterResults';
 import TableCell from 'Components/PatternFly/TableCell';
 import { selectors } from 'reducers';
 import { getHasReadWritePermission } from 'reducers/roles';
 import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
+import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import ReportsSearchFilter from './Components/ReportsSearchFilter';
 
 export type ActionItem = {
     title: string | ReactElement;
@@ -48,6 +52,8 @@ type ReportingTablePanelProps = {
     setCurrentPage: (page) => void;
     perPage: number;
     setPerPage: (perPage) => void;
+    searchFilter: SearchFilter;
+    setSearchFilter: (SearchFilter) => void;
     activeSortIndex: number;
     setActiveSortIndex: (idx) => void;
     activeSortDirection: SortDirection;
@@ -68,6 +74,8 @@ function ReportingTablePanel({
     setCurrentPage,
     perPage,
     setPerPage,
+    searchFilter,
+    setSearchFilter,
     activeSortIndex,
     setActiveSortIndex,
     activeSortDirection,
@@ -205,28 +213,49 @@ function ReportingTablePanel({
                     </AlertGroup>
                 </PageSection>
             )}
-            <Flex
-                className="pf-u-p-md"
-                alignSelf={{ default: 'alignSelfCenter' }}
-                fullWidth={{ default: 'fullWidth' }}
-            >
-                <FlexItem data-testid="reports-bulk-actions-dropdown">
-                    <BulkActionsDropdown isDisabled={!hasSelections}>
-                        <DropdownItem key="delete" component="button" onClick={onDeleteSelected}>
-                            Delete {numSelected} {pluralize('report', numSelected)}
-                        </DropdownItem>
-                    </BulkActionsDropdown>
-                </FlexItem>
-                <FlexItem align={{ default: 'alignRight' }}>
-                    <Pagination
-                        itemCount={reportCount}
-                        page={currentPage}
-                        onSetPage={changePage}
-                        perPage={perPage}
-                        onPerPageSelect={changePerPage}
-                    />
-                </FlexItem>
-            </Flex>
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <ReportsSearchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem variant="separator" />
+                    <ToolbarItem>
+                        <BulkActionsDropdown isDisabled={!hasSelections}>
+                            <DropdownItem
+                                key="delete"
+                                component="button"
+                                onClick={onDeleteSelected}
+                            >
+                                Delete {numSelected} {pluralize('report', numSelected)}
+                            </DropdownItem>
+                        </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={reportCount}
+                            page={currentPage}
+                            onSetPage={changePage}
+                            perPage={perPage}
+                            onPerPageSelect={changePerPage}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+            {Object.keys(searchFilter).length !== 0 && (
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <SearchFilterResults
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
             <Divider component="div" />
             <PageSection isFilled hasOverflowScroll>
                 <TableComposable variant="compact">

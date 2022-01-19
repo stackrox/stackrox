@@ -3927,6 +3927,7 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - checkout
@@ -4018,6 +4019,7 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - checkout
@@ -4126,6 +4128,8 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
 
     steps:
       - run-qa-tests:
@@ -4166,6 +4170,8 @@ jobs:
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
 
     steps:
       - run-qa-tests:
@@ -4395,6 +4401,8 @@ jobs:
       ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
       IS_RACE_BUILD: "true"
       ROX_VULN_RISK_MANAGEMENT: "true"
+      ROX_VULN_REPORTING: "true"
+
 
     steps:
       - run-qa-tests:
@@ -4736,6 +4744,8 @@ jobs:
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
 
     steps:
       - run-qa-tests:
@@ -4779,6 +4789,7 @@ jobs:
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - run-qa-tests:

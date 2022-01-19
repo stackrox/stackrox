@@ -95,7 +95,7 @@ function useRiskAcceptance({ requestIDs }: UseRiskAcceptance) {
         if (expiresWhenFixed) {
             expiry = { ...expiry, expiresWhenFixed };
         }
-        if (expiresOn) {
+        if (expiresOn !== undefined) {
             expiry = { ...expiry, expiresOn };
         }
 

@@ -49,6 +49,7 @@ func init() {
 			"suppressExpiry: Time",
 			"activeState(query: String): ActiveState",
 			"vulnerabilityState: String!",
+			"effectiveVulnerabilityRequest: VulnerabilityRequest",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
@@ -105,6 +106,7 @@ type VulnerabilityResolver interface {
 	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 
 	VulnerabilityState(ctx context.Context) string
+	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
 }
 
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).

@@ -29,7 +29,7 @@ type RenderOptions struct {
 }
 
 // FieldsFromClusterAndRenderOpts gets the template values for values.yaml
-func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, opts RenderOptions) (charts.MetaValues, error) {
+func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, opts RenderOptions) (*charts.MetaValues, error) {
 	mainImage, collectorImage, err := MakeClusterImageNames(imageFlavor, c)
 	if err != nil {
 		return nil, err
@@ -65,19 +65,19 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 }
 
 // setMainOverride adds main image values to meta values as defined in secured cluster object.
-func setMainOverride(mainImage *storage.ImageName, metaValues charts.MetaValues) {
-	metaValues["MainRegistry"] = mainImage.Registry
-	metaValues["ImageRemote"] = mainImage.Remote
-	metaValues["ImageTag"] = mainImage.Tag
+func setMainOverride(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
+	metaValues.MainRegistry = mainImage.Registry
+	metaValues.ImageRemote = mainImage.Remote
+	metaValues.ImageTag = mainImage.Tag
 }
 
 // setCollectorOverrideToMetaValues adds collector image values to meta values as defined in the provided *storage.ImageName objects.
-func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collectorSlimImage *storage.ImageName, metaValues charts.MetaValues) {
-	metaValues["CollectorRegistry"] = collectorImage.Registry
-	metaValues["CollectorFullImageRemote"] = collectorImage.Remote
-	metaValues["CollectorSlimImageRemote"] = collectorSlimImage.Remote
-	metaValues["CollectorFullImageTag"] = collectorImage.Tag
-	metaValues["CollectorSlimImageTag"] = collectorSlimImage.Tag
+func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collectorSlimImage *storage.ImageName, metaValues *charts.MetaValues) {
+	metaValues.CollectorRegistry = collectorImage.Registry
+	metaValues.CollectorFullImageRemote = collectorImage.Remote
+	metaValues.CollectorSlimImageRemote = collectorSlimImage.Remote
+	metaValues.CollectorFullImageTag = collectorImage.Tag
+	metaValues.CollectorSlimImageTag = collectorSlimImage.Tag
 }
 
 // determineCollectorImages is used to derive collector slim and full images from provided main and collector values.
@@ -123,7 +123,7 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 	}
 }
 
-func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) charts.MetaValues {
+func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) *charts.MetaValues {
 	envVars := make(map[string]string)
 	if devbuild.IsEnabled() {
 		for _, feature := range features.Flags {
@@ -136,45 +136,45 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 		command = "oc"
 	}
 
-	return charts.MetaValues{
-		"ClusterName": c.Name,
-		"ClusterType": c.Type.String(),
+	return &charts.MetaValues{
+		ClusterName: c.Name,
+		ClusterType: c.Type.String(),
 
-		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
+		PublicEndpoint:     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
+		AdvertisedEndpoint: urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		"CollectionMethod": c.CollectionMethod.String(),
+		CollectionMethod: c.CollectionMethod.String(),
 
 		// Hardcoding RHACS charts repo for now.
 		// TODO: fill ChartRepo based on the current image flavor.
-		"ChartRepo": defaults.ChartRepo{
+		ChartRepo: defaults.ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
 		},
 
-		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
-		"CreateUpgraderSA":   opts.CreateUpgraderSA,
+		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
+		CreateUpgraderSA:   opts.CreateUpgraderSA,
 
-		"EnvVars": envVars,
+		EnvVars: envVars,
 
-		"K8sCommand": command,
+		K8sCommand: command,
 
-		"OfflineMode": env.OfflineModeEnv.BooleanSetting(),
+		OfflineMode: env.OfflineModeEnv.BooleanSetting(),
 
-		"SlimCollector": opts.SlimCollector,
+		SlimCollector: opts.SlimCollector,
 
-		"KubectlOutput": true,
+		KubectlOutput: true,
 
-		"Versions": versions,
+		Versions: versions,
 
-		"FeatureFlags": make(map[string]string),
+		FeatureFlags: make(map[string]interface{}),
 
-		"AdmissionController":              c.AdmissionController,
-		"AdmissionControlListenOnUpdates":  c.GetAdmissionControllerUpdates(),
-		"AdmissionControlListenOnEvents":   c.GetAdmissionControllerEvents(),
-		"DisableBypass":                    c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-		"TimeoutSeconds":                   c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-		"ScanInline":                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-		"AdmissionControllerEnabled":       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-		"AdmissionControlEnforceOnUpdates": c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
+		AdmissionController:              c.AdmissionController,
+		AdmissionControlListenOnUpdates:  c.GetAdmissionControllerUpdates(),
+		AdmissionControlListenOnEvents:   c.GetAdmissionControllerEvents(),
+		DisableBypass:                    c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
+		TimeoutSeconds:                   c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
+		ScanInline:                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
+		AdmissionControllerEnabled:       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
+		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 	}
 }

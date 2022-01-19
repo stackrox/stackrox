@@ -35,7 +35,7 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 			tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 			require.NoError(t, err, "error retrieving chart template")
 			metaVals := charts.GetMetaValuesForFlavor(imageFlavor)
-			metaVals["ClusterName"] = "Test"
+			metaVals.ClusterName = "Test"
 			ch, err := tpl.InstantiateAndLoad(metaVals)
 			require.NoError(t, err, "error instantiating chart")
 

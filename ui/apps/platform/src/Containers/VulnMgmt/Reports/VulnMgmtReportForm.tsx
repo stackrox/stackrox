@@ -242,7 +242,7 @@ function VulnMgmtReportForm({
                                             isDisabled={false}
                                         >
                                             <SelectOption value="true">
-                                                since last successfuly report
+                                                since last successful report
                                             </SelectOption>
                                             <SelectOption value="false">
                                                 all vulnerabilities

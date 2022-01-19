@@ -3,18 +3,15 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
-    Button,
-    ButtonVariant,
     Divider,
     DropdownItem,
-    InputGroup,
+    Flex,
+    FlexItem,
     Pagination,
-    TextInput,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { SearchIcon } from '@patternfly/react-icons';
 
 import useTableSelection from 'hooks/useTableSelection';
 
@@ -30,7 +27,7 @@ import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import VulnRequestedAction from '../VulnRequestedAction';
+import PendingApprovalPopover from './PendingApprovalPopover';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
@@ -104,30 +101,10 @@ function ObservedCVEsTable({
               .map((row) => row.id)
         : [];
 
-    const currentDate = new Date();
-
     return (
         <>
             <Toolbar id="toolbar">
                 <ToolbarContent>
-                    <ToolbarItem>
-                        {/* @TODO: This is just a place holder. Put the correct search filter here */}
-                        <InputGroup>
-                            <TextInput
-                                name="textInput1"
-                                id="textInput1"
-                                type="search"
-                                aria-label="search input example"
-                            />
-                            <Button
-                                variant={ButtonVariant.control}
-                                aria-label="search button for search input"
-                            >
-                                <SearchIcon />
-                            </Button>
-                        </InputGroup>
-                    </ToolbarItem>
-                    <ToolbarItem variant="separator" />
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
@@ -186,7 +163,6 @@ function ObservedCVEsTable({
                         <Th>CVSS score</Th>
                         <Th>Affected components</Th>
                         <Th>Discovered</Th>
-                        <Th>Pending Request State</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -218,7 +194,18 @@ function ObservedCVEsTable({
                                         isSelected: selected[rowIndex],
                                     }}
                                 />
-                                <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="CVE">
+                                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                        <FlexItem>{row.cve}</FlexItem>
+                                        {row.vulnerabilityRequest && (
+                                            <FlexItem>
+                                                <PendingApprovalPopover
+                                                    vulnRequestId={row.vulnerabilityRequest.id}
+                                                />
+                                            </FlexItem>
+                                        )}
+                                    </Flex>
+                                </Td>
                                 <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
@@ -231,20 +218,6 @@ function ObservedCVEsTable({
                                 </Td>
                                 <Td dataLabel="Discovered">
                                     <DateTimeFormat time={row.discoveredAtImage} />
-                                </Td>
-                                <Td dataLabel="Pending Request State">
-                                    {row.vulnerabilityRequest ? (
-                                        <VulnRequestedAction
-                                            targetState={row.vulnerabilityRequest.targetState}
-                                            requestStatus={row.vulnerabilityRequest.status}
-                                            deferralReq={
-                                                row.vulnerabilityRequest.deferralReq?.expiry
-                                            }
-                                            currentDate={currentDate}
-                                        />
-                                    ) : (
-                                        '-'
-                                    )}
                                 </Td>
                                 <Td
                                     className="pf-u-text-align-right"
