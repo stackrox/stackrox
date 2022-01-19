@@ -163,12 +163,16 @@ func (c *certManagerImpl) setCertIssueRequestTimeoutTimer(timer *time.Timer) {
 	c.certIssueRequestTimeoutTimer = timer
 }
 
-// set request id, and reset timers and retry backoff.
+// set request id, and stops timers.
 func (c *certManagerImpl) setRequestID(requestID string) {
 	c.requestStatus.requestID = requestID
-	c.requestStatus.backoff = c.certRequestBackoffProto
 	c.setRefreshTimer(nil)
 	c.setCertIssueRequestTimeoutTimer(nil)
+}
+
+// reset retry backoff.
+func (c *certManagerImpl) resetBackoff() {
+	c.requestStatus.backoff = c.certRequestBackoffProto
 }
 
 func (c *certManagerImpl) HandleIssueCertificatesResponse(requestID string, issueError error, certificates *storage.TypedServiceCertificateSet) error {
@@ -201,7 +205,6 @@ func (c *certManagerImpl) doHandleIssueCertificatesResponse(requestID string, is
 		log.Debugf("ignoring issue certificate response from unknown request id %q", requestID)
 		return
 	}
-	c.setRequestID("")
 
 	if issueError != nil {
 		// server side error.
@@ -218,6 +221,7 @@ func (c *certManagerImpl) doHandleIssueCertificatesResponse(requestID string, is
 	}
 
 	log.Infof("successfully refreshed credential in secrets %v", c.secretNames)
+	c.resetBackoff()
 	c.scheduleIssueCertificatesRefresh(nextTimeToRefresh)
 }
 
@@ -230,8 +234,6 @@ func (c *certManagerImpl) issueCertificatesTimeout(requestID string) {
 	}
 	log.Errorf("timeout waiting for certificates for secrets %v on request with id %q after waiting for %s",
 		c.secretNames, requestID, c.certRequestTimeout)
-	// ignore eventual responses for this request.
-	c.setRequestID("")
 	c.scheduleRetryIssueCertificatesRefresh()
 }
 
@@ -247,6 +249,8 @@ func (c *certManagerImpl) scheduleRetryIssueCertificatesRefresh() {
 
 func (c *certManagerImpl) scheduleIssueCertificatesRefresh(timeToRefresh time.Duration) {
 	log.Infof("certificates for secrets %v scheduled to be refreshed in %s", c.secretNames, timeToRefresh)
+	// ignore eventual responses for this request.
+	c.setRequestID("")
 	c.setRefreshTimer(time.AfterFunc(timeToRefresh, func() {
 		c.dispatchC <- requestCertificates{}
 	}))
