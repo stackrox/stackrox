@@ -86,3 +86,10 @@ func TestError(t *testing.T) {
 		assert.Equal(t, "not authorized: cannot load", mine.Error())
 	}
 }
+
+func TestErrorAs(t *testing.T) {
+	err := errors.Wrap(NotFound, "wrapped")
+	var re RoxError
+	assert.ErrorAs(t, err, &re)
+	assert.Equal(t, "not found", re.Error())
+}
