@@ -36,6 +36,14 @@ type secretsExpirationStrategy interface {
 	GetSecretsDuration(secrets map[storage.ServiceType]*v1.Secret) time.Duration
 }
 
+type errorReporter interface {
+	Report(err error)
+}
+
+type jobScheduler interface {
+	AfterFunc(d time.Duration, f func()) *time.Timer
+}
+
 // CertManager is in charge of storing and refreshing service TLS certificates in a set of k8s secrets.
 type CertManager interface {
 	Start(ctx context.Context) error
@@ -56,7 +64,9 @@ type certManagerImpl struct {
 	stopC                   concurrency.ErrorSignal
 	certRequestTimeout      time.Duration
 	certRequestBackoffProto wait.Backoff
-	secretExpiration        secretsExpirationStrategy
+	expirationStrategy      secretsExpirationStrategy
+	errorReporter           errorReporter
+	jobScheduler            jobScheduler
 	// set at Start().
 	ctx context.Context
 	// handled by loop goroutine.
@@ -86,7 +96,9 @@ func newCertManager(secretsClient corev1.SecretInterface, secretNames map[storag
 		stopC:                   concurrency.NewErrorSignal(),
 		certRequestTimeout:      defaultCertRequestTimeout,
 		certRequestBackoffProto: certRequestBackoff,
-		secretExpiration:        &secretsExpirationStrategyImpl{},
+		expirationStrategy:      &secretsExpirationStrategyImpl{},
+		errorReporter:           &errorReporterImpl{},
+		jobScheduler:            &jobSchedulerImpl{},
 		dispatchC:               make(chan interface{}, internalChannelBuffSize),
 		requestStatus:           &requestStatus{},
 	}
@@ -99,7 +111,7 @@ func (c *certManagerImpl) Start(ctx context.Context) error {
 		return errors.Wrapf(err, "fetching secrets %v", c.secretNames)
 	}
 	// this refreshes immediately if certificates are already expired.
-	c.scheduleIssueCertificatesRefresh(c.secretExpiration.GetSecretsDuration(secrets))
+	c.scheduleIssueCertificatesRefresh(c.expirationStrategy.GetSecretsDuration(secrets))
 
 	go c.loop()
 
@@ -110,10 +122,6 @@ func (c *certManagerImpl) Stop() {
 	c.stopC.Signal()
 }
 
-func (c *certManagerImpl) issueCertificates() (requestID string, err error) {
-	return c.issueCerts(c)
-}
-
 func (c *certManagerImpl) loop() {
 	// FIXME: protect private methods and fields
 	for {
@@ -121,17 +129,17 @@ func (c *certManagerImpl) loop() {
 		case msg := <-c.dispatchC:
 			switch m := msg.(type) {
 			case requestCertificates:
-				c.requestCertificates()
+				c.errorReporter.Report(c.requestCertificates())
 			case handleIssueCertificatesResponse:
-				c.doHandleIssueCertificatesResponse(m.requestID, m.issueError, m.certificates)
+				c.errorReporter.Report(c.handleIssueCertificatesResponse(m.requestID, m.issueError, m.certificates))
 			case issueCertificatesTimeout:
-				c.issueCertificatesTimeout(m.requestID)
+				c.errorReporter.Report(c.issueCertificatesTimeout(m.requestID))
 			default:
-				log.Errorf("received unknown message %v, message will be ignored", msg)
+				c.errorReporter.Report(errors.Errorf("received unknown message %v, message will be ignored", msg))
 			}
 
 		case <-c.stopC.Done():
-			c.doStop()
+			c.errorReporter.Report(c.doStop())
 			return
 		}
 	}
@@ -184,63 +192,66 @@ func (c *certManagerImpl) HandleIssueCertificatesResponse(requestID string, issu
 }
 
 // should only be called from the loop goroutine.
-func (c *certManagerImpl) requestCertificates() {
-	if requestID, err := c.issueCertificates(); err != nil {
+func (c *certManagerImpl) requestCertificates() error {
+	requestID, err := c.issueCerts(c)
+	if err != nil {
 		// client side error
-		log.Errorf("client error sending request to issue certificates for secrets %v: %s",
-			c.secretNames, err)
 		c.scheduleRetryIssueCertificatesRefresh()
-	} else {
-		c.setRequestID(requestID)
-		c.setCertIssueRequestTimeoutTimer(time.AfterFunc(c.certRequestTimeout, func() {
-			c.dispatchC <- issueCertificatesTimeout{requestID: requestID}
-		}))
+		return errors.Wrapf(err, "client error sending request to issue certificates for secrets %v",
+			c.secretNames)
 	}
+	c.setRequestID(requestID)
+	c.setCertIssueRequestTimeoutTimer(c.jobScheduler.AfterFunc(c.certRequestTimeout, func() {
+		log.Debugf("request with id %q will timeout in %s", requestID, c.certRequestTimeout)
+		c.dispatchC <- issueCertificatesTimeout{requestID: requestID}
+	}))
+	return nil
 }
 
 // should only be called from the loop goroutine.
-func (c *certManagerImpl) doHandleIssueCertificatesResponse(requestID string, issueError error, certificates *storage.TypedServiceCertificateSet) {
+func (c *certManagerImpl) handleIssueCertificatesResponse(requestID string, issueError error,
+	certificates *storage.TypedServiceCertificateSet) error {
 	if requestID != c.requestStatus.requestID {
 		// silently ignore responses sent to the wrong CertManager.
 		log.Debugf("ignoring issue certificate response from unknown request id %q", requestID)
-		return
+		return nil
 	}
 
 	if issueError != nil {
 		// server side error.
-		log.Errorf("server side error issuing certificates for secrets %v: %s", c.secretNames, issueError)
 		c.scheduleRetryIssueCertificatesRefresh()
-		return
+		return errors.Wrapf(issueError, "server side error issuing certificates for secrets %v", c.secretNames)
 	}
 
 	nextTimeToRefresh, refreshErr := c.refreshSecrets(certificates)
 	if refreshErr != nil {
-		log.Errorf("failure to store the new certificates in the secrets %v: %s", c.secretNames, refreshErr)
 		c.scheduleRetryIssueCertificatesRefresh()
-		return
+		return errors.Wrapf(refreshErr, "failure to store the new certificates in the secrets %v", c.secretNames)
 	}
 
 	log.Infof("successfully refreshed credential in secrets %v", c.secretNames)
 	c.resetBackoff()
 	c.scheduleIssueCertificatesRefresh(nextTimeToRefresh)
+	return nil
 }
 
 // should only be called from the loop goroutine.
-func (c *certManagerImpl) issueCertificatesTimeout(requestID string) {
+func (c *certManagerImpl) issueCertificatesTimeout(requestID string) error {
 	if requestID != c.requestStatus.requestID {
 		// this is a timeout for a request we don't care about anymore.
 		log.Debugf("ignoring timeout on issue certificate request from unknown request id %q", requestID)
-		return
+		return nil
 	}
-	log.Errorf("timeout waiting for certificates for secrets %v on request with id %q after waiting for %s",
-		c.secretNames, requestID, c.certRequestTimeout)
 	c.scheduleRetryIssueCertificatesRefresh()
+	return errors.Errorf("timeout waiting for certificates for secrets %v on request with id %q after waiting "+
+		"for %s", c.secretNames, requestID, c.certRequestTimeout)
 }
 
 // should only be called from the loop goroutine.
-func (c *certManagerImpl) doStop() {
+func (c *certManagerImpl) doStop() error {
 	c.setRequestID("")
-	log.Info("CertManager stopped.")
+	log.Infof("cert manager for secrets %v stopped.", c.secretNames) // FIXME
+	return nil
 }
 
 func (c *certManagerImpl) scheduleRetryIssueCertificatesRefresh() {
@@ -251,7 +262,7 @@ func (c *certManagerImpl) scheduleIssueCertificatesRefresh(timeToRefresh time.Du
 	log.Infof("certificates for secrets %v scheduled to be refreshed in %s", c.secretNames, timeToRefresh)
 	// ignore eventual responses for this request.
 	c.setRequestID("")
-	c.setRefreshTimer(time.AfterFunc(timeToRefresh, func() {
+	c.setRefreshTimer(c.jobScheduler.AfterFunc(timeToRefresh, func() {
 		c.dispatchC <- requestCertificates{}
 	}))
 }
@@ -294,14 +305,28 @@ func (c *certManagerImpl) refreshSecrets(certificates *storage.TypedServiceCerti
 		// FIXME wrap
 		return 0, err
 	}
-	// TODO update secrets ROX-8969
+	// TODO update secrets ROX-9014
 
-	return c.secretExpiration.GetSecretsDuration(secrets), nil
+	return c.expirationStrategy.GetSecretsDuration(secrets), nil
 }
 
 type secretsExpirationStrategyImpl struct{}
 
 func (s *secretsExpirationStrategyImpl) GetSecretsDuration(secrets map[storage.ServiceType]*v1.Secret) time.Duration {
-	// TODO ROX-8969
+	// TODO ROX-9014
 	return 5 * time.Second
+}
+
+type errorReporterImpl struct{}
+
+func (*errorReporterImpl) Report(err error) {
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+type jobSchedulerImpl struct{}
+
+func (*jobSchedulerImpl) AfterFunc(d time.Duration, f func()) *time.Timer {
+	return time.AfterFunc(d, f)
 }

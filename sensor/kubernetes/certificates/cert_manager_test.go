@@ -7,6 +7,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +20,6 @@ import (
 
 const (
 	namespace = "namespace"
-	requestID = "requestID"
 )
 
 var (
@@ -37,6 +38,81 @@ func TestHandler(t *testing.T) {
 
 type certManagerSuite struct {
 	suite.Suite
+	ctx         context.Context
+	cancelCtx   context.CancelFunc
+	errReporter *recordErrorReporter
+	scheduler   *mockJobScheduler
+	certManager *certManagerImpl
+}
+
+func (s *certManagerSuite) TearDownTest() {
+	if s.cancelCtx != nil {
+		s.cancelCtx()
+	}
+	if s.certManager != nil {
+		s.certManager.Stop()
+	}
+
+	log.Warn("FIXME")
+}
+
+func (s *certManagerSuite) initialize(testTimeout time.Duration,
+	secretNamesMap map[storage.ServiceType]string,
+	certRequestTimeout time.Duration, expirations []time.Duration,
+	issueCerts CertIssuanceFunc) {
+	ctx := context.Background()
+	s.ctx, s.cancelCtx = context.WithTimeout(ctx, testTimeout)
+
+	secretNames := make([]string, len(secretNamesMap))
+	for _, secretName := range secretNamesMap {
+		secretNames = append(secretNames, secretName)
+	}
+	secretsClient := fakeSecretsClient(secretNames...)
+
+	s.errReporter = newRecordErrorReporter(3)
+	s.scheduler = newMockJobScheduler()
+
+	certManager := newCertManager(secretsClient, secretNamesMap, requestBackoff, issueCerts)
+	certManager.certRequestTimeout = certRequestTimeout
+	certManager.expirationStrategy = newFixedSecretsExpirationStrategy(expirations...)
+	certManager.errorReporter = s.errReporter
+	certManager.jobScheduler = s.scheduler
+	s.certManager = certManager
+}
+
+func (s *certManagerSuite) TestSuccessfulInitialRefresh() {
+	secretNames := map[storage.ServiceType]string{
+		storage.ServiceType_SCANNER_DB_SERVICE: "foo",
+	}
+	certRequestTimeout := 3 * time.Second
+	expirations := []time.Duration{0, 2 * time.Second}
+	s.initialize(time.Second, secretNames, certRequestTimeout, expirations,
+		// FIXME replace by mock method to assert on requestCertificates
+		func(manager CertManager) (string, error) {
+			requestID := uuid.NewV4().String()
+			go func() {
+				// TODO non nil certs ROX-9014
+				s.Require().NoError(manager.HandleIssueCertificatesResponse(requestID, nil, nil))
+			}()
+
+			return requestID, nil
+		})
+
+	s.scheduler.On("AfterFunc", expirations[0], mock.Anything).Once()
+	s.scheduler.On("AfterFunc", s.certManager.certRequestTimeout, mock.Anything).Once()
+	s.scheduler.On("AfterFunc", expirations[1], mock.Anything).Once().Run(func(mock.Arguments) {
+		s.certManager.Stop()
+	})
+
+	s.Require().NoError(s.certManager.Start(s.ctx))
+	waitErr, ok := s.errReporter.signal.WaitUntil(s.ctx)
+	s.Require().True(ok)
+	s.NoError(waitErr)
+
+	s.scheduler.AssertExpectations(s.T())
+	// requestCertificates, handleIssueCertificatesResponse, stop
+	s.Equal([]error{nil, nil, nil}, s.errReporter.errors)
+	// TODO: assert timers nil, retry reset, request id nil
 }
 
 func fakeClientSet(secretNames ...string) *fake.Clientset {
@@ -54,21 +130,18 @@ func fakeSecretsClient(secretNames ...string) corev1.SecretInterface {
 type fixedSecretsExpirationStrategy struct {
 	durations   []time.Duration
 	invocations int
-	signal      concurrency.ErrorSignal
 }
 
 func newFixedSecretsExpirationStrategy(durations ...time.Duration) *fixedSecretsExpirationStrategy {
 	return &fixedSecretsExpirationStrategy{
 		durations: durations,
-		signal:    concurrency.NewErrorSignal(),
 	}
 }
 
-// signals .signal when the last timeout is reached
-func (s *fixedSecretsExpirationStrategy) GetSecretsDuration(secrets map[storage.ServiceType]*v1.Secret) (duration time.Duration) {
+// returns the last duration forever when it runs out of durations
+func (s *fixedSecretsExpirationStrategy) GetSecretsDuration(map[storage.ServiceType]*v1.Secret) (duration time.Duration) {
 	s.invocations++
 	if len(s.durations) <= 1 {
-		s.signal.Signal()
 		return s.durations[0]
 	}
 
@@ -76,40 +149,46 @@ func (s *fixedSecretsExpirationStrategy) GetSecretsDuration(secrets map[storage.
 	return duration
 }
 
-func (s *certManagerSuite) TestSuccessfulRefresh() {
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-	defer cancel()
+// the reporter will Signal() its signal as soon as numErrorsToSignal are reported.
+type recordErrorReporter struct {
+	reporter          errorReporter
+	errors            []error
+	numErrorsToSignal int
+	signal            concurrency.ErrorSignal
+}
 
-	secretName := "foo"
-	secretNames := map[storage.ServiceType]string{
-		storage.ServiceType_SCANNER_DB_SERVICE: secretName,
+func (r *recordErrorReporter) Report(err error) {
+	r.errors = append(r.errors, err)
+	r.reporter.Report(err)
+	if len(r.errors) >= r.numErrorsToSignal {
+		r.signal.Signal()
 	}
-	secretsClient := fakeSecretsClient(secretName)
-	certManager := newCertManager(secretsClient, secretNames, requestBackoff,
-		func(manager CertManager) (requestID string, err error) {
-			// FIXME nil certs
-			s.Require().NoError(manager.HandleIssueCertificatesResponse(requestID, nil, nil))
-			return requestID, nil
-		})
-	defer certManager.Stop()
-	certManager.certRequestTimeout = 2 * time.Second
-	expirationStrategy := newFixedSecretsExpirationStrategy(0, 2*time.Second)
-	certManager.secretExpiration = expirationStrategy
+}
 
-	s.Require().NoError(certManager.Start(ctx))
+func newRecordErrorReporter(numErrorsToSignal int) *recordErrorReporter {
+	return &recordErrorReporter{
+		reporter:          &errorReporterImpl{},
+		signal:            concurrency.NewErrorSignal(),
+		numErrorsToSignal: numErrorsToSignal,
+	}
+}
 
-	// FIXME: idea, add error handler fields to certManagerImpl, that processes errors in loop, and
-	// make the processing functions return err. For prod it just logs; for test it keeps a slice of
-	// errors or something we can inspect
+// AfterFunc records the call in the mock, and then returns AfterFunc() for the
+// wrapped scheduler.
+type mockJobScheduler struct {
+	mock.Mock
+	scheduler jobScheduler
+}
 
-	waitErr, ok := expirationStrategy.signal.WaitUntil(ctx)
-	s.Require().True(ok)
-	s.NoError(waitErr)
+func (s *mockJobScheduler) AfterFunc(d time.Duration, f func()) *time.Timer {
+	s.Called(d, f)
+	return s.scheduler.AfterFunc(d, f)
+}
 
-	// TODO assert certManager not stopped
-
-	s.Empty(certManager.requestStatus.requestID)
+func newMockJobScheduler() *mockJobScheduler {
+	return &mockJobScheduler{
+		scheduler: &jobSchedulerImpl{},
+	}
 }
 
 /*
@@ -119,6 +198,8 @@ TODO failures:
 - server failure
 - client failure
 - timeout
+- unknown request ids
+- nil cert manager
 
 in all check retries as expected
 */
