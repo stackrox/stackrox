@@ -878,10 +878,6 @@ func (resolver *cVEResolver) addScopeContext(query *v1.Query) (context.Context, 
 // EffectiveVulnerabilityRequest returns the effective vulnerability request i.e. the request that directly impacts
 // this vulnerability in the given image scope.
 func (resolver *cVEResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
-	return effectiveVulnerabilityRequest(ctx, resolver.root, resolver.data.GetId())
-}
-
-func effectiveVulnerabilityRequest(ctx context.Context, resolver *Resolver, cve string) (*VulnerabilityRequestResolver, error) {
 	var imageID string
 	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
@@ -889,7 +885,7 @@ func effectiveVulnerabilityRequest(ctx context.Context, resolver *Resolver, cve 
 	}
 
 	if imageID == "" {
-		return nil, errors.Errorf("image scope must be provided for determining effective vulnerability request for cve %s", cve)
+		return nil, errors.Errorf("image scope must be provided for determining effective vulnerability request for cve %s", resolver.data.GetId())
 	}
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
@@ -897,12 +893,13 @@ func effectiveVulnerabilityRequest(ctx context.Context, resolver *Resolver, cve 
 	}
 	img, err := imageLoader.FromID(ctx, imageID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fetching image with id %s", imageID)
+		log.Error(errors.Wrapf(err, "fetching image with id %s", imageID))
+		return nil, nil
 	}
 
-	req, err := resolver.vulnReqMgr.EffectiveVulnReq(ctx, img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag(), cve)
+	req, err := resolver.root.vulnReqMgr.EffectiveVulnReq(ctx, img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag(), resolver.data.GetId())
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapVulnerabilityRequest(req, nil)
+	return resolver.root.wrapVulnerabilityRequest(req, nil)
 }

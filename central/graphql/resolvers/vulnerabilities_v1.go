@@ -517,8 +517,7 @@ func (evr *EmbeddedVulnerabilityResolver) vulnRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).Query()
 }
 
-// EffectiveVulnerabilityRequest returns the effective vulnerability request i.e. the request that directly impacts
-// this vulnerability in the given image scope.
+// EffectiveVulnerabilityRequest is not implemented for v1.
 func (evr *EmbeddedVulnerabilityResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
-	return effectiveVulnerabilityRequest(ctx, evr.root, evr.data.GetCve())
+	return nil, nil
 }
