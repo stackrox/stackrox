@@ -64,6 +64,10 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
         sortOption,
     } = useTableSort(columns, defaultSort);
 
+    function setSearchFilter(filters: Record<string, string | string[]>) {
+        console.log({ filters });
+    }
+
     const { reports, reportCount, error, isLoading, triggerRefresh } = useFetchReports(
         filteredSearch,
         sortOption,
@@ -149,6 +153,8 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                     setCurrentPage={setCurrentPage}
                     perPage={perPage}
                     setPerPage={setPerPage}
+                    searchFilter={filteredSearch}
+                    setSearchFilter={setSearchFilter}
                     activeSortIndex={activeSortIndex}
                     setActiveSortIndex={setActiveSortIndex}
                     activeSortDirection={activeSortDirection}

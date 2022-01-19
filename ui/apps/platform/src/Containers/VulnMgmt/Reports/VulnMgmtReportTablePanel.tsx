@@ -6,13 +6,14 @@ import {
     AlertGroup,
     AlertVariant,
     Button,
-    Flex,
-    FlexItem,
+    DropdownItem,
     Divider,
     PageSection,
     PageSectionVariants,
     Pagination,
-    DropdownItem,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
@@ -27,6 +28,7 @@ import { selectors } from 'reducers';
 import { getHasReadWritePermission } from 'reducers/roles';
 import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
+import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ReportsSearchFilter from './Components/ReportsSearchFilter';
 
@@ -49,6 +51,8 @@ type ReportingTablePanelProps = {
     setCurrentPage: (page) => void;
     perPage: number;
     setPerPage: (perPage) => void;
+    searchFilter: SearchFilter;
+    setSearchFilter: (SearchFilter) => void;
     activeSortIndex: number;
     setActiveSortIndex: (idx) => void;
     activeSortDirection: SortDirection;
@@ -69,6 +73,8 @@ function ReportingTablePanel({
     setCurrentPage,
     perPage,
     setPerPage,
+    searchFilter,
+    setSearchFilter,
     activeSortIndex,
     setActiveSortIndex,
     activeSortDirection,
@@ -206,31 +212,37 @@ function ReportingTablePanel({
                     </AlertGroup>
                 </PageSection>
             )}
-            <Flex
-                className="pf-u-p-md"
-                alignSelf={{ default: 'alignSelfCenter' }}
-                fullWidth={{ default: 'fullWidth' }}
-            >
-                <FlexItem data-testid="reports-bulk-actions-dropdown">
-                    <ReportsSearchFilter searchFilter={{}} setSearchFilter={() => {}} />
-                </FlexItem>
-                <FlexItem data-testid="reports-bulk-actions-dropdown">
-                    <BulkActionsDropdown isDisabled={!hasSelections}>
-                        <DropdownItem key="delete" component="button" onClick={onDeleteSelected}>
-                            Delete {numSelected} {pluralize('report', numSelected)}
-                        </DropdownItem>
-                    </BulkActionsDropdown>
-                </FlexItem>
-                <FlexItem align={{ default: 'alignRight' }}>
-                    <Pagination
-                        itemCount={reportCount}
-                        page={currentPage}
-                        onSetPage={changePage}
-                        perPage={perPage}
-                        onPerPageSelect={changePerPage}
-                    />
-                </FlexItem>
-            </Flex>
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <ReportsSearchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem variant="separator" />
+                    <ToolbarItem>
+                        <BulkActionsDropdown isDisabled={!hasSelections}>
+                            <DropdownItem
+                                key="delete"
+                                component="button"
+                                onClick={onDeleteSelected}
+                            >
+                                Delete {numSelected} {pluralize('report', numSelected)}
+                            </DropdownItem>
+                        </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={reportCount}
+                            page={currentPage}
+                            onSetPage={changePage}
+                            perPage={perPage}
+                            onPerPageSelect={changePerPage}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
             <Divider component="div" />
             <PageSection isFilled hasOverflowScroll>
                 <TableComposable variant="compact">
