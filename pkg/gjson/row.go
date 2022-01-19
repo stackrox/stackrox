@@ -514,7 +514,7 @@ func countDimension(result gjson.Result, offset int) int {
 }
 
 func removeModifierExpressionsFromQuery(query string) string {
-	regs := ModifiersRegexp()
+	regs := modifieresRegexp()
 	for _, r := range regs {
 		query = r.ReplaceAllString(query, "")
 	}
