@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -56,30 +57,41 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.Conta
 	})
 }
 
+var (
+	totalInScanAndSet int32
+)
+
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
+	atomic.AddInt32(&totalInScanAndSet, 1)
+	defer atomic.AddInt32(&totalInScanAndSet, -1)
 	defer c.signal.Signal()
 
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
-	eb.Multiplier = 1.5
-	eb.MaxInterval = 2 * time.Minute
+	eb.Multiplier = 2
+	eb.MaxInterval = 4 * time.Minute
 	eb.MaxElapsedTime = 0 // Never stop the backoff, leave that decision to the parent context.
+
+	numTries := 0
 
 outer:
 	for {
+		numTries++
 		scannedImage, err := scanImage(ctx, svc, ci)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate limited, backoff and try again.
 				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
-					log.Infof("Got too many parallel scans (iamge: %+v). Retrying...", ci)
-					time.Sleep(eb.NextBackOff())
+					sleep := eb.NextBackOff()
+					log.Infof("Got too many parallel scans (image: %+v). Retrying... (will sleep for %s; there are %d scans in flight)", ci, sleep, atomic.LoadInt32(&totalInScanAndSet))
+					time.Sleep(sleep)
 					continue outer
 				}
 			}
 			c.image = types.ToImage(ci)
 			return
 		}
+		log.Infof("Image %+v done after %d tries", ci, numTries)
 		c.image = scannedImage.GetImage()
 	}
 }
