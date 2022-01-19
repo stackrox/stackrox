@@ -97,16 +97,14 @@ function PendingApprovalsTable({
     });
     const selectedDeferralsToCancel = rows.filter((row) => {
         return (
-            canCreateRequests &&
-            row.requestor.name === currentUserName &&
+            (canApproveRequests || (canCreateRequests && row.requestor.name === currentUserName)) &&
             row.targetState === 'DEFERRED' &&
             selectedIds.includes(row.id)
         );
     });
     const selectedFalsePositivesToCancel = rows.filter((row) => {
         return (
-            canCreateRequests &&
-            row.requestor.name === currentUserName &&
+            (canApproveRequests || (canCreateRequests && row.requestor.name === currentUserName)) &&
             row.targetState === 'FALSE_POSITIVE' &&
             selectedIds.includes(row.id)
         );
@@ -262,7 +260,8 @@ function PendingApprovalsTable({
                     <Tbody>
                         {rows.map((row, rowIndex) => {
                             const canCancelRequest =
-                                canCreateRequests && row.requestor.name === currentUserName;
+                                canApproveRequests ||
+                                (canCreateRequests && row.requestor.name === currentUserName);
 
                             return (
                                 <Tr key={row.id}>

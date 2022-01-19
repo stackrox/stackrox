@@ -1,18 +1,13 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
-    Button,
-    ButtonVariant,
     Divider,
     DropdownItem,
-    InputGroup,
     Pagination,
-    TextInput,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { SearchIcon } from '@patternfly/react-icons';
 
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
@@ -90,24 +85,6 @@ function FalsePositiveCVEsTable({
         <>
             <Toolbar id="toolbar">
                 <ToolbarContent>
-                    <ToolbarItem>
-                        {/* @TODO: This is just a place holder. Put the correct search filter here */}
-                        <InputGroup>
-                            <TextInput
-                                name="textInput1"
-                                id="textInput1"
-                                type="search"
-                                aria-label="search input example"
-                            />
-                            <Button
-                                variant={ButtonVariant.control}
-                                aria-label="search button for search input"
-                            >
-                                <SearchIcon />
-                            </Button>
-                        </InputGroup>
-                    </ToolbarItem>
-                    <ToolbarItem variant="separator" />
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
