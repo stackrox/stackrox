@@ -206,7 +206,6 @@ const getAuthProviderError = (state) => state.authProviderResponse;
 const getAuthProviderEditingState = (state) => state.isEditingAuthProvider;
 const getSaveAuthProviderStatus = (state) => state.saveAuthProviderStatus;
 const getCurrentUser = (state) => state.currentUser;
-const getCurrentUserName = (state) => state.currentUser.userInfo.friendlyName;
 const getAvailableProviderTypes = (state) => state.availableProviderTypes;
 
 export const selectors = {
@@ -220,6 +219,5 @@ export const selectors = {
     getAuthProviderEditingState,
     getSaveAuthProviderStatus,
     getCurrentUser,
-    getCurrentUserName,
     getAvailableProviderTypes,
 };

@@ -17,6 +17,7 @@ import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
+import useAuthStatus from 'hooks/useAuthStatus';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedDeferralRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -65,7 +66,8 @@ function ApprovedDeferralsTable({
     const { updateVulnRequests, undoVulnRequests } = useRiskAcceptance({
         requestIDs: requestsToBeAssessed?.requestIDs || [],
     });
-    const { currentUserName, hasReadWriteAccess } = usePermissions();
+    const { hasReadWriteAccess } = usePermissions();
+    const { currentUser } = useAuthStatus();
 
     function cancelAssessment() {
         setRequestsToBeAssessed(null);
@@ -86,7 +88,7 @@ function ApprovedDeferralsTable({
             return (
                 selectedIds.includes(row.id) &&
                 (canApproveRequests ||
-                    (canCreateRequests && row.requestor.name === currentUserName))
+                    (canCreateRequests && row.requestor.id === currentUser.userId))
             );
         })
         .map((row) => row.id);
@@ -185,7 +187,7 @@ function ApprovedDeferralsTable({
                         {rows.map((row, rowIndex) => {
                             const canReobserveCVE =
                                 canApproveRequests ||
-                                (canCreateRequests && row.requestor.name === currentUserName);
+                                (canCreateRequests && row.requestor.id === currentUser.userId);
                             const canUpdateDeferral = canReobserveCVE;
 
                             return (

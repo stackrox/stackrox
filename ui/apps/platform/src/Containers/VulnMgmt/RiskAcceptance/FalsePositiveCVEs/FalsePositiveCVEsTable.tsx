@@ -14,6 +14,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
+import useAuthStatus from 'hooks/useAuthStatus';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';
@@ -52,7 +53,8 @@ function FalsePositiveCVEsTable({
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
     });
-    const { currentUserName, hasReadWriteAccess } = usePermissions();
+    const { hasReadWriteAccess } = usePermissions();
+    const { currentUser } = useAuthStatus();
 
     function cancelAssessment() {
         setVulnsToBeAssessed(null);
@@ -74,7 +76,7 @@ function FalsePositiveCVEsTable({
                 selectedIds.includes(row.id) &&
                 (canApproveRequests ||
                     (canCreateRequests &&
-                        row.vulnerabilityRequest.requestor.name === currentUserName))
+                        row.vulnerabilityRequest.requestor.id === currentUser.userId))
             );
         })
         .map((row) => {
@@ -137,7 +139,7 @@ function FalsePositiveCVEsTable({
                         const canReobserveCVE =
                             canApproveRequests ||
                             (canCreateRequests &&
-                                row.vulnerabilityRequest.requestor.name === currentUserName);
+                                row.vulnerabilityRequest.requestor.id === currentUser.userId);
 
                         return (
                             <Tr key={row.cve}>

@@ -17,6 +17,7 @@ import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
+import useAuthStatus from 'hooks/useAuthStatus';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import VulnRequestedAction from '../VulnRequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
@@ -69,7 +70,8 @@ function PendingApprovalsTable({
     const { approveVulnRequests, denyVulnRequests, deleteVulnRequests } = useRiskAcceptance({
         requestIDs,
     });
-    const { currentUserName, hasReadWriteAccess } = usePermissions();
+    const { hasReadWriteAccess } = usePermissions();
+    const { currentUser } = useAuthStatus();
 
     function cancelAssessment() {
         setRequestsToBeAssessed(null);
@@ -97,14 +99,16 @@ function PendingApprovalsTable({
     });
     const selectedDeferralsToCancel = rows.filter((row) => {
         return (
-            (canApproveRequests || (canCreateRequests && row.requestor.name === currentUserName)) &&
+            (canApproveRequests ||
+                (canCreateRequests && row.requestor.id === currentUser.userId)) &&
             row.targetState === 'DEFERRED' &&
             selectedIds.includes(row.id)
         );
     });
     const selectedFalsePositivesToCancel = rows.filter((row) => {
         return (
-            (canApproveRequests || (canCreateRequests && row.requestor.name === currentUserName)) &&
+            (canApproveRequests ||
+                (canCreateRequests && row.requestor.id === currentUser.userId)) &&
             row.targetState === 'FALSE_POSITIVE' &&
             selectedIds.includes(row.id)
         );
@@ -261,7 +265,7 @@ function PendingApprovalsTable({
                         {rows.map((row, rowIndex) => {
                             const canCancelRequest =
                                 canApproveRequests ||
-                                (canCreateRequests && row.requestor.name === currentUserName);
+                                (canCreateRequests && row.requestor.id === currentUser.userId);
 
                             return (
                                 <Tr key={row.id}>

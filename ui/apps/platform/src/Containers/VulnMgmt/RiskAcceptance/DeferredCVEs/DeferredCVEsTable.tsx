@@ -14,6 +14,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
+import useAuthStatus from 'hooks/useAuthStatus';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 import { DeferredCVEsToBeAssessed } from './types';
@@ -53,7 +54,8 @@ function DeferredCVEsTable({
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
     });
-    const { currentUserName, hasReadWriteAccess } = usePermissions();
+    const { hasReadWriteAccess } = usePermissions();
+    const { currentUser } = useAuthStatus();
 
     function cancelAssessment() {
         setVulnsToBeAssessed(null);
@@ -75,7 +77,7 @@ function DeferredCVEsTable({
                 selectedIds.includes(row.id) &&
                 (canApproveRequests ||
                     (canCreateRequests &&
-                        row.vulnerabilityRequest.requestor.name === currentUserName))
+                        row.vulnerabilityRequest.requestor.id === currentUser.userId))
             );
         })
         .map((row) => {
@@ -139,7 +141,7 @@ function DeferredCVEsTable({
                         const canReobserveCVE =
                             canApproveRequests ||
                             (canCreateRequests &&
-                                row.vulnerabilityRequest?.requestor.name === currentUserName);
+                                row.vulnerabilityRequest?.requestor.id === currentUser.userId);
 
                         return (
                             <Tr key={row.cve}>
