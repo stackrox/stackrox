@@ -4,6 +4,8 @@ import { ExtendedPageAction } from 'utils/queryStringUtils';
 
 export type VulnMgmtReportQueryObject = {
     action?: ExtendedPageAction;
+    s?: Record<string, string>;
+    p?: string; // really a page number, but all URL params are parsed as strings
 };
 
 export const emptyReportValues: ReportConfiguration = {
