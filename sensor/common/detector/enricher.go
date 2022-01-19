@@ -98,6 +98,7 @@ outer:
 		}
 		log.Infof("Image %+v done after %d tries", ci, numTries)
 		c.image = scannedImage.GetImage()
+		return
 	}
 }
 
