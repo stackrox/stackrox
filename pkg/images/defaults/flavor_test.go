@@ -53,7 +53,8 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 			shouldPanicAlways: true,
 		},
 		"": {
-			shouldPanicAlways: true,
+			expectedFlavor:       DevelopmentBuildImageFlavor(),
+			shouldPanicOnRelease: true,
 		},
 	}
 
