@@ -77,7 +77,7 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 	}
 
 	if vulnReportFilters.SinceLastReport {
-		reportLastSuccessfulRunTs := fmt.Sprintf(">%s", q.lastSuccessfulRunTime.Format("01/02/2006 3:04:05 PM MST"))
+		reportLastSuccessfulRunTs := fmt.Sprintf(">=%s", q.lastSuccessfulRunTime.Format("01/02/2006 3:04:05 PM MST"))
 		tsQ := search.NewQueryBuilder().AddStrings(search.FirstImageOccurrenceTimestamp, reportLastSuccessfulRunTs).Query()
 		conjuncts = append(conjuncts, tsQ)
 	}
