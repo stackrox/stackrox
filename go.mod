@@ -43,10 +43,9 @@ require (
 	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
 	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fatih/color v1.12.0
-	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.2.0
 	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -77,8 +76,8 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.16.0
+	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/gomega v1.17.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
@@ -107,14 +106,14 @@ require (
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
-	go.uber.org/zap v1.19.0
+	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/net v0.0.0-20210902165921-8d991716f632
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210908233432-aa78b53d3365
+	golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
-	golang.org/x/tools v0.1.5
+	golang.org/x/tools v0.1.6-0.20210820212750-d4cc65f0b2ff
 	golang.stackrox.io/grpc-http1 v0.2.4
 	google.golang.org/api v0.57.0
 	google.golang.org/genproto v0.0.0-20210903162649-d08c68adba83
@@ -125,14 +124,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
-	k8s.io/api v0.22.2
-	k8s.io/apimachinery v0.22.2
-	k8s.io/apiserver v0.22.2
-	k8s.io/client-go v0.22.2
+	k8s.io/api v0.23.0
+	k8s.io/apimachinery v0.23.0
+	k8s.io/apiserver v0.23.0
+	k8s.io/client-go v0.23.0
 	k8s.io/kubectl v0.22.2
 	k8s.io/kubelet v0.22.2
-	k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e
-	sigs.k8s.io/controller-runtime v0.10.2
+	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
+	sigs.k8s.io/controller-runtime v0.11.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
