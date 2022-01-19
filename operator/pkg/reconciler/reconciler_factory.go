@@ -37,17 +37,12 @@ var (
 func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix image.ChartPrefix, translator values.Translator, extraOpts ...reconciler.Option) error {
 	metaVals := charts.GetMetaValuesForFlavor(defaults.GetImageFlavorFromEnv())
 	if !buildinfo.ReleaseBuild {
-		metaVals["MainRegistry"] = mainRegistryOverride.Setting()
-		metaVals["CollectorRegistry"] = collectorRegistryOverride.Setting()
+		metaVals.MainRegistry = mainRegistryOverride.Setting()
+		metaVals.CollectorRegistry = collectorRegistryOverride.Setting()
 	}
-	metaVals["Operator"] = true
+	metaVals.Operator = true
 
-	// TODO: RS-379: Remove casting and simply override value:
-	// metaVals.ImagePullSecrets.AllowNone = true
-	if imagePullSecrets, ok := metaVals["ImagePullSecrets"].(defaults.ImagePullSecrets); ok {
-		imagePullSecrets.AllowNone = true
-		metaVals["ImagePullSecrets"] = imagePullSecrets
-	}
+	metaVals.ImagePullSecrets.AllowNone = true
 
 	chart, err := image.GetDefaultImage().LoadChart(chartPrefix, metaVals)
 	if err != nil {
