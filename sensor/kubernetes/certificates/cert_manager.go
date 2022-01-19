@@ -19,20 +19,20 @@ import (
 
 const (
 	// FIXME adjust
-	internalChannelBuffSize = 50
-	defaultCentralRequestTimeout = time.Minute
+	internalChannelBuffSize   = 50
+	defaultCertRequestTimeout = time.Minute
 )
 
 var (
 	log = logging.LoggerForModule()
 	// FIXME adjust
-	k8sAPIBackoff = retry.DefaultBackoff
-	_ SecretsExpirationStrategy = (*secretsExpirationStrategyImpl)(nil)
+	k8sAPIBackoff                           = retry.DefaultBackoff
+	_             secretsExpirationStrategy = (*secretsExpirationStrategyImpl)(nil)
 
 	_ CertManager = (*certManagerImpl)(nil)
 )
 
-type SecretsExpirationStrategy interface {
+type secretsExpirationStrategy interface {
 	GetSecretsDuration(secrets map[storage.ServiceType]*v1.Secret) time.Duration
 }
 
@@ -40,53 +40,55 @@ type SecretsExpirationStrategy interface {
 type CertManager interface {
 	Start(ctx context.Context) error
 	Stop()
-	// HandleIssueCertificatesResponse handles a certificate response from central.
+	// HandleIssueCertificatesResponse handles a certificate issue response.
 	// - Precondition: if issueError is nil then certificates is not nil.
 	// - Implementations should handle a nil receiver like an unknown request ID.
 	HandleIssueCertificatesResponse(requestID string, issueError error, certificates *storage.TypedServiceCertificateSet) error
 }
 
+// CertIssuanceFunc can be used to request a certificate.
 type CertIssuanceFunc func(CertManager) (requestID string, err error)
 type certManagerImpl struct {
 	// should be kept constant.
-	secretNames map[storage.ServiceType]string
-	secretsClient corev1.SecretInterface
-	issueCerts CertIssuanceFunc
-	stopC    concurrency.ErrorSignal
-	centralRequestTimeout time.Duration
-	centralBackoffProto wait.Backoff
-	secretExpiration SecretsExpirationStrategy
+	secretNames             map[storage.ServiceType]string
+	secretsClient           corev1.SecretInterface
+	issueCerts              CertIssuanceFunc
+	stopC                   concurrency.ErrorSignal
+	certRequestTimeout      time.Duration
+	certRequestBackoffProto wait.Backoff
+	secretExpiration        secretsExpirationStrategy
 	// set at Start().
-	ctx  context.Context
+	ctx context.Context
 	// handled by loop goroutine.
-	dispatchC     chan interface{}
-	requestStatus *requestStatus
-	refreshTimer  *time.Timer
+	dispatchC                    chan interface{}
+	requestStatus                *requestStatus
+	refreshTimer                 *time.Timer
 	certIssueRequestTimeoutTimer *time.Timer
 }
 
 type requestStatus struct {
 	requestID string
-	backoff wait.Backoff
+	backoff   wait.Backoff
 }
 
+// NewCertManager creates a new CertManager.
 func NewCertManager(secretsClient corev1.SecretInterface, secretNames map[storage.ServiceType]string,
-	centralBackoff wait.Backoff, issueCerts CertIssuanceFunc) CertManager {
-	return newCertManager(secretsClient, secretNames, centralBackoff, issueCerts)
+	certRequestBackoff wait.Backoff, issueCerts CertIssuanceFunc) CertManager {
+	return newCertManager(secretsClient, secretNames, certRequestBackoff, issueCerts)
 }
 
 func newCertManager(secretsClient corev1.SecretInterface, secretNames map[storage.ServiceType]string,
-	centralBackoff wait.Backoff, issueCerts CertIssuanceFunc) *certManagerImpl {
+	certRequestBackoff wait.Backoff, issueCerts CertIssuanceFunc) *certManagerImpl {
 	return &certManagerImpl{
-		secretNames:           secretNames,
-		secretsClient:         secretsClient,
-		issueCerts:            issueCerts,
-		stopC:   				concurrency.NewErrorSignal(),
-		centralRequestTimeout: defaultCentralRequestTimeout,
-		centralBackoffProto:   centralBackoff,
-		secretExpiration:      &secretsExpirationStrategyImpl{},
-		dispatchC:             make(chan interface{}, internalChannelBuffSize),
-		requestStatus:         &requestStatus{},
+		secretNames:             secretNames,
+		secretsClient:           secretsClient,
+		issueCerts:              issueCerts,
+		stopC:                   concurrency.NewErrorSignal(),
+		certRequestTimeout:      defaultCertRequestTimeout,
+		certRequestBackoffProto: certRequestBackoff,
+		secretExpiration:        &secretsExpirationStrategyImpl{},
+		dispatchC:               make(chan interface{}, internalChannelBuffSize),
+		requestStatus:           &requestStatus{},
 	}
 }
 
@@ -108,7 +110,7 @@ func (c *certManagerImpl) Stop() {
 	c.stopC.Signal()
 }
 
-func (c *certManagerImpl) issueCertificates() (requestID string, err error){
+func (c *certManagerImpl) issueCertificates() (requestID string, err error) {
 	return c.issueCerts(c)
 }
 
@@ -116,7 +118,7 @@ func (c *certManagerImpl) loop() {
 	// FIXME: protect private methods and fields
 	for {
 		select {
-		case msg := <- c.dispatchC:
+		case msg := <-c.dispatchC:
 			switch m := msg.(type) {
 			case requestCertificates:
 				c.requestCertificates()
@@ -136,25 +138,25 @@ func (c *certManagerImpl) loop() {
 }
 
 type handleIssueCertificatesResponse struct {
-	requestID string
-	issueError error
+	requestID    string
+	issueError   error
 	certificates *storage.TypedServiceCertificateSet
 }
 
-type requestCertificates struct {}
+type requestCertificates struct{}
 
 type issueCertificatesTimeout struct {
 	requestID string
 }
 
-func (c *certManagerImpl) setRefreshTimer(timer *time.Timer){
+func (c *certManagerImpl) setRefreshTimer(timer *time.Timer) {
 	if c.refreshTimer != nil {
 		c.refreshTimer.Stop()
 	}
 	c.refreshTimer = timer
 }
 
-func (c *certManagerImpl) setCertIssueRequestTimeoutTimer(timer *time.Timer){
+func (c *certManagerImpl) setCertIssueRequestTimeoutTimer(timer *time.Timer) {
 	if c.certIssueRequestTimeoutTimer != nil {
 		c.certIssueRequestTimeoutTimer.Stop()
 	}
@@ -162,13 +164,12 @@ func (c *certManagerImpl) setCertIssueRequestTimeoutTimer(timer *time.Timer){
 }
 
 // set request id, and reset timers and retry backoff.
-func (c *certManagerImpl) setRequestId(requestID string) {
+func (c *certManagerImpl) setRequestID(requestID string) {
 	c.requestStatus.requestID = requestID
-	c.requestStatus.backoff = c.centralBackoffProto
+	c.requestStatus.backoff = c.certRequestBackoffProto
 	c.setRefreshTimer(nil)
 	c.setCertIssueRequestTimeoutTimer(nil)
 }
-
 
 func (c *certManagerImpl) HandleIssueCertificatesResponse(requestID string, issueError error, certificates *storage.TypedServiceCertificateSet) error {
 	if c == nil {
@@ -186,8 +187,8 @@ func (c *certManagerImpl) requestCertificates() {
 			c.secretNames, err)
 		c.scheduleRetryIssueCertificatesRefresh()
 	} else {
-		c.setRequestId(requestID)
-		c.setCertIssueRequestTimeoutTimer(time.AfterFunc(c.centralRequestTimeout, func() {
+		c.setRequestID(requestID)
+		c.setCertIssueRequestTimeoutTimer(time.AfterFunc(c.certRequestTimeout, func() {
 			c.dispatchC <- issueCertificatesTimeout{requestID: requestID}
 		}))
 	}
@@ -200,7 +201,7 @@ func (c *certManagerImpl) doHandleIssueCertificatesResponse(requestID string, is
 		log.Debugf("ignoring issue certificate response from unknown request id %q", requestID)
 		return
 	}
-	c.setRequestId("")
+	c.setRequestID("")
 
 	if issueError != nil {
 		// server side error.
@@ -228,15 +229,15 @@ func (c *certManagerImpl) issueCertificatesTimeout(requestID string) {
 		return
 	}
 	log.Errorf("timeout waiting for certificates for secrets %v on request with id %q after waiting for %s",
-		c.secretNames, requestID, c.centralRequestTimeout)
+		c.secretNames, requestID, c.certRequestTimeout)
 	// ignore eventual responses for this request.
-	c.setRequestId("")
+	c.setRequestID("")
 	c.scheduleRetryIssueCertificatesRefresh()
 }
 
 // should only be called from the loop goroutine.
 func (c *certManagerImpl) doStop() {
-	c.setRequestId("")
+	c.setRequestID("")
 	log.Info("CertManager stopped.")
 }
 
@@ -257,7 +258,7 @@ func (c *certManagerImpl) fetchSecrets() (map[storage.ServiceType]*v1.Secret, er
 	for serviceType, secretName := range c.secretNames {
 		var (
 			secret *v1.Secret
-			err error
+			err    error
 		)
 		retryErr := retry.OnError(k8sAPIBackoff,
 			func(err error) bool {
@@ -268,8 +269,8 @@ func (c *certManagerImpl) fetchSecrets() (map[storage.ServiceType]*v1.Secret, er
 				return err
 			},
 		)
-		if retryErr != nil{
-			fetchErr = multierror.Append(fetchErr,  errors.Wrapf(retryErr,"for secret %s", secretName))
+		if retryErr != nil {
+			fetchErr = multierror.Append(fetchErr, errors.Wrapf(retryErr, "for secret %s", secretName))
 		} else {
 			secretsMap[serviceType] = secret
 		}
@@ -294,10 +295,9 @@ func (c *certManagerImpl) refreshSecrets(certificates *storage.TypedServiceCerti
 	return c.secretExpiration.GetSecretsDuration(secrets), nil
 }
 
-type secretsExpirationStrategyImpl struct {}
+type secretsExpirationStrategyImpl struct{}
 
 func (s *secretsExpirationStrategyImpl) GetSecretsDuration(secrets map[storage.ServiceType]*v1.Secret) time.Duration {
 	// TODO ROX-8969
 	return 5 * time.Second
 }
-

@@ -20,13 +20,14 @@ const (
 	namespace = "namespace"
 	requestID = "requestID"
 )
+
 var (
-	centralBackoff = wait.Backoff{
+	requestBackoff = wait.Backoff{
 		Steps:    3,
 		Duration: 10 * time.Millisecond,
 		Factor:   10.0,
 		Jitter:   0.1,
-		Cap: 	  2 * time.Second,
+		Cap:      2 * time.Second,
 	}
 )
 
@@ -38,7 +39,7 @@ type certManagerSuite struct {
 	suite.Suite
 }
 
-func fakeClientSet(secretNames ...string) *fake.Clientset{
+func fakeClientSet(secretNames ...string) *fake.Clientset {
 	secrets := make([]runtime.Object, len(secretNames))
 	for i, secretName := range secretNames {
 		secrets[i] = &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: namespace}}
@@ -51,22 +52,22 @@ func fakeSecretsClient(secretNames ...string) corev1.SecretInterface {
 }
 
 type fixedSecretsExpirationStrategy struct {
-	durations []time.Duration
+	durations   []time.Duration
 	invocations int
-	signal concurrency.ErrorSignal
+	signal      concurrency.ErrorSignal
 }
 
-func newFixedSecretsExpirationStrategy(durations ...time.Duration) *fixedSecretsExpirationStrategy{
+func newFixedSecretsExpirationStrategy(durations ...time.Duration) *fixedSecretsExpirationStrategy {
 	return &fixedSecretsExpirationStrategy{
 		durations: durations,
-		signal: concurrency.NewErrorSignal(),
+		signal:    concurrency.NewErrorSignal(),
 	}
 }
 
 // signals .signal when the last timeout is reached
 func (s *fixedSecretsExpirationStrategy) GetSecretsDuration(secrets map[storage.ServiceType]*v1.Secret) (duration time.Duration) {
-	s.invocations ++
-	if len(s.durations) <= 1{
+	s.invocations++
+	if len(s.durations) <= 1 {
 		s.signal.Signal()
 		return s.durations[0]
 	}
@@ -74,7 +75,6 @@ func (s *fixedSecretsExpirationStrategy) GetSecretsDuration(secrets map[storage.
 	duration, s.durations = s.durations[0], s.durations[1:]
 	return duration
 }
-
 
 func (s *certManagerSuite) TestSuccessfulRefresh() {
 	ctx := context.Background()
@@ -86,18 +86,18 @@ func (s *certManagerSuite) TestSuccessfulRefresh() {
 		storage.ServiceType_SCANNER_DB_SERVICE: secretName,
 	}
 	secretsClient := fakeSecretsClient(secretName)
-	certManager := newCertManager(secretsClient, secretNames, centralBackoff,
+	certManager := newCertManager(secretsClient, secretNames, requestBackoff,
 		func(manager CertManager) (requestID string, err error) {
 			// FIXME nil certs
-			manager.HandleIssueCertificatesResponse(requestID, nil, nil)
+			s.Require().NoError(manager.HandleIssueCertificatesResponse(requestID, nil, nil))
 			return requestID, nil
-	})
-	certManager.centralRequestTimeout = 2 * time.Second
-	expirationStrategy := newFixedSecretsExpirationStrategy(0, 2 * time.Second)
+		})
+	defer certManager.Stop()
+	certManager.certRequestTimeout = 2 * time.Second
+	expirationStrategy := newFixedSecretsExpirationStrategy(0, 2*time.Second)
 	certManager.secretExpiration = expirationStrategy
 
-	certManager.Start(ctx)
-	defer certManager.Stop()
+	s.Require().NoError(certManager.Start(ctx))
 
 	// FIXME: idea, add error handler fields to certManagerImpl, that processes errors in loop, and
 	// make the processing functions return err. For prod it just logs; for test it keeps a slice of
@@ -111,7 +111,6 @@ func (s *certManagerSuite) TestSuccessfulRefresh() {
 
 	s.Empty(certManager.requestStatus.requestID)
 }
-
 
 /*
 TODO failures:
