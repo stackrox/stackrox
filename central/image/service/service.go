@@ -8,10 +8,12 @@ import (
 	"github.com/stackrox/rox/central/risk/manager"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
+	"golang.org/x/sync/semaphore"
 )
 
 var (
@@ -38,5 +40,7 @@ func New(datastore datastore.DataStore, cveDatastore cveDataStore.DataStore, wat
 		enricher:      enricher,
 		metadataCache: metadataCache,
 		scanCache:     scanCache,
+
+		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 	}
 }

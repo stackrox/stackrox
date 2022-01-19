@@ -16,7 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -66,8 +67,6 @@ var (
 			"/v1.ImageService/UnwatchImage",
 		},
 	})
-
-	internalScanSemaphore = semaphore.NewWeighted(int64(env.ScanRateLimit.IntegerSetting()))
 )
 
 // serviceImpl provides APIs for alerts.
@@ -82,6 +81,8 @@ type serviceImpl struct {
 	enricher enricher.ImageEnricher
 
 	watchedImages watchedImageDataStore.DataStore
+
+	internalScanSemaphore *semaphore.Weighted
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -172,14 +173,15 @@ func (s *serviceImpl) saveImage(img *storage.Image) {
 	}
 }
 
-// ScanImage handles an image request from Sensor
+// ScanImageInternal handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	semaWaitCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
-	defer cancel()
-	if err := internalScanSemaphore.Acquire(semaWaitCtx, 1); err != nil {
-		return nil, status.Errorf(codes.Unavailable, "unable to acquire image scan semaphore within %.0f seconds. Backoff and retry", maxSemaphoreWaitTime.Seconds())
+	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
+		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
+		if pkgUtils.Should(err) == nil {
+			return nil, s.Err()
+		}
 	}
-	defer internalScanSemaphore.Release(1)
+	defer s.internalScanSemaphore.Release(1)
 
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images

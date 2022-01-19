@@ -13,24 +13,24 @@ type IntegerSetting struct {
 }
 
 // EnvVar returns the string name of the environment variable
-func (d *IntegerSetting) EnvVar() string {
-	return d.envVar
+func (s *IntegerSetting) EnvVar() string {
+	return s.envVar
 }
 
-// Setting returns the string form of the boolean environment variable
-func (d *IntegerSetting) Setting() string {
-	return fmt.Sprintf("%d", d.IntegerSetting())
+// Setting returns the string form of the integer environment variable
+func (s *IntegerSetting) Setting() string {
+	return fmt.Sprintf("%d", s.IntegerSetting())
 }
 
 // IntegerSetting returns the integer object represented by the environment variable
-func (d *IntegerSetting) IntegerSetting() int {
-	val := os.Getenv(d.envVar)
+func (s *IntegerSetting) IntegerSetting() int {
+	val := os.Getenv(s.envVar)
 	if val == "" {
-		return d.defaultValue
+		return s.defaultValue
 	}
 	v, err := strconv.Atoi(val)
 	if err != nil {
-		return d.defaultValue
+		return s.defaultValue
 	}
 	return v
 }

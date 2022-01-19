@@ -2,9 +2,9 @@ package detector
 
 import (
 	"context"
-	"math/rand"
 	"time"
 
+	"github.com/cenkalti/backoff/v3"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,14 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const (
-	scanTimeout             = 6 * time.Minute
-	scanBackOffBaseDuration = 5 * time.Second
-	scanBackOffJitter       = 1 * time.Second
+	scanTimeout = 6 * time.Minute
 )
 
 type scanResult struct {
@@ -51,30 +48,32 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func getBackoffDuration() time.Duration {
-	jitterAmount := time.Duration(rand.Int63n(scanBackOffJitter.Nanoseconds()*2)) - scanBackOffJitter
-	return scanBackOffBaseDuration + jitterAmount
-}
-
-func scanImage(svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 		Image: ci,
 	})
 }
 
-func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage) {
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
 	defer c.signal.Signal()
 
+	eb := backoff.NewExponentialBackOff()
+	eb.InitialInterval = 5 * time.Second
+	eb.Multiplier = 1.5
+	eb.MaxInterval = 2 * time.Minute
+	eb.MaxElapsedTime = 0 // Never stop the backoff, leave that decision to the parent context.
+
 	for {
-		scannedImage, err := scanImage(svc, ci)
+		scannedImage, err := scanImage(ctx, svc, ci)
 		if err != nil {
-			// If we receive unavailable from the endpoint, then the client is effectively rate limited
-			// backoff and try again
-			if s, ok := status.FromError(err); ok && s.Code() == codes.Unavailable {
-				time.Sleep(getBackoffDuration())
-				continue
+			for _, detail := range status.Convert(err).Details() {
+				// If the client is effectively rate limited, backoff and try again.
+				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
+					time.Sleep(eb.NextBackOff())
+					continue
+				}
 			}
 			c.image = types.ToImage(ci)
 			return
@@ -125,7 +124,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if newValue == value {
-		value.scanAndSet(e.imageSvc, ci)
+		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, ci)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),
