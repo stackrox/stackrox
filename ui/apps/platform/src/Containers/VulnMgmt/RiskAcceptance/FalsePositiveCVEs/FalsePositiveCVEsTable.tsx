@@ -16,7 +16,7 @@ import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import useAuthStatus from 'hooks/useAuthStatus';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
+import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
@@ -25,7 +25,7 @@ import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 
 export type FalsePositiveCVEsTableProps = {
-    rows: VulnerabilityWithRequest[];
+    rows: Vulnerability[];
     isLoading: boolean;
     itemCount: number;
     updateTable: () => void;
@@ -48,7 +48,7 @@ function FalsePositiveCVEsTable({
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<VulnerabilityWithRequest>(rows);
+    } = useTableSelection<Vulnerability>(rows);
     const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<FalsePositiveCVEsToBeAssessed>(null);
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],

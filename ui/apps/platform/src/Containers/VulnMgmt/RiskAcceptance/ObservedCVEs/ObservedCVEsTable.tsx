@@ -197,7 +197,7 @@ function ObservedCVEsTable({
                                 <Td dataLabel="CVE">
                                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                         <FlexItem>{row.cve}</FlexItem>
-                                        {row.vulnerabilityRequest && (
+                                        {row.vulnerabilityRequest?.id && (
                                             <FlexItem>
                                                 <PendingApprovalPopover
                                                     vulnRequestId={row.vulnerabilityRequest.id}
