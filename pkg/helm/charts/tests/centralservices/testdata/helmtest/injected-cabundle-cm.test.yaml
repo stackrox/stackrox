@@ -9,13 +9,10 @@ tests:
   - name: "Injected CA bundle has a proper label"
     expect: |
       assertThat(.configmaps["injected-cabundle-stackrox-central-services"].metadata.labels["config.openshift.io/inject-trusted-cabundle"] == "true")
-  - name: "Injected CA bundle has no owners"
-    expect: |
-      assertThat(.configmaps["injected-cabundle-stackrox-central-services"].metadata.ownerReferences == null)
 - server:
     availableSchemas:
       - openshift-3.11.0
   tests:
-  - name: "No injected CA bundle on "
+  - name: "No injected CA bundle on Openshift 3"
     expect: |
       assertThat(.configmaps["injected-cabundle-stackrox-central-services"] == null)
