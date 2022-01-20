@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
@@ -133,14 +133,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
 		c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
 	}
-	imageFlavorDefault := defaults.ImageFlavorNameRHACSRelease
-	if !buildinfo.ReleaseBuild {
-		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
-	}
-	imageFlavorHelpStr := fmt.Sprintf("default container images settings (%v); it controls repositories from where to download the images, image names and tags format",
-		strings.Join(defaults.GetAllowedImageFlavorNames(buildinfo.ReleaseBuild), ", "))
-	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", imageFlavorDefault, imageFlavorHelpStr)
-
+	flags.AddImageDefaults(c.PersistentFlags(), &imageFlavor)
 	return c
 }
 

@@ -9,8 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -85,13 +83,7 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags
-	imageFlavorHelpStr := fmt.Sprintf("default container images settings (%v); it controls repositories from where to download the images, image names and tags format",
-		strings.Join(defaults.GetAllowedImageFlavorNames(buildinfo.ReleaseBuild), ", "))
-	imageFlavorDefault := defaults.ImageFlavorNameRHACSRelease
-	if !buildinfo.ReleaseBuild {
-		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
-	}
-	flagWrap.StringVar(&k8sConfig.ImageFlavorName, "image-defaults", imageFlavorDefault, imageFlavorHelpStr)
+	flags.AddImageDefaults(flagWrap.FlagSet, &k8sConfig.ImageFlavorName)
 
 	// TODO(RS-418): restore default image names or update argument description
 	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "", "main image to use (if unset, the default will be used)", "central")
