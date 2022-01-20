@@ -107,11 +107,9 @@ func (s *HelmChartTestSuite) TestHelmLint() {
 				testChartLint(s.T(), chartName, false, imageFlavor)
 			})
 		}
-		for _, rhacs := range []bool{false, true} {
-			s.Run(fmt.Sprintf("%s-rhacs-%t", chartName, rhacs), func() {
-				testChartLint(s.T(), chartName, rhacs, defaults.ImageFlavorNameRHACSRelease)
-			})
-		}
+		s.Run(chartName, func() {
+			testChartLint(s.T(), chartName, true, "")
+		})
 	}
 }
 
@@ -127,9 +125,6 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	testIO, _, _, _ := environment.TestIO()
 	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
-	if rhacs && imageFlavor != "" {
-		t.Skipf("invalid parameter combination for this test")
-	}
 	metaVals, metaValsErr := getMetaValues(imageFlavor, imageFlavor != "", rhacs, buildinfo.ReleaseBuild, env.Logger())
 	require.NoErrorf(t, metaValsErr, "failed to getMetaValues for chart %s", chartName)
 	err = outputHelmChart(chartName, outputDir, true, metaVals, noDebug, noDebugChartPath)
