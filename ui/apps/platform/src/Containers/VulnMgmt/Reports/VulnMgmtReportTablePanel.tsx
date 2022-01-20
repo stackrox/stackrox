@@ -1,6 +1,5 @@
 import React, { useState, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import {
     Alert,
     AlertGroup,
@@ -17,16 +16,14 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
-import { createStructuredSelector } from 'reselect';
 
+import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import SearchFilterResults from 'Components/PatternFly/SearchFilterResults';
 import TableCell from 'Components/PatternFly/TableCell';
-import { selectors } from 'reducers';
-import { getHasReadWritePermission } from 'reducers/roles';
 import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
 import { SearchFilter } from 'types/search';
@@ -63,10 +60,6 @@ type ReportingTablePanelProps = {
     onDeleteReports: (reportIds: string[]) => Promise<void>; // return value not used
 };
 
-const permissionsSelector = createStructuredSelector({
-    userRolePermissions: selectors.getUserRolePermissions,
-});
-
 function ReportingTablePanel({
     reports,
     reportCount,
@@ -86,11 +79,13 @@ function ReportingTablePanel({
 }: ReportingTablePanelProps): ReactElement {
     const [alerts, setAlerts] = useState<AlertInfo[]>([]);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
-    const { userRolePermissions } = useSelector(permissionsSelector);
-    const hasWriteAccessForVulnerabilityReports = getHasReadWritePermission(
-        'VulnerabilityReports',
-        userRolePermissions
-    );
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
+    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
+    const canWriteReports =
+        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
 
     const {
         selected,
@@ -294,7 +289,7 @@ function ReportingTablePanel({
                             const { id } = report;
 
                             const actionItems: ActionItem[] = [];
-                            if (hasWriteAccessForVulnerabilityReports) {
+                            if (canWriteReports) {
                                 actionItems.push({
                                     title: (
                                         <Button
@@ -313,15 +308,13 @@ function ReportingTablePanel({
                                     ),
                                     onClick: () => {},
                                 });
-                            }
 
-                            // Run option comes second
-                            actionItems.push({
-                                title: <div>Run report now</div>,
-                                onClick: () => onClickRun([report.id]),
-                            });
+                                // Run option comes second
+                                actionItems.push({
+                                    title: <div>Run report now</div>,
+                                    onClick: () => onClickRun([report.id]),
+                                });
 
-                            if (hasWriteAccessForVulnerabilityReports) {
                                 actionItems.push({
                                     title: (
                                         <div className="pf-u-danger-color-100">Delete report</div>
