@@ -6,7 +6,6 @@ import { Bullseye, Spinner } from '@patternfly/react-core';
 import usePagination from 'hooks/patternfly/usePagination';
 import DeferredCVEsTable from './DeferredCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
-import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
 
 type DeferredCVEsProps = {
     imageId: string;
@@ -22,7 +21,7 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
             offset: (page - 1) * perPage,
             sortOption: {
                 field: 'cve',
-                reversed: false,
+                reversed: true,
             },
         },
     });
@@ -36,7 +35,7 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
     }
 
     const itemCount = data?.image?.vulnCount || 0;
-    const rows = (data?.image?.vulns || []) as VulnerabilityWithRequest[];
+    const rows = data?.image?.vulns || [];
 
     return (
         <DeferredCVEsTable
