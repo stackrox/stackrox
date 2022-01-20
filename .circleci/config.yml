@@ -3864,6 +3864,7 @@ jobs:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
+      - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
@@ -3889,6 +3890,7 @@ jobs:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
+      - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
