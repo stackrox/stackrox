@@ -2,7 +2,6 @@ package detector
 
 import (
 	"context"
-	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"google.golang.org/grpc/status"
 )
@@ -57,16 +57,7 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.Conta
 	})
 }
 
-var (
-	totalInScanAndSet int32
-)
-
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
-	atomic.AddInt32(&totalInScanAndSet, 1)
-	defer func() {
-		newVal := atomic.AddInt32(&totalInScanAndSet, -1)
-		log.Infof("Decrement total in scan and set. New val: %d", newVal)
-	}()
 	defer c.signal.Signal()
 
 	eb := backoff.NewExponentialBackOff()
@@ -77,26 +68,23 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 
 	eb.Reset()
 
-	numTries := 0
-
 outer:
 	for {
-		numTries++
+		// We want to get the time spent in backoff without including the time it took to scan the image.
+		timeSpentInBackoffSoFar := eb.GetElapsedTime()
 		scannedImage, err := scanImage(ctx, svc, ci)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate limited, backoff and try again.
 				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
-					sleep := eb.NextBackOff()
-					log.Infof("Got too many parallel scans (image: %+v). Retrying... (will sleep for %s; there are %d scans in flight)", ci, sleep, atomic.LoadInt32(&totalInScanAndSet))
-					time.Sleep(sleep)
+					time.Sleep(eb.NextBackOff())
 					continue outer
 				}
 			}
 			c.image = types.ToImage(ci)
 			return
 		}
-		log.Infof("Image %+v done after %d tries", ci, numTries)
+		metrics.ObserveTimeSpentInExponentialBackoff(timeSpentInBackoffSoFar)
 		c.image = scannedImage.GetImage()
 		return
 	}
