@@ -152,13 +152,15 @@ class ECRRegistryIntegration implements ImageIntegration {
         }
 
         if (args.useAssumeRole) {
+            args.useAssumeRole = false
             args.accessKeyId = args.assumeRoleAccessKey
             args.secretAccessKey = args.assumeRoleSecretKey
         } else if (args.useAssumeRoleExternalId) {
-            args.useAssumeRole = true
+            //args.useAssumeRole = true
+            args.useAssumeRole = false
             args.accessKeyId = args.assumeRoleAccessKey
             args.secretAccessKey = args.assumeRoleSecretKey
-            args.assumeRoleRoleId = args.assumeRoleExternalId
+            //args.assumeRoleRoleId = args.assumeRoleExternalId
         }
 
         ImageIntegrationOuterClass.ECRConfig.Builder config =
