@@ -91,7 +91,7 @@ func (scc *ScopeCheckerCoreImpl) PerformChecks(ctx context.Context) error {
 }
 
 // EffectiveAccessScope always returns error as plugin does not support it.
-func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(_ permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	return nil, errors.New("not supported: use built-in authorizer")
 }
 

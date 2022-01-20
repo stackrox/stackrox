@@ -39,7 +39,7 @@ func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
 	return nil
 }
 
-func (s uniformScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+func (s uniformScopeCheckerCore) EffectiveAccessScope(_ permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	if s {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
