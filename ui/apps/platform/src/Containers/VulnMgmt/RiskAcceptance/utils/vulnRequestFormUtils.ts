@@ -16,7 +16,7 @@ export function getExpiresOnValue(expiresOn: ExpiresOn): string | number | undef
     } else if (expiresOn === '90 days') {
         value = addDaysToDate(new Date(), 90);
     } else if (expiresOn === 'Indefinitely') {
-        value = 0;
+        value = undefined;
     }
     return value;
 }

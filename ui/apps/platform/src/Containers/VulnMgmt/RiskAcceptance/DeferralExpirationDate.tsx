@@ -28,9 +28,7 @@ function DeferralExpirationDate({
                 : deferralReq;
         if (expiresWhenFixed) {
             expirationDate = 'When fixed';
-            // The backend returns the following date when the deferral request is indefinitely
-            // We should ideally return a null
-        } else if (expiresOn && expiresOn !== '1970-01-01T00:00:00Z') {
+        } else if (expiresOn) {
             expirationDate = getDate(expiresOn);
         } else {
             expirationDate = 'Never';
