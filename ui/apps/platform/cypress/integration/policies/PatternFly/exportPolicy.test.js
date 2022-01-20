@@ -23,7 +23,7 @@ describe('Export policy', () => {
             visitPolicies();
 
             const trSelector = 'tbody tr:nth-child(1)';
-            cy.get(`${trSelector} ${selectors.table.linkToPolicy}`).then(($a) => {
+            cy.get(`${trSelector} ${selectors.table.policyLink}`).then(($a) => {
                 const segments = $a.attr('href').split('/');
                 const policyId = segments[segments.length - 1];
 
@@ -91,7 +91,7 @@ describe('Export policy', () => {
             visitPolicies();
 
             const trSelector = 'tbody tr:nth-child(1)';
-            cy.get(`${trSelector} ${selectors.table.linkToPolicy}`).then(($a) => {
+            cy.get(`${trSelector} ${selectors.table.policyLink}`).then(($a) => {
                 const segments = $a.attr('href').split('/');
                 const policyId = segments[segments.length - 1];
 
@@ -121,7 +121,7 @@ describe('Export policy', () => {
             visitPolicies();
 
             const trSelector = 'tbody tr:nth-child(1)';
-            cy.get(`${trSelector} ${selectors.table.linkToPolicy}`).then(($a) => {
+            cy.get(`${trSelector} ${selectors.table.policyLink}`).then(($a) => {
                 const segments = $a.attr('href').split('/');
                 const policyId = segments[segments.length - 1];
 
@@ -147,7 +147,7 @@ describe('Export policy', () => {
             visitPolicies();
 
             const trSelector = 'tbody tr:nth-child(1)';
-            cy.get(`${trSelector} ${selectors.table.linkToPolicy}`).then(($a) => {
+            cy.get(`${trSelector} ${selectors.table.policyLink}`).then(($a) => {
                 const segments = $a.attr('href').split('/');
                 const policyId = segments[segments.length - 1];
 
