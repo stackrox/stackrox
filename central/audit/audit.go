@@ -55,6 +55,20 @@ func (a *audit) sendAuditMessage(ctx context.Context, req interface{}, grpcMetho
 	a.notifications.ProcessAuditMessage(ctx, am)
 }
 
+// SendAdhocAuditMessage will send an audit message for the specified request. It is done on an adhoc basis as opposed to via the unary interceptor
+// because GraphQL mutation apis won't get intercepted. This will be removed in the future once GraphQL also goes through the same pipeline as other APIs
+func (a *audit) SendAdhocAuditMessage(ctx context.Context, req interface{}, grpcMethod string, authError interceptor.AuthStatus, requestError error) {
+	if !a.notifications.HasEnabledAuditNotifiers() {
+		return
+	}
+
+	am := newAuditMessage(ctx, req, grpcMethod, authError, requestError)
+	if am == nil {
+		return
+	}
+	a.notifications.ProcessAuditMessage(ctx, am)
+}
+
 func requestToAny(req interface{}) *types.Any {
 	if req == nil {
 		return nil
