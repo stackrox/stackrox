@@ -19,8 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -68,9 +66,6 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 	}
 	id, err := s.datastore.AddCluster(ctx, request)
 	if err != nil {
-		if errors.Is(err, errorhelpers.ErrAlreadyExists) {
-			return nil, status.Error(codes.AlreadyExists, err.Error())
-		}
 		return nil, err
 	}
 	request.Id = id

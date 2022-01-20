@@ -105,9 +105,6 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 		}
 		return false
 	})
-	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -142,12 +139,6 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 	}
 
 	err = s.entities.CreateExternalNetworkEntity(ctx, entity, false)
-	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-	}
-	if errors.Is(err, errorhelpers.ErrAlreadyExists) {
-		return nil, status.Error(codes.AlreadyExists, err.Error())
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -161,9 +152,6 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 	}
 
 	if err := s.entities.DeleteExternalNetworkEntity(ctx, request.GetId()); err != nil {
-		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-		}
 		return nil, err
 	}
 
@@ -188,9 +176,6 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 	entity.Info.GetExternalSource().Name = request.GetName()
 
 	if err := s.entities.UpdateExternalNetworkEntity(ctx, entity, false); err != nil {
-		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-		}
 		return nil, err
 	}
 	return entity, nil
@@ -198,9 +183,6 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 
 func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string) (*storage.NetworkEntity, error) {
 	entity, found, err := s.entities.GetEntity(ctx, id)
-	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-	}
 	if err != nil {
 		return nil, err
 	}
