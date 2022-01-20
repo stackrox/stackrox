@@ -122,7 +122,7 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	testIO, _, _, _ := environment.TestIO()
 	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
-	err = outputHelmChart(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, false, "", env.Logger())
+	err = outputHelmChart(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, noDebug, noDebugChartPath, env.Logger())
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {
