@@ -175,5 +175,5 @@ has_no_default_flavor_warning() {
 }
 
 has_flag_collision_warning() {
-  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: flag '--rhacs' is deprecated and must not be used together with '--image-defaults=(stackrox.io|development_build|rhacs)'. Remove '--rhacs' flag and specify only '--image-defaults=(stackrox.io|development_build|rhacs)' instead"
+  assert_line --partial "flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'"
 }
