@@ -6,6 +6,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+## [68.0]
+
 - The default gRPC port in Scanner's config map is changed to 8443, as that is what Scanner has actually been defaulting to this whole time.
   - Note: Scanner has been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expects `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
 - Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images.
