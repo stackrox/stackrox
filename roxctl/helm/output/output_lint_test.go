@@ -48,12 +48,12 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 		wantErr        bool
 	}
 	tests := []testCase{
-		{flavor: "", flavorProvided: false, rhacs: true},                                // '--rhacs' but no '--image-defaults'
+		{flavor: "", flavorProvided: false, rhacs: true},                                // backwards-compatible behavior
 		{flavor: "", flavorProvided: true, rhacs: true, wantErr: true},                  // error: collision of --rhacs and --image-defults
 		{flavor: "dummy", rhacs: true, wantErr: true},                                   // any flavor (even invalid) has priority over --rhacs
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true}, // error: collision of --rhacs and --image-defults
-		{flavor: "", flavorProvided: false, rhacs: false},                               // no '--rhacs' and no '--image-defaults'
-		{flavor: "", flavorProvided: true, rhacs: false, wantErr: true},                 // error: collision of --rhacs and --image-defults
+		{flavor: "", flavorProvided: false, rhacs: false, wantErr: true},                // error: outputHelmChart should not guess the default flavor
+		{flavor: "", flavorProvided: true, rhacs: false, wantErr: true},                 // error: outputHelmChart must receive valid flavor
 		{flavor: "dummy", rhacs: false, wantErr: true},
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
@@ -62,7 +62,7 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
 		tests = append(tests,
-			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true}, // error: collision of --rhacs and non-empty --image-defults
+			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true}, // error: collision of --rhacs and --image-defults
 			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
 		)
 	}
