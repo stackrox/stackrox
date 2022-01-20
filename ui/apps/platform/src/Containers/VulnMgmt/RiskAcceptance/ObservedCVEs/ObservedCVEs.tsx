@@ -21,7 +21,7 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             offset: (page - 1) * perPage,
             sortOption: {
                 field: 'cve',
-                reversed: false,
+                reversed: true,
             },
         },
     });
