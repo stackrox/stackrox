@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/registries"
-	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 )
@@ -24,7 +23,7 @@ type RegistryStore struct {
 // newRegistryStore creates a new registryStore.
 func newRegistryStore() *RegistryStore {
 	return &RegistryStore{
-		factory: registries.NewFactory(registries.WithRegistryCreators(dockerFactory.Creator)),
+		factory: registries.NewFactory(registries.WithDockerRegistry()),
 		store:   make(map[string]registries.Set),
 	}
 }

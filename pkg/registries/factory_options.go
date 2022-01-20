@@ -1,5 +1,7 @@
 package registries
 
+import dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
+
 type factoryOption struct {
 	creatorFuncs []creatorWrapper
 }
@@ -14,9 +16,9 @@ func (o factoryOptionFunc) apply(opt *factoryOption) {
 	o(opt)
 }
 
-// WithRegistryCreators specifies which registries to add to the factory.
-func WithRegistryCreators(creatorFuncs ...creatorWrapper) FactoryOption {
+// WithDockerRegistry adds the Docker registry creator to the registry factory.
+func WithDockerRegistry() FactoryOption {
 	return factoryOptionFunc(func(o *factoryOption) {
-		o.creatorFuncs = creatorFuncs
+		o.creatorFuncs = append(o.creatorFuncs, dockerFactory.Creator)
 	})
 }
