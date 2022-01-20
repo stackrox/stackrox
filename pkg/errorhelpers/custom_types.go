@@ -46,7 +46,7 @@ var (
 
 // GenericNoValidRole wraps ErrNoValidRole with a generic error message
 func GenericNoValidRole() error {
-	return fmt.Errorf("Access for this user is not authorized: %w. Please contact a system administrator.",
+	return fmt.Errorf("access for this user is not authorized: %w, please contact your system administrator",
 		ErrNoValidRole)
 }
 
