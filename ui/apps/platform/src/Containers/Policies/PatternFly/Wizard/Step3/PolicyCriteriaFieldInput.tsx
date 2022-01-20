@@ -141,7 +141,7 @@ function PolicyCriteriaFieldInput({
                     </Select>
                 </FormGroup>
             );
-        case 'group':
+        case 'group': {
             /* eslint-disable react/no-array-index-key */
             return (
                 <>
@@ -155,7 +155,8 @@ function PolicyCriteriaFieldInput({
                     ))}
                 </>
             );
-        /* eslint-enable react/no-array-index-key */
+            /* eslint-enable react/no-array-index-key */
+        }
     }
     /* eslint-enable default-case */
 }
