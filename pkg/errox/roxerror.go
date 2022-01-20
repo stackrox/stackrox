@@ -19,7 +19,7 @@ func new(message string) RoxError {
 	return &baseError{message}
 }
 
-// Error return error message. Implements error interface.
+// Error returns error message. Implements error interface.
 func (e *baseError) Error() string {
 	return e.message
 }
