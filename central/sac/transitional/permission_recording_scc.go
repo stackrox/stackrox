@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -109,4 +110,8 @@ func (s *permissionRecordingSCC) PerformChecks(ctx context.Context) error {
 
 func (s *permissionRecordingSCC) UsedPermissions() permissions.PermissionMap {
 	return s.rec.UsedPermissions()
+}
+
+func (s *permissionRecordingSCC) EffectiveAccessScope(ctx context.Context) (*effectiveaccessscope.ScopeTree, error) {
+	return s.wrapped.EffectiveAccessScope(ctx)
 }

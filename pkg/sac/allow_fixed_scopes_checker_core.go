@@ -1,6 +1,10 @@
 package sac
 
-import "context"
+import (
+	"context"
+
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+)
 
 type scopeKeySet map[ScopeKey]struct{}
 
@@ -44,4 +48,8 @@ func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerC
 		return c[1:]
 	}
 	return denyAllScopeCheckerCore
+}
+
+func (c allowFixedScopesCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+	panic("Implement me!")
 }

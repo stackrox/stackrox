@@ -2,6 +2,8 @@ package sac
 
 import (
 	"context"
+
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 type errScopeCheckerCore struct {
@@ -27,4 +29,8 @@ func ErrorAccessScopeCheckerCore(err error) ScopeCheckerCore {
 	return errScopeCheckerCore{
 		err: err,
 	}
+}
+
+func (s errScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+	return effectiveaccessscope.DenyAllEffectiveAccessScope(), s.err
 }

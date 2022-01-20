@@ -2,6 +2,8 @@ package sac
 
 import (
 	"context"
+
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 type uniformScopeCheckerCore bool
@@ -34,4 +36,11 @@ func (s uniformScopeCheckerCore) TryAllowed() TryAllowedResult {
 
 func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
 	return nil
+}
+
+func (s uniformScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+	if s {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 }
