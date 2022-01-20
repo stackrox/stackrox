@@ -41,7 +41,9 @@ function VulnRequestedAction({
             : deferralReq;
     if (expiresWhenFixed) {
         action = '(until fixed)';
-    } else if (expiresOn) {
+        // The backend returns the following date when the deferral request is indefinitely
+        // We should ideally return a null
+    } else if (expiresOn && expiresOn !== '1970-01-01T00:00:00Z') {
         const expiresOnDistance = getDistanceStrict(expiresOn, currentDate, {
             partialMethod: 'ceil',
             unit: 'd',
