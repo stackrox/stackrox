@@ -16,7 +16,7 @@ teardown() {
 @test "roxctl-release helm output help-text should state default value for --image-defaults flag" {
   run roxctl-release helm output central-services -h
   assert_success
-  assert_line --partial "default container registry for container images (default \"rhacs\")"
+  assert_line --partial "default container images settings (stackrox.io, rhacs); it controls repositories from where to download the images, image names and tags format (default \"rhacs\")"
 }
 
 @test "roxctl-release helm output central-services should use registry.redhat.io registry" {
