@@ -69,7 +69,7 @@ api_token="$(
 
 echo "Generating new Helm chart"
 new_helm_chart_dir="$(mktemp -d)"
-roxctl helm output secured-cluster-services --image-defaults=development_build --remove --output-dir "$new_helm_chart_dir"
+roxctl helm output secured-cluster-services --remove --output-dir "$new_helm_chart_dir"
 
 echo "Cloning upstream Helm charts repo"
 helm_charts_repo="$(mktemp -d)"
