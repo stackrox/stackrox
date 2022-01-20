@@ -161,10 +161,10 @@ run_invalid_flavor_value_test() {
 }
 
 has_deprecation_warning() {
-  assert_line --regexp "WARN:[[:space:]]+'--rhacs' is deprecated in favor of '--image-defaults=rhacs'"
+  assert_line --regexp "WARN:[[:space:]]+'--rhacs' is deprecated, please use '--image-defaults=rhacs' instead"
 }
 
-flavor_warning_regexp="WARN:[[:space:]]+images are taken from 'registry.redhat.io'. Use '--image-defaults=stackrox.io' to restore previous behavior"
+flavor_warning_regexp="WARN:[[:space:]]+Default image registries have changed. Images will be taken from 'registry.redhat.io'. Specify '--image-defaults=stackrox.io' command line argument to use images from 'stackrox.io' registries."
 
 has_default_flavor_warning() {
   assert_line --regexp "$flavor_warning_regexp"
@@ -175,5 +175,5 @@ has_not_default_flavor_warning() {
 }
 
 has_flag_collision_warning() {
-  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: flag '--rhacs' collides with '--image-defaults=(stackrox.io|development_build|rhacs)'. Remove '--rhacs' flag"
+  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: flag '--rhacs' is deprecated and must not be used together with '--image-defaults=(stackrox.io|development_build|rhacs)'. Remove '--rhacs' flag and specify only '--image-defaults=(stackrox.io|development_build|rhacs)' instead"
 }

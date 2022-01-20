@@ -72,7 +72,7 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 	for _, tt := range tests {
 		tt := tt
 		for chartName := range common.ChartTemplates {
-			s.Run(fmt.Sprintf("%s-rhacs-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavor), func() {
+			s.Run(fmt.Sprintf("%s-rhacs-%t-flavorProvided-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavorProvided, tt.flavor), func() {
 				outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
 				s.T().Cleanup(func() {
 					_ = os.RemoveAll(outputDir)
@@ -81,7 +81,7 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 				if tt.flavor != "" {
 					tt.flavorProvided = true
 				}
-				metaVals, metaValsErr := getMetaValues(tt.flavor, tt.flavorProvided, tt.rhacs, buildinfo.ReleaseBuild, env)
+				metaVals, metaValsErr := getMetaValues(tt.flavor, tt.flavorProvided, tt.rhacs, buildinfo.ReleaseBuild, env.Logger())
 				err = outputHelmChart(chartName, outputDir, true, metaVals, false, "")
 				if tt.wantErr {
 					assert.Error(s.T(), metaValsErr)
@@ -130,7 +130,7 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	if rhacs && imageFlavor != "" {
 		t.Skipf("invalid parameter combination for this test")
 	}
-	metaVals, metaValsErr := getMetaValues(imageFlavor, imageFlavor != "", rhacs, buildinfo.ReleaseBuild, env)
+	metaVals, metaValsErr := getMetaValues(imageFlavor, imageFlavor != "", rhacs, buildinfo.ReleaseBuild, env.Logger())
 	require.NoErrorf(t, metaValsErr, "failed to getMetaValues for chart %s", chartName)
 	err = outputHelmChart(chartName, outputDir, true, metaVals, noDebug, noDebugChartPath)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
