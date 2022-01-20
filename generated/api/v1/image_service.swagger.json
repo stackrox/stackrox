@@ -901,8 +901,14 @@
         "dataSource": {
           "$ref": "#/definitions/storageDataSource",
           "title": "DataSource contains information about which integration was used to pull the metadata"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Version is used to determine if the metadata needs to be re-pulled"
         }
-      }
+      },
+      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up"
     },
     "storageImageName": {
       "type": "object",

@@ -14,6 +14,10 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 // FetchOption determines what attempts should be made to retrieve the metadata
 type FetchOption int
 
@@ -24,10 +28,6 @@ const (
 	IgnoreExistingImages
 	ForceRefetch
 	ForceRefetchScansOnly
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments

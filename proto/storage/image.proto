@@ -113,6 +113,8 @@ message License {
     string url  = 3;
 }
 
+// If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go
+// to ensure that those changes will be automatically picked up
 message ImageMetadata {
     // V1Metadata contains all of the V1 docker data. In the normal case we will get this because the image is a
     // V1 image OR because the v2 manifest has a link to it in it's config.
@@ -125,6 +127,8 @@ message ImageMetadata {
     repeated string           layer_shas            = 3;
     // DataSource contains information about which integration was used to pull the metadata
     DataSource                data_source           = 4;
+    // Version is used to determine if the metadata needs to be re-pulled
+    uint64                    version               = 5;
 }
 
 message V2Metadata {
