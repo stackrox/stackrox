@@ -158,17 +158,17 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
 		MainRegistry:           "registry.redhat.io/advanced-cluster-security",
-		MainImageName:          "rhacs-rhel8-main",
+		MainImageName:          "rhacs-main-rhel8",
 		MainImageTag:           v.MainVersion,
 		CollectorRegistry:      "registry.redhat.io/advanced-cluster-security",
-		CollectorImageName:     "rhacs-rhel8-collector",
+		CollectorImageName:     "rhacs-collector-rhel8",
 		CollectorImageTag:      v.CollectorVersion,
-		CollectorSlimImageName: "rhacs-rhel8-collector-slim",
+		CollectorSlimImageName: "rhacs-collector-slim-rhel8",
 		CollectorSlimImageTag:  v.CollectorVersion,
 
-		ScannerImageName:   "rhacs-rhel8-scanner",
+		ScannerImageName:   "rhacs-scanner-rhel8",
 		ScannerImageTag:    v.ScannerVersion,
-		ScannerDBImageName: "rhacs-rhel8-scanner-db",
+		ScannerDBImageName: "rhacs-scanner-db-rhel8",
 		ScannerDBImageTag:  v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
@@ -225,7 +225,12 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 // roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
 // provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
-	f, err := GetImageFlavorByName(strings.TrimSpace(imageFlavorEnv()), buildinfo.ReleaseBuild)
+	envValue := strings.TrimSpace(imageFlavorEnv())
+	if envValue == "" && !buildinfo.ReleaseBuild {
+		envValue = ImageFlavorNameDevelopmentBuild
+		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, ImageFlavorNameDevelopmentBuild)
+	}
+	f, err := GetImageFlavorByName(envValue, buildinfo.ReleaseBuild)
 	if err != nil {
 		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
 		// build-time constant.

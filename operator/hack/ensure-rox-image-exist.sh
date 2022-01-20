@@ -7,7 +7,7 @@ git fetch origin
 docker_repo="stackrox/main"
 base_image="docker.io/stackrox/main"
 root_dir="$(git rev-parse --show-toplevel)"
-main_image_tag="$(make -C "$root_dir" tag)"
+main_image_tag=${MAIN_IMAGE_TAG:-"$(make -C "$root_dir" tag)"}
 main_image="$base_image:$main_image_tag"
 
 echo "Ensuring $base_image:$main_image_tag is available locally"

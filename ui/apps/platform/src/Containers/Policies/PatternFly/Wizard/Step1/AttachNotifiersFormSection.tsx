@@ -19,6 +19,10 @@ function AttachNotifiersFormSection() {
             .catch(() => {
                 // TODO
             });
+
+        return () => {
+            setNotifiers([]);
+        };
     }, []);
 
     function onSelectNotifier(e, isSelected, rowIndex) {

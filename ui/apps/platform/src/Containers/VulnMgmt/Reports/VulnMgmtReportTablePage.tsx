@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useEffect, useState, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, ReactElement } from 'react';
+import { Link, useHistory } from 'react-router-dom';
 import {
+    Alert,
+    AlertVariant,
+    Bullseye,
     Button,
     ButtonVariant,
     PageSection,
     PageSectionVariants,
+    Spinner,
     Text,
     TextContent,
     Title,
@@ -16,22 +20,38 @@ import {
 
 import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
+import { searchCategories } from 'constants/entityTypes';
 import usePermissions from 'hooks/usePermissions';
+import useSearchOptions from 'hooks/useSearchOptions';
+import useFetchReports from 'hooks/useFetchReports';
 import useTableSort from 'hooks/useTableSort';
 import { vulnManagementReportsPath } from 'routePaths';
-import { fetchReports, fetchReportsCount, deleteReport, runReport } from 'services/ReportsService';
-import { ReportConfiguration } from 'types/report.proto';
+import { deleteReport, runReport } from 'services/ReportsService';
+import { SearchFilter } from 'types/search';
+import { filterAllowedSearch } from 'utils/searchUtils';
+import { getQueryString } from 'utils/queryStringUtils';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
+import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
 
-function ReportTablePage(): ReactElement {
+type ReportTablePageProps = {
+    query: VulnMgmtReportQueryObject;
+};
+
+function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
+    const history = useHistory();
+
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+
+    const searchOptions = useSearchOptions(searchCategories.REPORT_CONFIGURATIONS) || [];
+
+    const pageSearch = query.s;
+    const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
 
     // Handle changes in the current table page.
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
-    const [reportCount, setReportCount] = useState(0);
 
     // To handle sort options.
     const columns = VulnMgmtReportTableColumnDescriptor;
@@ -47,31 +67,22 @@ function ReportTablePage(): ReactElement {
         sortOption,
     } = useTableSort(columns, defaultSort);
 
-    const [reports, setReports] = useState<ReportConfiguration[]>([]);
+    function setSearchFilter(filters: SearchFilter) {
+        const newSearchString = getQueryString({
+            s: filters,
+        });
 
-    useEffect(() => {
-        fetchReportsCount()
-            .then((count) => {
-                setReportCount(count);
-            })
-            .catch((error) => {
-                // TODO
-            });
-    }, []);
-
-    useEffect(() => {
-        refreshReportList();
-    }, [currentPage, perPage, sortOption]);
-
-    function refreshReportList() {
-        fetchReports([], sortOption, currentPage - 1, perPage)
-            .then((reportsResponse) => {
-                setReports(reportsResponse);
-            })
-            .catch(() => {
-                // TODO: show error message on failure
-            });
+        history.push({
+            search: newSearchString,
+        });
     }
+
+    const { reports, reportCount, error, isLoading, triggerRefresh } = useFetchReports(
+        filteredSearch,
+        sortOption,
+        currentPage,
+        perPage
+    );
 
     function onRunReports(reportIds) {
         const runPromises = reportIds.map((id) => runReport(id));
@@ -79,7 +90,7 @@ function ReportTablePage(): ReactElement {
         // Note: errors are handled and displayed down at the call site,
         //       ui/apps/platform/src/Containers/VulnMgmt/Reports/VulnMgmtReportTablePage.tsx
         return Promise.all(runPromises).then(() => {
-            refreshReportList();
+            triggerRefresh();
         });
     }
 
@@ -89,7 +100,7 @@ function ReportTablePage(): ReactElement {
         // Note: errors are handled and displayed down at the call site,
         //       ui/apps/platform/src/Containers/VulnMgmt/Reports/VulnMgmtReportTablePage.tsx
         return Promise.all(deletePromises).then(() => {
-            refreshReportList();
+            triggerRefresh();
         });
     }
 
@@ -128,14 +139,31 @@ function ReportTablePage(): ReactElement {
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>
-            {reports.length > 0 ? (
+            {!!error && (
+                <Alert
+                    isInline
+                    variant={AlertVariant.danger}
+                    title={error}
+                    className="pf-u-mb-lg"
+                />
+            )}
+            {isLoading && (
+                <PageSection variant={PageSectionVariants.light} isFilled>
+                    <Bullseye>
+                        <Spinner isSVG size="lg" />
+                    </Bullseye>
+                </PageSection>
+            )}
+            {!isLoading && reports && reports?.length > 0 && (
                 <VulnMgmtReportTablePanel
-                    reports={reports}
+                    reports={reports || []}
                     reportCount={reportCount}
                     currentPage={currentPage}
                     setCurrentPage={setCurrentPage}
                     perPage={perPage}
                     setPerPage={setPerPage}
+                    searchFilter={filteredSearch}
+                    setSearchFilter={setSearchFilter}
                     activeSortIndex={activeSortIndex}
                     setActiveSortIndex={setActiveSortIndex}
                     activeSortDirection={activeSortDirection}
@@ -144,7 +172,8 @@ function ReportTablePage(): ReactElement {
                     onRunReports={onRunReports}
                     onDeleteReports={onDeleteReports}
                 />
-            ) : (
+            )}
+            {!isLoading && !reports?.length && (
                 <PageSection variant={PageSectionVariants.light} isFilled>
                     <ACSEmptyState title="No reports are currently configured." />
                 </PageSection>

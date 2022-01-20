@@ -48,6 +48,11 @@ function MitreAttackVectorsFormSection(): ReactElement {
             .catch((error) => {
                 setMitreAttackVectorsError(getAxiosErrorMessage(error));
             });
+
+        return () => {
+            setMitreAttackVectors([]);
+            setMitreAttackVectorsError('');
+        };
     }, []);
 
     // Prevent multiple selections of a tactic.

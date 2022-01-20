@@ -49,7 +49,7 @@ func init() {
 			"suppressExpiry: Time",
 			"activeState(query: String): ActiveState",
 			"vulnerabilityState: String!",
-			"effectiveVulnerabilityRequest: VulnerabilityRequest",
+			"effectiveVulnerabilityRequest: VulnerabilityRequest!",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!"),

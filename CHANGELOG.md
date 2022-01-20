@@ -17,6 +17,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Added a new parameter `--image-defaults` that allows selecting the default registry from which container images will be taken for deploying central and scanner.
   - Deprecated parameter `--rhacs` in favor of `--image-defaults` (using both parameters results in an error)
 - Default behavior of `roxctl helm output` results now in using container images from `registry.redhat.io` instead of from `stackrox.io`
+- By default, notifications will be sent for every runtime policy violation instead of only the first encountered violation. If this is undesired, setting an environment variable `NOTIFY_EVERY_RUNTIME_EVENT` to `false` will restore the previous behavior. Please note that the environment variable will be removed in a future release, so please notify the ACS team if you have a valid use case.
 
 ## [67.2]
 

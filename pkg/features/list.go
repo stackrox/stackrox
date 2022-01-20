@@ -28,7 +28,7 @@ var (
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", true)
 
 	// VulnRiskManagement enables the vulnerability risk management workflow that allows accepting risk for vulnerabilities.
-	VulnRiskManagement = registerFeature("Enable Vulnerability Risk Management workflow", "ROX_VULN_RISK_MANAGEMENT", false)
+	VulnRiskManagement = registerFeature("Enable Vulnerability Risk Management workflow", "ROX_VULN_RISK_MANAGEMENT", true)
 
 	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
 	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
@@ -37,7 +37,7 @@ var (
 	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", false)
 
 	// VulnReporting enables scheduled vulnerability reporting workflow, that allows the creation and management of vulnerability reporting configurations.
-	VulnReporting = registerFeature("Enable creation of scheduled vulnerability reports to be sent via email notifier", "ROX_VULN_REPORTING", false)
+	VulnReporting = registerFeature("Enable creation of scheduled vulnerability reports to be sent via email notifier", "ROX_VULN_REPORTING", true)
 
 	// LocalImageScanning enables OpenShift local-image scanning.
 	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", false)

@@ -17,6 +17,7 @@ import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
+import useAuthStatus from 'hooks/useAuthStatus';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import VulnRequestedAction from '../VulnRequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
@@ -30,7 +31,7 @@ import DenyDeferralModal from './DenyDeferralModal';
 import DenyFalsePositiveModal from './DenyFalsePositiveModal';
 import CancelVulnRequestModal from './CancelVulnRequestModal';
 import DeferralExpirationDate from '../DeferralExpirationDate';
-import ImpactedEntities from '../ImpactedEntities';
+import ImpactedEntities from '../ImpactedEntities/ImpactedEntities';
 import PendingApprovalsSearchFilter from './PendingApprovalsSearchFilter';
 import SearchFilterResults from '../SearchFilterResults';
 
@@ -69,7 +70,8 @@ function PendingApprovalsTable({
     const { approveVulnRequests, denyVulnRequests, deleteVulnRequests } = useRiskAcceptance({
         requestIDs,
     });
-    const { currentUserName, hasReadWriteAccess } = usePermissions();
+    const { hasReadWriteAccess } = usePermissions();
+    const { currentUser } = useAuthStatus();
 
     function cancelAssessment() {
         setRequestsToBeAssessed(null);
@@ -97,16 +99,16 @@ function PendingApprovalsTable({
     });
     const selectedDeferralsToCancel = rows.filter((row) => {
         return (
-            canCreateRequests &&
-            row.requestor.name === currentUserName &&
+            (canApproveRequests ||
+                (canCreateRequests && row.requestor.id === currentUser.userId)) &&
             row.targetState === 'DEFERRED' &&
             selectedIds.includes(row.id)
         );
     });
     const selectedFalsePositivesToCancel = rows.filter((row) => {
         return (
-            canCreateRequests &&
-            row.requestor.name === currentUserName &&
+            (canApproveRequests ||
+                (canCreateRequests && row.requestor.id === currentUser.userId)) &&
             row.targetState === 'FALSE_POSITIVE' &&
             selectedIds.includes(row.id)
         );
@@ -262,7 +264,8 @@ function PendingApprovalsTable({
                     <Tbody>
                         {rows.map((row, rowIndex) => {
                             const canCancelRequest =
-                                canCreateRequests && row.requestor.name === currentUserName;
+                                canApproveRequests ||
+                                (canCreateRequests && row.requestor.id === currentUser.userId);
 
                             return (
                                 <Tr key={row.id}>
@@ -296,7 +299,9 @@ function PendingApprovalsTable({
                                     </Td>
                                     <Td dataLabel="Impacted entities">
                                         <ImpactedEntities
+                                            deployments={row.deployments}
                                             deploymentCount={row.deploymentCount}
+                                            images={row.images}
                                             imageCount={row.imageCount}
                                         />
                                     </Td>
