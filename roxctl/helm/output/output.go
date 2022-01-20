@@ -48,11 +48,16 @@ func getMetaValues(flavorName string, imageFlavorProvided, rhacs, release bool, 
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
 
-func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, metaVals *charts.MetaValues, debug bool, debugChartPath string) error {
+func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, imageFlavor string, flavorProvided, rhacs, debug bool, debugChartPath string, logger environment.Logger) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
+	}
+
+	metaVals, err := getMetaValues(imageFlavor, flavorProvided, rhacs, buildinfo.ReleaseBuild, logger)
+	if err != nil {
+		return err
 	}
 
 	if outputDir == "" {
@@ -117,11 +122,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			}
 			chartName := args[0]
 			flavorProvided := cmd.Flags().Changed("image-defaults")
-			metaVals, err := getMetaValues(imageFlavor, flavorProvided, rhacs, buildinfo.ReleaseBuild, cliEnvironment.Logger())
-			if err != nil {
-				return err
-			}
-			return outputHelmChart(chartName, outputDir, removeOutputDir, metaVals, debug, debugChartPath)
+			return outputHelmChart(chartName, outputDir, removeOutputDir, imageFlavor, flavorProvided, rhacs, debug, debugChartPath, cliEnvironment.Logger())
 		},
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")

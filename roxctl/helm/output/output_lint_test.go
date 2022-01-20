@@ -81,13 +81,10 @@ func (s *HelmChartTestSuite) TestHelmOutput() {
 				if tt.flavor != "" {
 					tt.flavorProvided = true
 				}
-				metaVals, metaValsErr := getMetaValues(tt.flavor, tt.flavorProvided, tt.rhacs, buildinfo.ReleaseBuild, env.Logger())
-				err = outputHelmChart(chartName, outputDir, true, metaVals, false, "")
+				err = outputHelmChart(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, false, "", env.Logger())
 				if tt.wantErr {
-					assert.Error(s.T(), metaValsErr)
 					assert.Error(s.T(), err)
 				} else {
-					assert.NoError(s.T(), metaValsErr)
 					assert.NoError(s.T(), err)
 				}
 			})
@@ -125,9 +122,7 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	testIO, _, _, _ := environment.TestIO()
 	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
-	metaVals, metaValsErr := getMetaValues(imageFlavor, imageFlavor != "", rhacs, buildinfo.ReleaseBuild, env.Logger())
-	require.NoErrorf(t, metaValsErr, "failed to getMetaValues for chart %s", chartName)
-	err = outputHelmChart(chartName, outputDir, true, metaVals, noDebug, noDebugChartPath)
+	err = outputHelmChart(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, false, "", env.Logger())
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {
