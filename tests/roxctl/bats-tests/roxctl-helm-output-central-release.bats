@@ -44,6 +44,14 @@ teardown() {
   assert_helm_template_central_registry "$out_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
 }
 
+@test "roxctl-release helm output central-services --image-defaults=rhacs should use registry.redhat.io registry" {
+  run roxctl-release helm output central-services --image-defaults=rhacs --output-dir "$out_dir"
+  assert_success
+  has_no_default_flavor_warning
+  assert_output --partial "Written Helm chart central-services to directory"
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+}
+
 @test "roxctl-release helm output central-services --image-defaults=development_build should fail" {
   run roxctl-release helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_failure
