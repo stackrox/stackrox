@@ -40,7 +40,7 @@ func New(base RoxError, message string) RoxError {
 	return &customError{base, nil, message}
 }
 
-// Error return error message. Implements error interface.
+// Error returns error message. Implements error interface.
 func (e *customError) Error() string {
 	if e.cause != nil {
 		return fmt.Sprintf("%s: %s", e.message, e.cause.Error())
