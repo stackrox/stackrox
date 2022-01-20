@@ -7,8 +7,8 @@ export function getExpiresWhenFixedValue(expiresOn: string): boolean {
 
 export type ExpiresOn = 'Until Fixable' | '2 weeks' | '30 days' | '90 days' | 'Indefinitely';
 
-export function getExpiresOnValue(expiresOn: ExpiresOn): string | number | undefined {
-    let value: string | number | undefined;
+export function getExpiresOnValue(expiresOn: ExpiresOn): string | number | null {
+    let value: string | number | null = null;
     if (expiresOn === '2 weeks') {
         value = addDaysToDate(new Date(), 14);
     } else if (expiresOn === '30 days') {
@@ -16,7 +16,7 @@ export function getExpiresOnValue(expiresOn: ExpiresOn): string | number | undef
     } else if (expiresOn === '90 days') {
         value = addDaysToDate(new Date(), 90);
     } else if (expiresOn === 'Indefinitely') {
-        value = undefined;
+        value = null;
     }
     return value;
 }
