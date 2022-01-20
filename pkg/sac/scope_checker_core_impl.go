@@ -4,8 +4,10 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -85,6 +87,11 @@ func (scc *ScopeCheckerCoreImpl) TryAllowed() TryAllowedResult {
 // PerformChecks performs all pending permission checks as per the comment on the interface
 func (scc *ScopeCheckerCoreImpl) PerformChecks(ctx context.Context) error {
 	return scc.reqTracker.PerformChecks(ctx)
+}
+
+// EffectiveAccessScope always returns error as plugin does not support it.
+func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+	return nil, errors.New("not supported: use built-in authorizer")
 }
 
 // SetState sets the Allow/Deny/Unknown state of this ScopeCheckerCore, it should only be called by RootScopeCheckerCore

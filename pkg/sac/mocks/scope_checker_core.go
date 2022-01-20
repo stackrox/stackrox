@@ -10,6 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	sac "github.com/stackrox/rox/pkg/sac"
+	effectiveaccessscope "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 // MockScopeCheckerCore is a mock of ScopeCheckerCore interface.
@@ -33,6 +34,21 @@ func NewMockScopeCheckerCore(ctrl *gomock.Controller) *MockScopeCheckerCore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockScopeCheckerCore) EXPECT() *MockScopeCheckerCoreMockRecorder {
 	return m.recorder
+}
+
+// EffectiveAccessScope mocks base method.
+func (m *MockScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EffectiveAccessScope")
+	ret0, _ := ret[0].(*effectiveaccessscope.ScopeTree)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EffectiveAccessScope indicates an expected call of EffectiveAccessScope.
+func (mr *MockScopeCheckerCoreMockRecorder) EffectiveAccessScope() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EffectiveAccessScope", reflect.TypeOf((*MockScopeCheckerCore)(nil).EffectiveAccessScope))
 }
 
 // PerformChecks mocks base method.

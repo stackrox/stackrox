@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 // TryAllowedResult represents the possible values of a `TryAllowed` call on an access scope checker.
@@ -39,6 +40,9 @@ type ScopeCheckerCore interface {
 	// Note: Only scopes that have been obtained from this scope via a call to `SubScopeChecker` are guaranteed
 	// to be considered. Similarly, only requests made in the current goroutine are guaranteed to be considered.
 	PerformChecks(ctx context.Context) error
+	// EffectiveAccessScope returns effective access scope for given principal stored in context.
+	// If checker is not at resource level then it returns an error.
+	EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error)
 }
 
 // NewRootScopeCheckerCore returns a ScopeCheckerCore with a root AccessScope

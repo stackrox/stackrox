@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 // ScopeChecker provides a convenience wrapper around a ScopeCheckerCore.
@@ -163,4 +164,9 @@ func (c ScopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, err
 		res = pred.TryAllowed(c)
 	}
 	return res == Allow, nil
+}
+
+// EffectiveAccessScope returns underlying effective access scope.
+func (c ScopeChecker) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+	return c.core.EffectiveAccessScope()
 }
