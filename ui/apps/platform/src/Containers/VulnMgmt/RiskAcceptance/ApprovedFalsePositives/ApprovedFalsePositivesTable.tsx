@@ -24,7 +24,7 @@ import useRiskAcceptance from '../useRiskAcceptance';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import ApprovedFalsePositiveActionsColumn from './ApprovedFalsePositiveActionsColumn';
-import ImpactedEntities from '../ImpactedEntities';
+import ImpactedEntities from '../ImpactedEntities/ImpactedEntities';
 import VulnRequestedAction from '../VulnRequestedAction';
 import ApprovedFalsePositivesSearchFilter from './ApprovedFalsePositivesSearchFilter';
 import SearchFilterResults from '../SearchFilterResults';
@@ -200,7 +200,9 @@ function ApprovedFalsePositivesTable({
                                     </Td>
                                     <Td dataLabel="Impacted entities">
                                         <ImpactedEntities
+                                            deployments={row.deployments}
                                             deploymentCount={row.deploymentCount}
+                                            images={row.images}
                                             imageCount={row.imageCount}
                                         />
                                     </Td>
