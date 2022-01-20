@@ -29,7 +29,7 @@ teardown() {
 @test "roxctl-development helm output help-text should state default value for --image-defaults flag" {
   run roxctl-development helm output central-services -h
   assert_success
-  assert_line --partial "default container images settings (development_build, stackrox.io, rhacs); it controls repositories from where to download the images, image names and tags format (default \"development_build\")"
+  assert_line --regexp "--image-defaults.*\(development_build, stackrox.io, rhacs\).*default \"development_build\""
 }
 
 @test "roxctl-development helm output central-services should use docker.io registry" {
@@ -72,7 +72,6 @@ teardown() {
   run roxctl-development helm output central-services --rhacs --image-defaults=development_build --output-dir "$out_dir"
   assert_failure
   has_deprecation_warning
-  has_no_default_flavor_warning
   has_flag_collision_warning
 }
 
