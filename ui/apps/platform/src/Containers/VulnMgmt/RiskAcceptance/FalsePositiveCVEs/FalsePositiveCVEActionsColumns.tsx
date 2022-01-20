@@ -1,10 +1,10 @@
 import React, { ReactElement } from 'react';
 import { ActionsColumn } from '@patternfly/react-table';
 import { FalsePositiveCVEsToBeAssessed } from './types';
-import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
+import { Vulnerability } from '../imageVulnerabilities.graphql';
 
 export type FalsePositiveCVEActionsColumnProps = {
-    row: VulnerabilityWithRequest;
+    row: Vulnerability;
     setVulnsToBeAssessed: React.Dispatch<React.SetStateAction<FalsePositiveCVEsToBeAssessed>>;
     canReobserveCVE: boolean;
 };
