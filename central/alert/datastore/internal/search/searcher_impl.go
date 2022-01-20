@@ -73,6 +73,7 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 		}
 		defer rows.Close()
 		var elems []*storage.ListAlert
+		//rows -> []*storage.ListAlert -> any -> []*storage.ListAlert
 		for rows.Next() {
 			var id string
 			var data []byte

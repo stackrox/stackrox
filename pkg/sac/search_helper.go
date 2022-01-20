@@ -32,6 +32,8 @@ type searchHelper struct {
 	resource permissions.Resource
 
 	resultsChecker searchResultsChecker
+
+	optionsMap search.OptionsMap
 }
 
 // NewSearchHelper returns a new search helper for the given resource.
@@ -58,6 +60,7 @@ func NewSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.
 	return &searchHelper{
 		resource:       resourceMD.GetResource(),
 		resultsChecker: resultsChecker,
+		optionsMap:     optionsMap,
 	}, nil
 }
 
@@ -110,10 +113,41 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 		1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
 		2. For every role get it's effective access scope (EAS)
 		3. Merge all EAS into a single tree
-		4. Generate where clause from merged EASes
+		4. Generate where clause from merged EASes and resource (easy part for Clusters, namespaces etc and hard part images, cves etc)
 		5. Append clause to SQL query
 	*/
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//if features.PostgresPOC.Enabled() {
+	//	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
+	// 5. enrich the query (q) with EAS filter.
+	//rows, err := postgres.RunSearchRequestValue(h.optionsMap.PrimaryCategory(), q, globaldb.GetPostgresDB(), h.optionsMap)
+	//	if err != nil {
+	//		if err == pgx.ErrNoRows {
+	//			return nil, nil
+	//		}
+	//		return nil, err
+	//	}
+	//	defer rows.Close()
+	//	var elems []*storage.ListAlert
+
+	//	for rows.Next() {
+	//		var id string
+	//		var data []byte
+	//		if err := rows.Scan(&id, &data); err != nil {
+	//			return nil, err
+	//		}
+	//		msg := new(storage.Alert)
+	//		buf := bytes.NewReader(data)
+	//		t := time.Now()
+	//		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+	//			return nil, err
+	//		}
+	//		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "Alert")
+	//		elems = append(elems, convert.AlertToListAlert(msg))
+	//	}
+	//	return elems, nil
+	//}
 
 	// Make sure the cluster and perhaps namespace fields are part of the returned fields.
 	fieldQB := search.NewQueryBuilder()
