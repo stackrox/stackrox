@@ -2,6 +2,8 @@ package sac
 
 import (
 	"context"
+
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 type errScopeCheckerCore struct {
@@ -29,6 +31,6 @@ func ErrorAccessScopeCheckerCore(err error) ScopeCheckerCore {
 	}
 }
 
-func (s errScopeCheckerCore) SqlQuery(_ context.Context) (string, error) {
-	return "", s.err
+func (s errScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+	return effectiveaccessscope.RestrictedEffectiveAccessScope(), s.err
 }

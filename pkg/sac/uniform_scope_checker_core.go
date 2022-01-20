@@ -2,6 +2,8 @@ package sac
 
 import (
 	"context"
+
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 type uniformScopeCheckerCore bool
@@ -36,9 +38,9 @@ func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
 	return nil
 }
 
-func (s uniformScopeCheckerCore) SqlQuery(_ context.Context) (string, error) {
+func (s uniformScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	if s {
-		return "where false", nil
+		return effectiveaccessscope.RestrictedEffectiveAccessScope(), nil
 	}
-	return "", nil
+	return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 }

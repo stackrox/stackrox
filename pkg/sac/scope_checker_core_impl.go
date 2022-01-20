@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -87,7 +88,7 @@ func (scc *ScopeCheckerCoreImpl) PerformChecks(ctx context.Context) error {
 	return scc.reqTracker.PerformChecks(ctx)
 }
 
-func (scc *ScopeCheckerCoreImpl) SqlQuery(_ context.Context) (string, error) {
+func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	panic("Implement me!")
 }
 

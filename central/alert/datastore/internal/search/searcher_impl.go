@@ -73,7 +73,8 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 		}
 		defer rows.Close()
 		var elems []*storage.ListAlert
-		//rows -> []*storage.ListAlert -> any -> []*storage.ListAlert
+		// We can't pass convert function to searcher as this may result in more casting than necessary:
+		// rows -> []*storage.ListAlert -> any -> []*storage.ListAlert
 		for rows.Next() {
 			var id string
 			var data []byte

@@ -1,6 +1,10 @@
 package sac
 
-import "context"
+import (
+	"context"
+
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+)
 
 // OneStepSCC is a ScopeCheckerCore implementation that looks at the first scope key
 // and delegates to a different ScopeCheckerCore for the respective subscope.
@@ -31,6 +35,6 @@ func (c OneStepSCC) PerformChecks(ctx context.Context) error {
 	return nil
 }
 
-func (c OneStepSCC) SqlQuery(_ context.Context) (string, error) {
+func (c OneStepSCC) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	panic("Implement me!")
 }

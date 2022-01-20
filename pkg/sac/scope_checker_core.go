@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 // TryAllowedResult represents the possible values of a `TryAllowed` call on an access scope checker.
@@ -38,10 +39,10 @@ type ScopeCheckerCore interface {
 	// Note: Only scopes that have been obtained from this scope via a call to `SubScopeChecker` are guaranteed
 	// to be considered. Similarly, only requests made in the current goroutine are guaranteed to be considered.
 	PerformChecks(ctx context.Context) error
-	// SqlQuery generates where clause for SQL query that will perform SAC filtering on SQL level to remove not allowed
-	// entries from result set.
-	// If SQL Query is not supported error should be returned and filtering needs to be performed in code.
-	SqlQuery(ctx context.Context) (string, error)
+	// EffectiveAccessScope returns effective access scope for given principal stored in context.
+	// TODO(janisz): What should be returned is EAS is not supported?
+	// If checker is not at resource level then error will be returned???.
+	EffectiveAccessScope(ctx context.Context) (*effectiveaccessscope.ScopeTree, error)
 }
 
 // NewRootScopeCheckerCore returns a ScopeCheckerCore with a root AccessScope
