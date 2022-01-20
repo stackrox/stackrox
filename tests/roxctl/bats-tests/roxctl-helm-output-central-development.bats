@@ -17,13 +17,13 @@ teardown() {
   run roxctl-development helm output central-services --rhacs --output-dir "$out_dir"
   assert_success
   has_deprecation_warning
-  has_not_default_flavor_warning
+  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output should support --image-defaults flag" {
   run roxctl-development helm output central-services --image-defaults="stackrox.io" --output-dir "$out_dir"
   assert_success
-  has_not_default_flavor_warning
+  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output help-text should state default value for --image-defaults flag" {
@@ -72,7 +72,7 @@ teardown() {
   run roxctl-development helm output central-services --rhacs --image-defaults=development_build --output-dir "$out_dir"
   assert_failure
   has_deprecation_warning
-  has_not_default_flavor_warning
+  has_no_default_flavor_warning
   has_flag_collision_warning
 }
 
@@ -81,7 +81,7 @@ teardown() {
   assert_failure
   has_deprecation_warning
   has_flag_collision_warning
-  has_not_default_flavor_warning
+  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=rhacs should return error about --rhacs colliding with --image-defaults" {
@@ -89,5 +89,5 @@ teardown() {
   assert_failure
   has_deprecation_warning
   has_flag_collision_warning
-  has_not_default_flavor_warning
+  has_no_default_flavor_warning
 }

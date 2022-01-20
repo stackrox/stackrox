@@ -170,7 +170,7 @@ has_default_flavor_warning() {
   assert_line --regexp "$flavor_warning_regexp"
 }
 
-has_not_default_flavor_warning() {
+has_no_default_flavor_warning() {
   refute_line --regexp "$flavor_warning_regexp"
 }
 
