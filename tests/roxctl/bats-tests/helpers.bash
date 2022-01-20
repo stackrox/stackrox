@@ -157,7 +157,7 @@ run_invalid_flavor_value_test() {
 
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
-  assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
+  assert_output --regexp "'--image-defaults': unexpected value .*, allowed values are \[.*\]: invalid arguments"
 }
 
 has_deprecation_warning() {
