@@ -1,17 +1,7 @@
 import React, { ReactElement } from 'react';
-import {
-    Card,
-    CardBody,
-    DescriptionList,
-    Grid,
-    GridItem,
-    List,
-    ListItem,
-    Title,
-} from '@patternfly/react-core';
+import { Card, CardBody, DescriptionList, Grid, GridItem, Title } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { Cluster } from 'types/cluster.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 
@@ -22,42 +12,33 @@ import {
     formatResponse,
     formatType,
     getEnforcementLifecycleStages,
-    getExcludedDeployments,
-    getExcludedImageNames,
 } from '../policies.utils';
 import PolicySeverityLabel from '../PolicySeverityLabel';
 
-import ExcludedDeployment from './ExcludedDeployment';
 import Notifier from './Notifier';
-import Restriction from './Restriction';
 
 type PolicyOverviewProps = {
-    clusters: Cluster[];
     notifiers: NotifierIntegration[];
     policy: Policy;
 };
 
-function PolicyOverview({ clusters, notifiers, policy }: PolicyOverviewProps): ReactElement {
+function PolicyOverview({ notifiers, policy }: PolicyOverviewProps): ReactElement {
     const {
         categories,
         description,
         enforcementActions,
         eventSource,
-        exclusions,
         isDefault,
         lifecycleStages,
         notifiers: notifierIds,
         rationale,
         remediation,
-        scope,
         severity,
     } = policy;
     const enforcementLifecycleStages = getEnforcementLifecycleStages(
         lifecycleStages,
         enforcementActions
     );
-    const excludedDeployments = getExcludedDeployments(exclusions);
-    const excludedImageNames = getExcludedImageNames(exclusions);
 
     return (
         <>
@@ -108,62 +89,6 @@ function PolicyOverview({ clusters, notifiers, policy }: PolicyOverviewProps): R
                             </GridItem>
                         ))}
                     </Grid>
-                </>
-            )}
-            {scope.length !== 0 && (
-                <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
-                        Restrict to scopes
-                    </Title>
-                    <Grid hasGutter>
-                        {scope.map((restriction, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
-                            <GridItem key={index} span={4}>
-                                <Card isFlat>
-                                    <CardBody>
-                                        <Restriction
-                                            clusters={clusters}
-                                            restriction={restriction}
-                                        />
-                                    </CardBody>
-                                </Card>
-                            </GridItem>
-                        ))}
-                    </Grid>
-                </>
-            )}
-            {excludedDeployments.length !== 0 && (
-                <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
-                        Excluded deployments
-                    </Title>
-                    <Grid hasGutter>
-                        {excludedDeployments.map((excludedDeployment, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
-                            <GridItem key={index} span={4}>
-                                <Card isFlat>
-                                    <CardBody>
-                                        <ExcludedDeployment
-                                            clusters={clusters}
-                                            excludedDeployment={excludedDeployment}
-                                        />
-                                    </CardBody>
-                                </Card>
-                            </GridItem>
-                        ))}
-                    </Grid>
-                </>
-            )}
-            {excludedImageNames.length !== 0 && (
-                <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
-                        Excluded images
-                    </Title>
-                    <List isPlain>
-                        {excludedImageNames.map((name) => (
-                            <ListItem key={name}>{name}</ListItem>
-                        ))}
-                    </List>
                 </>
             )}
         </>
