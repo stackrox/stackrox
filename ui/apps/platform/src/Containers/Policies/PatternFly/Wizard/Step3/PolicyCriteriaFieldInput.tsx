@@ -141,11 +141,13 @@ function PolicyCriteriaFieldInput({
                     </Select>
                 </FormGroup>
             );
-        case 'group':
+        case 'group': {
+            /* eslint-disable react/no-array-index-key */
             return (
                 <>
-                    {descriptor.subComponents?.map((subComponent) => (
+                    {descriptor.subComponents?.map((subComponent, index) => (
                         <PolicyCriteriaFieldSubInput
+                            key={index}
                             subComponent={subComponent}
                             readOnly={readOnly}
                             name={`${name}.${subComponent.subpath}`}
@@ -153,6 +155,8 @@ function PolicyCriteriaFieldInput({
                     ))}
                 </>
             );
+            /* eslint-enable react/no-array-index-key */
+        }
     }
     /* eslint-enable default-case */
 }
