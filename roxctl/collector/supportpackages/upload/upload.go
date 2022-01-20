@@ -171,8 +171,8 @@ func (cmd *collectorSPUploadCommand) uploadFilesFromPackage() error {
 	probeFiles, hasUnrecognized := analyzePackageFile(&zipFile.Reader)
 
 	if hasUnrecognized {
-		cmd.env.Logger().WarnfLn("Warning: The given support package contains unrecognized files. This may indicate data corruption.")
-		cmd.env.Logger().WarnfLn("         If you have obtained this support package from an official site, contact StackRox support.")
+		cmd.env.Logger().WarnfLn("The given support package contains unrecognized files. This may indicate data corruption.")
+		cmd.env.Logger().WarnfLn("If you have obtained this support package from an official site, contact StackRox support.")
 	}
 
 	if len(probeFiles) == 0 {
@@ -195,7 +195,7 @@ func (cmd *collectorSPUploadCommand) uploadFilesFromPackage() error {
 	}
 
 	if len(nonOverwrittenFiles) > 0 {
-		cmd.env.Logger().WarnfLn("Warning: there were %d file(s) present in the support package that were already present on the server, yet modified.", len(nonOverwrittenFiles))
+		cmd.env.Logger().WarnfLn("there were %d file(s) present in the support package that were already present on the server, yet modified.", len(nonOverwrittenFiles))
 		i := 0
 		for _, omittedFile := range nonOverwrittenFiles {
 			if i >= 2 {

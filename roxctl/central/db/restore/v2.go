@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
@@ -45,13 +46,13 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "restore <file>",
 		RunE: func(c *cobra.Command, args []string) error {
-			if len(args) > 1 {
-				return errors.Errorf("too many positional arguments (%d given)", len(args))
+			if err := validate(c, args); err != nil {
+				return err
 			}
 			if err := centralDbRestoreCmd.construct(c, args); err != nil {
 				return err
 			}
-			if err := centralDbRestoreCmd.validate(c, args); err != nil {
+			if err := centralDbRestoreCmd.validate(); err != nil {
 				return err
 			}
 			return centralDbRestoreCmd.restore(func(file *os.File, deadline time.Time) error {
@@ -70,26 +71,33 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
+func validate(cbr *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return cbr.Usage()
+	}
+	if len(args) > 1 {
+		return errors.WithMessagef(errorhelpers.ErrInvalidArgs, "too many positional arguments (%d given)", len(args))
+	}
+	if file, _ := cbr.Flags().GetString("file"); file != "" {
+		return errors.WithMessage(errorhelpers.ErrInvalidArgs, "legacy --file flag must not be used in conjunction with a positional argument")
+	}
+	return nil
+}
+
 func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string) error {
 	cmd.confirm = func() error {
 		return flags.CheckConfirmation(cbr)
 	}
 	cmd.timeout = flags.Timeout(cbr)
-	if len(args) == 1 {
-		if cmd.file != "" {
-			return errors.New("legacy --file flag must not be used in conjunction with a positional argument")
-		}
+	if cmd.file == "" {
 		cmd.file = args[0]
 	}
 	return nil
 }
 
-func (cmd *centralDbRestoreCommand) validate(cbr *cobra.Command, args []string) error {
+func (cmd *centralDbRestoreCommand) validate() error {
 	if cmd.file == "" {
-		if len(args) == 0 {
-			return cbr.Usage()
-		}
-		return errors.New("file to restore from must be specified")
+		return errors.WithMessage(errorhelpers.ErrInvalidArgs, "file to restore from must be specified")
 	}
 	return nil
 }

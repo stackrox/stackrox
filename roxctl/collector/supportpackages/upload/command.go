@@ -22,17 +22,31 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "upload <package-file>",
 		RunE: func(c *cobra.Command, args []string) error {
-			if len(args) > 1 {
-				return errors.Errorf("too many positional arguments (expected 1, got %d)", len(args))
+			if err := validate(args); err != nil {
+				return err
 			}
-			if len(args) == 0 {
-				return errors.New("missing <package-file> argument")
+			if err := collectorSPUploadCmd.construct(args); err != nil {
+				return err
 			}
-			collectorSPUploadCmd.packageFile = args[0]
 			return collectorSPUploadCmd.uploadFilesFromPackage()
 		},
 	}
 
 	c.Flags().BoolVarP(&collectorSPUploadCmd.overwrite, "overwrite", "", false, "whether to overwrite present but different files")
 	return c
+}
+
+func validate(args []string) error {
+	if len(args) > 1 {
+		return errors.Errorf("too many positional arguments (expected 1, got %d)", len(args))
+	}
+	if len(args) == 0 {
+		return errors.New("missing <package-file> argument")
+	}
+	return nil
+}
+
+func (cmd *collectorSPUploadCommand) construct(args []string) error {
+	cmd.packageFile = args[0]
+	return nil
 }
