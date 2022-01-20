@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -136,7 +137,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	if !buildinfo.ReleaseBuild {
 		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
 	}
-	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", imageFlavorDefault, "default container registry for container images")
+	imageFlavorHelpStr := fmt.Sprintf("default container images settings (%v); it controls repositories from where to download the images, image names and tags format",
+		strings.Join(defaults.GetAllowedImageFlavorNames(buildinfo.ReleaseBuild), ", "))
+	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", imageFlavorDefault, imageFlavorHelpStr)
 
 	return c
 }

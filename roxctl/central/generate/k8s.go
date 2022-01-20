@@ -85,7 +85,7 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags
-	imageFlavorHelpStr := fmt.Sprintf("default container images settings (%v); it controls repositories from where to download StackRox images, image names and tags format",
+	imageFlavorHelpStr := fmt.Sprintf("default container images settings (%v); it controls repositories from where to download the images, image names and tags format",
 		strings.Join(defaults.GetAllowedImageFlavorNames(buildinfo.ReleaseBuild), ", "))
 	imageFlavorDefault := defaults.ImageFlavorNameRHACSRelease
 	if !buildinfo.ReleaseBuild {
