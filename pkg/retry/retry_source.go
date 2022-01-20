@@ -21,26 +21,27 @@ type RetryableSource interface {
 // Result wraps a pair (result, err) produced by a source. By convention
 // either err or v has the zero value of its type.
 type Result struct {
-	v interface {}
+	v   interface{}
 	err error
+}
+
+// RetryableSourceRetriever be used to retrieve the result in a RetryableSource.
+type RetryableSourceRetriever struct {
+	// time to consider failed a call to AskForResult() that didn't return a result yet.
+	RequestTimeout time.Duration
+	ErrReporter    func(err error)
+	// should be reset between calls to Run.
+	Backoff      wait.Backoff
+	timeoutC     chan struct{}
+	timeoutTimer *time.Timer
 }
 
 // NewRetryableSourceRetriever create a new NewRetryableSourceRetriever
 func NewRetryableSourceRetriever(backoff wait.Backoff, requestTimeout time.Duration) *RetryableSourceRetriever {
 	return &RetryableSourceRetriever{
 		RequestTimeout: requestTimeout,
-		Backoff: backoff,
+		Backoff:        backoff,
 	}
-}
-
-type RetryableSourceRetriever struct {
-	// time to consider failed a call to AskForResult() that didn't return a result yet.
-	RequestTimeout time.Duration
-	ErrReporter func (err error)
-	// should be reset between calls to Run.
-	Backoff wait.Backoff
-	timeoutC chan struct{}
-	timeoutTimer *time.Timer
 }
 
 // Run gets the result from the specified source.
@@ -58,7 +59,7 @@ func (r *RetryableSourceRetriever) Run(ctx context.Context, source RetryableSour
 		case <-r.timeoutC:
 			// assume result will never come.
 			r.handleError(errors.New("timeout"), source)
-		case result := <- source.ResultC():
+		case result := <-source.ResultC():
 			err := result.err
 			if err != nil {
 				r.handleError(err, source)
