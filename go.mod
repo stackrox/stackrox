@@ -2,135 +2,82 @@ module github.com/stackrox/rox
 
 go 1.16
 
-// CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
-// directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d
-
 require (
-	cloud.google.com/go v0.94.1
-	cloud.google.com/go/containeranalysis v0.1.0
-	cloud.google.com/go/storage v1.12.0
-	github.com/BurntSushi/toml v0.4.1
+	github.com/BurntSushi/toml v0.4.1 // indirect
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PagerDuty/go-pagerduty v1.4.2
-	github.com/RoaringBitmap/roaring v0.9.4
-	github.com/VividCortex/ewma v1.2.0
-	github.com/andygrunwald/go-jira v1.14.0
-	github.com/antihax/optional v1.0.0
-	github.com/aws/aws-sdk-go v1.40.36
+	github.com/OneOfOne/xxhash v1.2.6 // indirect
+	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/blevesearch/bleve v1.0.14
 	github.com/blevesearch/blevex v1.0.0 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/segment v0.9.0 // indirect
-	github.com/cenkalti/backoff/v3 v3.2.2
-	github.com/ckaznocha/protoc-gen-lint v0.2.4
+	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
+	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
-	github.com/containers/image/v5 v5.11.1
-	github.com/coreos/go-oidc/v3 v3.0.0
-	github.com/coreos/go-systemd/v22 v22.3.2
-	github.com/couchbase/moss v0.1.0 // indirect
 	github.com/couchbase/vellum v1.0.2 // indirect
-	github.com/dave/jennifer v1.4.1
-	github.com/deckarep/golang-set v1.7.1
-	github.com/dexidp/dex v0.0.0-20210917061239-f0186ff2651e
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
-	github.com/docker/docker v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
-	github.com/docker/go-connections v0.4.0
-	github.com/docker/go-units v0.4.0
-	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
-	github.com/facebookincubator/nvdtools v0.1.4
-	github.com/fatih/color v1.12.0
+	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
+	github.com/fatih/color v1.12.0 // indirect
+	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/fullsailor/pkcs7 v0.0.0
-	github.com/ghodss/yaml v1.0.0
+	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-logr/logr v0.4.0
-	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.2
-	github.com/google/go-cmp v0.5.6
-	github.com/googleapis/gnostic v0.5.5
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/schema v1.2.0
-	github.com/graph-gophers/graphql-go v1.1.0
+	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-version v1.3.0
-	github.com/hashicorp/golang-lru v0.5.4
-	github.com/heroku/docker-registry-client v0.0.0
 	github.com/joelanford/helm-operator v0.0.7
-	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
-	github.com/kisielk/sqlstruct v0.0.0-20210630145711-dae28ed37023 // indirect
-	github.com/machinebox/graphql v0.2.2
-	github.com/magiconair/properties v1.8.5
-	github.com/mailru/easyjson v0.7.7
-	github.com/matryer/is v1.4.0 // indirect
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
+	github.com/lib/pq v1.10.3 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/mattn/go-runewidth v0.0.10 // indirect
+	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
 	github.com/mitchellh/go-wordwrap v1.0.1
-	github.com/mitchellh/hashstructure v1.1.0
-	github.com/nxadm/tail v1.4.8
-	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.16.0
-	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
+	github.com/onsi/gomega v1.16.0 // indirect
+	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6 // indirect
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
-	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
-	github.com/operator-framework/operator-sdk v0.19.4
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
-	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.32.1
-	github.com/russellhaering/gosaml2 v0.6.0
-	github.com/russellhaering/goxmldsig v1.1.1
-	github.com/sergi/go-diff v1.2.0
-	github.com/spf13/cobra v1.2.1
-	github.com/spf13/pflag v1.0.5
-	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
+	github.com/prometheus/common v0.32.1 // indirect
+	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/rogpeppe/go-internal v1.8.0 // indirect
+	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
-	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
-	github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89
-	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.0 // indirect
-	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
-	github.com/tidwall/gjson v1.9.2
 	github.com/tkuchiki/go-timezone v0.1.3
-	github.com/vbauerster/mpb/v4 v4.12.2
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190809123943-df4f5c81cb3b // indirect
+	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
+	github.com/yvasiyarov/gorelic v0.0.7 // indirect
+	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/net v0.0.0-20210902165921-8d991716f632
-	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210908233432-aa78b53d3365
-	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
-	golang.org/x/tools v0.1.5
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.57.0
-	google.golang.org/genproto v0.0.0-20210903162649-d08c68adba83
+	google.golang.org/api v0.57.0 // indirect
 	google.golang.org/grpc v1.40.0
-	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
-	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
+	honnef.co/go/tools v0.2.1 // indirect
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
-	k8s.io/apiserver v0.22.2
 	k8s.io/client-go v0.22.2
-	k8s.io/kubectl v0.22.2
-	k8s.io/kubelet v0.22.2
+	k8s.io/kube-openapi v0.0.0-20211025214626-d9a0cc0561b2 // indirect
+	k8s.io/kubectl v0.22.2 // indirect
 	k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e
 	sigs.k8s.io/controller-runtime v0.10.2
 	sigs.k8s.io/yaml v1.3.0
