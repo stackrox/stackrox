@@ -1733,9 +1733,6 @@
         "imageName": {
           "type": "string"
         },
-        "noExternalMetadata": {
-          "type": "boolean"
-        },
         "sendNotifications": {
           "type": "boolean"
         },
@@ -1764,9 +1761,6 @@
         "deployment": {
           "$ref": "#/definitions/storageDeployment"
         },
-        "noExternalMetadata": {
-          "type": "boolean"
-        },
         "enforcementOnly": {
           "type": "boolean"
         },
@@ -1791,9 +1785,6 @@
       "properties": {
         "yaml": {
           "type": "string"
-        },
-        "noExternalMetadata": {
-          "type": "boolean"
         },
         "enforcementOnly": {
           "type": "boolean"

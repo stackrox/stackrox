@@ -194,11 +194,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	// If no ID, then don't use caches as they could return stale data
-	fetchOpt := enricher.UseCachesIfPossible
+	var fetchOpt enricher.FetchOption
 	if request.GetCachedOnly() {
-		fetchOpt = enricher.NoExternalMetadata
-	} else if request.GetImage().GetId() == "" {
-		fetchOpt = enricher.ForceRefetch
+		fetchOpt = enricher.RefetchScans
 	}
 
 	img := types.ToImage(request.GetImage())
@@ -222,11 +220,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 // ScanImage scans an image and returns the result
 func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
-	enrichmentCtx := enricher.EnrichmentContext{
-		FetchOpt: enricher.IgnoreExistingImages,
-	}
+	var enrichmentCtx enricher.EnrichmentContext
 	if request.GetForce() {
-		enrichmentCtx.FetchOpt = enricher.ForceRefetch
+		enrichmentCtx.FetchOpt = enricher.RefetchScans
 	}
 	img, err := enricher.EnrichImageByName(s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
@@ -302,7 +298,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 
 	img := types.ToImage(containerImage)
 
-	enrichmentResult, err := s.enricher.EnrichImage(enricher.EnrichmentContext{FetchOpt: enricher.IgnoreExistingImages}, img)
+	enrichmentResult, err := s.enricher.EnrichImage(enricher.EnrichmentContext{}, img)
 	if err != nil {
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),

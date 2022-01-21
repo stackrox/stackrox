@@ -95,9 +95,6 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 	if !metadataOutOfDate {
 		return false, nil
 	}
-	if ctx.FetchOpt == NoExternalMetadata {
-		return false, nil
-	}
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error getting metadata for image: %s", image.GetName().GetFullName()))
 
@@ -167,13 +164,6 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 	return false, errorList.ToError()
 }
 
-func getRef(image *storage.Image) string {
-	if image.GetId() != "" {
-		return image.GetId()
-	}
-	return image.GetName().GetFullName()
-}
-
 func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
 	if !registry.Global() {
 		return false, nil
@@ -192,28 +182,30 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 	metadata.Version = metadataVersion
 	image.Metadata = metadata
 	if image.GetId() == "" {
-		image.Id = utils.GetImageID(image)
+		image.Id = utils.GetImageIDFromMetadata(metadata)
 	}
 	return true, nil
 }
 
 func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) (ScanResult, error) {
-	// Attempt to short-circuit before checking scanners.
-	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
-		return ScanNotDone, nil
-	}
-	if ctx.FetchOpt != ForceRefetch && ctx.FetchOpt != ForceRefetchScansOnly && image.GetId() != "" {
-		img, exists, err := e.imageGetter.GetImage(sac.WithAllAccess(context.Background()), image.GetId())
-		if err != nil {
-			return ScanNotDone, err
-		}
-
-		if !exists && ctx.FetchOpt == NoExternalMetadata {
+	switch ctx.FetchOpt {
+	case Default, NoInlineScan:
+		if image.GetScan() != nil {
 			return ScanNotDone, nil
 		}
-		if img.GetScan() != nil {
-			return ScanSucceeded, nil
+		if image.GetId() != "" {
+			img, exists, err := e.imageGetter.GetImage(sac.WithAllAccess(context.Background()), image.GetId())
+			if err != nil || !exists {
+				return ScanNotDone, err
+			}
+			if img.GetScan() != nil {
+				return ScanSucceeded, nil
+			}
 		}
+		if ctx.FetchOpt == NoInlineScan {
+			return ScanNotDone, nil
+		}
+	case RefetchScans:
 	}
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))

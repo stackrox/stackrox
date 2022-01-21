@@ -193,7 +193,12 @@ func GetFullyQualifiedFullName(holder nameHolder) string {
 
 // GetImageID returns the id of the image based on the currently set values
 func GetImageID(img *storage.Image) string {
-	return stringutils.FirstNonEmpty(img.GetId(), img.GetMetadata().GetV2().GetDigest(), img.GetMetadata().GetV1().GetDigest())
+	return stringutils.FirstNonEmpty(img.GetId(), GetImageIDFromMetadata(img.GetMetadata()))
+}
+
+// GetImageIDFromMetadata returns id of the image based on metadata
+func GetImageIDFromMetadata(m *storage.ImageMetadata) string {
+	return stringutils.FirstNonEmpty(m.GetV2().GetDigest(), m.GetV1().GetDigest())
 }
 
 // StripCVEDescriptions takes in an image and returns a stripped down version without the descriptions of CVEs

@@ -183,7 +183,7 @@ func TestEnricherFlow(t *testing.T) {
 		{
 			name: "data in both caches but force refetch scans only",
 			ctx: EnrichmentContext{
-				FetchOpt: ForceRefetchScansOnly,
+				FetchOpt: ForceRefetch,
 			},
 			inMetadataCache:      true,
 			inScanCache:          true,

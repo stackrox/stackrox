@@ -136,9 +136,6 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	img := types.ToImage(image)
 
 	eCtx := enricher.EnrichmentContext{}
-	if req.GetNoExternalMetadata() {
-		eCtx.FetchOpt = enricher.NoExternalMetadata
-	}
 	enrichResult, err := s.imageEnricher.EnrichImage(eCtx, img)
 	if err != nil {
 		return nil, err
@@ -273,9 +270,6 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	eCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
 	}
-	if req.GetNoExternalMetadata() {
-		eCtx.FetchOpt = enricher.NoExternalMetadata
-	}
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
@@ -350,9 +344,6 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 
 	enrichmentCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
-	}
-	if req.GetNoExternalMetadata() {
-		enrichmentCtx.FetchOpt = enricher.NoExternalMetadata
 	}
 
 	run, err := s.enrichAndDetect(ctx, enrichmentCtx, req.GetDeployment())

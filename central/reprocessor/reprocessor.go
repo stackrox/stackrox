@@ -360,9 +360,7 @@ func (l *loopImpl) reprocessNodes() {
 }
 
 func (l *loopImpl) reprocessWatchedImage(name string) bool {
-	img, err := imageEnricher.EnrichImageByName(l.imageEnricher, imageEnricher.EnrichmentContext{
-		FetchOpt: imageEnricher.IgnoreExistingImages,
-	}, name)
+	img, err := imageEnricher.EnrichImageByName(l.imageEnricher, imageEnricher.EnrichmentContext{}, name)
 	if err != nil {
 		log.Errorf("Error enriching watched image with name %q: %v", name, err)
 		return false
@@ -429,16 +427,16 @@ func (l *loopImpl) enrichLoop() {
 
 	// Call runReprocessing with ForceRefetch on start to ensure that the image metadata reflects any changes
 	// in the proto and to ensure that the images and nodes are pulling new scans on <= the reprocessing interval
-	l.runReprocessing(imageEnricher.ForceRefetch)
+	l.runReprocessing(imageEnricher.RefetchScans)
 	for !l.stopSig.IsDone() {
 		select {
 		case <-l.stopSig.Done():
 			return
 		case <-l.shortCircuitSig.Done():
 			l.shortCircuitSig.Reset()
-			l.runReprocessing(imageEnricher.UseCachesIfPossible)
+			l.runReprocessing(imageEnricher.Default)
 		case <-l.enrichAndDetectTicker.C:
-			l.runReprocessing(imageEnricher.ForceRefetchScansOnly)
+			l.runReprocessing(imageEnricher.RefetchScans)
 		}
 	}
 }

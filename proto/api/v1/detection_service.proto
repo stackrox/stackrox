@@ -14,7 +14,7 @@ message BuildDetectionRequest {
         storage.ContainerImage image = 1;
         string image_name            = 3;
     }
-    bool no_external_metadata         = 2;
+    reserved 2; // formerly no_external_metadata
     bool send_notifications           = 4;
     repeated string policy_categories = 5;
 }
@@ -27,14 +27,14 @@ message DeployDetectionRequest {
     oneof Resource {
         storage.Deployment deployment = 1;
     }
-    bool no_external_metadata = 2;
+    reserved 2; // formerly no_external_metadata
     bool enforcement_only     = 3;
     string cluster_id         = 4;
 }
 
 message DeployYAMLDetectionRequest {
     string yaml                       = 1;
-    bool no_external_metadata         = 2;
+    reserved 2; // formerly no_external_metadata
     bool enforcement_only             = 3;
     repeated string policy_categories = 4;
 }

@@ -23,11 +23,9 @@ type FetchOption int
 
 // These are all the possible fetch options for the enricher
 const (
-	UseCachesIfPossible FetchOption = iota
-	NoExternalMetadata
-	IgnoreExistingImages
-	ForceRefetch
-	ForceRefetchScansOnly
+	Default FetchOption = iota
+	NoInlineScan
+	RefetchScans
 )
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
@@ -45,17 +43,6 @@ type EnrichmentContext struct {
 	// Internal is used to indicate when the caller is internal.
 	// This is used to indicate that we do not want to fail upon failing to find integrations.
 	Internal bool
-}
-
-// FetchOnlyIfMetadataEmpty checks the fetch opts and return whether or not we can used a cached or saved
-// version of the external metadata
-func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
-	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch
-}
-
-// FetchOnlyIfScanEmpty will use the scan that exists in the image unless the fetch opts prohibit it
-func (e EnrichmentContext) FetchOnlyIfScanEmpty() bool {
-	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch && e.FetchOpt != ForceRefetchScansOnly
 }
 
 // EnrichmentResult denotes possible return values of the EnrichImage function.
