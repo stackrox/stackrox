@@ -8,21 +8,19 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
-
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
 	// FIXME adjust
 	defaultCertRequestTimeout = time.Minute
-	refreshCrashWaitTime = time.Minute
+	refreshCrashWaitTime      = time.Minute
 )
 
 var (
-	log = logging.LoggerForModule()
-	_ CertRefresher = (*certRefresherImpl)(nil)
+	log               = logging.LoggerForModule()
+	_   CertRefresher = (*certRefresherImpl)(nil)
 )
-
 
 // CertRefresher is in charge of scheduling the refresh of the TLS certificates of a set of services.
 type CertRefresher interface {
@@ -30,17 +28,19 @@ type CertRefresher interface {
 	Stop()
 }
 type certRefresherImpl struct {
-	conf certRefresherConf
-	ctx context.Context
+	conf         certRefresherConf
+	ctx          context.Context
 	refreshTimer *time.Timer
 }
 
 type certRefresherConf struct {
-	certsDescription string
+	certsDescription  string
 	certificateSource CertificateSource
-	issueCertificates          func(context.Context) (*storage.TypedServiceCertificateSet, error)
+	issueCertificates func(context.Context) (*storage.TypedServiceCertificateSet, error)
 }
 
+// CertificateSource is able to fetch certificates of type *storage.TypedServiceCertificateSet, and
+// to process the retrieved certificates.
 type CertificateSource interface {
 	// RetryableSource to fetch certificates of type *storage.TypedServiceCertificateSet.
 	retry.RetryableSource
@@ -51,16 +51,17 @@ type CertificateSource interface {
 	HandleCertificates(certificates *storage.TypedServiceCertificateSet) (timeToRefresh time.Duration, err error)
 }
 
+// NewCertRefresher creates a new CertRefresher.
 func NewCertRefresher(certsDescription string, certsSource CertificateSource,
 	certRequestBackoff wait.Backoff) CertRefresher {
 	return newCertRefresher(certsDescription, certsSource, certRequestBackoff)
 }
 
 func newCertRefresher(certsDescription string, certsSource CertificateSource,
-	certRequestBackoff wait.Backoff, ) *certRefresherImpl {
+	certRequestBackoff wait.Backoff) *certRefresherImpl {
 	return &certRefresherImpl{
 		conf: certRefresherConf{
-			certsDescription: certsDescription,
+			certsDescription:  certsDescription,
 			certificateSource: certsSource,
 			issueCertificates: createIssueCertificates(certsDescription, certsSource, certRequestBackoff),
 		},
@@ -76,7 +77,7 @@ func createIssueCertificates(certsDescription string, certsSource retry.Retryabl
 			certsDescription, timeToNextRetry, err)
 	}
 	retriever.ValidateResult = func(maybeCerts interface{}) bool {
-		_,  ok := maybeCerts.(*storage.TypedServiceCertificateSet)
+		_, ok := maybeCerts.(*storage.TypedServiceCertificateSet)
 		return ok
 	}
 	return func(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
@@ -100,8 +101,8 @@ func (c *certRefresherImpl) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-    go func() {
-		<- c.ctx.Done()
+	go func() {
+		<-c.ctx.Done()
 		c.Stop()
 	}()
 	return nil
@@ -115,7 +116,8 @@ func (c *certRefresherImpl) Stop() {
 func (c *certRefresherImpl) initialRefresh() error {
 	timeToRefresh, err := c.conf.certificateSource.HandleCertificates(nil)
 	if err != nil {
-		return errors.Wrapf(err, "critical error processing certificates %s, aborting", c.conf.certsDescription)
+		return errors.Wrapf(err, "critical error processing stored certificates %s, aborting",
+			c.conf.certsDescription)
 	}
 	c.scheduleIssueCertificatesRefresh(timeToRefresh)
 	return nil
@@ -153,8 +155,11 @@ func (c *certRefresherImpl) setRefreshTimer(timer *time.Timer) {
 func (c *certRefresherImpl) recoverFromRefreshCrash() {
 	// TODO: consider backoff here.
 	c.setRefreshTimer(time.AfterFunc(refreshCrashWaitTime, func() {
-		c.initialRefresh()
+		err := c.initialRefresh()
+		if err != nil {
+			log.Error(err)
+			c.recoverFromRefreshCrash()
+		}
 	}))
 	log.Errorf("refresh process for %s will restart in %s", c.conf.certsDescription, refreshCrashWaitTime)
 }
-
