@@ -100,7 +100,7 @@ func (h *searchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) sea
 	}
 }
 
-func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
+func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, [][]byte, error) {
 	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
@@ -108,8 +108,8 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 		return searcher.Search(q)
 	}
 
-	// 4. Generate where clause from merged EASes and resource (easy part for Clusters, namespaces etc and hard part images, cves etc)
-	//_, err := scopeChecker.EffectiveAccessScope(ctx)
+	//4. Generate where clause from merged EASes and resource (easy part for Clusters, namespaces etc and hard part images, cves etc)
+	//eas, err := scopeChecker.EffectiveAccessScope(ctx)
 	//if err != nil {
 	//	return nil, err
 	//}

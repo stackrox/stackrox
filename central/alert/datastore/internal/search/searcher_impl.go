@@ -103,6 +103,11 @@ func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*st
 }
 
 func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, []search.Result, error) {
+	// IF SQL call search with rows, there should not be any missing ID as DB should filter them
+	//results, rows, err := ds.SearchWithRows(ctx, q)
+	//assert len(results) == len(rows)
+	//convert rows to proper type (here []*storage.ListAlert)
+	// else ...
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
