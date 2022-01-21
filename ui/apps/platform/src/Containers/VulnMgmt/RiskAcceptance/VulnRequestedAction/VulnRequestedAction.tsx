@@ -22,6 +22,8 @@ function VulnRequestedAction({
     let type = '';
     let action = '';
 
+    // eslint-disable-next-line no-debugger
+    debugger;
     if (targetState === 'FALSE_POSITIVE') {
         type = 'False positive';
     } else if (
