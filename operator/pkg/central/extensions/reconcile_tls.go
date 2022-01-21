@@ -60,7 +60,7 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 	if err := r.reconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
-	return r.reconcileInitBundleSecrets(shouldDelete)
+	return nil // reconcileInitBundleSecrets not called due to ROX-9023.
 }
 
 func (r createCentralTLSExtensionRun) reconcileInitBundleSecrets(shouldDelete bool) error {
