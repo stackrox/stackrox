@@ -1,8 +1,10 @@
 import React, { useState, useEffect, ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, ButtonVariant, Flex, FlexItem, SelectOption } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import { accessControlBasePathV2 } from 'routePaths';
 import { fetchAccessScopes, AccessScope } from 'services/AccessScopesService';
 
 type ResourceScopeSelectionProps = {
@@ -65,7 +67,16 @@ function ResourceScopeSelection({
                 </FormLabelGroup>
             </FlexItem>
             <FlexItem>
-                <Button className="pf-u-mb-md" variant={ButtonVariant.secondary}>
+                <Button
+                    className="pf-u-mb-md"
+                    variant={ButtonVariant.secondary}
+                    component={(props) => (
+                        <Link
+                            {...props}
+                            to={`${accessControlBasePathV2}/access-scopes?action=create`}
+                        />
+                    )}
+                >
                     Create resource scope
                 </Button>
             </FlexItem>

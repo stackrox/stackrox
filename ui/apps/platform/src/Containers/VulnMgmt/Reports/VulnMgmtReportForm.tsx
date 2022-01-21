@@ -89,6 +89,11 @@ function VulnMgmtReportForm({
             history.goBack();
         } catch (error) {
             setMessage({ message: getAxiosErrorMessage(error), isError: true });
+
+            const alertEl = document.getElementById('form-message-alert');
+            if (alertEl) {
+                alertEl.scrollIntoView({ behavior: 'smooth' });
+            }
         }
     }
 
