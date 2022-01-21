@@ -4378,9 +4378,9 @@ jobs:
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
             cd go/src/github.com/stackrox/rox
-            version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed -E 's/.*main:([^" ]+).*/\1/g')"
+            version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed -E 's/.*main.*:([^" ]+).*/\1/g')"
             version_from_roxctl="$(./bin/windows/roxctl.exe version)"
-            echo "Versions: from YAML ${version_from_yaml}; from roxctl ${version_from_roxctl}"
+            printf "Versions:\n  from YAML: %s\nfrom roxctl: %s\n" "${version_from_yaml}" "${version_from_roxctl}"
             test "${version_from_yaml}" = "${version_from_roxctl}"
 
   race-condition-tests:
