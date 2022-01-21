@@ -29,7 +29,7 @@ type searchResultsChecker interface {
 }
 
 type searchHelper struct {
-	resource permissions.Resource
+	resource permissions.ResourceMetadata
 
 	resultsChecker searchResultsChecker
 
@@ -58,7 +58,7 @@ func NewSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.
 	}
 
 	return &searchHelper{
-		resource:       resourceMD.GetResource(),
+		resource:       resourceMD,
 		resultsChecker: resultsChecker,
 		optionsMap:     optionsMap,
 	}, nil
@@ -109,10 +109,21 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 	}
 
 	// 4. Generate where clause from merged EASes and resource (easy part for Clusters, namespaces etc and hard part images, cves etc)
-	_, err := scopeChecker.EffectiveAccessScope(ctx)
-	if err != nil {
-		return nil, err
-	}
+	//_, err := scopeChecker.EffectiveAccessScope(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//sacQB := search.NewQueryBuilder()
+	//switch h.resource.GetScope() {
+	//case permissions.GlobalScope:
+	//	return nil, errors.New("Effective Access Scope has no sense with globally-scoped resources")
+	//case permissions.ClusterScope:
+	//	nsScope = false
+	//case permissions.NamespaceScope:
+	//	nsScope = true
+	//default:
+	//	return nil, errors.Errorf("unknown resource scope %v", h.resource.GetScope())
+	//}
 
 	//if features.PostgresPOC.Enabled() {
 	//	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
