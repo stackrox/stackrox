@@ -25,9 +25,6 @@ var (
 	cf      fetcher.OrchestratorIstioCVEManager
 	manager Manager
 
-	imageScanCacheOnce sync.Once
-	imageScanCache     expiringcache.Cache
-
 	metadataCacheOnce sync.Once
 	metadataCache     expiringcache.Cache
 
@@ -35,8 +32,7 @@ var (
 )
 
 func initialize() {
-	ie = imageEnricher.New(cveDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
-		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton(), reporter.Singleton())
+	ie = imageEnricher.New(cveDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(), metrics.CentralSubsystem, datastore.Singleton(), reporter.Singleton())
 	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
@@ -53,14 +49,6 @@ func Singleton() Enricher {
 func ImageEnricherSingleton() imageEnricher.ImageEnricher {
 	once.Do(initialize)
 	return ie
-}
-
-// ImageScanCacheSingleton returns the cache for image scans
-func ImageScanCacheSingleton() expiringcache.Cache {
-	imageScanCacheOnce.Do(func() {
-		imageScanCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration)
-	})
-	return imageScanCache
 }
 
 // ImageMetadataCacheSingleton returns the cache for image metadata

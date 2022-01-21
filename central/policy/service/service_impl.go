@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -106,8 +105,6 @@ type serviceImpl struct {
 	buildTimePolicies detection.PolicySet
 	lifecycleManager  lifecycle.Manager
 	processor         notifierProcessor.Processor
-	metadataCache     expiringcache.Cache
-	scanCache         expiringcache.Cache
 
 	validator *policyValidator
 
@@ -330,9 +327,6 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 // ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
 func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, error) {
 	// Invalidate scan and metadata caches
-	s.metadataCache.RemoveAll()
-	s.scanCache.RemoveAll()
-
 	s.reprocessor.ShortCircuit()
 	return &v1.Empty{}, nil
 }

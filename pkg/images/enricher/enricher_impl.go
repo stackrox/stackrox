@@ -11,11 +11,12 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/sac"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
@@ -39,7 +40,8 @@ type enricherImpl struct {
 	integrationHealthReporter integrationhealth.Reporter ``
 
 	metadataLimiter *rate.Limiter
-	metadataCache   expiringcache.Cache
+
+	imageGetter imageGetter
 
 	asyncRateLimiter *rate.Limiter
 
@@ -92,16 +94,6 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
 	if !metadataOutOfDate {
 		return false, nil
-	}
-
-	if ctx.FetchOpt != ForceRefetch {
-		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
-		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
-			e.metrics.IncrementMetadataCacheHit()
-			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
-			return true, nil
-		}
-		e.metrics.IncrementMetadataCacheMiss()
 	}
 	if ctx.FetchOpt == NoExternalMetadata {
 		return false, nil
@@ -199,16 +191,8 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 	metadata.DataSource = registry.DataSource()
 	metadata.Version = metadataVersion
 	image.Metadata = metadata
-
-	cachedMetadata := metadata.Clone()
-	e.metadataCache.Add(getRef(image), cachedMetadata)
 	if image.GetId() == "" {
-		if digest := image.Metadata.GetV2().GetDigest(); digest != "" {
-			e.metadataCache.Add(digest, cachedMetadata)
-		}
-		if digest := image.Metadata.GetV1().GetDigest(); digest != "" {
-			e.metadataCache.Add(digest, cachedMetadata)
-		}
+		image.Id = utils.GetImageID(image)
 	}
 	return true, nil
 }
@@ -218,8 +202,18 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
 		return ScanNotDone, nil
 	}
-	if ctx.FetchOpt == NoExternalMetadata {
-		return ScanNotDone, nil
+	if ctx.FetchOpt != ForceRefetch && ctx.FetchOpt != ForceRefetchScansOnly && image.GetId() != "" {
+		img, exists, err := e.imageGetter.GetImage(sac.WithAllAccess(context.Background()), image.GetId())
+		if err != nil {
+			return ScanNotDone, err
+		}
+
+		if !exists && ctx.FetchOpt == NoExternalMetadata {
+			return ScanNotDone, nil
+		}
+		if img.GetScan() != nil {
+			return ScanSucceeded, nil
+		}
 	}
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))

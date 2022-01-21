@@ -5,7 +5,6 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	"github.com/stackrox/rox/central/enrichment"
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
@@ -31,8 +30,6 @@ func initialize() {
 		buildTimeDetection.SingletonPolicySet(),
 		lifecycle.SingletonManager(),
 		notifierProcessor.Singleton(),
-		enrichment.ImageMetadataCacheSingleton(),
-		enrichment.ImageScanCacheSingleton(),
 		connection.ManagerSingleton())
 }
 

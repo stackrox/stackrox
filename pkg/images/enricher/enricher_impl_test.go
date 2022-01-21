@@ -323,8 +323,6 @@ func TestEnricherFlow(t *testing.T) {
 				errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},
 				integrationHealthReporter: mockReporter,
 				metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
-				metadataCache:             expiringcache.NewExpiringCache(1 * time.Minute),
-				scanCache:                 expiringcache.NewExpiringCache(1 * time.Minute),
 				metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
 			}
 
@@ -568,10 +566,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 
 	mockReporter := reporterMocks.NewMockReporter(ctrl)
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
-	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
-		expiringcache.NewExpiringCache(1*time.Minute),
-		expiringcache.NewExpiringCache(1*time.Minute),
-		mockReporter)
+	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem, nil, mockReporter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)

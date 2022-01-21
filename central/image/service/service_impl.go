@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -74,9 +73,6 @@ type serviceImpl struct {
 	datastore    datastore.DataStore
 	cveDatastore cveDataStore.DataStore
 	riskManager  manager.Manager
-
-	metadataCache expiringcache.Cache
-	scanCache     expiringcache.Cache
 
 	enricher enricher.ImageEnricher
 
@@ -160,8 +156,6 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 
 // InvalidateScanAndRegistryCaches invalidates the image scan caches
 func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty) (*v1.Empty, error) {
-	s.metadataCache.RemoveAll()
-	s.scanCache.RemoveAll()
 	return &v1.Empty{}, nil
 }
 

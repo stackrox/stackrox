@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/backgroundtasks"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -38,8 +37,6 @@ func New(policies datastore.DataStore,
 	buildTimePolicies detection.PolicySet,
 	manager lifecycle.Manager,
 	processor notifierProcessor.Processor,
-	metadataCache expiringcache.Cache,
-	scanCache expiringcache.Cache,
 	connectionManager connection.Manager) Service {
 	backgroundTaskManager := backgroundtasks.NewManager()
 	backgroundTaskManager.Start()
@@ -55,9 +52,6 @@ func New(policies datastore.DataStore,
 		connectionManager: connectionManager,
 
 		processor: processor,
-
-		metadataCache: metadataCache,
-		scanCache:     scanCache,
 
 		validator:              newPolicyValidator(notifiers),
 		dryRunPolicyJobManager: backgroundTaskManager,
