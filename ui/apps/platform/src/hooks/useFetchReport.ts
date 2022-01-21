@@ -10,7 +10,7 @@ const defaultResultState = { report: null, error: null, isLoading: true };
 /*
  * This hook does an API call to the report configurations API to get the list of reports
  */
-function useFetchReport(reportId: string): Result {
+function useFetchReport(reportId: string, refresh = 0): Result {
     const [result, setResult] = useState<Result>(defaultResultState);
 
     useEffect(() => {
@@ -25,7 +25,7 @@ function useFetchReport(reportId: string): Result {
                     setResult({ report: null, error, isLoading: false });
                 });
         }
-    }, [reportId]);
+    }, [reportId, refresh]);
 
     return result;
 }
