@@ -23,6 +23,7 @@ import {
 } from 'routePaths';
 import usePermissions from 'hooks/usePermissions';
 import NotFoundMessage from 'Components/NotFoundMessage';
+import PageTitle from 'Components/PageTitle';
 import PendingApprovals from './PendingApprovals';
 import ApprovedDeferrals from './ApprovedDeferrals';
 import ApprovedFalsePositives from './ApprovedFalsePositives';
@@ -137,42 +138,61 @@ function RiskAcceptancePage(): ReactElement {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <div>
-                <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
-                    <Tab
-                        eventKey={TABS.PENDING_APPROVALS}
-                        tabContentId={TABS.PENDING_APPROVALS}
-                        title={<TabTitleText>{TAB_LABELS.PENDING_APPROVALS}</TabTitleText>}
+            <PageSection variant={PageSectionVariants.light} padding={{ default: 'noPadding' }}>
+                <div>
+                    <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
+                        <Tab
+                            eventKey={TABS.PENDING_APPROVALS}
+                            tabContentId={TABS.PENDING_APPROVALS}
+                            title={<TabTitleText>{TAB_LABELS.PENDING_APPROVALS}</TabTitleText>}
+                        />
+                        <Tab
+                            eventKey={TABS.APPROVED_DEFERRALS}
+                            tabContentId={TABS.APPROVED_DEFERRALS}
+                            title={<TabTitleText>{TAB_LABELS.APPROVED_DEFERRALS}</TabTitleText>}
+                        />
+                        <Tab
+                            eventKey={TABS.APPROVED_FALSE_POSITIVES}
+                            tabContentId={TABS.APPROVED_FALSE_POSITIVES}
+                            title={
+                                <TabTitleText>{TAB_LABELS.APPROVED_FALSE_POSITIVES}</TabTitleText>
+                            }
+                        />
+                    </Tabs>
+                </div>
+                <Switch>
+                    <Route
+                        exact
+                        path={vulnManagementPendingApprovalsPath}
+                        render={() => (
+                            <>
+                                <PageTitle title="Pending Approvals" />
+                                <TabContentList activeKeyTab={activeKeyTab} />
+                            </>
+                        )}
                     />
-                    <Tab
-                        eventKey={TABS.APPROVED_DEFERRALS}
-                        tabContentId={TABS.APPROVED_DEFERRALS}
-                        title={<TabTitleText>{TAB_LABELS.APPROVED_DEFERRALS}</TabTitleText>}
+                    <Route
+                        exact
+                        path={vulnManagementApprovedDeferralsPath}
+                        render={() => (
+                            <>
+                                <PageTitle title="Approved Deferrals" />
+                                <TabContentList activeKeyTab={activeKeyTab} />
+                            </>
+                        )}
                     />
-                    <Tab
-                        eventKey={TABS.APPROVED_FALSE_POSITIVES}
-                        tabContentId={TABS.APPROVED_FALSE_POSITIVES}
-                        title={<TabTitleText>{TAB_LABELS.APPROVED_FALSE_POSITIVES}</TabTitleText>}
+                    <Route
+                        exact
+                        path={vulnManagementApprovedFalsePositivesPath}
+                        render={() => (
+                            <>
+                                <PageTitle title="Approved False Positives" />
+                                <TabContentList activeKeyTab={activeKeyTab} />
+                            </>
+                        )}
                     />
-                </Tabs>
-            </div>
-            <Switch>
-                <Route
-                    exact
-                    path={vulnManagementPendingApprovalsPath}
-                    render={() => <TabContentList activeKeyTab={activeKeyTab} />}
-                />
-                <Route
-                    exact
-                    path={vulnManagementApprovedDeferralsPath}
-                    render={() => <TabContentList activeKeyTab={activeKeyTab} />}
-                />
-                <Route
-                    exact
-                    path={vulnManagementApprovedFalsePositivesPath}
-                    render={() => <TabContentList activeKeyTab={activeKeyTab} />}
-                />
-            </Switch>
+                </Switch>
+            </PageSection>
         </>
     );
 }

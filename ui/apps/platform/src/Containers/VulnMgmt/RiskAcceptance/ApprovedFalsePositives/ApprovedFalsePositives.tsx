@@ -3,6 +3,8 @@ import React, { ReactElement } from 'react';
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
 import useSearch from 'hooks/useSearch';
+import { PageSection, PageSectionVariants } from '@patternfly/react-core';
+import ACSEmptyState from 'Components/ACSEmptyState';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedFalsePositivesTable from './ApprovedFalsePositivesTable';
 
@@ -36,6 +38,14 @@ function ApprovedFalsePositives(): ReactElement {
 
     const rows = data?.vulnerabilityRequests || [];
     const itemCount = data?.vulnerabilityRequestsCount || 0;
+
+    if (!isLoading && rows && rows.length === 0) {
+        return (
+            <PageSection variant={PageSectionVariants.light} isFilled>
+                <ACSEmptyState title="No false positive requests were approved." />
+            </PageSection>
+        );
+    }
 
     return (
         <ApprovedFalsePositivesTable

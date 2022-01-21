@@ -128,6 +128,7 @@ function DeferredCVEsTable({
                             }}
                         />
                         <Th>CVE</Th>
+                        <Th>Fixable</Th>
                         <Th>Severity</Th>
                         <Th>Expires</Th>
                         <Th modifier="fitContent">Scope</Th>
@@ -153,6 +154,7 @@ function DeferredCVEsTable({
                                     }}
                                 />
                                 <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
