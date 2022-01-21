@@ -15,31 +15,33 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/certificates"
 	"k8s.io/apimachinery/pkg/util/wait"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 var (
-	log = logging.LoggerForModule()
-	_ common.SensorComponent = (*localScannerTLSIssuerImpl)(nil)
-	_ certificates.CertificateSource = (*localScannerTLSIssuerImpl)(nil)
+	log                                = logging.LoggerForModule()
+	_   common.SensorComponent         = (*localScannerTLSIssuerImpl)(nil)
+	_   certificates.CertificateSource = (*localScannerTLSIssuerImpl)(nil)
 )
 
 // FIXME separate files for different structs
 type localScannerTLSIssuerImpl struct {
-	conf config
+	// TODO for HandleCertificates: conf          config
 	certRefresher certificates.CertRefresher
 	certificateSourceImpl
 	sensorComponentImpl
 }
 
+/*
+TODO
 type config struct {
-	sensorNamespace  string
-	secretsClient corev1.SecretInterface
+	sensorNamespace string
+	secretsClient   corev1.SecretInterface
 }
+*/
 
 type certificateSourceImpl struct {
 	requestID string
-	resultC              chan *retry.Result
+	resultC   chan *retry.Result
 	// protects both requestID and resultC
 	certSourceStateMutex sync.Mutex
 	sensorComponentImpl
@@ -59,7 +61,9 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 
 	var certRequestBackoff wait.Backoff // FIXME
 	i.certRefresher = certificates.NewCertRefresher("FIXME desc", i, certRequestBackoff)
-	i.certRefresher.Start(context.Background())
+	if err := i.certRefresher.Start(context.Background()); err != nil {
+		return err
+	}
 
 	log.Info("local scanner TLS issuer started.")
 
@@ -114,10 +118,7 @@ func (i *certificateSourceImpl) processIssueLocalScannerCertsResponse(response *
 	if response.GetError() != nil {
 		result = &retry.Result{Err: errors.Errorf("server side error: %s", response.GetError().GetMessage())}
 	} else {
-		// retry.Result is untyped, so at least type here.
-		var certificates *storage.TypedServiceCertificateSet
-		certificates = response.GetCertificates()
-		result = &retry.Result{ V: certificates }
+		result = &retry.Result{V: response.GetCertificates()}
 	}
 	resultC := i.resultC
 	go func() {
@@ -160,7 +161,7 @@ func (i *certificateSourceImpl) Retry() {
 		resultC := i.resultC
 		go func() {
 			//  can block if i.resultC is filled.
-			resultC <- &retry.Result{ Err: errors.Wrap(ctx.Err(), "sending the request to central") }
+			resultC <- &retry.Result{Err: errors.Wrap(ctx.Err(), "sending the request to central")}
 		}()
 	}
 }
@@ -179,7 +180,7 @@ func (i *certificateSourceImpl) Close() {
 				select {
 				case <-oldResultC:
 				default:
-					break
+					return
 				}
 			}
 		}
@@ -188,9 +189,10 @@ func (i *certificateSourceImpl) Close() {
 
 func (i *certificateSourceImpl) HandleCertificates(certificates *storage.TypedServiceCertificateSet) (timeToRefresh time.Duration, err error) {
 	// TODO get secrets => secretRepository type
-	if certificates != nil {
-		// TODO update and store secrets => secretRepository type
-	}
+	/*
+		if certificates != nil {
+			// TODO update and store secrets => secretRepository type
+		}*/
 	// TODO get duration from secrets => secretExpirationStrategy type
 	return time.Minute, nil // FIXME
 }
