@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/uuid"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -22,16 +22,16 @@ const (
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
-func ReconcileCentralTLSExtensions(client client.Client) extensions.ReconcileExtension {
+func ReconcileCentralTLSExtensions(client ctrlClient.Client) extensions.ReconcileExtension {
 	return wrapExtension(reconcileCentralTLS, client)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client client.Client, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
 			centralObj: c,
-			ctrlClient: client,
+			client:     client,
 		},
 	}
 	return run.Execute()
@@ -189,7 +189,7 @@ func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix 
 func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent() (bool, error) {
 	list := &platform.SecuredClusterList{}
 	namespace := r.centralObj.GetNamespace()
-	if err := r.ctrlClient.List(r.ctx, list, client.InNamespace(namespace)); err != nil {
+	if err := r.client.List(r.ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
 		return false, errors.Wrapf(err, "cannot list securedclusters in namespace %q", namespace)
 	}
 	return len(list.Items) > 0, nil

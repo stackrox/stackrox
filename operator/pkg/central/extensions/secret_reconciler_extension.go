@@ -10,7 +10,7 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type validateSecretDataFunc func(secretDataMap, bool) error
@@ -18,7 +18,7 @@ type generateSecretDataFunc func() (secretDataMap, error)
 
 type secretReconciliationExtension struct {
 	ctx        context.Context
-	ctrlClient client.Client
+	client     ctrlClient.Client
 	centralObj *platform.Central
 }
 
@@ -28,8 +28,8 @@ func (r *secretReconciliationExtension) Namespace() string {
 
 func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
 	secret := &coreV1.Secret{}
-	key := client.ObjectKey{Namespace: r.Namespace(), Name: name}
-	if err := r.ctrlClient.Get(r.ctx, key, secret); err != nil {
+	key := ctrlClient.ObjectKey{Namespace: r.Namespace(), Name: name}
+	if err := r.client.Get(r.ctx, key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
 		}
@@ -40,7 +40,7 @@ func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist
 			return nil
 		}
 
-		if err := utils.DeleteExact(r.ctx, r.ctrlClient, secret); err != nil && !apiErrors.IsNotFound(err) {
+		if err := utils.DeleteExact(r.ctx, r.client, secret); err != nil && !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "deleting %s secret", name)
 		}
 		return nil
@@ -84,12 +84,12 @@ func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist
 	}
 
 	if secret == nil {
-		if err := r.ctrlClient.Create(r.ctx, newSecret); err != nil {
+		if err := r.client.Create(r.ctx, newSecret); err != nil {
 			return errors.Wrapf(err, "creating new %s secret", name)
 		}
 	} else {
 		newSecret.ResourceVersion = secret.ResourceVersion
-		if err := r.ctrlClient.Update(r.ctx, newSecret); err != nil {
+		if err := r.client.Update(r.ctx, newSecret); err != nil {
 			return errors.Wrapf(err, "updating %s secret because existing instance failed validation", secret.Name)
 		}
 	}
