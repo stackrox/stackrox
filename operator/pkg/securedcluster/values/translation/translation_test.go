@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -51,7 +51,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 
 func TestTranslate(t *testing.T) {
 	type args struct {
-		client client.Client
+		client ctrlClient.Client
 		sc     platform.SecuredCluster
 	}
 
@@ -331,7 +331,7 @@ func toUnstructured(sc platform.SecuredCluster) (*unstructured.Unstructured, err
 	return &unstructured.Unstructured{Object: obj}, nil
 }
 
-func newFakeClientWithInitBundle() client.Client {
+func newFakeClientWithInitBundle() ctrlClient.Client {
 	return fake.NewClientBuilder().WithObjects(
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),

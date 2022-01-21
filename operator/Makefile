@@ -216,8 +216,9 @@ generate: parent-proto-generate controller-gen ## Generate code containing DeepC
 fmt: ## Run go fmt against code.
 	go fmt ./...
 
-vet: ## Run go vet against code.
+vet: ## Run go vet and other checks against code.
 	go vet ./...
+	go run ./hack/importcheck $$(find . -type f -name '*.go')
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
