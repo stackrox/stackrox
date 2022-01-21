@@ -77,9 +77,7 @@ type cveSuppressor interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
-type imageGetter interface {
-	GetImage(ctx context.Context, id string) (*storage.Image, bool, error)
-}
+type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)

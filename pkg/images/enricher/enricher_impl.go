@@ -194,8 +194,8 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 			return ScanNotDone, nil
 		}
 		if image.GetId() != "" {
-			img, exists, err := e.imageGetter.GetImage(sac.WithAllAccess(context.Background()), image.GetId())
-			if err != nil || !exists {
+			img, _, err := e.imageGetter(sac.WithAllAccess(context.Background()), image.GetId())
+			if err != nil {
 				return ScanNotDone, err
 			}
 			if img.GetScan() != nil {
