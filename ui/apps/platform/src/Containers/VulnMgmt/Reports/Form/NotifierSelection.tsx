@@ -1,9 +1,18 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import { SelectOption, TextInput } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import {
+    Button,
+    ButtonVariant,
+    Flex,
+    FlexItem,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { fetchIntegration } from 'services/IntegrationsService';
+import { integrationsPath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 
 type NotifierSelectionProps = {
@@ -53,33 +62,48 @@ function NotifierSelection({
 
     return (
         <>
-            <FormLabelGroup
-                className="pf-u-mb-md"
-                isRequired
-                label="Notifier"
-                fieldId="emailConfig.notifierId"
-                touched={{}}
-                errors={{}}
-            >
-                <SelectSingle
-                    id="emailConfig.notifierId"
-                    value={notifierId}
-                    handleSelect={onNotifierChange}
-                    placeholderText="Select a notifier"
-                >
-                    {notifiers.map(({ id, name }) => (
-                        <SelectOption key={id} value={id}>
-                            {name}
-                        </SelectOption>
-                    ))}
-                </SelectSingle>
-            </FormLabelGroup>
+            <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
+                <FlexItem>
+                    <FormLabelGroup
+                        className="pf-u-mb-md"
+                        isRequired
+                        label="Notifier"
+                        fieldId="emailConfig.notifierId"
+                        touched={{}}
+                        errors={{}}
+                    >
+                        <SelectSingle
+                            id="emailConfig.notifierId"
+                            value={notifierId}
+                            handleSelect={onNotifierChange}
+                            placeholderText="Select a notifier"
+                        >
+                            {notifiers.map(({ id, name }) => (
+                                <SelectOption key={id} value={id}>
+                                    {name}
+                                </SelectOption>
+                            ))}
+                        </SelectSingle>
+                    </FormLabelGroup>
+                </FlexItem>
+                <FlexItem>
+                    <Button
+                        className="pf-u-mb-md"
+                        variant={ButtonVariant.secondary}
+                        component={(props) => (
+                            <Link {...props} to={`${integrationsPath}/notifiers/email/create`} />
+                        )}
+                    >
+                        Create email notifier
+                    </Button>
+                </FlexItem>
+            </Flex>
             <FormLabelGroup
                 label="Distribution list"
                 fieldId="emailConfig.mailingLists"
                 touched={{}}
                 errors={{}}
-                helperText="Enter an audience, who will receive the scheduled report. If an audience is not entered, the recipient defined in the notifier will be used. Multiple addresses can be entered with comma separators."
+                helperText="Enter an audience, who will receive the scheduled report. If an audience is not entered, the recipient defined in the notifier will be used. Multiple email addresses can be entered with comma separators."
             >
                 <TextInput
                     type="text"
@@ -87,6 +111,7 @@ function NotifierSelection({
                     value={joinedMailingLists}
                     onChange={onMailingListsChange}
                     onBlur={handleBlur}
+                    placeholder="annie@example.com,jack@example.com"
                 />
             </FormLabelGroup>
         </>

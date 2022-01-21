@@ -55,7 +55,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
             } else {
                 responseData = await createIntegration(source, data);
                 // we only want to redirect when creating a new (non-apitoken and non-clusterinitbundle) integration
-                history.push(integrationsListPath);
+                history.goBack();
             }
 
             fetchIntegrations();

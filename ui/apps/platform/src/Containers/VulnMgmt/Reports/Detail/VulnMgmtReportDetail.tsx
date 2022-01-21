@@ -51,21 +51,23 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
 
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
+    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
+    const canWriteReports =
+        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
 
     const dropdownItems: ReactElement[] = [];
-    if (hasVulnReportWriteAccess) {
+    if (canWriteReports) {
         dropdownItems.push(
             <DropdownItem key="Edit report" component="button" onClick={onEditReport}>
                 Edit report
             </DropdownItem>
         );
-    }
-    dropdownItems.push(
-        <DropdownItem key="Run report now" component="button" onClick={onRunReport}>
-            Run report now
-        </DropdownItem>
-    );
-    if (hasVulnReportWriteAccess) {
+        dropdownItems.push(
+            <DropdownItem key="Run report now" component="button" onClick={onRunReport}>
+                Run report now
+            </DropdownItem>
+        );
         dropdownItems.push(
             <DropdownItem key="Delete report" component="button" onClick={initiateDeleteReport}>
                 Delete report
@@ -234,7 +236,7 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
-                                <DescriptionListTerm>Resource source</DescriptionListTerm>
+                                <DescriptionListTerm>Resource scope</DescriptionListTerm>
                                 <DescriptionListDescription>
                                     <ScopeName scopeId={report?.scopeId} />
                                 </DescriptionListDescription>
