@@ -43,6 +43,10 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
 
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
+    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
+    const canWriteReports =
+        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
 
     const searchOptions = useSearchOptions(searchCategories.REPORT_CONFIGURATIONS) || [];
 
@@ -120,7 +124,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                                 </Text>
                             </TextContent>
                         </ToolbarItem>
-                        {hasVulnReportWriteAccess && (
+                        {canWriteReports && (
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
                                 <Button
                                     variant={ButtonVariant.primary}
