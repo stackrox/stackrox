@@ -996,6 +996,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Replicas',
         name: 'Replicas',
+        shortName: 'Replicas',
         longName: 'Replicas',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'group',
