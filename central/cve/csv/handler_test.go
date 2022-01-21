@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/audit"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -13,6 +14,7 @@ import (
 	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -49,6 +51,9 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.cveDataStore = cveMocks.NewMockDataStore(suite.mockCtrl)
+	notifierMock := notifierMocks.NewMockProcessor(suite.mockCtrl)
+
+	notifierMock.EXPECT().HasEnabledAuditNotifiers().Return(false).AnyTimes()
 
 	suite.resolver = &resolvers.Resolver{
 		ClusterDataStore:        suite.clusterDataStore,
@@ -58,6 +63,7 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 		NodeGlobalDataStore:     suite.nodeDataStore,
 		ImageComponentDataStore: suite.componentDataStore,
 		CVEDataStore:            suite.cveDataStore,
+		AuditLogger:             audit.New(notifierMock),
 	}
 
 	suite.handler = newHandler(suite.resolver)
