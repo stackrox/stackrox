@@ -2819,12 +2819,14 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			caseName:    "Should raise when replicas==5.",
 			replicas:    5,
 			policyValue: "5",
+			negate:      false,
 			alerts:      []*storage.Alert_Violation{{Message: "5 replicas are defined."}},
 		},
 		{
 			caseName:    "Should not raise unless replicas==3.",
 			replicas:    5,
 			policyValue: "3",
+			alerts:      nil,
 		},
 		{
 			caseName:    "Should raise unless replicas==3.",
@@ -2837,12 +2839,14 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			caseName:    "Should raise when replicas>=5.",
 			replicas:    5,
 			policyValue: ">=5",
+			negate:      false,
 			alerts:      []*storage.Alert_Violation{{Message: "5 replicas are defined."}},
 		},
 		{
 			caseName:    "Should raise when replicas<=5.",
 			replicas:    5,
 			policyValue: "<=5",
+			negate:      false,
 			alerts:      []*storage.Alert_Violation{{Message: "5 replicas are defined."}},
 		},
 		{
