@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	replicasTemplate = `{{- if eq .Replicas 1}}{{.Replicas}} replica is{{else}}{{.Replicas}} replicas are{{end}} defined.`
+	replicasTemplate = `Replicas is set to '{{.Replicas}}'`
 )
 
 func replicasPrinter(fieldMap map[string][]string) ([]string, error) {

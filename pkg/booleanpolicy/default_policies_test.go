@@ -2820,12 +2820,13 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			replicas:    5,
 			policyValue: "5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "5 replicas are defined."}},
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
 		},
 		{
 			caseName:    "Should not raise unless replicas==3.",
 			replicas:    5,
 			policyValue: "3",
+			negate:      false,
 			alerts:      nil,
 		},
 		{
@@ -2833,38 +2834,38 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			replicas:    5,
 			policyValue: "3",
 			negate:      true,
-			alerts:      []*storage.Alert_Violation{{Message: "5 replicas are defined."}},
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
 		},
 		{
 			caseName:    "Should raise when replicas>=5.",
 			replicas:    5,
 			policyValue: ">=5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "5 replicas are defined."}},
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
 		},
 		{
 			caseName:    "Should raise when replicas<=5.",
 			replicas:    5,
 			policyValue: "<=5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "5 replicas are defined."}},
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
 		},
 		{
 			caseName:    "Should raise when replicas<5.",
 			replicas:    1,
 			policyValue: "<5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "1 replica is defined."}},
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '1'"}},
 		},
 		{
 			caseName:    "Should raise when replicas>5.",
 			replicas:    10,
 			policyValue: ">5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "10 replicas are defined."}},
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '10'"}},
 		},
 	} {
-		suite.T().Run(testCase.caseName, func(t *testing.T) {
+		suite.Run(testCase.caseName, func() {
 			deployment := fixtures.GetDeployment().Clone()
 			deployment.Replicas = testCase.replicas
 			policy := policyWithSingleKeyValue(fieldnames.Replicas, testCase.policyValue, testCase.negate)
