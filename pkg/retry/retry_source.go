@@ -16,7 +16,7 @@ import (
 // Retry() can be called several times to retry the result computation, the
 // RetryableSource is in charge of handling the cancellation of the computation if needed.
 type RetryableSource interface {
-	AskForResult() chan *Result
+	AskForResult(ctx context.Context) chan *Result
 	Retry()
 }
 
@@ -55,7 +55,7 @@ func NewRetryableSourceRetriever(backoff wait.Backoff, requestTimeout time.Durat
 func (r *RetryableSourceRetriever) Run(ctx context.Context, source RetryableSource) (interface{}, error) {
 	r.timeoutC = make(chan struct{})
 
-	resultC := source.AskForResult()
+	resultC := source.AskForResult(ctx)
 	r.setTimeoutTimer(r.RequestTimeout)
 	defer r.setTimeoutTimer(-1)
 	for {
