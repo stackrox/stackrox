@@ -60,10 +60,11 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 	if err := r.reconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
-	return nil // reconcileInitBundleSecrets not called due to ROX-9023.
+	return nil // ReconcileInitBundleSecrets not called due to ROX-9023.
 }
 
-func (r createCentralTLSExtensionRun) reconcileInitBundleSecrets(shouldDelete bool) error {
+// ReconcileInitBundleSecrets is only exported temporarily to silence the static checker while it's unused.
+func (r createCentralTLSExtensionRun) ReconcileInitBundleSecrets(shouldDelete bool) error {
 	bundleSecretShouldExist, err := r.shouldBundleSecretsExist(shouldDelete)
 	if err != nil {
 		return err
