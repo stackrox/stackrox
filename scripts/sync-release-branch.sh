@@ -96,10 +96,16 @@ echo 'Fetching all recent commits from GitHub ...'
 git fetch
 echo
 
+arg_milestone="${1}"
+
 # For each milestone, find all PRs attached to it. Then, for each PR that is closed, find the "merge" event and
 # retrieve the associated commit hash. Then analyze whether this commit has already been cherry-picked or otherwise
 # made it onto the branch.
 for milestone in "${milestones[@]}"; do
+  if [[ -n "$arg_milestone" && "$milestone" != "$arg_milestone" ]]; then
+    echo "Skipping milestone ${milestone} ..."
+    continue
+  fi
   echo "Analyzing PRs/commits for milestone ${milestone} ..."
   milestone_prs="$(gh_curl '/search/issues?q=repo:stackrox/stackrox+is:pr+milestone:"'"$milestone"'"')"
 
