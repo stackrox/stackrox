@@ -52,7 +52,7 @@ function ImpactedEntitiesModal({
             <TableComposable aria-label="Simple table" variant="compact">
                 <Thead>
                     <Tr>
-                        <Th>Name</Th>
+                        <Th modifier="fitContent">Name</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
