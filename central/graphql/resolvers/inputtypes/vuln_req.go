@@ -23,13 +23,14 @@ func (re *VulnReqExpiry) AsRequestExpiry() *storage.RequestExpiry {
 	}
 
 	ret := &storage.RequestExpiry{}
-	if re.ExpiresWhenFixed != nil {
-		if *re.ExpiresWhenFixed {
-			ret.Expiry = &storage.RequestExpiry_ExpiresWhenFixed{
-				ExpiresWhenFixed: true,
-			}
+	if re.ExpiresWhenFixed != nil && *re.ExpiresWhenFixed {
+		ret.Expiry = &storage.RequestExpiry_ExpiresWhenFixed{
+			ExpiresWhenFixed: true,
 		}
 	} else {
+		if re.ExpiresOn == nil {
+			return nil
+		}
 		ts := protoconv.ConvertTimeToTimestampOrNil(re.ExpiresOn.Time)
 		if ts == nil {
 			return nil
