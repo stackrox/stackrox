@@ -9,7 +9,7 @@ set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-"$DIR/roxctl.sh" helm output central-services --remove --debug
-"$DIR/roxctl.sh" helm output secured-cluster-services --remove --debug
+"$DIR/roxctl.sh" helm output central-services --image-defaults=development_build --remove --debug
+"$DIR/roxctl.sh" helm output secured-cluster-services --image-defaults=development_build --remove --debug
 
-helm $@
+helm "$@"

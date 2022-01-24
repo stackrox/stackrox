@@ -21,7 +21,7 @@ roxctl-development() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    make "cli-${_uname}" GOTAGS=''
+    make -s "cli-${_uname}" GOTAGS='' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   "${tmp_roxctl}/roxctl-dev" "$@"
@@ -32,7 +32,7 @@ roxctl-release() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    make "cli-${_uname}" GOTAGS='release'
+    make -s "cli-${_uname}" GOTAGS='release' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   "${tmp_roxctl}/roxctl-release" "$@"
@@ -158,4 +158,22 @@ run_invalid_flavor_value_test() {
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
+}
+
+has_deprecation_warning() {
+  assert_line --regexp "WARN:[[:space:]]+'--rhacs' is deprecated, please use '--image-defaults=rhacs' instead"
+}
+
+flavor_warning_regexp="WARN:[[:space:]]+Default image registries have changed. Images will be taken from 'registry.redhat.io'. Specify '--image-defaults=stackrox.io' command line argument to use images from 'stackrox.io' registries."
+
+has_default_flavor_warning() {
+  assert_line --regexp "$flavor_warning_regexp"
+}
+
+has_no_default_flavor_warning() {
+  refute_line --regexp "$flavor_warning_regexp"
+}
+
+has_flag_collision_warning() {
+  assert_line --partial "flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'"
 }
