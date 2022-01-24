@@ -127,6 +127,7 @@ function FalsePositiveCVEsTable({
                             }}
                         />
                         <Th>CVE</Th>
+                        <Th>Fixable</Th>
                         <Th>Severity</Th>
                         <Th modifier="fitContent">Scope</Th>
                         <Th>Affected Components</Th>
@@ -151,6 +152,7 @@ function FalsePositiveCVEsTable({
                                     }}
                                 />
                                 <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
