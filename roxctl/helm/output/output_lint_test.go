@@ -40,29 +40,41 @@ func TestHelmLint(t *testing.T) {
 	suite.Run(t, new(HelmChartTestSuite))
 }
 
-func (s *HelmChartTestSuite) TestHelmOutput() {
+// TestOutputHelmChart demonstrates current behavior of outputHelmChart.
+// This test doesn't define a contract, so changes to the behavior are possible.
+// The contract is tested in the roxctl e2e tests.
+func (s *HelmChartTestSuite) TestOutputHelmChart() {
 	type testCase struct {
 		flavor         string
-		flavorProvided bool
+		flavorProvided bool // flavorProvided will be changed to true for non-empty 'flavor'
 		rhacs          bool
 		wantErr        bool
 	}
 	tests := []testCase{
-		{flavor: "", flavorProvided: false, rhacs: true},                                // backwards-compatible behavior
-		{flavor: "", flavorProvided: true, rhacs: true, wantErr: true},                  // error: collision of --rhacs and --image-defults
-		{flavor: "dummy", rhacs: true, wantErr: true},                                   // any flavor (even invalid) has priority over --rhacs
-		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true}, // error: collision of --rhacs and --image-defults
-		{flavor: "", flavorProvided: false, rhacs: false, wantErr: true},                // error: outputHelmChart should not guess the default flavor
-		{flavor: "", flavorProvided: true, rhacs: false, wantErr: true},                 // error: outputHelmChart must receive valid flavor
+		// Group: Invalid --image-defaults, no --rhacs
+		// outputHelmChart currently does not guess the default flavor, valid default flavor comes from command line flag setup
+		{flavor: "", flavorProvided: false, rhacs: false, wantErr: true},
+		{flavor: "", flavorProvided: true, rhacs: false, wantErr: true},
 		{flavor: "dummy", rhacs: false, wantErr: true},
+
+		// Group: Valid --image-defaults, no --rhacs
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
+
+		// Group: --rhacs only (test backwards-compatibility with versions < v3.68)
+		{flavor: "", flavorProvided: false, rhacs: true},
+
+		// Group: Both --image-defaults and --rhacs provided
+		// Providing both flags shall produce flag-collision error
+		{flavor: "", flavorProvided: true, rhacs: true, wantErr: true},
+		{flavor: "dummy", rhacs: true, wantErr: true},
+		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: true, wantErr: true},
 	}
 	// development flavor can be used only on non-released builds
 	if !buildinfo.ReleaseBuild {
 		tests = append(tests,
-			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true}, // error: collision of --rhacs and --image-defults
+			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true}, // error: collision of --rhacs and --image-defaults
 			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
 		)
 	}
