@@ -57,6 +57,7 @@ function PolicyCriteriaFieldSubInput({
                     <TextInput
                         value={value}
                         type="text"
+                        id={name}
                         isDisabled={readOnly}
                         placeholder={subComponent.placeholder}
                         onChange={(v) => setValue(v)}

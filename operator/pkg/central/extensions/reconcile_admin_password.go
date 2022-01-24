@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/renderer"
 	coreV1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -26,15 +26,15 @@ const (
 )
 
 // ReconcileAdminPasswordExtension returns an extension that takes care of reconciling the central-htpasswd secret.
-func ReconcileAdminPasswordExtension(client client.Client) extensions.ReconcileExtension {
+func ReconcileAdminPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
 	return wrapExtension(reconcileAdminPassword, client)
 }
 
-func reconcileAdminPassword(ctx context.Context, c *platform.Central, client client.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error {
+func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileAdminPasswordExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
-			ctrlClient: client,
+			client:     client,
 			centralObj: c,
 		},
 		statusUpdater: statusUpdater,
@@ -61,8 +61,8 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret() 
 	r.passwordSecretName = r.centralObj.Spec.Central.AdminPasswordSecret.Name
 
 	passwordSecret := &coreV1.Secret{}
-	key := client.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: r.passwordSecretName}
-	if err := r.ctrlClient.Get(r.ctx, key, passwordSecret); err != nil {
+	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: r.passwordSecretName}
+	if err := r.client.Get(r.ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve admin password secret %q", r.passwordSecretName)
 	}
 

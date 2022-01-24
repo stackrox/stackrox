@@ -173,7 +173,7 @@ func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStor
 }
 
 type message struct {
-	To          string
+	To          []string
 	From        string
 	Subject     string
 	Body        string
@@ -184,7 +184,7 @@ type message struct {
 func (m message) Bytes() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
-	buf.WriteString(fmt.Sprintf("To: %s\r\n", m.To))
+	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(m.To, ",")))
 	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", m.Subject))
 
 	buf.WriteString("MIME-Version: 1.0\r\n")
@@ -277,9 +277,8 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 	} else {
 		from = e.config.GetSender()
 	}
-
 	msg := message{
-		To:        strings.Join(recipients, ","),
+		To:        recipients,
 		From:      from,
 		Subject:   fmt.Sprintf("Red Hat Image Vulnerability Report for %s", time.Now().Format("02-January-2006")),
 		Body:      messageText,
@@ -326,7 +325,7 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 	}
 
 	msg := message{
-		To:        recipient,
+		To:        []string{recipient},
 		From:      from,
 		Subject:   subject,
 		Body:      body,
@@ -364,8 +363,10 @@ func (e *email) send(ctx context.Context, m *message) error {
 	if err = client.Mail(e.config.GetSender()); err != nil {
 		return createError("SMTP MAIL command failed", err)
 	}
-	if err = client.Rcpt(m.To); err != nil {
-		return createError("SMTP RCPT command failed", err)
+	for _, toAddr := range m.To {
+		if err = client.Rcpt(toAddr); err != nil {
+			return createError("SMTP RCPT command failed", err)
+		}
 	}
 
 	w, err := client.Data()

@@ -332,5 +332,5 @@ func TestAddAsConjunction(t *testing.T) {
 	}
 
 	_, err = AddAsConjunction(toAdd, addTo)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 }

@@ -21,17 +21,17 @@ export function visitPolicy(policyId) {
 export function createPolicy() {}
 
 export function doPolicyRowAction(trSelector, titleOfActionItem) {
-    cy.get(`${trSelector} ${selectors.table.buttonForActionToggle}`).click();
+    cy.get(`${trSelector} ${selectors.table.actionsToggleButton}`).click();
     cy.get(
-        `${trSelector} ${selectors.table.buttonForActionItem}:contains("${titleOfActionItem}")`
+        `${trSelector} ${selectors.table.actionsItemButton}:contains("${titleOfActionItem}")`
     ).click();
 }
 
 // Actions on policy detail page
 
 export function doPolicyPageAction(titleOfActionItem) {
-    cy.get(selectors.page.buttonForActionToggle).click();
-    cy.get(`${selectors.page.buttonForActionItem}:contains("${titleOfActionItem}")`).click();
+    cy.get(selectors.page.actionsToggleButton).click();
+    cy.get(`${selectors.page.actionsItemButton}:contains("${titleOfActionItem}")`).click();
 }
 
 export function clonePolicy() {}
