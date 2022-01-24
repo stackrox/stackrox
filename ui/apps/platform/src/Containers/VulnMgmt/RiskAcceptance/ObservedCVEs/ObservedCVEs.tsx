@@ -1,9 +1,10 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
-import { Bullseye, Spinner } from '@patternfly/react-core';
+import { Bullseye, PageSection, PageSectionVariants, Spinner } from '@patternfly/react-core';
 
 import usePagination from 'hooks/patternfly/usePagination';
+import ACSEmptyState from 'Components/ACSEmptyState';
 import ObservedCVEsTable from './ObservedCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 
@@ -39,6 +40,14 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
     const registry = data?.image?.name?.registry || '';
     const remote = data?.image?.name?.remote || '';
     const tag = data?.image?.name?.tag || '';
+
+    if (!isLoading && rows && rows.length === 0) {
+        return (
+            <PageSection variant={PageSectionVariants.light} isFilled>
+                <ACSEmptyState title="No CVEs available" />
+            </PageSection>
+        );
+    }
 
     return (
         <ObservedCVEsTable
