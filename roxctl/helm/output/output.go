@@ -10,39 +10,46 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func getMetaValues(flavorName string, rhacs, release bool) (*charts.MetaValues, error) {
+func handleRhacsWarnings(rhacs, imageFlavorProvided bool, logger environment.Logger) {
 	if rhacs {
-		fmt.Fprintln(os.Stderr, "Warning: '--rhacs' has priority over '--image-defaults'")
-		return charts.GetMetaValuesForFlavor(defaults.RHACSReleaseImageFlavor()), nil
+		logger.WarnfLn("'--rhacs' is deprecated, please use '--image-defaults=%s' instead", defaults.ImageFlavorNameRHACSRelease)
+	} else if !imageFlavorProvided {
+		logger.WarnfLn("Default image registries have changed. Images will be taken from 'registry.redhat.io'. Specify '--image-defaults=%s' command line argument to use images from 'stackrox.io' registries.", defaults.ImageFlavorNameStackRoxIORelease)
 	}
+}
 
-	if buildinfo.ReleaseBuild && flavorName == "" {
-		// TODO(RS-419): change default flavor to be RHACS
-		flavorName = defaults.ImageFlavorNameStackRoxIORelease
-	} else if flavorName == "" {
-		flavorName = defaults.ImageFlavorNameDevelopmentBuild
+func getMetaValues(flavorName string, imageFlavorProvided, rhacs, release bool, logger environment.Logger) (*charts.MetaValues, error) {
+	handleRhacsWarnings(rhacs, imageFlavorProvided, logger)
+	if rhacs {
+		if imageFlavorProvided {
+			return nil, errorhelpers.NewErrInvalidArgsf("flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'")
+		}
+		flavorName = defaults.ImageFlavorNameRHACSRelease
 	}
 	imageFlavor, err := defaults.GetImageFlavorByName(flavorName, release)
 	if err != nil {
-		return nil, errors.Wrapf(err, "invalid value of '--image-defaults=%s'", flavorName)
+		return nil, errorhelpers.NewErrInvalidArgsf("'--image-defaults': %v", err)
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
 
-func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, rhacs bool, imageFlavor string, debug bool, debugChartPath string) error {
+func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, imageFlavor string, flavorProvided, rhacs, debug bool, debugChartPath string, logger environment.Logger) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
 	}
 
-	metaVals, err := getMetaValues(imageFlavor, rhacs, buildinfo.ReleaseBuild)
+	metaVals, err := getMetaValues(imageFlavor, flavorProvided, rhacs, buildinfo.ReleaseBuild, logger)
 	if err != nil {
 		return err
 	}
@@ -93,7 +100,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 }
 
 // Command for writing Helm Chart.
-func Command() *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
 	var removeOutputDir bool
 	var debug bool
@@ -108,20 +115,21 @@ func Command() *cobra.Command {
 				return errors.New("incorrect number of arguments, see --help for usage information")
 			}
 			chartName := args[0]
-			return outputHelmChart(chartName, outputDir, removeOutputDir, rhacs, imageFlavor, debug, debugChartPath)
+			flavorProvided := cmd.Flags().Changed("image-defaults")
+			return outputHelmChart(chartName, outputDir, removeOutputDir, imageFlavor, flavorProvided, rhacs, debug, debugChartPath, cliEnvironment.Logger())
 		},
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
 	c.PersistentFlags().BoolVar(&removeOutputDir, "remove", false, "remove the output directory if it already exists")
-	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false, "render RHACS chart flavor")
+	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false,
+		fmt.Sprintf("render RHACS chart flavor (deprecated: use '--image-defaults=%s' instead", defaults.ImageFlavorNameRHACSRelease))
 
 	if !buildinfo.ReleaseBuild {
 		defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/stackrox/image/")
 		c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
 		c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
 	}
-	c.PersistentFlags().StringVar(&imageFlavor, "image-defaults", "", "default container registry for container images")
-
+	flags.AddImageDefaults(c.PersistentFlags(), &imageFlavor)
 	return c
 }
 
