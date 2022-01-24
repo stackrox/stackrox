@@ -52,23 +52,23 @@ func (rs *RegistryStore) upsertRegistry(namespace, registry string, dce types.Do
 	}
 
 	err = regs.UpdateImageIntegration(&storage.ImageIntegration{
-		Name:                 registry,
-		Type:                 "docker",
-		Categories:           []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig:    &storage.ImageIntegration_Docker{
+		Name:       registry,
+		Type:       "docker",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
-				Endpoint:             registry,
-				Username:             dce.Username,
-				Password:             dce.Password,
-				Insecure:             !secure,
+				Endpoint: registry,
+				Username: dce.Username,
+				Password: dce.Password,
+				Insecure: !secure,
 			},
 		},
 	})
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
-	} else {
-		log.Infof("Updated registry store with %q (Secure: %v)", registry, secure)
 	}
+
+	log.Infof("Updated registry store with %q (Secure: %v)", registry, secure)
 
 	return nil
 }

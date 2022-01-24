@@ -4,6 +4,7 @@ type factoryOption struct {
 	creatorFuncs []creatorWrapper
 }
 
+// FactoryOption specifies optional configuration parameters for a registry factory.
 type FactoryOption interface {
 	apply(*factoryOption)
 }
