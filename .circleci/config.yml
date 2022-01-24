@@ -853,13 +853,13 @@ commands:
             exit 1
           }
 
-  check-scanner-and-collector-release:
+  check-scanner-and-collector-release-step:
     parameters:
       fail-on-rc:
         type: boolean
     steps:
     - run:
-        name: Check COLLECTOR_VERSION and SCANNER_VERSION are release
+        name: Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release
         command: |
           function is_release() {
             [[ "$1" =~ << pipeline.parameters.release_rc_tag_bash_regex >> && -z "${BASH_REMATCH[3]}" ]]
@@ -2303,6 +2303,15 @@ jobs:
     - check-docs-step:
         only-on-release: false
 
+  # This serves as a reminder for the release manager to make sure Scanner and Collector versions are set to release.
+  check-scanner-and-collector-release-job:
+    executor: custom
+    resource_class: small
+    steps:
+    - checkout
+    - check-scanner-and-collector-release-step:
+        fail-on-rc: true
+
   check-generated-files-up-to-date:
     executor: custom
     resource_class: medium
@@ -2773,7 +2782,7 @@ jobs:
       - checkout-with-submodules
       - check-docs-step:
           only-on-release: true
-      - check-scanner-and-collector-release:
+      - check-scanner-and-collector-release-step:
           fail-on-rc: false
 
       - setup_remote_docker:
@@ -3651,9 +3660,6 @@ jobs:
 
       - store-k8s-logs
       - teardown-gke
-
-      - check-scanner-and-collector-release:
-          fail-on-rc: true
 
   gke-ui-e2e-tests:
     executor:
@@ -5083,6 +5089,10 @@ workflows:
             - aws-setup
 
       - check-docs-job:
+          <<: *runOnlyOnReleaseCandidateBuilds
+          context:
+          - custom-executor-pull
+      - check-scanner-and-collector-release-job:
           <<: *runOnlyOnReleaseCandidateBuilds
           context:
           - custom-executor-pull
