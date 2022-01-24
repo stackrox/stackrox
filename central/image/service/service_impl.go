@@ -169,6 +169,14 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
+func scanImageInternalResponseFromImage(img *storage.Image) *v1.ScanImageInternalResponse {
+	utils.FilterSuppressedCVEsNoClone(img)
+	utils.StripCVEDescriptionsNoClone(img)
+	return &v1.ScanImageInternalResponse{
+		Image: img,
+	}
+}
+
 // ScanImageInternal handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
@@ -188,10 +196,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		}
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
-			utils.FilterSuppressedCVEsNoClone(img)
-			return &v1.ScanImageInternalResponse{
-				Image: utils.StripCVEDescriptions(img),
-			}, nil
+			return scanImageInternalResponseFromImage(img), nil
 		}
 	}
 
@@ -219,10 +224,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	// This modifies the image object
-	utils.FilterSuppressedCVEsNoClone(img)
-	return &v1.ScanImageInternalResponse{
-		Image: utils.StripCVEDescriptions(img),
-	}, nil
+	return scanImageInternalResponseFromImage(img), nil
 }
 
 // ScanImage scans an image and returns the result
