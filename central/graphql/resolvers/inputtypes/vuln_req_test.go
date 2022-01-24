@@ -74,17 +74,17 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 				ExpiresWhenFixed: boolPtr(false),
 				ExpiresOn:        nil,
 			},
-			expectedExpiry: nil,
+			expectedExpiry: &storage.RequestExpiry{},
 		},
 		{
 			name:           "Never expiring with nil VulnReqExpiry",
 			input:          nil,
-			expectedExpiry: nil,
+			expectedExpiry: &storage.RequestExpiry{},
 		},
 		{
 			name:           "Never expiring with empty VulnReqExpiry",
 			input:          &VulnReqExpiry{},
-			expectedExpiry: nil,
+			expectedExpiry: &storage.RequestExpiry{},
 		},
 		{
 			name: "Expiring at zero time",
