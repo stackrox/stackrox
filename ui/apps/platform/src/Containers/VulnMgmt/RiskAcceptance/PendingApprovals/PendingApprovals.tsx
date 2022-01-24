@@ -4,6 +4,8 @@ import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
 import useSearch from 'hooks/useSearch';
 import { SearchFilter } from 'types/search';
+import { PageSection, PageSectionVariants } from '@patternfly/react-core';
+import ACSEmptyState from 'Components/ACSEmptyState';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 
@@ -46,6 +48,14 @@ function PendingApprovals(): ReactElement {
 
     const rows = data?.vulnerabilityRequests || [];
     const itemCount = data?.vulnerabilityRequestsCount || 0;
+
+    if (!isLoading && rows && rows.length === 0) {
+        return (
+            <PageSection variant={PageSectionVariants.light} isFilled>
+                <ACSEmptyState title="No pending requests to approve." />
+            </PageSection>
+        );
+    }
 
     return (
         <PendingApprovalsTable
