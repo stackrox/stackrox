@@ -93,6 +93,7 @@ type ImageFlavor struct {
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
 // Assumption: development_build flavor is never a release.
 func DevelopmentBuildImageFlavor() ImageFlavor {
+	_ = buildinfo.BuildTimestamp()
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
 		MainRegistry:  "docker.io/stackrox",
@@ -275,6 +276,11 @@ func (f *ImageFlavor) CollectorFullImage() string {
 // CollectorSlimImage is the container image reference (full name) for the "collector slim" image
 func (f *ImageFlavor) CollectorSlimImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.CollectorRegistry, f.CollectorSlimImageName, f.CollectorSlimImageTag)
+}
+
+// CollectorSlimImageNoTag is the container image repository (image name including registry, excluding tag) for the "collector slim" image.
+func (f *ImageFlavor) CollectorSlimImageNoTag() string {
+	return fmt.Sprintf("%s/%s", f.CollectorRegistry, f.CollectorSlimImageName)
 }
 
 // CollectorFullImageNoTag is the container image repository (image name including registry, excluding tag) for the  "collector" image.

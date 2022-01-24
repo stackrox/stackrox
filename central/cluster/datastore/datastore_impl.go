@@ -848,9 +848,13 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
-// GetClusterDefaults is consumed by the API to provide the user with the default secured cluster values.
-func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
-	cluster := &storage.Cluster{}
+func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context, kernelSupport bool, clusterType storage.ClusterType) (*storage.Cluster, error) {
+	cluster := &storage.Cluster{
+		Type:          clusterType,
+		SlimCollector: kernelSupport,
+		AdmissionController: clusterType != storage.ClusterType_OPENSHIFT_CLUSTER &&
+			clusterType != storage.ClusterType_OPENSHIFT4_CLUSTER,
+	}
 	if err := addDefaults(cluster); err != nil {
 		return nil, err
 	}
@@ -919,6 +923,13 @@ func addDefaults(cluster *storage.Cluster) error {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
 	}
 	flavor := defaults.GetImageFlavorFromEnv()
+	if cluster.GetCollectorImage() == "" {
+		if cluster.SlimCollector {
+			cluster.CollectorImage = flavor.CollectorSlimImageNoTag()
+		} else {
+			cluster.CollectorImage = flavor.CollectorFullImageNoTag()
+		}
+	}
 	if cluster.GetMainImage() == "" {
 		cluster.MainImage = flavor.MainImageNoTag()
 	}

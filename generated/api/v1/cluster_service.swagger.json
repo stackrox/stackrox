@@ -71,7 +71,7 @@
         ]
       }
     },
-    "/v1/clusters-env/cluster-defaults": {
+    "/v1/clusters-env/cluster-defaults/{type}": {
       "get": {
         "operationId": "ClustersService_GetClusterDefaults",
         "responses": {
@@ -88,6 +88,20 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "GENERIC_CLUSTER",
+              "KUBERNETES_CLUSTER",
+              "OPENSHIFT_CLUSTER",
+              "OPENSHIFT4_CLUSTER"
+            ]
+          }
+        ],
         "tags": [
           "ClustersService"
         ]

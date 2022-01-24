@@ -144,8 +144,12 @@ func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty
 	return result, nil
 }
 
-func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.ClusterResponse, error) {
-	cluster, err := s.datastore.GetClusterDefaults(ctx)
+func (s *serviceImpl) GetClusterDefaults(ctx context.Context, request *v1.GetClusterDefaultsRequest) (*v1.ClusterResponse, error) {
+	kernelSupport, err := s.probeSources.AnyAvailable(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cluster, err := s.datastore.GetClusterDefaults(ctx, kernelSupport, request.Type)
 	if err != nil {
 		return nil, err
 	}

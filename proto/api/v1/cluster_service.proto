@@ -39,6 +39,10 @@ message KernelSupportAvailableResponse {
     bool kernel_support_available = 1;
 }
 
+message GetClusterDefaultsRequest {
+    storage.ClusterType type = 1;
+}
+
 service ClustersService {
 
     rpc GetClusters (GetClustersRequest) returns (ClustersList) {
@@ -79,9 +83,9 @@ service ClustersService {
         };
     }
 
-    rpc GetClusterDefaults(Empty) returns (ClusterResponse) {
+    rpc GetClusterDefaults(GetClusterDefaultsRequest) returns (ClusterResponse) {
         option (google.api.http) = {
-            get: "/v1/clusters-env/cluster-defaults"
+            get: "/v1/clusters-env/cluster-defaults/{type}"
         };
     }
 }

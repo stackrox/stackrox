@@ -1292,7 +1292,37 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
-	defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx)
-	suite.NoError(err)
-	suite.Equal(defaults.GetCentralApiEndpoint(), centralEndpoint)
+	{
+		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, false, storage.ClusterType_KUBERNETES_CLUSTER)
+		suite.NoError(err)
+		suite.Equal(defaults.GetCentralApiEndpoint(), centralEndpoint)
+		suite.False(defaults.SlimCollector)
+		suite.True(defaults.AdmissionController)
+	}
+	{
+		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, true, storage.ClusterType_KUBERNETES_CLUSTER)
+		suite.NoError(err)
+		suite.True(defaults.SlimCollector)
+		suite.True(defaults.AdmissionController)
+		suite.True(defaults.DynamicConfig.DisableAuditLogs)
+	}
+	{
+		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, false, storage.ClusterType_OPENSHIFT_CLUSTER)
+		suite.NoError(err)
+		suite.False(defaults.SlimCollector)
+		suite.True(defaults.DynamicConfig.DisableAuditLogs)
+		suite.False(defaults.AdmissionController)
+	}
+	{
+		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, true, storage.ClusterType_OPENSHIFT_CLUSTER)
+		suite.NoError(err)
+		suite.True(defaults.DynamicConfig.DisableAuditLogs)
+		suite.False(defaults.AdmissionController)
+	}
+	{
+		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, true, storage.ClusterType_OPENSHIFT4_CLUSTER)
+		suite.NoError(err)
+		suite.False(defaults.DynamicConfig.DisableAuditLogs)
+		suite.False(defaults.AdmissionController)
+	}
 }
