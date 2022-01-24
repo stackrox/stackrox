@@ -874,10 +874,11 @@ commands:
           set -x
           main_release_like=0
           main_rc=0
-          if is_release "$(make --quiet tag)"; then
+          main_tag="$(make --quiet tag)"
+          if is_release "$main_tag"; then
             main_release_like=1
           fi
-          if is_rc "$(make --quiet tag)"; then
+          if is_rc "$main_tag"; then
             main_release_like=1
             main_rc=1
           fi
