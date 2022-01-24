@@ -102,6 +102,9 @@ function PendingApprovalsTable({
             (canApproveRequests ||
                 (canCreateRequests && row.requestor.id === currentUser.userId)) &&
             row.targetState === 'DEFERRED' &&
+            // @TODO: Canceling an approved pending update request causes an error.
+            // We can remove this once backend has a fix
+            row.status !== 'APPROVED_PENDING_UPDATE' &&
             selectedIds.includes(row.id)
         );
     });
@@ -263,9 +266,12 @@ function PendingApprovalsTable({
                     </Thead>
                     <Tbody>
                         {rows.map((row, rowIndex) => {
+                            // @TODO: Canceling an approved pending update request causes an error.
+                            // We can remove this once backend has a fix
                             const canCancelRequest =
-                                canApproveRequests ||
-                                (canCreateRequests && row.requestor.id === currentUser.userId);
+                                row.status !== 'APPROVED_PENDING_UPDATE' &&
+                                (canApproveRequests ||
+                                    (canCreateRequests && row.requestor.id === currentUser.userId));
 
                             return (
                                 <Tr key={row.id}>
