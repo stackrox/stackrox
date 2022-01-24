@@ -919,7 +919,6 @@ func addRequiredDefaults(cluster *storage.Cluster) error {
 	if cluster.GetCentralApiEndpoint() == "" {
 		cluster.CentralApiEndpoint = "central.stackrox:443"
 	}
-
 	return nil
 }
 
