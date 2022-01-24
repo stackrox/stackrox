@@ -169,14 +169,6 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) saveImage(img *storage.Image) {
-	// Save the image if we received an ID from sensor
-	// Otherwise, our inferred ID may not match
-	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
-	}
-}
-
 // ScanImageInternal handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
@@ -218,9 +210,13 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// even if we weren't able to enrich it
 	}
 
-	// asynchronously upsert images as this rpc should be performant
+
 	if img.GetId() != "" {
-		go s.saveImage(img.Clone())
+		// Save the image if we received an ID from sensor
+		// Otherwise, our inferred ID may not match
+		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+			log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
+		}
 	}
 
 	// This modifies the image object
