@@ -392,8 +392,8 @@ func getDeployDetectionRequest(reqNum int, clusterID string) *v1.DeployDetection
 		Resource: &v1.DeployDetectionRequest_Deployment{
 			Deployment: deployment,
 		},
-		EnforcementOnly:    true,
-		ClusterId:          clusterID,
+		EnforcementOnly: true,
+		ClusterId:       clusterID,
 	}
 }
 

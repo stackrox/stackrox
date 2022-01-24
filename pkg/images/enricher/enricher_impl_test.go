@@ -31,7 +31,7 @@ type fakeRegistryScanner struct {
 func (f *fakeRegistryScanner) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	f.requestedMetadata = true
 	return &storage.ImageMetadata{V2: &storage.V2Metadata{
-		Digest:               "id",
+		Digest: "id",
 	}}, nil
 }
 
@@ -130,16 +130,16 @@ func TestEnricherFlow(t *testing.T) {
 		shortCircuitRegistry bool
 		shortCircuitScanner  bool
 		image                *storage.Image
-		imageGetter imageGetter
+		imageGetter          imageGetter
 
 		fsr    *fakeRegistryScanner
 		result EnrichmentResult
 	}{
 		{
-			name: "fresh image",
-			ctx: EnrichmentContext{},
-			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
-			imageGetter:     emptyImageGetter,
+			name:        "fresh image",
+			ctx:         EnrichmentContext{},
+			image:       &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			imageGetter: emptyImageGetter,
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: true,
@@ -151,12 +151,12 @@ func TestEnricherFlow(t *testing.T) {
 			},
 		},
 		{
-			name: "metadata already exists",
-			ctx: EnrichmentContext{},
+			name:                 "metadata already exists",
+			ctx:                  EnrichmentContext{},
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
 			image:                &storage.Image{Id: "id", Metadata: &storage.ImageMetadata{}},
-			imageGetter: emptyImageGetter,
+			imageGetter:          emptyImageGetter,
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: false,
@@ -168,12 +168,12 @@ func TestEnricherFlow(t *testing.T) {
 			},
 		},
 		{
-			name: "scan already exists, but image is by tag",
-			ctx: EnrichmentContext{},
+			name:                 "scan already exists, but image is by tag",
+			ctx:                  EnrichmentContext{},
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
-			image:           &storage.Image{Name: &storage.ImageName{Registry: "reg"}},
-			imageGetter: 	 imageGetterFromImage(&storage.Image{Name: &storage.ImageName{Registry: "reg"}, Scan: &storage.ImageScan{}}),
+			image:                &storage.Image{Name: &storage.ImageName{Registry: "reg"}},
+			imageGetter:          imageGetterFromImage(&storage.Image{Name: &storage.ImageName{Registry: "reg"}, Scan: &storage.ImageScan{}}),
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: true,
@@ -312,7 +312,7 @@ func TestEnricherFlow(t *testing.T) {
 				integrationHealthReporter: mockReporter,
 				metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 				metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
-				imageGetter: c.imageGetter,
+				imageGetter:               c.imageGetter,
 			}
 
 			result, err := enricherImpl.EnrichImage(c.ctx, c.image)
@@ -440,7 +440,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	mockReporter := reporterMocks.NewMockReporter(ctrl)
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
-	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem, nil,	mockReporter)
+	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem, nil, mockReporter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "testimage"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)

@@ -92,7 +92,7 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		errorsPerScanner:          make(map[scannerTypes.ImageScanner]int32, len(is.ScannerSet().GetAll())),
 		integrationHealthReporter: healthReporter,
 
-		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		metadataLimiter:  rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		asyncRateLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
 
 		imageGetter: imageGetter,
