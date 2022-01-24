@@ -848,11 +848,13 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
+// GetClusterDefaults is consumed by the API to provide the user with the default secured cluster values.
 func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
 	cluster := &storage.Cluster{}
-	if err := addDefaults(cluster); err != nil {
+	if err := addRequiredDefaults(cluster); err != nil {
 		return nil, err
 	}
+	addUserDefaults(cluster)
 	return cluster, nil
 }
 
@@ -860,14 +862,24 @@ func normalizeCluster(cluster *storage.Cluster) error {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
 
-	return addDefaults(cluster)
+	return addRequiredDefaults(cluster)
 }
 
 func validateInput(cluster *storage.Cluster) error {
 	return clusterValidation.Validate(cluster).ToError()
 }
 
-func addDefaults(cluster *storage.Cluster) error {
+// addUserDefaults adds defaults that are not supposed to be stored in cluster object but are only used to
+// display the defaults to the user on the UI.
+func addUserDefaults(cluster *storage.Cluster) {
+	flavor := defaults.GetImageFlavorFromEnv()
+	if cluster.GetCollectorImage() == "" {
+		cluster.CollectorImage = flavor.CollectorFullImageNoTag()
+	}
+}
+
+// addRequiredDefaults adds default values that cannot be stored empty in the cluster object.
+func addRequiredDefaults(cluster *storage.Cluster) error {
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
 		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
@@ -901,15 +913,13 @@ func addDefaults(cluster *storage.Cluster) error {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
 	}
 	flavor := defaults.GetImageFlavorFromEnv()
-	if cluster.CollectorImage == "" {
-		cluster.CollectorImage = flavor.CollectorImageNoTag()
-	}
 	if cluster.GetMainImage() == "" {
-		cluster.MainImage = flavor.MainImage()
+		cluster.MainImage = flavor.MainImageNoTag()
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		cluster.CentralApiEndpoint = "central.stackrox:443"
 	}
+
 	return nil
 }
 
