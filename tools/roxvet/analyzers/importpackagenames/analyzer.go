@@ -1,8 +1,8 @@
 package importpackagenames
 
 import (
+	"fmt"
 	"go/ast"
-	"strings"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -10,16 +10,8 @@ import (
 
 const doc = `check that we import certain packages using particular names for consistency`
 
-var rules = []struct {
-	description      string
-	importPathSuffix string
-	expectedName     string
-}{
-	{
-		"controller-runtime client",
-		"controller-runtime/pkg/client",
-		"ctrlClient",
-	},
+var rules = map[string]string{
+	"sigs.k8s.io/controller-runtime/pkg/client": "ctrlClient",
 }
 
 // Analyzer is the analyzer.
@@ -43,12 +35,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 // verifyImportUsesAllowedPackageName verifies that if this imports a path for which
 // there is a rule, it uses the appropriate package name.
 func verifyImportUsesAllowedPackageName(pass *analysis.Pass, imp *ast.ImportSpec) {
-	for _, rule := range rules {
-		if !strings.HasSuffix(imp.Path.Value, rule.importPathSuffix+"\"") {
+	for importPath, name := range rules {
+		if imp.Path.Value != fmt.Sprintf("%q", importPath) {
 			continue
 		}
-		if imp.Name == nil || imp.Name.Name != rule.expectedName {
-			pass.Reportf(imp.Pos(), "inconsistent package name for import %s: please import %s as %q", imp.Path.Value, rule.description, rule.expectedName)
+		if imp.Name == nil || imp.Name.Name != name {
+			pass.Reportf(imp.Pos(), "inconsistent package name for import %s: please import as %q", imp.Path.Value, name)
 		}
 	}
 }
