@@ -2,7 +2,6 @@ package localscanner
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,57 +9,55 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/certificates"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
 	log                                = logging.LoggerForModule()
 	_   common.SensorComponent         = (*localScannerTLSIssuerImpl)(nil)
-	_   certificates.CertificateSource = (*localScannerTLSIssuerImpl)(nil)
+	_   certificates.CertificateIssuer = (*localScannerTLSIssuerImpl)(nil)
 )
 
 // FIXME separate files for different structs
 type localScannerTLSIssuerImpl struct {
-	// TODO for HandleCertificates: conf          config
+	conf          config
 	certRefresher certificates.CertRefresher
-	certificateSourceImpl
+	certIssuerImpl
 	sensorComponentImpl
 }
 
-/*
-TODO
 type config struct {
-	sensorNamespace string
-	secretsClient   corev1.SecretInterface
-}
-*/
-
-type certificateSourceImpl struct {
-	requestID string
-	resultC   chan *retry.Result
-	// protects both requestID and resultC
-	certSourceStateMutex sync.Mutex
-	sensorComponentImpl
+	// TODO sensorNamespace string
+	// TODO secretsClient   corev1.SecretInterface
+	certRefresherBackoff wait.Backoff
 }
 
 type sensorComponentImpl struct {
-	requestsC chan *central.MsgFromSensor
+	requestsC  chan *central.MsgFromSensor
+	responsesC chan *central.IssueLocalScannerCertsResponse
 }
 
-/*
-TODO create function
-    resultC = make(chan *retry.Result)
-*/
+type certIssuerImpl struct {
+	sensorComponentImpl
+	certSecretsRepoImpl
+}
+
+type certSyncRequesterImpl struct {
+	requestID  string
+	requestsC  chan *central.MsgFromSensor
+	responsesC chan *central.IssueLocalScannerCertsResponse
+}
+
+type certSecretsRepoImpl struct{}
 
 func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Info("starting local scanner TLS issuer.")
 
-	var certRequestBackoff wait.Backoff // FIXME
-	i.certRefresher = certificates.NewCertRefresher("FIXME desc", i, certRequestBackoff)
+	i.certRefresher = certificates.NewCertRefresher("FIXME desc", i, i.conf.certRefresherBackoff)
 	if err := i.certRefresher.Start(context.Background()); err != nil {
 		return err
 	}
@@ -74,7 +71,6 @@ func (i *localScannerTLSIssuerImpl) Stop(err error) {
 	if i.certRefresher != nil {
 		i.certRefresher.Stop()
 	}
-	i.Close()
 	log.Info("local scanner TLS issuer stopped.")
 }
 
@@ -89,13 +85,14 @@ func (i *sensorComponentImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 // ProcessMessage cannot block as it would prevent centralReceiverImpl from sending messages
-// to other SensorComponent.
+// to other SensorComponent. This is running in the goroutine launched in centralReceiverImpl.Start.
 func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_IssueLocalScannerCertsResponse:
 		response := m.IssueLocalScannerCertsResponse
 		go func() {
-			i.processIssueLocalScannerCertsResponse(response)
+			// will block if i.resultC is filled.
+			i.responsesC <- response
 		}()
 		return nil
 	default:
@@ -105,106 +102,86 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 	}
 }
 
-func (i *certificateSourceImpl) processIssueLocalScannerCertsResponse(response *central.IssueLocalScannerCertsResponse) {
-	i.certSourceStateMutex.Lock()
-	defer i.certSourceStateMutex.Unlock()
-
-	if response.GetRequestId() != i.requestID {
-		log.Debugf("ignoring response with unknown request id %s", response.GetRequestId())
-		return
+// RefreshCertificates TODO doc
+// This is running in the goroutine for a refresh timer in i.certRefresher.
+func (i *certIssuerImpl) RefreshCertificates(ctx context.Context) (timeToRefresh time.Duration, err error) {
+	secrets, fetchErr := i.fetchSecrets()
+	if fetchErr != nil {
+		return 0, fetchErr
 	}
-	i.requestID = ""
-	var result *retry.Result
+	timeToRefresh = time.Until(i.getCertRenewalTime(secrets))
+	if timeToRefresh > 0 {
+		return timeToRefresh, nil
+	}
+
+	certRequester := &certSyncRequesterImpl{
+		requestID:  uuid.NewV4().String(),
+		requestsC:  i.requestsC,
+		responsesC: i.responsesC,
+	}
+	response, requestErr := certRequester.requestCertificates(ctx)
+	if requestErr != nil {
+		return 0, requestErr
+	}
 	if response.GetError() != nil {
-		result = &retry.Result{Err: errors.Errorf("server side error: %s", response.GetError().GetMessage())}
-	} else {
-		result = &retry.Result{V: response.GetCertificates()}
+		return 0, errors.Errorf("server side error: %s", response.GetError().GetMessage())
 	}
-	resultC := i.resultC
-	go func() {
-		//  can block if i.resultC is filled.
-		resultC <- result
-	}()
+
+	certificates := response.GetCertificates()
+	if refreshErr := i.refreshSecrets(certificates, secrets); refreshErr != nil {
+		return 0, refreshErr
+	}
+	timeToRefresh = time.Until(i.getCertRenewalTime(secrets))
+	return timeToRefresh, nil
 }
 
-func (i *certificateSourceImpl) AskForResult(ctx context.Context) <-chan *retry.Result {
-	resultC := i.resetCertSource()
-	go func() {
-		i.Retry()
-	}()
-
-	return resultC
+func (i *certIssuerImpl) getCertRenewalTime(secrets map[storage.ServiceType]*v1.Secret) time.Time {
+	return time.Now() // TODO
 }
 
-// Retry blocks until the message is sent or we get a timeout.
-func (i *certificateSourceImpl) Retry() {
-	i.certSourceStateMutex.Lock()
-	defer i.certSourceStateMutex.Unlock()
+func (i *certIssuerImpl) refreshSecrets(certificates *storage.TypedServiceCertificateSet,
+	secrets map[storage.ServiceType]*v1.Secret) error {
+	// TODO
+	return i.updateSecrets(secrets)
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second) // FIXME timeout and context, or retry with backoff in a goroutine
-	defer cancel()
-
-	requestID := uuid.NewV4().String()
+func (i *certSyncRequesterImpl) requestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
 			IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
-				RequestId: requestID,
+				RequestId: i.requestID,
 			},
 		},
 	}
 	select {
-	case i.requestsC <- msg:
-		i.requestID = requestID
-		log.Debugf("request to issue local Scanner certificates sent to Central succesfully: %v", msg)
 	case <-ctx.Done():
-		i.requestID = ""
-		resultC := i.resultC
-		go func() {
-			//  can block if i.resultC is filled.
-			resultC <- &retry.Result{Err: errors.Wrap(ctx.Err(), "sending the request to central")}
-		}()
+		return nil, ctx.Err()
+	case i.requestsC <- msg:
+		log.Debugf("request to issue local Scanner certificates sent to Central succesfully: %v", msg)
 	}
-}
 
-func (i *certificateSourceImpl) Close() {
-	i.certSourceStateMutex.Lock()
-	defer i.certSourceStateMutex.Unlock()
-
-	oldResultC := i.resultC
-	i.doResetCertSource()
-	go func() {
-		if oldResultC != nil {
-			// drain channel in case the reader gave up, to avoid
-			// zombie goroutines.
-			for {
-				select {
-				case <-oldResultC:
-				default:
-					return
-				}
+	var response *central.IssueLocalScannerCertsResponse
+	for response == nil {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case newResponse := <-i.responsesC:
+			if response.GetRequestId() != i.requestID {
+				log.Debugf("ignoring response with unknown request id %s", response.GetRequestId())
+			} else {
+				response = newResponse
 			}
 		}
-	}()
+	}
+
+	return response, nil
 }
 
-func (i *certificateSourceImpl) HandleCertificates(certificates *storage.TypedServiceCertificateSet) (timeToRefresh time.Duration, err error) {
-	// TODO get secrets => secretRepository type
-	/*
-		if certificates != nil {
-			// TODO update and store secrets => secretRepository type
-		}*/
-	// TODO get duration from secrets => secretExpirationStrategy type
-	return time.Minute, nil // FIXME
+func (i *certSecretsRepoImpl) fetchSecrets() (map[storage.ServiceType]*v1.Secret, error) {
+	secretsMap := make(map[storage.ServiceType]*v1.Secret, 3)
+	return secretsMap, nil // TODO
 }
 
-func (i *certificateSourceImpl) resetCertSource() chan *retry.Result {
-	i.certSourceStateMutex.Lock()
-	defer i.certSourceStateMutex.Unlock()
-
-	i.doResetCertSource()
-	return i.resultC
-}
-func (i *certificateSourceImpl) doResetCertSource() {
-	i.requestID = ""
-	i.resultC = make(chan *retry.Result)
+func (i *certSecretsRepoImpl) updateSecrets(secrets map[storage.ServiceType]*v1.Secret) error {
+	return nil // TODO
 }
