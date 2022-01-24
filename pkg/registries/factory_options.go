@@ -10,13 +10,13 @@ type FactoryOption interface {
 
 type factoryOptionFunc func(*factoryOption)
 
-func (o factoryOptionFunc) apply(opt *factoryOption) {
-	o(opt)
+func (f factoryOptionFunc) apply(opt *factoryOption) {
+	f(opt)
 }
 
 // WithRegistryCreators specifies which registries to add to the factory.
 func WithRegistryCreators(creatorFuncs ...creatorWrapper) FactoryOption {
 	return factoryOptionFunc(func(o *factoryOption) {
-		o.creatorFuncs = creatorFuncs
+		o.creatorFuncs = append(o.creatorFuncs, creatorFuncs...)
 	})
 }
