@@ -195,6 +195,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 				err := s.regStore.upsertRegistry(secret.GetNamespace(), registry, dce)
 				if err != nil {
 					log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
+				} else {
+					log.Info("Upserted registry %q", registry)
 				}
 			}
 		}

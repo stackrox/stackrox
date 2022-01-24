@@ -66,6 +66,8 @@ func (rs *RegistryStore) upsertRegistry(namespace, registry string, dce types.Do
 	})
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
+	} else {
+		log.Infof("Updated registry store with %q (Secure: %v)", registry, secure)
 	}
 
 	return nil
