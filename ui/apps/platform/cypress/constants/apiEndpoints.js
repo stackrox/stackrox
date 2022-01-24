@@ -276,6 +276,11 @@ export const report = {
     configurations: '/v1/report/configurations',
 };
 
+export const riskAcceptance = {
+    getImageVulnerabilities: graphql('getImageVulnerabilities'),
+    deferVulnerability: graphql('deferVulnerability'),
+};
+
 export const system = {
     config: '/v1/config',
 };
