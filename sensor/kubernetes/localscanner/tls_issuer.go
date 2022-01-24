@@ -32,7 +32,6 @@ type localScannerTLSIssuerImpl struct {
 
 type config struct {
 	// TODO sensorNamespace string
-	// TODO secretsClient   corev1.SecretInterface
 	certRefresherBackoff wait.Backoff
 }
 
@@ -52,7 +51,9 @@ type certSyncRequesterImpl struct {
 	responsesC chan *central.IssueLocalScannerCertsResponse
 }
 
-type certSecretsRepoImpl struct{}
+type certSecretsRepoImpl struct {
+	// TODO secretsClient   corev1.SecretInterface
+}
 
 func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Info("starting local scanner TLS issuer.")
@@ -166,7 +167,7 @@ func (i *certSyncRequesterImpl) requestCertificates(ctx context.Context) (*centr
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case newResponse := <-i.responsesC:
-			if response.GetRequestId() != i.requestID {
+			if newResponse.GetRequestId() != i.requestID {
 				log.Debugf("ignoring response with unknown request id %s", response.GetRequestId())
 			} else {
 				response = newResponse
