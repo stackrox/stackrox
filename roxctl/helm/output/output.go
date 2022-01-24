@@ -121,7 +121,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
 	c.PersistentFlags().BoolVar(&removeOutputDir, "remove", false, "remove the output directory if it already exists")
-	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false, "render RHACS chart flavor")
+	c.PersistentFlags().BoolVar(&rhacs, "rhacs", false,
+		fmt.Sprintf("render RHACS chart flavor (deprecated: use '--image-defaults=%s' instead", defaults.ImageFlavorNameRHACSRelease))
 
 	if !buildinfo.ReleaseBuild {
 		defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/stackrox/image/")
