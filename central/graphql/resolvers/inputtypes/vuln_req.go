@@ -16,23 +16,18 @@ type VulnReqExpiry struct {
 // AsRequestExpiry converts vulnerability request expiry to proto.
 func (re *VulnReqExpiry) AsRequestExpiry() *storage.RequestExpiry {
 	if re == nil {
-		return nil
-	}
-	if re.ExpiresWhenFixed == nil && re.ExpiresOn == nil {
-		return nil
+		return &storage.RequestExpiry{}
 	}
 
 	ret := &storage.RequestExpiry{}
-	if re.ExpiresWhenFixed != nil {
-		if *re.ExpiresWhenFixed {
-			ret.Expiry = &storage.RequestExpiry_ExpiresWhenFixed{
-				ExpiresWhenFixed: true,
-			}
+	if re.ExpiresWhenFixed != nil && *re.ExpiresWhenFixed {
+		ret.Expiry = &storage.RequestExpiry_ExpiresWhenFixed{
+			ExpiresWhenFixed: true,
 		}
-	} else {
+	} else if re.ExpiresOn != nil {
 		ts := protoconv.ConvertTimeToTimestampOrNil(re.ExpiresOn.Time)
 		if ts == nil {
-			return nil
+			return &storage.RequestExpiry{}
 		}
 		ret.Expiry = &storage.RequestExpiry_ExpiresOn{
 			ExpiresOn: ts,
