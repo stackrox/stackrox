@@ -93,9 +93,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
 
         // Note: errors are handled and displayed down at the call site,
         //       ui/apps/platform/src/Containers/VulnMgmt/Reports/VulnMgmtReportTablePage.tsx
-        return Promise.all(runPromises).then(() => {
-            triggerRefresh();
-        });
+        return Promise.all(runPromises);
     }
 
     function onDeleteReports(reportIds) {
