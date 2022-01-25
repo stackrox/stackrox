@@ -85,8 +85,9 @@ func (i *sensorComponentImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return i.msgFromSensorC
 }
 
-// ProcessMessage cannot block as it would prevent centralReceiverImpl from sending messages
-// to other SensorComponent. This is running in the goroutine launched in centralReceiverImpl.Start.
+// ProcessMessage is how the central receiver delivers messages from central to SensorComponents.
+// This method must not block as it would prevent centralReceiverImpl from sending messages
+// to other SensorComponents.
 func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_IssueLocalScannerCertsResponse:
@@ -125,7 +126,7 @@ func (i *certIssuerImpl) RefreshCertificates(ctx context.Context) (timeToRefresh
 		return 0, requestErr
 	}
 	if response.GetError() != nil {
-		return 0, errors.Errorf("server side error: %s", response.GetError().GetMessage())
+		return 0, errors.Errorf("central refused to issue certificates: %s", response.GetError().GetMessage())
 	}
 
 	certificates := response.GetCertificates()
