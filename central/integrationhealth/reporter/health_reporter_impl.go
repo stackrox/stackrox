@@ -97,16 +97,12 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 		select {
 		case health := <-d.healthUpdates:
 			if health.Status == storage.IntegrationHealth_UNINITIALIZED {
-				d.lock.Lock()
-				defer d.lock.Unlock()
-				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
+				d.updateTimestampInCache(health)
 				if err := d.integrationDS.UpdateIntegrationHealth(allAccessCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
 			} else if health.LastTimestamp.Compare(d.latestDBTimestampMap[health.Id]) > 0 {
-				d.lock.Lock()
-				defer d.lock.Unlock()
-				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
+				d.updateTimestampInCache(health)
 				_, exists, err := d.integrationDS.GetIntegrationHealth(allAccessCtx, health.Id)
 				if err != nil {
 					log.Errorf("Error reading health for integration %s (%s): %v", health.Name, health.Id, err)
@@ -123,6 +119,12 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 			return
 		}
 	}
+}
+
+func (d *DatastoreBasedIntegrationHealthReporter) updateTimestampInCache(health *storage.IntegrationHealth) {
+	concurrency.WithLock(&d.lock, func() {
+		d.latestDBTimestampMap[health.Id] = health.LastTimestamp
+	})
 }
 
 // Singleton returns an instance of the integration health reporter
