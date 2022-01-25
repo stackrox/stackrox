@@ -192,8 +192,8 @@ func Command() *cobra.Command {
 	c.PersistentFlags().BoolVar(&continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")
 	c.PersistentFlags().StringVar(&cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&cluster.MainImage, "main-image-repository", "", "image repository sensor should be deployed with")
-	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (leave blank to use default)")
+	c.PersistentFlags().StringVar(&cluster.MainImage, "main-image-repository", "", "image repository sensor should be deployed with (if unset, the default will be used)")
+	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, the default will be derived from main repository)")
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
 
