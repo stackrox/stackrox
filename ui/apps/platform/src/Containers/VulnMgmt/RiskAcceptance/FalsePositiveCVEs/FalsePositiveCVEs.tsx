@@ -21,7 +21,7 @@ function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
             limit: perPage,
             offset: (page - 1) * perPage,
             sortOption: {
-                field: 'cve',
+                field: 'Severity',
                 reversed: true,
             },
         },
