@@ -11,7 +11,7 @@ import (
 // Split splits the input image into a set of parts.
 func Split(image *storage.Image, withComponents bool) ImageParts {
 	parts := ImageParts{
-		image:         image.Clone(),
+		image:         image,
 		imageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
