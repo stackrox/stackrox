@@ -8,26 +8,26 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/kubernetes/certificates"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
-	log                                = logging.LoggerForModule()
-	_   common.SensorComponent         = (*localScannerTLSIssuerImpl)(nil)
-	_   certificates.CertificateIssuer = (*localScannerTLSIssuerImpl)(nil)
-	_   certificates.CertificateIssuer = (*certIssuerImpl)(nil)
+	log                        = logging.LoggerForModule()
+	_   common.SensorComponent = (*localScannerTLSIssuerImpl)(nil)
+	//	_   certificates.CertificateIssuer = (*localScannerTLSIssuerImpl)(nil)
+	//	_   certificates.CertificateIssuer = (*certIssuerImpl)(nil)
 	_ certSecretsRepo = (*certSecretsRepoImpl)(nil)
 )
 
 // FIXME separate files for different structs
 type localScannerTLSIssuerImpl struct {
-	conf          config
-	certRefresher certificates.CertRefresher
+	conf              config
+	certRefreshTicker *concurrency.RetryTicker
 	certIssuerImpl
 	sensorComponentImpl
 }
@@ -65,10 +65,18 @@ type certSecretsRepoImpl struct {
 func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Info("starting local scanner TLS issuer.")
 
-	i.certRefresher = certificates.NewCertRefresher("FIXME desc", i, i.conf.certRefresherBackoff)
-	if err := i.certRefresher.Start(); err != nil {
-		return err
+	i.certRefreshTicker = concurrency.NewRetryTicker(i.RefreshCertificates,
+		time.Second,
+		i.conf.certRefresherBackoff)
+	certsDescription := "local scanner credentials"
+	i.certRefreshTicker.OnTickSuccess = func(nextTimeToTick time.Duration) {
+		log.Infof("successfully refreshed %v", certsDescription)
+		log.Infof("%v scheduled to be refreshed in %s", certsDescription, nextTimeToTick)
 	}
+	i.certRefreshTicker.OnTickError = func(refreshErr error) {
+		log.Errorf("refreshing %s: %s", certsDescription, refreshErr)
+	}
+	i.certRefreshTicker.Start()
 
 	log.Info("local scanner TLS issuer started.")
 
@@ -76,8 +84,8 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 }
 
 func (i *localScannerTLSIssuerImpl) Stop(err error) {
-	if i.certRefresher != nil {
-		i.certRefresher.Stop()
+	if i.certRefreshTicker != nil {
+		i.certRefreshTicker.Stop()
 	}
 	log.Info("local scanner TLS issuer stopped.")
 }
