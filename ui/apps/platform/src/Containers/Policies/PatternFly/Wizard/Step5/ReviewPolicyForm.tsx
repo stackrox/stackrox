@@ -4,6 +4,8 @@ import { useFormikContext } from 'formik';
 
 import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
+import { Cluster } from 'types/cluster.proto';
+import { NotifierIntegration } from 'types/notifier.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import PolicyDetailContent from '../../Detail/PolicyDetailContent';
@@ -11,7 +13,12 @@ import PreviewViolations from './PreviewViolations';
 
 import './ReviewPolicyForm.css';
 
-function ReviewPolicyForm(): ReactElement {
+type ReviewPolicyFormProps = {
+    clusters: Cluster[];
+    notifiers: NotifierIntegration[];
+};
+
+function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): ReactElement {
     const { values } = useFormikContext<Policy>();
 
     const [isRunningDryRun, setIsRunningDryRun] = useState(false);
@@ -85,7 +92,12 @@ function ReviewPolicyForm(): ReactElement {
                 <Title headingLevel="h2">Review policy</Title>
                 <div>Review policy settings and violations.</div>
                 <Divider component="div" />
-                <PolicyDetailContent clusters={[]} notifiers={[]} policy={values} />
+                <PolicyDetailContent
+                    clusters={clusters}
+                    notifiers={notifiers}
+                    policy={values}
+                    isReview
+                />
             </Flex>
             <Flex
                 flex={{ default: 'flex_1' }}

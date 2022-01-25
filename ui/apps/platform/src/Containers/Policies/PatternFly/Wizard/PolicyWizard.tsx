@@ -5,6 +5,7 @@ import { Wizard, Breadcrumb, Title, BreadcrumbItem, Divider } from '@patternfly/
 
 import { Policy } from 'types/policy.proto';
 import { Cluster } from 'types/cluster.proto';
+import { NotifierIntegration } from 'types/notifier.proto';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -19,9 +20,15 @@ type PolicyWizardProps = {
     pageAction: ExtendedPageAction;
     policy: Policy;
     clusters: Cluster[];
+    notifiers: NotifierIntegration[];
 };
 
-function PolicyWizard({ pageAction, policy, clusters }: PolicyWizardProps): ReactElement {
+function PolicyWizard({
+    pageAction,
+    policy,
+    clusters,
+    notifiers,
+}: PolicyWizardProps): ReactElement {
     const history = useHistory();
     const [stepId, setStepId] = useState(1);
     const [stepIdReached, setStepIdReached] = useState(1);
@@ -112,7 +119,9 @@ function PolicyWizard({ pageAction, policy, clusters }: PolicyWizardProps): Reac
                         {
                             id: 5,
                             name: 'Review policy',
-                            component: <ReviewPolicyForm />,
+                            component: (
+                                <ReviewPolicyForm clusters={clusters} notifiers={notifiers} />
+                            ),
                             nextButtonText: 'Save',
                             canJumpTo: stepIdReached >= 5,
                             enableNext: isValid,

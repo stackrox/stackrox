@@ -238,7 +238,7 @@ function PolicyDetail({
             </Toolbar>
             {requestError}
             <Title headingLevel="h2" className="pf-u-mb-md">
-                Policy overview
+                Policy details
             </Title>
             <Divider component="div" className="pf-u-pb-md" />
             <PolicyDetailContent clusters={clusters} policy={policy} notifiers={notifiers} />
