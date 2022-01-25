@@ -36,7 +36,7 @@ clean-generated-srcs:
 .PHONY: test
 test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test -Dgroups=TARGET
 
 .PHONY: bat-test
 bat-test: proto-generated-srcs
