@@ -211,8 +211,6 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 	img.Id = utils.GetImageID(img)
 	if img.GetId() != "" {
-		// Save the image if we received an ID from sensor
-		// Otherwise, our inferred ID may not match
 		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 			log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
 		}
