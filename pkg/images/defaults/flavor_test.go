@@ -1,7 +1,6 @@
 package defaults
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -137,20 +136,5 @@ func TestGetAllowedImageFlavorNames(t *testing.T) {
 			got := GetAllowedImageFlavorNames(tt.isRelease)
 			assert.EqualValues(t, tt.want, got)
 		})
-	}
-}
-
-func (s *imageFlavorTestSuite) TestFlavorsDontHaveEmptyFields() {
-	for _, f := range []ImageFlavor{DevelopmentBuildImageFlavor(), StackRoxIOReleaseImageFlavor(), RHACSReleaseImageFlavor()} {
-		data, err := json.Marshal(f)
-		s.Require().NoError(err)
-
-		mapData := make(map[string]interface{})
-		err = json.Unmarshal(data, &mapData)
-		s.Require().NoError(err)
-
-		for k, v := range mapData {
-			s.Assert().NotEmpty(v, "Field %q was empty but should have a value.", k)
-		}
 	}
 }
