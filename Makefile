@@ -439,7 +439,7 @@ webhookserver-build: build-prep
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: build-prep
 	@echo "+ $@"
-	$(GOBUILD) integration-tests/mock-grpc-server
+	CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
