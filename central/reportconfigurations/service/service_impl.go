@@ -174,11 +174,16 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	if config.GetEmailConfig() == nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify an email notifier configuration")
 	}
-	if config.GetEmailConfig().GetMailingLists() != nil {
-		for _, addr := range config.GetEmailConfig().GetMailingLists() {
-			if _, err := mail.ParseAddress(addr); err != nil {
-				return errors.Wrapf(errorhelpers.ErrInvalidArgs, "Invalid mailing list address: %s", addr)
-			}
+	if config.GetEmailConfig().GetNotifierId() == "" {
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify a valid email notifier")
+	}
+	if len(config.GetEmailConfig().GetMailingLists()) == 0 {
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify one more recipients to send the report to")
+	}
+
+	for _, addr := range config.GetEmailConfig().GetMailingLists() {
+		if _, err := mail.ParseAddress(addr); err != nil {
+			return errors.Wrapf(errorhelpers.ErrInvalidArgs, "Invalid mailing list address: %s", addr)
 		}
 	}
 
@@ -188,8 +193,12 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	}
 
 	_, found, err = s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
-	if !found || err != nil {
+	if err != nil {
 		return errors.Wrapf(errorhelpers.ErrNotFound, "Notifier %s not found. Error: %s", config.GetEmailConfig().GetNotifierId(), err)
 	}
+	if !found {
+		return errors.Wrapf(errorhelpers.ErrNotFound, "Notifier %s not found", config.GetEmailConfig().GetNotifierId())
+	}
+
 	return nil
 }
