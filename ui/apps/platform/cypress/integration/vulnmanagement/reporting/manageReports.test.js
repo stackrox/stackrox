@@ -14,7 +14,9 @@ describe('Vulnmanagement reports', () => {
 
     describe('creating a report', () => {
         beforeEach(() => {
-            cy.intercept('GET', api.report.configurations).as('getReportConfigurations');
+            cy.intercept('GET', api.report.configurations, { reportConfigs: [] }).as(
+                'getReportConfigurations'
+            );
         });
 
         it('should navigate to the Create Report view by button or directly', () => {
