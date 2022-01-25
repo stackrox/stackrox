@@ -11,9 +11,11 @@ import (
 )
 
 var (
-	_  common.SensorComponent = (*localScannerTLSIssuerImpl)(nil)
+	_ common.SensorComponent = (*localScannerTLSIssuerImpl)(nil)
 )
 
+// NewLocalScannerTLSIssuer creates a sensor component that will keep the local scanner certificates
+// fresh, using the specified retry parameters.
 func NewLocalScannerTLSIssuer(certRefreshTimeout time.Duration, certRefreshBackoff wait.Backoff) common.SensorComponent {
 	msgFromSensorC := make(msgFromSensorChan)
 	msgToSensorC := make(msgToSensorChan)
@@ -23,17 +25,17 @@ func NewLocalScannerTLSIssuer(certRefreshTimeout time.Duration, certRefreshBacko
 	}
 	return &localScannerTLSIssuerImpl{
 		msgFromSensorC: msgFromSensorC,
-		msgToSensorC: msgToSensorC,
-		certRefresher: newCertRefresher(requestCertificates, certRefreshTimeout, certRefreshBackoff),
+		msgToSensorC:   msgToSensorC,
+		certRefresher:  newCertRefresher(requestCertificates, certRefreshTimeout, certRefreshBackoff),
 	}
 }
 
 type msgFromSensorChan chan *central.MsgFromSensor
-type msgToSensorChan   chan *central.IssueLocalScannerCertsResponse
+type msgToSensorChan chan *central.IssueLocalScannerCertsResponse
 type localScannerTLSIssuerImpl struct {
 	msgFromSensorC msgFromSensorChan
 	msgToSensorC   msgToSensorChan
-	certRefresher certRefresher
+	certRefresher  certRefresher
 }
 
 func (i *localScannerTLSIssuerImpl) Start() error {

@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-	certsDescription = "local scanner credentials"
-	_ certRefresher = (*certRefresherImpl)(nil)
+	log                            = logging.LoggerForModule()
+	certsDescription               = "local scanner credentials"
+	_                certRefresher = (*certRefresherImpl)(nil)
 )
 
 type certRefresher interface {
@@ -28,16 +28,16 @@ func newCertRefresher(requestCertificates requestCertificatesFunc, timeout time.
 	backoff wait.Backoff) certRefresher {
 	return &certRefresherImpl{
 		requestCertificates: requestCertificates,
-		certRefreshTimeout: timeout,
-		certRefreshBackoff: backoff,
+		certRefreshTimeout:  timeout,
+		certRefreshBackoff:  backoff,
 	}
 }
 
 type certRefresherImpl struct {
 	requestCertificates requestCertificatesFunc
-	certRefreshTimeout time.Duration
-	certRefreshBackoff wait.Backoff
-	certRefreshTicker  *concurrency.RetryTicker
+	certRefreshTimeout  time.Duration
+	certRefreshBackoff  wait.Backoff
+	certRefreshTicker   *concurrency.RetryTicker
 	certSecretsRepoImpl // FIXME to composition
 }
 

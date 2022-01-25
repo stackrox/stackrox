@@ -11,13 +11,16 @@ var (
 	_ CertificateRequester = (*certRequesterSyncImpl)(nil)
 )
 
+// CertificateRequester request a new set of local scanner certificates to central.
 type CertificateRequester interface {
 	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 }
 
+// NewCertificateRequester creates a new CertificateRequester that communicates through
+// the specified channels, and that uses a fresh request ID.
 func NewCertificateRequester(msgFromSensorC chan *central.MsgFromSensor,
 	msgToSensorC chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
-	return  &certRequesterSyncImpl{
+	return &certRequesterSyncImpl{
 		requestID:      uuid.NewV4().String(),
 		msgFromSensorC: msgFromSensorC,
 		msgToSensorC:   msgToSensorC,
