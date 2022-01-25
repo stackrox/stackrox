@@ -336,6 +336,8 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			log.Errorf("context cancelled via stop: %v", err)
 			return
 		}
+		// Duplicates can exist if the image is within multiple deployments
+		clusterIDSet := set.NewStringSet(result.Matches[imageClusterIDFieldPath]...)
 		go func(id string, clusterIDs []string) {
 			defer sema.Release(1)
 			defer wg.Add(-1)
@@ -374,7 +376,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					log.Errorf("error injecting updated image %s to Sensor %q: %v", image.GetName().GetFullName(), clusterID, err)
 				}
 			}
-		}(result.ID, result.Matches[imageClusterIDFieldPath])
+		}(result.ID, clusterIDSet.AsSlice())
 	}
 	select {
 	case <-wg.Done():
