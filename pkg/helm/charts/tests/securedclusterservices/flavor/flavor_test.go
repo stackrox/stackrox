@@ -48,7 +48,7 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 			ch, err := tpl.InstantiateAndLoad(metaVals)
 			require.NoError(t, err, "error instantiating chart")
 
-			suite, err := helmTest.NewLoader(testDir, helmTest.WithAdditionalTestDirs(path.Join(), name)).LoadSuite()
+			suite, err := helmTest.NewLoader(testDir, helmTest.WithAdditionalTestDirs(path.Join(testDir, name))).LoadSuite()
 			require.NoError(t, err, "failed to load helmtest suite")
 
 			target := &helmTest.Target{
