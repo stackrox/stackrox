@@ -44,7 +44,7 @@ func (s uniformScopeCheckerCore) NeedsPostFiltering() bool {
 
 func (s uniformScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	if s {
-		return effectiveaccessscope.RestrictedEffectiveAccessScope(), nil
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
-	return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	return effectiveaccessscope.RestrictedEffectiveAccessScope(), nil
 }
