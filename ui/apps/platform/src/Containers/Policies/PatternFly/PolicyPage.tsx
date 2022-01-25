@@ -151,7 +151,12 @@ function PolicyPage({
             ) : (
                 policyError || // TODO ROX-8487: Improve PolicyPage when request fails
                 (pageAction ? (
-                    <PolicyWizard pageAction={pageAction} policy={policy} clusters={clusters} />
+                    <PolicyWizard
+                        pageAction={pageAction}
+                        policy={policy}
+                        clusters={clusters}
+                        notifiers={notifiers}
+                    />
                 ) : (
                     <PolicyDetail
                         clusters={clusters}
