@@ -20,6 +20,8 @@ var (
 	log                                = logging.LoggerForModule()
 	_   common.SensorComponent         = (*localScannerTLSIssuerImpl)(nil)
 	_   certificates.CertificateIssuer = (*localScannerTLSIssuerImpl)(nil)
+	_   certificates.CertificateIssuer = (*certIssuerImpl)(nil)
+	_ certSecretsRepo = (*certSecretsRepoImpl)(nil)
 )
 
 // FIXME separate files for different structs
@@ -49,6 +51,11 @@ type certSyncRequesterImpl struct {
 	requestID      string
 	msgFromSensorC chan *central.MsgFromSensor
 	msgToSensorC   chan *central.IssueLocalScannerCertsResponse
+}
+
+type certSecretsRepo interface {
+	getSecrets(ctx context.Context) (map[storage.ServiceType]*v1.Secret, error)
+	putSecrets(ctx context.Context, secrets map[storage.ServiceType]*v1.Secret) error
 }
 
 type certSecretsRepoImpl struct {
@@ -107,7 +114,7 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 // RefreshCertificates TODO doc
 // This is running in the goroutine for a refresh timer in i.certRefresher.
 func (i *certIssuerImpl) RefreshCertificates(ctx context.Context) (timeToRefresh time.Duration, err error) {
-	secrets, fetchErr := i.fetchSecrets(ctx)
+	secrets, fetchErr := i.getSecrets(ctx)
 	if fetchErr != nil {
 		return 0, fetchErr
 	}
@@ -130,7 +137,7 @@ func (i *certIssuerImpl) RefreshCertificates(ctx context.Context) (timeToRefresh
 	}
 
 	certificates := response.GetCertificates()
-	if refreshErr := i.refreshSecrets(ctx, certificates, secrets); refreshErr != nil {
+	if refreshErr := i.updateSecrets(ctx, certificates, secrets); refreshErr != nil {
 		return 0, refreshErr
 	}
 	timeToRefresh = time.Until(i.getCertRenewalTime(secrets))
@@ -141,10 +148,12 @@ func (i *certIssuerImpl) getCertRenewalTime(secrets map[storage.ServiceType]*v1.
 	return time.Now() // TODO
 }
 
-func (i *certIssuerImpl) refreshSecrets(ctx context.Context, certificates *storage.TypedServiceCertificateSet,
+// updateSecrets stores the certificates in the data of each corresponding secret, and then persists
+// the secrets in k8s.
+func (i *certIssuerImpl) updateSecrets(ctx context.Context, certificates *storage.TypedServiceCertificateSet,
 	secrets map[storage.ServiceType]*v1.Secret) error {
 	// TODO
-	return i.updateSecrets(secrets)
+	return i.putSecrets(ctx, secrets)
 }
 
 func (i *certSyncRequesterImpl) requestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
@@ -179,11 +188,11 @@ func (i *certSyncRequesterImpl) requestCertificates(ctx context.Context) (*centr
 	return response, nil
 }
 
-func (i *certSecretsRepoImpl) fetchSecrets(ctx context.Context) (map[storage.ServiceType]*v1.Secret, error) {
+func (i *certSecretsRepoImpl) getSecrets(ctx context.Context) (map[storage.ServiceType]*v1.Secret, error) {
 	secretsMap := make(map[storage.ServiceType]*v1.Secret, 3)
 	return secretsMap, nil // TODO
 }
 
-func (i *certSecretsRepoImpl) updateSecrets(secrets map[storage.ServiceType]*v1.Secret) error {
+func (i *certSecretsRepoImpl) putSecrets(ctx context.Context, secrets map[storage.ServiceType]*v1.Secret) error {
 	return nil // TODO
 }
