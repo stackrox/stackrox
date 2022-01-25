@@ -6,24 +6,24 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
 	pollingInterval = 10 * time.Millisecond
-	epsilonTime = 100 * time.Millisecond
-	longTime = 2 * time.Second
-	backoff = wait.Backoff{
+	epsilonTime     = 100 * time.Millisecond
+	longTime        = 2 * time.Second
+	backoff         = wait.Backoff{
 		Duration: epsilonTime,
-		Factor: 1,
-		Jitter: 0,
-		Steps: 1,
-		Cap: epsilonTime,
+		Factor:   1,
+		Jitter:   0,
+		Steps:    1,
+		Cap:      epsilonTime,
 	}
 )
+
 func TestHandler(t *testing.T) {
 	suite.Run(t, new(retryTickerSuite))
 }
@@ -55,13 +55,13 @@ func (s *retryTickerSuite) TestRetryTicker() {
 		// tickErr1 error
 		// timeToNextTick2 time.Duration
 		// tickErr2 error
-		forceError bool
+		forceError       bool
 		addEventHandlers bool
 	}{
-		"successWithEventHandlers": { forceError: false, addEventHandlers: true},
-		"successWithoutEventHandlers": { forceError: false, addEventHandlers: false},
-		"oneErrorWithEventHandlers": { forceError: true, addEventHandlers: true},
-		"oneErrorWithoutEventHandlers": { forceError: true, addEventHandlers: false},
+		"successWithEventHandlers":     {forceError: false, addEventHandlers: true},
+		"successWithoutEventHandlers":  {forceError: false, addEventHandlers: false},
+		"oneErrorWithEventHandlers":    {forceError: true, addEventHandlers: true},
+		"oneErrorWithoutEventHandlers": {forceError: true, addEventHandlers: false},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -84,7 +84,7 @@ func (s *retryTickerSuite) TestRetryTicker() {
 			m.On("f", mock.Anything).Return(longTime, nil).Run(func(args mock.Arguments) {
 				done2.Set(true)
 			}).Once()
-			if tc.addEventHandlers  {
+			if tc.addEventHandlers {
 				ticker.OnTickSuccess = m.OnTickSuccess
 				ticker.OnTickError = m.OnTickError
 				if !tc.forceError {
@@ -100,9 +100,9 @@ func (s *retryTickerSuite) TestRetryTicker() {
 
 			s.True(PollWithTimeout(done1.Get, pollingInterval, epsilonTime))
 			if !tc.forceError {
-				s.True(PollWithTimeout(done2.Get, pollingInterval, wait1 + epsilonTime))
+				s.True(PollWithTimeout(done2.Get, pollingInterval, wait1+epsilonTime))
 			} else {
-				s.True(PollWithTimeout(done2.Get, pollingInterval, backoff.Cap + epsilonTime))
+				s.True(PollWithTimeout(done2.Get, pollingInterval, backoff.Cap+epsilonTime))
 			}
 
 			m.AssertExpectations(s.T())
