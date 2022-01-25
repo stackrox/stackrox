@@ -45,8 +45,7 @@ func Test_errRox_Is(t *testing.T) {
 
 func TestWrap(t *testing.T) {
 	{
-		err := NotFound
-		err = Wrap(err, NotAuthorized)
+		err := Wrap(NotFound, NotAuthorized)
 
 		assert.NotErrorIs(t, err, InvalidArgs)
 		assert.ErrorIs(t, err, NotFound)
@@ -69,7 +68,10 @@ func TestError(t *testing.T) {
 	{
 		err := NotFound
 		assert.Equal(t, "not found", err.Error())
-		err = Wrap(err, NotAuthorized)
+	}
+
+	{
+		err := Wrap(NotFound, NotAuthorized)
 		assert.Equal(t, "not authorized: not found", err.Error())
 	}
 

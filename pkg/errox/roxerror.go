@@ -59,7 +59,7 @@ func (e *customError) Base() RoxError {
 }
 
 // Wrap wraps an error by a RoxError. Returns a new error. Panics if rox is nil.
-func Wrap(cause error, rox RoxError) RoxError {
+func Wrap(cause error, rox RoxError) error {
 	return &customError{
 		base:    rox,
 		cause:   cause,
