@@ -7,7 +7,32 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/sync"
 )
+
+var (
+	lazyTemplateCache = &templateCache{templates: make(map[string]*template.Template)}
+)
+
+type templateCache struct {
+	templates map[string]*template.Template
+
+	lock sync.RWMutex
+}
+
+func (t *templateCache) Get(tpl string) *template.Template {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	return t.templates[tpl]
+}
+
+func (t *templateCache) Set(tpl string, tmpl *template.Template) {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	t.templates[tpl] = tmpl
+}
 
 func stringSliceToSortedSentence(s []string) string {
 	sort.Strings(s)
@@ -56,12 +81,18 @@ func getSingleValueFromFieldMap(f string, fieldMap map[string][]string) (string,
 }
 
 func executeTemplate(tpl string, values interface{}) ([]string, error) {
-	tmpl, err := template.New("").Parse(tpl)
-	if err != nil {
-		return nil, err
+	tmpl := lazyTemplateCache.Get(tpl)
+	if tmpl == nil {
+		var err error
+		tmpl, err = template.New("").Parse(tpl)
+		if err != nil {
+			return nil, err
+		}
+		lazyTemplateCache.Set(tpl, tmpl)
 	}
+
 	var sb strings.Builder
-	err = tmpl.Execute(&sb, values)
+	err := tmpl.Execute(&sb, values)
 	if err != nil {
 		return nil, err
 	}
