@@ -319,7 +319,7 @@ test_upgrade_paths() {
 
     cd "$REPO_FOR_TIME_TRAVEL"
 
-    validate_upgrade "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7" "../image/policies/files"
+    validate_upgrade "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     cd "$TEST_ROOT"
 
