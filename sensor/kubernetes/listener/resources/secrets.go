@@ -188,7 +188,6 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 	// In OpenShift, the default service account also contains credentials for the
 	// OpenShift Container Registry, which is an internal image registry.
 	fromDefaultSA := secret.GetAnnotations()[saAnnotation] == defaultSA
-	log.Infof("Secret %s:%s from default SA? %v", secret.GetName(), secret.GetNamespace(), secret.GetAnnotations()[saAnnotation] == defaultSA)
 	for registry, dce := range dockerConfig {
 		if features.LocalImageScanning.Enabled() {
 			if fromDefaultSA {
