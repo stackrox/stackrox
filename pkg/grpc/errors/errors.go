@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/errox"
