@@ -848,10 +848,18 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
+// GetClusterDefaults is consumed by the API to provide the user with the default secured cluster values.
 func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
 	cluster := &storage.Cluster{}
 	if err := addDefaults(cluster); err != nil {
 		return nil, err
+	}
+
+	// Collector image default is not supposed to be stored in cluster object but only used to display to the user
+	// on the UI.
+	flavor := defaults.GetImageFlavorFromEnv()
+	if cluster.GetCollectorImage() == "" {
+		cluster.CollectorImage = flavor.CollectorFullImageNoTag()
 	}
 	return cluster, nil
 }
@@ -867,6 +875,7 @@ func validateInput(cluster *storage.Cluster) error {
 	return clusterValidation.Validate(cluster).ToError()
 }
 
+// addDefaults adds default values that cannot be stored empty in the cluster object.
 func addDefaults(cluster *storage.Cluster) error {
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
@@ -901,11 +910,8 @@ func addDefaults(cluster *storage.Cluster) error {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
 	}
 	flavor := defaults.GetImageFlavorFromEnv()
-	if cluster.CollectorImage == "" {
-		cluster.CollectorImage = flavor.CollectorImageNoTag()
-	}
 	if cluster.GetMainImage() == "" {
-		cluster.MainImage = flavor.MainImage()
+		cluster.MainImage = flavor.MainImageNoTag()
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		cluster.CentralApiEndpoint = "central.stackrox:443"
