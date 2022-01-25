@@ -68,12 +68,10 @@ func (rs *RegistryStore) upsertRegistry(namespace, registry string, dce types.Do
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
 
-	log.Infof("Updated registry store with %q (Secure: %v)", registry, secure)
-
 	return nil
 }
 
-// getAllInNamespace returns all the registries+credentials within a given namespace.
+// getAllInNamespace returns all the registries within a given namespace.
 func (rs *RegistryStore) getAllInNamespace(namespace string) registries.Set {
 	rs.mutex.RLock()
 	defer rs.mutex.RUnlock()
