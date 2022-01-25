@@ -107,7 +107,6 @@ type serviceImpl struct {
 	lifecycleManager  lifecycle.Manager
 	processor         notifierProcessor.Processor
 	metadataCache     expiringcache.Cache
-	scanCache         expiringcache.Cache
 
 	validator *policyValidator
 
@@ -331,7 +330,6 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, error) {
 	// Invalidate scan and metadata caches
 	s.metadataCache.RemoveAll()
-	s.scanCache.RemoveAll()
 
 	s.reprocessor.ShortCircuit()
 	return &v1.Empty{}, nil

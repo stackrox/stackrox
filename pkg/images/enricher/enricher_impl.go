@@ -217,23 +217,34 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 	return true, nil
 }
 
+func (e *enricherImpl) fetchFromDatabase(img *storage.Image, option FetchOption) bool {
+	if option == ForceRefetch || option == ForceRefetchScansOnly {
+		return false
+	}
+	// See if the image exists in the DB with a scan, if it does, then use that instead of fetching
+	id := utils.GetImageID(img)
+	if id == "" {
+		return false
+	}
+	existingImage, exists, err := e.imageGetter(sac.WithAllAccess(context.Background()), id)
+	if err != nil {
+		log.Errorf("error fetching image %q: %v", id, err)
+		return false
+	}
+	if exists && existingImage.GetScan() != nil {
+		img.Scan = existingImage.GetScan()
+		return true
+	}
+	return false
+}
+
 func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) (ScanResult, error) {
 	// Attempt to short-circuit before checking scanners.
 	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
 		return ScanNotDone, nil
 	}
-	if ctx.FetchOpt != ForceRefetch && ctx.FetchOpt != ForceRefetchScansOnly {
-		// See if the image exists in the DB with a scan, if it does, then use that instead of fetching
-		id := utils.GetImageID(image)
-		if id != "" {
-			existingImage, exists, err := e.imageGetter(sac.WithAllAccess(context.Background()), id)
-			if err != nil {
-				return ScanNotDone, errors.Wrapf(err, "fetching image %q", id)
-			}
-			if exists && existingImage.GetScan() != nil {
-				return ScanSucceeded, nil
-			}
-		}
+	if e.fetchFromDatabase(image, ctx.FetchOpt) {
+		return ScanSucceeded, nil
 	}
 
 	if ctx.FetchOpt == NoExternalMetadata {
