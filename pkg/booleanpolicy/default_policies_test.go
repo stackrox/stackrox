@@ -2807,6 +2807,172 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	suite.Empty(violations)
 }
 
+func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
+	for _, testCase := range []struct {
+		caseName    string
+		containers  []*storage.Container
+		policyValue string
+		alerts      []*storage.Alert_Violation
+	}{
+		{
+			caseName: "Should raise alert since liveness probe is defined.",
+			containers: []*storage.Container{
+				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: true}},
+			},
+			policyValue: "true",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Liveness probe is defined for container 'container'"},
+			},
+		},
+		{
+			caseName: "Should not raise alert since liveness probe is defined.",
+			containers: []*storage.Container{
+				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: true}},
+			},
+			policyValue: "false",
+			alerts:      nil,
+		},
+		{
+			caseName: "Should not raise alert since liveness probe is not defined.",
+			containers: []*storage.Container{
+				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+			},
+			policyValue: "true",
+			alerts:      nil,
+		},
+		{
+			caseName: "Should raise alert since liveness probe is not defined.",
+			containers: []*storage.Container{
+				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Liveness probe is not defined for container 'container'"},
+			},
+		},
+		{
+			caseName: "Should raise alert for both containers.",
+			containers: []*storage.Container{
+				{Name: "container-1", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+				{Name: "container-2", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Liveness probe is not defined for container 'container-1'"},
+				{Message: "Liveness probe is not defined for container 'container-2'"},
+			},
+		},
+		{
+			caseName: "Should raise alert only for container-2.",
+			containers: []*storage.Container{
+				{Name: "container-1", LivenessProbe: &storage.LivenessProbe{Defined: true}},
+				{Name: "container-2", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Liveness probe is not defined for container 'container-2'"},
+			},
+		},
+	} {
+		suite.Run(testCase.caseName, func() {
+			deployment := fixtures.GetDeployment().Clone()
+			deployment.Containers = testCase.containers
+			policy := policyWithSingleKeyValue(fieldnames.LivenessProbeDefined, testCase.policyValue, false)
+
+			matcher, err := BuildDeploymentMatcher(policy)
+			suite.NoError(err, "deployment matcher creation must succeed")
+			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			suite.NoError(err, "deployment matcher run must succeed")
+
+			suite.Empty(violations.ProcessViolation)
+			suite.Equal(violations.AlertViolations, testCase.alerts)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
+	for _, testCase := range []struct {
+		caseName    string
+		containers  []*storage.Container
+		policyValue string
+		alerts      []*storage.Alert_Violation
+	}{
+		{
+			caseName: "Should raise alert since readiness probe is defined.",
+			containers: []*storage.Container{
+				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
+			},
+			policyValue: "true",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Readiness probe is defined for container 'container'"},
+			},
+		},
+		{
+			caseName: "Should not raise alert since readiness probe is defined.",
+			containers: []*storage.Container{
+				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
+			},
+			policyValue: "false",
+			alerts:      nil,
+		},
+		{
+			caseName: "Should not raise alert since readiness probe is not defined.",
+			containers: []*storage.Container{
+				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+			},
+			policyValue: "true",
+			alerts:      nil,
+		},
+		{
+			caseName: "Should raise alert since readiness probe is not defined.",
+			containers: []*storage.Container{
+				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Readiness probe is not defined for container 'container'"},
+			},
+		},
+		{
+			caseName: "Should raise alert for both containers.",
+			containers: []*storage.Container{
+				{Name: "container-1", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+				{Name: "container-2", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Readiness probe is not defined for container 'container-1'"},
+				{Message: "Readiness probe is not defined for container 'container-2'"},
+			},
+		},
+		{
+			caseName: "Should raise alert only for container-2.",
+			containers: []*storage.Container{
+				{Name: "container-1", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
+				{Name: "container-2", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Readiness probe is not defined for container 'container-2'"},
+			},
+		},
+	} {
+		suite.Run(testCase.caseName, func() {
+			deployment := fixtures.GetDeployment().Clone()
+			deployment.Containers = testCase.containers
+			policy := policyWithSingleKeyValue(fieldnames.ReadinessProbeDefined, testCase.policyValue, false)
+
+			matcher, err := BuildDeploymentMatcher(policy)
+			suite.NoError(err, "deployment matcher creation must succeed")
+			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			suite.NoError(err, "deployment matcher run must succeed")
+
+			suite.Empty(violations.ProcessViolation)
+			suite.Equal(violations.AlertViolations, testCase.alerts)
+		})
+	}
+}
+
 func newIndicator(deployment *storage.Deployment, name, args, execFilePath string) *storage.ProcessIndicator {
 	return &storage.ProcessIndicator{
 		Id:            uuid.NewV4().String(),

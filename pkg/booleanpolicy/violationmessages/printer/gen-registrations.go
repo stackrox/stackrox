@@ -23,6 +23,7 @@ const (
 	ImageScanAgeKey                 = "imageScanAge"
 	ImageUserKey                    = "imageUser"
 	LineKey                         = "line"
+	LivenessProbeDefinedKey         = "livenessProbeDefined"
 	NamespaceKey                    = "namespace"
 	NodePortKey                     = "nodePort"
 	PortKey                         = "port"
@@ -31,6 +32,7 @@ const (
 	ProcessBaselineKey              = "processBaseline"
 	RbacKey                         = "rbac"
 	ReadOnlyRootFSKey               = "readOnlyRootFS"
+	ReadinessProbeDefinedKey        = "readinessProbeDefined"
 	RequiredAnnotationKey           = "requiredAnnotation"
 	RequiredImageLabelKey           = "requiredImageLabel"
 	RequiredLabelKey                = "requiredLabel"
@@ -62,6 +64,7 @@ func init() {
 	registerFunc(ImageScanAgeKey, imageScanAgePrinter)
 	registerFunc(ImageUserKey, imageUserPrinter)
 	registerFunc(LineKey, linePrinter)
+	registerFunc(LivenessProbeDefinedKey, livenessProbeDefinedPrinter)
 	registerFunc(NamespaceKey, namespacePrinter)
 	registerFunc(NodePortKey, nodePortPrinter)
 	registerFunc(PortKey, portPrinter)
@@ -70,6 +73,7 @@ func init() {
 	registerFunc(ProcessBaselineKey, processBaselinePrinter)
 	registerFunc(RbacKey, rbacPrinter)
 	registerFunc(ReadOnlyRootFSKey, readOnlyRootFSPrinter)
+	registerFunc(ReadinessProbeDefinedKey, readinessProbeDefinedPrinter)
 	registerFunc(RequiredAnnotationKey, requiredAnnotationPrinter)
 	registerFunc(RequiredImageLabelKey, requiredImageLabelPrinter)
 	registerFunc(RequiredLabelKey, requiredLabelPrinter)

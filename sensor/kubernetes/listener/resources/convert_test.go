@@ -376,6 +376,8 @@ func TestConvert(t *testing.T) {
 											v1.ResourceMemory: resource.MustParse("2Gi"),
 										},
 									},
+									LivenessProbe:  &v1.Probe{TimeoutSeconds: 10},
+									ReadinessProbe: &v1.Probe{TimeoutSeconds: 10},
 								},
 								{
 									Name: "container2",
@@ -580,6 +582,8 @@ func TestConvert(t *testing.T) {
 								Protocol:      "UCP",
 							},
 						},
+						LivenessProbe:  &storage.LivenessProbe{Defined: true},
+						ReadinessProbe: &storage.ReadinessProbe{Defined: true},
 					},
 					{
 						Id:   "FooID:container2",
@@ -632,7 +636,9 @@ func TestConvert(t *testing.T) {
 								Type:        "HostPath",
 							},
 						},
-						Resources: &storage.Resources{},
+						Resources:      &storage.Resources{},
+						LivenessProbe:  &storage.LivenessProbe{Defined: false},
+						ReadinessProbe: &storage.ReadinessProbe{Defined: false},
 					},
 				},
 			},

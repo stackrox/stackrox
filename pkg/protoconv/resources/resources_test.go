@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -148,4 +149,110 @@ func TestIsTrackedReference(t *testing.T) {
 			assert.Equal(t, IsTrackedOwnerReference(c.ref), c.isTracked)
 		})
 	}
+}
+
+func TestContainerLivenessProbePopulation(t *testing.T) {
+	for _, testCase := range []struct {
+		caseName             string
+		livenessProbeDefined bool
+		probe                *v1.Probe
+	}{
+		{
+			caseName:             "Liveness probe defined.",
+			livenessProbeDefined: true,
+			probe:                &v1.Probe{TimeoutSeconds: 10},
+		},
+		{
+			caseName:             "Liveness probe zero value.",
+			livenessProbeDefined: false,
+			probe:                &v1.Probe{},
+		},
+		{
+			caseName:             "No liveness probe defined.",
+			livenessProbeDefined: false,
+			probe:                nil,
+		},
+	} {
+		t.Run(testCase.caseName, func(t *testing.T) {
+			emptyContainer := &storage.Container{}
+			containers := []*storage.Container{emptyContainer}
+			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			spec := v1.PodSpec{Containers: []v1.Container{{LivenessProbe: testCase.probe}}}
+
+			deploymentWrap.populateProbes(spec)
+
+			livenessProbe := deploymentWrap.GetContainers()[0].GetLivenessProbe()
+			assert.Equal(t, livenessProbe.Defined, testCase.livenessProbeDefined)
+		})
+	}
+}
+
+func TestContainerLivenessProbeNotDefinedWhenEmptyInSpec(t *testing.T) {
+	livenessProbeDefined := false
+	emptyContainer := &storage.Container{}
+	containers := []*storage.Container{emptyContainer}
+	deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+
+	probeJSON := `{"LivenessProbe": {}}`
+	var probe v1.Probe
+	err := json.Unmarshal([]byte(probeJSON), &probe)
+	spec := v1.PodSpec{Containers: []v1.Container{{LivenessProbe: &probe}}}
+	deploymentWrap.populateProbes(spec)
+
+	assert.NoError(t, err)
+	livenessProbe := deploymentWrap.GetContainers()[0].GetLivenessProbe()
+	assert.Equal(t, livenessProbe.Defined, livenessProbeDefined)
+}
+
+func TestContainerReadinessProbePopulation(t *testing.T) {
+	for _, testCase := range []struct {
+		caseName              string
+		readinessProbeDefined bool
+		probe                 *v1.Probe
+	}{
+		{
+			caseName:              "Readiness probe defined.",
+			readinessProbeDefined: true,
+			probe:                 &v1.Probe{TimeoutSeconds: 10},
+		},
+		{
+			caseName:              "Readiness probe zero value.",
+			readinessProbeDefined: false,
+			probe:                 &v1.Probe{},
+		},
+		{
+			caseName:              "No readiness probe defined.",
+			readinessProbeDefined: false,
+			probe:                 nil,
+		},
+	} {
+		t.Run(testCase.caseName, func(t *testing.T) {
+			emptyContainer := &storage.Container{}
+			containers := []*storage.Container{emptyContainer}
+			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			spec := v1.PodSpec{Containers: []v1.Container{{ReadinessProbe: testCase.probe}}}
+
+			deploymentWrap.populateProbes(spec)
+
+			readinessProbe := deploymentWrap.GetContainers()[0].GetReadinessProbe()
+			assert.Equal(t, readinessProbe.Defined, testCase.readinessProbeDefined)
+		})
+	}
+}
+
+func TestContainerReadinessProbeNotDefinedWhenEmptyInSpec(t *testing.T) {
+	readinessProbeDefined := false
+	emptyContainer := &storage.Container{}
+	containers := []*storage.Container{emptyContainer}
+	deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+
+	probeJSON := `{"ReadinessProbe": {}}`
+	var probe v1.Probe
+	err := json.Unmarshal([]byte(probeJSON), &probe)
+	spec := v1.PodSpec{Containers: []v1.Container{{ReadinessProbe: &probe}}}
+	deploymentWrap.populateProbes(spec)
+
+	assert.NoError(t, err)
+	readinessProbe := deploymentWrap.GetContainers()[0].GetReadinessProbe()
+	assert.Equal(t, readinessProbe.Defined, readinessProbeDefined)
 }
