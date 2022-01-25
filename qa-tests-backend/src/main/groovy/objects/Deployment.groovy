@@ -46,6 +46,8 @@ class Deployment {
     Boolean createLoadBalancer = false
     Boolean createRoute = false
     Boolean automountServiceAccountToken = true
+    Boolean livenessProbeDefined = true
+    Boolean readinessProbeDefined = true
     String serviceName
     String serviceAccountName
 
@@ -214,6 +216,16 @@ class Deployment {
 
     Deployment setHostNetwork(boolean val) {
         this.hostNetwork = val
+        return this
+    }
+
+    Deployment setLivenessProbeDefined(Boolean probeDefined) {
+        this.livenessProbeDefined = probeDefined
+        return this
+    }
+
+    Deployment setReadinessProbeDefined(Boolean probeDefined) {
+        this.readinessProbeDefined = probeDefined
         return this
     }
 

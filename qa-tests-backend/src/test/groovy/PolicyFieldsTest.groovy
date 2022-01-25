@@ -67,6 +67,8 @@ class PolicyFieldsTest extends BaseSpecification {
                             )
                     )
                     .setCreateRoute(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+                    .setLivenessProbeDefined(true)
+                    .setReadinessProbeDefined(true)
 
     static final private BASED_ON_DEBIAN_7 = DEP_A
     static final private WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG = DEP_A
@@ -97,6 +99,8 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITH_RW_ROOT_FS = DEP_A
     static final private IS_SCANNED = DEP_A
     static final private WITH_A_RW_FOO_VOLUME = DEP_A
+    static final private WITH_LIVENESS_PROBE = DEP_A
+    static final private WITH_READINESS_PROBE = DEP_A
 
     static final private Deployment DEP_B =
             createAndRegisterDeployment()
@@ -128,6 +132,8 @@ class PolicyFieldsTest extends BaseSpecification {
                             ),
                             true
                     )
+                    .setLivenessProbeDefined(false)
+                    .setReadinessProbeDefined(false)
 
     static final private BASED_ON_CENTOS_8 = DEP_B
     static final private WITH_ADD_CAPS_NET_ADMIN = DEP_B
@@ -159,6 +165,8 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITHOUT_PROCESS_UID_1 = DEP_B
     static final private WITH_A_RO_HOST_BAR_VOLUME = DEP_B
     static final private WITH_SEVERITY_GT_IMPORTANT = DEP_B
+    static final private WITHOUT_LIVENESS_PROBE = DEP_B
+    static final private WITHOUT_READINESS_PROBE = DEP_B
 
     static final private CONFIG_MAP_NAME = "test-config-map"
     static final private SECRET_NAME = "test-secret"
@@ -553,6 +561,14 @@ class PolicyFieldsTest extends BaseSpecification {
             ["30"]
     )
 
+    // "Liveness Probe Defined"
+
+    // static final private NO_LIVENESS_PROBE_DEFINED = setPolicyFieldANDValues(
+    //         BASE_POLICY.clone().setName("AAA_NO_LIVENESS_PROBE_DEFINED"),
+    //         "Liveness Probe Defined",
+    //         ["false"]
+    // )
+
     // "Minimum RBAC Permissions"
 
     static final private MINIMUM_RBAC_CLUSTER_WIDE = setPolicyFieldANDValues(
@@ -654,6 +670,14 @@ class PolicyFieldsTest extends BaseSpecification {
             "Read-Only Root Filesystem",
             ["false"]
     )
+
+    // "Readiness Probe Defined"
+
+    // static final private NO_READINESS_PROBE_DEFINED = setPolicyFieldANDValues(
+    //         BASE_POLICY.clone().setName("AAA_NO_READINESS_PROBE_DEFINED"),
+    //         "Readiness Probe Defined",
+    //         ["false"]
+    // )
 
     // "Required Annotation"
 
@@ -895,6 +919,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Image Remote"                    | NO_IMAGE_REMOTE                      | WITH_IMAGE_REMOTE_TO_MATCH              | "match"
         "Image Tag"                       | NO_IMAGE_TAG                         | WITH_IMAGE_TAG_TO_MATCH                 | "match"
         //"Image Scan Age"                  | NO_OLD_IMAGE_SCANS | UNSCANNED | "match"
+        // "Liveness Probe Defined"          | NO_LIVENESS_PROBE_DEFINED            | WITHOUT_LIVENESS_PROBE                  | "match"
         "Minimum RBAC Permissions"        | MINIMUM_RBAC_CLUSTER_WIDE            | SENSOR                                  | "match"
         "Namespace"                       | HAS_POLICYFIELDSTEST_IN_NAMESPACE    | WITH_NAMESPACE_POLICYFIELDTEST_C        | "match"
         "Namespace"                       | HAS_POLICYFIELDSTEST_IN_NAMESPACE    | WITH_NAMESPACE_POLICYFIELDTEST_D        | "match"
@@ -908,6 +933,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Process Name"                    | HAS_BASH_EXEC                        | WITH_BASH_EXEC                          | "match"
         "Process UID"                     | HAS_PROCESS_UID_1                    | WITH_PROCESS_UID_1                      | "match"
         "Read-Only Root Filesystem"       | HAS_RW_ROOT_FS                       | WITH_RW_ROOT_FS                         | "match"
+        // "Readiness Probe Defined"         | NO_READINESS_PROBE_DEFINED           | WITHOUT_READINESS_PROBE                 | "match"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE    | WITH_KEY_ONLY_ANNOTATION                | "no key only when value required"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE    | WITH_MISMATCHED_ANNOTATIONS             | "both required"
         "Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_ONLY        | WITHOUT_IMAGE_LABELS                    | "no labels I"
@@ -987,6 +1013,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Image Remote"                    | NO_IMAGE_REMOTE                       | WITH_IMAGE_REMOTE_TO_NOT_MATCH         | "no match"
         "Image Tag"                       | NO_IMAGE_TAG                          | WITH_IMAGE_TAG_TO_NOT_MATCH            | "no match"
         "Image Scan Age"                  | NO_OLD_IMAGE_SCANS                    | WITH_RECENT_SCAN_AGE                   | "no match"
+        // "Liveness Probe Defined"          | NO_LIVENESS_PROBE_DEFINED             | WITH_LIVENESS_PROBE                    | "no match"
         "Minimum RBAC Permissions"        | MINIMUM_RBAC_CLUSTER_WIDE             | CENTRAL                                | "no match"
         "Namespace"                       | IS_NAMESPACE_OF_DEPLOYMENT_D          | WITH_NAMESPACE_POLICYFIELDTEST_C       | "no match"
         "Service Account"                 | DEFAULT_SERVICE_ACCOUNT_NAME          | CENTRAL                                | "no match"
@@ -998,6 +1025,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Process Name"                    | HAS_BASH_EXEC                         | WITHOUT_BASH_EXEC                      | "no match"
         "Process UID"                     | HAS_PROCESS_UID_1                     | WITHOUT_PROCESS_UID_1                  | "no match"
         "Read-Only Root Filesystem"       | HAS_RW_ROOT_FS                        | WITH_RDONLY_ROOT_FS                    | "no match"
+        // "Readiness Probe Defined"         | NO_READINESS_PROBE_DEFINED            | WITH_READINESS_PROBE                   | "no match"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_ONLY          | WITH_KEY_ONLY_ANNOTATION               | "key only"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_ONLY          | WITH_KEY_AND_VALUE_ANNOTATION          | "key only matches key and value"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE     | WITH_KEY_AND_VALUE_ANNOTATION          | "key and value"

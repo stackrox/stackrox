@@ -36,6 +36,7 @@ import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.Quantity
+import io.fabric8.kubernetes.api.model.Probe
 import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ResourceRequirements
 import io.fabric8.kubernetes.api.model.Secret as K8sSecret
@@ -2109,7 +2110,9 @@ class Kubernetes implements OrchestratorMain {
                 securityContext: new SecurityContext(privileged: deployment.isPrivileged,
                                                      readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
-                                                                                    drop: deployment.dropCapabilities))
+                                                                                    drop: deployment.dropCapabilities)),
+                livenessProbe: deployment.livenessProbeDefined ? new Probe(timeoutSeconds: 10) : null,
+                readinessProbe: deployment.readinessProbeDefined ? new Probe(timeoutSeconds: 10) : null,
         )
 
         PodSpec podSpec = new PodSpec(
