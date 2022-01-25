@@ -1,97 +1,95 @@
 import React, { ReactElement } from 'react';
-import { Card, CardBody, DescriptionList, Grid, GridItem, Title } from '@patternfly/react-core';
+import {
+    Card,
+    CardBody,
+    DescriptionList,
+    Grid,
+    GridItem,
+    Title,
+    Divider,
+    CardHeader,
+} from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
+import MitreAttackVectorsView from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
 
-import {
-    formatCategories,
-    formatEventSource,
-    formatLifecycleStages,
-    formatResponse,
-    formatType,
-    getEnforcementLifecycleStages,
-} from '../policies.utils';
+import { formatCategories, formatType } from '../policies.utils';
 import PolicySeverityLabel from '../PolicySeverityLabel';
-
 import Notifier from './Notifier';
 
 type PolicyOverviewProps = {
     notifiers: NotifierIntegration[];
     policy: Policy;
+    isReview?: boolean;
 };
 
-function PolicyOverview({ notifiers, policy }: PolicyOverviewProps): ReactElement {
+function PolicyOverview({
+    notifiers,
+    policy,
+    isReview = false,
+}: PolicyOverviewProps): ReactElement {
     const {
         categories,
         description,
-        enforcementActions,
-        eventSource,
         isDefault,
-        lifecycleStages,
         notifiers: notifierIds,
         rationale,
         remediation,
         severity,
+        name,
     } = policy;
-    const enforcementLifecycleStages = getEnforcementLifecycleStages(
-        lifecycleStages,
-        enforcementActions
-    );
-
     return (
-        <>
-            <DescriptionList isCompact isHorizontal>
-                <DescriptionListItem
-                    term="Severity"
-                    desc={<PolicySeverityLabel severity={severity} />}
-                />
-                <DescriptionListItem term="Categories" desc={formatCategories(categories)} />
-                <DescriptionListItem term="Type" desc={formatType(isDefault)} />
-                <DescriptionListItem term="Description" desc={description} />
-                <DescriptionListItem term="Rationale" desc={rationale} />
-                <DescriptionListItem term="Guidance" desc={remediation} />
-            </DescriptionList>
-            <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
-                Behavior
-            </Title>
-            <DescriptionList isCompact isHorizontal>
-                <DescriptionListItem
-                    term="Lifecycle stages"
-                    desc={formatLifecycleStages(lifecycleStages)}
-                />
-                <DescriptionListItem term="Event source" desc={formatEventSource(eventSource)} />
-                <DescriptionListItem
-                    term="Response"
-                    desc={formatResponse(enforcementLifecycleStages)}
-                />
-                {enforcementLifecycleStages.length !== 0 && (
-                    <DescriptionListItem
-                        term="Enforcement"
-                        desc={formatLifecycleStages(enforcementLifecycleStages)}
-                    />
-                )}
-            </DescriptionList>
-            {notifierIds.length !== 0 && (
-                <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
-                        Notifiers
+        <Card isFlat>
+            {isReview && (
+                <CardHeader>
+                    <Title headingLevel="h2" size="lg">
+                        {name}
                     </Title>
-                    <Grid hasGutter>
-                        {notifierIds.map((notifierId) => (
-                            <GridItem key={notifierId} span={4}>
-                                <Card isFlat>
-                                    <CardBody>
-                                        <Notifier notifierId={notifierId} notifiers={notifiers} />
-                                    </CardBody>
-                                </Card>
-                            </GridItem>
-                        ))}
-                    </Grid>
-                </>
+                </CardHeader>
             )}
-        </>
+            <CardBody>
+                <DescriptionList isCompact isHorizontal>
+                    <DescriptionListItem
+                        term="Severity"
+                        desc={<PolicySeverityLabel severity={severity} />}
+                    />
+                    <DescriptionListItem term="Categories" desc={formatCategories(categories)} />
+                    <DescriptionListItem term="Type" desc={formatType(isDefault)} />
+                    <DescriptionListItem term="Description" desc={description} />
+                    <DescriptionListItem term="Rationale" desc={rationale} />
+                    <DescriptionListItem term="Guidance" desc={remediation} />
+                </DescriptionList>
+                {notifierIds.length !== 0 && (
+                    <>
+                        <Divider component="div" className="pf-u-mt-md" />
+                        <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                            Notifiers
+                        </Title>
+                        <Grid hasGutter sm={12} md={6}>
+                            {notifierIds.map((notifierId) => (
+                                <GridItem key={notifierId}>
+                                    <Card isFlat>
+                                        <CardBody>
+                                            <Notifier
+                                                notifierId={notifierId}
+                                                notifiers={notifiers}
+                                            />
+                                        </CardBody>
+                                    </Card>
+                                </GridItem>
+                            ))}
+                        </Grid>
+                    </>
+                )}
+                <Divider component="div" className="pf-u-mt-md" />
+                <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
+                    MITRE ATT&CK
+                </Title>
+                <MitreAttackVectorsView policyId={policy.id} />
+            </CardBody>
+        </Card>
     );
 }
 

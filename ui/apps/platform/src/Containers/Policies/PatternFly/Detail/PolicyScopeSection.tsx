@@ -2,34 +2,35 @@ import React from 'react';
 import { Title, Grid, GridItem, Card, CardBody, List, ListItem } from '@patternfly/react-core';
 
 import { Cluster } from 'types/cluster.proto';
-import { PolicyScope, PolicyExcludedDeployment } from 'types/policy.proto';
+import { PolicyScope, PolicyExclusion } from 'types/policy.proto';
 import Restriction from './Restriction';
 import ExcludedDeployment from './ExcludedDeployment';
+import { getExcludedDeployments, getExcludedImageNames } from '../policies.utils';
 
 type PolicyScopeSectionProps = {
     scope: PolicyScope[];
-    excludedDeployments: PolicyExcludedDeployment[];
-    excludedImageNames: string[];
+    exclusions: PolicyExclusion[];
     clusters: Cluster[];
 };
 
 function PolicyScopeSection({
     scope,
-    excludedDeployments,
-    excludedImageNames,
+    exclusions,
     clusters,
 }: PolicyScopeSectionProps): React.ReactElement {
+    const excludedDeployments = getExcludedDeployments(exclusions);
+    const excludedImageNames = getExcludedImageNames(exclusions);
     return (
         <>
             {scope.length !== 0 && (
                 <>
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
-                        Restrict to scopes
+                        Scope inclusions
                     </Title>
-                    <Grid hasGutter>
+                    <Grid hasGutter sm={12} md={6}>
                         {scope.map((restriction, index) => (
                             // eslint-disable-next-line react/no-array-index-key
-                            <GridItem key={index} span={4}>
+                            <GridItem key={index}>
                                 <Card isFlat>
                                     <CardBody>
                                         <Restriction
@@ -46,12 +47,12 @@ function PolicyScopeSection({
             {excludedDeployments.length !== 0 && (
                 <>
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
-                        Excluded deployments
+                        Scope exclusions
                     </Title>
-                    <Grid hasGutter>
+                    <Grid hasGutter sm={12} md={6}>
                         {excludedDeployments.map((excludedDeployment, index) => (
                             // eslint-disable-next-line react/no-array-index-key
-                            <GridItem key={index} span={4}>
+                            <GridItem key={index}>
                                 <Card isFlat>
                                     <CardBody>
                                         <ExcludedDeployment
@@ -68,7 +69,7 @@ function PolicyScopeSection({
             {excludedImageNames.length !== 0 && (
                 <>
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
-                        Excluded images
+                        Image exclusions
                     </Title>
                     <List isPlain>
                         {excludedImageNames.map((name) => (
