@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 )
 
-// TODO: make use of the errox errors and functions instead of these aliases.
+// Deprecated: use the errox errors and functions instead of these aliases.
 var (
 	ErrAlreadyExists             = errox.AlreadyExists
 	ErrInvalidArgs               = errox.InvalidArgs

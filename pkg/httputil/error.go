@@ -87,7 +87,7 @@ func WriteGRPCStyleErrorf(w http.ResponseWriter, c codes.Code, format string, ar
 //   - else => 500 Internal Server Error with the appropriate message.
 func WriteError(w http.ResponseWriter, err error) {
 	w.WriteHeader(StatusFromError(err))
-	st := grpc_errors.ErrToGrpcStatus(err)
+	st := grpc_errors.ErrToGRPCStatus(err)
 	_ = new(jsonpb.Marshaler).Marshal(w, st.Proto())
 }
 

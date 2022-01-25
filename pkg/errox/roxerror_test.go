@@ -1,6 +1,7 @@
 package errox
 
 import (
+	"os"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -8,8 +9,8 @@ import (
 )
 
 func Test_errRox_Is(t *testing.T) {
-	errNotFound := new("base not found")
-	errNotFound1 := new("base not found")
+	errNotFound := makeSentinel("base not found")
+	errNotFound1 := makeSentinel("base not found")
 
 	assert.NotErrorIs(t, errNotFound, errNotFound1)
 
@@ -61,6 +62,7 @@ func TestWrap(t *testing.T) {
 		mine := Wrap(errors.New("cannot load"), NotAuthorized)
 		assert.ErrorIs(t, mine, NotAuthorized)
 	}
+	assert.ErrorIs(t, Wrap(os.ErrNotExist, NotFound), os.ErrNotExist)
 }
 
 func TestError(t *testing.T) {
@@ -84,6 +86,13 @@ func TestError(t *testing.T) {
 	{
 		mine := Wrap(errors.New("cannot load"), NotAuthorized)
 		assert.Equal(t, "not authorized: cannot load", mine.Error())
+	}
+
+	{
+		err := errors.New("no such file config.yaml")
+		err = Wrap(err, NotFound)
+		err = errors.WithMessage(err, "Opening settings")
+		assert.Equal(t, "Opening settings: not found: no such file config.yaml", err.Error())
 	}
 }
 

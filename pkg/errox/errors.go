@@ -9,15 +9,15 @@ import (
 // the error type in some cases, e.g., when embedded into a GraphQL response,
 // thus changing them might break error matching for some clients, e.g., the UI.
 var (
-	AlreadyExists             = new("already exists")
-	InvalidArgs               = new("invalid arguments")
-	NotFound                  = new("not found")
-	ReferencedByAnotherObject = new("referenced by another object")
-	InvariantViolation        = new("invariant violation")
-	NoCredentials             = new("credentials not found")
-	NoValidRole               = new("no valid role")
-	NotAuthorized             = new("not authorized")
-	NoAuthzConfigured         = new("service authorization is misconfigured")
+	AlreadyExists             = makeSentinel("already exists")
+	InvalidArgs               = makeSentinel("invalid arguments")
+	NotFound                  = makeSentinel("not found")
+	ReferencedByAnotherObject = makeSentinel("referenced by another object")
+	InvariantViolation        = makeSentinel("invariant violation")
+	NoCredentials             = makeSentinel("credentials not found")
+	NoValidRole               = makeSentinel("no valid role")
+	NotAuthorized             = makeSentinel("not authorized")
+	NoAuthzConfigured         = makeSentinel("service authorization is misconfigured")
 	// When adding a new error please update the translators (gRPC, HTTP etc.).
 )
 

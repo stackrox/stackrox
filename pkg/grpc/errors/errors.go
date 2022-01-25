@@ -13,25 +13,23 @@ func unwrapGRPCStatus(err error) *status.Status {
 	if err == nil {
 		return nil
 	}
-	var se interface { GRPCStatus() *status.Status }
+	var se interface{ GRPCStatus() *status.Status }
 	if errors.As(err, &se) {
 		return se.GRPCStatus()
 	}
 	return nil
 }
 
-// ErrToGrpcStatus wraps an error into a gRPC status with code.
-func ErrToGrpcStatus(err error) *status.Status {
-	if err == nil {
-		return nil
-	}
-	se, ok := status.FromError(err)
-	if ok && se != nil {
+// ErrToGRPCStatus wraps an error into a gRPC status with code.
+func ErrToGRPCStatus(err error) *status.Status {
+	if se, ok := status.FromError(err); ok {
 		return se
 	}
-	code := grpcCode(err)
-	if se = unwrapGRPCStatus(err); se != nil {
+	var code codes.Code
+	if se := unwrapGRPCStatus(err); se != nil {
 		code = se.Code()
+	} else {
+		code = roxErrorToGRPCCode(err)
 	}
 	return status.New(code, err.Error())
 }
@@ -39,10 +37,13 @@ func ErrToGrpcStatus(err error) *status.Status {
 // ErrToHTTPStatus maps known internal and gRPC errors to the appropriate
 // HTTP status code.
 func ErrToHTTPStatus(err error) int {
-	return runtime.HTTPStatusFromCode(ErrToGrpcStatus(err).Code())
+	if s := ErrToGRPCStatus(err); s != nil {
+		return runtime.HTTPStatusFromCode(s.Code())
+	}
+	return runtime.HTTPStatusFromCode(codes.OK)
 }
 
-func grpcCode(err error) codes.Code {
+func roxErrorToGRPCCode(err error) codes.Code {
 	switch {
 	case err == nil:
 		return codes.OK

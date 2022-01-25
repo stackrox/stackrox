@@ -38,7 +38,7 @@ func AssertAuthzWorks(t *testing.T, service pkgGRPC.APIService) {
 
 	for _, method := range allMethods(service) {
 		_, err := authFunc.AuthFuncOverride(context.Background(), method)
-		s := errors.ErrToGrpcStatus(err)
+		s := errors.ErrToGRPCStatus(err)
 		assert.Containsf(t, allowedAuthStatusCodes, s.Code(), "authorizing method %s: invalid auth error code %v from error %v", method, s.Code(), s)
 	}
 }

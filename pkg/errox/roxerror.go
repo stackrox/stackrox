@@ -14,8 +14,8 @@ type baseError struct {
 	message string
 }
 
-// new returns a new sentinel RoxError.
-func new(message string) RoxError {
+// makeSentinel returns a new sentinel RoxError.
+func makeSentinel(message string) RoxError {
 	return &baseError{message}
 }
 
