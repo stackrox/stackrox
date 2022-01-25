@@ -40,6 +40,11 @@ func New(base RoxError, message string) RoxError {
 	return &customError{base, nil, message}
 }
 
+// Newf creates a new error based on base error with formatted message
+func Newf(base RoxError, format string, args ...interface{}) RoxError {
+	return New(base, fmt.Sprintf(format, args...))
+}
+
 // Error returns error message. Implements error interface.
 func (e *customError) Error() string {
 	if e.cause != nil {

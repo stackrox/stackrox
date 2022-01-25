@@ -94,6 +94,12 @@ func TestError(t *testing.T) {
 		err = errors.WithMessage(err, "Opening settings")
 		assert.Equal(t, "Opening settings: not found: no such file config.yaml", err.Error())
 	}
+
+	{
+		err := Newf(InvalidArgs, "custom %s", "message")
+		assert.Equal(t, "custom message", err.Error())
+		assert.ErrorIs(t, err, InvalidArgs)
+	}
 }
 
 func TestErrorAs(t *testing.T) {
