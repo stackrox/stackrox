@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -e
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 if [[ -z $1 ]]; then
@@ -13,6 +15,6 @@ unzip -d "${DIR}/database-restore/expanded" $1
 mkdir -p "${DIR}/database-restore/expanded/rocksdb"
 tar -xvf "${DIR}/database-restore/expanded/rocks.db" -C "${DIR}/database-restore/expanded/rocksdb"
 mkdir -p "${DIR}/database-restore/full/rocksdb"
-rocksdb_ldb --db="${DIR}/database-restore/full/rocksdb" restore --backup_dir="${DIR}/database-restore/expanded/rocksdb"
+go run "${DIR}/expand/main.go" --backup  "${DIR}/database-restore/expanded/rocksdb" --restored "${DIR}/database-restore/full/rocksdb"
 mv "${DIR}/database-restore/expanded/bolt.db" "${DIR}/database-restore/full/bolt.db"
 rm -rf "${DIR}/database-restore/expanded"
