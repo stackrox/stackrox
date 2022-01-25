@@ -8,6 +8,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [68.0]
 
+- Improved accuracy of active component and vulnerability and presented it with higher confidence.
+  - Added `Active` state to list of components and list of vulnerabilities under Vulnerability Management within the scope of a specific deployment.
+  - Added `Inactive` state: the component or vulnerability was not run in the specific deployment.
+  - Added image scope so that the Active State can be determined in the scope of a deployment for a specific image.
 - The default gRPC port in Scanner's config map is changed to 8443, as that is what Scanner has actually been defaulting to this whole time.
   - Note: Scanner has been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expects `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
 - Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images.
