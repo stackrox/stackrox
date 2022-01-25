@@ -106,7 +106,7 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 // RefreshCertificates TODO doc
 // This is running in the goroutine for a refresh timer in i.certRefresher.
 func (i *certIssuerImpl) RefreshCertificates(ctx context.Context) (timeToRefresh time.Duration, err error) {
-	secrets, fetchErr := i.fetchSecrets()
+	secrets, fetchErr := i.fetchSecrets(ctx)
 	if fetchErr != nil {
 		return 0, fetchErr
 	}
@@ -129,7 +129,7 @@ func (i *certIssuerImpl) RefreshCertificates(ctx context.Context) (timeToRefresh
 	}
 
 	certificates := response.GetCertificates()
-	if refreshErr := i.refreshSecrets(certificates, secrets); refreshErr != nil {
+	if refreshErr := i.refreshSecrets(ctx, certificates, secrets); refreshErr != nil {
 		return 0, refreshErr
 	}
 	timeToRefresh = time.Until(i.getCertRenewalTime(secrets))
@@ -140,7 +140,7 @@ func (i *certIssuerImpl) getCertRenewalTime(secrets map[storage.ServiceType]*v1.
 	return time.Now() // TODO
 }
 
-func (i *certIssuerImpl) refreshSecrets(certificates *storage.TypedServiceCertificateSet,
+func (i *certIssuerImpl) refreshSecrets(ctx context.Context, certificates *storage.TypedServiceCertificateSet,
 	secrets map[storage.ServiceType]*v1.Secret) error {
 	// TODO
 	return i.updateSecrets(secrets)
@@ -178,7 +178,7 @@ func (i *certSyncRequesterImpl) requestCertificates(ctx context.Context) (*centr
 	return response, nil
 }
 
-func (i *certSecretsRepoImpl) fetchSecrets() (map[storage.ServiceType]*v1.Secret, error) {
+func (i *certSecretsRepoImpl) fetchSecrets(ctx context.Context) (map[storage.ServiceType]*v1.Secret, error) {
 	secretsMap := make(map[storage.ServiceType]*v1.Secret, 3)
 	return secretsMap, nil // TODO
 }
