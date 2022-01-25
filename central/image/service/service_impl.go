@@ -209,6 +209,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// even if we weren't able to enrich it
 	}
 
+	img.Id = utils.GetImageID(img)
 	if img.GetId() != "" {
 		// Save the image if we received an ID from sensor
 		// Otherwise, our inferred ID may not match
