@@ -10,9 +10,6 @@ import (
 )
 
 func unwrapGRPCStatus(err error) *status.Status {
-	if err == nil {
-		return nil
-	}
 	var se interface{ GRPCStatus() *status.Status }
 	if errors.As(err, &se) {
 		return se.GRPCStatus()
@@ -37,10 +34,7 @@ func ErrToGRPCStatus(err error) *status.Status {
 // ErrToHTTPStatus maps known internal and gRPC errors to the appropriate
 // HTTP status code.
 func ErrToHTTPStatus(err error) int {
-	if s := ErrToGRPCStatus(err); s != nil {
-		return runtime.HTTPStatusFromCode(s.Code())
-	}
-	return runtime.HTTPStatusFromCode(codes.OK)
+	return runtime.HTTPStatusFromCode(ErrToGRPCStatus(err).Code())
 }
 
 func roxErrorToGRPCCode(err error) codes.Code {

@@ -31,16 +31,10 @@ func PanicOnInvariantViolationStreamInterceptor(srv interface{}, ss grpc.ServerS
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.
 func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
-	if s := ErrToGRPCStatus(err); s != nil {
-		return resp, s.Err()
-	}
-	return resp, nil
+	return resp, ErrToGRPCStatus(err).Err()
 }
 
 // ErrorToGrpcCodeStreamInterceptor translates common errors defined in errorhelpers to GRPC codes.
 func ErrorToGrpcCodeStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	if s := ErrToGRPCStatus(handler(srv, ss)); s != nil {
-		return s.Err()
-	}
-	return nil
+	return ErrToGRPCStatus(handler(srv, ss)).Err()
 }
