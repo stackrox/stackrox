@@ -13,12 +13,11 @@ func unwrapGRPCStatus(err error) *status.Status {
 	if err == nil {
 		return nil
 	}
-	if se, ok := err.(interface {
-		GRPCStatus() *status.Status
-	}); ok {
+	var se interface { GRPCStatus() *status.Status }
+	if errors.As(err, &se) {
 		return se.GRPCStatus()
 	}
-	return unwrapGRPCStatus(errors.Unwrap(err))
+	return nil
 }
 
 // ErrToGrpcStatus wraps an error into a gRPC status with code.
