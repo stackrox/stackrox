@@ -9,13 +9,13 @@ import (
 
 // RetryTicker repeatedly calls a function with a timeout and a retry backoff strategy.
 type RetryTicker struct {
-	f func(ctx context.Context) (timeToNextTick time.Duration, err error)
-	tickTimeout time.Duration
+	f                func(ctx context.Context) (timeToNextTick time.Duration, err error)
+	tickTimeout      time.Duration
 	backoffPrototype wait.Backoff
-	backoff      wait.Backoff
-	tickTimer *time.Timer
-	OnTickSuccess func(nextTimeToTick time.Duration)
-	OnTickError func(error)
+	backoff          wait.Backoff
+	tickTimer        *time.Timer
+	OnTickSuccess    func(nextTimeToTick time.Duration)
+	OnTickError      func(error)
 }
 
 // NewRetryTicker returns a new RetryTicker that calls the function f repeatedly:
@@ -25,20 +25,22 @@ type RetryTicker struct {
 // - On success RetryTicker will reset backoff, and wait the amount of time returned by f before running f again.
 func NewRetryTicker(f func(ctx context.Context) (nextTimeToTick time.Duration, err error),
 	tickTimeout time.Duration,
-	backoff wait.Backoff) *RetryTicker{
+	backoff wait.Backoff) *RetryTicker {
 	ticker := &RetryTicker{
-		f: f,
-		tickTimeout: tickTimeout,
+		f:                f,
+		tickTimeout:      tickTimeout,
 		backoffPrototype: backoff,
-		backoff: backoff,
+		backoff:          backoff,
 	}
 	return ticker
 }
 
+// Start calls t.f and schedules the next tick accordingly.
 func (t *RetryTicker) Start() {
 	t.scheduleTick(0)
 }
 
+// Stop cancels this RetryTicker.
 func (t *RetryTicker) Stop() {
 	t.setTickTimer(nil)
 }
