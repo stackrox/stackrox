@@ -1928,8 +1928,8 @@ github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7 h
 github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7/go.mod h1:faUw9vx/mA7ql41Ftlst5MYar2DT3nnS6oK94lbaW0g=
 github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3 h1:O96olg7oQXTbQUbXdrDPkrT9WjesGI+3bq5H8cjmsxo=
 github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3/go.mod h1:u5rkZgJvT0MfanZCoq/lCqY+3Ixr+CbPxYNnhvsggHg=
-github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89 h1:h3Z1bazS+4RWhzDk4L3B/jN4DL0UAZCDCx7UfQ6T5jg=
-github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89/go.mod h1:+BKUQnSVJqDJr4sa8zmCKyQ/UOjJuy/frPEyZnTrigY=
+github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347 h1:ByiXbT2lnhWmUlrpUCeQlk8hRZTFr6CPtTtpd7XlOGY=
+github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347/go.mod h1:vWZFszN4CfxMWzzMI/XfrcG4kkoDIPdwfDry76nYIbo=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab h1:77xJmm1YkqbgrQzHI3C4MyPckWL+PYRLWakQRC6Mzj8=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab/go.mod h1:EBskgGC5Gzt/r8ToNsuD6tYMcf+AWY0ubaFSRy5/3QM=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5 h1:0O3kYf9IvjnzwKBE/UuofeiKmwb8x9ga3mm26dqL4/Y=
@@ -3149,8 +3149,8 @@ k8s.io/utils v0.0.0-20210111153108-fddb29f9d009/go.mod h1:jPW/WVKK9YHAvNhRxK0md/
 k8s.io/utils v0.0.0-20210707171843-4b05e18ac7d9/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 k8s.io/utils v0.0.0-20210802155522-efc7438f0176/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
-k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e h1:ldQh+neBabomh7+89dTpiFAB8tGdfVmuIzAHbvtl+9I=
-k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
+k8s.io/utils v0.0.0-20211208161948-7d6a63dca704 h1:ZKMMxTvduyf5WUtREOqg5LiXaN1KO/+0oOQPRFrClpo=
+k8s.io/utils v0.0.0-20211208161948-7d6a63dca704/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 modernc.org/cc v1.0.0/go.mod h1:1Sk4//wdnYJiUIxnW8ddKpaOJCF37yAdqYnkxUpaYxw=
 modernc.org/golex v1.0.0/go.mod h1:b/QX9oBD/LhixY6NDh+IdGv17hgB+51fET1i2kPSmvk=
 modernc.org/mathutil v1.0.0/go.mod h1:wU0vUrJsVWBZ4P6e7xtFJEhFSNsfRLJ8H458uRjg03k=
