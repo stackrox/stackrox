@@ -141,8 +141,7 @@ func TestGetAllowedImageFlavorNames(t *testing.T) {
 }
 
 func (s *imageFlavorTestSuite) TestFlavorsDontHaveEmptyFields() {
-	flavors := []ImageFlavor{DevelopmentBuildImageFlavor(), StackRoxIOReleaseImageFlavor(), RHACSReleaseImageFlavor()}
-	for _, f := range flavors {
+	for _, f := range []ImageFlavor{DevelopmentBuildImageFlavor(), StackRoxIOReleaseImageFlavor(), RHACSReleaseImageFlavor()} {
 		data, err := json.Marshal(f)
 		s.Require().NoError(err)
 
