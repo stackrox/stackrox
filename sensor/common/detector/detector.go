@@ -253,6 +253,7 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 	key := imagecacheutils.GetImageCacheKey(image)
 
+	log.Infof("Got image update for %s", image.GetName().GetFullName())
 	newValue := &cacheValue{
 		image: image,
 	}
@@ -262,6 +263,7 @@ func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 }
 
 func (d *detectorImpl) processReprocessDeployments() error {
+	log.Info("Got reprocess for deployments")
 	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
 		// Would prefer to do a targeted flush
 		d.admCtrlSettingsMgr.FlushCache()
