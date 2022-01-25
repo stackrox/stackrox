@@ -36,8 +36,8 @@ type config struct {
 }
 
 type sensorComponentImpl struct {
-	requestsC  chan *central.MsgFromSensor
-	responsesC chan *central.IssueLocalScannerCertsResponse
+	msgFromSensorC chan *central.MsgFromSensor
+	msgToSensorC   chan *central.IssueLocalScannerCertsResponse
 }
 
 type certIssuerImpl struct {
@@ -46,9 +46,9 @@ type certIssuerImpl struct {
 }
 
 type certSyncRequesterImpl struct {
-	requestID  string
-	requestsC  chan *central.MsgFromSensor
-	responsesC chan *central.IssueLocalScannerCertsResponse
+	requestID      string
+	msgFromSensorC chan *central.MsgFromSensor
+	msgToSensorC   chan *central.IssueLocalScannerCertsResponse
 }
 
 type certSecretsRepoImpl struct {
@@ -82,7 +82,7 @@ func (i *sensorComponentImpl) Capabilities() []centralsensor.SensorCapability {
 // ResponsesC is called "responses" because for other SensorComponent it is central that
 // initiates the interaction. However, here it is sensor which sends a request to central.
 func (i *sensorComponentImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	return i.requestsC
+	return i.msgFromSensorC
 }
 
 // ProcessMessage cannot block as it would prevent centralReceiverImpl from sending messages
@@ -93,7 +93,7 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 		response := m.IssueLocalScannerCertsResponse
 		go func() {
 			// will block if i.resultC is filled.
-			i.responsesC <- response
+			i.msgToSensorC <- response
 		}()
 		return nil
 	default:
@@ -116,9 +116,9 @@ func (i *certIssuerImpl) RefreshCertificates(ctx context.Context) (timeToRefresh
 	}
 
 	certRequester := &certSyncRequesterImpl{
-		requestID:  uuid.NewV4().String(),
-		requestsC:  i.requestsC,
-		responsesC: i.responsesC,
+		requestID:      uuid.NewV4().String(),
+		msgFromSensorC: i.msgFromSensorC,
+		msgToSensorC:   i.msgToSensorC,
 	}
 	response, requestErr := certRequester.requestCertificates(ctx)
 	if requestErr != nil {
@@ -157,7 +157,7 @@ func (i *certSyncRequesterImpl) requestCertificates(ctx context.Context) (*centr
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case i.requestsC <- msg:
+	case i.msgFromSensorC <- msg:
 		log.Debugf("request to issue local Scanner certificates sent to Central succesfully: %v", msg)
 	}
 
@@ -166,7 +166,7 @@ func (i *certSyncRequesterImpl) requestCertificates(ctx context.Context) (*centr
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		case newResponse := <-i.responsesC:
+		case newResponse := <-i.msgToSensorC:
 			if newResponse.GetRequestId() != i.requestID {
 				log.Debugf("ignoring response with unknown request id %s", response.GetRequestId())
 			} else {
