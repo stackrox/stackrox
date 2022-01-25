@@ -59,7 +59,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Info("starting local scanner TLS issuer.")
 
 	i.certRefresher = certificates.NewCertRefresher("FIXME desc", i, i.conf.certRefresherBackoff)
-	if err := i.certRefresher.Start(context.Background()); err != nil {
+	if err := i.certRefresher.Start(); err != nil {
 		return err
 	}
 
