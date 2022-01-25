@@ -122,9 +122,9 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 }
 
 func (d *DatastoreBasedIntegrationHealthReporter) updateTimestampInCache(health *storage.IntegrationHealth) {
-	concurrency.WithLock(&d.lock, func() {
-		d.latestDBTimestampMap[health.Id] = health.LastTimestamp
-	})
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	d.latestDBTimestampMap[health.Id] = health.LastTimestamp
 }
 
 // Singleton returns an instance of the integration health reporter
