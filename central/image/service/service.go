@@ -31,7 +31,7 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(datastore datastore.DataStore, cveDatastore cveDataStore.DataStore, watchedImages watchedImageDataStore.DataStore, riskManager manager.Manager,
-	enricher enricher.ImageEnricher, metadataCache, scanCache expiringcache.Cache) Service {
+	enricher enricher.ImageEnricher, metadataCache expiringcache.Cache) Service {
 	return &serviceImpl{
 		datastore:     datastore,
 		cveDatastore:  cveDatastore,
@@ -39,7 +39,6 @@ func New(datastore datastore.DataStore, cveDatastore cveDataStore.DataStore, wat
 		riskManager:   riskManager,
 		enricher:      enricher,
 		metadataCache: metadataCache,
-		scanCache:     scanCache,
 
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 	}
