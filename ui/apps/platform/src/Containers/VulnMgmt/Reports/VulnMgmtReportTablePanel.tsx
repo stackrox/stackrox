@@ -56,7 +56,7 @@ type ReportingTablePanelProps = {
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
     columns: TableColumn[];
-    onRunReports: (reportIds: string[]) => Promise<void>; // return value not used
+    onRunReports: (reportIds: string[]) => Promise<any>; // return value not used
     onDeleteReports: (reportIds: string[]) => Promise<void>; // return value not used
 };
 
@@ -299,7 +299,7 @@ function ReportingTablePanel({
                                             component={(props) => (
                                                 <Link
                                                     {...props}
-                                                    to={`${vulnManagementReportsPath}/${id}`}
+                                                    to={`${vulnManagementReportsPath}/${id}?action=edit`}
                                                 />
                                             )}
                                         >
