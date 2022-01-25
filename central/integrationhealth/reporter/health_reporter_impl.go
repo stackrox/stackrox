@@ -28,7 +28,7 @@ type DatastoreBasedIntegrationHealthReporter struct {
 	healthUpdates        chan *storage.IntegrationHealth
 	stopSig              concurrency.Signal
 	latestDBTimestampMap map[string]*types.Timestamp
-	lock                 sync.Mutex
+	lock                 sync.RWMutex
 	integrationDS        datastore.DataStore
 }
 
@@ -101,7 +101,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 				if err := d.integrationDS.UpdateIntegrationHealth(allAccessCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
-			} else if health.LastTimestamp.Compare(d.latestDBTimestampMap[health.Id]) > 0 {
+			} else if health.LastTimestamp.Compare(d.getTimestampInCache(health)) > 0 {
 				d.updateTimestampInCache(health)
 				_, exists, err := d.integrationDS.GetIntegrationHealth(allAccessCtx, health.Id)
 				if err != nil {
@@ -115,6 +115,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
 			}
+
 		case <-d.stopSig.Done():
 			return
 		}
@@ -125,6 +126,12 @@ func (d *DatastoreBasedIntegrationHealthReporter) updateTimestampInCache(health 
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.latestDBTimestampMap[health.Id] = health.LastTimestamp
+}
+
+func (d *DatastoreBasedIntegrationHealthReporter) getTimestampInCache(health *storage.IntegrationHealth) *types.Timestamp {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	return d.latestDBTimestampMap[health.Id]
 }
 
 // Singleton returns an instance of the integration health reporter
