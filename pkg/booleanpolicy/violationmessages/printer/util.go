@@ -28,8 +28,8 @@ func (t *templateCache) Get(tpl string) *template.Template {
 }
 
 func (t *templateCache) Set(tpl string, tmpl *template.Template) {
-	t.lock.RLock()
-	defer t.lock.RUnlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	t.templates[tpl] = tmpl
 }
