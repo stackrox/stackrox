@@ -82,7 +82,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
 
 const validationSchemaDefault = yup.object().shape({});
 
-export function getValidationSchema(stepId: number | string | undefined) {
+export function getValidationSchema(stepId: number | string | undefined): yup.Schema {
     switch (stepId) {
         case 1:
             return validationSchema1;
