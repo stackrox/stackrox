@@ -144,7 +144,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
           readOnly: true
         [<- end >]
-        {{- include "srox.injectedCAbundleMount" . | nindent 8 }}
+        {{- include "srox.injectedCABundleMount" . | nindent 8 }}
       volumes:
       - name: certs
         secret:
@@ -178,7 +178,7 @@ spec:
           secretName: helm-effective-cluster-name
           optional: true
       [<- end >]
-      {{- include "srox.injectedCAbundle" . | nindent 6 }}
+      {{- include "srox.injectedCABundle" . | nindent 6 }}
 ---
 apiVersion: v1
 kind: Service

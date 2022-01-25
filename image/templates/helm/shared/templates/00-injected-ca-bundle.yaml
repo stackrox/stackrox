@@ -1,35 +1,15 @@
 {{- include "srox.init" . -}}
 
 {{- if eq ._rox.env.openshift 4 }}
-{{ $injectedCAbundleName := printf "injected-cabundle-%s" .Release.Name }}
+{{ $injectedCABundleName := printf "injected-cabundle-%s" .Release.Name }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $injectedCAbundleName }}
+  name: {{ $injectedCABundleName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "configmap" $injectedCAbundleName) | nindent 4 }}
+    {{- include "srox.labels" (list . "configmap" $injectedCABundleName) | nindent 4 }}
     "config.openshift.io/inject-trusted-cabundle": "true"
   annotations:
-    {{- include "srox.annotations" (list . "configmap" $injectedCAbundleName) | nindent 4 }}
+    {{- include "srox.annotations" (list . "configmap" $injectedCABundleName) | nindent 4 }}
 {{- end }}
-
-{{- define "srox.injectedCAbundle" -}}
-{{- if eq ._rox.env.openshift 4 }}
-- name: trusted-ca-volume
-  configMap:
-    name: injected-cabundle-{{ .Release.Name }}
-    items:
-      - key: ca-bundle.crt
-        path: tls-ca-bundle.pem
-    optional: true
-{{ end }}
-{{ end }}
-
-{{- define "srox.injectedCAbundleMount" -}}
-{{- if eq ._rox.env.openshift 4 }}
-- name: trusted-ca-volume
-  mountPath: /etc/pki/injected-ca-trust/
-  readOnly: true
-{{ end }}
-{{ end }}

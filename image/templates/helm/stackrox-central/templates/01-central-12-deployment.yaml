@@ -147,7 +147,7 @@ spec:
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
         {{- end }}
-        {{- include "srox.injectedCAbundleMount" . | nindent 8 }}
+        {{- include "srox.injectedCABundleMount" . | nindent 8 }}
       volumes:
       - name: varlog
         emptyDir: {}
@@ -199,4 +199,4 @@ spec:
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}
       {{- end }}
-      {{- include "srox.injectedCAbundle" . | nindent 6 }}
+      {{- include "srox.injectedCABundle" . | nindent 6 }}

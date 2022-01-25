@@ -10,9 +10,18 @@ tests:
     expect: |
       assertThat(.configmaps["injected-cabundle-stackrox-central-services"].metadata.labels["config.openshift.io/inject-trusted-cabundle"] == "true")
 - server:
-    availableSchemas:
-      - openshift-3.11.0
+    visibleSchemas:
+    - openshift-3.11.0
+  set:
+    env.openshift: 3
   tests:
   - name: "No injected CA bundle on Openshift 3"
+    expect: |
+      assertThat(.configmaps["injected-cabundle-stackrox-central-services"] == null)
+- server:
+    visibleSchemas:
+    - kubernetes-1.20.2
+  tests:
+  - name: "No injected CA bundle on Kubernetes"
     expect: |
       assertThat(.configmaps["injected-cabundle-stackrox-central-services"] == null)
