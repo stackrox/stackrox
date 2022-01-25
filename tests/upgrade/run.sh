@@ -383,13 +383,13 @@ restore_backup_test() {
 }
 
 validate_upgrade() {
-    if [[ "$#" -lt 2 ]]; then
-        die "missing args. usage: validate_upgrade <stage> <upgrade_cluster_id> [<policies_dir>]"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: validate_upgrade <stage> <upgrade_cluster_id>"
     fi
 
     local stage="$1"
     local upgrade_cluster_id="$2"
-    local policies_dir="${3:-"../pkg/defaults/policies/files"}"
+    local policies_dir="../pkg/defaults/policies/files"
 
     info "Validating the upgrade with upgrade tests: $stage"
 
