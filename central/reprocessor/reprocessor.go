@@ -342,15 +342,27 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 
 			image, successfullyProcessed := l.reprocessImage(id, fetchOpt)
 			if !successfullyProcessed {
+				log.Warnf("Did not successfully process image: %v", id)
+				image, exists, err := l.images.GetImage(allAccessCtx, id)
+				if err != nil {
+					log.Errorf("error getting image: %v", id)
+				} else if !exists {
+					log.Errorf("image doesn't exists: %v", id)
+				} else {
+					log.Infof("Image was not successfully processed: %v", image.GetName().GetFullName())
+				}
 				return
 			}
 			nReprocessed.Inc()
 
 			utils.FilterSuppressedCVEsNoClone(image)
-			utils.StripCVEDescriptions(image)
+			utils.StripCVEDescriptionsNoClone(image)
+			log.Infof("%v: clusters found: %+v", image.GetName().GetFullName(), clusterIDs)
+
 			for _, clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
 				if conn == nil {
+					log.Infof("%v: No connection found for cluster: %v", image.GetName().GetFullName(), clusterID)
 					continue
 				}
 				err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
