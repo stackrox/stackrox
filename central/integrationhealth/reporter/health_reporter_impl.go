@@ -28,8 +28,8 @@ type DatastoreBasedIntegrationHealthReporter struct {
 	healthUpdates        chan *storage.IntegrationHealth
 	stopSig              concurrency.Signal
 	latestDBTimestampMap map[string]*types.Timestamp
-
-	integrationDS datastore.DataStore
+	lock                 sync.Mutex
+	integrationDS        datastore.DataStore
 }
 
 // New returns a new datastore based integration health reporter
@@ -75,6 +75,8 @@ func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ 
 func (d *DatastoreBasedIntegrationHealthReporter) RemoveIntegrationHealth(id string) error {
 	err := d.integrationDS.RemoveIntegrationHealth(allAccessCtx, id)
 	if err == nil {
+		d.lock.Lock()
+		defer d.lock.Unlock()
 		delete(d.latestDBTimestampMap, id)
 	}
 	return err
@@ -95,11 +97,15 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 		select {
 		case health := <-d.healthUpdates:
 			if health.Status == storage.IntegrationHealth_UNINITIALIZED {
+				d.lock.Lock()
+				defer d.lock.Unlock()
 				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
 				if err := d.integrationDS.UpdateIntegrationHealth(allAccessCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
 			} else if health.LastTimestamp.Compare(d.latestDBTimestampMap[health.Id]) > 0 {
+				d.lock.Lock()
+				defer d.lock.Unlock()
 				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
 				_, exists, err := d.integrationDS.GetIntegrationHealth(allAccessCtx, health.Id)
 				if err != nil {
