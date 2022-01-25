@@ -29,10 +29,6 @@ function PolicyCriteriaFieldInput({
     const { value } = field;
     const { setValue } = helper;
 
-    // TODO: Add group/nested fields
-    // this is to accomodate for recursive Fields (when type is 'group')
-    // const path = descriptor.subpath ? name : `${name}.value`;
-
     function handleChangeValue(val) {
         setValue({ value: val });
     }
@@ -66,6 +62,7 @@ function PolicyCriteriaFieldInput({
                 <TextInput
                     value={value.value}
                     type="text"
+                    id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
                 />
@@ -90,6 +87,7 @@ function PolicyCriteriaFieldInput({
                 <TextInput
                     value={value.value}
                     type="number"
+                    id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
                     placeholder={descriptor.placeholder}
@@ -143,11 +141,13 @@ function PolicyCriteriaFieldInput({
                     </Select>
                 </FormGroup>
             );
-        case 'group':
+        case 'group': {
+            /* eslint-disable react/no-array-index-key */
             return (
                 <>
-                    {descriptor.subComponents?.map((subComponent) => (
+                    {descriptor.subComponents?.map((subComponent, index) => (
                         <PolicyCriteriaFieldSubInput
+                            key={index}
                             subComponent={subComponent}
                             readOnly={readOnly}
                             name={`${name}.${subComponent.subpath}`}
@@ -155,6 +155,8 @@ function PolicyCriteriaFieldInput({
                     ))}
                 </>
             );
+            /* eslint-enable react/no-array-index-key */
+        }
     }
     /* eslint-enable default-case */
 }

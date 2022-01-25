@@ -34,6 +34,10 @@ import (
 	"gopkg.in/robfig/cron.v2"
 )
 
+const (
+	numDeploymentsLimit = 50
+)
+
 var (
 	log = logging.LoggerForModule()
 
@@ -269,13 +273,11 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	if !ok {
 		return errors.Errorf("incorrect notifier type in report config '%s'", rc.GetName())
 	}
-
 	// Get the results of running the report query
 	reportData, err := s.getReportData(req.Ctx, reportQuery)
 	if err != nil {
 		return err
 	}
-
 	// Format results into CSV
 	zippedCSVData, err := common.Format(reportData)
 	if err != nil {
@@ -283,10 +285,8 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-	var messageText string
-	if zippedCSVData == nil {
-		messageText = noVulnsFoundEmailTemplate
-	} else {
+	messageText := noVulnsFoundEmailTemplate
+	if zippedCSVData != nil {
 		messageText, err = formatMessage(rc)
 		if err != nil {
 			return errors.Wrap(err, "error formatting the report email text")
@@ -334,22 +334,43 @@ func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
 	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
 	for _, sq := range rQuery.ScopeQueries {
-		response := s.Schema.Exec(ctx,
-			reportDataQuery, "getVulnReportData", map[string]interface{}{
-				"scopequery": sq,
-				"cvequery":   rQuery.CveFieldsQuery,
-			})
-		if len(response.Errors) > 0 {
-			return []common.Result{}, response.Errors[0].Err
-		}
-
-		var resultData common.Result
-		if err := json.Unmarshal(response.Data, &resultData); err != nil {
-			return []common.Result{}, err
+		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery)
+		if err != nil {
+			return nil, err
 		}
 		r = append(r, resultData)
 	}
 	return r, nil
+}
+
+func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string) (common.Result, error) {
+	offset := 0
+	var resultData common.Result
+	for {
+		response := s.Schema.Exec(ctx,
+			reportDataQuery, "getVulnReportData", map[string]interface{}{
+				"scopequery": scopeQuery,
+				"cvequery":   cveQuery,
+				"pagination": map[string]interface{}{
+					"offset": offset,
+					"limit":  numDeploymentsLimit,
+				},
+			})
+		if len(response.Errors) > 0 {
+			log.Errorf("error running graphql query: %s", response.Errors[0].Message)
+			return common.Result{}, response.Errors[0].Err
+		}
+		var r common.Result
+		if err := json.Unmarshal(response.Data, &r); err != nil {
+			return common.Result{}, err
+		}
+		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
+		if len(r.Deployments) < numDeploymentsLimit {
+			break
+		}
+		offset += len(r.Deployments)
+	}
+	return resultData, nil
 }
 
 func (s *scheduler) Start() {

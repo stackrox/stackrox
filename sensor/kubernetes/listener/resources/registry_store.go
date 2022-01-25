@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/registries"
+	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 )
@@ -23,7 +24,7 @@ type RegistryStore struct {
 // newRegistryStore creates a new registryStore.
 func newRegistryStore() *RegistryStore {
 	return &RegistryStore{
-		factory: registries.NewFactory(registries.WithDockerRegistry()),
+		factory: registries.NewFactory(registries.WithRegistryCreators(dockerFactory.Creator)),
 		store:   make(map[string]registries.Set),
 	}
 }
@@ -51,15 +52,15 @@ func (rs *RegistryStore) upsertRegistry(namespace, registry string, dce types.Do
 	}
 
 	err = regs.UpdateImageIntegration(&storage.ImageIntegration{
-		Name:                 registry,
-		Type:                 "docker",
-		Categories:           []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig:    &storage.ImageIntegration_Docker{
+		Name:       registry,
+		Type:       "docker",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
-				Endpoint:             registry,
-				Username:             dce.Username,
-				Password:             dce.Password,
-				Insecure:             !secure,
+				Endpoint: registry,
+				Username: dce.Username,
+				Password: dce.Password,
+				Insecure: !secure,
 			},
 		},
 	})
@@ -70,7 +71,7 @@ func (rs *RegistryStore) upsertRegistry(namespace, registry string, dce types.Do
 	return nil
 }
 
-// getAllInNamespace returns all the registries+credentials within a given namespace.
+// getAllInNamespace returns all the registries within a given namespace.
 func (rs *RegistryStore) getAllInNamespace(namespace string) registries.Set {
 	rs.mutex.RLock()
 	defer rs.mutex.RUnlock()

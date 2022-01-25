@@ -9,7 +9,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type updateStatusFunc func(status *platform.SecuredClusterStatus) bool
@@ -18,7 +18,7 @@ var (
 	errUnexpectedGVK = errors.New("invoked reconciliation extension for object with unexpected GVK")
 )
 
-func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.SecuredCluster, client client.Client, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client client.Client) extensions.ReconcileExtension {
+func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.SecuredCluster, client ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != platform.SecuredClusterGVK {
 			log.Error(errUnexpectedGVK, "unable to reconcile secured cluster", "expectedGVK", platform.SecuredClusterGVK, "actualGVK", u.GroupVersionKind())

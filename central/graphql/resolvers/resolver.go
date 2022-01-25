@@ -10,6 +10,7 @@ import (
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	violationsDatastore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/apitoken/backend"
+	"github.com/stackrox/rox/central/audit"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
@@ -35,6 +36,7 @@ import (
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/notifier/processor"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	baselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -51,6 +53,7 @@ import (
 	vulnReqService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -101,6 +104,7 @@ type Resolver struct {
 	vulnReqMgr                  vulnReqManager.Manager
 	vulnReqService              vulnReqService.Service
 	vulnReqStore                vulnReqDataStore.DataStore
+	AuditLogger                 auditPkg.Auditor
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -148,6 +152,7 @@ func New() *Resolver {
 		vulnReqMgr:                  vulnReqManager.Singleton(),
 		vulnReqService:              vulnReqService.Singleton(),
 		vulnReqStore:                vulnReqDataStore.Singleton(),
+		AuditLogger:                 audit.New(processor.Singleton()),
 	}
 	return resolver
 }

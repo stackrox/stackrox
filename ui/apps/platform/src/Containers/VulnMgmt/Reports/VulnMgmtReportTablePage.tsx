@@ -43,6 +43,10 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
 
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
+    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
+    const canWriteReports =
+        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
 
     const searchOptions = useSearchOptions(searchCategories.REPORT_CONFIGURATIONS) || [];
 
@@ -89,9 +93,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
 
         // Note: errors are handled and displayed down at the call site,
         //       ui/apps/platform/src/Containers/VulnMgmt/Reports/VulnMgmtReportTablePage.tsx
-        return Promise.all(runPromises).then(() => {
-            triggerRefresh();
-        });
+        return Promise.all(runPromises);
     }
 
     function onDeleteReports(reportIds) {
@@ -120,7 +122,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                                 </Text>
                             </TextContent>
                         </ToolbarItem>
-                        {hasVulnReportWriteAccess && (
+                        {canWriteReports && (
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
                                 <Button
                                     variant={ButtonVariant.primary}

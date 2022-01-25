@@ -1,10 +1,10 @@
 import React, { ReactElement } from 'react';
 import { ActionsColumn } from '@patternfly/react-table';
 import { DeferredCVEsToBeAssessed } from './types';
-import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
+import { Vulnerability } from '../imageVulnerabilities.graphql';
 
 export type DeferredCVEActionsColumnProps = {
-    row: VulnerabilityWithRequest;
+    row: Vulnerability;
     setVulnsToBeAssessed: React.Dispatch<React.SetStateAction<DeferredCVEsToBeAssessed>>;
     canReobserveCVE: boolean;
 };

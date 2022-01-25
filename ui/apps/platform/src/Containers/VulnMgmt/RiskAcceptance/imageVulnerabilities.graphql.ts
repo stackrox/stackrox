@@ -1,7 +1,24 @@
 import { gql } from '@apollo/client';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
-import { Scope, VulnerabilityRequest } from 'types/vuln_request.proto';
+import { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
+import { SlimUser } from 'types/user.proto';
+import { DeferralRequest, RequestComment, RequestStatus, Scope } from 'types/vuln_request.proto';
+
+export type VulnerabilityRequest = {
+    id: string;
+    targetState: VulnerabilityState;
+    status: RequestStatus;
+    expired: boolean;
+    requestor: SlimUser;
+    approvers: SlimUser[];
+    comments: RequestComment[];
+    scope: Scope;
+    deferralReq: DeferralRequest;
+    updatedDeferralReq: DeferralRequest;
+    cves: {
+        ids: string[];
+    };
+};
 
 // This type is specific to the way we query using GraphQL
 export type Vulnerability = {
@@ -13,10 +30,6 @@ export type Vulnerability = {
     scoreVersion: string;
     discoveredAtImage: string;
     components: EmbeddedImageScanComponent[];
-    vulnerabilityRequest?: VulnerabilityRequest;
-};
-
-export type VulnerabilityWithRequest = Vulnerability & {
     vulnerabilityRequest: VulnerabilityRequest;
 };
 
@@ -76,6 +89,47 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                     name
                     version
                     fixedIn
+                }
+                vulnerabilityRequest: effectiveVulnerabilityRequest {
+                    id
+                    targetState
+                    status
+                    expired
+                    requestor {
+                        id
+                        name
+                    }
+                    approvers {
+                        id
+                        name
+                    }
+                    comments {
+                        createdAt
+                        id
+                        message
+                        user {
+                            id
+                            name
+                        }
+                    }
+                    deferralReq {
+                        expiresOn
+                        expiresWhenFixed
+                    }
+                    updatedDeferralReq {
+                        expiresOn
+                        expiresWhenFixed
+                    }
+                    scope {
+                        imageScope {
+                            registry
+                            remote
+                            tag
+                        }
+                    }
+                    cves {
+                        ids
+                    }
                 }
             }
         }

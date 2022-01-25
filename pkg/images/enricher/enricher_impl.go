@@ -90,10 +90,13 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
-	if ctx.FetchOnlyIfMetadataEmpty() && image.GetMetadata() != nil {
+	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
+	if !metadataOutOfDate {
 		return false, nil
 	}
+
 	if ctx.FetchOpt != ForceRefetch {
+		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
 			e.metrics.IncrementMetadataCacheHit()
 			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
@@ -195,6 +198,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 		return false, errors.Wrapf(err, "error getting metadata from registry: %q", registry.Name())
 	}
 	metadata.DataSource = registry.DataSource()
+	metadata.Version = metadataVersion
 	image.Metadata = metadata
 
 	cachedMetadata := metadata.Clone()

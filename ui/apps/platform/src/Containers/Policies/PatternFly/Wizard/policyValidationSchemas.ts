@@ -17,7 +17,33 @@ const validationSchema2 = yup.object().shape({
         .min(1, 'At least one lifecycle state is required'), // TODO redundant? .required('Lifecycle stage is required'),
 });
 
-const validationSchema3 = yup.object().shape({}); // TODO
+const validationSchema3 = yup.object().shape({
+    policySections: yup
+        .array()
+        .of(
+            yup.object().shape({
+                policyGroups: yup
+                    .array()
+                    .of(
+                        yup.object().shape({
+                            fieldName: yup.string().trim().required(),
+                            booleanOperator: yup.string().trim().oneOf(['OR', 'AND']),
+                            negate: yup.boolean(),
+                            values: yup
+                                .array()
+                                .of(
+                                    yup.object().shape({
+                                        value: yup.string().trim().required(),
+                                    })
+                                )
+                                .min(1),
+                        })
+                    )
+                    .min(1),
+            })
+        )
+        .min(1),
+});
 
 const validationSchema4 = yup.object().shape({}); // TODO
 

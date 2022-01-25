@@ -16,7 +16,7 @@ import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import useAuthStatus from 'hooks/useAuthStatus';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import { VulnerabilityWithRequest } from '../imageVulnerabilities.graphql';
+import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { DeferredCVEsToBeAssessed } from './types';
 import DeferredCVEActionsColumn from './DeferredCVEActionsColumn';
 import useRiskAcceptance from '../useRiskAcceptance';
@@ -26,7 +26,7 @@ import DeferralExpirationDate from '../DeferralExpirationDate';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 
 export type DeferredCVEsTableProps = {
-    rows: VulnerabilityWithRequest[];
+    rows: Vulnerability[];
     isLoading: boolean;
     itemCount: number;
     updateTable: () => void;
@@ -49,7 +49,7 @@ function DeferredCVEsTable({
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<VulnerabilityWithRequest>(rows);
+    } = useTableSelection<Vulnerability>(rows);
     const [vulnsToBeAssessed, setVulnsToBeAssessed] = useState<DeferredCVEsToBeAssessed>(null);
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
@@ -128,6 +128,7 @@ function DeferredCVEsTable({
                             }}
                         />
                         <Th>CVE</Th>
+                        <Th>Fixable</Th>
                         <Th>Severity</Th>
                         <Th>Expires</Th>
                         <Th modifier="fitContent">Scope</Th>
@@ -153,6 +154,7 @@ function DeferredCVEsTable({
                                     }}
                                 />
                                 <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
@@ -161,9 +163,7 @@ function DeferredCVEsTable({
                                         <DeferralExpirationDate
                                             targetState={row.vulnerabilityRequest.targetState}
                                             requestStatus={row.vulnerabilityRequest.status}
-                                            deferralReq={
-                                                row.vulnerabilityRequest.deferralReq.expiry
-                                            }
+                                            deferralReq={row.vulnerabilityRequest.deferralReq}
                                         />
                                     ) : (
                                         'N/A'

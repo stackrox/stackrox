@@ -132,6 +132,7 @@ function PolicyScopeCard({
                                 <TextInput
                                     value={value.namespace || scope?.namespace}
                                     type="text"
+                                    id={`${name}-namespace`}
                                     onChange={handleChangeNamespace}
                                     placeholder="Provide a namespace"
                                 />
@@ -171,6 +172,7 @@ function PolicyScopeCard({
                                     <TextInput
                                         value={value.label?.key || scope?.label?.key}
                                         type="text"
+                                        id={`${name}-label-key`}
                                         onChange={handleChangeLabelKey}
                                         placeholder="Label key"
                                         isDisabled={hasAuditLogEventSource}
@@ -178,6 +180,7 @@ function PolicyScopeCard({
                                     <TextInput
                                         value={value.label?.value || scope?.label?.value}
                                         type="text"
+                                        id={`${name}-label-value`}
                                         onChange={handleChangeLabelValue}
                                         placeholder="Label value"
                                         isDisabled={hasAuditLogEventSource}

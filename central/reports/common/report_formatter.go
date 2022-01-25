@@ -75,6 +75,10 @@ func Format(results []Result) (*bytes.Buffer, error) {
 			for _, i := range d.Images {
 				for _, c := range i.Components {
 					for _, v := range c.Vulns {
+						discoveredTs := "Not Available"
+						if v.DiscoveredAtImage != nil {
+							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
+						}
 						csvWriter.AddValue(csv.Value{
 							d.Cluster.Name,
 							d.Namespace,
@@ -85,7 +89,7 @@ func Format(results []Result) (*bytes.Buffer, error) {
 							strconv.FormatBool(v.IsFixable),
 							v.FixedByVersion,
 							strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
-							v.DiscoveredAtImage.Time.Format("January 02, 2006"),
+							discoveredTs,
 							v.Link,
 						})
 					}

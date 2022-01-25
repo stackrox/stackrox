@@ -235,6 +235,7 @@ function PolicyBehaviorForm() {
                                             isChecked={hasEnforcementForLifecycle('BUILD')}
                                             isDisabled={!hasBuild}
                                             onChange={onEnforcementActionChangeHandler('BUILD')}
+                                            label="Enforce on Build"
                                         />
                                     </CardActions>
                                 </CardHeader>
@@ -259,6 +260,7 @@ function PolicyBehaviorForm() {
                                             isChecked={hasEnforcementForLifecycle('DEPLOY')}
                                             isDisabled={!hasDeploy}
                                             onChange={onEnforcementActionChangeHandler('DEPLOY')}
+                                            label="Enforce on Deploy"
                                         />
                                     </CardActions>
                                 </CardHeader>
@@ -280,6 +282,7 @@ function PolicyBehaviorForm() {
                                             isChecked={hasEnforcementForLifecycle('RUNTIME')}
                                             isDisabled={!hasRuntime}
                                             onChange={onEnforcementActionChangeHandler('RUNTIME')}
+                                            label="Enforce on Runtime"
                                         />
                                     </CardActions>
                                 </CardHeader>

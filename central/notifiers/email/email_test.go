@@ -17,7 +17,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	assert.NoError(t, err)
 
 	msg := &message{
-		To:      "foo@stackrox.com, bar@stackrox.com",
+		To:      []string{"foo@stackrox.com", "bar@stackrox.com"},
 		From:    "xyz@stackrox.com",
 		Subject: "Test Email",
 		Body:    "How you doin'?",
@@ -31,7 +31,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	msgStr := string(msgBytes)
 
 	assert.Contains(t, msgStr, "From: xyz@stackrox.com\r\n")
-	assert.Contains(t, msgStr, "To: foo@stackrox.com, bar@stackrox.com\r\n")
+	assert.Contains(t, msgStr, "To: foo@stackrox.com,bar@stackrox.com\r\n")
 	assert.Contains(t, msgStr, "Subject: Test Email\r\n")
 	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
 	assert.Contains(t, msgStr, "Content-Type: multipart/mixed;")
@@ -52,7 +52,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 
 func TestEmailMsgNoAttachments(t *testing.T) {
 	msg := &message{
-		To:        "foo@stackrox.com, bar@stackrox.com",
+		To:        []string{"foo@stackrox.com", "bar@stackrox.com"},
 		From:      "xyz@stackrox.com",
 		Subject:   "Test Email",
 		Body:      "How you doin'?",
@@ -63,12 +63,11 @@ func TestEmailMsgNoAttachments(t *testing.T) {
 	msgStr := string(msgBytes)
 
 	assert.Contains(t, msgStr, "From: xyz@stackrox.com\r\n")
-	assert.Contains(t, msgStr, "To: foo@stackrox.com, bar@stackrox.com\r\n")
+	assert.Contains(t, msgStr, "To: foo@stackrox.com,bar@stackrox.com\r\n")
 	assert.Contains(t, msgStr, "Subject: Test Email\r\n")
 	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
 	assert.Contains(t, msgStr, "Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
 	assert.NotContains(t, msgStr, "Content-Type: multipart/mixed;")
-
 	assert.NotContains(t, msgStr, "Content-Type: application/zip\r\n")
 	assert.NotContains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
 	assert.NotContains(t, msgStr, "Content-Disposition: attachment;")

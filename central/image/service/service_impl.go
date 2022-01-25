@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -27,11 +29,17 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
 	maxImagesReturned = 1000
+
+	maxSemaphoreWaitTime = 5 * time.Second
 )
 
 var (
@@ -73,6 +81,8 @@ type serviceImpl struct {
 	enricher enricher.ImageEnricher
 
 	watchedImages watchedImageDataStore.DataStore
+
+	internalScanSemaphore *semaphore.Weighted
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -165,6 +175,14 @@ func (s *serviceImpl) saveImage(img *storage.Image) {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
+		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
+		if pkgUtils.Should(err) == nil {
+			return nil, s.Err()
+		}
+	}
+	defer s.internalScanSemaphore.Release(1)
+
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
 	if request.GetImage().GetId() != "" {

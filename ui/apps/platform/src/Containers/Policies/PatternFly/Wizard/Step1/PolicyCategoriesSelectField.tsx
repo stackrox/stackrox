@@ -39,6 +39,10 @@ function PolicyCategoriesSelectField(): ReactElement {
                 setPolicyCategories(response);
             })
             .catch(() => {});
+
+        return () => {
+            setPolicyCategories([]);
+        };
     }, []);
 
     return (

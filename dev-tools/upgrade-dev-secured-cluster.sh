@@ -9,7 +9,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 custom_helm_args=("$@")
 secured_cluster_chart_path="$DIR/../deploy/k8s/sensor-deploy/chart"
 
-roxctl helm output secured-cluster-services --output-dir "$secured_cluster_chart_path" --remove --debug
+roxctl helm output secured-cluster-services --image-defaults=development_build --output-dir "$secured_cluster_chart_path" --remove --debug
 
 if [[ ! -d "$secured_cluster_chart_path" ]]; then
   echo "Could not find chart: $secured_cluster_chart_path"

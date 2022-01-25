@@ -39,11 +39,13 @@ import { getMappedFixability, getFixabilityConstantFromMap } from './VulnMgmtRep
 export type VulnMgmtReportFormProps = {
     initialValues: ReportConfiguration;
     isEditable?: boolean;
+    refreshQuery?: () => void;
 };
 
 function VulnMgmtReportForm({
     initialValues,
     isEditable = true,
+    refreshQuery = () => {},
 }: VulnMgmtReportFormProps): ReactElement {
     const history = useHistory();
     const [message, setMessage] = useState<FormResponseMessage>(null);
@@ -86,9 +88,15 @@ function VulnMgmtReportForm({
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             responseData = await saveReport(data);
 
+            refreshQuery();
             history.goBack();
         } catch (error) {
             setMessage({ message: getAxiosErrorMessage(error), isError: true });
+
+            const alertEl = document.getElementById('form-message-alert');
+            if (alertEl) {
+                alertEl.scrollIntoView({ behavior: 'smooth' });
+            }
         }
     }
 

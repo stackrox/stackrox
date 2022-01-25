@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -30,15 +30,15 @@ var (
 )
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
-func ReconcilePVCExtension(client client.Client) extensions.ReconcileExtension {
+func ReconcilePVCExtension(client ctrlClient.Client) extensions.ReconcileExtension {
 	return wrapExtension(reconcilePVC, client)
 }
 
-func reconcilePVC(ctx context.Context, central *platform.Central, client client.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+func reconcilePVC(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:        ctx,
 		namespace:  central.GetNamespace(),
-		ctrlClient: client,
+		client:     client,
 		centralObj: central,
 		log:        log,
 	}
@@ -49,7 +49,7 @@ func reconcilePVC(ctx context.Context, central *platform.Central, client client.
 type reconcilePVCExtensionRun struct {
 	ctx        context.Context
 	namespace  string
-	ctrlClient client.Client
+	client     ctrlClient.Client
 	centralObj *platform.Central
 	log        logr.Logger
 }
@@ -72,9 +72,9 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	}
 	claimName := pointer.StringPtrDerefOr(pvcConfig.ClaimName, defaultPVCName)
 
-	key := client.ObjectKey{Namespace: r.namespace, Name: claimName}
+	key := ctrlClient.ObjectKey{Namespace: r.namespace, Name: claimName}
 	pvc := &corev1.PersistentVolumeClaim{}
-	if err := r.ctrlClient.Get(r.ctx, key, pvc); err != nil {
+	if err := r.client.Get(r.ctx, key, pvc); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "fetching referenced %s pvc", claimName)
 		}
@@ -119,7 +119,7 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 		utils.RemoveOwnerRef(ownedPVC, r.centralObj)
 		r.log.Info(fmt.Sprintf("removed owner reference from %q", ownedPVC.GetName()))
 
-		if err := r.ctrlClient.Update(r.ctx, ownedPVC); err != nil {
+		if err := r.client.Update(r.ctx, ownedPVC); err != nil {
 			return errors.Wrapf(err, "removing OwnerReference from %s pvc", ownedPVC.GetName())
 		}
 	}
@@ -151,7 +151,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 		},
 	}
 
-	if err := r.ctrlClient.Create(r.ctx, newPVC); err != nil {
+	if err := r.client.Create(r.ctx, newPVC); err != nil {
 		return errors.Wrapf(err, "creating new %s pvc", claimName)
 	}
 	return nil
@@ -177,7 +177,7 @@ func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.Persisten
 	}
 
 	if shouldUpdate {
-		if err := r.ctrlClient.Update(r.ctx, existingPVC); err != nil {
+		if err := r.client.Update(r.ctx, existingPVC); err != nil {
 			return errors.Wrapf(err, "updating %s pvc", existingPVC.GetName())
 		}
 	}
@@ -198,7 +198,7 @@ func parseResourceQuantityOr(qStrPtr *string, d resource.Quantity) (resource.Qua
 
 func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClaim, error) {
 	pvcList := &corev1.PersistentVolumeClaimList{}
-	if err := r.ctrlClient.List(r.ctx, pvcList, client.InNamespace(r.namespace)); err != nil {
+	if err := r.client.List(r.ctx, pvcList, ctrlClient.InNamespace(r.namespace)); err != nil {
 		return nil, errors.Wrapf(err, "receiving list PVC list for %s %s", r.centralObj.GroupVersionKind(), r.centralObj.GetName())
 	}
 

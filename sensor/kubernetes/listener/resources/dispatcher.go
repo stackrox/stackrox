@@ -61,7 +61,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
 	rbacUpdater := rbac.NewStore()
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)
-	registryStore := newRegistryStore()
+	registryStore := RegistryStoreSingleton()
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
