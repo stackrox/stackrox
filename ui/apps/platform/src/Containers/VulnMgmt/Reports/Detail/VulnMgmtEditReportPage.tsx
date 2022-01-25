@@ -17,9 +17,13 @@ import VulnMgmtReportForm from '../VulnMgmtReportForm';
 
 type VulnMgmtEditReportPageProps = {
     report: ReportConfiguration;
+    refreshQuery: () => void;
 };
 
-function VulnMgmtEditReportPage({ report }: VulnMgmtEditReportPageProps): ReactElement {
+function VulnMgmtEditReportPage({
+    report,
+    refreshQuery,
+}: VulnMgmtEditReportPageProps): ReactElement {
     const { id, name } = report;
 
     return (
@@ -44,7 +48,7 @@ function VulnMgmtEditReportPage({ report }: VulnMgmtEditReportPageProps): ReactE
                 </TextContent>
             </PageSection>
             <Divider component="div" />
-            <VulnMgmtReportForm initialValues={report} />
+            <VulnMgmtReportForm initialValues={report} refreshQuery={refreshQuery} />
         </>
     );
 }
