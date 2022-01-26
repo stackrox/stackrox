@@ -28,7 +28,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - collector (slim): `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8`
   - scanner: `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8`
   - scanner-db: `registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8`
-- Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images.
+- Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images. For example, a scanner image for ACS 3.68.0 is now identified as following `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:3.68.0` and `stackrox.io/scanner:3.68.0` Please double-check it! This versioning scheme will be used for future releases.
 
 ## [67.2]
 
