@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import {connect} from 'react-redux';
+import {createStructuredSelector} from 'reselect';
 import upperFirst from 'lodash/upperFirst';
-import { Message } from '@stackrox/ui-components';
+import {Message} from '@stackrox/ui-components';
 
-import { selectors } from 'reducers';
+import {selectors} from 'reducers';
 import AppWrapper from '../AppWrapper';
 
 function closeThisWindow() {
@@ -36,13 +36,9 @@ function getMessage(response) {
         );
     });
 
-    const displayRoles = response.roles
-        .filter((role) => {
-            return role.name !== `None`;
-        })
-        .map((role) => {
-            return <li key={role.name}>{role.name}</li>;
-        });
+    const displayRoles = response.roles.map((role) => {
+        return <li key={role.name}>{role.name}</li>;
+    });
 
     const content = (
         <>
