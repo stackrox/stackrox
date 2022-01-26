@@ -6,31 +6,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
 	pollingInterval = 10 * time.Millisecond
-	epsilonTime     = 100 * time.Millisecond
+	capTime         = 100 * time.Millisecond
 	longTime        = 2 * time.Second
 	backoff         = wait.Backoff{
-		Duration: epsilonTime,
+		Duration: capTime,
 		Factor:   1,
 		Jitter:   0,
 		Steps:    1,
-		Cap:      epsilonTime,
+		Cap:      capTime,
 	}
 )
-
-func TestHandler(t *testing.T) {
-	suite.Run(t, new(retryTickerSuite))
-}
-
-type retryTickerSuite struct {
-	suite.Suite
-}
 
 type testTickFun struct {
 	mock.Mock
@@ -49,7 +41,7 @@ func (f *testTickFun) OnTickError(err error) {
 	f.Called(err)
 }
 
-func (s *retryTickerSuite) TestRetryTicker() {
+func TestRetryTicker(t *testing.T) {
 	testCases := map[string]struct {
 		forceError       bool
 		addEventHandlers bool
@@ -60,9 +52,9 @@ func (s *retryTickerSuite) TestRetryTicker() {
 		"oneErrorWithoutEventHandlers": {forceError: true, addEventHandlers: false},
 	}
 	for tcName, tc := range testCases {
-		s.Run(tcName, func() {
+		t.Run(tcName, func(t *testing.T) {
 			var done1, done2 Flag
-			wait1 := 2 * epsilonTime
+			wait1 := 2 * capTime
 			forcedErr := errors.New("forced")
 
 			m := &testTickFun{}
@@ -94,14 +86,14 @@ func (s *retryTickerSuite) TestRetryTicker() {
 			ticker.Start()
 			defer ticker.Stop()
 
-			s.True(PollWithTimeout(done1.Get, pollingInterval, epsilonTime))
+			assert.True(t, PollWithTimeout(done1.Get, pollingInterval, capTime))
 			if !tc.forceError {
-				s.True(PollWithTimeout(done2.Get, pollingInterval, wait1+epsilonTime))
+				assert.True(t, PollWithTimeout(done2.Get, pollingInterval, wait1+capTime))
 			} else {
-				s.True(PollWithTimeout(done2.Get, pollingInterval, backoff.Cap+epsilonTime))
+				assert.True(t, PollWithTimeout(done2.Get, pollingInterval, backoff.Cap+capTime))
 			}
 
-			m.AssertExpectations(s.T())
+			m.AssertExpectations(t)
 		})
 	}
 }
