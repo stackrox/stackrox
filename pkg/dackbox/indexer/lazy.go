@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -39,14 +40,16 @@ func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, index bleve.Index, ac
 		toIndex:    toIndex,
 		buff:       NewBuffer(maxBatchSize),
 		stopSignal: concurrency.NewSignal(),
+		keyTracker: set.NewStringSet(),
 	}
 }
 
 type lazyImpl struct {
-	wrapper Wrapper
-	index   bleve.Index
-	acker   Acker
-	toIndex queue.WaitableQueue
+	keyTracker set.StringSet
+	wrapper    Wrapper
+	index      bleve.Index
+	acker      Acker
+	toIndex    queue.WaitableQueue
 
 	buff Buffer
 
@@ -108,6 +111,10 @@ func (li *lazyImpl) handleKeyValue(key []byte, value proto.Message) {
 		log.Errorf("no wrapper registered for key: %s", key)
 		return
 	}
+	if strings.HasPrefix(string(key), "image_to_cve") {
+		li.keyTracker.Add(indexedKey)
+		log.Errorf("Adding image_cve_edge %s to index buffer. indexedKey=%s; indexedValue=%v", key, indexedKey, indexedValue)
+	}
 	li.buff.AddKeyToAck(key)
 	li.buff.AddValueToIndex(indexedKey, indexedValue)
 }
@@ -132,6 +139,10 @@ func (li *lazyImpl) indexItems(itemsToIndex map[string]interface{}) {
 			if err := batch.Index(key, value); err != nil {
 				log.Errorf("unable to index item: %s, %v", key, err)
 			}
+			if li.keyTracker.Contains(key) {
+				log.Errorf("Successfully indexed image_cve_edge key=%s; value=%s", key, value)
+			}
+
 		} else {
 			batch.Delete(key)
 		}

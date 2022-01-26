@@ -2,6 +2,7 @@ package dackbox
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
@@ -200,6 +201,9 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 		msg, err := reader.ReadIn(key, txn)
 		if err != nil {
 			return err
+		}
+		if strings.HasPrefix(string(key), "image_to_cve") {
+			log.Errorf("Added image_cve_edge %s to index queue. value isNil? %v", key, msg == nil)
 		}
 		indexQ.Push(key, msg)
 	}
