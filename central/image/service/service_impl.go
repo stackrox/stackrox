@@ -193,8 +193,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
 		// Otherwise, fetch it from the DB.
 		if exists {
+			utils.FilterSuppressedCVEsNoClone(img)
 			return &v1.ScanImageInternalResponse{
-				Image: sanitizeImage(img),
+				Image: utils.StripCVEDescriptions(img),
 			}, nil
 		}
 	}
@@ -214,23 +215,16 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// even if we weren't able to enrich it
 	}
 
-	// asynchronously upsert the image, as this rpc should be performant
+	// asynchronously upsert images as this rpc should be performant
 	if img.GetId() != "" {
 		go s.saveImage(img.Clone())
 	}
 
-	return &v1.ScanImageInternalResponse{
-		Image: sanitizeImage(img),
-	}, nil
-}
-
-// sanitizeImage prepares the image for responses.
-// The passed in image is modified.
-// Returns the passed in image.
-func sanitizeImage(img *storage.Image) *storage.Image {
+	// This modifies the image object
 	utils.FilterSuppressedCVEsNoClone(img)
-	utils.StripCVEDescriptionsNoClone(img)
-	return img
+	return &v1.ScanImageInternalResponse{
+		Image: utils.StripCVEDescriptions(img),
+	}, nil
 }
 
 // ScanImage scans an image and returns the result
@@ -261,7 +255,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 // GetImageVulnerabilitiesInternal retrieves the vulnerabilities related to the image
 // specified by the given components and scan notes.
-// This is meant to be called by Sensor or Admission Controller.
+// This is meant to be called by Sensor.
 // TODO(ROX-8401): Implement me.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.GetImageVulnerabilitiesInternalResponse, error) {
 	return nil, nil
