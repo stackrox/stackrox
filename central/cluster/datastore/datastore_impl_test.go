@@ -28,11 +28,13 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -130,6 +132,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.networkBaselineMgr,
 	)
 	suite.NoError(err)
+	testbuildinfo.SetForTest(suite.T())
+	testutils.SetExampleVersion(suite.T())
 }
 
 func (suite *ClusterDataStoreTestSuite) TearDownTest() {
@@ -1292,37 +1296,72 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
-	{
+
+	suite.Run("Default API endpoint", func() {
 		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, false, storage.ClusterType_KUBERNETES_CLUSTER)
 		suite.NoError(err)
-		suite.Equal(defaults.GetCentralApiEndpoint(), centralEndpoint)
-		suite.False(defaults.SlimCollector)
-		suite.True(defaults.AdmissionController)
+		suite.Equal(centralEndpoint, defaults.GetCentralApiEndpoint())
+	})
+
+	cases := map[string]struct {
+		kernelSupport bool
+		clusterType   storage.ClusterType
+
+		expectedSlimCollector       bool
+		expectedAdmissionController bool
+		expectedDisableAuditLogs    bool
+	}{
+		"No kernel suppport / K8s cluster": {
+			kernelSupport:               false,
+			clusterType:                 storage.ClusterType_KUBERNETES_CLUSTER,
+			expectedSlimCollector:       false,
+			expectedAdmissionController: true,
+			expectedDisableAuditLogs:    true,
+		},
+		"With kernel suppport / K8s cluster": {
+			kernelSupport:               true,
+			clusterType:                 storage.ClusterType_KUBERNETES_CLUSTER,
+			expectedSlimCollector:       true,
+			expectedAdmissionController: true,
+			expectedDisableAuditLogs:    true,
+		},
+		"No kernel suppport / Openshift cluster": {
+			kernelSupport:               false,
+			clusterType:                 storage.ClusterType_OPENSHIFT_CLUSTER,
+			expectedSlimCollector:       false,
+			expectedAdmissionController: false,
+			expectedDisableAuditLogs:    true,
+		},
+		"With kernel suppport / Openshift cluster": {
+			kernelSupport:               true,
+			clusterType:                 storage.ClusterType_OPENSHIFT_CLUSTER,
+			expectedSlimCollector:       true,
+			expectedAdmissionController: false,
+			expectedDisableAuditLogs:    true,
+		},
+		"No kernel suppport / Openshift 4 cluster": {
+			kernelSupport:               false,
+			clusterType:                 storage.ClusterType_OPENSHIFT4_CLUSTER,
+			expectedSlimCollector:       false,
+			expectedAdmissionController: false,
+			expectedDisableAuditLogs:    false,
+		},
+		"With kernel suppport / Openshift 4 cluster": {
+			kernelSupport:               true,
+			clusterType:                 storage.ClusterType_OPENSHIFT4_CLUSTER,
+			expectedSlimCollector:       true,
+			expectedAdmissionController: false,
+			expectedDisableAuditLogs:    false,
+		},
 	}
-	{
-		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, true, storage.ClusterType_KUBERNETES_CLUSTER)
-		suite.NoError(err)
-		suite.True(defaults.SlimCollector)
-		suite.True(defaults.AdmissionController)
-		suite.True(defaults.DynamicConfig.DisableAuditLogs)
-	}
-	{
-		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, false, storage.ClusterType_OPENSHIFT_CLUSTER)
-		suite.NoError(err)
-		suite.False(defaults.SlimCollector)
-		suite.True(defaults.DynamicConfig.DisableAuditLogs)
-		suite.False(defaults.AdmissionController)
-	}
-	{
-		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, true, storage.ClusterType_OPENSHIFT_CLUSTER)
-		suite.NoError(err)
-		suite.True(defaults.DynamicConfig.DisableAuditLogs)
-		suite.False(defaults.AdmissionController)
-	}
-	{
-		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, true, storage.ClusterType_OPENSHIFT4_CLUSTER)
-		suite.NoError(err)
-		suite.False(defaults.DynamicConfig.DisableAuditLogs)
-		suite.False(defaults.AdmissionController)
+
+	for name, testCase := range cases {
+		suite.Run(name, func() {
+			defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, testCase.kernelSupport, testCase.clusterType)
+			suite.NoError(err)
+			suite.Equal(testCase.expectedSlimCollector, defaults.SlimCollector)
+			suite.Equal(testCase.expectedAdmissionController, defaults.AdmissionController)
+			suite.Equal(testCase.expectedDisableAuditLogs, defaults.DynamicConfig.DisableAuditLogs)
+		})
 	}
 }
