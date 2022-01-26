@@ -24,17 +24,18 @@ type certSecretsRepo interface {
 }
 
 type certSecretsRepoImpl struct {
-	secretNames map[storage.ServiceType]string
-	backoff wait.Backoff
-	secretsClient   corev1.SecretInterface
-
+	secretNames   map[storage.ServiceType]string
+	backoff       wait.Backoff
+	secretsClient corev1.SecretInterface
 }
 
+// NewCertSecretsRepo creates a new certSecretsRepo that handles secrets with the specified names and
+// for the specified service types.
 func NewCertSecretsRepo(secretNames map[storage.ServiceType]string,
 	backoff wait.Backoff, secretsClient corev1.SecretInterface) certSecretsRepo {
 	return &certSecretsRepoImpl{
-		secretNames: secretNames,
-		backoff: backoff,
+		secretNames:   secretNames,
+		backoff:       backoff,
 		secretsClient: secretsClient,
 	}
 }
@@ -45,7 +46,7 @@ func (r *certSecretsRepoImpl) getSecrets(ctx context.Context) (map[storage.Servi
 	for serviceType, secretName := range r.secretNames {
 		var (
 			secret *v1.Secret
-			err error
+			err    error
 		)
 		retryErr := retry.OnError(r.backoff,
 			func(err error) bool {
@@ -57,7 +58,7 @@ func (r *certSecretsRepoImpl) getSecrets(ctx context.Context) (map[storage.Servi
 			},
 		)
 		if retryErr != nil {
-			getErr = multierror.Append(getErr, errors.Wrapf(retryErr,"for secret %s", secretName))
+			getErr = multierror.Append(getErr, errors.Wrapf(retryErr, "for secret %s", secretName))
 		} else {
 			secretsMap[serviceType] = secret
 		}
@@ -89,8 +90,8 @@ func (r *certSecretsRepoImpl) putSecrets(ctx context.Context, secrets map[storag
 					return err
 				},
 			)
-			if retryErr != nil{
-				putErr = multierror.Append(putErr, errors.Wrapf(retryErr,"for secret %s", secretName))
+			if retryErr != nil {
+				putErr = multierror.Append(putErr, errors.Wrapf(retryErr, "for secret %s", secretName))
 			}
 		}
 		// on context cancellation abort putting other secrets.

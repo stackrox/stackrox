@@ -8,14 +8,13 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-
-	"github.com/stretchr/testify/suite"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	fakecorev1 "k8s.io/client-go/kubernetes/typed/core/v1/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
@@ -23,16 +22,17 @@ import (
 const (
 	namespace = "namespace"
 )
+
 var (
-	forcedErr = errors.New("forced error")
-	serviceTypes    = []storage.ServiceType{
+	errForced    = errors.New("forced error")
+	serviceTypes = []storage.ServiceType{
 		storage.ServiceType_SENSOR_SERVICE,
 		storage.ServiceType_SCANNER_SERVICE,
 		storage.ServiceType_SCANNER_DB_SERVICE,
 		storage.ServiceType_CENTRAL_SERVICE,
 	}
-	capTime         = 100 * time.Millisecond
-	shortBackoff         = wait.Backoff{
+	capTime      = 100 * time.Millisecond
+	shortBackoff = wait.Backoff{
 		Duration: capTime,
 		Factor:   1,
 		Jitter:   0,
@@ -41,10 +41,11 @@ var (
 	}
 	longBackoff = wait.Backoff{
 		Duration: 2 * time.Second,
-		Factor: 10,
-		Steps: 20,
+		Factor:   10,
+		Steps:    20,
 	}
 )
+
 func TestCertSecretsRepo(t *testing.T) {
 	suite.Run(t, new(certSecretsRepoSuite))
 }
@@ -54,13 +55,13 @@ type certSecretsRepoSuite struct {
 }
 
 func (s *certSecretsRepoSuite) TestGet() {
-	testCases := map[string]struct{
+	testCases := map[string]struct {
 		expectedErr error
-		f *certSecretsRepoFixture
+		f           *certSecretsRepoFixture
 	}{
-		"successful get": {nil, s.newFixture("", shortBackoff,"foo")},
-		"failed get": {forcedErr, s.newFixture("get", shortBackoff, "foo")},
-		"cancelled get": {context.Canceled, s.newFixture("get", longBackoff, "foo")},
+		"successful get": {nil, s.newFixture("", shortBackoff, "foo")},
+		"failed get":     {errForced, s.newFixture("get", shortBackoff, "foo")},
+		"cancelled get":  {context.Canceled, s.newFixture("get", longBackoff, "foo")},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -92,13 +93,13 @@ func (s *certSecretsRepoSuite) TestGet() {
 }
 
 func (s *certSecretsRepoSuite) TestPut() {
-	testCases := map[string]struct{
+	testCases := map[string]struct {
 		expectedErr error
-		f *certSecretsRepoFixture
+		f           *certSecretsRepoFixture
 	}{
-		"successful put": {nil, s.newFixture("", shortBackoff,"foo")},
-		"failed put": {forcedErr, s.newFixture("update", shortBackoff, "foo")},
-		"cancelled put": {context.Canceled, s.newFixture("update", longBackoff, "foo")},
+		"successful put": {nil, s.newFixture("", shortBackoff, "foo")},
+		"failed put":     {errForced, s.newFixture("update", shortBackoff, "foo")},
+		"cancelled put":  {context.Canceled, s.newFixture("update", longBackoff, "foo")},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -123,19 +124,19 @@ func (s *certSecretsRepoSuite) TestPut() {
 	}
 }
 
-func  (s *certSecretsRepoSuite) checkExpectedError(expectedErr, err error) {
-	if expectedErr != forcedErr {
+func (s *certSecretsRepoSuite) checkExpectedError(expectedErr, err error) {
+	if expectedErr != errForced {
 		s.Equal(expectedErr, err)
 	} else {
-		// multierror wraps forcedErr
+		// multierror wraps errForced
 		s.NotNil(err)
 	}
 }
 
 type certSecretsRepoFixture struct {
-	repo certSecretsRepo
+	repo         certSecretsRepo
 	secretClient corev1.SecretInterface
-	secretsMap map[storage.ServiceType]*v1.Secret
+	secretsMap   map[storage.ServiceType]*v1.Secret
 }
 
 func (s *certSecretsRepoSuite) newFixture(verbToError string, backoff wait.Backoff, secretNames ...string) *certSecretsRepoFixture {
@@ -147,7 +148,7 @@ func (s *certSecretsRepoSuite) newFixture(verbToError string, backoff wait.Backo
 	for i, secretName := range secretNames {
 		secret := &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: secretName,
+				Name:      secretName,
 				Namespace: namespace,
 			},
 		}
@@ -158,11 +159,11 @@ func (s *certSecretsRepoSuite) newFixture(verbToError string, backoff wait.Backo
 	clientSet := fake.NewSimpleClientset(objects...)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(verbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
-		return true, &v1.Secret{}, forcedErr
+		return true, &v1.Secret{}, errForced
 	})
 	return &certSecretsRepoFixture{
-		repo: NewCertSecretsRepo(secretsNamesMap, backoff, secretsClient),
+		repo:         NewCertSecretsRepo(secretsNamesMap, backoff, secretsClient),
 		secretClient: secretsClient,
-		secretsMap: secretsMap,
+		secretsMap:   secretsMap,
 	}
 }
