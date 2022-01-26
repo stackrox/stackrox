@@ -17,6 +17,7 @@ import (
 // Client is a Scanner gRPC client.
 type Client struct {
 	client scannerV1.ImageScanServiceClient
+	conn   *grpc.ClientConn
 }
 
 // NewGRPCClient creates a new Scanner client.
@@ -50,6 +51,7 @@ func NewGRPCClient(endpoint string) (*Client, error) {
 
 	return &Client{
 		client: scannerV1.NewImageScanServiceClient(conn),
+		conn: conn,
 	}, nil
 }
 
@@ -75,4 +77,8 @@ func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 	}
 
 	return resp, nil
+}
+
+func (c *Client) Close() error {
+	return c.conn.Close()
 }
