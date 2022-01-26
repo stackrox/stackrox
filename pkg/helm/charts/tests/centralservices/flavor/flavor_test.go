@@ -1,7 +1,7 @@
 package flavor
 
 import (
-	"fmt"
+	"path"
 	"testing"
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
@@ -14,15 +14,20 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
+const testDir = "testdata/helmtest"
+
 func customFlavor(t *testing.T) defaults.ImageFlavor {
 	return defaults.ImageFlavor{
-		MainRegistry:       "example.io",
-		MainImageName:      "custom-main",
-		MainImageTag:       "1.2.3",
-		ScannerImageName:   "custom-scanner",
-		ScannerImageTag:    "3.2.1",
-		ScannerDBImageName: "custom-scanner-db",
-		ScannerDBImageTag:  "3.2.1",
+		MainRegistry:           "example.io",
+		MainImageName:          "custom-main",
+		MainImageTag:           "1.2.3",
+		ScannerImageName:       "custom-scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        "3.2.1",
+		ScannerDBSlimImageName: "scanner-slim",
+		ScannerDBImageName:     "custom-scanner-db",
+
+		ScannerDBImageTag: "3.2.1",
 		ChartRepo: defaults.ChartRepo{
 			URL: "url",
 		},
@@ -64,7 +69,7 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 			ch, err := tpl.InstantiateAndLoad(metaVals)
 			require.NoError(t, err, "error instantiating chart")
 
-			suite, err := helmTest.NewLoader("testdata/helmtest", helmTest.WithCustomFilePattern(fmt.Sprintf("%s.test.yaml", name))).LoadSuite()
+			suite, err := helmTest.NewLoader(testDir, helmTest.WithAdditionalTestDirs(path.Join(testDir, name))).LoadSuite()
 			require.NoError(t, err, "failed to load helmtest suite")
 
 			target := &helmTest.Target{
