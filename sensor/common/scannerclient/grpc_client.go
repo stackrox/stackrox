@@ -14,14 +14,14 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// Client is a Scanner gRPC client.
-type Client struct {
+// client is a Scanner gRPC client.
+type client struct {
 	client scannerV1.ImageScanServiceClient
 	conn   *grpc.ClientConn
 }
 
-// NewGRPCClient creates a new Scanner client.
-func NewGRPCClient(endpoint string) (*Client, error) {
+// newGRPCClient creates a new Scanner client.
+func newGRPCClient(endpoint string) (*client, error) {
 	if endpoint == "" {
 		// No Scanner connection desired.
 		return nil, nil
@@ -36,7 +36,6 @@ func NewGRPCClient(endpoint string) (*Client, error) {
 		endpoint = fmt.Sprintf("https://%s", endpoint)
 	}
 
-	// TODO: is this right?
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
 	})
@@ -49,7 +48,7 @@ func NewGRPCClient(endpoint string) (*Client, error) {
 		return nil, errors.Wrap(err, "failed to connect to Scanner")
 	}
 
-	return &Client{
+	return &client{
 		client: scannerV1.NewImageScanServiceClient(conn),
 		conn: conn,
 	}, nil
@@ -60,7 +59,7 @@ func NewGRPCClient(endpoint string) (*Client, error) {
 // 1. Retrieve image metadata.
 // 2. Request image analysis from Scanner, directly.
 // 3. Return image analysis results.
-func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*scannerV1.GetImageComponentsResponse, error) {
+func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*scannerV1.GetImageComponentsResponse, error) {
 	// TODO: get image metadata
 
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
@@ -79,6 +78,6 @@ func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 	return resp, nil
 }
 
-func (c *Client) Close() error {
+func (c *client) Close() error {
 	return c.conn.Close()
 }

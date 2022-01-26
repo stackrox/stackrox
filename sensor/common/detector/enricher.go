@@ -61,7 +61,6 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.Conta
 	// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
 	// image is stored in an internal registry which Sensor can reach.
 	if err == nil && scannedImage.GetImage().GetMetadata() == nil {
-		// TODO: Add rate limiting?
 		scannedImage.Image, err = scannerclient.ScanImage(ctx, svc, ci)
 	}
 
