@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.EnvVarBuilder
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder
+import io.fabric8.kubernetes.api.model.ExecAction
 import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
@@ -2097,10 +2098,8 @@ class Kubernetes implements OrchestratorMain {
             requests.put(key, quantity)
         }
 
-        Probe livenessProbe = new Probe()
-        livenessProbe.setTimeoutSeconds(10)
-        Probe readinessProbe = new Probe()
-        readinessProbe.setTimeoutSeconds(10)
+        Probe livenessProbe = new Probe(exec: new ExecAction(command: ["cat", "/run/health"]))
+        Probe readinessProbe = new Probe(exec: new ExecAction(command: ["cat", "/run/health"]))
         Container container = new Container(
                 name: deployment.containerName ? deployment.containerName : deployment.name,
                 image: deployment.image,
