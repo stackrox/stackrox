@@ -1,4 +1,4 @@
-package resources
+package registry
 
 import (
 	"github.com/pkg/errors"
@@ -10,9 +10,9 @@ import (
 	"github.com/stackrox/rox/pkg/tlscheck"
 )
 
-// RegistryStore stores cluster-internal registries by namespace.
+// Store stores cluster-internal registries by namespace.
 // It is assumed all the registries are Docker registries.
-type RegistryStore struct {
+type Store struct {
 	factory registries.Factory
 	// store maps a namespace to the names of registries accessible from within the namespace.
 	// The registry maps to its credentials.
@@ -22,14 +22,14 @@ type RegistryStore struct {
 }
 
 // newRegistryStore creates a new registryStore.
-func newRegistryStore() *RegistryStore {
-	return &RegistryStore{
+func newRegistryStore() *Store {
+	return &Store{
 		factory: registries.NewFactory(registries.WithRegistryCreators(dockerFactory.Creator)),
 		store:   make(map[string]registries.Set),
 	}
 }
 
-func (rs *RegistryStore) getRegistries(namespace string) registries.Set {
+func (rs *Store) getRegistries(namespace string) registries.Set {
 	rs.mutex.Lock()
 	defer rs.mutex.Unlock()
 
@@ -42,8 +42,8 @@ func (rs *RegistryStore) getRegistries(namespace string) registries.Set {
 	return regs
 }
 
-// upsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
-func (rs *RegistryStore) upsertRegistry(namespace, registry string, dce types.DockerConfigEntry) error {
+// UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
+func (rs *Store) UpsertRegistry(namespace, registry string, dce types.DockerConfigEntry) error {
 	regs := rs.getRegistries(namespace)
 
 	secure, err := tlscheck.CheckTLS(registry)
@@ -71,8 +71,8 @@ func (rs *RegistryStore) upsertRegistry(namespace, registry string, dce types.Do
 	return nil
 }
 
-// getAllInNamespace returns all the registries within a given namespace.
-func (rs *RegistryStore) getAllInNamespace(namespace string) registries.Set {
+// GetAllInNamespace returns all the registries within a given namespace.
+func (rs *Store) GetAllInNamespace(namespace string) registries.Set {
 	rs.mutex.RLock()
 	defer rs.mutex.RUnlock()
 

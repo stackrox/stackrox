@@ -8,9 +8,6 @@ var (
 
 	psInit   sync.Once
 	podStore *PodStore
-
-	rsInit   sync.Once
-	regStore *RegistryStore
 )
 
 // DeploymentStoreSingleton returns a singleton of the DeploymentStore
@@ -27,12 +24,4 @@ func PodStoreSingleton() *PodStore {
 		podStore = newPodStore()
 	})
 	return podStore
-}
-
-// RegistryStoreSingleton returns a singleton of the RegistryStore.
-func RegistryStoreSingleton() *RegistryStore {
-	rsInit.Do(func() {
-		regStore = newRegistryStore()
-	})
-	return regStore
 }

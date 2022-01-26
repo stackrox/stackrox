@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/registry"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -122,11 +123,11 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 
 // secretDispatcher handles secret resource events.
 type secretDispatcher struct {
-	regStore *RegistryStore
+	regStore *registry.Store
 }
 
 // newSecretDispatcher creates and returns a new secret handler.
-func newSecretDispatcher(regStore *RegistryStore) *secretDispatcher {
+func newSecretDispatcher(regStore *registry.Store) *secretDispatcher {
 	return &secretDispatcher{
 		regStore: regStore,
 	}
@@ -192,7 +193,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 		if features.LocalImageScanning.Enabled() {
 			if fromDefaultSA {
 				// Store the registry credentials so Sensor can reach it.
-				err := s.regStore.upsertRegistry(secret.GetNamespace(), registry, dce)
+				err := s.regStore.UpsertRegistry(secret.GetNamespace(), registry, dce)
 				if err != nil {
 					log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 				}
