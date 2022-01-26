@@ -67,7 +67,7 @@ class PolicyFieldsTest extends BaseSpecification {
                             )
                     )
                     .setCreateRoute(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
-                    .setReplicas(3)
+                    .setReplicas(2)
 
     static final private BASED_ON_DEBIAN_7 = DEP_A
     static final private WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG = DEP_A
