@@ -265,6 +265,10 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 	if err != nil {
 		return nil, err
 	}
+	// Make sure pods are in the hierarchy
+	for _, p := range pods {
+		hierarchy.Add(p)
+	}
 	return filterOnOwners(hierarchy, w.Id, pods), nil
 }
 

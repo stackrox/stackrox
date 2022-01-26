@@ -1,13 +1,15 @@
 package references
 
 import (
+	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ParentHierarchy defines the interface for managing dependencies between deployments
 type ParentHierarchy interface {
-	Add(parents []string, child string)
+	Add(obj metav1.Object)
 	Remove(id string)
 	IsValidChild(parent string, child string) bool
 	TopLevelParents(child string) set.StringSet
@@ -25,11 +27,19 @@ func NewParentHierarchy() ParentHierarchy {
 	}
 }
 
-func (p *parentHierarchy) Add(parents []string, child string) {
+func (p *parentHierarchy) Add(obj metav1.Object) {
+	parents := make([]string, 0, len(obj.GetOwnerReferences()))
+	for _, ref := range obj.GetOwnerReferences() {
+		if ref.UID != "" && resources.IsTrackedOwnerReference(ref) {
+			// Only bother adding parents we track.
+			parents = append(parents, string(ref.UID))
+		}
+	}
+
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	p.parents[child] = parents
+	p.parents[string(obj.GetUID())] = parents
 }
 
 func (p *parentHierarchy) Remove(id string) {
