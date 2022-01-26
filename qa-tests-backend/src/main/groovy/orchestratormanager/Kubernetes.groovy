@@ -2097,10 +2097,10 @@ class Kubernetes implements OrchestratorMain {
             requests.put(key, quantity)
         }
 
-        // Probe livenessProbe = new Probe()
-        // livenessProbe.setTimeoutSeconds(10);
-        // Probe readinessProbe = new Probe()
-        // readinessProbe.setTimeoutSeconds(10);
+        Probe livenessProbe = new Probe()
+        livenessProbe.setTimeoutSeconds(10)
+        Probe readinessProbe = new Probe()
+        readinessProbe.setTimeoutSeconds(10)
         Container container = new Container(
                 name: deployment.containerName ? deployment.containerName : deployment.name,
                 image: deployment.image,
@@ -2115,10 +2115,8 @@ class Kubernetes implements OrchestratorMain {
                                                      readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
                                                                                     drop: deployment.dropCapabilities)),
-                // livenessProbe: deployment.livenessProbeDefined ? null : null,
-                // readinessProbe: deployment.readinessProbeDefined ? null : null,
-                livenessProbe: null,
-                readinessProbe: null,
+                livenessProbe: deployment.livenessProbeDefined ? livenessProbe : null,
+                readinessProbe: deployment.readinessProbeDefined ? readinessProbe : null,
         )
 
         PodSpec podSpec = new PodSpec(
