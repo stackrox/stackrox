@@ -137,10 +137,17 @@ func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
 // available per result.
 //
 // The constructed tree would look like the following:
-//                  dep1
-//		image1				image2
-//	comp11   comp12      comp21   comp22
-// cve1          -      cve1          cve2
+//	dep1
+//	- image1
+//	  - comp11
+//      - cve1
+//    - comp12
+//      - -
+//  - image2
+//    - comp21
+//      - cve1
+//    - comp22
+//      - cve2
 //
 // Each children is representing a related data. Now, when constructing the column, we are aware of
 // related data and can expand the column values.
@@ -213,7 +220,7 @@ func (ct *columnTree) CreateColumns() [][]string {
 	columns := make([][]string, 0, numberOfQueries)
 	for columnIndex := 0; columnIndex < numberOfQueries; columnIndex++ {
 		// For each query, the query ID == columnID on the node. Retrieve all values for the specific columnID
-		// and auto expand, if required, the values already.
+		// and auto expand, if required, them.
 		// The values need to be merged based on their index.
 		columns = append(columns, ct.createColumnFromColumnNodes(columnIndex))
 	}
@@ -266,6 +273,11 @@ func getDimensionFromQuery(query string) int {
 
 // isRelatedQuery checks whether relatedQuery is a relatedQuery to query
 func isRelatedQuery(relatedQuery, query string) bool {
+	// If the query is empty, we automatically assume that they are related.
+	if query == "" {
+		return true
+	}
+
 	// Related queries are substrings and not equal. If they are equal, return false.
 	if relatedQuery == query {
 		return false
@@ -332,44 +344,39 @@ func getColumnNodesForResult(query string, result gjson.Result, dimension int, c
 // lower dimension.
 // The values of lastIndex and count have to be false when starting the recursion.
 func getValuesAndIndices(value gjson.Result, values []string, lastIndex int, indicesInLowerDimension []int, dimension int, count bool) ([]string, []int, int) {
-	if value.String() == "" || value.Raw == "[]" || value.Type == gjson.Null {
+	if isEmpty(value) {
 		if dimension <= 1 {
 			// Special case: If the dimension is 0, we always count. Otherwise, this would lead to lastIndex=-1.
 			lastIndex++
 		}
-		return append(values, "-"), append(indicesInLowerDimension, lastIndex), lastIndex
+		return append(values, emptyReplacement), append(indicesInLowerDimension, lastIndex), lastIndex
 	}
 
 	if !value.IsArray() {
 		return append(values, value.String()), append(indicesInLowerDimension, lastIndex), lastIndex
 	}
-	if value.IsArray() {
-		arr := value.Array()
-		for _, res := range arr {
-			if res.IsArray() && count && getDimension(res) == 1 {
-				lastIndex++
-			}
-			// Start counting when the value is equal to the dimension we are getting values for.
-			// Count the index of associated values in lower hierarchy.
-			if currentDimension := getDimension(value); currentDimension == dimension && !count {
-				count = true
-				// Special case: Since the lastIndex is starting with -1, need to count for dimension <=2, otherwise
-				// the result will be lastIndex=-1, which would be invalid.
-				if currentDimension <= 2 {
-					lastIndex++
-				}
-			} else if dimension <= 1 {
-				// Special case: If the dimension is 0, we always count. Otherwise, this would lead to lastIndex=-1.
-				count = true
-				lastIndex++
-			}
-
-			// TODO: Potentially need a special case here, where we are counting for dimension 1 each time.
-
-			// Recursively get the values and indices for each array element. The lastIndex will be reused, so get the
-			// correct offset for each yielded values.
-			values, indicesInLowerDimension, lastIndex = getValuesAndIndices(res, values, lastIndex, indicesInLowerDimension, dimension, count)
+	arr := value.Array()
+	for _, res := range arr {
+		if res.IsArray() && count && getDimension(res) == 1 {
+			lastIndex++
 		}
+		// Start counting when the value is equal to the dimension we are getting values for.
+		// Count the index of associated values in lower hierarchy.
+		if currentDimension := getDimension(value); currentDimension == dimension && !count {
+			count = true
+			// Special case: Since the lastIndex is starting with -1, need to count for dimension <=2, otherwise
+			// the result will be lastIndex=-1, which would be invalid.
+			if currentDimension <= 2 {
+				lastIndex++
+			}
+		} else if dimension <= 1 {
+			// Special case: If the dimension is 0, we always count. Otherwise, this would lead to lastIndex=-1.
+			count = true
+			lastIndex++
+		}
+		// Recursively get the values and indices for each array element. The lastIndex will be reused, so get the
+		// correct offset for each yielded values.
+		values, indicesInLowerDimension, lastIndex = getValuesAndIndices(res, values, lastIndex, indicesInLowerDimension, dimension, count)
 	}
 
 	return values, indicesInLowerDimension, lastIndex
@@ -516,4 +523,9 @@ func removeModifierExpressionsFromQuery(query string) string {
 		query = r.ReplaceAllString(query, "")
 	}
 	return query
+}
+
+func isEmpty(value gjson.Result) bool {
+	// Need to handle more cases than Exists covers, i.e. empty arrays or objects.
+	return !value.Exists() || value.Raw == "[]" || value.String() == "" || value.Raw == "{}"
 }
