@@ -295,8 +295,8 @@ rollback_sensor_via_upgrader() {
 test_upgrade_paths() {
     info "Testing various upgrade paths"
 
-    EARLIER_SHA="af363cc209e33af88d30bba4b53afc0e55441e16"
-    EARLIER_TAG="3.0.58.x-41-gb7c73d4d9d"
+    EARLIER_SHA="9f82d2713cfec4b5c876d8dc0149f6d9cd70d349"
+    EARLIER_TAG="3.63.x-163-g2c4fe1563c"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
     cd "$REPO_FOR_TIME_TRAVEL"
@@ -312,14 +312,14 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     wait_for_api
 
-    validate_upgrade "central upgrade to 3.0.58.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "central upgrade to 3.63.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     force_rollback
     wait_for_api
 
     cd "$REPO_FOR_TIME_TRAVEL"
 
-    validate_upgrade "forced rollback to 3.0.58.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7" "../image/policies/files"
+    validate_upgrade "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     cd "$TEST_ROOT"
 
@@ -383,13 +383,13 @@ restore_backup_test() {
 }
 
 validate_upgrade() {
-    if [[ "$#" -lt 2 ]]; then
-        die "missing args. usage: validate_upgrade <stage> <upgrade_cluster_id> [<policies_dir>]"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: validate_upgrade <stage> <upgrade_cluster_id>"
     fi
 
     local stage="$1"
     local upgrade_cluster_id="$2"
-    local policies_dir="${3:-"../pkg/defaults/policies/files"}"
+    local policies_dir="../pkg/defaults/policies/files"
 
     info "Validating the upgrade with upgrade tests: $stage"
 
