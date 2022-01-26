@@ -22,7 +22,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - For `roxctl helm output` deprecated flag `--rhacs` in favor of `--image-defaults=rhacs` (using `--rhacs` with `--image-defaults` results in an error).
 - Default behavior of `roxctl helm output` results now in using container images from `registry.redhat.io` instead of `stackrox.io`.
 - By default, notifications will be sent for every runtime policy violation instead of only the first encountered violation. If this is undesired, setting an environment variable `NOTIFY_EVERY_RUNTIME_EVENT` to `false` will restore the previous behavior. Please note that the environment variable will be removed in a future release, so please notify the ACS team if you have a valid use case.
-- Certain ACS images were moved to a new repository: 
+- Certain ACS images were moved to new repositories: 
   - main: from `registry.redhat.io/rh-acs/main` to `registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8`
   - collector: from `registry.redhat.io/rh-acs/collector` (with `-latest` tag) to `registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8`
   - collector (slim): from `registry.redhat.io/rh-acs/collector` (with `-slim` tag) to `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8`
