@@ -29,8 +29,8 @@ func newFixture() *fixture {
 	msgToSensorC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &fixture{
 		msgFromSensorC: msgFromSensorC,
-		msgToSensorC: msgToSensorC,
-		requester: NewCertificateRequester(msgFromSensorC, msgToSensorC),
+		msgToSensorC:   msgToSensorC,
+		requester:      NewCertificateRequester(msgFromSensorC, msgToSensorC),
 	}
 }
 
@@ -77,14 +77,14 @@ func (s *certificateRequesterSuite) TestRequestSuccess() {
 			requestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
 			s.Require().NotEmpty(requestID)
 			// should be ignored.
-			f.msgToSensorC <-&central.IssueLocalScannerCertsResponse{
+			f.msgToSensorC <- &central.IssueLocalScannerCertsResponse{
 				RequestId: "",
 			}
 			expectedResponse := &central.IssueLocalScannerCertsResponse{
 				RequestId: requestID,
 			}
-			f.msgToSensorC <-expectedResponse
-			expectedResponseC <-expectedResponse
+			f.msgToSensorC <- expectedResponse
+			expectedResponseC <- expectedResponse
 		}
 	}()
 
