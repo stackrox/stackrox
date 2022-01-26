@@ -22,12 +22,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - For `roxctl helm output` deprecated flag `--rhacs` in favor of `--image-defaults=rhacs` (using `--rhacs` with `--image-defaults` results in an error).
 - Default behavior of `roxctl helm output` results now in using container images from `registry.redhat.io` instead of `stackrox.io`.
 - By default, notifications will be sent for every runtime policy violation instead of only the first encountered violation. If this is undesired, setting an environment variable `NOTIFY_EVERY_RUNTIME_EVENT` to `false` will restore the previous behavior. Please note that the environment variable will be removed in a future release, so please notify the ACS team if you have a valid use case.
-- All images were moved to a new repository: 
-  - main: `registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8`
-  - collector: `registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8`
-  - collector (slim): `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8`
-  - scanner: `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8`
-  - scanner-db: `registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8`
+- Certain ACS images were moved to a new repository: 
+  - main: from `registry.redhat.io/rh-acs/main` to `registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8`
+  - collector: from `registry.redhat.io/rh-acs/collector` (with `-latest` tag) to `registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8`
+  - collector (slim): from `registry.redhat.io/rh-acs/collector` (with `-slim` tag) to `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8`
+  - scanner: from `registry.redhat.io/rh-acs/scanner` to `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8`
+  - scanner-db: from `registry.redhat.io/rh-acs/scanner-db` to `registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8`
 - Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images. For example, a scanner image for ACS 3.68.0 is now identified as following `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:3.68.0` and `stackrox.io/scanner:3.68.0`. Please make sure you follow this versioning scheme when upgrading manually. This scheme will be used for all future releases.
 - Collector Slim image name and tag have changed. Now the `-slim` is not part of the image tag but part of the image name. This means that Collector Slim image for the release 3.68.0 is identified as `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8:3.68.0` and `collector.stackrox.io/collector-slim:3.68.0`.
 
