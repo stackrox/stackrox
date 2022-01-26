@@ -759,5 +759,15 @@ func initializeFieldMetadata() FieldMetadata {
 		negationForbidden, operatorsForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.Replicas,
+		querybuilders.ForFieldLabel(search.Replicas),
+		violationmessages.ResourceContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return comparatorDecimalValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+	)
+
 	return f
 }

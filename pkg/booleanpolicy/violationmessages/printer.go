@@ -55,6 +55,7 @@ var (
 		fieldnames.PrivilegedContainer:          {{required: set.NewStringSet(search.Privileged.String()), printerFuncKey: printer.PrivilegedKey}},
 		fieldnames.ExposedPortProtocol:          {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
 		fieldnames.ReadOnlyRootFS:               {{required: set.NewStringSet(search.ReadOnlyRootFilesystem.String()), printerFuncKey: printer.ReadOnlyRootFSKey}},
+		fieldnames.Replicas:                     {{required: set.NewStringSet(search.Replicas.String()), printerFuncKey: printer.ReplicasKey}},
 		fieldnames.RequiredAnnotation:           {{required: set.NewStringSet(search.Annotation.String()), printerFuncKey: printer.RequiredAnnotationKey}},
 		fieldnames.RequiredImageLabel:           {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.RequiredImageLabelKey}},
 		fieldnames.RequiredLabel:                {{required: set.NewStringSet(search.Label.String()), printerFuncKey: printer.RequiredLabelKey}},
