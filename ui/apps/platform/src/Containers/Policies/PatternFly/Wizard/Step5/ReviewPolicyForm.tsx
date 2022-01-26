@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Flex, FlexItem, Spinner, Title, Divider } from '@patternfly/react-core';
+import { Alert, Flex, FlexItem, Spinner, Title, Divider, Button } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
 import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService';
@@ -21,6 +21,7 @@ type ReviewPolicyFormProps = {
 function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): ReactElement {
     const { values } = useFormikContext<Policy>();
 
+    const [showPolicyResults, setShowPolicyResults] = useState(true);
     const [isRunningDryRun, setIsRunningDryRun] = useState(false);
     const [jobIdOfDryRun, setJobIdOfDryRun] = useState('');
     const [errorMessageFromDryRun, setErrorMessageFromDryRun] = useState('');
@@ -82,15 +83,27 @@ function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): React
 
     /* eslint-disable no-nested-ternary */
     return (
-        <Flex direction={{ default: 'row' }}>
+        <Flex>
             <Flex
                 flex={{ default: 'flex_1' }}
                 direction={{ default: 'column' }}
                 alignSelf={{ default: 'alignSelfStretch' }}
                 className="review-policy"
             >
-                <Title headingLevel="h2">Review policy</Title>
-                <div>Review policy settings and violations.</div>
+                <Flex>
+                    <FlexItem flex={{ default: 'flex_1' }}>
+                        <Title headingLevel="h2">Review policy</Title>
+                        <div>Review policy settings and violations.</div>
+                    </FlexItem>
+                    <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
+                        <Button
+                            variant="secondary"
+                            onClick={() => setShowPolicyResults(!showPolicyResults)}
+                        >
+                            Policy results
+                        </Button>
+                    </FlexItem>
+                </Flex>
                 <Divider component="div" />
                 <PolicyDetailContent
                     clusters={clusters}
@@ -99,32 +112,37 @@ function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): React
                     isReview
                 />
             </Flex>
-            <Flex
-                flex={{ default: 'flex_1' }}
-                direction={{ default: 'column' }}
-                alignSelf={{ default: 'alignSelfStretch' }}
-                className="preview-violations"
-            >
-                <Title headingLevel="h2">Preview violations</Title>
-                <div className="pf-u-mb-md pf-u-mt-sm">
-                    The policy settings you have selected will generate violations for the following
-                    deployments. Before you save the policy, verify that the violations seem
-                    accurate.
-                </div>
-                {isRunningDryRun ? (
-                    <Flex justifyContent={{ default: 'justifyContentCenter' }}>
-                        <FlexItem>
-                            <Spinner isSVG />
-                        </FlexItem>
+            {showPolicyResults && (
+                <>
+                    <Divider component="div" isVertical />
+                    <Flex
+                        flex={{ default: 'flex_1' }}
+                        direction={{ default: 'column' }}
+                        alignSelf={{ default: 'alignSelfStretch' }}
+                        className="preview-violations"
+                    >
+                        <Title headingLevel="h2">Preview violations</Title>
+                        <div className="pf-u-mb-md pf-u-mt-sm">
+                            The policy settings you have selected will generate violations for the
+                            following deployments. Before you save the policy, verify that the
+                            violations seem accurate.
+                        </div>
+                        {isRunningDryRun ? (
+                            <Flex justifyContent={{ default: 'justifyContentCenter' }}>
+                                <FlexItem>
+                                    <Spinner isSVG />
+                                </FlexItem>
+                            </Flex>
+                        ) : errorMessageFromDryRun ? (
+                            <Alert title="Request failure for violations" variant="danger" isInline>
+                                {errorMessageFromDryRun}
+                            </Alert>
+                        ) : (
+                            <PreviewViolations alertsFromDryRun={alertsFromDryRun} />
+                        )}
                     </Flex>
-                ) : errorMessageFromDryRun ? (
-                    <Alert title="Request failure for violations" variant="danger" isInline>
-                        {errorMessageFromDryRun}
-                    </Alert>
-                ) : (
-                    <PreviewViolations alertsFromDryRun={alertsFromDryRun} />
-                )}
-            </Flex>
+                </>
+            )}
         </Flex>
     );
     /* eslint-enable no-nested-ternary */
