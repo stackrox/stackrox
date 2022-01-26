@@ -207,7 +207,7 @@ class ImageScanningTest extends BaseSpecification {
         "validate registry based image metadata"
         def imageDigest
         try {
-            withRetry(15, 2) {
+            withRetry(120, 2) {
                 imageDigest = ImageService.getImages().find { it.name == deployment.image }
                 assert imageDigest?.id
             }
