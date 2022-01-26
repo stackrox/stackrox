@@ -2,6 +2,7 @@ package concurrency
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -14,6 +15,7 @@ type RetryTicker struct {
 	backoffPrototype wait.Backoff
 	backoff          wait.Backoff
 	tickTimer        *time.Timer
+	tickTimerM       sync.Mutex
 	OnTickSuccess    func(nextTimeToTick time.Duration)
 	OnTickError      func(error)
 }
@@ -67,6 +69,8 @@ func (t *RetryTicker) scheduleTick(timeToTick time.Duration) {
 }
 
 func (t *RetryTicker) setTickTimer(timer *time.Timer) {
+	t.tickTimerM.Lock()
+	defer t.tickTimerM.Unlock()
 	if t.tickTimer != nil {
 		t.tickTimer.Stop()
 	}
