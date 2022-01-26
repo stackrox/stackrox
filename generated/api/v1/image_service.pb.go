@@ -1264,8 +1264,7 @@ type ImageServiceClient interface {
 	ScanImage(ctx context.Context, in *ScanImageRequest, opts ...grpc.CallOption) (*storage.Image, error)
 	// ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
 	ScanImageInternal(ctx context.Context, in *ScanImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
-	// GetImageVulnerabilities is used solely by the Sensor and Admission Controller to send
-	// vulnerability matching requests.
+	// GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
 	GetImageVulnerabilitiesInternal(ctx context.Context, in *GetImageVulnerabilitiesInternalRequest, opts ...grpc.CallOption) (*GetImageVulnerabilitiesInternalResponse, error)
 	// InvalidateScanAndRegistryCaches removes the image metadata cache.
 	InvalidateScanAndRegistryCaches(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
@@ -1401,8 +1400,7 @@ type ImageServiceServer interface {
 	ScanImage(context.Context, *ScanImageRequest) (*storage.Image, error)
 	// ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
 	ScanImageInternal(context.Context, *ScanImageInternalRequest) (*ScanImageInternalResponse, error)
-	// GetImageVulnerabilities is used solely by the Sensor and Admission Controller to send
-	// vulnerability matching requests.
+	// GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
 	GetImageVulnerabilitiesInternal(context.Context, *GetImageVulnerabilitiesInternalRequest) (*GetImageVulnerabilitiesInternalResponse, error)
 	// InvalidateScanAndRegistryCaches removes the image metadata cache.
 	InvalidateScanAndRegistryCaches(context.Context, *Empty) (*Empty, error)
