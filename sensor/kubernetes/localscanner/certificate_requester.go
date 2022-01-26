@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	_ CertificateRequester = (*certRequesterSyncImpl)(nil)
-	log                    = logging.LoggerForModule()
+	_   CertificateRequester = (*certRequesterSyncImpl)(nil)
+	log                      = logging.LoggerForModule()
 )
 
 // CertificateRequester request a new set of local scanner certificates to central.
