@@ -73,7 +73,6 @@ function PolicyPage({
     policyId,
 }: PolicyPageProps): ReactElement {
     const [clusters, setClusters] = useState<Cluster[]>([]);
-
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
 
     const [policy, setPolicy] = useState<Policy>(initialPolicy);

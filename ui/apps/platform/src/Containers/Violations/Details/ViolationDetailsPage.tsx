@@ -16,6 +16,9 @@ import { violationsBasePath } from 'routePaths';
 import { fetchAlert } from 'services/AlertsService';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
+import PolicyDetailContent from '../../../Policies/PatternFly/Detail/PolicyDetailContent';
 import DeploymentDetails from './DeploymentDetails';
 import PolicyDetails from './PolicyDetails';
 import EnforcementDetails from './EnforcementDetails';
@@ -29,6 +32,7 @@ function ViolationDetailsPage(): ReactElement {
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
     const { alertId } = useParams();
+    const isPoliciesPFEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_POLICIES_PATTERNFLY);
 
     function handleTabClick(_, tabIndex) {
         setActiveTabKey(tabIndex);
@@ -61,6 +65,7 @@ function ViolationDetailsPage(): ReactElement {
     }
 
     const { policy, deployment, resource, commonEntityInfo } = alert;
+    console.log(policy);
     const title = policy.name || 'Unknown violation';
     const { name: entityName } = resource || deployment || {};
     const resourceType = resource?.resourceType || commonEntityInfo?.resourceType || 'deployment';
@@ -95,7 +100,11 @@ function ViolationDetailsPage(): ReactElement {
                     </Tab>
                 )}
                 <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
-                    <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
+                    {isPoliciesPFEnabled ? (
+                        <PolicyDetailContent policy={policy} notifiers={[]} clusters={[]} />
+                    ) : (
+                        <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
+                    )}
                 </Tab>
             </Tabs>
         </PageSection>
