@@ -2098,8 +2098,23 @@ class Kubernetes implements OrchestratorMain {
             requests.put(key, quantity)
         }
 
-        Probe livenessProbe = new Probe(exec: new ExecAction(command: ["cat", "/run/health"]))
-        Probe readinessProbe = new Probe(exec: new ExecAction(command: ["cat", "/run/health"]))
+        Probe livenessProbe = new Probe(
+            exec: new ExecAction(command: ["cat", "/health"]),
+            failureThreshold: 1,
+            initialDelaySeconds: 1,
+            periodSeconds: 1,
+            successThreshold: 1,
+            timeoutSeconds: 1
+        )
+        Probe readinessProbe = new Probe(
+            exec: new ExecAction(command: ["cat", "/health"]),
+            failureThreshold: 1,
+            initialDelaySeconds: 1,
+            periodSeconds: 1,
+            successThreshold: 1,
+            timeoutSeconds: 1
+        )
+
         Container container = new Container(
                 name: deployment.containerName ? deployment.containerName : deployment.name,
                 image: deployment.image,
