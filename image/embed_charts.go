@@ -100,7 +100,8 @@ func (i *Image) ReadFileAndTemplate(pathToFile string) (*template.Template, erro
 	return helmTemplate.InitTemplate(templatePath).Parse(contents)
 }
 
-func (i *Image) getChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.ChartTemplate, error) {
+// GetChartTemplate loads the chart based on the given prefix.
+func (i *Image) GetChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.ChartTemplate, error) {
 	chartTplFiles, err := i.getChartFiles(chartPrefixPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystem", chartPrefixPath)
@@ -127,12 +128,12 @@ func (i *Image) GetSensorChart(values *charts.MetaValues, certs *sensor.Certs) *
 
 // GetCentralServicesChartTemplate retrieves the StackRox Central Services Helm chart template.
 func (i *Image) GetCentralServicesChartTemplate() (*helmTemplate.ChartTemplate, error) {
-	return i.getChartTemplate(CentralServicesChartPrefix)
+	return i.GetChartTemplate(CentralServicesChartPrefix)
 }
 
 // GetSecuredClusterServicesChartTemplate retrieves the StackRox Secured Cluster Services Helm chart template.
 func (i *Image) GetSecuredClusterServicesChartTemplate() (*helmTemplate.ChartTemplate, error) {
-	return i.getChartTemplate(SecuredClusterServicesChartPrefix)
+	return i.GetChartTemplate(SecuredClusterServicesChartPrefix)
 }
 
 var (
