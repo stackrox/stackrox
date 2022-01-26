@@ -2807,6 +2807,80 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	suite.Empty(violations)
 }
 
+func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
+	for _, testCase := range []struct {
+		caseName    string
+		replicas    int64
+		policyValue string
+		negate      bool
+		alerts      []*storage.Alert_Violation
+	}{
+		{
+			caseName:    "Should raise when replicas==5.",
+			replicas:    5,
+			policyValue: "5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+		},
+		{
+			caseName:    "Should not raise unless replicas==3.",
+			replicas:    5,
+			policyValue: "3",
+			negate:      false,
+			alerts:      nil,
+		},
+		{
+			caseName:    "Should raise unless replicas==3.",
+			replicas:    5,
+			policyValue: "3",
+			negate:      true,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+		},
+		{
+			caseName:    "Should raise when replicas>=5.",
+			replicas:    5,
+			policyValue: ">=5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+		},
+		{
+			caseName:    "Should raise when replicas<=5.",
+			replicas:    5,
+			policyValue: "<=5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+		},
+		{
+			caseName:    "Should raise when replicas<5.",
+			replicas:    1,
+			policyValue: "<5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '1'"}},
+		},
+		{
+			caseName:    "Should raise when replicas>5.",
+			replicas:    10,
+			policyValue: ">5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '10'"}},
+		},
+	} {
+		suite.Run(testCase.caseName, func() {
+			deployment := fixtures.GetDeployment().Clone()
+			deployment.Replicas = testCase.replicas
+			policy := policyWithSingleKeyValue(fieldnames.Replicas, testCase.policyValue, testCase.negate)
+
+			matcher, err := BuildDeploymentMatcher(policy)
+			suite.NoError(err, "deployment matcher creation must succeed")
+			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			suite.NoError(err, "deployment matcher run must succeed")
+
+			suite.Empty(violations.ProcessViolation)
+			suite.Equal(violations.AlertViolations, testCase.alerts)
+		})
+	}
+}
+
 func newIndicator(deployment *storage.Deployment, name, args, execFilePath string) *storage.ProcessIndicator {
 	return &storage.ProcessIndicator{
 		Id:            uuid.NewV4().String(),

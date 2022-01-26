@@ -77,6 +77,7 @@ const nonStandardNumberFields = [
     'Container CPU Limit',
     'Container Memory Request',
     'Container Memory Limit',
+    'Replicas',
     'Severity',
 ];
 

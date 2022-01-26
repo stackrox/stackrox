@@ -67,6 +67,7 @@ class PolicyFieldsTest extends BaseSpecification {
                             )
                     )
                     .setCreateRoute(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+                    .setReplicas(3)
 
     static final private BASED_ON_DEBIAN_7 = DEP_A
     static final private WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG = DEP_A
@@ -97,6 +98,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITH_RW_ROOT_FS = DEP_A
     static final private IS_SCANNED = DEP_A
     static final private WITH_A_RW_FOO_VOLUME = DEP_A
+    static final private WITH_THREE_REPLICAS = DEP_A
 
     static final private Deployment DEP_B =
             createAndRegisterDeployment()
@@ -128,6 +130,7 @@ class PolicyFieldsTest extends BaseSpecification {
                             ),
                             true
                     )
+                    .setReplicas(1)
 
     static final private BASED_ON_CENTOS_8 = DEP_B
     static final private WITH_ADD_CAPS_NET_ADMIN = DEP_B
@@ -159,6 +162,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITHOUT_PROCESS_UID_1 = DEP_B
     static final private WITH_A_RO_HOST_BAR_VOLUME = DEP_B
     static final private WITH_SEVERITY_GT_IMPORTANT = DEP_B
+    static final private WITH_ONE_REPLICA = DEP_B
 
     static final private CONFIG_MAP_NAME = "test-config-map"
     static final private SECRET_NAME = "test-secret"
@@ -655,6 +659,14 @@ class PolicyFieldsTest extends BaseSpecification {
             ["false"]
     )
 
+    // "Replicas"
+
+    static final private LESS_THAN_THREE_REPLICAS = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_LESS_THAN_THREE_REPLICAS"),
+            "Replicas",
+            ["<3"]
+    )
+
     // "Required Annotation"
 
     static final private REQUIRED_ANNOTATION_KEY_ONLY = setPolicyFieldANDValues(
@@ -908,6 +920,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Process Name"                    | HAS_BASH_EXEC                        | WITH_BASH_EXEC                          | "match"
         "Process UID"                     | HAS_PROCESS_UID_1                    | WITH_PROCESS_UID_1                      | "match"
         "Read-Only Root Filesystem"       | HAS_RW_ROOT_FS                       | WITH_RW_ROOT_FS                         | "match"
+        "Replicas"                        | LESS_THAN_THREE_REPLICAS             | WITH_ONE_REPLICA                        | "LT"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE    | WITH_KEY_ONLY_ANNOTATION                | "no key only when value required"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE    | WITH_MISMATCHED_ANNOTATIONS             | "both required"
         "Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_ONLY        | WITHOUT_IMAGE_LABELS                    | "no labels I"
@@ -998,6 +1011,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Process Name"                    | HAS_BASH_EXEC                         | WITHOUT_BASH_EXEC                      | "no match"
         "Process UID"                     | HAS_PROCESS_UID_1                     | WITHOUT_PROCESS_UID_1                  | "no match"
         "Read-Only Root Filesystem"       | HAS_RW_ROOT_FS                        | WITH_RDONLY_ROOT_FS                    | "no match"
+        "Replicas"                        | LESS_THAN_THREE_REPLICAS              | WITH_THREE_REPLICAS                    | "not LT"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_ONLY          | WITH_KEY_ONLY_ANNOTATION               | "key only"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_ONLY          | WITH_KEY_AND_VALUE_ANNOTATION          | "key only matches key and value"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE     | WITH_KEY_AND_VALUE_ANNOTATION          | "key and value"
