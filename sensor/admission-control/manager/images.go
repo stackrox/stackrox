@@ -130,7 +130,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 			if cachedImage != nil {
 				images[idx] = cachedImage
 			}
-			// The cached image might be insufficient if it doesn't have a scan, and we want to do inline scans.
+			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
 			if ctx != nil && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
 				atomic.AddInt32(&pendingCount, 1)
 				// Ensure the image has its Namespace field, as it may be needed when fetching.
