@@ -139,8 +139,12 @@ message ImageMetadata {
     // Version is used to determine if the metadata needs to be re-pulled
     uint64                    version               = 5;
     // Signature contains the signature of the image in raw form, which can be used for verification.
+    repeated ImageSignature signatures              = 6;
+}
+
+message ImageSignature {
     oneof Signature {
-        CosignSignature cosign = 6;
+        CosignSignature cosign = 1;
     }
 }
 
