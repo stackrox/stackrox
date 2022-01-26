@@ -18,6 +18,7 @@ func TestWithHelmtest(t *testing.T) {
 	require.NoError(t, err, "error retrieving chart template")
 	metaVals := metaUtil.MakeMetaValuesForTest(t)
 
+	// TODO(ROX-8793): The tests will be enabled in a follow-up ticket because the current implementation break helm chart rendering.
 	if !buildinfo.ReleaseBuild {
 		metaVals.FeatureFlags[features.LocalImageScanning.EnvVar()] = false
 	}
