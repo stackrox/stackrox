@@ -27,13 +27,6 @@
 {{ $values := deepCopy $.Values }}
 {{ include "srox.applyCompatibilityTranslation" (list $ $values) }}
 
-[<- if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-{{/*
-    #TODO(ROX-8672): Add setup and defaulting logic to secured cluster chart
-    Scanner setup
-  */}}
-[<- end ->]
-
 {{/*
     $rox / ._rox is the dictionary in which _all_ data that is modified by the init logic
     is stored.
@@ -43,6 +36,14 @@
 {{ $rox := deepCopy $values }}
 {{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml)) }}
 {{ $_ = set $ "_rox" $rox }}
+
+[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+{{/*
+  #TODO(ROX-8672): Add setup and defaulting logic to secured cluster chart
+    Scanner setup
+  */}}
+{{ $_ := set $._rox "scanner" (dict "disable" true) }}
+[<- end >]
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
 {{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
