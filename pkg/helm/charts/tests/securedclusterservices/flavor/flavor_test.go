@@ -40,9 +40,11 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 			require.NoError(t, err, "error retrieving chart template")
 			metaVals := charts.GetMetaValuesForFlavor(imageFlavor)
 			metaVals.ClusterName = "Test"
+
 			if !buildinfo.ReleaseBuild {
 				metaVals.FeatureFlags[features.LocalImageScanning.EnvVar()] = false
 			}
+
 			ch, err := tpl.InstantiateAndLoad(metaVals)
 			require.NoError(t, err, "error instantiating chart")
 
