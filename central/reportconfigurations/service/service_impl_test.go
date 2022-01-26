@@ -146,3 +146,14 @@ func (s *TestReportConfigurationServiceTestSuite) TestAccessScopeDoesNotExist() 
 	})
 	s.Error(err)
 }
+
+func (s *TestReportConfigurationServiceTestSuite) TestNoMailingAddresses() {
+	ctx := context.Background()
+	reportConfig := fixtures.GetValidReportConfiguration()
+	reportConfig.GetEmailConfig().MailingLists = []string{}
+
+	_, err := s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
+		ReportConfig: reportConfig,
+	})
+	s.Error(err)
+}
