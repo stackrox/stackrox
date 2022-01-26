@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {connect} from 'react-redux';
-import {createStructuredSelector} from 'reselect';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 import upperFirst from 'lodash/upperFirst';
-import {Message} from '@stackrox/ui-components';
+import { Message } from '@stackrox/ui-components';
 
-import {selectors} from 'reducers';
+import { selectors } from 'reducers';
 import AppWrapper from '../AppWrapper';
 
 function closeThisWindow() {
