@@ -644,6 +644,14 @@
         }
       }
     },
+    "storageCosignSignature": {
+      "type": "object",
+      "properties": {
+        "rawSignatureBase64Enc": {
+          "type": "string"
+        }
+      }
+    },
     "storageDataSource": {
       "type": "object",
       "properties": {
@@ -813,6 +821,12 @@
         "scan": {
           "$ref": "#/definitions/storageImageScan"
         },
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageSignatureResult"
+          }
+        },
         "components": {
           "type": "integer",
           "format": "int32"
@@ -851,7 +865,7 @@
           }
         }
       },
-      "title": "Next Tag: 15"
+      "title": "Next Tag: 16"
     },
     "storageImageLayer": {
       "type": "object",
@@ -900,9 +914,12 @@
           "type": "string",
           "format": "uint64",
           "title": "Version is used to determine if the metadata needs to be re-pulled"
+        },
+        "cosign": {
+          "$ref": "#/definitions/storageCosignSignature"
         }
       },
-      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up"
+      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up\nNext Tag: 7"
     },
     "storageImageName": {
       "type": "object",
@@ -969,6 +986,20 @@
         "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
       ],
       "default": "UNSET"
+    },
+    "storageImageSignatureResult": {
+      "type": "object",
+      "properties": {
+        "verificationTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "verifierId": {
+          "type": "string",
+          "description": "verifier_id correlates to the ID of the signature integration used to verify the signature."
+        }
+      },
+      "title": "Next Tag: 3"
     },
     "storageLicense": {
       "type": "object",

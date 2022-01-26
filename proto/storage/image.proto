@@ -12,13 +12,15 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 15
+// Next Tag: 16
 message Image {
     string                    id           = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName                 name         = 1;
 
     ImageMetadata             metadata     = 2;
     ImageScan                 scan         = 3 [(gogoproto.moretags) = "policy:\"Image Scan\""];
+
+    repeated ImageSignatureResult results  = 15;
 
     oneof set_components {
         int32 components                   = 7 [(gogoproto.moretags) = "search:\"Component Count,store,hidden\""];
@@ -71,6 +73,13 @@ message ImageScan {
     repeated Note                       notes            = 5;
 }
 
+// Next Tag: 3
+message ImageSignatureResult {
+    google.protobuf.Timestamp verification_time = 1;
+    // verifier_id correlates to the ID of the signature integration used to verify the signature.
+    string verifier_id                          = 2;
+}
+
 // Next Tag: 13
 message EmbeddedImageScanComponent {
     string                         name        = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
@@ -114,6 +123,7 @@ message License {
 
 // If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go
 // to ensure that those changes will be automatically picked up
+// Next Tag: 7
 message ImageMetadata {
     // V1Metadata contains all of the V1 docker data. In the normal case we will get this because the image is a
     // V1 image OR because the v2 manifest has a link to it in it's config.
@@ -128,6 +138,14 @@ message ImageMetadata {
     DataSource                data_source           = 4;
     // Version is used to determine if the metadata needs to be re-pulled
     uint64                    version               = 5;
+    // Signature contains the signature of the image in raw form, which can be used for verification.
+    oneof Signature {
+        CosignSignature cosign = 6;
+    }
+}
+
+message CosignSignature {
+    string raw_signature_base64_enc = 1;
 }
 
 message V2Metadata {
