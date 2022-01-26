@@ -103,6 +103,7 @@ func AwareDialContext(ctx context.Context, address string) (net.Conn, error) {
 }
 
 // AwareDialContextTLS is a convenience wrapper around AwareDialContext that establishes a TLS connection.
+// It is up to the client to close the connection once it is no longer needed.
 func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls.Config) (net.Conn, error) {
 	host, _, _, err := netutil.ParseEndpoint(address)
 	if err != nil {
@@ -123,6 +124,7 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 	}
 	tlsConn := tls.Client(conn, tlsClientConf)
 	if err := tlsConn.Handshake(); err != nil {
+		utils.IgnoreError(tlsConn.Close)
 		return nil, err
 	}
 	return tlsConn, nil
