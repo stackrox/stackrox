@@ -111,6 +111,14 @@ func TestGetValuesAndIndices(t *testing.T) {
 			expectedValues:  []string{"value"},
 			expectedIndices: []int{0},
 		},
+		"multiple values for dimension one": {
+			result: gjson.Result{
+				Type: gjson.JSON,
+				Raw:  `["valueA", "valueB"]`,
+			},
+			expectedValues:  []string{"valueA", "valueB"},
+			expectedIndices: []int{0, 1},
+		},
 		"multiple values for dimension two": {
 			result: gjson.Result{
 				Type: gjson.JSON,
@@ -167,4 +175,287 @@ func TestColumnNode_GetNodesWithColumnIndex(t *testing.T) {
 	ct.rootNode.children = []*columnNode{nodeWithColumnIndex2Children, nodeWithoutColumnIndex2Children}
 
 	assert.Len(t, ct.rootNode.getNodesWithColumnIndex(2, nil), 3)
+}
+
+func TestColumnNode_GetAmountOfUniqueColumnIDsWithinChildren(t *testing.T) {
+	cases := map[string]struct {
+		node           columnNode
+		expectedResult int
+	}{
+		"only unique column IDs": {
+			node:           columnNode{children: []*columnNode{{columnIndex: 1}, {columnIndex: 2}, {columnIndex: 3}}},
+			expectedResult: 3,
+		},
+		"empty children": {
+			node:           columnNode{},
+			expectedResult: 0,
+		},
+		"non-unique column IDs": {
+			node:           columnNode{children: []*columnNode{{columnIndex: 1}, {columnIndex: 2}, {columnIndex: 2}}},
+			expectedResult: 2,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.expectedResult, c.node.getAmountOfUniqueColumnIDsWithinChildren())
+		})
+	}
+}
+
+func TestIsRelated(t *testing.T) {
+	cases := map[string]struct {
+		query         string
+		nodes         []*columnNode
+		related       bool
+		expectedIndex []int
+	}{
+		"no related nodes": {
+			query: "something",
+			nodes: []*columnNode{{query: "another.thing"}},
+		},
+		"multiple related nodes": {
+			query: "something.matching.another.thing",
+			nodes: []*columnNode{
+				{query: "something.matching"},
+				{query: "something.matching.another"},
+			},
+			expectedIndex: []int{0, 1},
+			related:       true,
+		},
+		"mix of related and unrelated nodes": {
+			query: "something.matching.another.thing",
+			nodes: []*columnNode{
+				{query: "something.matching"},
+				{query: "something.matching.another"},
+				{query: "somewhere.different.query"},
+				{query: "somewhere.different"},
+			},
+			expectedIndex: []int{0, 1},
+			related:       true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			related, index := isRelated(c.query, c.nodes)
+			assert.Equal(t, related, c.related)
+			assert.Equal(t, c.expectedIndex, index)
+		})
+	}
+}
+
+func TestIsRelatedQuery(t *testing.T) {
+	cases := map[string]struct {
+		query        string
+		relatedQuery string
+		related      bool
+	}{
+		"empty query should be related": {
+			related:      true,
+			relatedQuery: "something",
+		},
+		"should be related": {
+			query:        "something.matching",
+			related:      true,
+			relatedQuery: "something.matching.anotherone",
+		},
+		"should not be related": {
+			query:        "something.matching",
+			relatedQuery: "anotherhing.matching",
+		},
+		"should not be related when under the exact same path": {
+			query:        "something.matching",
+			relatedQuery: "something.othermatch",
+		},
+		"should not be matching when the queries are equal": {
+			query:        "something.matching",
+			relatedQuery: "something.matching",
+		},
+		"should not be matching when no . is used as separator": {
+			query:        "something-matching",
+			relatedQuery: "something-else-matching",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.related, isRelatedQuery(c.relatedQuery, c.query))
+		})
+	}
+}
+
+func TestRowMapper_CreateRows_SimpleHierarchy(t *testing.T) {
+	type example struct {
+		Names     []string `json:"names"`
+		Addresses []string `json:"addresses"`
+	}
+	type simpleHierarchy struct {
+		Result example `json:"result"`
+	}
+
+	testJSONObject := &simpleHierarchy{
+		Result: example{
+			Names:     []string{"Gandalf", "Gollum", "Aragorn", "Bilbo Baggins"},
+			Addresses: []string{"Minas Tirith", "Gladden Fields", "Gondor", "Bag End"},
+		},
+	}
+	testExpression := "{result.names,result.addresses}"
+
+	expectedRows := [][]string{
+		{"Gandalf", "Minas Tirith"},
+		{"Gollum", "Gladden Fields"},
+		{"Aragorn", "Gondor"},
+		{"Bilbo Baggins", "Bag End"},
+	}
+
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRows)
+}
+
+type people struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+}
+
+type example struct {
+	People    []people `json:"people"`
+	Franchise string   `json:"franchise"`
+}
+
+type deepHierarchy struct {
+	Result []example `json:"result"`
+}
+
+func TestRowMapper_Create_Rows_DeepHierarchy(t *testing.T) {
+	testJSONObject := &deepHierarchy{
+		Result: []example{
+			{
+				Franchise: "LOTR",
+				People: []people{
+					{
+						Name:    "Gandalf",
+						Address: "Minas Tirith",
+					},
+					{
+						Name:    "Gollum",
+						Address: "Gladden Fields",
+					},
+					{
+						Name:    "Aragorn",
+						Address: "Gondor",
+					},
+					{
+						Name:    "Bilbo Baggins",
+						Address: "Bag End",
+					},
+				},
+			},
+			{
+				Franchise: "Harry Potter",
+				People: []people{
+					{
+						Name:    "Harry Potter",
+						Address: "Little Whinging",
+					},
+					{
+						Name:    "Ron Weasley",
+						Address: "The Burrow",
+					},
+					{
+						Name:    "Hagrid",
+						Address: "Hagrid's Hut",
+					},
+				},
+			},
+		},
+	}
+
+	testExpression := "{result.#.franchise,result.#.people.#.name,result.#.people.#.address}"
+
+	expectedRows := [][]string{
+		{"LOTR", "Gandalf", "Minas Tirith"},
+		{"LOTR", "Gollum", "Gladden Fields"},
+		{"LOTR", "Aragorn", "Gondor"},
+		{"LOTR", "Bilbo Baggins", "Bag End"},
+		{"Harry Potter", "Harry Potter", "Little Whinging"},
+		{"Harry Potter", "Ron Weasley", "The Burrow"},
+		{"Harry Potter", "Hagrid", "Hagrid's Hut"},
+	}
+
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRows)
+}
+
+func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValues(t *testing.T) {
+	testJSONObject := &deepHierarchy{
+		Result: []example{
+			{
+				Franchise: "LOTR",
+				People: []people{
+					{
+						Name:    "Gandalf",
+						Address: "Minas Tirith",
+					},
+					{
+						Name:    "Gollum",
+						Address: "Gladden Fields",
+					},
+					{
+						Name:    "Aragorn",
+						Address: "Gondor",
+					},
+					{
+						Name:    "Bilbo Baggins",
+						Address: "Bag End",
+					},
+					{
+						Name: "Sauron",
+					},
+				},
+			},
+			{
+				Franchise: "Harry Potter",
+				People: []people{
+					{
+						Name:    "Harry Potter",
+						Address: "Little Whinging",
+					},
+					{
+						Name:    "Ron Weasley",
+						Address: "The Burrow",
+					},
+					{
+						Name:    "Hagrid",
+						Address: "Hagrid's Hut",
+					},
+					{
+						Name: "Voldemort",
+					},
+				},
+			},
+		},
+	}
+
+	testExpression := "{result.#.franchise,result.#.people.#.name,result.#.people.#.address}"
+
+	expectedRows := [][]string{
+		{"LOTR", "Gandalf", "Minas Tirith"},
+		{"LOTR", "Gollum", "Gladden Fields"},
+		{"LOTR", "Aragorn", "Gondor"},
+		{"LOTR", "Bilbo Baggins", "Bag End"},
+		{"LOTR", "Sauron", "-"},
+		{"Harry Potter", "Harry Potter", "Little Whinging"},
+		{"Harry Potter", "Ron Weasley", "The Burrow"},
+		{"Harry Potter", "Hagrid", "Hagrid's Hut"},
+		{"Harry Potter", "Voldemort", "-"},
+	}
+
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRows)
+}
+
+func runRowMapperTest(t *testing.T, obj interface{}, expression string, expectedRows [][]string) {
+	mapper, err := NewRowMapper(obj, expression)
+	require.NoError(t, err)
+	rows, err := mapper.CreateRows()
+	require.NoError(t, err)
+	assert.Equal(t, expectedRows, rows)
 }
