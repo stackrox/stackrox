@@ -194,7 +194,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 
 	_, found, err = s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
 	if err != nil {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Notifier %s not found. Error: %s", config.GetEmailConfig().GetNotifierId(), err)
+		return errors.Wrapf(errorhelpers.ErrNotFound, "Failed to fetch notifier %s with error %s", config.GetEmailConfig().GetNotifierId(), err)
 	}
 	if !found {
 		return errors.Wrapf(errorhelpers.ErrNotFound, "Notifier %s not found", config.GetEmailConfig().GetNotifierId())
