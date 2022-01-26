@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/registry"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -61,7 +62,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
 	rbacUpdater := rbac.NewStore()
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)
-	registryStore := RegistryStoreSingleton()
+	registryStore := registry.Singleton()
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
