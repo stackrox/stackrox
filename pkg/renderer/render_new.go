@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"os"
 	"path"
 	"strings"
 
@@ -72,7 +73,7 @@ func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles [
 }
 
 func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
-	helmImage := image.GetDefaultImage()
+	helmImage := c.getHelmImage()
 	valuesFiles, err := renderNewHelmValues(c)
 	if err != nil {
 		return nil, errors.Wrap(err, "rendering new helm values")
@@ -216,4 +217,11 @@ func renderNew(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.Fi
 	allFiles = append(allFiles, auxFiles...)
 
 	return allFiles, nil
+}
+
+func (c Config) getHelmImage() *image.Image {
+	if c.HelmImageDir == "" {
+		return image.GetDefaultImage()
+	}
+	return image.NewImage(os.DirFS(c.HelmImageDir))
 }

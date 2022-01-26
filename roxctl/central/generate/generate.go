@@ -149,6 +149,9 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 				config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.Enabled())
 			}
 		}
+		if flags.IsDebug() {
+			config.HelmImageDir = flags.DebugChartPath()
+		}
 	}
 
 	htpasswd, err := renderer.GenerateHtpasswd(&config)
@@ -301,6 +304,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}, "with-config-file", "Use the given local file(s) to override default config files")
 	utils.Must(
 		c.PersistentFlags().MarkHidden("with-config-file"))
+
+	if !buildinfo.ReleaseBuild {
+		flags.AddDebug(c)
+	}
 
 	c.AddCommand(centralGenerateCmd.interactive())
 	c.AddCommand(k8s(cliEnvironment))

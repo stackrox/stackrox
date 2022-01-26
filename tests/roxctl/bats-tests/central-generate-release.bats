@@ -108,3 +108,9 @@ teardown() {
 @test "roxctl-release roxctl central generate openshift --image-defaults=development should fail" {
   run_invalid_flavor_value_test roxctl-release openshift '--image-defaults' 'development'
 }
+
+@test "roxctl-release central generate k8s --debug should fail" {
+  run roxctl-release central generate k8s none --output-dir "$out_dir" --debug
+  assert_failure
+  assert_line --regexp "ERROR:[[:space:]]+unknown flag: --debug"
+}

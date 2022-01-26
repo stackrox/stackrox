@@ -85,6 +85,15 @@ assert_components_registry() {
   done
 }
 
+# TODO ROX-9153 replace with bats-file
+assert_file_exist() {
+  local p
+  local -r file="$1"
+  if [[ ! -e "$file" ]]; then
+    fail "ERROR: file '$file' does not exist"
+  fi
+}
+
 registry_regex() {
   local registry_slug="$1"
   local component="$2"
@@ -158,6 +167,30 @@ run_invalid_flavor_value_test() {
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
+}
+
+# run_with_debug_flag copies chart bundle content into a temporary folder, modifies it, and executes a given command with the debug flag
+run_with_debug_flag() {
+  # default debug path argument
+  local chart_src_dir="$GOPATH/src/github.com/stackrox/stackrox/image"
+  [[ -d $chart_src_dir ]] || skip "This test requires a chart template located on the file system"
+
+  [[ -n "$chart_debug_dir" ]] || fail "chart_debug_dir is unset"
+
+  cp -r "$chart_src_dir" "$chart_debug_dir"
+  touch "$chart_debug_dir/templates/helm/shared/templates/bats-test.yaml"
+
+  run "$@" --debug --debug-path "$chart_debug_dir"
+}
+
+# run_with_debug_flag_non_existing_dir executes a given command with the debug flag and non-existing debug directory
+run_with_debug_flag_non_existing_dir() {
+  run "$@" --debug --debug-path "/non-existing-dir"
+}
+
+assert_debug_templates_exist() {
+    local tpl_dir="${1}"
+    assert_file_exist "$tpl_dir/bats-test.yaml"
 }
 
 has_deprecation_warning() {

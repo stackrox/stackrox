@@ -140,7 +140,8 @@ type Config struct {
 
 	ConfigFileOverrides map[string]string
 
-	RenderOpts *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
+	RenderOpts   *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
+	HelmImageDir string
 }
 
 func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {
