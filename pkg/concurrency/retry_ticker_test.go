@@ -51,10 +51,6 @@ func (f *testTickFun) OnTickError(err error) {
 
 func (s *retryTickerSuite) TestRetryTicker() {
 	testCases := map[string]struct {
-		// timeToNextTick1 time.Duration
-		// tickErr1 error
-		// timeToNextTick2 time.Duration
-		// tickErr2 error
 		forceError       bool
 		addEventHandlers bool
 	}{
