@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go v0.94.1
 	cloud.google.com/go/containeranalysis v0.1.0
 	cloud.google.com/go/storage v1.12.0
-	github.com/BurntSushi/toml v0.4.1
+	github.com/BurntSushi/toml v1.0.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
@@ -78,7 +78,7 @@ require (
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.16.0
+	github.com/onsi/gomega v1.18.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
@@ -112,7 +112,7 @@ require (
 	golang.org/x/net v0.0.0-20210902165921-8d991716f632
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210908233432-aa78b53d3365
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 	golang.org/x/tools v0.1.5
 	golang.stackrox.io/grpc-http1 v0.2.4
