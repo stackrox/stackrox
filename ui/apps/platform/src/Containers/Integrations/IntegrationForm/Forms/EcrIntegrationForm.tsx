@@ -51,9 +51,8 @@ export const validationSchema = yup.object().shape({
             useIam: yup.bool(),
             accessKeyId: yup.string().when('useIam', {
                 is: false,
-                then: yup
-                    .string()
-                    .test(
+                then: (accessKeyIdSchema) =>
+                    accessKeyIdSchema.test(
                         'acessKeyId-test',
                         'An access key ID is required',
                         (value, context: yup.TestContext) => {
@@ -73,9 +72,8 @@ export const validationSchema = yup.object().shape({
             }),
             secretAccessKey: yup.string().when('useIam', {
                 is: false,
-                then: yup
-                    .string()
-                    .test(
+                then: (secretAccessKeySchema) =>
+                    secretAccessKeySchema.test(
                         'secretAccessKey-test',
                         'A secret access key is required',
                         (value, context: yup.TestContext) => {
@@ -96,11 +94,12 @@ export const validationSchema = yup.object().shape({
             useAssumeRole: yup.bool(),
             assumeRoleId: yup.string().when('useAssumeRole', {
                 is: true,
-                then: yup.string().trim().required('A Role ID is required'),
+                then: (assumeRoleIdSchema) =>
+                    assumeRoleIdSchema.trim().required('A Role ID is required'),
             }),
             assumeRoleExternalId: yup.string().when('useAssumeRole', {
                 is: true,
-                then: yup.string().trim(),
+                then: (assumeRoleExternalIdSchema) => assumeRoleExternalIdSchema.trim(),
             }),
         }),
         skipTestIntegration: yup.bool(),

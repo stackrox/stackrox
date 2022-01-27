@@ -97,7 +97,7 @@ export const validationSchema = yup.object().shape({
                 .email('Must be a valid sender email address'),
             startTLSAuthMethod: yup.string().when('disableTLS', {
                 is: true,
-                then: yup.string().required(),
+                then: (startTLSAuthMethodSchema) => startTLSAuthMethodSchema.required(),
             }),
         }),
     }),
