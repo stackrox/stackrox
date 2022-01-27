@@ -43,13 +43,10 @@ func (f *testTickFun) OnTickError(err error) {
 
 func TestRetryTicker(t *testing.T) {
 	testCases := map[string]struct {
-		forceError       bool
-		addEventHandlers bool
+		forceError bool
 	}{
-		"successWithEventHandlers":     {forceError: false, addEventHandlers: true},
-		"successWithoutEventHandlers":  {forceError: false, addEventHandlers: false},
-		"oneErrorWithEventHandlers":    {forceError: true, addEventHandlers: true},
-		"oneErrorWithoutEventHandlers": {forceError: true, addEventHandlers: false},
+		"success":  {forceError: false},
+		"oneError": {forceError: true},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
@@ -72,18 +69,7 @@ func TestRetryTicker(t *testing.T) {
 			m.On("f", mock.Anything).Return(longTime, nil).Run(func(args mock.Arguments) {
 				done2.Set(true)
 			}).Once()
-			if tc.addEventHandlers {
-				tickerBuilder := NewRetryTickerBuilder(m.f, longTime, backoff)
-				ticker = tickerBuilder.OnTickSuccess(m.OnTickSuccess).OnTickError(m.OnTickError).Build()
-				if !tc.forceError {
-					m.On("OnTickSuccess", wait1).Once()
-				} else {
-					m.On("OnTickError", forcedErr).Once()
-				}
-				m.On("OnTickSuccess", longTime).Once()
-			} else {
-				ticker = NewRetryTicker(m.f, longTime, backoff)
-			}
+			ticker = NewRetryTicker(m.f, longTime, backoff)
 
 			ticker.Start()
 			defer ticker.Stop()

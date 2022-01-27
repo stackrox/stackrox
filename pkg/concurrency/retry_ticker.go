@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	_ RetryTicker        = (*retryTickerImpl)(nil)
-	_ RetryTickerBuilder = (*retryTickerBuilderImpl)(nil)
+	_ RetryTicker = (*retryTickerImpl)(nil)
 )
 
 // RetryTicker repeatedly calls a function with a timeout and a retry backoff strategy.
@@ -20,11 +19,9 @@ type RetryTicker interface {
 }
 
 type retryTickerImpl struct {
-	f                tickFunc
+	fn               tickFunc
 	tickTimeout      time.Duration
 	backoffPrototype wait.Backoff
-	onTickSuccess    onTickSuccessFunc
-	onTickError      onTickErrorFunc
 	backoff          wait.Backoff
 	tickTimer        *time.Timer
 	tickTimerM       sync.Mutex
@@ -34,7 +31,7 @@ type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error
 type onTickSuccessFunc func(nextTimeToTick time.Duration)
 type onTickErrorFunc func(tickErr error)
 
-// Start calls t.f and schedules the next tick accordingly.
+// Start calls t.f and schedules the next tick immediately.
 func (t *retryTickerImpl) Start() {
 	t.scheduleTick(0)
 }
@@ -49,16 +46,10 @@ func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 		ctx, cancel := context.WithTimeout(context.Background(), t.tickTimeout)
 		defer cancel()
 
-		nextTimeToTick, tickErr := t.f(ctx)
+		nextTimeToTick, tickErr := t.fn(ctx)
 		if tickErr != nil {
-			if t.onTickError != nil {
-				t.onTickError(tickErr)
-			}
 			t.scheduleTick(t.backoff.Step())
 			return
-		}
-		if t.onTickSuccess != nil {
-			t.onTickSuccess(nextTimeToTick)
 		}
 		t.backoff = t.backoffPrototype // reset backoff strategy
 		t.scheduleTick(nextTimeToTick)
@@ -83,45 +74,11 @@ type RetryTickerBuilder interface {
 
 // NewRetryTicker returns a new RetryTicker with the minimal parameters. See Build method below for
 // details about how that is created.
-func NewRetryTicker(f tickFunc, tickTimeout time.Duration, backoff wait.Backoff) RetryTicker {
-	return NewRetryTickerBuilder(f, tickTimeout, backoff).Build()
-}
-
-// NewRetryTickerBuilder returns a builder for a RetryTicker that has been initialized with its mandatory parameters.
-func NewRetryTickerBuilder(f tickFunc, tickTimeout time.Duration, backoff wait.Backoff) RetryTickerBuilder {
-	return &retryTickerBuilderImpl{f: f, tickTimeout: tickTimeout, backoffPrototype: backoff}
-}
-
-// Build returns a new RetryTicker that calls the function f repeatedly:
-// - When started, the RetryTicker calls f immediately, and if that returns an error
-// then the RetryTicker will wait the time returned by backoff.Step before calling f again.
-// - f must return an error if ctx is cancelled. RetryTicker always call f with a context with a timeout of tickTimeout.
-// - On success RetryTicker will reset backoff, and wait the amount of time returned by f before running f again.
-func (b *retryTickerBuilderImpl) Build() RetryTicker {
+func NewRetryTicker(fn tickFunc, tickTimeout time.Duration, backoff wait.Backoff) RetryTicker {
 	return &retryTickerImpl{
-		f:                b.f,
-		tickTimeout:      b.tickTimeout,
-		backoffPrototype: b.backoffPrototype,
-		onTickSuccess:    b.onTickSuccess,
-		onTickError:      b.onTickError,
-		backoff:          b.backoffPrototype,
+		fn:               fn,
+		tickTimeout:      tickTimeout,
+		backoffPrototype: backoff,
+		backoff:          backoff,
 	}
-}
-
-type retryTickerBuilderImpl struct {
-	f                tickFunc
-	tickTimeout      time.Duration
-	backoffPrototype wait.Backoff
-	onTickSuccess    onTickSuccessFunc
-	onTickError      onTickErrorFunc
-}
-
-func (b *retryTickerBuilderImpl) OnTickSuccess(onTickSuccess onTickSuccessFunc) RetryTickerBuilder {
-	b.onTickSuccess = onTickSuccess
-	return b
-}
-
-func (b *retryTickerBuilderImpl) OnTickError(onTickError onTickErrorFunc) RetryTickerBuilder {
-	b.onTickError = onTickError
-	return b
 }
