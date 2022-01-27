@@ -124,8 +124,8 @@ describe('Vulnmanagement Risk Acceptance', () => {
             cy.wait('@getObservedCVEs');
 
             // select two rows and bulk defer
-            getCheckboxByRowIndex(2).check({ force: true });
-            getCheckboxByRowIndex(3).check({ force: true });
+            getCheckboxByRowIndex(2).check({ force: true, multiple: true });
+            getCheckboxByRowIndex(3).check({ force: true, multiple: true });
             selectBulkAction('Defer CVE (2)');
             submitDeferralForm();
 
@@ -139,8 +139,8 @@ describe('Vulnmanagement Risk Acceptance', () => {
             cy.wait('@getObservedCVEs');
 
             // select two rows and bulk mark false positive
-            getCheckboxByRowIndex(4).check({ force: true });
-            getCheckboxByRowIndex(5).check({ force: true });
+            getCheckboxByRowIndex(4).check({ force: true, multiple: true });
+            getCheckboxByRowIndex(5).check({ force: true, multiple: true });
             selectBulkAction('Mark false positive (2)');
             submitFalsePositiveForm();
 
