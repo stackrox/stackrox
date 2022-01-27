@@ -397,9 +397,9 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessingComplete.Reset()
 	l.reprocessingStarted.Signal()
 
-	l.reprocessImagesAndResyncDeployments(imageFetchOpt)
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
+	l.reprocessImagesAndResyncDeployments(imageFetchOpt)
 
 	l.reprocessingStarted.Reset()
 	l.reprocessingComplete.Signal()
