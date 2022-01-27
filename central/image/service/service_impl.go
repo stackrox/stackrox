@@ -289,8 +289,19 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 		return nil, err
 	}
 
+	keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(idSlice))
+	for _, id := range idSlice {
+		keys = append(keys, &central.InvalidateImageCache_ImageKey{
+			ImageId: id,
+		})
+	}
+
 	s.connManager.BroadcastMessage(&central.MsgToSensor{
-		Msg:                  nil,
+		Msg: &central.MsgToSensor_InvalidateImageCache{
+			InvalidateImageCache: &central.InvalidateImageCache{
+				ImageKeys: keys,
+			},
+		},
 	})
 
 	return response, nil

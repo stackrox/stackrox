@@ -12,6 +12,7 @@ type Cache interface {
 	Add(key, value interface{})
 	Get(key interface{}) interface{}
 	GetAll() []interface{}
+	GetKeys() []interface{}
 	GetOrSet(key interface{}, value interface{}) interface{}
 	Remove(key interface{}) bool
 	RemoveAll()
@@ -151,7 +152,13 @@ func (e *expiringCacheImpl) RemoveAll() {
 	e.mq.removeAll()
 }
 
-// GetOrPut returns the value for the key if it exists or sets the value if it does not
+func (e *expiringCacheImpl) GetKeys() []interface{} {
+	e.cleanNoLock(e.clock.Now())
+
+	return e.mq.getAllKeys()
+}
+
+// GetOrSet returns the value for the key if it exists or sets the value if it does not
 // In the case of setting the value, it will return the passed value
 func (e *expiringCacheImpl) GetOrSet(key, value interface{}) interface{} {
 	e.lock.Lock()
