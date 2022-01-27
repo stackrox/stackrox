@@ -9,6 +9,7 @@ import (
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
+	"github.com/stackrox/rox/central/sac/authorizer"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -478,7 +479,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	badScope := getInvalidAccessScope("scope.new", "new invalid scope")
 	mimicScope := getValidAccessScope("scope.new", "existing scope")
 	cloneScope := getValidAccessScope("scope.existing", "new existing scope")
-	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall", role.AccessScopeExcludeAll.GetName())
+	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall", authorizer.AccessScopeExcludeAll.GetName())
 
 	err := s.dataStore.AddAccessScope(s.hasWriteCtx, badScope)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid scope for Add*() yields an error")

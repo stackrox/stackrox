@@ -9,7 +9,7 @@ import withAuth from '../../helpers/basicAuth';
 const h1 = 'Access Control';
 const h2 = 'Access scopes';
 
-const defaultNames = ['Deny All'];
+const defaultNames = ['Unrestricted', 'Deny All'];
 
 describe('Access Control Access scopes', () => {
     withAuth();

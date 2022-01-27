@@ -7,6 +7,7 @@ import (
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
+	"github.com/stackrox/rox/central/sac/authorizer"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
@@ -151,8 +152,9 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		resourceToAccess := permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...)
 
 		role := &storage.Role{
-			Name:        roleName,
-			Description: attributes.description,
+			Name:          roleName,
+			Description:   attributes.description,
+			AccessScopeId: authorizer.AccessScopeIncludeAll.Id,
 		}
 
 		permissionSet := &storage.PermissionSet{
@@ -167,5 +169,5 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		roles = append(roles, role)
 
 	}
-	return roles, permissionSets, []*storage.SimpleAccessScope{rolePkg.AccessScopeExcludeAll}
+	return roles, permissionSets, []*storage.SimpleAccessScope{authorizer.AccessScopeIncludeAll, authorizer.AccessScopeExcludeAll}
 }

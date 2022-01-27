@@ -61,6 +61,12 @@ func UnrestrictedEffectiveAccessScope() *ScopeTree {
 	return newEffectiveAccessScopeTree(Included)
 }
 
+// DenyAllEffectiveAccessScope returns ScopeTree denying everything
+// implicitly via marking the root Excluded.
+func DenyAllEffectiveAccessScope() *ScopeTree {
+	return newEffectiveAccessScopeTree(Excluded)
+}
+
 // ComputeEffectiveAccessScope applies a simple access scope to provided
 // clusters and namespaces and yields ScopeTree. Empty access scope rules
 // mean nothing is included.

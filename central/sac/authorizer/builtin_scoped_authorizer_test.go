@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -66,7 +65,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		},
 		{
 			name:      "allow cluster modification (e.g., creation) with permissions even if it does not exist yet",
-			roles:     []permissions.ResolvedRole{role(clusterEdit, nil)},
+			roles:     []permissions.ResolvedRole{role(clusterEdit, AccessScopeIncludeAll)},
 			scopeKeys: scopeKeys(storage.Access_READ_WRITE_ACCESS, resources.Cluster.Resource, "unknown ID", ""),
 			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow, sac.Allow},
 		},
@@ -97,10 +96,16 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow, sac.Allow},
 		},
 		{
-			name:      "allow read from anything when scope is nil",
-			roles:     []permissions.ResolvedRole{role(allResourcesView, nil)},
+			name:      "allow read from anything when scope unrestricted",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, AccessScopeIncludeAll)},
 			scopeKeys: readCluster("unknown ID"),
 			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow},
+		},
+		{
+			name:      "deny read from anything when scope is nil",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, nil)},
+			scopeKeys: readCluster("unknown ID"),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
 		},
 		{
 			name:      "deny read from anything when scope is empty",
@@ -110,7 +115,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		},
 		{
 			name:      "deny read from anything when scope deny all",
-			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeExcludeAll)},
+			roles:     []permissions.ResolvedRole{role(allResourcesView, AccessScopeExcludeAll)},
 			scopeKeys: readCluster(firstCluster.ID),
 			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
 		},

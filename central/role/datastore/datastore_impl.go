@@ -7,6 +7,7 @@ import (
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/central/sac/authorizer"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -284,7 +285,7 @@ func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.Simp
 	if err := rolePkg.ValidateSimpleAccessScope(scope); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
-	if err := verifyNotDefaultAccessScope(scope.GetName()); err != nil {
+	if err := verifyNotDefaultAccessScope(scope); err != nil {
 		return err
 	}
 
@@ -312,7 +313,7 @@ func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, scope *storage.S
 	if err := rolePkg.ValidateSimpleAccessScope(scope); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
-	if err := verifyNotDefaultAccessScope(scope.GetName()); err != nil {
+	if err := verifyNotDefaultAccessScope(scope); err != nil {
 		return err
 	}
 
@@ -349,7 +350,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	if !found {
 		return errors.Wrapf(errorhelpers.ErrNotFound, "id = %s", id)
 	}
-	if err := verifyNotDefaultAccessScope(accessScope.GetName()); err != nil {
+	if err := verifyNotDefaultAccessScope(accessScope); err != nil {
 		return err
 	}
 
@@ -522,9 +523,9 @@ func (ds *dataStoreImpl) verifyRoleNameExists(name string) error {
 }
 
 // Returns errorhelpers.ErrInvalidArgs if the given scope is a default one.
-func verifyNotDefaultAccessScope(name string) error {
-	if rolePkg.IsDefaultAccessScope(name) {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "default access scope %q cannot be modified or deleted", name)
+func verifyNotDefaultAccessScope(scope *storage.SimpleAccessScope) error {
+	if authorizer.IsDefaultAccessScope(scope.GetId()) {
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "default access scope %q cannot be modified or deleted", scope.GetName())
 	}
 	return nil
 }
