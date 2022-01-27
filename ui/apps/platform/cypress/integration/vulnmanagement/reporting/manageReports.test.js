@@ -27,6 +27,10 @@ describe('Vulnmanagement reports', () => {
 
             // navigate by button
             cy.wait('@getReportConfigurations');
+
+            // TODO: change this 2nd wait to await the report count API endpoint, after it is available
+            cy.wait('@getReportConfigurations');
+
             cy.get(selectors.reportSection.createReportLink).click();
             cy.location('pathname').should('eq', `${url.reporting.list}`);
             cy.location('search').should('eq', '?action=create');
