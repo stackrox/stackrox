@@ -11,7 +11,7 @@ import (
 type ParentHierarchy interface {
 	Add(obj metav1.Object)
 	Remove(id string)
-	IsValidChild(parent string, child string) bool
+	IsValidChild(parent string, child metav1.Object) bool
 	TopLevelParents(child string) set.StringSet
 }
 
@@ -49,7 +49,7 @@ func (p *parentHierarchy) Remove(id string) {
 	delete(p.parents, id)
 }
 
-func (p *parentHierarchy) searchRecursiveNoLock(parent, child string) bool {
+func (p *parentHierarchy) searchRecursiveNoLock(parent string, child string) bool {
 	if parent == child {
 		return true
 	}
@@ -61,11 +61,19 @@ func (p *parentHierarchy) searchRecursiveNoLock(parent, child string) bool {
 	return false
 }
 
-func (p *parentHierarchy) IsValidChild(parent, child string) bool {
+func (p *parentHierarchy) IsValidChild(parent string, child metav1.Object) bool {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	return p.searchRecursiveNoLock(parent, child)
+	for _, ref := range child.GetOwnerReferences() {
+		if ref.UID != "" && resources.IsTrackedOwnerReference(ref) {
+			// Only bother checking for parents we track.
+			if p.searchRecursiveNoLock(parent, string(ref.UID)) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (p *parentHierarchy) addTopLevelParentsRecursiveNoLock(child string, parents set.StringSet) {

@@ -41,7 +41,7 @@ func hierarchyFromPodLister(l *mockPodLister) references.ParentHierarchy {
 	pods, _ := l.List(nil)
 	for _, p := range pods {
 		if len(p.OwnerReferences) > 0 {
-			ph.Add([]string{string(p.OwnerReferences[0].UID)}, string(p.GetUID()))
+			ph.Add(p)
 		}
 	}
 	return ph
