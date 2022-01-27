@@ -66,5 +66,5 @@ To run the tests locally, you may simply execute a bats file:
 or run the entire suite:
 
 ```shell
-bats tests/roxctl/bats-tests/*.bats
+bats --recursive tests/roxctl/bats-tests/
 ```

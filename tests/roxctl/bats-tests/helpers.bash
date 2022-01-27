@@ -16,26 +16,36 @@ luname() {
 
 tmp_roxctl="tmp/roxctl-bats/bin"
 
-# roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
-roxctl-development() {
+# roxctl-development-cmd prints the path to roxctl built with GOTAGS=''. It builds the binary if needed
+roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
     make -s "cli-${_uname}" GOTAGS='' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
-  "${tmp_roxctl}/roxctl-dev" "$@"
+  echo "${tmp_roxctl}/roxctl-dev"
 }
 
-# roxctl-release runs roxctl built with GOTAGS='release'. It builds the binary if needed
-roxctl-release() {
+# roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
+roxctl-development() {
+   "$(roxctl-development-cmd)" "$@"
+}
+
+# roxctl-development-cmd prints the path to roxctl built with GOTAGS='release'. It builds the binary if needed
+roxctl-release-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
     make -s "cli-${_uname}" GOTAGS='release' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
-  "${tmp_roxctl}/roxctl-release" "$@"
+  echo "${tmp_roxctl}/roxctl-release"
+}
+
+# roxctl-release runs roxctl built with GOTAGS='release'. It builds the binary if needed
+roxctl-release() {
+  "$(roxctl-release-cmd)" "$@"
 }
 
 helm_template_central() {
@@ -55,12 +65,21 @@ assert_helm_template_central_registry() {
   assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$@"
 }
 
+wait_10s_for_dir() {
+  local file="$1"
+  for _ in {1..10}; do
+    if [[ -d "$file" ]]; then return 0; fi
+    sleep 1
+  done
+}
+
 assert_components_registry() {
   local dir="$1"
   local registry_slug="$2"
   shift; shift;
 
-  [[ ! -d "$dir" ]] && fail "ERROR: not a directory: '$dir'"
+  # The expect-based tests may be slow and flaky, so let's add a timeout to this check
+  wait_10s_for_dir "$dir" || fail "ERROR: not a directory: '$dir'"
   (( $# < 1 )) && fail "ERROR: 0 components provided"
 
   for component in "${@}"; do
