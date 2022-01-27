@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -132,6 +133,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.networkBaselineMgr,
 	)
 	suite.NoError(err)
+	ei := envisolator.NewEnvIsolator(suite.T())
+	ei.Setenv("ROX_IMAGE_FLAVOR", "development_build")
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
@@ -1376,4 +1379,12 @@ func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
 			suite.Equal("docker.io/stackrox/collector", defaults.GetCollectorImage())
 		})
 	}
+
+	suite.Run("No collector image set when main image provided", func() {
+		cluster := &storage.Cluster{
+			MainImage: "somevalue",
+		}
+		suite.NoError(addDefaults(cluster))
+		suite.Empty(cluster.GetCollectorImage())
+	})
 }
