@@ -2098,23 +2098,6 @@ class Kubernetes implements OrchestratorMain {
             requests.put(key, quantity)
         }
 
-        Probe livenessProbe = new Probe(
-            exec: new ExecAction(command: ["cat", "/health"]),
-            failureThreshold: 1,
-            initialDelaySeconds: 1,
-            periodSeconds: 1,
-            successThreshold: 1,
-            timeoutSeconds: 1
-        )
-        Probe readinessProbe = new Probe(
-            exec: new ExecAction(command: ["cat", "/health"]),
-            failureThreshold: 1,
-            initialDelaySeconds: 1,
-            periodSeconds: 1,
-            successThreshold: 1,
-            timeoutSeconds: 1
-        )
-
         Container container = new Container(
                 name: deployment.containerName ? deployment.containerName : deployment.name,
                 image: deployment.image,
@@ -2128,10 +2111,16 @@ class Kubernetes implements OrchestratorMain {
                 securityContext: new SecurityContext(privileged: deployment.isPrivileged,
                                                      readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
-                                                                                    drop: deployment.dropCapabilities)),
-                livenessProbe: deployment.livenessProbeDefined ? livenessProbe : null,
-                readinessProbe: deployment.readinessProbeDefined ? readinessProbe : null,
+                                                                                    drop: deployment.dropCapabilities))
         )
+        if (deployment.livenessProbeDefined) {
+            Probe livenessProbe = new Probe(exec: new ExecAction(command: ["cat", "/health"]))
+            container.setLivenessProbe(livenessProbe)
+        }
+        if (deployment.readinessProbeDefined) {
+            Probe readinessProbe = new Probe(exec: new ExecAction(command: ["cat", "/health"]))
+            container.setReadinessProbe(readinessProbe)
+        }
 
         PodSpec podSpec = new PodSpec(
                 containers: [container],
