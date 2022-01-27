@@ -31,7 +31,7 @@ var (
 		storage.ServiceType_SCANNER_DB_SERVICE,
 		storage.ServiceType_CENTRAL_SERVICE,
 	}
-	capTime      = 100 * time.Millisecond
+	capTime      = 10 * time.Millisecond
 	shortBackoff = wait.Backoff{
 		Duration: capTime,
 		Factor:   1,
@@ -40,9 +40,11 @@ var (
 		Cap:      capTime,
 	}
 	longBackoff = wait.Backoff{
-		Duration: 2 * time.Second,
-		Factor:   10,
-		Steps:    20,
+		Duration: capTime,
+		Factor:   1,
+		Steps:    10,
+		Jitter:   0,
+		Cap:      capTime,
 	}
 )
 
@@ -80,12 +82,10 @@ func (s *certSecretsRepoSuite) TestGet() {
 				doneErrSig.SignalWithError(err)
 			}()
 			if tc.expectedErr == context.Canceled {
-				go cancelGetCtx()
+				cancelGetCtx()
 			}
 
-			timeoutCtx, cancelTimeoutCtx := context.WithTimeout(context.Background(), time.Second)
-			defer cancelTimeoutCtx()
-			err, ok := doneErrSig.WaitUntil(timeoutCtx)
+			err, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
 			s.Require().True(ok)
 			s.checkExpectedError(tc.expectedErr, err)
 		})
@@ -112,12 +112,10 @@ func (s *certSecretsRepoSuite) TestPut() {
 				doneErrSig.SignalWithError(err)
 			}()
 			if tc.expectedErr == context.Canceled {
-				go cancelPutCtx()
+				cancelPutCtx()
 			}
 
-			timeoutCtx, cancelTimeoutCtx := context.WithTimeout(context.Background(), time.Second)
-			defer cancelTimeoutCtx()
-			err, ok := doneErrSig.WaitUntil(timeoutCtx)
+			err, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
 			s.Require().True(ok)
 			s.checkExpectedError(tc.expectedErr, err)
 		})
@@ -129,7 +127,7 @@ func (s *certSecretsRepoSuite) checkExpectedError(expectedErr, err error) {
 		s.Equal(expectedErr, err)
 	} else {
 		// multierror wraps errForced
-		s.NotNil(err)
+		s.Error(err)
 	}
 }
 
