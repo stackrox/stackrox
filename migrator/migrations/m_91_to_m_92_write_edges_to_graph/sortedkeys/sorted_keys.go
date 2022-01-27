@@ -3,6 +3,8 @@ package sortedkeys
 import (
 	"bytes"
 	"sort"
+
+	"github.com/stackrox/rox/pkg/dackbox/utils"
 )
 
 // SortedKeys is a helper class that is a serializable list of keys with a maximum length of 1 << 16. Optimized for a small number of keys stored together.
@@ -47,4 +49,44 @@ func (sk SortedKeys) insertAt(key []byte, idx int) SortedKeys {
 		return ret // no values after the insertion index.
 	}
 	return append(ret, sk[idx:]...)
+}
+
+// Union combines two sets of sorted keys.
+func (sk SortedKeys) Union(other SortedKeys) SortedKeys {
+	if len(other) == 0 {
+		return utils.CopyKeys(sk)
+	}
+	newKeys := make([][]byte, 0, len(sk)+len(other))
+	otherIdx := 0
+	thisIdx := 0
+	thisInBounds := thisIdx < len(sk)
+	otherInBounds := otherIdx < len(other)
+	for thisInBounds || otherInBounds {
+		var cmp int
+		if thisInBounds && otherInBounds {
+			cmp = bytes.Compare(sk[thisIdx], other[otherIdx])
+		} else if otherInBounds {
+			cmp = 1
+		} else {
+			cmp = -1
+		}
+
+		if cmp == 0 {
+			// If they both have the value, add it and move both arrays forward.
+			newKeys = append(newKeys, sk[thisIdx])
+			otherIdx++
+			thisIdx++
+		} else if cmp > 0 {
+			// Other set has value and not this one, add it and move that one forward.
+			newKeys = append(newKeys, other[otherIdx])
+			otherIdx++
+		} else {
+			// This set has value and not the other one, add it and move this one forward.
+			newKeys = append(newKeys, sk[thisIdx])
+			thisIdx++
+		}
+		thisInBounds = thisIdx < len(sk)
+		otherInBounds = otherIdx < len(other)
+	}
+	return newKeys
 }

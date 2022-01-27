@@ -54,6 +54,7 @@ func (suite *snoozedStateMigrationTestSuite) TestImagesCVEEdgeMigration() {
 		string(img2): {
 			"cve1": {},
 			"cve3": {},
+			"cve4": {},
 		},
 		string(img3): {
 			"cve4": {},
