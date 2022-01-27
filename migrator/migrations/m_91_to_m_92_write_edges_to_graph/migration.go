@@ -46,38 +46,32 @@ func writeImageCVEEdgesToGraph(databases *types.Databases) error {
 		}
 
 		imageKey := getImageKey([]byte(edgeID.ParentID))
-		fromKey := getGraphKey(imageKey)
+		imageKeyString := string(imageKey)
 		cveKey := getCVEKey([]byte(edgeID.ChildID))
-		edgesInGraph, err := databases.RocksDB.Get(readOpts, fromKey)
-		if err != nil {
-			return err
-		}
 
-		if edgesInGraph.Exists() {
-			// Read from the DB only if we do not have the latest snapshot of connections for that image in the map.
-			if _, ok := connections[string(imageKey)]; !ok {
-				tos, err := sortedkeys.Unmarshal(edgesInGraph.Data())
-				if err != nil {
-					return err
-				}
-				connections[string(imageKey)] = connections[string(imageKey)].Union(tos)
+		// Read from the DB only if we do not have the latest snapshot of connections for that image in the map.
+		if _, ok := connections[imageKeyString]; !ok {
+			edgesInGraph, err := databases.RocksDB.Get(readOpts, getGraphKey(imageKey))
+			if err != nil {
+				return err
 			}
-		}
-		connections[string(imageKey)], _ = connections[string(imageKey)].Insert(cveKey)
 
-		for _, to := range connections {
-			wb.Put(fromKey, to.Marshal())
+			tos, err := sortedkeys.Unmarshal(edgesInGraph.Data())
+			if err != nil {
+				return err
+			}
+			connections[imageKeyString] = tos
 		}
+		connections[imageKeyString], _ = connections[imageKeyString].Insert(cveKey)
+	}
 
+	for from, tos := range connections {
+		wb.Put(getGraphKey([]byte(from)), tos.Marshal())
 		if wb.Count() == batchSize {
 			if err := databases.RocksDB.Write(writeOpts, wb); err != nil {
 				return errors.Wrap(err, "writing to RocksDB")
 			}
 			wb.Clear()
-			// We have written the current snapshot to DB so flush the map before moving to next batch,
-			// instead of keeping all the connections until the end of the migrations. When we encounter the same
-			// image again for some image-cve edge, we have record in the DB, which is pulled out.
-			connections = make(map[string]sortedkeys.SortedKeys)
 		}
 	}
 	if wb.Count() != 0 {

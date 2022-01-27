@@ -3,8 +3,6 @@ package sortedkeys
 import (
 	"bytes"
 	"sort"
-
-	"github.com/stackrox/rox/pkg/dackbox/utils"
 )
 
 // SortedKeys is a helper class that is a serializable list of keys with a maximum length of 1 << 16. Optimized for a small number of keys stored together.
@@ -54,7 +52,7 @@ func (sk SortedKeys) insertAt(key []byte, idx int) SortedKeys {
 // Union combines two sets of sorted keys.
 func (sk SortedKeys) Union(other SortedKeys) SortedKeys {
 	if len(other) == 0 {
-		return utils.CopyKeys(sk)
+		return CopyKeys(sk)
 	}
 	newKeys := make([][]byte, 0, len(sk)+len(other))
 	otherIdx := 0
@@ -89,4 +87,29 @@ func (sk SortedKeys) Union(other SortedKeys) SortedKeys {
 		otherInBounds = otherIdx < len(other)
 	}
 	return newKeys
+}
+
+// CopyKeys returns a copy of a list of keys.
+func CopyKeys(keys [][]byte) [][]byte {
+	ret := make([][]byte, len(keys))
+	for i := 0; i < len(keys); i++ {
+		ret[i] = ByteClone(keys[i])
+	}
+	return ret
+}
+
+// ByteClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func ByteClone(in []byte) []byte {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []byte{}
+	}
+	out := make([]byte, len(in))
+	copy(out, in)
+	return out
 }

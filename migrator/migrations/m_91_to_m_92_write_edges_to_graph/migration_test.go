@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/m_91_to_m_92_write_edges_to_graph/sortedkeys"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	dbTypes "github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -32,10 +31,6 @@ func (suite *snoozedStateMigrationTestSuite) SetupTest() {
 
 	suite.db = rocksDB
 	suite.databases = &dbTypes.Databases{RocksDB: rocksDB.DB}
-
-	if !features.VulnRiskManagement.Enabled() {
-		suite.T().SkipNow()
-	}
 }
 
 func (suite *snoozedStateMigrationTestSuite) TearDownTest() {
