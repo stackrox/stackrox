@@ -43,7 +43,8 @@ func (i *certRequestSyncImpl) requestCertificates(ctx context.Context) (*central
 			return nil, ctx.Err()
 		case newResponse := <-i.msgToSensorC:
 			if newResponse.GetRequestId() != i.requestID {
-				log.Debugf("ignoring response with unknown request id %q", response.GetRequestId())
+				log.Debugf("request id %q does not match %q, skipping request", response.GetRequestId(),
+					i.requestID)
 			} else {
 				response = newResponse
 			}

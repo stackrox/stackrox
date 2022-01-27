@@ -22,12 +22,13 @@ type CertificateRequester interface {
 	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 }
 
-// NewCertificateRequester creates a new certificateRequest manager that communicates through
-// the specified channels, and that uses a fresh request ID for reach new request.
-// TODO document this handles concurrent requests from several goroutines
+// NewCertificateRequester creates a new certificate requester that communicates through
+// the specified channels and initializes a new request ID for reach request.
+// To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
+// This assumes that the certificate requester is the only consumer of msgToSensorC.
 func NewCertificateRequester(msgFromSensorC msgFromSensorC, msgToSensorC msgToSensorC) CertificateRequester {
 	return &certificateRequesterImpl{
-		stopC: concurrency.NewErrorSignal(),
+		stopC:          concurrency.NewErrorSignal(),
 		msgFromSensorC: msgFromSensorC,
 		msgToSensorC:   msgToSensorC,
 	}
@@ -36,10 +37,10 @@ func NewCertificateRequester(msgFromSensorC msgFromSensorC, msgToSensorC msgToSe
 type msgFromSensorC chan *central.MsgFromSensor
 type msgToSensorC chan *central.IssueLocalScannerCertsResponse
 type certificateRequesterImpl struct {
-	stopC    concurrency.ErrorSignal
+	stopC          concurrency.ErrorSignal
 	msgFromSensorC msgFromSensorC
 	msgToSensorC   msgToSensorC
-	requests sync.Map
+	requests       sync.Map
 }
 
 func (m *certificateRequesterImpl) Start() {
@@ -65,13 +66,13 @@ func (m *certificateRequesterImpl) forwardMessagesToSensor() {
 }
 
 func (m *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
-	certRequester := &certRequestSyncImpl{
-		requestID: uuid.NewV4().String(),
+	request := &certRequestSyncImpl{
+		requestID:      uuid.NewV4().String(),
 		msgFromSensorC: m.msgFromSensorC,
-		msgToSensorC: make(msgToSensorC),
+		msgToSensorC:   make(msgToSensorC),
 	}
-	m.requests.Store(certRequester.requestID, certRequester.msgToSensorC)
-	response, err := certRequester.requestCertificates(ctx)
-	m.requests.Delete(certRequester.requestID)
+	m.requests.Store(request.requestID, request.msgToSensorC)
+	response, err := request.requestCertificates(ctx)
+	m.requests.Delete(request.requestID)
 	return response, err
 }
