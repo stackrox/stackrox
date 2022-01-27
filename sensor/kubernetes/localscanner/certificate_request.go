@@ -33,7 +33,7 @@ func (i *certRequestSyncImpl) requestCertificates(ctx context.Context) (*central
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case i.msgFromSensorC <- msg:
-		log.Debugf("request to issue local Scanner certificates sent to Central succesfully: %v", msg)
+		log.Debugf("request to issue local Scanner certificates sent to Central successfully: %v", msg)
 	}
 
 	var response *central.IssueLocalScannerCertsResponse

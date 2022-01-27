@@ -60,6 +60,9 @@ func (m *certificateRequesterImpl) forwardMessagesToSensor() {
 			requestC, ok := m.requests.Load(msg.GetRequestId())
 			if ok {
 				requestC.(msgToSensorC) <- msg
+			} else {
+				log.Debugf("request ID %q does not match any known request ID, skipping request",
+					msg.GetRequestId()) // FIXME debug
 			}
 		}
 	}
