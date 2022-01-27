@@ -12,8 +12,10 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -77,6 +79,8 @@ type serviceImpl struct {
 
 	metadataCache expiringcache.Cache
 	scanCache     expiringcache.Cache
+
+	connManager connection.Manager
 
 	enricher enricher.ImageEnricher
 
@@ -284,6 +288,11 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 	if err := s.datastore.DeleteImages(ctx, idSlice...); err != nil {
 		return nil, err
 	}
+
+	s.connManager.BroadcastMessage(&central.MsgToSensor{
+		Msg:                  nil,
+	})
+
 	return response, nil
 }
 

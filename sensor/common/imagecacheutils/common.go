@@ -15,8 +15,15 @@ type CacheKeyProvider interface {
 
 // GetImageCacheKey generates image cache key from a cache key provider.
 func GetImageCacheKey(provider CacheKeyProvider) ImageCacheKey {
+	id := provider.GetId()
+	var name string
+	if id != "" {
+		name = provider.GetName().GetFullName()
+	}
+
+	// The cache key will either be solely the ID or will be
 	return ImageCacheKey{
-		ID:   provider.GetId(),
-		Name: provider.GetName().GetFullName(),
+		ID:   id,
+		Name: name,
 	}
 }
