@@ -13,6 +13,9 @@ var (
 	imageFlavorDefault string = defaults.ImageFlavorNameRHACSRelease
 )
 
+// ImageDefaultsFlagName is a shared constant for --image-defaults command line flag.
+const ImageDefaultsFlagName = "image-defaults"
+
 func init() {
 	if !buildinfo.ReleaseBuild {
 		imageFlavorDefault = defaults.ImageFlavorNameDevelopmentBuild
@@ -23,5 +26,5 @@ func init() {
 func AddImageDefaults(pf *pflag.FlagSet, destination *string) {
 	imageFlavorHelpStr := fmt.Sprintf("default container images settings (%v); it controls repositories from where to download the images, image names and tags format",
 		strings.Join(defaults.GetAllowedImageFlavorNames(buildinfo.ReleaseBuild), ", "))
-	pf.StringVar(destination, "image-defaults", imageFlavorDefault, imageFlavorHelpStr)
+	pf.StringVar(destination, ImageDefaultsFlagName, imageFlavorDefault, imageFlavorHelpStr)
 }

@@ -86,11 +86,12 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	flags.AddImageDefaults(flagWrap.FlagSet, &k8sConfig.ImageFlavorName)
 
 	// TODO(RS-418): restore default image names or update argument description
-	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "", "main image to use (if unset, the default will be used)", "central")
+	defaultImageHelp := fmt.Sprintf("(if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
+	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "", "main image to use "+defaultImageHelp, "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
 
-	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", "", "Scanner image to use (if unset, the default will be used)", "scanner")
-	flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", "", "Scanner DB image to use (if unset, the default will be used)", "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", "", "Scanner image to use "+defaultImageHelp, "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", "", "Scanner DB image to use "+defaultImageHelp, "scanner")
 
 	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
 
