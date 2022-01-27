@@ -8,7 +8,7 @@ setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
   command -v expect || skip "Tests in this file require expect"
-  # remove binaried from the previous runs
+  # remove binaries from the previous runs
   rm -f "$(roxctl-development-cmd)" "$(roxctl-development-release)"
 }
 
