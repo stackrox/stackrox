@@ -27,10 +27,14 @@ func NewParentHierarchy() ParentHierarchy {
 	}
 }
 
+func isValidOwnerRef(ref metav1.OwnerReference) bool {
+	return ref.UID != "" && resources.IsTrackedOwnerReference(ref)
+}
+
 func (p *parentHierarchy) Add(obj metav1.Object) {
 	parents := make([]string, 0, len(obj.GetOwnerReferences()))
 	for _, ref := range obj.GetOwnerReferences() {
-		if ref.UID != "" && resources.IsTrackedOwnerReference(ref) {
+		if isValidOwnerRef(ref) {
 			// Only bother adding parents we track.
 			parents = append(parents, string(ref.UID))
 		}
@@ -66,7 +70,7 @@ func (p *parentHierarchy) IsValidChild(parent string, child metav1.Object) bool 
 	defer p.lock.RUnlock()
 
 	for _, ref := range child.GetOwnerReferences() {
-		if ref.UID != "" && resources.IsTrackedOwnerReference(ref) {
+		if isValidOwnerRef(ref) {
 			// Only bother checking for parents we track.
 			if p.searchRecursiveNoLock(parent, string(ref.UID)) {
 				return true
