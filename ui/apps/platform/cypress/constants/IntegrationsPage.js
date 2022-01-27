@@ -8,6 +8,7 @@ export const url = '/main/integrations';
 export const selectors = {
     configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
     navLink: `${navigationSelectors.nestedNavLinks}:contains("Integrations")`,
+    integrationsTitle: 'h1:contains("Integrations")',
     kubernetesTile: 'a[data-testid="integration-tile"]:contains("Kubernetes")',
     dockerRegistryTile: 'a[data-testid="integration-tile"]:contains("Generic Docker Registry")',
     tiles: 'a[data-testid="integration-tile"]',
