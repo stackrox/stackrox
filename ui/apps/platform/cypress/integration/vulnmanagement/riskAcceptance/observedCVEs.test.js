@@ -17,19 +17,19 @@ function submitDeferralForm() {
     cy.get('input[value="2 weeks"]').check();
     cy.get('input[value="All tags within image"]').check();
     cy.get('textarea[id="comment"]').type('Defer for 2 weeks');
-    cy.get('button:contains("Request approval")').click();
+    cy.get('button:contains("Request approval")').click({ force: true });
     cy.wait('@deferVulnerability');
 }
 
 function submitFalsePositiveForm() {
     cy.get('input[value="All tags within image"]').check();
     cy.get('textarea[id="comment"]').type('Marked as false positive');
-    cy.get('button:contains("Request approval")').click();
+    cy.get('button:contains("Request approval")').click({ force: true });
     cy.wait('@markVulnerabilityFalsePositive');
 }
 
 function selectBulkAction(actionText) {
-    cy.get('button:contains("Bulk actions")').click();
+    cy.get('button:contains("Bulk actions")').click({ force: true });
     cy.get(`li[role="menuitem"] button:contains("${actionText}")`);
 }
 
@@ -57,7 +57,7 @@ function getRowActionItem(actionText) {
 
 describe('Vulnmanagement Risk Acceptance', () => {
     before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_VULN_RISK_MANAGEMENT')) {
+        if (hasFeatureFlag('ROX_VULN_RISK_MANAGEMENT')) {
             this.skip();
         }
     });
@@ -98,8 +98,8 @@ describe('Vulnmanagement Risk Acceptance', () => {
             cy.wait('@getObservedCVEs');
 
             // defer the first row CVE
-            getTableRowActionsByRowIndex(0).click();
-            getRowActionItem('Defer CVE').click();
+            getTableRowActionsByRowIndex(0).click({ force: true });
+            getRowActionItem('Defer CVE').click({ force: true });
             submitDeferralForm();
 
             // confirm that there is a pending request for the CVE you deferrred
@@ -111,8 +111,8 @@ describe('Vulnmanagement Risk Acceptance', () => {
             cy.wait('@getObservedCVEs');
 
             // mark the first row CVE as false positive
-            getTableRowActionsByRowIndex(1).click();
-            getRowActionItem('Mark as False Positive').click();
+            getTableRowActionsByRowIndex(1).click({ force: true });
+            getRowActionItem('Mark as False Positive').click({ force: true });
             submitFalsePositiveForm();
 
             // confirm that there is a pending request for the CVE you deferrred
@@ -158,7 +158,7 @@ describe('Vulnmanagement Risk Acceptance', () => {
             // click on the first row's affected components link
             cy.get(
                 'table[aria-label="Observed CVEs Table"] tbody tr:nth(0) td[data-label="Affected components"] button'
-            ).click();
+            ).click({ force: true });
 
             // confirm the modal shows up with the affected components table
             cy.get('table[aria-label="Affected Components Table"]');
@@ -169,12 +169,12 @@ describe('Vulnmanagement Risk Acceptance', () => {
             cy.wait('@getObservedCVEs');
 
             // defer the first row CVE
-            getTableRowActionsByRowIndex(0).click();
-            getRowActionItem('Defer CVE').click();
+            getTableRowActionsByRowIndex(0).click({ force: true });
+            getRowActionItem('Defer CVE').click({ force: true });
             submitDeferralForm();
 
             // click the pending request icon and navigate to the URL displayed in the input field
-            getPendingApprovalIconByRowIndex(0).click();
+            getPendingApprovalIconByRowIndex(0).click({ force: true });
             cy.get('input[aria-label="Copyable input"]')
                 .invoke('val')
                 .then((url) => {
