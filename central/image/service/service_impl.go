@@ -190,14 +190,12 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
 	if request.GetImage().GetId() != "" {
-		log.Infof("Taking quick path: %v id=%v", request.GetImage().GetName().GetFullName(), request.GetImage().GetId())
 		img, exists, err := s.datastore.GetImage(ctx, request.GetImage().GetId())
 		if err != nil {
 			return nil, err
 		}
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
-			log.Infof("EXISTS: Taking quick path: %v id=%v", request.GetImage().GetName().GetFullName(), request.GetImage().GetId())
 			utils.FilterSuppressedCVEsNoClone(img)
 			return &v1.ScanImageInternalResponse{
 				Image: utils.StripCVEDescriptions(img),

@@ -1509,7 +1509,6 @@ commands:
       - run:
           name: QA Automation Platform Part 2
           command: |
-            exit 1
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
             else

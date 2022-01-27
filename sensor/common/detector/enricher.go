@@ -52,8 +52,6 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
-
-	log.Infof("Scanning image: %v %v %v", ci.GetId(), ci.GetName(), ci.GetNotPullable())
 	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 		Image: ci,
 	})
