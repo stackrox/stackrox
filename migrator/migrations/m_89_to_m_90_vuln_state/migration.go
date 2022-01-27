@@ -56,15 +56,16 @@ func updateImageCVEEdgesWithVulnState(databases *types.Databases) error {
 			return err
 		}
 
-		if _, ok := suppressedCVEs[edgeID.ChildID]; !ok {
-			continue
-		}
-
 		imageCVEEdge := &storage.ImageCVEEdge{}
 		if err := proto.Unmarshal(it.Value().Data(), imageCVEEdge); err != nil {
 			return errors.Wrapf(err, "unmarshaling image-cve edge %s", edgeID)
 		}
-		imageCVEEdge.State = storage.VulnerabilityState_DEFERRED
+
+		if _, ok := suppressedCVEs[edgeID.ChildID]; !ok {
+			imageCVEEdge.State = storage.VulnerabilityState_OBSERVED
+		} else {
+			imageCVEEdge.State = storage.VulnerabilityState_DEFERRED
+		}
 
 		newData, err := proto.Marshal(imageCVEEdge)
 		if err != nil {
