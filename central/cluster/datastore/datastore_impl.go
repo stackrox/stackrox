@@ -858,13 +858,6 @@ func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context, kernelSupport b
 	if err := addDefaults(cluster); err != nil {
 		return nil, err
 	}
-
-	// Collector image default is not supposed to be stored in cluster object but only used to display to the user
-	// on the UI.
-	flavor := defaults.GetImageFlavorFromEnv()
-	if cluster.GetCollectorImage() == "" {
-		cluster.CollectorImage = flavor.CollectorFullImageNoTag()
-	}
 	return cluster, nil
 }
 
@@ -923,15 +916,15 @@ func addDefaults(cluster *storage.Cluster) error {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
 	}
 	flavor := defaults.GetImageFlavorFromEnv()
-	if cluster.GetCollectorImage() == "" {
-		if cluster.SlimCollector {
-			cluster.CollectorImage = flavor.CollectorSlimImageNoTag()
-		} else {
-			cluster.CollectorImage = flavor.CollectorFullImageNoTag()
-		}
-	}
 	if cluster.GetMainImage() == "" {
 		cluster.MainImage = flavor.MainImageNoTag()
+		if cluster.GetCollectorImage() == "" {
+			if cluster.SlimCollector {
+				cluster.CollectorImage = flavor.CollectorSlimImageNoTag()
+			} else {
+				cluster.CollectorImage = flavor.CollectorFullImageNoTag()
+			}
+		}
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		cluster.CentralApiEndpoint = "central.stackrox:443"
