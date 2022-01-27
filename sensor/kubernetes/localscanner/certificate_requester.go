@@ -2,67 +2,76 @@ package localscanner
 
 import (
 	"context"
+	"sync"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
-	_   CertificateRequester = (*certRequesterSyncImpl)(nil)
 	log                      = logging.LoggerForModule()
+	_   CertificateRequester = (*certificateRequesterImpl)(nil)
 )
 
 // CertificateRequester request a new set of local scanner certificates to central.
 type CertificateRequester interface {
+	Start()
+	Stop()
 	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 }
 
-// NewCertificateRequester creates a new CertificateRequester that communicates through
-// the specified channels, and that uses a fresh request ID.
-func NewCertificateRequester(msgFromSensorC chan *central.MsgFromSensor,
-	msgToSensorC chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
-	return &certRequesterSyncImpl{
-		requestID:      uuid.NewV4().String(),
+// NewCertificateRequester creates a new certificateRequest manager that communicates through
+// the specified channels, and that uses a fresh request ID for reach new request.
+// TODO document this handles concurrent requests from several goroutines
+func NewCertificateRequester(msgFromSensorC msgFromSensorC, msgToSensorC msgToSensorC) CertificateRequester {
+	return &certificateRequesterImpl{
+		stopC: concurrency.NewErrorSignal(),
 		msgFromSensorC: msgFromSensorC,
 		msgToSensorC:   msgToSensorC,
 	}
 }
 
-type certRequesterSyncImpl struct {
-	requestID      string
-	msgFromSensorC chan *central.MsgFromSensor
-	msgToSensorC   chan *central.IssueLocalScannerCertsResponse
+type msgFromSensorC chan *central.MsgFromSensor
+type msgToSensorC chan *central.IssueLocalScannerCertsResponse
+type certificateRequesterImpl struct {
+	stopC    concurrency.ErrorSignal
+	msgFromSensorC msgFromSensorC
+	msgToSensorC   msgToSensorC
+	requests sync.Map
 }
 
-func (i *certRequesterSyncImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
-			IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
-				RequestId: i.requestID,
-			},
-		},
-	}
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case i.msgFromSensorC <- msg:
-		log.Debugf("request to issue local Scanner certificates sent to Central succesfully: %v", msg)
-	}
+func (m *certificateRequesterImpl) Start() {
+	go m.forwardMessagesToSensor()
+}
 
-	var response *central.IssueLocalScannerCertsResponse
-	for response == nil {
+func (m *certificateRequesterImpl) Stop() {
+	m.stopC.Signal()
+}
+
+func (m *certificateRequesterImpl) forwardMessagesToSensor() {
+	for {
 		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case newResponse := <-i.msgToSensorC:
-			if newResponse.GetRequestId() != i.requestID {
-				log.Debugf("ignoring response with unknown request id %q", response.GetRequestId())
-			} else {
-				response = newResponse
+		case <-m.stopC.Done():
+			return
+		case msg := <-m.msgToSensorC:
+			requestC, ok := m.requests.Load(msg.GetRequestId())
+			if ok {
+				requestC.(msgToSensorC) <- msg
 			}
 		}
 	}
+}
 
-	return response, nil
+func (m *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
+	certRequester := &certRequestSyncImpl{
+		requestID: uuid.NewV4().String(),
+		msgFromSensorC: m.msgFromSensorC,
+		msgToSensorC: make(msgToSensorC),
+	}
+	m.requests.Store(certRequester.requestID, certRequester.msgToSensorC)
+	response, err := certRequester.requestCertificates(ctx)
+	m.requests.Delete(certRequester.requestID)
+	return response, err
 }

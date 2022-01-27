@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestHandler(t *testing.T) {
+func TestCertificateRequester(t *testing.T) {
 	suite.Run(t, new(certificateRequesterSuite))
 }
 
@@ -19,14 +19,14 @@ type certificateRequesterSuite struct {
 }
 
 type fixture struct {
-	msgFromSensorC chan *central.MsgFromSensor
-	msgToSensorC   chan *central.IssueLocalScannerCertsResponse
-	requester      CertificateRequester
+	msgFromSensorC msgFromSensorC
+	msgToSensorC msgToSensorC
+	requester    CertificateRequester
 }
 
 func newFixture() *fixture {
-	msgFromSensorC := make(chan *central.MsgFromSensor)
-	msgToSensorC := make(chan *central.IssueLocalScannerCertsResponse)
+	msgFromSensorC := make(msgFromSensorC)
+	msgToSensorC := make(msgToSensorC)
 	return &fixture{
 		msgFromSensorC: msgFromSensorC,
 		msgToSensorC:   msgToSensorC,
@@ -36,6 +36,9 @@ func newFixture() *fixture {
 
 func (s *certificateRequesterSuite) TestRequestCancellation() {
 	f := newFixture()
+	f.requester.Start() // FIXME don't start and this is much simpler
+	defer f.requester.Stop()
+
 	requestCtx, cancelRequestCtx := context.WithCancel(context.Background())
 	doneErrSig := concurrency.NewErrorSignal()
 
@@ -55,6 +58,8 @@ func (s *certificateRequesterSuite) TestRequestCancellation() {
 
 func (s *certificateRequesterSuite) TestRequestSuccess() {
 	f := newFixture()
+	f.requester.Start()
+	defer f.requester.Stop()
 	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), time.Second)
 	defer cancelWaitCtx()
 	doneErrSig := concurrency.NewErrorSignal()
