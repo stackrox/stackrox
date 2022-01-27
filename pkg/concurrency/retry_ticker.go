@@ -2,9 +2,9 @@ package concurrency
 
 import (
 	"context"
-	"sync"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
