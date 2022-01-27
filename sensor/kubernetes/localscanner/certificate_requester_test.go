@@ -20,8 +20,8 @@ type certificateRequesterSuite struct {
 
 type fixture struct {
 	msgFromSensorC msgFromSensorC
-	msgToSensorC msgToSensorC
-	requester    CertificateRequester
+	msgToSensorC   msgToSensorC
+	requester      CertificateRequester
 }
 
 func newFixture() *fixture {
