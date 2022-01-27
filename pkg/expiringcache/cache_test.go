@@ -53,6 +53,13 @@ func TestExpiringCache(t *testing.T) {
 		assert.Equal(t, p.value, ec.Get(p.key).(string))
 	}
 
+	var keys []interface{}
+	for _, p := range pairs {
+		keys = append(keys, p.key)
+	}
+	clock.EXPECT().Now().Return(getTime)
+	assert.Equal(t, keys, ec.GetKeys())
+
 	// Move forward 11 seconds, and the first element should get pruned but the rest should be available.
 	getTime = getTime.Add(11 * time.Second)
 
