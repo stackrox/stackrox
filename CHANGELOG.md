@@ -14,7 +14,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Added image scope so that the Active State can be determined in the scope of a deployment for a specific image.
 - The default gRPC port in Scanner's config map is changed to 8443, as that is what Scanner has actually been defaulting to this whole time.
   - Note: Scanner has been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expects `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
-- Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images.
 - AWS ECR integration supports AssumeRole authentication.
 - The default policy to detect Log4Shell vulnerability has been updated to also detect CVE-2021-45046 and the remediation has been updated to reflect the latest guidance by the Apache Logging security team.
 - Prior to this release, CVEs could be snoozed using global write access on `Images`. Starting this release, requests to snooze CVEs can be created only using `VulnerabilityManagementRequests` global write access and requests can be approved only using `VulnerabilityManagementApprovals` global write access. Roles with write access on `Images`, created prior to this release, are provided with both the newly added permissions. We recommend updating the roles to only include the least amount of resources required for each role. All new roles must be explicitly supplied with `VulnerabilityManagementRequests` and/or `VulnerabilityManagementApprovals` permissions in order to use CVE snoozing functionality.
@@ -23,6 +22,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - For `roxctl helm output` deprecated flag `--rhacs` in favor of `--image-defaults=rhacs` (using `--rhacs` with `--image-defaults` results in an error).
 - Default behavior of `roxctl helm output` results now in using container images from `registry.redhat.io` instead of `stackrox.io`.
 - By default, notifications will be sent for every runtime policy violation instead of only the first encountered violation. If this is undesired, setting an environment variable `NOTIFY_EVERY_RUNTIME_EVENT` to `false` will restore the previous behavior. Please note that the environment variable will be removed in a future release, so please notify the ACS team if you have a valid use case.
+- Certain ACS images were moved to new repositories: 
+  - main: from `registry.redhat.io/rh-acs/main` to `registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8`
+  - collector: from `registry.redhat.io/rh-acs/collector` (with `-latest` tag) to `registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8`
+  - collector (slim): from `registry.redhat.io/rh-acs/collector` (with `-slim` tag) to `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8`
+  - scanner: from `registry.redhat.io/rh-acs/scanner` to `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8`
+  - scanner-db: from `registry.redhat.io/rh-acs/scanner-db` to `registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8`
+- Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images. For example, a scanner image for ACS 3.68.0 is now identified as following `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:3.68.0` and `stackrox.io/scanner:3.68.0`. Please make sure you follow this versioning scheme when upgrading manually. This scheme will be used for all future releases.
+- Collector Slim image name and tag have changed. Now the `-slim` is not part of the image tag but part of the image name. This means that Collector Slim image for the release 3.68.0 is identified as `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8:3.68.0` and `collector.stackrox.io/collector-slim:3.68.0`.
 
 ## [67.2]
 
