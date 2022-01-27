@@ -10,3 +10,6 @@ type WaitGroup = sync.WaitGroup
 
 // Locker is an alias for `sync.Locker`.
 type Locker = sync.Locker
+
+// Map is an alias for `sync.Map`.
+type Map = sync.Map
