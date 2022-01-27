@@ -14,7 +14,7 @@ export function fetchResources(): Promise<{ response: { resources: string[] } }>
 export function fetchResourcesAsArray(): Promise<string[]> {
     return axios
         .get<{ resources: string[] }>(resourcesUrl)
-        .then((response) => response.data.resources);
+        .then((response) => response?.data?.resources ?? []);
 }
 
 const rolesUrl = '/v1/roles';
@@ -48,7 +48,7 @@ export function fetchRoles(): Promise<{ response: { roles: Role[] } }> {
  * Fetch entities and return array of objects.
  */
 export function fetchRolesAsArray(): Promise<Role[]> {
-    return axios.get<{ roles: Role[] }>(rolesUrl).then((response) => response.data.roles);
+    return axios.get<{ roles: Role[] }>(rolesUrl).then((response) => response?.data?.roles ?? []);
 }
 
 /*

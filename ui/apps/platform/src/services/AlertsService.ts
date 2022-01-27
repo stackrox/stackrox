@@ -114,7 +114,7 @@ export function fetchAlerts(
     );
     return axios
         .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`)
-        .then((response) => (response.data ? response.data.alerts : []));
+        .then((response) => response?.data?.alerts ?? []);
 }
 
 /*
@@ -127,7 +127,7 @@ export function fetchAlertCount(options: RestSearchOption[]): Promise<number> {
     );
     return axios
         .get<{ count: number }>(`${baseCountUrl}?${params}`)
-        .then((response) => response.data.count);
+        .then((response) => response?.data?.count ?? 0);
 }
 
 /*

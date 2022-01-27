@@ -53,7 +53,7 @@ export function fetchDeployments(
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`)
-        .then((response) => response.data.deployments);
+        .then((response) => response?.data?.deployments ?? []);
 }
 
 export type ListDeploymentWithProcessInfo = {
@@ -79,7 +79,7 @@ export function fetchDeploymentsCount(options: RestSearchOption[]): Promise<numb
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat' });
     return axios
         .get<{ count: number }>(`${deploymentsCountUrl}?${params}`)
-        .then((response) => response.data.count);
+        .then((response) => response?.data?.count ?? 0);
 }
 
 /**
@@ -129,7 +129,7 @@ export function fetchDeploymentsLegacy(options: RestSearchOption[]): Promise<{
     return axios
         .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`)
         .then((response) => ({
-            response: normalize(response.data.deployments, [deploymentSchema]),
+            response: normalize(response?.data?.deployments ?? [], [deploymentSchema]),
         }));
 }
 

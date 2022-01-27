@@ -54,7 +54,7 @@ export function getPolicies(query = ''): Promise<ListPolicy[]> {
     const params = queryString.stringify({ query });
     return axios
         .get<{ policies: Policy[] }>(`${baseUrl}?${params}`)
-        .then((response) => response.data.policies);
+        .then((response) => response?.data?.policies ?? []);
 }
 
 /*
@@ -73,7 +73,7 @@ export function fetchPolicyCategories(): Promise<{ response: { categories: strin
 export function getPolicyCategories(): Promise<string[]> {
     return axios
         .get<{ categories: string[] }>(policyCategoriesUrl)
-        .then((response) => response.data.categories);
+        .then((response) => response?.data?.categories ?? []);
 }
 
 /*
@@ -164,7 +164,7 @@ export function startDryRun(policy: Policy): Promise<{ data: { jobId: string } }
     /*
      * TODO after policiesSagas.js has been deleted:
      * function return type: Promise<string>
-     * add method: then((response) => response.data.jobId)
+     * add method: then((response) => response?.data?.jobId)
      */
     const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
 
