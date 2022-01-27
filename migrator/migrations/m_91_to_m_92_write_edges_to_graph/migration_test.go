@@ -87,7 +87,7 @@ func (suite *snoozedStateMigrationTestSuite) TestImagesCVEEdgeMigration() {
 		expectedTos, ok := edges[string(imageKey)]
 		suite.True(ok)
 		for to := range expectedTos {
-			tos.Find(getCVEKey([]byte(to)))
+			suite.NotEqual(-1, tos.Find(getCVEKey([]byte(to))))
 		}
 		count++
 	}

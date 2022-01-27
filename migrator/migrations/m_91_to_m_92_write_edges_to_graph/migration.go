@@ -30,7 +30,6 @@ func writeImageCVEEdgesToGraph(databases *types.Databases) error {
 	it := databases.RocksDB.NewIterator(readOpts)
 	defer it.Close()
 
-	connections := make(map[string]sortedkeys.SortedKeys)
 	wb := gorocksdb.NewWriteBatch()
 	defer wb.Destroy()
 
@@ -50,18 +49,17 @@ func writeImageCVEEdgesToGraph(databases *types.Databases) error {
 			return err
 		}
 
+		var tos sortedkeys.SortedKeys
 		if edgesInGraph.Exists() {
 			ss, err := sortedkeys.Unmarshal(edgesInGraph.Data())
 			if err != nil {
 				return err
 			}
-			connections[string(imageKey)] = ss
+			tos = ss
 		}
-		connections[string(imageKey)], _ = connections[string(imageKey)].Insert(cveKey)
+		tos, _ = tos.Insert(cveKey)
 
-		for _, tos := range connections {
-			wb.Put(fromKey, tos.Marshal())
-		}
+		wb.Put(fromKey, tos.Marshal())
 		if err := databases.RocksDB.Write(writeOpts, wb); err != nil {
 			return errors.Wrap(err, "writing to RocksDB")
 		}
