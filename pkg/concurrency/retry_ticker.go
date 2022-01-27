@@ -19,12 +19,12 @@ type RetryTicker interface {
 }
 
 type retryTickerImpl struct {
-	fn               tickFunc
-	tickTimeout      time.Duration
+	doFunc           tickFunc
+	timeout          time.Duration
 	backoffPrototype wait.Backoff
 	backoff          wait.Backoff
-	tickTimer        *time.Timer
-	tickTimerM       sync.Mutex
+	timer            *time.Timer
+	mutex            sync.Mutex
 }
 
 type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error)
@@ -43,10 +43,10 @@ func (t *retryTickerImpl) Stop() {
 
 func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 	t.setTickTimer(time.AfterFunc(timeToTick, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), t.tickTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
 		defer cancel()
 
-		nextTimeToTick, tickErr := t.fn(ctx)
+		nextTimeToTick, tickErr := t.doFunc(ctx)
 		if tickErr != nil {
 			t.scheduleTick(t.backoff.Step())
 			return
@@ -57,12 +57,12 @@ func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 }
 
 func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
-	t.tickTimerM.Lock()
-	defer t.tickTimerM.Unlock()
-	if t.tickTimer != nil {
-		t.tickTimer.Stop()
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	if t.timer != nil {
+		t.timer.Stop()
 	}
-	t.tickTimer = timer
+	t.timer = timer
 }
 
 // RetryTickerBuilder is a builder for RetryTicker objects.
@@ -74,10 +74,10 @@ type RetryTickerBuilder interface {
 
 // NewRetryTicker returns a new RetryTicker with the minimal parameters. See Build method below for
 // details about how that is created.
-func NewRetryTicker(fn tickFunc, tickTimeout time.Duration, backoff wait.Backoff) RetryTicker {
+func NewRetryTicker(doFunc tickFunc, timeout time.Duration, backoff wait.Backoff) RetryTicker {
 	return &retryTickerImpl{
-		fn:               fn,
-		tickTimeout:      tickTimeout,
+		doFunc:           doFunc,
+		timeout:          timeout,
 		backoffPrototype: backoff,
 		backoff:          backoff,
 	}
