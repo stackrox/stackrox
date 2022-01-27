@@ -1297,12 +1297,6 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 
 func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
 
-	suite.Run("Default API endpoint", func() {
-		defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, false, storage.ClusterType_KUBERNETES_CLUSTER)
-		suite.NoError(err)
-		suite.Equal(centralEndpoint, defaults.GetCentralApiEndpoint())
-	})
-
 	cases := map[string]struct {
 		kernelSupport bool
 		clusterType   storage.ClusterType
@@ -1311,6 +1305,20 @@ func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
 		expectedAdmissionController bool
 		expectedDisableAuditLogs    bool
 	}{
+		"No kernel suppport / Generic cluster": {
+			kernelSupport:               false,
+			clusterType:                 storage.ClusterType_GENERIC_CLUSTER,
+			expectedSlimCollector:       false,
+			expectedAdmissionController: true,
+			expectedDisableAuditLogs:    true,
+		},
+		"With kernel suppport / Generic cluster": {
+			kernelSupport:               true,
+			clusterType:                 storage.ClusterType_GENERIC_CLUSTER,
+			expectedSlimCollector:       true,
+			expectedAdmissionController: true,
+			expectedDisableAuditLogs:    true,
+		},
 		"No kernel suppport / K8s cluster": {
 			kernelSupport:               false,
 			clusterType:                 storage.ClusterType_KUBERNETES_CLUSTER,
@@ -1362,6 +1370,10 @@ func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
 			suite.Equal(testCase.expectedSlimCollector, defaults.SlimCollector)
 			suite.Equal(testCase.expectedAdmissionController, defaults.AdmissionController)
 			suite.Equal(testCase.expectedDisableAuditLogs, defaults.DynamicConfig.DisableAuditLogs)
+
+			suite.Equal(centralEndpoint, defaults.GetCentralApiEndpoint())
+			suite.Equal("docker.io/stackrox/main", defaults.GetMainImage())
+			suite.Equal("docker.io/stackrox/collector", defaults.GetCollectorImage())
 		})
 	}
 }
