@@ -16,83 +16,126 @@ func TestCertificateRequester(t *testing.T) {
 
 type certificateRequesterSuite struct {
 	suite.Suite
-}
-
-type fixture struct {
 	msgFromSensorC msgFromSensorC
 	msgToSensorC   msgToSensorC
 	requester      CertificateRequester
 }
 
-func newFixture() *fixture {
-	msgFromSensorC := make(msgFromSensorC)
-	msgToSensorC := make(msgToSensorC)
-	return &fixture{
-		msgFromSensorC: msgFromSensorC,
-		msgToSensorC:   msgToSensorC,
-		requester:      NewCertificateRequester(msgFromSensorC, msgToSensorC),
-	}
+func (s *certificateRequesterSuite) SetupTest() {
+	s.msgFromSensorC = make(msgFromSensorC)
+	s.msgToSensorC = make(msgToSensorC)
+	s.requester = NewCertificateRequester(s.msgFromSensorC, s.msgToSensorC)
+	s.requester.Start()
+}
+
+func (s *certificateRequesterSuite) TearDownTest() {
+	s.requester.Stop()
 }
 
 func (s *certificateRequesterSuite) TestRequestCancellation() {
-	f := newFixture()
-	f.requester.Start() // FIXME don't start and this is much simpler
-	defer f.requester.Stop()
-
 	requestCtx, cancelRequestCtx := context.WithCancel(context.Background())
 	doneErrSig := concurrency.NewErrorSignal()
 
 	go func() {
-		certs, err := f.requester.RequestCertificates(requestCtx)
+		certs, err := s.requester.RequestCertificates(requestCtx)
 		s.Nil(certs)
 		doneErrSig.SignalWithError(err)
 	}()
 	cancelRequestCtx()
 
-	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), time.Second)
-	defer cancelWaitCtx()
-	requestErr, ok := doneErrSig.WaitUntil(waitCtx)
+	requestErr, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
 	s.Require().True(ok)
 	s.Equal(context.Canceled, requestErr)
 }
 
 func (s *certificateRequesterSuite) TestRequestSuccess() {
-	f := newFixture()
-	f.requester.Start()
-	defer f.requester.Stop()
-	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), time.Second)
+	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancelWaitCtx()
-	doneErrSig := concurrency.NewErrorSignal()
-	expectedResponseC := make(chan *central.IssueLocalScannerCertsResponse)
 
-	go func() {
-		response, err := f.requester.RequestCertificates(waitCtx)
-		expectedResponse := <-expectedResponseC
-		s.Equal(expectedResponse, response)
-		s.Nil(err)
-		doneErrSig.Signal()
-	}()
-
+	responseC := make(msgToSensorC)
+	var interceptedRequestID string
 	go func() {
 		select {
 		case <-waitCtx.Done():
 			return
-		case request := <-f.msgFromSensorC:
-			s.Require().NotNil(request.GetIssueLocalScannerCertsRequest())
-			requestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
-			s.Require().NotEmpty(requestID)
-			// should be ignored.
-			f.msgToSensorC <- &central.IssueLocalScannerCertsResponse{
-				RequestId: "",
+		case request := <-s.msgFromSensorC:
+			interceptedRequestID = request.GetIssueLocalScannerCertsRequest().GetRequestId()
+			s.NotEmpty(interceptedRequestID)
+			s.msgToSensorC <- &central.IssueLocalScannerCertsResponse{
+				RequestId: interceptedRequestID,
 			}
-			expectedResponse := &central.IssueLocalScannerCertsResponse{
-				RequestId: requestID,
-			}
-			f.msgToSensorC <- expectedResponse
-			expectedResponseC <- expectedResponse
 		}
 	}()
 
-	_, ok := doneErrSig.WaitUntil(waitCtx)
+	go func() {
+		response, err := s.requester.RequestCertificates(waitCtx)
+		s.NoError(err)
+		responseC <- response
+	}()
+
+	select {
+	case response := <-responseC:
+		s.Equal(interceptedRequestID, response.GetRequestId())
+	case <-waitCtx.Done():
+		s.Require().Fail("timeout reached")
+	}
+}
+
+func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
+	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancelWaitCtx()
+	doneErrSig := concurrency.NewErrorSignal()
+
+	go func() {
+		select {
+		case <-waitCtx.Done():
+		case <-s.msgFromSensorC:
+			select {
+			case <-waitCtx.Done():
+				// Request with different request ID should be ignored.
+			case s.msgToSensorC <- &central.IssueLocalScannerCertsResponse{RequestId: ""}:
+			}
+		}
+	}()
+
+	go func() {
+		certs, err := s.requester.RequestCertificates(waitCtx)
+		s.Nil(certs)
+		doneErrSig.SignalWithError(err)
+	}()
+
+	requestErr, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
+	s.Require().True(ok)
+	s.Equal(context.DeadlineExceeded, requestErr)
+}
+
+func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere() {
+	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancelWaitCtx()
+	numConcurrentRequests := 3
+	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
+
+	for i := 0; i < numConcurrentRequests; i++ {
+		go func() {
+			select {
+			case <-waitCtx.Done():
+				return
+			case request := <-s.msgFromSensorC:
+				interceptedRequestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
+				s.NotEmpty(interceptedRequestID)
+				s.msgToSensorC <- &central.IssueLocalScannerCertsResponse{
+					RequestId: interceptedRequestID,
+				}
+			}
+		}()
+
+		go func() {
+			_, err := s.requester.RequestCertificates(waitCtx)
+			s.NoError(err)
+			waitGroup.Add(-1)
+		}()
+	}
+
+	ok := concurrency.WaitWithTimeout(&waitGroup, 100*time.Millisecond)
 	s.Require().True(ok)
 }
