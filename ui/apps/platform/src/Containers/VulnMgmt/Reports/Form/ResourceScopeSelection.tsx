@@ -24,7 +24,11 @@ function ResourceScopeSelection({
             .then((response) => {
                 const resourceScopesList = response || [];
                 const filteredScopes = resourceScopesList.filter(
-                    (scope) => !['io.stackrox.authz.accessscope.denyall', 'io.stackrox.authz.accessscope.unrestricted'].includes(scope.id)
+                    (scope) =>
+                        ![
+                            'io.stackrox.authz.accessscope.denyall',
+                            'io.stackrox.authz.accessscope.unrestricted',
+                        ].includes(scope.id)
                 );
                 setResourceScopes(filteredScopes);
 
