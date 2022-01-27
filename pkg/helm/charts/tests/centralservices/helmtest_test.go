@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
-
 )
 
 func TestWithHelmtest(t *testing.T) {
