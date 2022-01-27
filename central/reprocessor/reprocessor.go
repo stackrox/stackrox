@@ -459,27 +459,9 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessingComplete.Reset()
 	l.reprocessingStarted.Signal()
 
-	wg := concurrency.NewWaitGroup(0)
-
-	wg.Add(1)
-	go func() {
-		defer wg.Add(-1)
-		l.reprocessImagesAndResyncDeployments(imageFetchOpt)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Add(-1)
-		l.reprocessNodes()
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Add(-1)
-		l.reprocessWatchedImages()
-	}()
-
-	<-wg.Done()
+	l.reprocessNodes()
+	l.reprocessWatchedImages()
+	l.reprocessImagesAndResyncDeployments(imageFetchOpt)
 
 	l.reprocessingStarted.Reset()
 	l.reprocessingComplete.Signal()
