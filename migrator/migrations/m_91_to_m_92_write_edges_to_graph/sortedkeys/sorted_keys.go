@@ -8,20 +8,6 @@ import (
 // SortedKeys is a helper class that is a serializable list of keys with a maximum length of 1 << 16. Optimized for a small number of keys stored together.
 type SortedKeys [][]byte
 
-type byteSliceSorter [][]byte
-
-func (s byteSliceSorter) Len() int {
-	return len(s)
-}
-
-func (s byteSliceSorter) Less(i, j int) bool {
-	return bytes.Compare(s[i], s[j]) < 0
-}
-
-func (s byteSliceSorter) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
 // Find returns the index of the input key, or -1 if it is not found.
 func (sk SortedKeys) Find(key []byte) int {
 	pos, exists := sk.positionOf(key)
