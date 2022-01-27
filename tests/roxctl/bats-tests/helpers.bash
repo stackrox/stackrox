@@ -65,12 +65,14 @@ assert_helm_template_central_registry() {
   assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$@"
 }
 
-wait_10s_for_dir() {
-  local file="$1"
+wait_10s_for() {
+  local file="$1"; shift
+  local args=("${@}")
   for _ in {1..10}; do
-    if [[ -d "$file" ]]; then return 0; fi
+    if "${args[@]}" "$file"; then return 0; fi
     sleep 1
   done
+  "${args[@]}" "$file"
 }
 
 assert_components_registry() {
@@ -78,22 +80,25 @@ assert_components_registry() {
   local registry_slug="$2"
   shift; shift;
 
-  # The expect-based tests may be slow and flaky, so let's add a timeout to this check
-  wait_10s_for_dir "$dir" || fail "ERROR: not a directory: '$dir'"
+  # The expect-based tests may be slow and flaky, so let's add timeouts to this assertion
+  wait_10s_for "$dir" "test" "-d" || fail "ERROR: not a directory: '$dir'"
   (( $# < 1 )) && fail "ERROR: 0 components provided"
 
   for component in "${@}"; do
     regex="$(registry_regex "$registry_slug" "$component")"
     case $component in
       main)
+        wait_10s_for "${dir}/01-central-12-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/01-central-12-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "central").image' "${dir}/01-central-12-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
       scanner)
+        wait_10s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "scanner").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
       scanner-db)
+        wait_10s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 1) | .spec.template.spec.containers[] | select(.name == "db").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
