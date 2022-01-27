@@ -821,11 +821,11 @@
         "scan": {
           "$ref": "#/definitions/storageImageScan"
         },
-        "results": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageImageSignatureResult"
-          }
+        "signatureData": {
+          "$ref": "#/definitions/storageImageSignatureData"
+        },
+        "signature": {
+          "$ref": "#/definitions/storageImageSignature"
         },
         "components": {
           "type": "integer",
@@ -914,13 +914,6 @@
           "type": "string",
           "format": "uint64",
           "title": "Version is used to determine if the metadata needs to be re-pulled"
-        },
-        "signatures": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageImageSignature"
-          },
-          "description": "Signature contains the signature of the image in raw form, which can be used for verification."
         }
       },
       "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up\nNext Tag: 7"
@@ -994,12 +987,26 @@
     "storageImageSignature": {
       "type": "object",
       "properties": {
-        "cosign": {
-          "$ref": "#/definitions/storageCosignSignature"
+        "signatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSignature"
+          }
         }
       }
     },
-    "storageImageSignatureResult": {
+    "storageImageSignatureData": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageSignatureVerificationResult"
+          }
+        }
+      }
+    },
+    "storageImageSignatureVerificationResult": {
       "type": "object",
       "properties": {
         "verificationTime": {
@@ -1009,9 +1016,24 @@
         "verifierId": {
           "type": "string",
           "description": "verifier_id correlates to the ID of the signature integration used to verify the signature."
+        },
+        "status": {
+          "$ref": "#/definitions/storageImageSignatureVerificationResultStatus"
         }
       },
       "title": "Next Tag: 3"
+    },
+    "storageImageSignatureVerificationResultStatus": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "VERIFIED",
+        "UNVERIFIED",
+        "NO_SIGNATURE",
+        "INVALID_SIGNATURE"
+      ],
+      "default": "UNSET",
+      "description": "Status represents the status of the result."
     },
     "storageLicense": {
       "type": "object",
@@ -1059,6 +1081,14 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "storageSignature": {
+      "type": "object",
+      "properties": {
+        "cosign": {
+          "$ref": "#/definitions/storageCosignSignature"
         }
       }
     },

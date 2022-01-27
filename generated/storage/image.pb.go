@@ -130,13 +130,49 @@ func (ImageScan_Note) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{2, 0}
 }
 
+// Status represents the status of the result.
+type ImageSignatureVerificationResult_Status int32
+
+const (
+	ImageSignatureVerificationResult_UNSET             ImageSignatureVerificationResult_Status = 0
+	ImageSignatureVerificationResult_VERIFIED          ImageSignatureVerificationResult_Status = 1
+	ImageSignatureVerificationResult_UNVERIFIED        ImageSignatureVerificationResult_Status = 2
+	ImageSignatureVerificationResult_NO_SIGNATURE      ImageSignatureVerificationResult_Status = 3
+	ImageSignatureVerificationResult_INVALID_SIGNATURE ImageSignatureVerificationResult_Status = 4
+)
+
+var ImageSignatureVerificationResult_Status_name = map[int32]string{
+	0: "UNSET",
+	1: "VERIFIED",
+	2: "UNVERIFIED",
+	3: "NO_SIGNATURE",
+	4: "INVALID_SIGNATURE",
+}
+
+var ImageSignatureVerificationResult_Status_value = map[string]int32{
+	"UNSET":             0,
+	"VERIFIED":          1,
+	"UNVERIFIED":        2,
+	"NO_SIGNATURE":      3,
+	"INVALID_SIGNATURE": 4,
+}
+
+func (x ImageSignatureVerificationResult_Status) String() string {
+	return proto.EnumName(ImageSignatureVerificationResult_Status_name, int32(x))
+}
+
+func (ImageSignatureVerificationResult_Status) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_c926ac8b7cb24b2e, []int{4, 0}
+}
+
 // Next Tag: 16
 type Image struct {
-	Id       string                  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha,store,hidden"`
-	Name     *ImageName              `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Metadata *ImageMetadata          `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Scan     *ImageScan              `protobuf:"bytes,3,opt,name=scan,proto3" json:"scan,omitempty" policy:"Image Scan"`
-	Results  []*ImageSignatureResult `protobuf:"bytes,15,rep,name=results,proto3" json:"results,omitempty"`
+	Id            string              `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha,store,hidden"`
+	Name          *ImageName          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Metadata      *ImageMetadata      `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Scan          *ImageScan          `protobuf:"bytes,3,opt,name=scan,proto3" json:"scan,omitempty" policy:"Image Scan"`
+	SignatureData *ImageSignatureData `protobuf:"bytes,15,opt,name=signature_data,json=signatureData,proto3" json:"signature_data,omitempty"`
+	Signature     *ImageSignature     `protobuf:"bytes,16,opt,name=signature,proto3" json:"signature,omitempty"`
 	// Types that are valid to be assigned to SetComponents:
 	//	*Image_Components
 	SetComponents isImage_SetComponents `protobuf_oneof:"set_components"`
@@ -324,9 +360,16 @@ func (m *Image) GetScan() *ImageScan {
 	return nil
 }
 
-func (m *Image) GetResults() []*ImageSignatureResult {
+func (m *Image) GetSignatureData() *ImageSignatureData {
 	if m != nil {
-		return m.Results
+		return m.SignatureData
+	}
+	return nil
+}
+
+func (m *Image) GetSignature() *ImageSignature {
+	if m != nil {
+		return m.Signature
 	}
 	return nil
 }
@@ -417,12 +460,8 @@ func (m *Image) Clone() *Image {
 	cloned.Name = m.Name.Clone()
 	cloned.Metadata = m.Metadata.Clone()
 	cloned.Scan = m.Scan.Clone()
-	if m.Results != nil {
-		cloned.Results = make([]*ImageSignatureResult, len(m.Results))
-		for idx, v := range m.Results {
-			cloned.Results[idx] = v.Clone()
-		}
-	}
+	cloned.SignatureData = m.SignatureData.Clone()
+	cloned.Signature = m.Signature.Clone()
 	if m.SetComponents != nil {
 		cloned.SetComponents = m.SetComponents.Clone()
 	}
@@ -616,28 +655,25 @@ func (m *ImageScan) Clone() *ImageScan {
 	return cloned
 }
 
-// Next Tag: 3
-type ImageSignatureResult struct {
-	VerificationTime *types.Timestamp `protobuf:"bytes,1,opt,name=verification_time,json=verificationTime,proto3" json:"verification_time,omitempty"`
-	// verifier_id correlates to the ID of the signature integration used to verify the signature.
-	VerifierId           string   `protobuf:"bytes,2,opt,name=verifier_id,json=verifierId,proto3" json:"verifier_id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+type ImageSignatureData struct {
+	Results              []*ImageSignatureVerificationResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
+	XXX_unrecognized     []byte                              `json:"-"`
+	XXX_sizecache        int32                               `json:"-"`
 }
 
-func (m *ImageSignatureResult) Reset()         { *m = ImageSignatureResult{} }
-func (m *ImageSignatureResult) String() string { return proto.CompactTextString(m) }
-func (*ImageSignatureResult) ProtoMessage()    {}
-func (*ImageSignatureResult) Descriptor() ([]byte, []int) {
+func (m *ImageSignatureData) Reset()         { *m = ImageSignatureData{} }
+func (m *ImageSignatureData) String() string { return proto.CompactTextString(m) }
+func (*ImageSignatureData) ProtoMessage()    {}
+func (*ImageSignatureData) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{3}
 }
-func (m *ImageSignatureResult) XXX_Unmarshal(b []byte) error {
+func (m *ImageSignatureData) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageSignatureResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageSignatureData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ImageSignatureResult.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ImageSignatureData.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -647,40 +683,117 @@ func (m *ImageSignatureResult) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *ImageSignatureResult) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ImageSignatureResult.Merge(m, src)
+func (m *ImageSignatureData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImageSignatureData.Merge(m, src)
 }
-func (m *ImageSignatureResult) XXX_Size() int {
+func (m *ImageSignatureData) XXX_Size() int {
 	return m.Size()
 }
-func (m *ImageSignatureResult) XXX_DiscardUnknown() {
-	xxx_messageInfo_ImageSignatureResult.DiscardUnknown(m)
+func (m *ImageSignatureData) XXX_DiscardUnknown() {
+	xxx_messageInfo_ImageSignatureData.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ImageSignatureResult proto.InternalMessageInfo
+var xxx_messageInfo_ImageSignatureData proto.InternalMessageInfo
 
-func (m *ImageSignatureResult) GetVerificationTime() *types.Timestamp {
+func (m *ImageSignatureData) GetResults() []*ImageSignatureVerificationResult {
+	if m != nil {
+		return m.Results
+	}
+	return nil
+}
+
+func (m *ImageSignatureData) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ImageSignatureData) Clone() *ImageSignatureData {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ImageSignatureData)
+	*cloned = *m
+
+	if m.Results != nil {
+		cloned.Results = make([]*ImageSignatureVerificationResult, len(m.Results))
+		for idx, v := range m.Results {
+			cloned.Results[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+// Next Tag: 3
+type ImageSignatureVerificationResult struct {
+	VerificationTime *types.Timestamp `protobuf:"bytes,1,opt,name=verification_time,json=verificationTime,proto3" json:"verification_time,omitempty"`
+	// verifier_id correlates to the ID of the signature integration used to verify the signature.
+	VerifierId           string                                  `protobuf:"bytes,2,opt,name=verifier_id,json=verifierId,proto3" json:"verifier_id,omitempty"`
+	Status               ImageSignatureVerificationResult_Status `protobuf:"varint,3,opt,name=status,proto3,enum=storage.ImageSignatureVerificationResult_Status" json:"status,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                `json:"-"`
+	XXX_unrecognized     []byte                                  `json:"-"`
+	XXX_sizecache        int32                                   `json:"-"`
+}
+
+func (m *ImageSignatureVerificationResult) Reset()         { *m = ImageSignatureVerificationResult{} }
+func (m *ImageSignatureVerificationResult) String() string { return proto.CompactTextString(m) }
+func (*ImageSignatureVerificationResult) ProtoMessage()    {}
+func (*ImageSignatureVerificationResult) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c926ac8b7cb24b2e, []int{4}
+}
+func (m *ImageSignatureVerificationResult) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ImageSignatureVerificationResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ImageSignatureVerificationResult.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ImageSignatureVerificationResult) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImageSignatureVerificationResult.Merge(m, src)
+}
+func (m *ImageSignatureVerificationResult) XXX_Size() int {
+	return m.Size()
+}
+func (m *ImageSignatureVerificationResult) XXX_DiscardUnknown() {
+	xxx_messageInfo_ImageSignatureVerificationResult.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ImageSignatureVerificationResult proto.InternalMessageInfo
+
+func (m *ImageSignatureVerificationResult) GetVerificationTime() *types.Timestamp {
 	if m != nil {
 		return m.VerificationTime
 	}
 	return nil
 }
 
-func (m *ImageSignatureResult) GetVerifierId() string {
+func (m *ImageSignatureVerificationResult) GetVerifierId() string {
 	if m != nil {
 		return m.VerifierId
 	}
 	return ""
 }
 
-func (m *ImageSignatureResult) MessageClone() proto.Message {
+func (m *ImageSignatureVerificationResult) GetStatus() ImageSignatureVerificationResult_Status {
+	if m != nil {
+		return m.Status
+	}
+	return ImageSignatureVerificationResult_UNSET
+}
+
+func (m *ImageSignatureVerificationResult) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *ImageSignatureResult) Clone() *ImageSignatureResult {
+func (m *ImageSignatureVerificationResult) Clone() *ImageSignatureVerificationResult {
 	if m == nil {
 		return nil
 	}
-	cloned := new(ImageSignatureResult)
+	cloned := new(ImageSignatureVerificationResult)
 	*cloned = *m
 
 	cloned.VerificationTime = m.VerificationTime.Clone()
@@ -716,7 +829,7 @@ func (m *EmbeddedImageScanComponent) Reset()         { *m = EmbeddedImageScanCom
 func (m *EmbeddedImageScanComponent) String() string { return proto.CompactTextString(m) }
 func (*EmbeddedImageScanComponent) ProtoMessage()    {}
 func (*EmbeddedImageScanComponent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{4}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{5}
 }
 func (m *EmbeddedImageScanComponent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -934,7 +1047,7 @@ func (m *EmbeddedImageScanComponent_Executable) Reset()         { *m = EmbeddedI
 func (m *EmbeddedImageScanComponent_Executable) String() string { return proto.CompactTextString(m) }
 func (*EmbeddedImageScanComponent_Executable) ProtoMessage()    {}
 func (*EmbeddedImageScanComponent_Executable) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{4, 0}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{5, 0}
 }
 func (m *EmbeddedImageScanComponent_Executable) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -996,7 +1109,7 @@ func (m *License) Reset()         { *m = License{} }
 func (m *License) String() string { return proto.CompactTextString(m) }
 func (*License) ProtoMessage()    {}
 func (*License) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{5}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{6}
 }
 func (m *License) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1075,19 +1188,17 @@ type ImageMetadata struct {
 	// DataSource contains information about which integration was used to pull the metadata
 	DataSource *DataSource `protobuf:"bytes,4,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
 	// Version is used to determine if the metadata needs to be re-pulled
-	Version uint64 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
-	// Signature contains the signature of the image in raw form, which can be used for verification.
-	Signatures           []*ImageSignature `protobuf:"bytes,6,rep,name=signatures,proto3" json:"signatures,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	Version              uint64   `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *ImageMetadata) Reset()         { *m = ImageMetadata{} }
 func (m *ImageMetadata) String() string { return proto.CompactTextString(m) }
 func (*ImageMetadata) ProtoMessage()    {}
 func (*ImageMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{6}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{7}
 }
 func (m *ImageMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1151,13 +1262,6 @@ func (m *ImageMetadata) GetVersion() uint64 {
 	return 0
 }
 
-func (m *ImageMetadata) GetSignatures() []*ImageSignature {
-	if m != nil {
-		return m.Signatures
-	}
-	return nil
-}
-
 func (m *ImageMetadata) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -1175,29 +1279,21 @@ func (m *ImageMetadata) Clone() *ImageMetadata {
 		copy(cloned.LayerShas, m.LayerShas)
 	}
 	cloned.DataSource = m.DataSource.Clone()
-	if m.Signatures != nil {
-		cloned.Signatures = make([]*ImageSignature, len(m.Signatures))
-		for idx, v := range m.Signatures {
-			cloned.Signatures[idx] = v.Clone()
-		}
-	}
 	return cloned
 }
 
 type ImageSignature struct {
-	// Types that are valid to be assigned to Signature:
-	//	*ImageSignature_Cosign
-	Signature            isImageSignature_Signature `protobuf_oneof:"Signature"`
-	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
-	XXX_unrecognized     []byte                     `json:"-"`
-	XXX_sizecache        int32                      `json:"-"`
+	Signatures           []*Signature `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
 func (m *ImageSignature) Reset()         { *m = ImageSignature{} }
 func (m *ImageSignature) String() string { return proto.CompactTextString(m) }
 func (*ImageSignature) ProtoMessage()    {}
 func (*ImageSignature) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{7}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{8}
 }
 func (m *ImageSignature) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1226,48 +1322,11 @@ func (m *ImageSignature) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ImageSignature proto.InternalMessageInfo
 
-type isImageSignature_Signature interface {
-	isImageSignature_Signature()
-	MarshalTo([]byte) (int, error)
-	Size() int
-	Clone() isImageSignature_Signature
-}
-
-type ImageSignature_Cosign struct {
-	Cosign *CosignSignature `protobuf:"bytes,1,opt,name=cosign,proto3,oneof" json:"cosign,omitempty"`
-}
-
-func (*ImageSignature_Cosign) isImageSignature_Signature() {}
-func (m *ImageSignature_Cosign) Clone() isImageSignature_Signature {
-	if m == nil {
-		return nil
-	}
-	cloned := new(ImageSignature_Cosign)
-	*cloned = *m
-
-	cloned.Cosign = m.Cosign.Clone()
-	return cloned
-}
-
-func (m *ImageSignature) GetSignature() isImageSignature_Signature {
+func (m *ImageSignature) GetSignatures() []*Signature {
 	if m != nil {
-		return m.Signature
+		return m.Signatures
 	}
 	return nil
-}
-
-func (m *ImageSignature) GetCosign() *CosignSignature {
-	if x, ok := m.GetSignature().(*ImageSignature_Cosign); ok {
-		return x.Cosign
-	}
-	return nil
-}
-
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*ImageSignature) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
-		(*ImageSignature_Cosign)(nil),
-	}
 }
 
 func (m *ImageSignature) MessageClone() proto.Message {
@@ -1278,6 +1337,111 @@ func (m *ImageSignature) Clone() *ImageSignature {
 		return nil
 	}
 	cloned := new(ImageSignature)
+	*cloned = *m
+
+	if m.Signatures != nil {
+		cloned.Signatures = make([]*Signature, len(m.Signatures))
+		for idx, v := range m.Signatures {
+			cloned.Signatures[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type Signature struct {
+	// Types that are valid to be assigned to Signature:
+	//	*Signature_Cosign
+	Signature            isSignature_Signature `protobuf_oneof:"Signature"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *Signature) Reset()         { *m = Signature{} }
+func (m *Signature) String() string { return proto.CompactTextString(m) }
+func (*Signature) ProtoMessage()    {}
+func (*Signature) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c926ac8b7cb24b2e, []int{9}
+}
+func (m *Signature) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Signature) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Signature.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Signature) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Signature.Merge(m, src)
+}
+func (m *Signature) XXX_Size() int {
+	return m.Size()
+}
+func (m *Signature) XXX_DiscardUnknown() {
+	xxx_messageInfo_Signature.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Signature proto.InternalMessageInfo
+
+type isSignature_Signature interface {
+	isSignature_Signature()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isSignature_Signature
+}
+
+type Signature_Cosign struct {
+	Cosign *CosignSignature `protobuf:"bytes,1,opt,name=cosign,proto3,oneof" json:"cosign,omitempty"`
+}
+
+func (*Signature_Cosign) isSignature_Signature() {}
+func (m *Signature_Cosign) Clone() isSignature_Signature {
+	if m == nil {
+		return nil
+	}
+	cloned := new(Signature_Cosign)
+	*cloned = *m
+
+	cloned.Cosign = m.Cosign.Clone()
+	return cloned
+}
+
+func (m *Signature) GetSignature() isSignature_Signature {
+	if m != nil {
+		return m.Signature
+	}
+	return nil
+}
+
+func (m *Signature) GetCosign() *CosignSignature {
+	if x, ok := m.GetSignature().(*Signature_Cosign); ok {
+		return x.Cosign
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Signature) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*Signature_Cosign)(nil),
+	}
+}
+
+func (m *Signature) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *Signature) Clone() *Signature {
+	if m == nil {
+		return nil
+	}
+	cloned := new(Signature)
 	*cloned = *m
 
 	if m.Signature != nil {
@@ -1297,7 +1461,7 @@ func (m *CosignSignature) Reset()         { *m = CosignSignature{} }
 func (m *CosignSignature) String() string { return proto.CompactTextString(m) }
 func (*CosignSignature) ProtoMessage()    {}
 func (*CosignSignature) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{8}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{10}
 }
 func (m *CosignSignature) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1357,7 +1521,7 @@ func (m *V2Metadata) Reset()         { *m = V2Metadata{} }
 func (m *V2Metadata) String() string { return proto.CompactTextString(m) }
 func (*V2Metadata) ProtoMessage()    {}
 func (*V2Metadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{9}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{11}
 }
 func (m *V2Metadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1425,7 +1589,7 @@ func (m *V1Metadata) Reset()         { *m = V1Metadata{} }
 func (m *V1Metadata) String() string { return proto.CompactTextString(m) }
 func (*V1Metadata) ProtoMessage()    {}
 func (*V1Metadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{10}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{12}
 }
 func (m *V1Metadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1570,7 +1734,7 @@ func (m *ImageLayer) Reset()         { *m = ImageLayer{} }
 func (m *ImageLayer) String() string { return proto.CompactTextString(m) }
 func (*ImageLayer) ProtoMessage()    {}
 func (*ImageLayer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{11}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{13}
 }
 func (m *ImageLayer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1662,7 +1826,7 @@ func (m *ImageName) Reset()         { *m = ImageName{} }
 func (m *ImageName) String() string { return proto.CompactTextString(m) }
 func (*ImageName) ProtoMessage()    {}
 func (*ImageName) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{12}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{14}
 }
 func (m *ImageName) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1756,7 +1920,7 @@ func (m *ListImage) Reset()         { *m = ListImage{} }
 func (m *ListImage) String() string { return proto.CompactTextString(m) }
 func (*ListImage) ProtoMessage()    {}
 func (*ListImage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{13}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{15}
 }
 func (m *ListImage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1971,7 +2135,7 @@ func (m *ImageComponentEdge) Reset()         { *m = ImageComponentEdge{} }
 func (m *ImageComponentEdge) String() string { return proto.CompactTextString(m) }
 func (*ImageComponentEdge) ProtoMessage()    {}
 func (*ImageComponentEdge) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{14}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{16}
 }
 func (m *ImageComponentEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2087,7 +2251,7 @@ func (m *ImageCVEEdge) Reset()         { *m = ImageCVEEdge{} }
 func (m *ImageCVEEdge) String() string { return proto.CompactTextString(m) }
 func (*ImageCVEEdge) ProtoMessage()    {}
 func (*ImageCVEEdge) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{15}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{17}
 }
 func (m *ImageCVEEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2162,7 +2326,7 @@ func (m *WatchedImage) Reset()         { *m = WatchedImage{} }
 func (m *WatchedImage) String() string { return proto.CompactTextString(m) }
 func (*WatchedImage) ProtoMessage()    {}
 func (*WatchedImage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c926ac8b7cb24b2e, []int{16}
+	return fileDescriptor_c926ac8b7cb24b2e, []int{18}
 }
 func (m *WatchedImage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2215,15 +2379,18 @@ func init() {
 	proto.RegisterEnum("storage.SourceType", SourceType_name, SourceType_value)
 	proto.RegisterEnum("storage.Image_Note", Image_Note_name, Image_Note_value)
 	proto.RegisterEnum("storage.ImageScan_Note", ImageScan_Note_name, ImageScan_Note_value)
+	proto.RegisterEnum("storage.ImageSignatureVerificationResult_Status", ImageSignatureVerificationResult_Status_name, ImageSignatureVerificationResult_Status_value)
 	proto.RegisterType((*Image)(nil), "storage.Image")
 	proto.RegisterType((*DataSource)(nil), "storage.DataSource")
 	proto.RegisterType((*ImageScan)(nil), "storage.ImageScan")
-	proto.RegisterType((*ImageSignatureResult)(nil), "storage.ImageSignatureResult")
+	proto.RegisterType((*ImageSignatureData)(nil), "storage.ImageSignatureData")
+	proto.RegisterType((*ImageSignatureVerificationResult)(nil), "storage.ImageSignatureVerificationResult")
 	proto.RegisterType((*EmbeddedImageScanComponent)(nil), "storage.EmbeddedImageScanComponent")
 	proto.RegisterType((*EmbeddedImageScanComponent_Executable)(nil), "storage.EmbeddedImageScanComponent.Executable")
 	proto.RegisterType((*License)(nil), "storage.License")
 	proto.RegisterType((*ImageMetadata)(nil), "storage.ImageMetadata")
 	proto.RegisterType((*ImageSignature)(nil), "storage.ImageSignature")
+	proto.RegisterType((*Signature)(nil), "storage.Signature")
 	proto.RegisterType((*CosignSignature)(nil), "storage.CosignSignature")
 	proto.RegisterType((*V2Metadata)(nil), "storage.V2Metadata")
 	proto.RegisterType((*V1Metadata)(nil), "storage.V1Metadata")
@@ -2239,6 +2406,7 @@ func init() {
 func init() { proto.RegisterFile("storage/image.proto", fileDescriptor_c926ac8b7cb24b2e) }
 
 var fileDescriptor_c926ac8b7cb24b2e = []byte{
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	// 2016 bytes of a gzipped FileDescriptorProto
@@ -2646,6 +2814,153 @@ var fileDescriptor_c926ac8b7cb24b2e = []byte{
 >>>>>>> 1d72845ea (Allow multiple signatures to be associated with a single image.)
 	0x13, 0x00, 0x00,
 >>>>>>> 94f9380cb (Add signature to ImageMetadata; add ImageSignatureResult.)
+=======
+	// 2289 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x58, 0x4d, 0x73, 0xdb, 0xc6,
+	0xf9, 0x17, 0x28, 0xbe, 0x3e, 0x94, 0x65, 0x6a, 0xad, 0xd8, 0xb4, 0x1c, 0x0b, 0x30, 0x9c, 0xe4,
+	0x2f, 0xbf, 0xd1, 0xb6, 0xac, 0x7f, 0xd3, 0x64, 0xc6, 0xe9, 0x90, 0x14, 0x2d, 0x51, 0xa1, 0x29,
+	0xcf, 0x92, 0xa2, 0xc7, 0xc9, 0x01, 0x03, 0x81, 0x2b, 0x0a, 0x23, 0x12, 0x60, 0xb1, 0x4b, 0xda,
+	0xec, 0x07, 0xe8, 0x4c, 0x8f, 0xed, 0xa9, 0x1f, 0xa0, 0xc7, 0x9e, 0xf2, 0x29, 0x72, 0xcc, 0x27,
+	0xe0, 0x74, 0xdc, 0x5b, 0x4f, 0x1d, 0x9e, 0x7b, 0xe8, 0xec, 0x62, 0x01, 0x02, 0x94, 0x14, 0xab,
+	0xb7, 0xdd, 0x67, 0x7f, 0xcf, 0xb3, 0x8b, 0xe7, 0xfd, 0x01, 0xdc, 0xa0, 0xcc, 0xf5, 0xcc, 0x1e,
+	0x79, 0x6a, 0x0f, 0xcc, 0x1e, 0x29, 0x0d, 0x3d, 0x97, 0xb9, 0x28, 0x23, 0x89, 0x1b, 0x6a, 0xcf,
+	0x75, 0x7b, 0x7d, 0xf2, 0x54, 0x90, 0x8f, 0x47, 0x27, 0x4f, 0x99, 0x3d, 0x20, 0x94, 0x99, 0x83,
+	0xa1, 0x8f, 0xdc, 0x40, 0x01, 0xbb, 0x67, 0xd3, 0x33, 0x49, 0x5b, 0x0b, 0x68, 0xd6, 0x58, 0x0a,
+	0xdc, 0xb8, 0x13, 0x90, 0xc6, 0xa3, 0xbe, 0x43, 0x3c, 0xf3, 0xd8, 0xee, 0xdb, 0x6c, 0x72, 0xd1,
+	0xa1, 0xe1, 0x91, 0xdf, 0x8f, 0x08, 0x65, 0x54, 0x1e, 0xae, 0xf7, 0xdc, 0x9e, 0x2b, 0x96, 0x4f,
+	0xf9, 0xca, 0xa7, 0xea, 0xff, 0xce, 0x40, 0xaa, 0xce, 0x1f, 0x8c, 0x5e, 0x40, 0xc2, 0xee, 0x16,
+	0x93, 0x9a, 0xb2, 0x95, 0xab, 0xdc, 0x9f, 0x4d, 0x55, 0x95, 0x12, 0xd3, 0xb3, 0x4e, 0xbf, 0xd5,
+	0xc5, 0xb1, 0xd6, 0x3a, 0x35, 0x1f, 0x73, 0xf1, 0xe4, 0xf1, 0xa9, 0xdd, 0xed, 0x12, 0x47, 0xc7,
+	0x09, 0xbb, 0x8b, 0xbe, 0x82, 0xa4, 0x63, 0x0e, 0x48, 0x51, 0xd1, 0x94, 0xad, 0xfc, 0x36, 0x2a,
+	0xc9, 0x07, 0x94, 0x04, 0x4f, 0xd3, 0x1c, 0x10, 0x2c, 0xce, 0xd1, 0x36, 0x64, 0x07, 0x84, 0x99,
+	0x5d, 0x93, 0x99, 0xc5, 0x84, 0xc0, 0xde, 0x8c, 0x63, 0x5f, 0xcb, 0x53, 0x1c, 0xe2, 0xd0, 0xef,
+	0x20, 0x49, 0x2d, 0xd3, 0x29, 0x2e, 0x5f, 0x24, 0xbb, 0x65, 0x99, 0x4e, 0xe5, 0xd6, 0x6c, 0xaa,
+	0xde, 0x18, 0xba, 0x7d, 0xdb, 0x9a, 0x84, 0xcf, 0xb4, 0x4c, 0x47, 0xc7, 0x82, 0x11, 0x55, 0x60,
+	0x95, 0xda, 0x3d, 0xc7, 0x64, 0x23, 0x8f, 0x18, 0xe2, 0xea, 0xeb, 0x42, 0xd4, 0x9d, 0x05, 0x51,
+	0x01, 0x66, 0x97, 0xdf, 0x7f, 0x8d, 0x46, 0xb7, 0xe8, 0xff, 0x21, 0x17, 0x12, 0x8a, 0x05, 0xc1,
+	0x7e, 0xeb, 0x12, 0x76, 0x3c, 0x47, 0xa2, 0xef, 0x01, 0x2c, 0x77, 0x30, 0x74, 0x1d, 0xe2, 0x30,
+	0x5a, 0xcc, 0x68, 0xca, 0x56, 0xaa, 0xf2, 0x60, 0x36, 0x55, 0xbf, 0x0c, 0x94, 0x5a, 0x0d, 0x4e,
+	0xb5, 0xaa, 0x3b, 0x72, 0x58, 0x5c, 0xb5, 0xfb, 0x4b, 0x38, 0xc2, 0x8e, 0xbe, 0x81, 0xa4, 0x35,
+	0x26, 0xb4, 0x98, 0x15, 0x62, 0x62, 0xb6, 0xa9, 0x76, 0x6a, 0x17, 0x0a, 0x50, 0xb0, 0x60, 0x41,
+	0x6f, 0x60, 0xe5, 0xc4, 0xfe, 0x60, 0x1e, 0xf7, 0x89, 0x21, 0x44, 0xe4, 0x84, 0x88, 0x47, 0xb3,
+	0xa9, 0xfa, 0x7f, 0x81, 0x88, 0x57, 0xfe, 0xb9, 0x76, 0x99, 0xa8, 0x04, 0xce, 0x4b, 0x11, 0x55,
+	0x2e, 0xd1, 0x80, 0x95, 0xbe, 0x49, 0x99, 0x31, 0x1a, 0x76, 0x4d, 0x46, 0xba, 0xc5, 0x94, 0xd0,
+	0xc9, 0x46, 0xc9, 0xf7, 0xef, 0x52, 0xe0, 0xdf, 0xa5, 0x76, 0xe0, 0xdf, 0x15, 0x6d, 0x36, 0x55,
+	0x3f, 0x0f, 0x6e, 0x6b, 0x98, 0x94, 0x69, 0x47, 0x3e, 0x6f, 0xe8, 0x49, 0x79, 0x2e, 0x51, 0x12,
+	0xd1, 0x3d, 0x58, 0x71, 0x5c, 0x66, 0x0c, 0x47, 0xfd, 0x3e, 0xbf, 0xb4, 0x08, 0x9a, 0xb2, 0x95,
+	0xc5, 0x79, 0xc7, 0x65, 0x6f, 0x24, 0x09, 0x6d, 0x40, 0x76, 0xe8, 0xd9, 0xae, 0x67, 0xb3, 0x49,
+	0x31, 0xaf, 0x29, 0x5b, 0xcb, 0x38, 0xdc, 0xa3, 0x97, 0x00, 0x3c, 0x82, 0x0c, 0x6a, 0xb9, 0x1e,
+	0x29, 0xae, 0x68, 0xca, 0x56, 0xa2, 0xb2, 0x39, 0x9b, 0xaa, 0x1b, 0xc1, 0x0b, 0xb0, 0x4d, 0xcf,
+	0xb4, 0x96, 0x15, 0xf5, 0xe4, 0x1c, 0xe7, 0x10, 0x24, 0xf4, 0x1d, 0x64, 0x99, 0x3b, 0x34, 0xac,
+	0x31, 0xa5, 0xc5, 0x6b, 0x82, 0xf9, 0xde, 0x6c, 0xaa, 0xde, 0x8d, 0xc7, 0x42, 0xdb, 0x1d, 0x6a,
+	0xd5, 0x4e, 0xab, 0xe5, 0x6b, 0x4a, 0xdf, 0x5f, 0xc6, 0x19, 0xe6, 0x0e, 0xab, 0x63, 0x4a, 0xd1,
+	0x03, 0x48, 0x39, 0x2e, 0x23, 0xb4, 0xb8, 0xaa, 0x2d, 0x6f, 0xad, 0x6e, 0xdf, 0x88, 0xfb, 0x4a,
+	0xa9, 0xe9, 0x32, 0x82, 0x7d, 0x84, 0xfe, 0x02, 0x92, 0x7c, 0x8b, 0xd6, 0xa1, 0xf0, 0xba, 0xde,
+	0x6a, 0xd5, 0x9b, 0x7b, 0xc6, 0xeb, 0x5a, 0xbb, 0xbc, 0x5b, 0x6e, 0x97, 0x0b, 0x4b, 0xe8, 0x33,
+	0x58, 0x0b, 0xa8, 0xad, 0x6a, 0xb9, 0x69, 0x08, 0xb2, 0x52, 0x29, 0xc0, 0x2a, 0x25, 0xcc, 0x98,
+	0x7b, 0x47, 0x05, 0x20, 0x2b, 0x28, 0x63, 0x42, 0x2b, 0xd7, 0x20, 0xcf, 0xd7, 0xd2, 0x5e, 0x95,
+	0x55, 0x58, 0xe1, 0xdb, 0xe0, 0x83, 0x0e, 0x92, 0xd9, 0x74, 0x21, 0xa3, 0x3f, 0x03, 0xe0, 0xae,
+	0xdd, 0x72, 0x47, 0x9e, 0x45, 0xd0, 0xaa, 0x08, 0x7b, 0x1e, 0xbf, 0x39, 0x11, 0xd1, 0x48, 0x46,
+	0x74, 0x42, 0x50, 0xc4, 0x5a, 0xff, 0x53, 0x12, 0x72, 0x61, 0xd4, 0xa1, 0x1f, 0x21, 0xc7, 0xc3,
+	0xcb, 0xe0, 0x19, 0x4c, 0x06, 0xfe, 0xaf, 0x99, 0x5f, 0x9f, 0x4d, 0xd5, 0xcd, 0x85, 0x5c, 0x62,
+	0x99, 0x8e, 0xc6, 0x11, 0x52, 0x81, 0x38, 0xcb, 0x05, 0x72, 0x02, 0xaa, 0xc6, 0x02, 0x27, 0xa1,
+	0x2d, 0x6f, 0xe5, 0xb7, 0xef, 0x87, 0x4a, 0xac, 0x0d, 0x8e, 0x49, 0xb7, 0x4b, 0xba, 0xe1, 0x63,
+	0xc2, 0x30, 0x8a, 0x05, 0xcc, 0x2b, 0x28, 0xb8, 0x43, 0xe2, 0x99, 0xcc, 0x76, 0x7a, 0x06, 0x9d,
+	0x50, 0x46, 0x06, 0x32, 0xb1, 0xdd, 0x99, 0x4d, 0xd5, 0x5b, 0xf1, 0xc7, 0x1c, 0x06, 0x66, 0xc4,
+	0xd7, 0x43, 0xa6, 0x96, 0xe0, 0x41, 0x3b, 0x90, 0xe7, 0x69, 0xc3, 0xa0, 0x42, 0x55, 0x32, 0x11,
+	0xcd, 0x4d, 0x3a, 0xd7, 0x22, 0x86, 0xee, 0x5c, 0xa3, 0x4f, 0x02, 0x17, 0x48, 0x09, 0x17, 0xb8,
+	0x75, 0x3e, 0x71, 0xc5, 0xdc, 0xe0, 0xef, 0x8a, 0xf4, 0x83, 0x1c, 0xa4, 0x8e, 0x9a, 0xad, 0x5a,
+	0xbb, 0xb0, 0x84, 0x10, 0xac, 0x1e, 0xb6, 0x8c, 0xa3, 0x66, 0xb9, 0x53, 0xae, 0x37, 0xca, 0x95,
+	0x46, 0xad, 0xa0, 0x70, 0x87, 0x78, 0x53, 0xc6, 0xed, 0x7a, 0xb9, 0x11, 0x71, 0x88, 0x04, 0xba,
+	0x05, 0x37, 0x0e, 0x5b, 0x46, 0xb5, 0x53, 0x8b, 0xe3, 0x97, 0xd1, 0x1a, 0x5c, 0x0b, 0x0e, 0x5a,
+	0xed, 0x72, 0xa3, 0x56, 0x48, 0xa2, 0xbb, 0x70, 0xbb, 0x51, 0x6e, 0xee, 0x1d, 0x95, 0xf7, 0x6a,
+	0xe7, 0x39, 0x52, 0xe8, 0x3e, 0xa8, 0xd5, 0x1a, 0x6e, 0xd7, 0x5f, 0xd5, 0x6b, 0xbb, 0x06, 0xde,
+	0xaf, 0xc9, 0x8b, 0xa2, 0xa0, 0xb4, 0xfe, 0x0e, 0xd0, 0xf9, 0xac, 0x89, 0xaa, 0x90, 0xf1, 0x08,
+	0x1d, 0xf5, 0x19, 0x2d, 0x2a, 0xc2, 0x66, 0x0f, 0x2e, 0x49, 0x92, 0x1d, 0xe2, 0xd9, 0x27, 0xb6,
+	0x65, 0x32, 0xdb, 0x75, 0xb0, 0xe0, 0xc0, 0x01, 0xa7, 0xfe, 0x53, 0x02, 0xb4, 0x4f, 0xa1, 0xd1,
+	0x1e, 0xac, 0x8d, 0x23, 0xd4, 0x2b, 0x7a, 0x21, 0x2e, 0x44, 0x99, 0x84, 0xa7, 0xa9, 0x90, 0xf7,
+	0x69, 0xc4, 0x33, 0xec, 0xae, 0xf4, 0x77, 0x08, 0x48, 0xf5, 0x2e, 0xda, 0x87, 0x34, 0x65, 0x26,
+	0x1b, 0x51, 0x61, 0xf8, 0xd5, 0xed, 0x67, 0x57, 0xfe, 0xa4, 0x52, 0x4b, 0xf0, 0x61, 0xc9, 0xaf,
+	0xff, 0x00, 0x69, 0x9f, 0x12, 0xb5, 0xf1, 0x0a, 0x64, 0x3b, 0x35, 0x2c, 0x94, 0x5d, 0x50, 0xd0,
+	0x2a, 0xc0, 0x51, 0x33, 0xdc, 0x27, 0x50, 0x01, 0x56, 0x9a, 0x87, 0x46, 0xab, 0xbe, 0xd7, 0x2c,
+	0xb7, 0x8f, 0x30, 0xb7, 0xe7, 0x67, 0xb0, 0x56, 0x6f, 0x76, 0xca, 0x8d, 0xfa, 0x6e, 0x84, 0x9c,
+	0xd4, 0xff, 0x9c, 0x82, 0x8d, 0xcb, 0xc3, 0x02, 0x3d, 0x8b, 0x14, 0xe8, 0x5c, 0xe5, 0xf3, 0xd9,
+	0x54, 0x2d, 0x9e, 0x2b, 0x41, 0x81, 0xff, 0xfb, 0xa5, 0xfa, 0x3b, 0xc8, 0x8c, 0x89, 0x47, 0x6d,
+	0xd7, 0xf1, 0x75, 0x52, 0xf9, 0x62, 0x36, 0x55, 0xb5, 0xf3, 0x75, 0xab, 0xe3, 0x83, 0x02, 0xe6,
+	0x80, 0x09, 0x3d, 0x84, 0x4c, 0xdf, 0xb6, 0x88, 0x43, 0x83, 0x80, 0x29, 0x84, 0x7a, 0x6b, 0xf8,
+	0x74, 0x1c, 0x00, 0xd0, 0x0e, 0xa4, 0x78, 0xab, 0x42, 0x8b, 0x49, 0xe1, 0x34, 0x9b, 0xe7, 0x02,
+	0xbd, 0x13, 0xed, 0x72, 0xb0, 0x0f, 0x46, 0xf7, 0x20, 0xdf, 0x37, 0x27, 0xdc, 0x6c, 0x4e, 0x97,
+	0x7c, 0x10, 0x15, 0x28, 0xc5, 0x4b, 0xa6, 0x20, 0xd6, 0x39, 0x2d, 0x56, 0x21, 0xd2, 0x0b, 0x15,
+	0xe2, 0x11, 0xa4, 0x65, 0x40, 0x67, 0x84, 0x5d, 0xe7, 0x01, 0xed, 0x07, 0x70, 0x7b, 0x32, 0x24,
+	0x58, 0x42, 0xb8, 0xa0, 0xbe, 0xeb, 0xdb, 0x56, 0xd4, 0xdf, 0x1c, 0x0e, 0xf7, 0xe8, 0x4e, 0xa4,
+	0x56, 0xf0, 0xc2, 0x9a, 0xd8, 0x57, 0xe6, 0x85, 0xe0, 0x6e, 0xac, 0x0e, 0xf1, 0x22, 0x96, 0x88,
+	0xd6, 0x99, 0xdb, 0x90, 0x3d, 0xb1, 0x3f, 0x90, 0xae, 0x71, 0xec, 0x97, 0xb0, 0x1c, 0xce, 0x88,
+	0x7d, 0x65, 0x82, 0xde, 0x42, 0x9e, 0x7c, 0x20, 0xd6, 0x88, 0xf1, 0x1c, 0x4e, 0x8b, 0x2b, 0x42,
+	0x35, 0xa5, 0x2b, 0xe4, 0xc0, 0x52, 0x2d, 0x64, 0xab, 0xa4, 0xfe, 0x35, 0x55, 0x95, 0x27, 0x38,
+	0x2a, 0x69, 0x63, 0x17, 0x60, 0x8e, 0xe0, 0x89, 0x7e, 0x68, 0xb2, 0x53, 0x99, 0xfa, 0xc5, 0x1a,
+	0xe9, 0xb0, 0xd2, 0x25, 0x43, 0xe2, 0x74, 0x89, 0x63, 0xd9, 0xc4, 0xcf, 0xbf, 0x39, 0x1c, 0xa3,
+	0x55, 0xd6, 0xe0, 0xfa, 0xa9, 0x49, 0x8d, 0x88, 0x05, 0x16, 0xeb, 0x8c, 0x5e, 0x85, 0x8c, 0x34,
+	0x75, 0x58, 0x4e, 0x94, 0x79, 0x39, 0xe1, 0x34, 0x36, 0x19, 0x86, 0x25, 0x86, 0xaf, 0x51, 0x01,
+	0x96, 0x47, 0x5e, 0x5f, 0x78, 0x4c, 0x0e, 0xf3, 0xa5, 0xfe, 0xb3, 0x02, 0xd7, 0x62, 0xad, 0x21,
+	0xba, 0x0f, 0x89, 0xf1, 0x73, 0x19, 0xeb, 0x73, 0xa3, 0x75, 0x9e, 0x87, 0xbd, 0x63, 0x62, 0xfc,
+	0x5c, 0x80, 0xb6, 0x65, 0x8f, 0x19, 0x01, 0x6d, 0x47, 0x40, 0xdb, 0xdc, 0x38, 0xfe, 0xfb, 0xe9,
+	0xa9, 0xc9, 0xc3, 0x9b, 0x7f, 0x65, 0x4e, 0x50, 0x5a, 0xa7, 0x26, 0x5d, 0xcc, 0xfb, 0xc9, 0xab,
+	0xe5, 0xfd, 0xe2, 0x3c, 0x70, 0xb8, 0x4b, 0x26, 0xc3, 0x90, 0xd0, 0x77, 0x61, 0x35, 0x9e, 0x32,
+	0xd0, 0x36, 0x40, 0xd8, 0x2c, 0x06, 0x29, 0x73, 0xde, 0xe1, 0xce, 0x5b, 0xca, 0x08, 0x4a, 0x6f,
+	0x40, 0x2e, 0x2a, 0x20, 0x6d, 0xb9, 0xfc, 0x50, 0xea, 0xa3, 0x18, 0x32, 0x57, 0x05, 0x39, 0x44,
+	0xee, 0x2f, 0x61, 0x89, 0xac, 0xe4, 0x23, 0x02, 0xf4, 0x03, 0xb8, 0xbe, 0x80, 0x44, 0x5f, 0x43,
+	0xd1, 0x33, 0xdf, 0x1b, 0xf3, 0x9e, 0xf9, 0xd8, 0xa4, 0xe4, 0x37, 0x3b, 0x06, 0x71, 0x2c, 0x69,
+	0xbf, 0xcf, 0x3c, 0xf3, 0x7d, 0x88, 0xaf, 0x88, 0xd3, 0x9a, 0x63, 0xe9, 0x5f, 0x00, 0xcc, 0x15,
+	0x8c, 0x6e, 0x42, 0xba, 0x6b, 0xf7, 0x08, 0x65, 0x92, 0x49, 0xee, 0xf4, 0x9f, 0x92, 0x00, 0x73,
+	0x63, 0x5d, 0x06, 0x43, 0x3f, 0x42, 0xc6, 0xf2, 0x88, 0xe8, 0x2d, 0x13, 0x9f, 0x6c, 0x2e, 0xbe,
+	0x9c, 0x4d, 0xd5, 0x7b, 0xf1, 0x7a, 0x5e, 0xf5, 0x99, 0x63, 0xfd, 0x45, 0x20, 0x91, 0x5f, 0x6a,
+	0x8e, 0xd8, 0xa9, 0xeb, 0x49, 0x4f, 0x93, 0x3b, 0x9e, 0x13, 0x84, 0xf9, 0x83, 0x4c, 0xb4, 0xd0,
+	0xb7, 0x35, 0xf8, 0x19, 0x96, 0x10, 0xf4, 0x08, 0x92, 0x23, 0x4a, 0x3c, 0x61, 0xe5, 0x9c, 0x3f,
+	0x84, 0xc4, 0x9f, 0x70, 0x44, 0x89, 0xa7, 0x63, 0x01, 0x42, 0x3b, 0x90, 0xb1, 0xdc, 0xc1, 0xc0,
+	0x74, 0xba, 0xc5, 0x34, 0xf7, 0xb3, 0xca, 0xc6, 0x6c, 0xaa, 0xde, 0x5c, 0x78, 0xb2, 0x0f, 0xe0,
+	0xef, 0xf4, 0x57, 0xbc, 0x8b, 0x25, 0x0e, 0xf3, 0x26, 0x43, 0xd7, 0x76, 0x58, 0x31, 0x23, 0x18,
+	0xef, 0xce, 0xa6, 0xea, 0xed, 0x38, 0x63, 0x2d, 0xc4, 0xe8, 0x38, 0xc2, 0xc0, 0x2f, 0x1d, 0xbb,
+	0xfd, 0xd1, 0x40, 0x0c, 0x0d, 0x97, 0x5c, 0xda, 0xf1, 0x01, 0x3c, 0x73, 0xfb, 0x2b, 0xf4, 0x96,
+	0x2b, 0xe1, 0x98, 0xf4, 0x79, 0x36, 0xe3, 0x4a, 0x50, 0x2f, 0x88, 0xb1, 0x52, 0x43, 0x20, 0xc4,
+	0xc5, 0xf1, 0xbe, 0xda, 0x97, 0x2a, 0x8e, 0x03, 0xb5, 0x4b, 0x71, 0x1b, 0xdf, 0x40, 0x3e, 0xc2,
+	0xc6, 0x63, 0xfd, 0x8c, 0x4c, 0xa4, 0xd9, 0xf9, 0x12, 0xad, 0x43, 0x6a, 0x6c, 0xf6, 0x47, 0x41,
+	0x4a, 0xf0, 0x37, 0xdf, 0x26, 0x7e, 0xab, 0xe8, 0x7f, 0x49, 0x00, 0xcc, 0x4d, 0x80, 0x5a, 0x90,
+	0xb7, 0x1d, 0xca, 0xbc, 0x91, 0x25, 0x32, 0xb2, 0x5f, 0xd5, 0x9e, 0xcf, 0xa6, 0xea, 0x93, 0xe0,
+	0x19, 0xbb, 0xae, 0x75, 0x46, 0xbc, 0x13, 0xbb, 0x4f, 0xb4, 0xfa, 0x1c, 0xa9, 0x7d, 0x4f, 0x26,
+	0xef, 0x5d, 0xaf, 0x1b, 0xbc, 0x2c, 0x2a, 0x05, 0xd5, 0x62, 0xb7, 0x57, 0x9e, 0xce, 0xa6, 0xea,
+	0xa3, 0x4f, 0x88, 0xeb, 0x70, 0x7c, 0x20, 0xcc, 0xe7, 0x16, 0x96, 0x96, 0x8e, 0xbb, 0xfc, 0xc9,
+	0x7e, 0xe4, 0x02, 0x8f, 0x4c, 0xc6, 0x3c, 0x72, 0x1d, 0x52, 0x64, 0x30, 0x94, 0xe5, 0x2b, 0x8b,
+	0xfd, 0xcd, 0x41, 0x32, 0x9b, 0x2a, 0xa4, 0xf5, 0xff, 0x28, 0xb2, 0x1f, 0xe7, 0x13, 0x36, 0x7a,
+	0x09, 0x59, 0x8f, 0xf4, 0x6c, 0xca, 0x3c, 0xa9, 0xd3, 0x8b, 0x46, 0x16, 0x2c, 0x11, 0x61, 0xc7,
+	0x1d, 0xb0, 0xa0, 0xaf, 0x21, 0xed, 0x91, 0x81, 0xcb, 0x82, 0xcf, 0x57, 0x67, 0x53, 0xf5, 0xce,
+	0x22, 0x33, 0x3f, 0x0f, 0xad, 0xea, 0xc3, 0x51, 0x09, 0x96, 0x99, 0xd9, 0xf3, 0x03, 0x29, 0xde,
+	0x59, 0xc8, 0x29, 0xc9, 0xec, 0x05, 0x2c, 0x1c, 0x88, 0xf6, 0x20, 0x77, 0x32, 0xea, 0xf7, 0x0d,
+	0x51, 0x0f, 0xfc, 0x76, 0xfc, 0xe1, 0x6c, 0xaa, 0x7e, 0x15, 0xe3, 0x92, 0xc3, 0xa7, 0xe9, 0x98,
+	0xfd, 0xc9, 0x1f, 0x88, 0xf7, 0x92, 0x32, 0xd3, 0xe9, 0x9a, 0x5e, 0x57, 0xc7, 0x59, 0xce, 0xcc,
+	0x3f, 0x58, 0xff, 0x25, 0x01, 0xb9, 0x86, 0x4d, 0x99, 0xff, 0xdf, 0xc2, 0x1f, 0x60, 0x32, 0xbf,
+	0x36, 0xc0, 0x20, 0x2d, 0x36, 0x55, 0x2c, 0x07, 0x0d, 0x43, 0x64, 0x64, 0x58, 0x97, 0x33, 0x76,
+	0x52, 0x9c, 0x05, 0xe3, 0xf3, 0xfd, 0x85, 0xf1, 0xd9, 0x6f, 0x35, 0x16, 0x26, 0xe2, 0x88, 0xdd,
+	0xd3, 0x57, 0xb7, 0xfb, 0xcb, 0x85, 0x39, 0x3a, 0xfb, 0x49, 0xd6, 0xd8, 0x94, 0x1c, 0x6d, 0x70,
+	0x20, 0xde, 0xe0, 0xfc, 0x4f, 0x33, 0xe2, 0x41, 0x32, 0x9b, 0x2b, 0x80, 0xfe, 0x37, 0x45, 0xb6,
+	0xf5, 0x61, 0x33, 0x51, 0xeb, 0xf6, 0xce, 0x0f, 0x87, 0x0b, 0x9d, 0x57, 0xe2, 0x82, 0xce, 0x6b,
+	0x3f, 0xd2, 0x30, 0xf9, 0xae, 0xf1, 0x78, 0x36, 0x55, 0xb7, 0xce, 0xf7, 0x8f, 0x0d, 0x89, 0x5a,
+	0xf8, 0xab, 0x14, 0x72, 0x5f, 0xd0, 0x68, 0x70, 0xc7, 0x5f, 0xf1, 0x9f, 0xd9, 0xa9, 0x5d, 0xf8,
+	0xc0, 0x3f, 0x2a, 0x70, 0xf3, 0xc4, 0xf6, 0x28, 0x33, 0xc4, 0x5f, 0x38, 0xc3, 0xb5, 0xac, 0x91,
+	0xe7, 0x11, 0xc7, 0x22, 0x57, 0x28, 0x26, 0x3b, 0xb3, 0xa9, 0xfa, 0x6c, 0xfe, 0x5b, 0xc4, 0xa3,
+	0x4c, 0x93, 0x23, 0x62, 0x28, 0x45, 0x0b, 0xd1, 0xe1, 0x83, 0xd7, 0xc5, 0x7d, 0x02, 0x38, 0xc7,
+	0xa1, 0x16, 0xa4, 0x78, 0xf3, 0x4f, 0xe4, 0xec, 0x30, 0xff, 0xe5, 0x14, 0xeb, 0x68, 0xf9, 0x54,
+	0x40, 0xe2, 0x3f, 0x48, 0x62, 0xe7, 0x9a, 0x00, 0xe8, 0xd8, 0x97, 0xa5, 0xeb, 0xb0, 0xf2, 0xd6,
+	0x64, 0xd6, 0xa9, 0x6c, 0xfe, 0x2e, 0x6a, 0xae, 0x1e, 0x9e, 0x01, 0xcc, 0xdb, 0x58, 0x94, 0x86,
+	0xc4, 0x61, 0xab, 0xb0, 0x84, 0x00, 0xd2, 0x6f, 0xde, 0xb5, 0xf7, 0x0f, 0x9b, 0x05, 0x05, 0x65,
+	0x21, 0x79, 0x50, 0xee, 0xf0, 0xd9, 0x31, 0x0b, 0x49, 0x7c, 0x54, 0x79, 0x57, 0x58, 0xe6, 0xe7,
+	0xcd, 0xc3, 0xdd, 0xda, 0x41, 0xab, 0x90, 0xe4, 0x83, 0xc6, 0xee, 0x61, 0xbb, 0x59, 0x6b, 0x57,
+	0x0f, 0x71, 0x0d, 0x1f, 0x35, 0xdb, 0xf5, 0xd7, 0x7c, 0x3a, 0x44, 0xb0, 0x5a, 0x6f, 0xbe, 0xc2,
+	0xe5, 0x56, 0x1b, 0x1f, 0x55, 0xc5, 0xf0, 0x91, 0xae, 0xec, 0xfc, 0xfc, 0x71, 0x53, 0xf9, 0xe5,
+	0xe3, 0xa6, 0xf2, 0x8f, 0x8f, 0x9b, 0xca, 0x5f, 0xff, 0xb9, 0xb9, 0x04, 0xb7, 0x6d, 0xb7, 0x44,
+	0x99, 0x69, 0x9d, 0x79, 0xee, 0x07, 0x5f, 0xc7, 0xc1, 0x97, 0xff, 0x10, 0xfc, 0x0b, 0x3d, 0x4e,
+	0x0b, 0xfa, 0x8b, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0x15, 0xa0, 0x3c, 0xec, 0x32, 0x15, 0x00,
+	0x00,
+>>>>>>> 13aecc79f (Address review comments.)
 }
 
 func (m *Image) Marshal() (dAtA []byte, err error) {
@@ -2672,35 +2987,47 @@ func (m *Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Results) > 0 {
-		for iNdEx := len(m.Results) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Results[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintImage(dAtA, i, uint64(size))
+	if m.Signature != nil {
+		{
+			size, err := m.Signature.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
 			}
-			i--
-			dAtA[i] = 0x7a
+			i -= size
+			i = encodeVarintImage(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x82
+	}
+	if m.SignatureData != nil {
+		{
+			size, err := m.SignatureData.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintImage(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x7a
 	}
 	if len(m.Notes) > 0 {
-		dAtA2 := make([]byte, len(m.Notes)*10)
-		var j1 int
+		dAtA4 := make([]byte, len(m.Notes)*10)
+		var j3 int
 		for _, num := range m.Notes {
 			for num >= 1<<7 {
-				dAtA2[j1] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA4[j3] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j1++
+				j3++
 			}
-			dAtA2[j1] = uint8(num)
-			j1++
+			dAtA4[j3] = uint8(num)
+			j3++
 		}
-		i -= j1
-		copy(dAtA[i:], dAtA2[:j1])
-		i = encodeVarintImage(dAtA, i, uint64(j1))
+		i -= j3
+		copy(dAtA[i:], dAtA4[:j3])
+		i = encodeVarintImage(dAtA, i, uint64(j3))
 		i--
 		dAtA[i] = 0x72
 	}
@@ -2934,20 +3261,20 @@ func (m *ImageScan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Notes) > 0 {
-		dAtA8 := make([]byte, len(m.Notes)*10)
-		var j7 int
+		dAtA10 := make([]byte, len(m.Notes)*10)
+		var j9 int
 		for _, num := range m.Notes {
 			for num >= 1<<7 {
-				dAtA8[j7] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA10[j9] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j7++
+				j9++
 			}
-			dAtA8[j7] = uint8(num)
-			j7++
+			dAtA10[j9] = uint8(num)
+			j9++
 		}
-		i -= j7
-		copy(dAtA[i:], dAtA8[:j7])
-		i = encodeVarintImage(dAtA, i, uint64(j7))
+		i -= j9
+		copy(dAtA[i:], dAtA10[:j9])
+		i = encodeVarintImage(dAtA, i, uint64(j9))
 		i--
 		dAtA[i] = 0x2a
 	}
@@ -2999,7 +3326,7 @@ func (m *ImageScan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageSignatureResult) Marshal() (dAtA []byte, err error) {
+func (m *ImageSignatureData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3009,12 +3336,12 @@ func (m *ImageSignatureResult) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageSignatureResult) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageSignatureData) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ImageSignatureResult) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ImageSignatureData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3022,6 +3349,52 @@ func (m *ImageSignatureResult) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Results) > 0 {
+		for iNdEx := len(m.Results) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Results[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintImage(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ImageSignatureVerificationResult) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ImageSignatureVerificationResult) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ImageSignatureVerificationResult) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Status != 0 {
+		i = encodeVarintImage(dAtA, i, uint64(m.Status))
+		i--
+		dAtA[i] = 0x18
 	}
 	if len(m.VerifierId) > 0 {
 		i -= len(m.VerifierId)
@@ -3305,20 +3678,6 @@ func (m *ImageMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Signatures) > 0 {
-		for iNdEx := len(m.Signatures) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Signatures[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintImage(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x32
-		}
-	}
 	if m.Version != 0 {
 		i = encodeVarintImage(dAtA, i, uint64(m.Version))
 		i--
@@ -3396,6 +3755,47 @@ func (m *ImageSignature) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.Signatures) > 0 {
+		for iNdEx := len(m.Signatures) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Signatures[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintImage(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *Signature) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Signature) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Signature) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
 	if m.Signature != nil {
 		{
 			size := m.Signature.Size()
@@ -3408,12 +3808,12 @@ func (m *ImageSignature) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageSignature_Cosign) MarshalTo(dAtA []byte) (int, error) {
+func (m *Signature_Cosign) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ImageSignature_Cosign) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Signature_Cosign) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Cosign != nil {
 		{
@@ -4087,11 +4487,13 @@ func (m *Image) Size() (n int) {
 		}
 		n += 1 + sovImage(uint64(l)) + l
 	}
-	if len(m.Results) > 0 {
-		for _, e := range m.Results {
-			l = e.Size()
-			n += 1 + l + sovImage(uint64(l))
-		}
+	if m.SignatureData != nil {
+		l = m.SignatureData.Size()
+		n += 1 + l + sovImage(uint64(l))
+	}
+	if m.Signature != nil {
+		l = m.Signature.Size()
+		n += 2 + l + sovImage(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -4192,7 +4594,25 @@ func (m *ImageScan) Size() (n int) {
 	return n
 }
 
-func (m *ImageSignatureResult) Size() (n int) {
+func (m *ImageSignatureData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Results) > 0 {
+		for _, e := range m.Results {
+			l = e.Size()
+			n += 1 + l + sovImage(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ImageSignatureVerificationResult) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4205,6 +4625,9 @@ func (m *ImageSignatureResult) Size() (n int) {
 	l = len(m.VerifierId)
 	if l > 0 {
 		n += 1 + l + sovImage(uint64(l))
+	}
+	if m.Status != 0 {
+		n += 1 + sovImage(uint64(m.Status))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -4356,6 +4779,18 @@ func (m *ImageMetadata) Size() (n int) {
 	if m.Version != 0 {
 		n += 1 + sovImage(uint64(m.Version))
 	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ImageSignature) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	if len(m.Signatures) > 0 {
 		for _, e := range m.Signatures {
 			l = e.Size()
@@ -4368,7 +4803,7 @@ func (m *ImageMetadata) Size() (n int) {
 	return n
 }
 
-func (m *ImageSignature) Size() (n int) {
+func (m *Signature) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4383,7 +4818,7 @@ func (m *ImageSignature) Size() (n int) {
 	return n
 }
 
-func (m *ImageSignature_Cosign) Size() (n int) {
+func (m *Signature_Cosign) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5087,7 +5522,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 			}
 		case 15:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Results", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SignatureData", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5114,8 +5549,46 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Results = append(m.Results, &ImageSignatureResult{})
-			if err := m.Results[len(m.Results)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if m.SignatureData == nil {
+				m.SignatureData = &ImageSignatureData{}
+			}
+			if err := m.SignatureData.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signature", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowImage
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthImage
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthImage
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Signature == nil {
+				m.Signature = &ImageSignature{}
+			}
+			if err := m.Signature.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5514,7 +5987,7 @@ func (m *ImageScan) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageSignatureResult) Unmarshal(dAtA []byte) error {
+func (m *ImageSignatureData) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5537,10 +6010,95 @@ func (m *ImageSignatureResult) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageSignatureResult: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageSignatureData: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageSignatureResult: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageSignatureData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Results", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowImage
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthImage
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthImage
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Results = append(m.Results, &ImageSignatureVerificationResult{})
+			if err := m.Results[len(m.Results)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipImage(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthImage
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ImageSignatureVerificationResult) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowImage
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ImageSignatureVerificationResult: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ImageSignatureVerificationResult: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5611,6 +6169,25 @@ func (m *ImageSignatureResult) Unmarshal(dAtA []byte) error {
 			}
 			m.VerifierId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowImage
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= ImageSignatureVerificationResult_Status(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipImage(dAtA[iNdEx:])
@@ -6414,40 +6991,6 @@ func (m *ImageMetadata) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Signatures", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowImage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthImage
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthImage
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Signatures = append(m.Signatures, &ImageSignature{})
-			if err := m.Signatures[len(m.Signatures)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipImage(dAtA[iNdEx:])
@@ -6501,6 +7044,91 @@ func (m *ImageSignature) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signatures", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowImage
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthImage
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthImage
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Signatures = append(m.Signatures, &Signature{})
+			if err := m.Signatures[len(m.Signatures)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipImage(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthImage
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Signature) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowImage
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Signature: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Signature: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Cosign", wireType)
 			}
 			var msglen int
@@ -6532,7 +7160,7 @@ func (m *ImageSignature) Unmarshal(dAtA []byte) error {
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Signature = &ImageSignature_Cosign{v}
+			m.Signature = &Signature_Cosign{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
