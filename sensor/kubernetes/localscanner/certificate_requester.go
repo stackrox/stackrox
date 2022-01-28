@@ -57,7 +57,11 @@ func (r *certificateRequesterImpl) forwardMessagesToSensor() {
 			return
 		case msg := <-r.receiveC:
 			requestC, ok := r.requests.Load(msg.GetRequestId())
+			r.requests.Delete(msg.GetRequestId())
 			if ok {
+				// doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
+				// ever reads this, because requestC has buffer of 1, and we removed it from `r.request` above,
+				// in case we get more than 1 response for `msg.GetRequestId()`.
 				requestC.(chan *central.IssueLocalScannerCertsResponse) <- msg
 			} else {
 				log.Debugf("request ID %q does not match any known request ID, skipping request",
@@ -69,8 +73,10 @@ func (r *certificateRequesterImpl) forwardMessagesToSensor() {
 
 func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
 	requestID := uuid.NewV4().String()
-	receiveC := make(chan *central.IssueLocalScannerCertsResponse)
+	receiveC := make(chan *central.IssueLocalScannerCertsResponse, 1)
 	r.requests.Store(requestID, receiveC)
+	// always delete this entry when leaving this scope to account for requests that are never responded, to avoid
+	// having entries in `r.requests` that are never removed.
 	defer r.requests.Delete(requestID)
 
 	if err := r.send(ctx, requestID); err != nil {
@@ -96,11 +102,11 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 	}
 }
 
-func receive(ctx context.Context, msgToSensorC chan *central.IssueLocalScannerCertsResponse) (*central.IssueLocalScannerCertsResponse, error) {
+func receive(ctx context.Context, receiveC chan *central.IssueLocalScannerCertsResponse) (*central.IssueLocalScannerCertsResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case response := <-msgToSensorC:
+	case response := <-receiveC:
 		return response, nil
 	}
 }
