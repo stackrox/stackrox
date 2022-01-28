@@ -43,30 +43,30 @@ type certificateRequesterImpl struct {
 }
 
 func (r *certificateRequesterImpl) Start() {
-	go r.forwardMessagesToSensor()
+	go r.dispatchResponses()
 }
 
 func (r *certificateRequesterImpl) Stop() {
 	r.stopC.Signal()
 }
 
-func (r *certificateRequesterImpl) forwardMessagesToSensor() {
+func (r *certificateRequesterImpl) dispatchResponses() {
 	for {
 		select {
 		case <-r.stopC.Done():
 			return
 		case msg := <-r.receiveC:
 			requestC, ok := r.requests.Load(msg.GetRequestId())
-			r.requests.Delete(msg.GetRequestId())
-			if ok {
-				// doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
-				// ever reads this, because requestC has buffer of 1, and we removed it from `r.request` above,
-				// in case we get more than 1 response for `msg.GetRequestId()`.
-				requestC.(chan *central.IssueLocalScannerCertsResponse) <- msg
-			} else {
+			if !ok {
 				log.Debugf("request ID %q does not match any known request ID, skipping request",
 					msg.GetRequestId())
+				continue
 			}
+			r.requests.Delete(msg.GetRequestId())
+			// doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
+			// ever reads this, because requestC has buffer of 1, and we removed it from `r.request` above,
+			// in case we get more than 1 response for `msg.GetRequestId()`.
+			requestC.(chan *central.IssueLocalScannerCertsResponse) <- msg
 		}
 	}
 }
