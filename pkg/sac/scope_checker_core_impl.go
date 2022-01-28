@@ -88,6 +88,13 @@ func (scc *ScopeCheckerCoreImpl) PerformChecks(ctx context.Context) error {
 	return scc.reqTracker.PerformChecks(ctx)
 }
 
+func (scc *ScopeCheckerCoreImpl) NeedsPostFiltering() bool {
+	// The external plugin needs to go to the external system to evaluate
+	// whether a given search result is in scope or not. The search results
+	// are needed for that evaluation to be performed.
+	return true
+}
+
 func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	panic("Implement me!")
 }

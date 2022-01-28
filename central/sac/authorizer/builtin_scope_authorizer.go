@@ -88,6 +88,13 @@ func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
 	return nil
 }
 
+func (a *globalScopeChecker) NeedsPostFiltering() bool {
+	return true
+	// TODO : toggle to the following code once the scope filter extraction is implemented
+	// The scope is known and can therefore be injected as scope filter
+	//return false
+}
+
 func (a *globalScopeChecker) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	panic("not implemented")
 }

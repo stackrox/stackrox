@@ -39,6 +39,9 @@ type ScopeCheckerCore interface {
 	// Note: Only scopes that have been obtained from this scope via a call to `SubScopeChecker` are guaranteed
 	// to be considered. Similarly, only requests made in the current goroutine are guaranteed to be considered.
 	PerformChecks(ctx context.Context) error
+	// NeedsPostFiltering returns whether the scope checker core needs post-search evaluation to assess if
+	// the scope is allowed or not
+	NeedsPostFiltering() bool
 	// EffectiveAccessScope returns effective access scope for given principal stored in context.
 	// TODO(janisz): What should be returned is EAS is not supported?
 	// If checker is not at resource level then error will be returned???.

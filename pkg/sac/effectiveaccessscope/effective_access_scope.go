@@ -258,6 +258,104 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace *storag
 	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(matched, nodeAttributesForNamespace(namespace, detail))
 }
 
+func MergeEffectiveAccessScopes(tree1, tree2 ScopeTree) ScopeTree {
+	if tree1.State == Excluded {
+		return tree2
+	}
+	if tree1.State == Included {
+		return tree1
+	}
+	if tree2.State == Excluded {
+		return tree1
+	}
+	if tree2.State == Included {
+		return tree2
+	}
+
+	output := ScopeTree{State: Partial}
+	for id, name := range tree1.clusterIDToName {
+		output.clusterIDToName[id] = name
+	}
+	for id, name := range tree2.clusterIDToName {
+		output.clusterIDToName[id] = name
+	}
+	for name, subtree := range tree1.Clusters {
+		otherSubtree := tree2.Clusters[name]
+		if otherSubtree != nil {
+			output.Clusters[name] = mergeClusterScopes(subtree, otherSubtree)
+		} else {
+			output.Clusters[name] = subtree
+		}
+	}
+	for name, subtree := range tree2.Clusters {
+		if _, exists := tree1.Clusters[name]; exists {
+			// The subtree was already merged in the previous loop
+			continue
+		}
+		output.Clusters[name] = subtree
+	}
+	return output
+}
+
+func mergeClusterScopes(tree1, tree2 *clustersScopeSubTree) *clustersScopeSubTree {
+	if tree1 == nil {
+		return tree2
+	}
+	if tree2 == nil {
+		return tree1
+	}
+	if tree1.State == Excluded {
+		return tree2
+	}
+	if tree1.State == Included {
+		return tree1
+	}
+	if tree2.State == Excluded {
+		return tree1
+	}
+	if tree2.State == Included {
+		return tree2
+	}
+
+	output := &clustersScopeSubTree{State: Partial}
+	output.Attributes = tree1.Attributes
+	for name, subtree := range tree1.Namespaces {
+		otherSubtree := tree2.Namespaces[name]
+		if otherSubtree != nil {
+			output.Namespaces[name] = mergeNamespaceScopes(subtree, otherSubtree)
+		} else {
+			output.Namespaces[name] = subtree
+		}
+	}
+	for name, subtree := range tree2.Namespaces {
+		if _, exists := tree1.Namespaces[name]; exists {
+			// The subtree was already merged in the previous loop
+			continue
+		}
+		output.Namespaces[name] = subtree
+	}
+	return output
+}
+
+func mergeNamespaceScopes(tree1, tree2 *namespacesScopeSubTree) *namespacesScopeSubTree {
+	if tree1 == nil {
+		return tree2
+	}
+	if tree2 == nil {
+		return tree1
+	}
+	if tree1.State == Included {
+		return tree1
+	}
+	if tree2.State == Excluded {
+		return tree1
+	}
+	// It makes no sense to have partial state at Namespace level.
+	// Either tree1 and tree2 are excluded, in which case the output will be excluded.
+	// Or tree2 is included, in which case the output will be included.
+	return tree2
+}
+
 func newEffectiveAccessScopeTree(state scopeState) *ScopeTree {
 	return &ScopeTree{
 		State:           state,

@@ -38,6 +38,10 @@ func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
 	return nil
 }
 
+func (s uniformScopeCheckerCore) NeedsPostFiltering() bool {
+	return false
+}
+
 func (s uniformScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	if s {
 		return effectiveaccessscope.RestrictedEffectiveAccessScope(), nil

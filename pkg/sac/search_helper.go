@@ -100,7 +100,7 @@ func (h *searchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) sea
 	}
 }
 
-func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, [][]byte, error) {
+func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, /*[][]byte,*/ error) {
 	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err

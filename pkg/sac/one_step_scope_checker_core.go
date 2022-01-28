@@ -35,6 +35,11 @@ func (c OneStepSCC) PerformChecks(ctx context.Context) error {
 	return nil
 }
 
+func (c OneStepSCC) NeedsPostFiltering() bool {
+	// The need for search result filtering can depend on the child-level need
+	return true
+}
+
 func (c OneStepSCC) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	panic("Implement me!")
 }

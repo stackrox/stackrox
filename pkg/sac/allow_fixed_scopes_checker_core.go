@@ -50,6 +50,14 @@ func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerC
 	return denyAllScopeCheckerCore
 }
 
+func (c allowFixedScopesCheckerCore) NeedsPostFiltering() bool {
+	return true
+	// TODO: toggle the logic to that one once the scope filter extraction is implemented
+	// The complete allowed scope is known and can be injected as request
+	// filter. Post-filtering is not needed
+	//return false
+}
+
 func (c allowFixedScopesCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	panic("Implement me!")
 }

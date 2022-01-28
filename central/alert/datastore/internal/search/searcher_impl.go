@@ -60,7 +60,7 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 	return protoResults, nil
 }
 
-// SearchRawAlerts retrieves Alerts from the indexer and storage
+// SearchListAlerts retrieves Alerts from the indexer and storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
 	if features.PostgresPOC.Enabled() {
 		defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
@@ -108,6 +108,39 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 	//assert len(results) == len(rows)
 	//convert rows to proper type (here []*storage.ListAlert)
 	// else ...
+	if features.PostgresPOC.Enabled() {
+		defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
+		// TODO - longer run : extract generic part in search helper
+		// TODO compute and inject query filter here
+		rows, err := postgres.RunSearchRequestValue(v1.SearchCategory_ALERTS, q, globaldb.GetPostgresDB(), mappings.OptionsMap)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return nil, nil, nil
+			}
+			return nil, nil, err
+		}
+		// TODO perform data post-filtering here
+		defer rows.Close()
+		var elems []*storage.ListAlert
+		// We can't pass convert function to searcher as this may result in more casting than necessary:
+		// rows -> []*storage.ListAlert -> any -> []*storage.ListAlert
+		for rows.Next() {
+			var id string
+			var data []byte
+			if err := rows.Scan(&id, &data); err != nil {
+				return nil, nil, err
+			}
+			msg := new(storage.Alert)
+			buf := bytes.NewReader(data)
+			t := time.Now()
+			if err := jsonpb.Unmarshal(buf, msg); err != nil {
+				return nil, nil, err
+			}
+			metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "Alert")
+			elems = append(elems, convert.AlertToListAlert(msg))
+		}
+		return elems, nil, nil
+	}
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
@@ -123,6 +156,8 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
 	if features.PostgresPOC.Enabled() {
 		defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
+		// TODO - longer run : extract generic part in search helper
+		// TODO compute and inject query filter here
 		rows, err := postgres.RunSearchRequestValue(v1.SearchCategory_ALERTS, q, globaldb.GetPostgresDB(), mappings.OptionsMap)
 		if err != nil {
 			if err == pgx.ErrNoRows {
@@ -131,6 +166,7 @@ func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*stora
 			return nil, err
 		}
 		defer rows.Close()
+		// TODO perform data post-filtering here
 		var elems []*storage.Alert
 		for rows.Next() {
 			var id string
@@ -203,6 +239,7 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 ///////////////////////////////////////////////
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
+	// TODO integrate postgresql search helper here
 	filteredSearcher := alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
 	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher)
 	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)

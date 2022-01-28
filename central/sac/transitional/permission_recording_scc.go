@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -105,6 +106,14 @@ func (s *permissionRecordingSCC) TryAllowed() sac.TryAllowedResult {
 
 func (s *permissionRecordingSCC) PerformChecks(ctx context.Context) error {
 	return s.wrapped.PerformChecks(ctx)
+}
+
+func (s *permissionRecordingSCC) NeedsPostFiltering() bool {
+	return s.wrapped.NeedsPostFiltering()
+}
+
+func (s *permissionRecordingSCC) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+	panic("Implement me!")
 }
 
 func (s *permissionRecordingSCC) UsedPermissions() permissions.PermissionMap {

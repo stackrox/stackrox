@@ -52,6 +52,11 @@ func (c ScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
 	return curr.TryAllowed()
 }
 
+// NeedsPostFiltering calls teh `NeedsPostFiltering()` method on the wrapped ScopeCheckerCore.
+func (c ScopeChecker) NeedsPostFiltering() bool {
+	return c.core.NeedsPostFiltering()
+}
+
 // Allowed checks (in a blocking way) if access to the given (sub-)scope is allowed.
 func (c ScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error) {
 	curr := c.core
