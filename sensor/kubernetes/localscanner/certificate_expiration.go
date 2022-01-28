@@ -5,7 +5,6 @@ import (
 
 	"crypto/x509"
 	"math/rand"
-
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
