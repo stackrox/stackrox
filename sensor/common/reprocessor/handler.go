@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 )
 
 var (
@@ -83,17 +82,16 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill invalidate image cache request")
 	default:
 		h.admCtrlSettingsMgr.FlushCache()
+
+		keysToDelete := make([]interface{}, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
-			// For new images the image ID may not be present since the image is not saved in Central DB.
-			// Hence, flush the entries having keys with no ID as well.
-			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
-				Name: image.GetImageFullName(),
-			})
-			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
-				ID:   image.GetImageId(),
-				Name: image.GetImageFullName(),
-			})
+			key := image.GetImageId()
+			if key == "" {
+				key = image.GetImageFullName()
+			}
+			keysToDelete = append(keysToDelete, key)
 		}
+		h.imageCache.Remove(keysToDelete...)
 	}
 	return nil
 }
