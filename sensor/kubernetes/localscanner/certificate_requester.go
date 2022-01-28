@@ -69,21 +69,18 @@ func (r *certificateRequesterImpl) forwardMessagesToSensor() {
 }
 
 func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
-	requestID, requestErr := r.send(ctx)
-	if requestErr != nil {
-		return nil, requestErr
+	requestID := uuid.NewV4().String()
+	receiveC := make(msgToSensorC)
+	r.requests.Store(requestID, receiveC)
+	defer r.requests.Delete(requestID)
+
+	if err := r.send(ctx, requestID); err != nil {
+		return nil, err
 	}
-
-	msgToSensorC := make(msgToSensorC)
-	r.requests.Store(requestID, msgToSensorC)
-	response, responseErr := receive(ctx, msgToSensorC)
-	r.requests.Delete(requestID)
-
-	return response, responseErr
+	return receive(ctx, receiveC)
 }
 
-func (r *certificateRequesterImpl) send(ctx context.Context) (requestID string, err error) {
-	requestID = uuid.NewV4().String()
+func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) error {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
 			IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
@@ -93,10 +90,10 @@ func (r *certificateRequesterImpl) send(ctx context.Context) (requestID string, 
 	}
 	select {
 	case <-ctx.Done():
-		return "", ctx.Err()
+		return ctx.Err()
 	case r.msgFromSensorC <- msg:
 		log.Debugf("request to issue local Scanner certificates sent to Central successfully: %v", msg)
-		return requestID, nil
+		return nil
 	}
 }
 
