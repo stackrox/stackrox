@@ -2,7 +2,6 @@ package enricher
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -336,10 +335,6 @@ func TestEnricherFlow(t *testing.T) {
 				metadataCache:             expiringcache.NewExpiringCache(1 * time.Minute),
 				metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
 				imageGetter:               emptyImageGetter,
-			}
-
-			if c.name == "scan and metadata in both caches" {
-				fmt.Println("hi")
 			}
 			if c.inMetadataCache {
 				enricherImpl.metadataCache.Add(c.image.GetId(), c.image.GetMetadata())
