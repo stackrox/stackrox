@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -57,15 +56,7 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 		d.handler.hierarchy.Remove(string(metaObj.GetUID()))
 		return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 	}
-
-	parents := make([]string, 0, len(metaObj.GetOwnerReferences()))
-	for _, ref := range metaObj.GetOwnerReferences() {
-		if ref.UID != "" && resources.IsTrackedOwnerReference(ref) {
-			// Only bother adding parents we track.
-			parents = append(parents, string(ref.UID))
-		}
-	}
-	d.handler.hierarchy.Add(parents, string(metaObj.GetUID()))
+	d.handler.hierarchy.Add(metaObj)
 	return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 }
 
