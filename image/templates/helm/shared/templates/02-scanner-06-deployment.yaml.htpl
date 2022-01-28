@@ -74,7 +74,15 @@ spec:
       {{- end }}
       containers:
       - name: scanner
+        [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+        {{ if eq ._rox.scanner.mode "slim" -}}
+        image: {{ ._rox.scanner.slimImage.fullRef | quote }}
+        {{ else }}
         image: {{ ._rox.scanner.image.fullRef | quote }}
+        {{ end -}}
+        [< else ->]
+        image: {{ ._rox.scanner.image.fullRef | quote }}
+        [< end ->]
         env:
         - name: POD_NAME
           valueFrom:
@@ -229,7 +237,15 @@ spec:
             {{- end }}
       initContainers:
         - name: init-db
+          [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+          {{ if eq ._rox.scanner.mode "slim" -}}
+          image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
+          {{ else -}}
           image: {{ ._rox.scanner.dbImage.fullRef | quote }}
+          {{ end -}}
+          [< else ->]
+          image: {{ ._rox.scanner.dbImage.fullRef | quote }}
+          [< end ->]
           command:
           - /bin/sh
           - -c
@@ -245,7 +261,15 @@ spec:
       containers:
       - name: db
         command: ["/usr/local/bin/docker-entrypoint.sh", "postgres", "-c", "config_file=/etc/postgresql.conf"]
+        [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+        {{ if eq ._rox.scanner.mode "slim" -}}
+        image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
+        {{ else -}}
         image: {{ ._rox.scanner.dbImage.fullRef | quote }}
+        {{ end -}}
+        [< else ->]
+        image: {{ ._rox.scanner.dbImage.fullRef | quote }}
+        [< end ->]
         ports:
         - name: https-db
           containerPort: 5432
