@@ -46,15 +46,15 @@ message CVE {
 
     string                    id                    = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
     float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
-    float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score,store\""];
+    float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score\""];
     // For internal purposes only. This will only be populated prior to upsert into datastore.
     CVEType                   type                  = 3;
     repeated CVEType          types                 = 18 [(gogoproto.moretags) = "search:\"CVE Type,store\""];
     string                    summary               = 4;
     string                    link                  = 5;
-    google.protobuf.Timestamp published_on          = 6 [(gogoproto.moretags) = "search:\"CVE Published On,store\""];
+    google.protobuf.Timestamp published_on          = 6 [(gogoproto.moretags) = "search:\"CVE Published On\""];
     // Time when the CVE was first seen in the system.
-    google.protobuf.Timestamp created_at            = 15 [(gogoproto.moretags) = "search:\"CVE Created Time,store\""];
+    google.protobuf.Timestamp created_at            = 15 [(gogoproto.moretags) = "search:\"CVE Created Time\""];
     google.protobuf.Timestamp last_modified         = 7;
     repeated Reference        references            = 8;
 
@@ -62,9 +62,9 @@ message CVE {
     CVSSV2                    cvss_v2               = 10;
     CVSSV3                    cvss_v3               = 11;
 
-    bool                      suppressed            = 12 [(gogoproto.moretags) = "search:\"CVE Snoozed,store\""];
+    bool                      suppressed            = 12 [(gogoproto.moretags) = "search:\"CVE Snoozed\""];
     google.protobuf.Timestamp suppress_activation   = 16;
-    google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = "search:\"CVE Snooze Expiry,store,hidden\""];
+    google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = "search:\"CVE Snooze Expiry,hidden\""];
 
     message DistroSpecific {
         VulnerabilitySeverity     severity              = 1;
