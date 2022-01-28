@@ -21,6 +21,7 @@ import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySever
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import usePermissions from 'hooks/usePermissions';
+import { GetSortParams } from 'hooks/patternfly/useURLSort';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -41,6 +42,7 @@ export type ObservedCVEsTableProps = {
     remote: string;
     tag: string;
     itemCount: number;
+    getSortParams: GetSortParams;
     updateTable: () => void;
 } & UsePaginationResult;
 
@@ -54,6 +56,7 @@ function ObservedCVEsTable({
     perPage,
     onSetPage,
     onPerPageSelect,
+    getSortParams,
     updateTable,
 }: ObservedCVEsTableProps): ReactElement {
     const {
@@ -159,10 +162,10 @@ function ObservedCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Fixable</Th>
-                        <Th>Severity</Th>
-                        <Th>CVSS score</Th>
+                        <Th sort={getSortParams('Severity')}>Severity</Th>
+                        <Th sort={getSortParams('CVSS')}>CVSS score</Th>
                         <Th>Affected components</Th>
-                        <Th>Discovered</Th>
+                        <Th sort={getSortParams('Discovered')}>Discovered</Th>
                     </Tr>
                 </Thead>
                 <Tbody>

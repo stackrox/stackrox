@@ -5,6 +5,7 @@ import { Bullseye, PageSection, PageSectionVariants, Spinner } from '@patternfly
 
 import usePagination from 'hooks/patternfly/usePagination';
 import ACSEmptyState from 'Components/ACSEmptyState';
+import useURLSort, { SortOption } from 'hooks/patternfly/useURLSort';
 import ObservedCVEsTable from './ObservedCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 
@@ -12,8 +13,18 @@ type ObservedCVEsProps = {
     imageId: string;
 };
 
+const sortFields = ['Severity', 'CVSS', 'Discovered'];
+const defaultSortOption: SortOption = {
+    field: 'Severity',
+    direction: 'desc',
+};
+
 function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+    });
     const { isLoading, data, refetchQuery } = useImageVulnerabilities({
         imageId,
         vulnsQuery: 'Vulnerability State:OBSERVED',
@@ -21,8 +32,8 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             limit: perPage,
             offset: (page - 1) * perPage,
             sortOption: {
-                field: 'Severity',
-                reversed: true,
+                field: sortOption.field,
+                reversed: sortOption.direction === 'desc',
             },
         },
     });
@@ -61,6 +72,7 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             perPage={perPage}
             onSetPage={onSetPage}
             onPerPageSelect={onPerPageSelect}
+            getSortParams={getSortParams}
             updateTable={refetchQuery}
         />
     );
