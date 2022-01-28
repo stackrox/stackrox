@@ -551,7 +551,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Email_AuthMethod(0)))
 	utils.Must(builder.AddType("EmbeddedImageScanComponent_Executable", []string{
-		"dependencies: [String!]!",
 		"path: String!",
 	}))
 	utils.Must(builder.AddType("EmbeddedSecret", []string{
@@ -5567,11 +5566,6 @@ func (resolver *Resolver) wrapEmbeddedImageScanComponent_Executables(values []*s
 		output[i] = &embeddedImageScanComponent_ExecutableResolver{root: resolver, data: v}
 	}
 	return output, nil
-}
-
-func (resolver *embeddedImageScanComponent_ExecutableResolver) Dependencies(ctx context.Context) []string {
-	value := resolver.data.GetDependencies()
-	return value
 }
 
 func (resolver *embeddedImageScanComponent_ExecutableResolver) Path(ctx context.Context) string {
