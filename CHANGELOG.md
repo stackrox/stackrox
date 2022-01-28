@@ -30,6 +30,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - scanner-db: from `registry.redhat.io/rh-acs/scanner-db` to `registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8`
 - Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images. For example, a scanner image for ACS 3.68.0 is now identified as following `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:3.68.0` and `stackrox.io/scanner:3.68.0`. Please make sure you follow this versioning scheme when upgrading manually. This scheme will be used for all future releases.
 - Collector Slim image name and tag have changed. Now the `-slim` is not part of the image tag but part of the image name. This means that Collector Slim image for the release 3.68.0 is identified as `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8:3.68.0` and `collector.stackrox.io/collector-slim:3.68.0`.
+- Scanner now supports images based on Alpine 3.15
+- Scanner limits the maximum size of an ELF file it will read.
+  - For Active Vulnerability Management, Scanner reads ELF files to determine an executable's dependencies.
+  - We only read ELF files smaller than `maxExtractableFileSizeMB`, which is set in Scanner's ConfigMap.
+  - Note: `maxExtractableFileSizeMB` already existed as a configuration option for Scanner.
 
 ## [67.2]
 
