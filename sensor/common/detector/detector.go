@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"google.golang.org/grpc"
@@ -108,8 +107,6 @@ type detectorImpl struct {
 	auditStopper      concurrency.Stopper
 	serializerStopper concurrency.Stopper
 	alertStopSig      concurrency.Signal
-
-	admissionCacheNeedsFlush bool
 }
 
 func (d *detectorImpl) Start() error {
@@ -250,37 +247,12 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 	return errs.ToError()
 }
 
-func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
-	key := imagecacheutils.GetImageCacheKey(image)
-
-	newValue := &cacheValue{
-		image: image,
-	}
-	d.enricher.imageCache.Add(key, newValue)
-	d.admissionCacheNeedsFlush = true
-	return nil
-}
-
-func (d *detectorImpl) processReprocessDeployments() error {
-	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
-		// Would prefer to do a targeted flush
-		d.admCtrlSettingsMgr.FlushCache()
-	}
-	d.admissionCacheNeedsFlush = false
-	d.deduper.reset()
-	return nil
-}
-
 func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetPolicySync() != nil:
 		return d.processPolicySync(msg.GetPolicySync())
 	case msg.GetReassessPolicies() != nil:
 		return d.processReassessPolicies(msg.GetReassessPolicies())
-	case msg.GetUpdatedImage() != nil:
-		return d.processUpdatedImage(msg.GetUpdatedImage())
-	case msg.GetReprocessDeployments() != nil:
-		return d.processReprocessDeployments()
 	case msg.GetBaselineSync() != nil:
 		return d.processBaselineSync(msg.GetBaselineSync())
 	case msg.GetNetworkBaselineSync() != nil:
