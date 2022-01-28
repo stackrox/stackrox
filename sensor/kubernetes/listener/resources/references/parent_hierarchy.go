@@ -1,15 +1,17 @@
 package references
 
 import (
+	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ParentHierarchy defines the interface for managing dependencies between deployments
 type ParentHierarchy interface {
-	Add(parents []string, child string)
+	Add(obj metav1.Object)
 	Remove(id string)
-	IsValidChild(parent string, child string) bool
+	IsValidChild(parent string, child metav1.Object) bool
 	TopLevelParents(child string) set.StringSet
 }
 
@@ -25,11 +27,23 @@ func NewParentHierarchy() ParentHierarchy {
 	}
 }
 
-func (p *parentHierarchy) Add(parents []string, child string) {
+func isValidOwnerRef(ref metav1.OwnerReference) bool {
+	return ref.UID != "" && resources.IsTrackedOwnerReference(ref)
+}
+
+func (p *parentHierarchy) Add(obj metav1.Object) {
+	parents := make([]string, 0, len(obj.GetOwnerReferences()))
+	for _, ref := range obj.GetOwnerReferences() {
+		if isValidOwnerRef(ref) {
+			// Only bother adding parents we track.
+			parents = append(parents, string(ref.UID))
+		}
+	}
+
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	p.parents[child] = parents
+	p.parents[string(obj.GetUID())] = parents
 }
 
 func (p *parentHierarchy) Remove(id string) {
@@ -51,11 +65,19 @@ func (p *parentHierarchy) searchRecursiveNoLock(parent, child string) bool {
 	return false
 }
 
-func (p *parentHierarchy) IsValidChild(parent, child string) bool {
+func (p *parentHierarchy) IsValidChild(parent string, child metav1.Object) bool {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	return p.searchRecursiveNoLock(parent, child)
+	for _, ref := range child.GetOwnerReferences() {
+		if isValidOwnerRef(ref) {
+			// Only bother checking for parents we track.
+			if p.searchRecursiveNoLock(parent, string(ref.UID)) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (p *parentHierarchy) addTopLevelParentsRecursiveNoLock(child string, parents set.StringSet) {

@@ -1,4 +1,5 @@
 scanner:
+  mode: null # string
   disable: null # bool
   replicas: null # int
   logLevel: null # string

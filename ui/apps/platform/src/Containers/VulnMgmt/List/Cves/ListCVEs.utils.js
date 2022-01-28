@@ -1,11 +1,11 @@
 import entityTypes from 'constants/entityTypes';
 
 export function getFilteredCVEColumns(columns, workflowState) {
-    const shouldKeepActiveColumn =
-        workflowState.isCurrentSingle(entityTypes.DEPLOYMENT) ||
-        workflowState.isPrecedingSingle(entityTypes.DEPLOYMENT) ||
-        (workflowState.getSingleAncestorOfType(entityTypes.DEPLOYMENT) &&
-            workflowState.getSingleAncestorOfType(entityTypes.IMAGE));
+    // TODO: when active status for CVEs becomes available
+    // uncomment the following check
+    // const shouldKeepActiveColumn =
+    //     workflowState.isCurrentSingle(entityTypes.DEPLOYMENT) ||
+    //     workflowState.isPrecedingSingle(entityTypes.DEPLOYMENT);
 
     const shouldKeepFixedByColumn =
         workflowState.isPreceding(entityTypes.COMPONENT) ||
@@ -24,7 +24,10 @@ export function getFilteredCVEColumns(columns, workflowState) {
     return columns.filter((col) => {
         switch (col.accessor) {
             case 'isActive': {
-                return !!shouldKeepActiveColumn;
+                // TODO: when active status for CVEs becomes available
+                // uncomment the following actual check, and remove the always-false return
+                // return !!shouldKeepActiveColumn;
+                return false;
             }
             case 'fixedByVersion': {
                 return shouldKeepFixedByColumn;
