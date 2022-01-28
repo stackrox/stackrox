@@ -2,6 +2,7 @@ package localscanner
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -10,15 +11,20 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var (
+	testTimeout = time.Second
+)
+
 func TestCertificateRequester(t *testing.T) {
 	suite.Run(t, new(certificateRequesterSuite))
 }
 
 type certificateRequesterSuite struct {
 	suite.Suite
-	sendC     chan *central.MsgFromSensor
-	receiveC  chan *central.IssueLocalScannerCertsResponse
-	requester CertificateRequester
+	sendC                chan *central.MsgFromSensor
+	receiveC             chan *central.IssueLocalScannerCertsResponse
+	requester            CertificateRequester
+	interceptedRequestID atomic.Value
 }
 
 func (s *certificateRequesterSuite) SetupTest() {
@@ -43,89 +49,70 @@ func (s *certificateRequesterSuite) TestRequestCancellation() {
 	}()
 	cancelRequestCtx()
 
-	requestErr, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
+	requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
 	s.Require().True(ok)
 	s.Equal(context.Canceled, requestErr)
 }
 
 func (s *certificateRequesterSuite) TestRequestSuccess() {
-	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancelWaitCtx()
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
 
-	var interceptedRequestID string
-	go func() {
-		select {
-		case <-waitCtx.Done():
-			return
-		case request := <-s.sendC:
-			interceptedRequestID = request.GetIssueLocalScannerCertsRequest().GetRequestId()
-			s.NotEmpty(interceptedRequestID)
-			s.receiveC <- &central.IssueLocalScannerCertsResponse{
-				RequestId: interceptedRequestID,
-			}
-		}
-	}()
+	go s.respondRequest(ctx, "")
 
-	response, err := s.requester.RequestCertificates(waitCtx)
+	response, err := s.requester.RequestCertificates(ctx)
 	s.NoError(err)
-	s.Equal(interceptedRequestID, response.GetRequestId())
+	s.Equal(s.interceptedRequestID.Load(), response.GetRequestId())
 }
 
 func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
-	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 10*time.Millisecond)
-	defer cancelWaitCtx()
-	doneErrSig := concurrency.NewErrorSignal()
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
 
-	go func() {
-		select {
-		case <-waitCtx.Done():
-		case <-s.sendC:
-			select {
-			case <-waitCtx.Done():
-				// Request with different request ID should be ignored.
-			case s.receiveC <- &central.IssueLocalScannerCertsResponse{RequestId: ""}:
-			}
-		}
-	}()
+	// Request with different request ID should be ignored.
+	go s.respondRequest(ctx, "UNKNOWN")
 
-	go func() {
-		certs, err := s.requester.RequestCertificates(waitCtx)
-		s.Nil(certs)
-		doneErrSig.SignalWithError(err)
-	}()
-
-	requestErr, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
-	s.Require().True(ok)
+	certs, requestErr := s.requester.RequestCertificates(ctx)
+	s.Nil(certs)
 	s.Equal(context.DeadlineExceeded, requestErr)
 }
 
 func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere() {
-	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancelWaitCtx()
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
 	numConcurrentRequests := 2
 	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
 
 	for i := 0; i < numConcurrentRequests; i++ {
-		go func() {
-			select {
-			case <-waitCtx.Done():
-				return
-			case request := <-s.sendC:
-				interceptedRequestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
-				s.NotEmpty(interceptedRequestID)
-				s.receiveC <- &central.IssueLocalScannerCertsResponse{
-					RequestId: interceptedRequestID,
-				}
-			}
-		}()
+		go s.respondRequest(ctx, "")
 
 		go func() {
-			_, err := s.requester.RequestCertificates(waitCtx)
+			_, err := s.requester.RequestCertificates(ctx)
 			s.NoError(err)
 			waitGroup.Add(-1)
 		}()
 	}
 
-	ok := concurrency.WaitWithTimeout(&waitGroup, 2*time.Second)
+	ok := concurrency.WaitWithTimeout(&waitGroup, time.Duration(numConcurrentRequests)*testTimeout)
 	s.Require().True(ok)
+}
+
+// respondRequest reads a request from `s.sendC` and responds with `responseRequestID` as the requestID, or with
+// the same ID as the request if `responseRequestID` is "".
+// Before sending the response, it stores in s.responseRequestID the request ID for the requests read from `s.sendC`.
+func (s *certificateRequesterSuite) respondRequest(ctx context.Context, responseRequestID string) {
+	select {
+	case <-ctx.Done():
+	case request := <-s.sendC:
+		interceptedRequestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
+		s.NotEmpty(interceptedRequestID)
+		if responseRequestID != "" {
+			interceptedRequestID = responseRequestID
+		}
+		s.interceptedRequestID.Store(interceptedRequestID)
+		select {
+		case <-ctx.Done():
+		case s.receiveC <- &central.IssueLocalScannerCertsResponse{RequestId: interceptedRequestID}:
+		}
+	}
 }

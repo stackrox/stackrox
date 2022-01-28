@@ -36,7 +36,7 @@ func NewCertificateRequester(msgFromSensorC chan *central.MsgFromSensor,
 }
 
 type certificateRequesterImpl struct {
-	stopC           concurrency.ErrorSignal
+	stopC    concurrency.ErrorSignal
 	sendC    chan *central.MsgFromSensor
 	receiveC chan *central.IssueLocalScannerCertsResponse
 	requests sync.Map
