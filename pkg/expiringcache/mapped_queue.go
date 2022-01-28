@@ -22,6 +22,7 @@ type mappedQueue interface {
 
 	get(key interface{}) interface{}
 	getAllValues() []interface{}
+	getAllKeys() []interface{}
 }
 
 func newMappedQueue() mappedQueue {
@@ -91,6 +92,17 @@ func (mq *mappedQueueImpl) getAllValues() []interface{} {
 	ret := make([]interface{}, 0, mq.queue.Len())
 	for next := mq.queue.Front(); next != nil; next = next.Next() {
 		ret = append(ret, next.Value.(*mappedQueueElement).value)
+	}
+	return ret
+}
+
+func (mq *mappedQueueImpl) getAllKeys() []interface{} {
+	if mq.queue.Len() == 0 {
+		return nil
+	}
+	ret := make([]interface{}, 0, mq.queue.Len())
+	for next := mq.queue.Front(); next != nil; next = next.Next() {
+		ret = append(ret, next.Value.(*mappedQueueElement).key)
 	}
 	return ret
 }
