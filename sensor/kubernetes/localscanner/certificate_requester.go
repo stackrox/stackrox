@@ -43,39 +43,68 @@ type certificateRequesterImpl struct {
 	requests       sync.Map
 }
 
-func (m *certificateRequesterImpl) Start() {
-	go m.forwardMessagesToSensor()
+func (r *certificateRequesterImpl) Start() {
+	go r.forwardMessagesToSensor()
 }
 
-func (m *certificateRequesterImpl) Stop() {
-	m.stopC.Signal()
+func (r *certificateRequesterImpl) Stop() {
+	r.stopC.Signal()
 }
 
-func (m *certificateRequesterImpl) forwardMessagesToSensor() {
+func (r *certificateRequesterImpl) forwardMessagesToSensor() {
 	for {
 		select {
-		case <-m.stopC.Done():
+		case <-r.stopC.Done():
 			return
-		case msg := <-m.msgToSensorC:
-			requestC, ok := m.requests.Load(msg.GetRequestId())
+		case msg := <-r.msgToSensorC:
+			requestC, ok := r.requests.Load(msg.GetRequestId())
 			if ok {
 				requestC.(msgToSensorC) <- msg
 			} else {
 				log.Debugf("request ID %q does not match any known request ID, skipping request",
-					msg.GetRequestId()) // FIXME debug
+					msg.GetRequestId())
 			}
 		}
 	}
 }
 
-func (m *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
-	request := &certRequestSyncImpl{
-		requestID:      uuid.NewV4().String(),
-		msgFromSensorC: m.msgFromSensorC,
-		msgToSensorC:   make(msgToSensorC),
+func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
+	requestID, requestErr := r.send(ctx)
+	if requestErr != nil {
+		return nil, requestErr
 	}
-	m.requests.Store(request.requestID, request.msgToSensorC)
-	response, err := request.requestCertificates(ctx)
-	m.requests.Delete(request.requestID)
-	return response, err
+
+	msgToSensorC := make(msgToSensorC)
+	r.requests.Store(requestID, msgToSensorC)
+	response, responseErr := receive(ctx, msgToSensorC)
+	r.requests.Delete(requestID)
+
+	return response, responseErr
+}
+
+func (r *certificateRequesterImpl) send(ctx context.Context) (requestID string, err error) {
+	requestID = uuid.NewV4().String()
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
+			IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
+				RequestId: requestID,
+			},
+		},
+	}
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case r.msgFromSensorC <- msg:
+		log.Debugf("request to issue local Scanner certificates sent to Central successfully: %v", msg)
+		return requestID, nil
+	}
+}
+
+func receive(ctx context.Context, msgToSensorC msgToSensorC) (*central.IssueLocalScannerCertsResponse, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case response := <-msgToSensorC:
+		return response, nil
+	}
 }
