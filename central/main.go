@@ -119,6 +119,7 @@ import (
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
+	signatureService "github.com/stackrox/rox/central/signature/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
@@ -337,6 +338,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
+		signatureService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
 		telemetryService.Singleton(),

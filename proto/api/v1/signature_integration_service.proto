@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "api/v1/common.proto";
+import "storage/signature_integration.proto";
+
+package v1;
+
+message GetSignatureIntegrationsResponse {
+  repeated storage.SignatureIntegration integrations = 1;
+}
+
+service SignatureIntegrationService {
+  // GetSignatureIntegrations returns all signature integrations.
+  rpc GetSignatureIntegrations (Empty) returns (GetSignatureIntegrationsResponse) {
+    option (google.api.http) = {
+      get: "/v1/imagesignatureintegrations"
+    };
+  }
+
+  // GetSignatureIntegration returns the signature integration given its ID.
+  rpc GetSignatureIntegration (ResourceByID) returns (storage.SignatureIntegration) {
+    option (google.api.http) = {
+      get: "/v1/imagesignatureintegrations/{id}"
+    };
+  }
+
+  // PostSignatureIntegration creates a signature integration.
+  rpc PostSignatureIntegration (storage.SignatureIntegration) returns (storage.SignatureIntegration) {
+    option (google.api.http) = {
+      post: "/v1/imagesignatureintegrations"
+      body: "*"
+    };
+  }
+
+  // PutSignatureIntegration modifies a given signature integration.
+  rpc PutSignatureIntegration (storage.SignatureIntegration) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v1/imagesignatureintegrations/{id}"
+      body: "*"
+    };
+  }
+
+  // DeleteSignatureIntegration removes a signature integration given its ID.
+  rpc DeleteSignatureIntegration (ResourceByID) returns (Empty) {
+    option (google.api.http) = {
+      delete: "/v1/imagesignatureintegrations/{id}"
+    };
+  }
+}
