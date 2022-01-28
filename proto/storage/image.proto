@@ -142,7 +142,7 @@ message License {
 
 // If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go
 // to ensure that those changes will be automatically picked up
-// Next Tag: 7
+// Next Tag: 6
 message ImageMetadata {
     // V1Metadata contains all of the V1 docker data. In the normal case we will get this because the image is a
     // V1 image OR because the v2 manifest has a link to it in it's config.
