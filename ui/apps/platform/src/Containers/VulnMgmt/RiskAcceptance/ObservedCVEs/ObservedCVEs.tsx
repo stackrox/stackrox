@@ -2,10 +2,10 @@
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
 
-import usePagination from 'hooks/patternfly/usePagination';
 import { SearchFilter } from 'types/search';
 import queryService from 'utils/queryService';
-import useTableSort, { SortOption } from 'hooks/patternfly/useTableSort';
+import useURLSort, { SortOption } from 'hooks/patternfly/useURLSort';
+import useURLPagination from 'hooks/useURLPagination';
 import ObservedCVEsTable from './ObservedCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 
@@ -21,8 +21,8 @@ const defaultSortOption: SortOption = {
 
 function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
     const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
-    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
-    const { sortOption, getSortParams } = useTableSort({
+    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
     });
@@ -58,12 +58,12 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             itemCount={itemCount}
             page={page}
             perPage={perPage}
-            onSetPage={onSetPage}
-            onPerPageSelect={onPerPageSelect}
+            onSetPage={(_e, num) => setPage(num)}
+            onPerPageSelect={(_e, num) => setPerPage(num)}
+            getSortParams={getSortParams}
             updateTable={refetchQuery}
             searchFilter={searchFilter}
             setSearchFilter={setSearchFilter}
-            getSortParams={getSortParams}
         />
     );
 }
