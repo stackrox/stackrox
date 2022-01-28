@@ -105,7 +105,7 @@ func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	{{- if .UniqKeyFunc}}
 	return &storeImpl{
-		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, allocCluster, uniqKeyFunc, {{.TrackIndex}}),
+		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}}),
 	}
 	{{- else}}
 	return &storeImpl{
