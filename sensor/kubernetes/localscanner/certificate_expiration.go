@@ -5,7 +5,6 @@ import (
 
 	"crypto/x509"
 	"math/rand"
-
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,9 +12,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func getSecretsCertRenewalTime(secrets map[storage.ServiceType]*v1.Secret) (time.Time, error) {
+// GetSecretsCertRenewalTime computes the time when the service certificates stored in a set of
+// secrets should be refreshed.
+// If different services have different expiration times then the earliest time is returned.
+func GetSecretsCertRenewalTime(secrets map[storage.ServiceType]*v1.Secret) (time.Time, error) {
 	var (
-		renewalTime time.Time
+		renewalTime            time.Time
 		renewalTimeInitialized bool
 	)
 	for _, secret := range secrets {
