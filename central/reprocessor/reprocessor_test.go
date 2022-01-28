@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	watchedImageMocks "github.com/stackrox/rox/central/watchedimage/datastore/mocks"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
@@ -100,6 +101,11 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 	timesSpec(suite.mockImage.EXPECT().Search(allAccessCtx, gomock.Any()).Return(nil, nil), times)
 	timesSpec(suite.mockNode.EXPECT().Search(allAccessCtx, gomock.Any()).Return(nil, nil), times)
 	timesSpec(suite.mockWatchedImages.EXPECT().GetAllWatchedImages(allAccessCtx).Return(nil, nil), times)
+	timesSpec(suite.mockManager.EXPECT().BroadcastMessage(&central.MsgToSensor{
+		Msg: &central.MsgToSensor_ReassessPolicies{
+			ReassessPolicies: &central.ReassessPolicies{},
+		},
+	}), times)
 }
 
 func (suite *loopTestSuite) waitForRun(loop *loopImpl, timeout time.Duration) bool {

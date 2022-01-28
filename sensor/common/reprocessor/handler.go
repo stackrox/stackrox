@@ -86,12 +86,13 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 		for _, image := range req.GetImageKeys() {
 			// For new images the image ID may not be present since the image is not saved in Central DB.
 			// Hence, flush the entries having keys with no ID as well.
-			for _, key := range h.imageCache.GetKeys() {
-				ick := key.(imagecacheutils.ImageCacheKey)
-				if ick.ID == image.GetImageId() || ick.Name == image.GetImageFullName() {
-					h.imageCache.Remove(key)
-				}
-			}
+			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
+				Name: image.GetImageFullName(),
+			})
+			h.imageCache.Remove(imagecacheutils.ImageCacheKey{
+				ID:   image.GetImageId(),
+				Name: image.GetImageFullName(),
+			})
 		}
 	}
 	return nil
