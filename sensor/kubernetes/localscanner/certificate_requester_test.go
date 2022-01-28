@@ -16,15 +16,15 @@ func TestCertificateRequester(t *testing.T) {
 
 type certificateRequesterSuite struct {
 	suite.Suite
-	msgFromSensorC msgFromSensorC
-	msgToSensorC   msgToSensorC
-	requester      CertificateRequester
+	sendC     chan *central.MsgFromSensor
+	receiveC  chan *central.IssueLocalScannerCertsResponse
+	requester CertificateRequester
 }
 
 func (s *certificateRequesterSuite) SetupTest() {
-	s.msgFromSensorC = make(msgFromSensorC)
-	s.msgToSensorC = make(msgToSensorC)
-	s.requester = NewCertificateRequester(s.msgFromSensorC, s.msgToSensorC)
+	s.sendC = make(chan *central.MsgFromSensor)
+	s.receiveC = make(chan *central.IssueLocalScannerCertsResponse)
+	s.requester = NewCertificateRequester(s.sendC, s.receiveC)
 	s.requester.Start()
 }
 
@@ -52,33 +52,23 @@ func (s *certificateRequesterSuite) TestRequestSuccess() {
 	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancelWaitCtx()
 
-	responseC := make(msgToSensorC)
 	var interceptedRequestID string
 	go func() {
 		select {
 		case <-waitCtx.Done():
 			return
-		case request := <-s.msgFromSensorC:
+		case request := <-s.sendC:
 			interceptedRequestID = request.GetIssueLocalScannerCertsRequest().GetRequestId()
 			s.NotEmpty(interceptedRequestID)
-			s.msgToSensorC <- &central.IssueLocalScannerCertsResponse{
+			s.receiveC <- &central.IssueLocalScannerCertsResponse{
 				RequestId: interceptedRequestID,
 			}
 		}
 	}()
 
-	go func() {
-		response, err := s.requester.RequestCertificates(waitCtx)
-		s.NoError(err)
-		responseC <- response
-	}()
-
-	select {
-	case response := <-responseC:
-		s.Equal(interceptedRequestID, response.GetRequestId())
-	case <-waitCtx.Done():
-		s.Require().Fail("timeout reached")
-	}
+	response, err := s.requester.RequestCertificates(waitCtx)
+	s.NoError(err)
+	s.Equal(interceptedRequestID, response.GetRequestId())
 }
 
 func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
@@ -89,11 +79,11 @@ func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
 	go func() {
 		select {
 		case <-waitCtx.Done():
-		case <-s.msgFromSensorC:
+		case <-s.sendC:
 			select {
 			case <-waitCtx.Done():
 				// Request with different request ID should be ignored.
-			case s.msgToSensorC <- &central.IssueLocalScannerCertsResponse{RequestId: ""}:
+			case s.receiveC <- &central.IssueLocalScannerCertsResponse{RequestId: ""}:
 			}
 		}
 	}()
@@ -110,9 +100,9 @@ func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
 }
 
 func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere() {
-	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	waitCtx, cancelWaitCtx := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancelWaitCtx()
-	numConcurrentRequests := 3
+	numConcurrentRequests := 2
 	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
 
 	for i := 0; i < numConcurrentRequests; i++ {
@@ -120,10 +110,10 @@ func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere()
 			select {
 			case <-waitCtx.Done():
 				return
-			case request := <-s.msgFromSensorC:
+			case request := <-s.sendC:
 				interceptedRequestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
 				s.NotEmpty(interceptedRequestID)
-				s.msgToSensorC <- &central.IssueLocalScannerCertsResponse{
+				s.receiveC <- &central.IssueLocalScannerCertsResponse{
 					RequestId: interceptedRequestID,
 				}
 			}
@@ -136,6 +126,6 @@ func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere()
 		}()
 	}
 
-	ok := concurrency.WaitWithTimeout(&waitGroup, 100*time.Millisecond)
+	ok := concurrency.WaitWithTimeout(&waitGroup, 2*time.Second)
 	s.Require().True(ok)
 }

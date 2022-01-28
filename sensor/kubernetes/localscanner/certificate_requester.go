@@ -25,22 +25,21 @@ type CertificateRequester interface {
 // NewCertificateRequester creates a new certificate requester that communicates through
 // the specified channels and initializes a new request ID for reach request.
 // To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
-// This assumes that the certificate requester is the only consumer of msgToSensorC.
-func NewCertificateRequester(msgFromSensorC msgFromSensorC, msgToSensorC msgToSensorC) CertificateRequester {
+// This assumes that the certificate requester is the only consumer of receiveC.
+func NewCertificateRequester(msgFromSensorC chan *central.MsgFromSensor,
+	msgToSensorC chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
 	return &certificateRequesterImpl{
-		stopC:          concurrency.NewErrorSignal(),
-		msgFromSensorC: msgFromSensorC,
-		msgToSensorC:   msgToSensorC,
+		stopC:    concurrency.NewErrorSignal(),
+		sendC:    msgFromSensorC,
+		receiveC: msgToSensorC,
 	}
 }
 
-type msgFromSensorC chan *central.MsgFromSensor
-type msgToSensorC chan *central.IssueLocalScannerCertsResponse
 type certificateRequesterImpl struct {
-	stopC          concurrency.ErrorSignal
-	msgFromSensorC msgFromSensorC
-	msgToSensorC   msgToSensorC
-	requests       sync.Map
+	stopC           concurrency.ErrorSignal
+	sendC    chan *central.MsgFromSensor
+	receiveC chan *central.IssueLocalScannerCertsResponse
+	requests sync.Map
 }
 
 func (r *certificateRequesterImpl) Start() {
@@ -56,10 +55,10 @@ func (r *certificateRequesterImpl) forwardMessagesToSensor() {
 		select {
 		case <-r.stopC.Done():
 			return
-		case msg := <-r.msgToSensorC:
+		case msg := <-r.receiveC:
 			requestC, ok := r.requests.Load(msg.GetRequestId())
 			if ok {
-				requestC.(msgToSensorC) <- msg
+				requestC.(chan *central.IssueLocalScannerCertsResponse) <- msg
 			} else {
 				log.Debugf("request ID %q does not match any known request ID, skipping request",
 					msg.GetRequestId())
@@ -70,7 +69,7 @@ func (r *certificateRequesterImpl) forwardMessagesToSensor() {
 
 func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
 	requestID := uuid.NewV4().String()
-	receiveC := make(msgToSensorC)
+	receiveC := make(chan *central.IssueLocalScannerCertsResponse)
 	r.requests.Store(requestID, receiveC)
 	defer r.requests.Delete(requestID)
 
@@ -91,13 +90,13 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case r.msgFromSensorC <- msg:
+	case r.sendC <- msg:
 		log.Debugf("request to issue local Scanner certificates sent to Central successfully: %v", msg)
 		return nil
 	}
 }
 
-func receive(ctx context.Context, msgToSensorC msgToSensorC) (*central.IssueLocalScannerCertsResponse, error) {
+func receive(ctx context.Context, msgToSensorC chan *central.IssueLocalScannerCertsResponse) (*central.IssueLocalScannerCertsResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
