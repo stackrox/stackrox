@@ -53,7 +53,7 @@ func (p *parentHierarchy) Remove(id string) {
 	delete(p.parents, id)
 }
 
-func (p *parentHierarchy) searchRecursiveNoLock(parent string, child string) bool {
+func (p *parentHierarchy) searchRecursiveNoLock(parent, child string) bool {
 	if parent == child {
 		return true
 	}
