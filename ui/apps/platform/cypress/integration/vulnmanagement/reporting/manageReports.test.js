@@ -2,8 +2,15 @@ import * as api from '../../../constants/apiEndpoints';
 import { url, selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import {
+    getHelperElementByLabel,
+    getInputByLabel,
+    // generateNameWithDate,
+    // getSelectButtonByLabel,
+    // getSelectOption,
+} from '../../../helpers/formHelpers';
 
-describe('Vulnmanagement reports', () => {
+describe.only('Vulnmanagement reports', () => {
     before(function beforeHook() {
         if (!hasFeatureFlag('ROX_VULN_REPORTING')) {
             this.skip();
@@ -17,6 +24,7 @@ describe('Vulnmanagement reports', () => {
             cy.intercept('GET', api.report.configurations, { reportConfigs: [] }).as(
                 'getReportConfigurations'
             );
+            cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
         });
 
         it('should navigate to the Create Report view by button or directly', () => {
@@ -30,6 +38,8 @@ describe('Vulnmanagement reports', () => {
 
             // TODO: change this 2nd wait to await the report count API endpoint, after it is available
             cy.wait('@getReportConfigurations');
+
+            cy.wait('@searchOptions');
 
             cy.get(selectors.reportSection.createReportLink).click();
             cy.location('pathname').should('eq', `${url.reporting.list}`);
@@ -47,6 +57,19 @@ describe('Vulnmanagement reports', () => {
             cy.visit('/main/dashboard'); // leave Create Report page
             cy.visit(`${url.reporting.list}?action=create`);
             cy.get('h1:contains("Create a vulnerability report")');
+        });
+
+        it('should should allow creating a new Report Configuration', () => {
+            cy.visit(`${url.reporting.list}?action=create`);
+
+            // Step 0, should start out with disabled Save button
+            cy.get(selectors.reportSection.buttons.create).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Report name').type(' ');
+
+            getHelperElementByLabel('Report name').contains('A report name is required');
+            cy.get(selectors.reportSection.buttons.create).should('be.disabled');
         });
     });
 });
