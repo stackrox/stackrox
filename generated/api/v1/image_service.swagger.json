@@ -821,8 +821,8 @@
         "scan": {
           "$ref": "#/definitions/storageImageScan"
         },
-        "signatureData": {
-          "$ref": "#/definitions/storageImageSignatureData"
+        "signatureVerificationData": {
+          "$ref": "#/definitions/storageImageSignatureVerificationData"
         },
         "signature": {
           "$ref": "#/definitions/storageImageSignature"
@@ -865,7 +865,7 @@
           }
         }
       },
-      "title": "Next Tag: 16"
+      "title": "Next Tag: 17"
     },
     "storageImageLayer": {
       "type": "object",
@@ -995,7 +995,7 @@
         }
       }
     },
-    "storageImageSignatureData": {
+    "storageImageSignatureVerificationData": {
       "type": "object",
       "properties": {
         "results": {
@@ -1021,19 +1021,19 @@
           "$ref": "#/definitions/storageImageSignatureVerificationResultStatus"
         }
       },
-      "title": "Next Tag: 3"
+      "title": "Next Tag: 4"
     },
     "storageImageSignatureVerificationResultStatus": {
       "type": "string",
       "enum": [
         "UNSET",
         "VERIFIED",
-        "UNVERIFIED",
-        "NO_SIGNATURE",
-        "INVALID_SIGNATURE"
+        "FAILED_VERIFICATION",
+        "INVALID_SIGNATURE_ALGO",
+        "CORRUPTED_SIGNATURE"
       ],
       "default": "UNSET",
-      "description": "Status represents the status of the result."
+      "description": "Status represents the status of the result.\n\n - VERIFIED: VERIFIED is set when the signature's verification was successful.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the signature's verification failed.\n - INVALID_SIGNATURE_ALGO: INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.\n - CORRUPTED_SIGNATURE: CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding."
     },
     "storageLicense": {
       "type": "object",

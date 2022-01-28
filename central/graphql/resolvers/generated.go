@@ -632,7 +632,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"riskScore: Float!",
 		"scan: ImageScan",
 		"signature: ImageSignature",
-		"signatureData: ImageSignatureData",
+		"signatureVerificationData: ImageSignatureVerificationData",
 	}))
 	utils.Must(builder.AddType("ImageComponent", []string{
 		"fixedBy: String!",
@@ -685,7 +685,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ImageSignature", []string{
 		"signatures: [Signature]!",
 	}))
-	utils.Must(builder.AddType("ImageSignatureData", []string{
+	utils.Must(builder.AddType("ImageSignatureVerificationData", []string{
 		"results: [ImageSignatureVerificationResult]!",
 	}))
 	utils.Must(builder.AddType("ImageSignatureVerificationResult", []string{
@@ -6276,10 +6276,10 @@ func (resolver *imageResolver) Signature(ctx context.Context) (*imageSignatureRe
 	return resolver.root.wrapImageSignature(value, true, nil)
 }
 
-func (resolver *imageResolver) SignatureData(ctx context.Context) (*imageSignatureDataResolver, error) {
+func (resolver *imageResolver) SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error) {
 	resolver.ensureData(ctx)
-	value := resolver.data.GetSignatureData()
-	return resolver.root.wrapImageSignatureData(value, true, nil)
+	value := resolver.data.GetSignatureVerificationData()
+	return resolver.root.wrapImageSignatureVerificationData(value, true, nil)
 }
 
 type imageComponentResolver struct {
@@ -6676,31 +6676,31 @@ func (resolver *imageSignatureResolver) Signatures(ctx context.Context) ([]*sign
 	return resolver.root.wrapSignatures(value, nil)
 }
 
-type imageSignatureDataResolver struct {
+type imageSignatureVerificationDataResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *storage.ImageSignatureData
+	data *storage.ImageSignatureVerificationData
 }
 
-func (resolver *Resolver) wrapImageSignatureData(value *storage.ImageSignatureData, ok bool, err error) (*imageSignatureDataResolver, error) {
+func (resolver *Resolver) wrapImageSignatureVerificationData(value *storage.ImageSignatureVerificationData, ok bool, err error) (*imageSignatureVerificationDataResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageSignatureDataResolver{root: resolver, data: value}, nil
+	return &imageSignatureVerificationDataResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapImageSignatureDatas(values []*storage.ImageSignatureData, err error) ([]*imageSignatureDataResolver, error) {
+func (resolver *Resolver) wrapImageSignatureVerificationDatas(values []*storage.ImageSignatureVerificationData, err error) ([]*imageSignatureVerificationDataResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	output := make([]*imageSignatureDataResolver, len(values))
+	output := make([]*imageSignatureVerificationDataResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageSignatureDataResolver{root: resolver, data: v}
+		output[i] = &imageSignatureVerificationDataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
 
-func (resolver *imageSignatureDataResolver) Results(ctx context.Context) ([]*imageSignatureVerificationResultResolver, error) {
+func (resolver *imageSignatureVerificationDataResolver) Results(ctx context.Context) ([]*imageSignatureVerificationResultResolver, error) {
 	value := resolver.data.GetResults()
 	return resolver.root.wrapImageSignatureVerificationResults(value, nil)
 }
