@@ -1936,8 +1936,8 @@ github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5 h1:0
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5/go.mod h1:GEtZ9DYAzmOtyqQPCJCEIzXJ7NcrHbMy6ZPJbcyfmLM=
 github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56 h1:D2wYiy+hcKy8qZAg9SxSWfZgbvmEgD9AdV0g0lJqGZ0=
 github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56/go.mod h1:AIeN7k60Q/kcW9aeiMpA0PY8CU3zsrLV0UhIksolMn4=
-github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d h1:AugbkBwG2hVTam/UG0k+/GcjNMLMDd8/au9ke2NnOtY=
-github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d/go.mod h1:DxQRXuuHfgvLOCBkhwX67Q6qO/6MkKizEBXdnhKudkQ=
+github.com/stackrox/scanner v0.0.0-20211214023301-55ee93adca37 h1:XRSG0THUUfZojIpwEkscfc7AaU76l1CFBibzX+4Obms=
+github.com/stackrox/scanner v0.0.0-20211214023301-55ee93adca37/go.mod h1:DxQRXuuHfgvLOCBkhwX67Q6qO/6MkKizEBXdnhKudkQ=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
