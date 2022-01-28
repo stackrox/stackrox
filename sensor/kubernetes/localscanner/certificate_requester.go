@@ -26,19 +26,19 @@ type CertificateRequester interface {
 // the specified channels and initializes a new request ID for reach request.
 // To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
 // This assumes that the certificate requester is the only consumer of receiveC.
-func NewCertificateRequester(msgFromSensorC chan *central.MsgFromSensor,
-	msgToSensorC chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
+func NewCertificateRequester(sendC chan<- *central.MsgFromSensor,
+	receiveC <-chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
 	return &certificateRequesterImpl{
 		stopC:    concurrency.NewErrorSignal(),
-		sendC:    msgFromSensorC,
-		receiveC: msgToSensorC,
+		sendC:    sendC,
+		receiveC: receiveC,
 	}
 }
 
 type certificateRequesterImpl struct {
 	stopC    concurrency.ErrorSignal
-	sendC    chan *central.MsgFromSensor
-	receiveC chan *central.IssueLocalScannerCertsResponse
+	sendC    chan<- *central.MsgFromSensor
+	receiveC <-chan *central.IssueLocalScannerCertsResponse
 	requests sync.Map
 }
 
@@ -102,7 +102,7 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 	}
 }
 
-func receive(ctx context.Context, receiveC chan *central.IssueLocalScannerCertsResponse) (*central.IssueLocalScannerCertsResponse, error) {
+func receive(ctx context.Context, receiveC <-chan *central.IssueLocalScannerCertsResponse) (*central.IssueLocalScannerCertsResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
