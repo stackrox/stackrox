@@ -32,9 +32,14 @@ func RegisterTable(table string, objType string) {
 
 // GetPostgresDB returns the global postgres instance
 func GetPostgresDB() *pgxpool.Pool {
+	source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
+	// 		source := "host=localhost port=5432 database=postgres user=connorgorman sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
+	pgInitialize(source)
+	return pgDB
+}
+
+func pgInitialize(source string) {
 	pgInit.Do(func() {
-		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
-		// 		source := "host=localhost port=5432 database=postgres user=connorgorman sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
 		config, err := pgxpool.ParseConfig(source)
 		if err != nil {
 			panic(err)
@@ -68,7 +73,6 @@ func GetPostgresDB() *pgxpool.Pool {
 		}
 		go startMonitoringPostgresDB(pgDB)
 	})
-	return pgDB
 }
 
 func startMonitoringPostgresDB(db *pgxpool.Pool) {
@@ -81,7 +85,7 @@ func startMonitoringPostgresDB(db *pgxpool.Pool) {
 				log.Errorf("error scanning count row for table %s: %v", registeredTable.table, err)
 				continue
 			}
-			log.Infof("table %s has %d objects", registeredTable.table, count)
+			//log.Infof("table %s has %d objects", registeredTable.table, count)
 		}
 
 		rows, err := db.Query(context.Background(), "select total_exec_time, mean_exec_time, calls, substr(query, 1, 300) from pg_stat_statements where calls > 5 order by total_exec_time desc limit 50 ;")
@@ -96,7 +100,7 @@ func startMonitoringPostgresDB(db *pgxpool.Pool) {
 			if err := rows.Scan(&totalExecTime, &meanExecTime, &calls, &query); err != nil {
 				log.Errorf("error scanning pg_stat_statement: %v", err)
 			}
-			log.Infof("Stat: total=%0.2f mean=%0.2f calls=%d query=%s", totalExecTime, meanExecTime, calls, query)
+			//log.Infof("Stat: total=%0.2f mean=%0.2f calls=%d query=%s", totalExecTime, meanExecTime, calls, query)
 		}
 
 	}
