@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
-	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	v1 "github.com/stackrox/scanner/generated/shared/api/v1"
 )
 
 func convertNodeToVulnRequest(node *storage.Node) *v1.GetNodeVulnerabilitiesRequest {

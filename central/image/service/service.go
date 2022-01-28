@@ -6,6 +6,7 @@ import (
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
@@ -31,7 +32,7 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(datastore datastore.DataStore, cveDatastore cveDataStore.DataStore, watchedImages watchedImageDataStore.DataStore, riskManager manager.Manager,
-	enricher enricher.ImageEnricher, metadataCache, scanCache expiringcache.Cache) Service {
+	connManager connection.Manager, enricher enricher.ImageEnricher, metadataCache, scanCache expiringcache.Cache) Service {
 	return &serviceImpl{
 		datastore:     datastore,
 		cveDatastore:  cveDatastore,
@@ -40,6 +41,7 @@ func New(datastore datastore.DataStore, cveDatastore cveDataStore.DataStore, wat
 		enricher:      enricher,
 		metadataCache: metadataCache,
 		scanCache:     scanCache,
+		connManager:   connManager,
 
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 	}

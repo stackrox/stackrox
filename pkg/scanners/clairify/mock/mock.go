@@ -2,7 +2,7 @@ package mock
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	scannerV1 "github.com/stackrox/scanner/generated/shared/api/v1"
 )
 
 // GetTestScannerVulns returns test clair vulns and also the expected converted proto vulns
