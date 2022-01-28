@@ -338,7 +338,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		}
 		// Duplicates can exist if the image is within multiple deployments
 		clusterIDSet := set.NewStringSet(result.Matches[imageClusterIDFieldPath]...)
-		go func(id string, clusterIDs []string) {
+		go func(id string, clusterIDs set.StringSet) {
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
@@ -351,7 +351,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			utils.FilterSuppressedCVEsNoClone(image)
 			utils.StripCVEDescriptionsNoClone(image)
 
-			for _, clusterID := range clusterIDs {
+			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
 				if conn == nil {
 					continue
@@ -365,7 +365,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					log.Errorf("error injecting updated image %s to Sensor %q: %v", image.GetName().GetFullName(), clusterID, err)
 				}
 			}
-		}(result.ID, clusterIDSet.AsSlice())
+		}(result.ID, clusterIDSet)
 	}
 	select {
 	case <-wg.Done():

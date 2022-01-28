@@ -82,13 +82,16 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 		return errors.Wrap(h.stopSig.Err(), "could not fulfill invalidate image cache request")
 	default:
 		h.admCtrlSettingsMgr.FlushCache()
+
+		keysToDelete := make([]interface{}, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
 			key := image.GetImageId()
 			if key == "" {
 				key = image.GetImageFullName()
 			}
-			h.imageCache.Remove(key)
+			keysToDelete = append(keysToDelete, key)
 		}
+		h.imageCache.Remove(keysToDelete...)
 	}
 	return nil
 }

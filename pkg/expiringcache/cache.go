@@ -12,9 +12,8 @@ type Cache interface {
 	Add(key, value interface{})
 	Get(key interface{}) interface{}
 	GetAll() []interface{}
-	GetKeys() []interface{}
 	GetOrSet(key interface{}, value interface{}) interface{}
-	Remove(key interface{}) bool
+	Remove(key ...interface{})
 	RemoveAll()
 }
 
@@ -130,18 +129,19 @@ func (e *expiringCacheImpl) GetAll() []interface{} {
 	return actualValues
 }
 
-func (e *expiringCacheImpl) removeNoLock(key interface{}) bool {
-	present := e.getValue(key) != nil
-	e.mq.remove(key)
-	return present
+func (e *expiringCacheImpl) removeNoLock(keys ...interface{}) {
+	for _, key := range keys {
+		e.mq.remove(key)
+	}
 }
 
 // Remove removes a key in the cache if present. Returns if it was present.
-func (e *expiringCacheImpl) Remove(key interface{}) bool {
+func (e *expiringCacheImpl) Remove(keys ...interface{}) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
+
 	e.cleanNoLock(e.clock.Now())
-	return e.removeNoLock(key)
+	e.removeNoLock(keys...)
 }
 
 // RemoveAll removes all values from the cache.
@@ -150,15 +150,6 @@ func (e *expiringCacheImpl) RemoveAll() {
 	defer e.lock.Unlock()
 
 	e.mq.removeAll()
-}
-
-func (e *expiringCacheImpl) GetKeys() []interface{} {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
-	e.cleanNoLock(e.clock.Now())
-
-	return e.mq.getAllKeys()
 }
 
 // GetOrSet returns the value for the key if it exists or sets the value if it does not
