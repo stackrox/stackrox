@@ -865,6 +865,10 @@ func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Clust
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
+	if cluster == nil {
+		return errorhelpers.NewErrInvariantViolation("cannot normalize nil cluster object")
+	}
+
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
 
@@ -875,8 +879,13 @@ func validateInput(cluster *storage.Cluster) error {
 	return clusterValidation.Validate(cluster).ToError()
 }
 
-// addDefaults adds default values that cannot be stored empty in the cluster object.
+// addDefaults enriches the provided non-nil cluster object with defaults for
+// fields that cannot stay empty.
 func addDefaults(cluster *storage.Cluster) error {
+	if cluster == nil {
+		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
+	}
+
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
 		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
