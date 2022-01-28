@@ -14,7 +14,6 @@ import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
 import "internalapi/central/local_scanner.proto";
 import "storage/cluster.proto";
-import "storage/image.proto";
 
 package central;
 
@@ -37,8 +36,6 @@ message MsgFromSensor {
 
 message ReassessPolicies {}
 
-message ReprocessDeployments {}
-
 message MsgToSensor {
     oneof msg {
         SensorEnforcement              enforcement                        =  1;
@@ -58,8 +55,6 @@ message MsgToSensor {
         ReprocessDeployment            reprocess_deployment               = 15;
         InvalidateImageCache           invalidate_image_cache             = 16;
         IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
-        storage.Image                  updated_image                      = 18;
-        ReprocessDeployments           ReprocessDeployments               = 19;
     }
 }
 
