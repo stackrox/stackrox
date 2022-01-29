@@ -66,7 +66,6 @@ function ViolationDetailsPage(): ReactElement {
     }
 
     const { policy, deployment, resource, commonEntityInfo } = alert;
-    console.log(policy);
     const title = policy.name || 'Unknown violation';
     const { name: entityName } = resource || deployment || {};
     const resourceType = resource?.resourceType || commonEntityInfo?.resourceType || 'deployment';
