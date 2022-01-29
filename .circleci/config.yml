@@ -922,7 +922,7 @@ commands:
       - run:
           name: Setup deployment env
           command: |
-            source ./scripts/ci/lib.sh
+            source scripts/ci/lib.sh
             setup_deployment_env "<< parameters.docker-login >>" "<< parameters.use-websocket >>"
 
   setup-gcp:
