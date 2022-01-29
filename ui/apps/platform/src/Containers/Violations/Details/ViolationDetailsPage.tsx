@@ -106,7 +106,7 @@ function ViolationDetailsPage(): ReactElement {
                                 Policy overview
                             </Title>
                             <Divider component="div" className="pf-u-pb-md" />
-                            <PolicyDetailContent policy={policy} notifiers={[]} clusters={[]} />
+                            <PolicyDetailContent policy={policy} />
                         </>
                     ) : (
                         <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
