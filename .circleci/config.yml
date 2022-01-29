@@ -3799,11 +3799,10 @@ jobs:
           run-on-master: true
           run-on-tags: true
           changed-path: '^migrator/.*$'
-      - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - setup-dep-env:
-          docker-login: true
+          docker-login: false
       - *setupRoxctl
 
       - setup-gcp
