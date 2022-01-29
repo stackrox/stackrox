@@ -371,7 +371,10 @@ test_upgrade_paths() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
+    info "Making roxctl to match earlier version for deploy scripts"
+    make cli
+
+    PATH="bin/$TEST_HOST_OS:$PATH" MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
 
     get_central_basic_auth_creds
 }
