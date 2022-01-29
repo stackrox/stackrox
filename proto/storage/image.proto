@@ -90,8 +90,7 @@ message EmbeddedImageScanComponent {
     // Component version that fixes all the fixable vulnerabilities in this component.
     string                         fixed_by    = 11;
     message Executable {
-        string          path         = 1;
-        repeated string dependencies = 2;
+        string path = 1;
     }
     // Values are cleared after moving to cache, remove them from the grpc return as well
     repeated Executable            executables = 12 [(gogoproto.jsontag) = "-"];
