@@ -7,6 +7,7 @@ import {
     Tabs,
     Tab,
     Title,
+    Divider,
     PageSection,
     Spinner,
     Bullseye,
@@ -101,7 +102,13 @@ function ViolationDetailsPage(): ReactElement {
                 )}
                 <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                     {isPoliciesPFEnabled ? (
-                        <PolicyDetailContent policy={policy} notifiers={[]} clusters={[]} />
+                        <>
+                            <Title headingLevel="h2" className="pf-u-my-md">
+                                Policy overview
+                            </Title>
+                            <Divider component="div" className="pf-u-pb-md" />
+                            <PolicyDetailContent policy={policy} notifiers={[]} clusters={[]} />
+                        </>
                     ) : (
                         <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
                     )}
