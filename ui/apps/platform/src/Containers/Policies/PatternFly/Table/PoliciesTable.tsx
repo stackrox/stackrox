@@ -23,7 +23,7 @@ import orderBy from 'lodash/orderBy';
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
 import SearchFilterInput from 'Components/SearchFilterInput';
-import { ActionItem } from 'Containers/Violations/PatternFly/ViolationsTablePanel';
+import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
 import { SortDirection } from 'hooks/useTableSort';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';

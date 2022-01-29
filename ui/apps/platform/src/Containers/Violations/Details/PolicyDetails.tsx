@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Flex, FlexItem, Title } from '@patternfly/react-core';
 
-import { Policy } from 'Containers/Violations/PatternFly/types/violationTypes';
+import { Policy } from 'Containers/Violations/types/violationTypes';
 
 import Fields from 'Containers/Policies/Wizard/Details/Fields';
 import ConfigurationFields from 'Containers/Policies/Wizard/Details/ConfigurationFields';
