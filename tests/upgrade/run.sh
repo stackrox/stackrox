@@ -372,7 +372,7 @@ deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
     gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_OS/roxctl"
-    PATH="bin/$TEST_HOST_OS:$PATH" MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
+    PATH="bin/$TEST_HOST_OS:$PATH" MAIN_IMAGE_TAG="$EARLIER_TAG" bash -x ./deploy/k8s/central.sh
 
     get_central_basic_auth_creds
 }
