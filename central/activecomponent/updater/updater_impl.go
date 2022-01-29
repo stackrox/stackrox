@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
@@ -86,8 +87,9 @@ func (u *updaterImpl) getExecToComponentsMap(imageScan *storage.ImageScan) map[s
 		if component.GetSource() != storage.SourceType_OS {
 			continue
 		}
+		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
 		for _, exec := range component.GetExecutables() {
-			execToComponents[exec.GetPath()] = append(execToComponents[exec.GetPath()], exec.GetDependencies()...)
+			execToComponents[exec.GetPath()] = append(execToComponents[exec.GetPath()], componentID)
 		}
 		// Remove the executables to save some memory. The same image won't be processed again.
 		component.Executables = nil
