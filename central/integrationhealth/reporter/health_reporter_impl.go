@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -73,14 +74,13 @@ func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ 
 	return nil
 }
 
-// RemoveIntegrationHealthAsync removes the health entry corresponding to the integration
-func (d *DatastoreBasedIntegrationHealthReporter) RemoveIntegrationHealthAsync(id string) {
-	select {
-	case d.healthRemoval <- id:
-		return
-	case <-d.stopSig.Done():
-		return
+// RemoveIntegrationHealth removes the health entry corresponding to the integration
+func (d *DatastoreBasedIntegrationHealthReporter) RemoveIntegrationHealth(id string) error {
+	if err := d.integrationDS.RemoveIntegrationHealth(allAccessCtx, id); err != nil {
+		return errors.Wrapf(err, "Error removing health for integration %s", id)
 	}
+	d.healthRemoval <- id
+	return nil
 }
 
 // UpdateIntegrationHealthAsync updates the health of the integration
@@ -117,10 +117,6 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 				}
 			}
 		case id := <-d.healthRemoval:
-			if err := d.integrationDS.RemoveIntegrationHealth(allAccessCtx, id); err != nil {
-				log.Errorf("Error removing health for integration %s : %v", id, err)
-				continue
-			}
 			delete(d.latestDBTimestampMap, id)
 
 		case <-d.stopSig.Done():

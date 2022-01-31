@@ -9,5 +9,5 @@ import (
 type Reporter interface {
 	Register(id, name string, typ storage.IntegrationHealth_Type) error
 	UpdateIntegrationHealthAsync(*storage.IntegrationHealth)
-	RemoveIntegrationHealthAsync(id string)
+	RemoveIntegrationHealth(id string) error
 }
