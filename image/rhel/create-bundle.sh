@@ -96,7 +96,7 @@ extract_from_image "${DATA_IMAGE}" "/stackrox-data" "${bundle_root}/stackrox/sta
 extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
 
 # Install all the required compression packages for RocksDB to compile
-rpm_base_url="http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages"
+rpm_base_url="http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages"
 rpm_suffix="el8.x86_64.rpm"
 
 curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_suffix}"
