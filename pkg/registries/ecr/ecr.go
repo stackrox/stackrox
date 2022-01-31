@@ -125,7 +125,7 @@ func (e *ecr) Test() error {
 	if err != nil {
 		logging.Errorf("error testing ECR integration: %v", err)
 		if e, _ := err.(*registry.ClientError); e != nil {
-			return errors.Errorf("error testing ECR integration (code: %d).Please check Central logs for full error", e.Code())
+			return errors.Errorf("error testing ECR integration (code: %d). Please check Central logs for full error", e.Code())
 		}
 		return err
 	}
