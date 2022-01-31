@@ -1,6 +1,8 @@
 /* eslint-disable import/prefer-default-export */
 import * as yup from 'yup';
 
+import { Policy } from 'types/policy.proto';
+
 import { WizardPolicyStep4, WizardScope } from '../policies.utils';
 
 const validationSchemaStep1 = yup.object().shape({
@@ -12,18 +14,27 @@ const validationSchemaStep1 = yup.object().shape({
     categories: yup.array().of(yup.string().trim()).min(1, 'At least one category is required'), // TODO redundant? .required('Category is required'),
 });
 
-const validationSchemaStep2 = yup.object().shape({
-    eventSource: yup.string().when('lifecycleStages', {
-        is: (lifecycleStages: string[]) => lifecycleStages.includes('RUNTIME'),
-        then: (eventSourceSchema) =>
-            eventSourceSchema.oneOf(['DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT']),
-        otherwise: (eventSourceSchema) => eventSourceSchema.oneOf(['NOT_APPLICABLE']),
-    }),
-    lifecycleStages: yup
-        .array()
-        .of(yup.string().trim().oneOf(['BUILD', 'DEPLOY', 'RUNTIME']))
-        .min(1, 'At least one lifecycle state is required'), // TODO redundant? .required('Lifecycle stage is required'),
-});
+const validationSchemaStep2: yup.ObjectSchema<Pick<Policy, 'eventSource' | 'lifecycleStages'>> = yup
+    .object()
+    .shape({
+        eventSource: yup
+            .string()
+            .required()
+            .oneOf(['NOT_APPLICABLE', 'DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT'])
+            .when('lifecycleStages', {
+                is: (lifecycleStages: string[]) => lifecycleStages.includes('RUNTIME'),
+                // Remove values of eventSource that are not relevant for lifecycle stage.
+                then: (eventSourceSchema) => eventSourceSchema.notOneOf(['NOT_APPLICABLE']),
+                otherwise: (eventSourceSchema) =>
+                    eventSourceSchema.notOneOf(['DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT']),
+            }),
+        lifecycleStages: yup
+            .array()
+            .of(yup.string().required().oneOf(['BUILD', 'DEPLOY', 'RUNTIME']))
+            .min(1, 'At least one lifecycle stage is required')
+            .required(),
+        // Schema omits enforcementActions, because code (not user) changes the value.
+    });
 
 const validationSchemaStep3 = yup.object().shape({
     policySections: yup
