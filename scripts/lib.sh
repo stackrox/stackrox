@@ -23,9 +23,11 @@ die() {
 }
 
 is_CI() {
-    (
-        [[ -n "${CI:-}" || -n "${CIRCLECI:-}" ]]
-    )
+    [[ -n "${CI:-}" || -n "${CIRCLECI:-}" ]]
+}
+
+is_CIRCLECI() {
+    [[ -n "${CIRCLECI:-}" ]]
 }
 
 is_darwin() {
