@@ -916,7 +916,7 @@
           "title": "Version is used to determine if the metadata needs to be re-pulled"
         }
       },
-      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up\nNext Tag: 7"
+      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up\nNext Tag: 6"
     },
     "storageImageName": {
       "type": "object",
