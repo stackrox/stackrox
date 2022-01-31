@@ -169,7 +169,7 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
-func scanImageInternalResponseFromImage(img *storage.Image) *v1.ScanImageInternalResponse {
+func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse {
 	utils.FilterSuppressedCVEsNoClone(img)
 	utils.StripCVEDescriptionsNoClone(img)
 	return &v1.ScanImageInternalResponse{
@@ -196,7 +196,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		}
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
-			return scanImageInternalResponseFromImage(img), nil
+			return internalScanRespFromImage(img), nil
 		}
 	}
 
@@ -223,7 +223,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	// This modifies the image object
-	return scanImageInternalResponseFromImage(img), nil
+	return internalScanRespFromImage(img), nil
 }
 
 // ScanImage scans an image and returns the result
