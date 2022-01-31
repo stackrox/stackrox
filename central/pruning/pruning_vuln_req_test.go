@@ -28,7 +28,7 @@ func TestExpiredVulnReqsPruning(t *testing.T) {
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	datastore, err := vulnReqDataStore.NewForTestOnly(t, db, bleveIndex, cache.PendingReqsCacheSingleton())
+	datastore, err := vulnReqDataStore.NewForTestOnly(t, db, bleveIndex, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
 	require.NoError(t, err)
 
 	oneMonthDayPastRetention := (30 + configDS.DefaultExpiredVulnReqRetention) * 24 * time.Hour

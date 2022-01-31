@@ -4,7 +4,7 @@ import (
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/reprocessor"
-	vulReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager"
+	vulReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
