@@ -301,29 +301,8 @@ func local_request_ClustersService_GetKernelSupportAvailable_0(ctx context.Conte
 }
 
 func request_ClustersService_GetClusterDefaults_0(ctx context.Context, marshaler runtime.Marshaler, client ClustersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetClusterDefaultsRequest
+	var protoReq Empty
 	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		e   int32
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["type"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "type")
-	}
-
-	e, err = runtime.Enum(val, storage.ClusterType_value)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "type", err)
-	}
-
-	protoReq.Type = storage.ClusterType(e)
 
 	msg, err := client.GetClusterDefaults(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -331,29 +310,8 @@ func request_ClustersService_GetClusterDefaults_0(ctx context.Context, marshaler
 }
 
 func local_request_ClustersService_GetClusterDefaults_0(ctx context.Context, marshaler runtime.Marshaler, server ClustersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetClusterDefaultsRequest
+	var protoReq Empty
 	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		e   int32
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["type"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "type")
-	}
-
-	e, err = runtime.Enum(val, storage.ClusterType_value)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "type", err)
-	}
-
-	protoReq.Type = storage.ClusterType(e)
 
 	msg, err := server.GetClusterDefaults(ctx, &protoReq)
 	return msg, metadata, err
@@ -724,7 +682,7 @@ var (
 
 	pattern_ClustersService_GetKernelSupportAvailable_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "clusters-env", "kernel-support-available"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ClustersService_GetClusterDefaults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "clusters-env", "cluster-defaults", "type"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ClustersService_GetClusterDefaults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "cluster-defaults"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

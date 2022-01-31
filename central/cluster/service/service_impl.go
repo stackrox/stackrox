@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
@@ -144,17 +145,32 @@ func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty
 	return result, nil
 }
 
-func (s *serviceImpl) GetClusterDefaults(ctx context.Context, request *v1.GetClusterDefaultsRequest) (*v1.ClusterResponse, error) {
+func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
 	kernelSupport, err := s.probeSources.AnyAvailable(ctx)
 	if err != nil {
 		return nil, err
 	}
-	cluster, err := s.datastore.GetClusterDefaults(ctx, kernelSupport, request.Type)
-	if err != nil {
+	cluster := &storage.Cluster{
+		Type:                storage.ClusterType_GENERIC_CLUSTER,
+		SlimCollector:       kernelSupport,
+		AdmissionController: true,
+	}
+	if err := datastore.AddDefaults(cluster); err != nil {
 		return nil, err
 	}
-	result := &v1.ClusterResponse{
-		Cluster: cluster,
+	if cluster.GetCollectorImage() == "" {
+		flavor := defaults.GetImageFlavorFromEnv()
+		if cluster.SlimCollector {
+			cluster.CollectorImage = flavor.CollectorSlimImageNoTag()
+		} else {
+			cluster.CollectorImage = flavor.CollectorFullImageNoTag()
+		}
 	}
-	return result, nil
+
+	defaults := &v1.ClusterDefaultsResponse{
+		MainImageRepository:      cluster.GetMainImage(),
+		CollectorImageRepository: cluster.GetCollectorImage(),
+		KernelSupportAvailable:   kernelSupport,
+	}
+	return defaults, nil
 }

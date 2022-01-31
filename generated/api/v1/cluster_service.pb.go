@@ -147,6 +147,82 @@ func (m *ClusterResponse) Clone() *ClusterResponse {
 	return cloned
 }
 
+type ClusterDefaultsResponse struct {
+	MainImageRepository      string   `protobuf:"bytes,1,opt,name=main_image_repository,json=mainImageRepository,proto3" json:"main_image_repository,omitempty"`
+	CollectorImageRepository string   `protobuf:"bytes,2,opt,name=collector_image_repository,json=collectorImageRepository,proto3" json:"collector_image_repository,omitempty"`
+	KernelSupportAvailable   bool     `protobuf:"varint,3,opt,name=kernel_support_available,json=kernelSupportAvailable,proto3" json:"kernel_support_available,omitempty"`
+	XXX_NoUnkeyedLiteral     struct{} `json:"-"`
+	XXX_unrecognized         []byte   `json:"-"`
+	XXX_sizecache            int32    `json:"-"`
+}
+
+func (m *ClusterDefaultsResponse) Reset()         { *m = ClusterDefaultsResponse{} }
+func (m *ClusterDefaultsResponse) String() string { return proto.CompactTextString(m) }
+func (*ClusterDefaultsResponse) ProtoMessage()    {}
+func (*ClusterDefaultsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e08f99f642c8548a, []int{1}
+}
+func (m *ClusterDefaultsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ClusterDefaultsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ClusterDefaultsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ClusterDefaultsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClusterDefaultsResponse.Merge(m, src)
+}
+func (m *ClusterDefaultsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ClusterDefaultsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClusterDefaultsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ClusterDefaultsResponse proto.InternalMessageInfo
+
+func (m *ClusterDefaultsResponse) GetMainImageRepository() string {
+	if m != nil {
+		return m.MainImageRepository
+	}
+	return ""
+}
+
+func (m *ClusterDefaultsResponse) GetCollectorImageRepository() string {
+	if m != nil {
+		return m.CollectorImageRepository
+	}
+	return ""
+}
+
+func (m *ClusterDefaultsResponse) GetKernelSupportAvailable() bool {
+	if m != nil {
+		return m.KernelSupportAvailable
+	}
+	return false
+}
+
+func (m *ClusterDefaultsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ClusterDefaultsResponse) Clone() *ClusterDefaultsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ClusterDefaultsResponse)
+	*cloned = *m
+
+	return cloned
+}
+
 type ClustersList struct {
 	Clusters             []*storage.Cluster `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
@@ -158,7 +234,7 @@ func (m *ClustersList) Reset()         { *m = ClustersList{} }
 func (m *ClustersList) String() string { return proto.CompactTextString(m) }
 func (*ClustersList) ProtoMessage()    {}
 func (*ClustersList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{1}
+	return fileDescriptor_e08f99f642c8548a, []int{2}
 }
 func (m *ClustersList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -224,7 +300,7 @@ func (m *GetClustersRequest) Reset()         { *m = GetClustersRequest{} }
 func (m *GetClustersRequest) String() string { return proto.CompactTextString(m) }
 func (*GetClustersRequest) ProtoMessage()    {}
 func (*GetClustersRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{2}
+	return fileDescriptor_e08f99f642c8548a, []int{3}
 }
 func (m *GetClustersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -284,7 +360,7 @@ func (m *KernelSupportAvailableResponse) Reset()         { *m = KernelSupportAva
 func (m *KernelSupportAvailableResponse) String() string { return proto.CompactTextString(m) }
 func (*KernelSupportAvailableResponse) ProtoMessage()    {}
 func (*KernelSupportAvailableResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{3}
+	return fileDescriptor_e08f99f642c8548a, []int{4}
 }
 func (m *KernelSupportAvailableResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -333,122 +409,64 @@ func (m *KernelSupportAvailableResponse) Clone() *KernelSupportAvailableResponse
 	return cloned
 }
 
-type GetClusterDefaultsRequest struct {
-	Type                 storage.ClusterType `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
-}
-
-func (m *GetClusterDefaultsRequest) Reset()         { *m = GetClusterDefaultsRequest{} }
-func (m *GetClusterDefaultsRequest) String() string { return proto.CompactTextString(m) }
-func (*GetClusterDefaultsRequest) ProtoMessage()    {}
-func (*GetClusterDefaultsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{4}
-}
-func (m *GetClusterDefaultsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetClusterDefaultsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetClusterDefaultsRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetClusterDefaultsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetClusterDefaultsRequest.Merge(m, src)
-}
-func (m *GetClusterDefaultsRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetClusterDefaultsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetClusterDefaultsRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetClusterDefaultsRequest proto.InternalMessageInfo
-
-func (m *GetClusterDefaultsRequest) GetType() storage.ClusterType {
-	if m != nil {
-		return m.Type
-	}
-	return storage.ClusterType_GENERIC_CLUSTER
-}
-
-func (m *GetClusterDefaultsRequest) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *GetClusterDefaultsRequest) Clone() *GetClusterDefaultsRequest {
-	if m == nil {
-		return nil
-	}
-	cloned := new(GetClusterDefaultsRequest)
-	*cloned = *m
-
-	return cloned
-}
-
 func init() {
 	proto.RegisterEnum("v1.DeploymentFormat", DeploymentFormat_name, DeploymentFormat_value)
 	proto.RegisterEnum("v1.LoadBalancerType", LoadBalancerType_name, LoadBalancerType_value)
 	proto.RegisterType((*ClusterResponse)(nil), "v1.ClusterResponse")
+	proto.RegisterType((*ClusterDefaultsResponse)(nil), "v1.ClusterDefaultsResponse")
 	proto.RegisterType((*ClustersList)(nil), "v1.ClustersList")
 	proto.RegisterType((*GetClustersRequest)(nil), "v1.GetClustersRequest")
 	proto.RegisterType((*KernelSupportAvailableResponse)(nil), "v1.KernelSupportAvailableResponse")
-	proto.RegisterType((*GetClusterDefaultsRequest)(nil), "v1.GetClusterDefaultsRequest")
 }
 
 func init() { proto.RegisterFile("api/v1/cluster_service.proto", fileDescriptor_e08f99f642c8548a) }
 
 var fileDescriptor_e08f99f642c8548a = []byte{
-	// 663 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0xdd, 0x4e, 0xdb, 0x4a,
-	0x10, 0xc7, 0xe3, 0x00, 0x07, 0x32, 0xe1, 0xc3, 0x2c, 0x1c, 0x4e, 0x88, 0x38, 0x11, 0xf2, 0x15,
-	0x75, 0x1b, 0xa7, 0xa1, 0x37, 0x15, 0x6a, 0x2f, 0x12, 0xe2, 0x52, 0x84, 0x49, 0xa8, 0x09, 0x55,
-	0xc5, 0x4d, 0xb4, 0x84, 0x29, 0xb2, 0x70, 0xbc, 0xc6, 0xbb, 0xb6, 0x9a, 0x22, 0x6e, 0xfa, 0x0a,
-	0x95, 0xaa, 0x3e, 0x52, 0x2f, 0x2b, 0xf5, 0x05, 0x2a, 0xda, 0x07, 0xa9, 0xfc, 0x15, 0x0c, 0xa4,
-	0x95, 0x7a, 0xe7, 0xfd, 0xe7, 0x3f, 0xbf, 0x99, 0x9d, 0x9d, 0x09, 0xac, 0x51, 0xd7, 0xaa, 0x05,
-	0xf5, 0x5a, 0xdf, 0xf6, 0xb9, 0x40, 0xaf, 0xc7, 0xd1, 0x0b, 0xac, 0x3e, 0x6a, 0xae, 0xc7, 0x04,
-	0x23, 0xf9, 0xa0, 0x5e, 0x5e, 0x3b, 0x63, 0xec, 0xcc, 0xc6, 0x5a, 0x68, 0xa4, 0x8e, 0xc3, 0x04,
-	0x15, 0x16, 0x73, 0x78, 0xec, 0x28, 0x2f, 0xa5, 0xf1, 0x6c, 0x30, 0x60, 0x4e, 0x22, 0x92, 0x44,
-	0xc4, 0x81, 0x2b, 0x86, 0x89, 0xf6, 0x2f, 0x17, 0xcc, 0xa3, 0x67, 0x98, 0x66, 0x8a, 0x65, 0xe5,
-	0x39, 0x2c, 0x6c, 0xc7, 0x82, 0x89, 0xdc, 0x65, 0x0e, 0x47, 0xa2, 0xc2, 0x74, 0xe2, 0x29, 0x49,
-	0xeb, 0xd2, 0x46, 0x71, 0x53, 0xd6, 0x92, 0x58, 0x2d, 0xb5, 0xa6, 0x06, 0xe5, 0x19, 0xcc, 0x26,
-	0x1a, 0x37, 0x2c, 0x2e, 0xc8, 0x23, 0x98, 0x49, 0x7e, 0xe2, 0x25, 0x69, 0x7d, 0x62, 0x6c, 0xf0,
-	0xc8, 0xa1, 0xa8, 0x40, 0x76, 0x50, 0xa4, 0x00, 0x13, 0x2f, 0x7c, 0xe4, 0x82, 0x2c, 0xc3, 0xd4,
-	0x85, 0x8f, 0xde, 0x30, 0xca, 0x5e, 0x30, 0xe3, 0x83, 0x72, 0x0c, 0x95, 0x3d, 0xf4, 0x1c, 0xb4,
-	0x0f, 0x7d, 0xd7, 0x65, 0x9e, 0x68, 0x04, 0xd4, 0xb2, 0xe9, 0x89, 0x8d, 0xa3, 0xba, 0x9f, 0x42,
-	0xe9, 0x3c, 0x72, 0xf4, 0x78, 0x6c, 0xe9, 0xd1, 0xd4, 0x13, 0xa1, 0x66, 0xcc, 0x95, 0xf3, 0xb1,
-	0x04, 0x45, 0x87, 0xd5, 0x9b, 0x3a, 0x5a, 0xf8, 0x96, 0xfa, 0xb6, 0x18, 0x95, 0xb3, 0x01, 0x93,
-	0x62, 0xe8, 0xc6, 0x88, 0xf9, 0xcd, 0xe5, 0xbb, 0xd7, 0xe9, 0x0e, 0x5d, 0x34, 0x23, 0x87, 0xba,
-	0x05, 0x72, 0x0b, 0x5d, 0x9b, 0x0d, 0x07, 0xe8, 0x88, 0x17, 0xcc, 0x1b, 0x50, 0x41, 0x8a, 0x30,
-	0xbd, 0x77, 0xd4, 0xd4, 0xb7, 0xbb, 0x86, 0x9c, 0x23, 0x33, 0x30, 0xf9, 0x52, 0x37, 0xf6, 0x65,
-	0x89, 0x2c, 0x40, 0x31, 0xfc, 0xea, 0xbd, 0x6e, 0x18, 0x47, 0xfa, 0xa1, 0x9c, 0x57, 0x77, 0x41,
-	0x36, 0x18, 0x3d, 0x6d, 0x52, 0x9b, 0x3a, 0xfd, 0x98, 0x1a, 0xda, 0xdb, 0x9d, 0xb6, 0x2e, 0xe7,
-	0xc8, 0x22, 0xcc, 0x19, 0x9d, 0x46, 0xab, 0xd7, 0x6c, 0x18, 0x8d, 0xf6, 0xb6, 0x6e, 0xca, 0x12,
-	0x99, 0x83, 0x42, 0xbb, 0xd3, 0xd2, 0x7b, 0x07, 0x1d, 0xb3, 0x2b, 0xe7, 0x49, 0x01, 0xa6, 0xcc,
-	0xce, 0x51, 0x57, 0x97, 0x27, 0x36, 0x3f, 0x4d, 0x8d, 0xde, 0x94, 0x1f, 0xc6, 0xe3, 0x44, 0xf6,
-	0xa1, 0x98, 0xe9, 0x34, 0x59, 0xd1, 0x82, 0xba, 0x76, 0xbf, 0xf5, 0x65, 0x39, 0xd4, 0xb3, 0x0f,
-	0xaa, 0x2c, 0x7f, 0xf8, 0xf6, 0xf3, 0x63, 0x7e, 0x9e, 0xcc, 0x66, 0x86, 0x94, 0x93, 0x36, 0xc0,
-	0x4d, 0x34, 0x89, 0xa2, 0x4c, 0xe4, 0xcc, 0xf7, 0xfa, 0xd8, 0x1c, 0xee, 0xb6, 0xca, 0x4b, 0x19,
-	0x4e, 0xfa, 0x3e, 0xca, 0x6a, 0x84, 0x5a, 0x22, 0x8b, 0x59, 0x54, 0xed, 0xd2, 0x3a, 0xbd, 0x0a,
-	0xcb, 0x3b, 0x60, 0x3c, 0x03, 0xbc, 0xd3, 0xe4, 0xf1, 0xc0, 0xff, 0x22, 0xe0, 0xa2, 0x72, 0xab,
-	0xb6, 0x2d, 0x49, 0x25, 0xaf, 0x00, 0x0e, 0xfc, 0xbf, 0xa5, 0xad, 0x45, 0xb4, 0x95, 0xf2, 0xfd,
-	0xf2, 0x42, 0xe4, 0x0e, 0xcc, 0xb5, 0xd0, 0x46, 0x81, 0xbf, 0xbf, 0x74, 0x21, 0x54, 0xf4, 0x70,
-	0xe5, 0xd2, 0xab, 0xaa, 0x63, 0xae, 0x7a, 0x15, 0xcd, 0xda, 0xf8, 0x51, 0x26, 0x37, 0x88, 0xb2,
-	0x12, 0x7e, 0xfe, 0x79, 0xe2, 0x95, 0x7a, 0x94, 0xe6, 0x21, 0x79, 0x90, 0x4d, 0x53, 0x45, 0x27,
-	0xa8, 0xc5, 0x83, 0x5e, 0x4d, 0x16, 0xa1, 0x3a, 0x5a, 0x04, 0xf2, 0x3e, 0xbb, 0x72, 0xe9, 0xa8,
-	0x93, 0xff, 0x6f, 0xcf, 0xc3, 0x9d, 0x15, 0x18, 0xdf, 0xaf, 0xc7, 0x51, 0x72, 0x95, 0x6c, 0xdc,
-	0x4b, 0x9e, 0x1c, 0xaa, 0xa7, 0x09, 0xa6, 0x76, 0x19, 0xae, 0xc7, 0x55, 0x53, 0xfb, 0x72, 0x5d,
-	0x91, 0xbe, 0x5e, 0x57, 0xa4, 0xef, 0xd7, 0x15, 0xe9, 0xf3, 0x8f, 0x4a, 0x0e, 0x4a, 0x16, 0xd3,
-	0xb8, 0xa0, 0xfd, 0x73, 0x8f, 0xbd, 0x8b, 0xff, 0x90, 0x34, 0xea, 0x5a, 0x5a, 0x50, 0x3f, 0xce,
-	0x07, 0xf5, 0x37, 0xb9, 0x93, 0x7f, 0x22, 0xed, 0xc9, 0xaf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x2d,
-	0x1b, 0x59, 0xb1, 0x26, 0x05, 0x00, 0x00,
+	// 695 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0x4d, 0x4f, 0xdb, 0x4c,
+	0x10, 0x8e, 0x03, 0xbc, 0x90, 0x09, 0xbc, 0x98, 0x0d, 0x1f, 0x21, 0x2f, 0x8a, 0x90, 0x4f, 0xbc,
+	0x69, 0xe3, 0x28, 0xf4, 0x52, 0x21, 0x7a, 0x48, 0x88, 0x4b, 0x11, 0x21, 0xa1, 0x26, 0x54, 0x15,
+	0x17, 0x6b, 0x09, 0xd3, 0xc8, 0xc2, 0xf1, 0x1a, 0xef, 0xc6, 0x6a, 0x54, 0x71, 0xe9, 0x5f, 0xe8,
+	0xa5, 0x7f, 0xa8, 0x52, 0x8f, 0x95, 0xfa, 0x07, 0x2a, 0xda, 0xdf, 0xd0, 0x73, 0xe5, 0x4f, 0x5c,
+	0x48, 0x91, 0x7a, 0xb3, 0x9f, 0x79, 0xe6, 0x99, 0x79, 0x66, 0x67, 0x17, 0x36, 0xa8, 0x63, 0xd6,
+	0xbc, 0x7a, 0xad, 0x6f, 0x8d, 0xb8, 0x40, 0xd7, 0xe0, 0xe8, 0x7a, 0x66, 0x1f, 0x55, 0xc7, 0x65,
+	0x82, 0x91, 0xac, 0x57, 0x2f, 0x6d, 0x0c, 0x18, 0x1b, 0x58, 0x58, 0xf3, 0x89, 0xd4, 0xb6, 0x99,
+	0xa0, 0xc2, 0x64, 0x36, 0x0f, 0x19, 0xa5, 0x42, 0x9c, 0xcf, 0x86, 0x43, 0x66, 0x47, 0x20, 0x89,
+	0x40, 0x1c, 0x3a, 0x62, 0x1c, 0x61, 0x2b, 0x5c, 0x30, 0x97, 0x0e, 0x30, 0xae, 0x14, 0xc2, 0xca,
+	0x33, 0x58, 0xdc, 0x0b, 0x01, 0x1d, 0xb9, 0xc3, 0x6c, 0x8e, 0xa4, 0x02, 0xb3, 0x11, 0xa7, 0x28,
+	0x6d, 0x4a, 0x5b, 0xf9, 0x6d, 0x59, 0x8d, 0x72, 0xd5, 0x98, 0x1a, 0x13, 0x94, 0x4f, 0x12, 0xac,
+	0x45, 0x60, 0x0b, 0xdf, 0xd0, 0x91, 0x25, 0x78, 0xa2, 0xb3, 0x0d, 0x2b, 0x43, 0x6a, 0xda, 0x86,
+	0x39, 0xa4, 0x03, 0x34, 0x5c, 0x74, 0x18, 0x37, 0x05, 0x73, 0xc7, 0x81, 0x6a, 0x4e, 0x2f, 0xf8,
+	0xc1, 0x03, 0x3f, 0xa6, 0x27, 0x21, 0xb2, 0x0b, 0xa5, 0x3e, 0xb3, 0x2c, 0xec, 0x0b, 0xe6, 0xde,
+	0x4f, 0xcc, 0x06, 0x89, 0xc5, 0x84, 0x71, 0x37, 0xfb, 0x29, 0x14, 0x2f, 0xd1, 0xb5, 0xd1, 0x32,
+	0xf8, 0xc8, 0x71, 0x98, 0x2b, 0x0c, 0xea, 0x51, 0xd3, 0xa2, 0xe7, 0x16, 0x16, 0xa7, 0x36, 0xa5,
+	0xad, 0x39, 0x7d, 0x35, 0x8c, 0x9f, 0x84, 0xe1, 0x46, 0x1c, 0x55, 0x76, 0x61, 0x3e, 0xb2, 0xc1,
+	0xdb, 0x26, 0x17, 0xe4, 0x31, 0xcc, 0x45, 0x16, 0x79, 0x51, 0xda, 0x9c, 0x9a, 0x38, 0x84, 0x84,
+	0xa1, 0x54, 0x80, 0xec, 0xa3, 0x88, 0x05, 0x74, 0xbc, 0x1a, 0x21, 0x17, 0x64, 0x19, 0x66, 0xae,
+	0x46, 0x98, 0xf8, 0x0d, 0x7f, 0x94, 0x33, 0x28, 0x1f, 0x4e, 0xec, 0x21, 0x99, 0xdb, 0x43, 0x2e,
+	0xa4, 0x87, 0x5c, 0x54, 0x76, 0x40, 0x6e, 0xa1, 0x63, 0xb1, 0xf1, 0x10, 0x6d, 0xf1, 0x9c, 0xb9,
+	0x43, 0x2a, 0x48, 0x1e, 0x66, 0x0f, 0x4f, 0x9b, 0xda, 0x5e, 0xaf, 0x2d, 0x67, 0xc8, 0x1c, 0x4c,
+	0xbf, 0xd0, 0xda, 0x47, 0xb2, 0x44, 0x16, 0x21, 0xef, 0x7f, 0x19, 0xaf, 0x1a, 0xed, 0x53, 0xed,
+	0x44, 0xce, 0x56, 0x0e, 0x40, 0x6e, 0x33, 0x7a, 0xd1, 0xa4, 0x16, 0xb5, 0xfb, 0xe8, 0xf6, 0xc6,
+	0x0e, 0xfa, 0xf4, 0x4e, 0xb7, 0xa3, 0xc9, 0x19, 0xb2, 0x04, 0x0b, 0xed, 0x6e, 0xa3, 0x65, 0x34,
+	0x1b, 0xed, 0x46, 0x67, 0x4f, 0xd3, 0x65, 0x89, 0x2c, 0x40, 0xae, 0xd3, 0x6d, 0x69, 0xc6, 0x71,
+	0x57, 0xef, 0xc9, 0x59, 0x92, 0x83, 0x19, 0xbd, 0x7b, 0xda, 0xd3, 0xe4, 0xa9, 0xed, 0x9f, 0xd3,
+	0xc9, 0x52, 0xf1, 0x93, 0x70, 0x9f, 0xc9, 0x11, 0xe4, 0x53, 0x23, 0x22, 0xab, 0xaa, 0x57, 0x57,
+	0xef, 0xcf, 0xac, 0x24, 0xfb, 0x78, 0xfa, 0x24, 0x94, 0xe5, 0xf7, 0x5f, 0x7f, 0x7c, 0xc8, 0xfe,
+	0x4b, 0xe6, 0x53, 0xb7, 0x84, 0x93, 0x0e, 0xc0, 0x6d, 0x36, 0x09, 0xb2, 0x74, 0xe4, 0x6c, 0xe4,
+	0xf6, 0xb1, 0x39, 0x3e, 0x68, 0x95, 0x0a, 0x29, 0x9d, 0x78, 0xb0, 0xca, 0x7a, 0x20, 0x55, 0x20,
+	0x4b, 0x69, 0xa9, 0xda, 0x3b, 0xf3, 0xe2, 0xda, 0x6f, 0xef, 0x98, 0xf1, 0x94, 0xe0, 0x9d, 0xc3,
+	0x9e, 0x2c, 0xb8, 0x16, 0x08, 0x2e, 0x29, 0xbf, 0xf5, 0xb6, 0x23, 0x55, 0xc8, 0x4b, 0x80, 0xe3,
+	0xd1, 0xdf, 0xaa, 0x6d, 0x04, 0x6a, 0xab, 0xa5, 0xfb, 0xed, 0xf9, 0x92, 0xfb, 0xb0, 0xd0, 0x42,
+	0x0b, 0x05, 0xfe, 0xd9, 0x74, 0xce, 0x47, 0x34, 0xff, 0xce, 0xc7, 0x56, 0x2b, 0x13, 0xac, 0x5e,
+	0xc3, 0xfa, 0x3e, 0x8a, 0xc9, 0x3b, 0x48, 0x6e, 0x25, 0x4a, 0x8a, 0xff, 0xf9, 0xf0, 0xaa, 0x2a,
+	0xf5, 0xa0, 0xcc, 0x23, 0xf2, 0x7f, 0xba, 0x4c, 0x15, 0x6d, 0xaf, 0x16, 0x6e, 0x68, 0x35, 0xda,
+	0xe0, 0x6a, 0xb2, 0xc1, 0xe4, 0x2c, 0x7d, 0x57, 0xe2, 0x37, 0x23, 0x5d, 0xf7, 0xbf, 0xd4, 0x6c,
+	0xee, 0xbe, 0x29, 0xf1, 0x8c, 0xc8, 0x72, 0xaa, 0x60, 0xf5, 0x22, 0x62, 0x35, 0xd5, 0xcf, 0x37,
+	0x65, 0xe9, 0xcb, 0x4d, 0x59, 0xfa, 0x76, 0x53, 0x96, 0x3e, 0x7e, 0x2f, 0x67, 0xa0, 0x68, 0x32,
+	0x95, 0x0b, 0xda, 0xbf, 0x74, 0xd9, 0xdb, 0xf0, 0xc5, 0x53, 0xa9, 0x63, 0xaa, 0x5e, 0xfd, 0x2c,
+	0xeb, 0xd5, 0x5f, 0x67, 0xce, 0xff, 0x09, 0xb0, 0x27, 0xbf, 0x02, 0x00, 0x00, 0xff, 0xff, 0x89,
+	0xb7, 0x45, 0x4b, 0x87, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -469,7 +487,7 @@ type ClustersServiceClient interface {
 	PutCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
 	DeleteCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	GetKernelSupportAvailable(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*KernelSupportAvailableResponse, error)
-	GetClusterDefaults(ctx context.Context, in *GetClusterDefaultsRequest, opts ...grpc.CallOption) (*ClusterResponse, error)
+	GetClusterDefaults(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClusterDefaultsResponse, error)
 }
 
 type clustersServiceClient struct {
@@ -534,8 +552,8 @@ func (c *clustersServiceClient) GetKernelSupportAvailable(ctx context.Context, i
 	return out, nil
 }
 
-func (c *clustersServiceClient) GetClusterDefaults(ctx context.Context, in *GetClusterDefaultsRequest, opts ...grpc.CallOption) (*ClusterResponse, error) {
-	out := new(ClusterResponse)
+func (c *clustersServiceClient) GetClusterDefaults(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClusterDefaultsResponse, error) {
+	out := new(ClusterDefaultsResponse)
 	err := c.cc.Invoke(ctx, "/v1.ClustersService/GetClusterDefaults", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -551,7 +569,7 @@ type ClustersServiceServer interface {
 	PutCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
 	DeleteCluster(context.Context, *ResourceByID) (*Empty, error)
 	GetKernelSupportAvailable(context.Context, *Empty) (*KernelSupportAvailableResponse, error)
-	GetClusterDefaults(context.Context, *GetClusterDefaultsRequest) (*ClusterResponse, error)
+	GetClusterDefaults(context.Context, *Empty) (*ClusterDefaultsResponse, error)
 }
 
 // UnimplementedClustersServiceServer can be embedded to have forward compatible implementations.
@@ -576,7 +594,7 @@ func (*UnimplementedClustersServiceServer) DeleteCluster(ctx context.Context, re
 func (*UnimplementedClustersServiceServer) GetKernelSupportAvailable(ctx context.Context, req *Empty) (*KernelSupportAvailableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetKernelSupportAvailable not implemented")
 }
-func (*UnimplementedClustersServiceServer) GetClusterDefaults(ctx context.Context, req *GetClusterDefaultsRequest) (*ClusterResponse, error) {
+func (*UnimplementedClustersServiceServer) GetClusterDefaults(ctx context.Context, req *Empty) (*ClusterDefaultsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClusterDefaults not implemented")
 }
 
@@ -693,7 +711,7 @@ func _ClustersService_GetKernelSupportAvailable_Handler(srv interface{}, ctx con
 }
 
 func _ClustersService_GetClusterDefaults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetClusterDefaultsRequest)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -705,7 +723,7 @@ func _ClustersService_GetClusterDefaults_Handler(srv interface{}, ctx context.Co
 		FullMethod: "/v1.ClustersService/GetClusterDefaults",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClustersServiceServer).GetClusterDefaults(ctx, req.(*GetClusterDefaultsRequest))
+		return srv.(ClustersServiceServer).GetClusterDefaults(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -780,6 +798,57 @@ func (m *ClusterResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarintClusterService(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClusterDefaultsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClusterDefaultsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClusterDefaultsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.KernelSupportAvailable {
+		i--
+		if m.KernelSupportAvailable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.CollectorImageRepository) > 0 {
+		i -= len(m.CollectorImageRepository)
+		copy(dAtA[i:], m.CollectorImageRepository)
+		i = encodeVarintClusterService(dAtA, i, uint64(len(m.CollectorImageRepository)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.MainImageRepository) > 0 {
+		i -= len(m.MainImageRepository)
+		copy(dAtA[i:], m.MainImageRepository)
+		i = encodeVarintClusterService(dAtA, i, uint64(len(m.MainImageRepository)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -898,38 +967,6 @@ func (m *KernelSupportAvailableResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *GetClusterDefaultsRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetClusterDefaultsRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetClusterDefaultsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Type != 0 {
-		i = encodeVarintClusterService(dAtA, i, uint64(m.Type))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintClusterService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovClusterService(v)
 	base := offset
@@ -950,6 +987,29 @@ func (m *ClusterResponse) Size() (n int) {
 	if m.Cluster != nil {
 		l = m.Cluster.Size()
 		n += 1 + l + sovClusterService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ClusterDefaultsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.MainImageRepository)
+	if l > 0 {
+		n += 1 + l + sovClusterService(uint64(l))
+	}
+	l = len(m.CollectorImageRepository)
+	if l > 0 {
+		n += 1 + l + sovClusterService(uint64(l))
+	}
+	if m.KernelSupportAvailable {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -999,21 +1059,6 @@ func (m *KernelSupportAvailableResponse) Size() (n int) {
 	_ = l
 	if m.KernelSupportAvailable {
 		n += 2
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetClusterDefaultsRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Type != 0 {
-		n += 1 + sovClusterService(uint64(m.Type))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1092,6 +1137,141 @@ func (m *ClusterResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipClusterService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClusterDefaultsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowClusterService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClusterDefaultsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClusterDefaultsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MainImageRepository", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MainImageRepository = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectorImageRepository", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CollectorImageRepository = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KernelSupportAvailable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.KernelSupportAvailable = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipClusterService(dAtA[iNdEx:])
@@ -1331,76 +1511,6 @@ func (m *KernelSupportAvailableResponse) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.KernelSupportAvailable = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipClusterService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthClusterService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetClusterDefaultsRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowClusterService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetClusterDefaultsRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetClusterDefaultsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
-			}
-			m.Type = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowClusterService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Type |= storage.ClusterType(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipClusterService(dAtA[iNdEx:])

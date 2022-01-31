@@ -1298,7 +1298,7 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 
 }
 
-func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
+func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 
 	cases := map[string]struct {
 		kernelSupport bool
@@ -1368,15 +1368,21 @@ func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
 
 	for name, testCase := range cases {
 		suite.Run(name, func() {
-			defaults, err := suite.clusterDataStore.GetClusterDefaults(suite.hasWriteCtx, testCase.kernelSupport, testCase.clusterType)
+			cluster := &storage.Cluster{
+				Type:          testCase.clusterType,
+				SlimCollector: testCase.kernelSupport,
+				AdmissionController: testCase.clusterType != storage.ClusterType_OPENSHIFT_CLUSTER &&
+					testCase.clusterType != storage.ClusterType_OPENSHIFT4_CLUSTER,
+			}
+			err := AddDefaults(cluster)
 			suite.NoError(err)
-			suite.Equal(testCase.expectedSlimCollector, defaults.SlimCollector)
-			suite.Equal(testCase.expectedAdmissionController, defaults.AdmissionController)
-			suite.Equal(testCase.expectedDisableAuditLogs, defaults.DynamicConfig.DisableAuditLogs)
+			suite.Equal(testCase.expectedSlimCollector, cluster.SlimCollector)
+			suite.Equal(testCase.expectedAdmissionController, cluster.AdmissionController)
+			suite.Equal(testCase.expectedDisableAuditLogs, cluster.DynamicConfig.DisableAuditLogs)
 
-			suite.Equal(centralEndpoint, defaults.GetCentralApiEndpoint())
-			suite.Equal("docker.io/stackrox/main", defaults.GetMainImage())
-			suite.Equal("docker.io/stackrox/collector", defaults.GetCollectorImage())
+			suite.Equal(centralEndpoint, cluster.GetCentralApiEndpoint())
+			suite.Equal("docker.io/stackrox/main", cluster.GetMainImage())
+			suite.Empty(cluster.GetCollectorImage())
 		})
 	}
 
@@ -1384,7 +1390,7 @@ func (suite *ClusterDataStoreTestSuite) TestGetClusterDefaults() {
 		cluster := &storage.Cluster{
 			MainImage: "somevalue",
 		}
-		suite.NoError(addDefaults(cluster))
+		suite.NoError(AddDefaults(cluster))
 		suite.Empty(cluster.GetCollectorImage())
 	})
 }

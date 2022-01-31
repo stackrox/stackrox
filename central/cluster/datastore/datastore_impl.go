@@ -848,19 +848,6 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
-func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context, kernelSupport bool, clusterType storage.ClusterType) (*storage.Cluster, error) {
-	cluster := &storage.Cluster{
-		Type:          clusterType,
-		SlimCollector: kernelSupport,
-		AdmissionController: clusterType != storage.ClusterType_OPENSHIFT_CLUSTER &&
-			clusterType != storage.ClusterType_OPENSHIFT4_CLUSTER,
-	}
-	if err := addDefaults(cluster); err != nil {
-		return nil, err
-	}
-	return cluster, nil
-}
-
 func normalizeCluster(cluster *storage.Cluster) error {
 	if cluster == nil {
 		return errorhelpers.NewErrInvariantViolation("cannot normalize nil cluster object")
@@ -869,20 +856,20 @@ func normalizeCluster(cluster *storage.Cluster) error {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
 
-	return addDefaults(cluster)
+	return AddDefaults(cluster)
 }
 
 func validateInput(cluster *storage.Cluster) error {
 	return clusterValidation.Validate(cluster).ToError()
 }
 
-// addDefaults enriches the provided non-nil cluster object with defaults for
+// AddDefaults enriches the provided non-nil cluster object with defaults for
 // fields that cannot stay empty.
-func addDefaults(cluster *storage.Cluster) error {
+// `cluster.* bool` flags remain untouched.
+func AddDefaults(cluster *storage.Cluster) error {
 	if cluster == nil {
 		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
 	}
-
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
 		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
@@ -915,16 +902,10 @@ func addDefaults(cluster *storage.Cluster) error {
 	if acConfig.GetTimeoutSeconds() == 0 {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
 	}
-	flavor := defaults.GetImageFlavorFromEnv()
 	if cluster.GetMainImage() == "" {
+		flavor := defaults.GetImageFlavorFromEnv()
 		cluster.MainImage = flavor.MainImageNoTag()
-		if cluster.GetCollectorImage() == "" {
-			if cluster.SlimCollector {
-				cluster.CollectorImage = flavor.CollectorSlimImageNoTag()
-			} else {
-				cluster.CollectorImage = flavor.CollectorFullImageNoTag()
-			}
-		}
+		// cluster.CollectorImage may be kept empty as it is computed ad-hoc from the MainImage
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		cluster.CentralApiEndpoint = "central.stackrox:443"

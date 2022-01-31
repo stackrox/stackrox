@@ -11,6 +11,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/cluster-defaults": {
+      "get": {
+        "operationId": "ClustersService_GetClusterDefaults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ClusterDefaultsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "ClustersService"
+        ]
+      }
+    },
     "/v1/clusters": {
       "get": {
         "operationId": "ClustersService_GetClusters",
@@ -64,42 +86,6 @@
             "schema": {
               "$ref": "#/definitions/storageCluster"
             }
-          }
-        ],
-        "tags": [
-          "ClustersService"
-        ]
-      }
-    },
-    "/v1/clusters-env/cluster-defaults/{type}": {
-      "get": {
-        "operationId": "ClustersService_GetClusterDefaults",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1ClusterResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "type",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "enum": [
-              "GENERIC_CLUSTER",
-              "KUBERNETES_CLUSTER",
-              "OPENSHIFT_CLUSTER",
-              "OPENSHIFT4_CLUSTER"
-            ]
           }
         ],
         "tags": [
@@ -806,6 +792,20 @@
         "since": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "v1ClusterDefaultsResponse": {
+      "type": "object",
+      "properties": {
+        "mainImageRepository": {
+          "type": "string"
+        },
+        "collectorImageRepository": {
+          "type": "string"
+        },
+        "kernelSupportAvailable": {
+          "type": "boolean"
         }
       }
     },

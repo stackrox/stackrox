@@ -27,6 +27,12 @@ message ClusterResponse {
     storage.Cluster cluster            = 1;
 }
 
+message ClusterDefaultsResponse {
+    string main_image_repository = 1;
+    string collector_image_repository = 2;
+    bool kernel_support_available = 3;
+}
+
 message ClustersList {
     repeated storage.Cluster clusters = 1;
 }
@@ -37,10 +43,6 @@ message GetClustersRequest {
 
 message KernelSupportAvailableResponse {
     bool kernel_support_available = 1;
-}
-
-message GetClusterDefaultsRequest {
-    storage.ClusterType type = 1;
 }
 
 service ClustersService {
@@ -83,9 +85,9 @@ service ClustersService {
         };
     }
 
-    rpc GetClusterDefaults(GetClusterDefaultsRequest) returns (ClusterResponse) {
+    rpc GetClusterDefaults(Empty) returns (ClusterDefaultsResponse) {
         option (google.api.http) = {
-            get: "/v1/clusters-env/cluster-defaults/{type}"
+            get: "/v1/cluster-defaults"
         };
     }
 }
