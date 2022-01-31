@@ -13,8 +13,8 @@ import (
 
 var (
 	pollingInterval = 10 * time.Millisecond
-	capTime         = 100 * time.Millisecond
-	longTime        = 2 * time.Second
+	capTime         = 500 * time.Millisecond
+	longTime        = 5 * time.Second
 	backoff         = wait.Backoff{
 		Duration: capTime,
 		Factor:   1,
@@ -28,36 +28,28 @@ type testTickFun struct {
 	mock.Mock
 }
 
-func (f *testTickFun) f(ctx context.Context) (nextTimeToTick time.Duration, err error) {
+func (f *testTickFun) f(ctx context.Context) (timeToNextTick time.Duration, err error) {
 	args := f.Called(ctx)
 	return args.Get(0).(time.Duration), args.Error(1)
 }
 
 func TestRetryTicker(t *testing.T) {
 	testCases := map[string]struct {
-		expectError bool
+		timeToSecondTick time.Duration
+		firstErr         error
 	}{
-		"success":  {expectError: false},
-		"with error should retry": {expectError: true},
+		"success":                 {timeToSecondTick: 2 * capTime, firstErr: nil},
+		"with error should retry": {timeToSecondTick: 0, firstErr: errors.New("forced")},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
 			var done1, done2 Flag
-			wait1 := 2 * capTime
-			forcedErr := errors.New("forced")
-
 			m := &testTickFun{}
 			var ticker RetryTicker
 
-			if tc.expectError {
-				m.On("f", mock.Anything).Return(time.Duration(0), forcedErr).Run(func(args mock.Arguments) {
-					done1.Set(true)
-				}).Once()
-			} else {
-				m.On("f", mock.Anything).Return(wait1, nil).Run(func(args mock.Arguments) {
-					done1.Set(true)
-				}).Once()
-			}
+			m.On("f", mock.Anything).Return(tc.timeToSecondTick, tc.firstErr).Run(func(args mock.Arguments) {
+				done1.Set(true)
+			}).Once()
 			m.On("f", mock.Anything).Return(longTime, nil).Run(func(args mock.Arguments) {
 				done2.Set(true)
 			}).Once()
@@ -66,14 +58,17 @@ func TestRetryTicker(t *testing.T) {
 			ticker.Start()
 			defer ticker.Stop()
 
+			// this should happen immediately, we add capTime to give some margin to make test more stable.
 			assert.True(t, PollWithTimeout(done1.Get, pollingInterval, capTime))
-			if tc.expectError {
-				assert.True(t, PollWithTimeout(done2.Get, pollingInterval, backoff.Cap+capTime))
-			} else {
-				assert.True(t, PollWithTimeout(done2.Get, pollingInterval, wait1+capTime))
-			}
 
-			m.AssertExpectations(t)
+			var expectedTimeToSecondAttempt time.Duration
+			if tc.firstErr == nil {
+				expectedTimeToSecondAttempt = tc.timeToSecondTick
+			} else {
+				expectedTimeToSecondAttempt = backoff.Cap
+			}
+			// we add capTime to give some margin to make test more stable.
+			assert.True(t, PollWithTimeout(done2.Get, pollingInterval, expectedTimeToSecondAttempt+capTime))
 		})
 	}
 }
