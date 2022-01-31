@@ -215,7 +215,7 @@ function PolicyBehaviorForm() {
                             name="inform"
                             onChange={() => {
                                 setShowEnforcement(false);
-                                setFieldValue('enforcementActions', [], false); // , because code changes the value
+                                setFieldValue('enforcementActions', [], false); // do not validate, because code changes the value
                             }}
                         />
                         <Radio
