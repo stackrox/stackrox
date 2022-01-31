@@ -371,12 +371,7 @@ test_upgrade_paths() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    mkdir -p "bin/$TEST_HOST_OS"
-    gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_OS/roxctl"
-    chmod +x "bin/$TEST_HOST_OS/roxctl"
-    PATH="bin/$TEST_HOST_OS:$PATH" command -v roxctl
-    PATH="bin/$TEST_HOST_OS:$PATH" roxctl version
-    PATH="bin/$TEST_HOST_OS:$PATH" MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
+    MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
 
     get_central_basic_auth_creds
 }
