@@ -15,7 +15,7 @@ var (
 	_   CertificateRequester = (*certificateRequesterImpl)(nil)
 )
 
-// CertificateRequester request a new set of local scanner certificates to central.
+// CertificateRequester requests a new set of local scanner certificates from central.
 type CertificateRequester interface {
 	Start()
 	Stop()
@@ -63,7 +63,7 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 				continue
 			}
 			r.requests.Delete(msg.GetRequestId())
-			// doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
+			// Doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
 			// ever reads this, because requestC has buffer of 1, and we removed it from `r.request` above,
 			// in case we get more than 1 response for `msg.GetRequestId()`.
 			requestC.(chan *central.IssueLocalScannerCertsResponse) <- msg
@@ -75,7 +75,7 @@ func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*ce
 	requestID := uuid.NewV4().String()
 	receiveC := make(chan *central.IssueLocalScannerCertsResponse, 1)
 	r.requests.Store(requestID, receiveC)
-	// always delete this entry when leaving this scope to account for requests that are never responded, to avoid
+	// Always delete this entry when leaving this scope to account for requests that are never responded, to avoid
 	// having entries in `r.requests` that are never removed.
 	defer r.requests.Delete(requestID)
 
