@@ -19,12 +19,12 @@ type RetryTicker interface {
 }
 
 type retryTickerImpl struct {
-	doFunc           tickFunc
-	timeout          time.Duration
-	backoffPrototype wait.Backoff
-	backoff          wait.Backoff
-	timer            *time.Timer
-	mutex            sync.Mutex
+	doFunc         tickFunc
+	timeout        time.Duration
+	initialBackoff wait.Backoff
+	backoff        wait.Backoff
+	timer          *time.Timer
+	mutex          sync.Mutex
 }
 
 type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error)
@@ -49,7 +49,7 @@ func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 			t.scheduleTick(t.backoff.Step())
 			return
 		}
-		t.backoff = t.backoffPrototype // reset backoff strategy
+		t.backoff = t.initialBackoff // reset backoff strategy
 		t.scheduleTick(nextTimeToTick)
 	}))
 }
@@ -67,9 +67,9 @@ func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
 // details about how that is created.
 func NewRetryTicker(doFunc tickFunc, timeout time.Duration, backoff wait.Backoff) RetryTicker {
 	return &retryTickerImpl{
-		doFunc:           doFunc,
-		timeout:          timeout,
-		backoffPrototype: backoff,
-		backoff:          backoff,
+		doFunc:         doFunc,
+		timeout:        timeout,
+		initialBackoff: backoff,
+		backoff:        backoff,
 	}
 }
