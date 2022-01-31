@@ -73,7 +73,7 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 		return err
 	}
 	if len(providers.GetAuthProviders()) == 0 {
-		cmd.env.Logger().PrintfLn("No user certificate providers configured")
+		cmd.env.Logger().InfofLn("No user certificate providers configured")
 		return nil
 	}
 	groups, err := groupClient.GetGroups(ctx, &v1.GetGroupsRequest{})

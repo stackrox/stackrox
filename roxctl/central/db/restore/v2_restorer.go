@@ -221,7 +221,7 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 			}
 
 			if r.transferProgressBar == nil {
-				r.env.Logger().PrintfLn("Encountered a temporary error: %v. Retrying in %v (attempt %d out of %d)", err, retryDelay, i+1, resumeRetries)
+				r.env.Logger().ErrfLn("Encountered a temporary error: %v. Retrying in %v (attempt %d out of %d)", err, retryDelay, i+1, resumeRetries)
 			}
 
 			continueTime := time.Now().Add(retryDelay)

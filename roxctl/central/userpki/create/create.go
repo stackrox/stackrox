@@ -43,11 +43,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "create name",
 		RunE: func(c *cobra.Command, args []string) error {
-			if len(centralUserPkiCreateCmd.pemFiles) == 0 {
-				return errNoPEMFiles
-			}
-			if len(args) != 1 {
-				return errNoProviderName
+			if err := centralUserPkiCreateCmd.validate(args); err != nil {
+				return err
 			}
 			if err := centralUserPkiCreateCmd.construct(c, args); err != nil {
 				return err
@@ -60,6 +57,16 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringVarP(&centralUserPkiCreateCmd.roleName, "role", "r", "", "Minimum access role for users of this provider")
 	utils.Must(c.MarkFlagRequired("role"))
 	return c
+}
+
+func (cmd *centralUserPkiCreateCommand) validate(args []string) error {
+	if len(cmd.pemFiles) == 0 {
+		return errNoPEMFiles
+	}
+	if len(args) != 1 {
+		return errNoProviderName
+	}
+	return nil
 }
 
 func (cmd *centralUserPkiCreateCommand) construct(cbr *cobra.Command, args []string) error {

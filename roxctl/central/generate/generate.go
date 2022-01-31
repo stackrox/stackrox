@@ -165,7 +165,7 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
 
 		if config.K8sConfig.EnableTelemetry {
-			logger.InfofLn(`NOTE: Unless run in offline mode,
+			logger.InfofLn(`Unless run in offline mode,
  StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.
   If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag`)
 		}
@@ -222,11 +222,9 @@ func OutputZip(logger environment.Logger, config renderer.Config) error {
 	}
 
 	logger.InfofLn("Done!")
-	logger.InfofLn("")
 
 	if outputPath != "" {
 		logger.InfofLn("Wrote central bundle to %q", outputPath)
-		logger.InfofLn("")
 	}
 
 	if err := config.WriteInstructions(os.Stderr); err != nil {

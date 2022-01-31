@@ -134,7 +134,7 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		clusterType := storage.ClusterType_OPENSHIFT_CLUSTER
 		switch openshiftVersion {
 		case 0:
-			cliEnvironment.Logger().InfofLn("%s\n", noteOpenShift3xCompatibilityMode)
+			cliEnvironment.Logger().InfofLn("%s", noteOpenShift3xCompatibilityMode)
 		case 3:
 		case 4:
 			clusterType = storage.ClusterType_OPENSHIFT4_CLUSTER

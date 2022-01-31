@@ -26,7 +26,7 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "dump",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			cliEnvironment.Logger().InfofLn("Retrieving debug metrics. This may take a couple minutes...")
+			cliEnvironment.Logger().InfofLn("Retrieving debug metrics. This may take a couple of minutes...")
 			return retrieveDump(flags.Timeout(c), withLogs, outputDir)
 		}),
 	}

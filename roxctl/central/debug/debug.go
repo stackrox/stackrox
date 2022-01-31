@@ -98,7 +98,8 @@ func (cmd *centralDebugLogLevelCommand) printGetLogLevelResponse(r *v1.LogLevelR
 		}
 	}
 	if len(r.GetModuleLevels()) > 0 {
-		cmd.env.Logger().PrintfLn(indent+rowFormat+"\n", "Module", "Level")
+		cmd.env.Logger().PrintfLn(indent+rowFormat, "Module", "Level")
+		cmd.env.Logger().PrintfLn("")
 		for _, modLvl := range r.GetModuleLevels() {
 			cmd.env.Logger().PrintfLn(indent+rowFormat, modLvl.GetModule(), modLvl.GetLevel())
 		}

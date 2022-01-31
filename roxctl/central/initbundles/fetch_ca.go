@@ -47,7 +47,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) er
 		return errors.Wrap(err, "writing init bundle")
 	}
 	if bundleOutput != os.Stdout {
-		cliEnvironment.Logger().InfofLn("The CA configuration has been written to file %q.\n", outputFile)
+		cliEnvironment.Logger().InfofLn("The CA configuration has been written to file %q.", outputFile)
 		if err := bundleOutput.Close(); err != nil {
 			return errors.Wrap(err, "closing output file for CA config")
 		}

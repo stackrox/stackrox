@@ -78,7 +78,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 			return errors.Wrapf(err, "writing init bundle to %s", stringutils.FirstNonEmpty(out.filename, "<stdout>"))
 		}
 		if outFile != os.Stdout {
-			cliEnvironment.Logger().InfofLn("The newly generated init bundle has been written to file %q.\n", outFile.Name())
+			cliEnvironment.Logger().InfofLn("The newly generated init bundle has been written to file %q.", outFile.Name())
 			if err := outFile.Close(); err != nil {
 				return errors.Wrapf(err, "closing output file %q", outFile.Name())
 			}
@@ -86,9 +86,8 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 		files[i] = nil
 	}
 
-	cliEnvironment.Logger().InfofLn(`
-Note: The init bundle needs to be stored securely, since it contains secrets.
-      It is not possible to retrieve previously generated init bundles.`)
+	cliEnvironment.Logger().InfofLn("The init bundle needs to be stored securely, since it contains secrets.")
+	cliEnvironment.Logger().InfofLn("It is not possible to retrieve previously generated init bundles.")
 	return nil
 }
 
