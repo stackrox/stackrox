@@ -3,7 +3,7 @@ import * as yup from 'yup';
 
 import { WizardPolicyStep4, WizardScope } from '../policies.utils';
 
-const validationSchema1 = yup.object().shape({
+const validationSchemaStep1 = yup.object().shape({
     name: yup.string().trim().required('Policy name is required'),
     severity: yup
         .string()
@@ -12,14 +12,20 @@ const validationSchema1 = yup.object().shape({
     categories: yup.array().of(yup.string().trim()).min(1, 'At least one category is required'), // TODO redundant? .required('Category is required'),
 });
 
-const validationSchema2 = yup.object().shape({
+const validationSchemaStep2 = yup.object().shape({
+    eventSource: yup.string().when('lifecycleStages', {
+        is: (lifecycleStages: string[]) => lifecycleStages.includes('RUNTIME'),
+        then: (eventSourceSchema) =>
+            eventSourceSchema.oneOf(['DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT']),
+        otherwise: (eventSourceSchema) => eventSourceSchema.oneOf(['NOT_APPLICABLE']),
+    }),
     lifecycleStages: yup
         .array()
         .of(yup.string().trim().oneOf(['BUILD', 'DEPLOY', 'RUNTIME']))
         .min(1, 'At least one lifecycle state is required'), // TODO redundant? .required('Lifecycle stage is required'),
 });
 
-const validationSchema3 = yup.object().shape({
+const validationSchemaStep3 = yup.object().shape({
     policySections: yup
         .array()
         .of(
@@ -111,11 +117,11 @@ const validationSchemaDefault = yup.object().shape({});
 export function getValidationSchema(stepId: number | string | undefined): yup.Schema {
     switch (stepId) {
         case 1:
-            return validationSchema1;
+            return validationSchemaStep1;
         case 2:
-            return validationSchema2;
+            return validationSchemaStep2;
         case 3:
-            return validationSchema3;
+            return validationSchemaStep3;
         case 4:
             return validationSchemaStep4;
         default:
