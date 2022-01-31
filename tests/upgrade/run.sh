@@ -327,7 +327,7 @@ test_upgrade_paths() {
     wait_for_api
 
     info "Waiting for scanner to be ready"
-    kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
+    wait_for_scanner_to_be_ready
 
     validate_upgrade "upgrade after rollback" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
@@ -459,6 +459,29 @@ wait_for_central_reconciliation() {
         sleep 10
     done
     [[ "$success" == 1 ]]
+}
+
+wait_for_scanner_to_be_ready() {
+    echo "Waiting for scanner to be ready"
+    start_time="$(date '+%s')"
+    while true; do
+      scanner_json="$(kubectl -n stackrox get deploy/scanner -o json)"
+      replicas="$(jq '.status.replicas' <<<"${scanner_json}")"
+      readyReplicas="$(jq '.status.readyReplicas' <<<"${scanner_json}")"
+      echo "scanner replicas: $replicas"
+      echo "scanner readyReplicas: $readyReplicas"
+      if [[  "$replicas" == "$readyReplicas" ]]; then
+        break
+      fi
+      if (( $(date '+%s') - start_time > 300 )); then
+        kubectl -n stackrox get pod -o wide
+        kubectl -n stackrox get deploy -o wide
+        echo >&2 "Timed out after 5m"
+        exit 1
+      fi
+      sleep 5
+    done
+    echo "Scanner is ready"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
