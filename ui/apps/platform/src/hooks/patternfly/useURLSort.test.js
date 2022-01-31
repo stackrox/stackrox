@@ -7,24 +7,26 @@ import useURLSort from './useURLSort';
 
 const history = createMemoryHistory();
 
-const sortFields = ['Name', 'Status'];
+const params = {
+    sortFields: ['Name', 'Status'],
+    defaultSortOption: {
+        field: 'Name',
+        direction: 'desc',
+    },
+};
+
+const wrapper = ({ children }) => {
+    return <Router history={history}>{children}</Router>;
+};
 
 describe('useURLSort', () => {
     it('should get the sort options from URL by default', () => {
         const { result } = renderHook(
             () => {
-                return useURLSort({
-                    sortFields,
-                    defaultSortOption: {
-                        field: 'Name',
-                        direction: 'desc',
-                    },
-                });
+                return useURLSort(params);
             },
             {
-                wrapper: ({ children }) => {
-                    return <Router history={history}>{children}</Router>;
-                },
+                wrapper,
             }
         );
 
@@ -35,18 +37,10 @@ describe('useURLSort', () => {
     it('should keep sorting to the "Status" field and change direction to "asc"', () => {
         const { result } = renderHook(
             () => {
-                return useURLSort({
-                    sortFields,
-                    defaultSortOption: {
-                        field: 'Name',
-                        direction: 'desc',
-                    },
-                });
+                return useURLSort(params);
             },
             {
-                wrapper: ({ children }) => {
-                    return <Router history={history}>{children}</Router>;
-                },
+                wrapper,
             }
         );
 
@@ -61,18 +55,10 @@ describe('useURLSort', () => {
     it('should change sorting to the "Status" field and direction to "desc"', () => {
         const { result } = renderHook(
             () => {
-                return useURLSort({
-                    sortFields,
-                    defaultSortOption: {
-                        field: 'Name',
-                        direction: 'desc',
-                    },
-                });
+                return useURLSort(params);
             },
             {
-                wrapper: ({ children }) => {
-                    return <Router history={history}>{children}</Router>;
-                },
+                wrapper,
             }
         );
 
