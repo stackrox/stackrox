@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	numConcurrentRequests = 2
+)
+
 var (
 	testTimeout = time.Second
 )
@@ -58,7 +62,7 @@ func (s *certificateRequesterSuite) TestRequestSuccess() {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	go s.respondRequest(ctx, "")
+	go s.respondRequest(ctx, nil)
 
 	response, err := s.requester.RequestCertificates(ctx)
 	s.NoError(err)
@@ -70,7 +74,7 @@ func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
 	defer cancel()
 
 	// Request with different request ID should be ignored.
-	go s.respondRequest(ctx, "UNKNOWN")
+	go s.respondRequest(ctx, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
 
 	certs, requestErr := s.requester.RequestCertificates(ctx)
 	s.Nil(certs)
@@ -80,16 +84,15 @@ func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
 func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere() {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
-	numConcurrentRequests := 2
 	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
 
 	for i := 0; i < numConcurrentRequests; i++ {
-		go s.respondRequest(ctx, "")
+		go s.respondRequest(ctx, nil)
 
 		go func() {
+			defer waitGroup.Add(-1)
 			_, err := s.requester.RequestCertificates(ctx)
 			s.NoError(err)
-			waitGroup.Add(-1)
 		}()
 	}
 
@@ -100,19 +103,22 @@ func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere()
 // respondRequest reads a request from `s.sendC` and responds with `responseRequestID` as the requestID, or with
 // the same ID as the request if `responseRequestID` is "".
 // Before sending the response, it stores in s.responseRequestID the request ID for the requests read from `s.sendC`.
-func (s *certificateRequesterSuite) respondRequest(ctx context.Context, responseRequestID string) {
+func (s *certificateRequesterSuite) respondRequest(ctx context.Context, responseOverwrite *central.IssueLocalScannerCertsResponse) {
 	select {
 	case <-ctx.Done():
 	case request := <-s.sendC:
 		interceptedRequestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
 		s.NotEmpty(interceptedRequestID)
-		if responseRequestID != "" {
-			interceptedRequestID = responseRequestID
+		var response *central.IssueLocalScannerCertsResponse
+		if responseOverwrite != nil {
+			response = responseOverwrite
+		} else {
+			response = &central.IssueLocalScannerCertsResponse{RequestId: interceptedRequestID}
 		}
-		s.interceptedRequestID.Store(interceptedRequestID)
+		s.interceptedRequestID.Store(response.GetRequestId())
 		select {
 		case <-ctx.Done():
-		case s.receiveC <- &central.IssueLocalScannerCertsResponse{RequestId: interceptedRequestID}:
+		case s.receiveC <- response:
 		}
 	}
 }
