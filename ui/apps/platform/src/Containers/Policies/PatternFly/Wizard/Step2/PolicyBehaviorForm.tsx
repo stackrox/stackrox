@@ -59,7 +59,7 @@ function PolicyBehaviorForm() {
             setFieldValue(
                 'enforcementActions',
                 [...values.enforcementActions, ...lifecycleToEnforcementsMap[lifecycleStage]],
-                false // do not validate, because on another step
+                false // do not validate, because code changes the value
             );
         } else {
             clearEnforcementActionsForLifecycleStage(lifecycleStage);
@@ -72,7 +72,7 @@ function PolicyBehaviorForm() {
             values.enforcementActions.filter(
                 (action) => !lifecycleToEnforcementsMap[lifecycleStage].includes(action)
             ),
-            false // do not validate, because on another step
+            false // do not validate, because code changes the value
         );
     }
 
@@ -215,7 +215,7 @@ function PolicyBehaviorForm() {
                             name="inform"
                             onChange={() => {
                                 setShowEnforcement(false);
-                                setFieldValue('enforcementActions', [], false); // do not validate
+                                setFieldValue('enforcementActions', [], false); // , because code changes the value
                             }}
                         />
                         <Radio
