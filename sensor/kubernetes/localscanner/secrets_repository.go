@@ -7,11 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/util/retry"
 )
 
 var (
@@ -29,17 +26,15 @@ type certSecretsRepo interface {
 
 type certSecretsRepoImpl struct {
 	secretNames   map[storage.ServiceType]string
-	backoff       wait.Backoff
 	secretsClient corev1.SecretInterface
 }
 
 // NewCertSecretsRepo creates a new certSecretsRepo that handles secrets with the specified names and
 // for the specified service types, and uses the k8s API for persistence.
 func NewCertSecretsRepo(secretNames map[storage.ServiceType]string,
-	backoff wait.Backoff, secretsClient corev1.SecretInterface) certSecretsRepo {
+	secretsClient corev1.SecretInterface) certSecretsRepo {
 	return &certSecretsRepoImpl{
 		secretNames:   secretNames,
-		backoff:       backoff,
 		secretsClient: secretsClient,
 	}
 }
@@ -52,17 +47,9 @@ func (r *certSecretsRepoImpl) getSecrets(ctx context.Context) (map[storage.Servi
 			secret *v1.Secret
 			err    error
 		)
-		retryErr := retry.OnError(r.backoff,
-			func(err error) bool {
-				return (ctx.Err() == nil) && !k8sErrors.IsNotFound(err)
-			},
-			func() error {
-				secret, err = r.secretsClient.Get(ctx, secretName, metav1.GetOptions{})
-				return err
-			},
-		)
-		if retryErr != nil {
-			getErr = multierror.Append(getErr, errors.Wrapf(retryErr, "for secret %s", secretName))
+		secret, err = r.secretsClient.Get(ctx, secretName, metav1.GetOptions{})
+		if err != nil {
+			getErr = multierror.Append(getErr, errors.Wrapf(err, "for secret %s", secretName))
 		} else {
 			secretsMap[serviceType] = secret
 		}
@@ -85,17 +72,9 @@ func (r *certSecretsRepoImpl) putSecrets(ctx context.Context, secrets map[storag
 			putErr =
 				multierror.Append(putErr, errors.Errorf("no secret found for service type %s", serviceType))
 		} else {
-			retryErr := retry.OnError(r.backoff,
-				func(err error) bool {
-					return ctx.Err() == nil
-				},
-				func() error {
-					_, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{})
-					return err
-				},
-			)
-			if retryErr != nil {
-				putErr = multierror.Append(putErr, errors.Wrapf(retryErr, "for secret %s", secretName))
+			_, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{})
+			if err != nil {
+				putErr = multierror.Append(putErr, errors.Wrapf(err, "for secret %s", secretName))
 			}
 		}
 		// on context cancellation abort putting other secrets.

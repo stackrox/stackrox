@@ -12,7 +12,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	fakecorev1 "k8s.io/client-go/kubernetes/typed/core/v1/fake"
@@ -31,21 +30,6 @@ var (
 		storage.ServiceType_SCANNER_DB_SERVICE,
 		storage.ServiceType_CENTRAL_SERVICE,
 	}
-	capTime      = 10 * time.Millisecond
-	shortBackoff = wait.Backoff{
-		Duration: capTime,
-		Factor:   1,
-		Jitter:   0,
-		Steps:    2,
-		Cap:      capTime,
-	}
-	longBackoff = wait.Backoff{
-		Duration: capTime,
-		Factor:   1,
-		Steps:    10,
-		Jitter:   0,
-		Cap:      capTime,
-	}
 )
 
 func TestCertSecretsRepo(t *testing.T) {
@@ -61,9 +45,9 @@ func (s *certSecretsRepoSuite) TestGet() {
 		expectedErr error
 		f           *certSecretsRepoFixture
 	}{
-		"successful get": {nil, s.newFixture("", shortBackoff, "foo")},
-		"failed get":     {errForced, s.newFixture("get", shortBackoff, "foo")},
-		"cancelled get":  {context.Canceled, s.newFixture("get", longBackoff, "foo")},
+		"successful get": {nil, s.newFixture("", "foo")},
+		"failed get":     {errForced, s.newFixture("get", "foo")},
+		"cancelled get":  {context.Canceled, s.newFixture("get", "foo")},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -72,6 +56,9 @@ func (s *certSecretsRepoSuite) TestGet() {
 			doneErrSig := concurrency.NewErrorSignal()
 
 			go func() {
+				if tc.expectedErr == context.Canceled {
+					cancelGetCtx()
+				}
 				secrets, err := tc.f.repo.getSecrets(getCtx)
 				if tc.expectedErr == nil {
 					s.Equal(len(tc.f.secretsMap), len(secrets))
@@ -81,9 +68,6 @@ func (s *certSecretsRepoSuite) TestGet() {
 				}
 				doneErrSig.SignalWithError(err)
 			}()
-			if tc.expectedErr == context.Canceled {
-				cancelGetCtx()
-			}
 
 			err, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
 			s.Require().True(ok)
@@ -97,9 +81,9 @@ func (s *certSecretsRepoSuite) TestPut() {
 		expectedErr error
 		f           *certSecretsRepoFixture
 	}{
-		"successful put": {nil, s.newFixture("", shortBackoff, "foo")},
-		"failed put":     {errForced, s.newFixture("update", shortBackoff, "foo")},
-		"cancelled put":  {context.Canceled, s.newFixture("update", longBackoff, "foo")},
+		"successful put": {nil, s.newFixture("", "foo")},
+		"failed put":     {errForced, s.newFixture("update", "foo")},
+		"cancelled put":  {context.Canceled, s.newFixture("update", "foo")},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -108,12 +92,12 @@ func (s *certSecretsRepoSuite) TestPut() {
 			doneErrSig := concurrency.NewErrorSignal()
 
 			go func() {
+				if tc.expectedErr == context.Canceled {
+					cancelPutCtx()
+				}
 				err := tc.f.repo.putSecrets(putCtx, tc.f.secretsMap)
 				doneErrSig.SignalWithError(err)
 			}()
-			if tc.expectedErr == context.Canceled {
-				cancelPutCtx()
-			}
 
 			err, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
 			s.Require().True(ok)
@@ -137,7 +121,7 @@ type certSecretsRepoFixture struct {
 	secretsMap   map[storage.ServiceType]*v1.Secret
 }
 
-func (s *certSecretsRepoSuite) newFixture(verbToError string, backoff wait.Backoff, secretNames ...string) *certSecretsRepoFixture {
+func (s *certSecretsRepoSuite) newFixture(verbToError string, secretNames ...string) *certSecretsRepoFixture {
 	s.Require().LessOrEqual(len(secretNames), len(serviceTypes))
 
 	secretsNamesMap := make(map[storage.ServiceType]string, len(secretNames))
@@ -160,7 +144,7 @@ func (s *certSecretsRepoSuite) newFixture(verbToError string, backoff wait.Backo
 		return true, &v1.Secret{}, errForced
 	})
 	return &certSecretsRepoFixture{
-		repo:         NewCertSecretsRepo(secretsNamesMap, backoff, secretsClient),
+		repo:         NewCertSecretsRepo(secretsNamesMap, secretsClient),
 		secretClient: secretsClient,
 		secretsMap:   secretsMap,
 	}
