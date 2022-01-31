@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	namespace   = "namespace"
+	namespace   = "stackrox-ns"
 	testTimeout = time.Second
 )
 
