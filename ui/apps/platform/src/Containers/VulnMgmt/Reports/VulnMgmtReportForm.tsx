@@ -22,6 +22,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
+import * as yup from 'yup';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
@@ -42,6 +43,36 @@ export type VulnMgmtReportFormProps = {
     refreshQuery?: () => void;
 };
 
+export const validationSchema = yup.object().shape({
+    name: yup.string().trim().required('A report name is required.'),
+    vulnReportFilters: yup.object().shape({
+        fixability: yup.string().oneOf(['BOTH', 'FIXABLE', 'NOT_FIXABLE']).required(),
+        sinceLastReport: yup.boolean().required(),
+        severities: yup
+            .array()
+            .of(
+                yup
+                    .string()
+                    .oneOf([
+                        'LOW_VULNERABILITY_SEVERITY',
+                        'MODERATE_VULNERABILITY_SEVERITY',
+                        'IMPORTANT_VULNERABILITY_SEVERITY',
+                        'CRITICAL_VULNERABILITY_SEVERITY',
+                    ])
+                    .min(1)
+            )
+            .required('You must select at least one severity.'),
+    }),
+    scopeId: yup.string().trim().required('A resource scope is required.'),
+    emailConfig: yup.object().shape({
+        notifierId: yup.string().trim().required('A notifier is required.'),
+        mailingLists: yup.array().of(yup.string()),
+    }),
+    schedule: yup.object().shape({
+        intervalType: yup.string().oneOf(['WEEKLY', 'MONTHLY']).required(),
+    }),
+});
+
 function VulnMgmtReportForm({
     initialValues,
     isEditable = true,
@@ -55,6 +86,7 @@ function VulnMgmtReportForm({
             const response = onSave(formValues);
             return response;
         },
+        validationSchema,
     });
 
     const {

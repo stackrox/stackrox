@@ -2,15 +2,9 @@ import * as api from '../../../constants/apiEndpoints';
 import { url, selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
-import {
-    getHelperElementByLabel,
-    getInputByLabel,
-    // generateNameWithDate,
-    // getSelectButtonByLabel,
-    // getSelectOption,
-} from '../../../helpers/formHelpers';
+import { getHelperElementByLabel, getInputByLabel } from '../../../helpers/formHelpers';
 
-describe.only('Vulnmanagement reports', () => {
+describe('Vulnmanagement reports', () => {
     before(function beforeHook() {
         if (!hasFeatureFlag('ROX_VULN_REPORTING')) {
             this.skip();
@@ -66,7 +60,7 @@ describe.only('Vulnmanagement reports', () => {
             cy.get(selectors.reportSection.buttons.create).should('be.disabled');
 
             // Step 1, check empty fields
-            getInputByLabel('Report name').type(' ');
+            getInputByLabel('Report name').type(' ').blur();
 
             getHelperElementByLabel('Report name').contains('A report name is required');
             cy.get(selectors.reportSection.buttons.create).should('be.disabled');
