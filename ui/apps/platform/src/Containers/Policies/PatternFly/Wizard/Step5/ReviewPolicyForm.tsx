@@ -15,23 +15,39 @@ import './ReviewPolicyForm.css';
 
 type ReviewPolicyFormProps = {
     clusters: Cluster[];
+    isBadRequest: boolean;
     notifiers: NotifierIntegration[];
+    policyErrorMessage: string;
+    setIsBadRequest: (isBadRequest: boolean) => void;
+    setIsValidOnServer: (isValidOnServer: boolean) => void;
+    setPolicyErrorMessage: (message: string) => void;
 };
 
-function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): ReactElement {
+function ReviewPolicyForm({
+    clusters,
+    isBadRequest,
+    notifiers,
+    policyErrorMessage,
+    setIsBadRequest,
+    setIsValidOnServer,
+    setPolicyErrorMessage,
+}: ReviewPolicyFormProps): ReactElement {
     const { values } = useFormikContext<Policy>();
 
     const [showPolicyResults, setShowPolicyResults] = useState(true);
     const [isRunningDryRun, setIsRunningDryRun] = useState(false);
     const [jobIdOfDryRun, setJobIdOfDryRun] = useState('');
-    const [errorMessageFromDryRun, setErrorMessageFromDryRun] = useState('');
     const [counterToCheckDryRun, setCounterToCheckDryRun] = useState(0);
+    const [checkDryRunErrorMessage, setCheckDryRunErrorMessage] = useState('');
     const [alertsFromDryRun, setAlertsFromDryRun] = useState<DryRunAlert[]>([]);
 
     // Start "dry run" job for preview of violations.
     useEffect(() => {
+        setIsValidOnServer(false);
         setIsRunningDryRun(true);
-        setErrorMessageFromDryRun('');
+        setPolicyErrorMessage('');
+        setIsBadRequest(false);
+        setCheckDryRunErrorMessage('');
         setAlertsFromDryRun([]);
 
         startDryRun(values)
@@ -40,13 +56,17 @@ function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): React
                  * TODO after policiesSagas.js has been deleted:
                  * Replace ({ data: { jobId } }) with (jobId) above.
                  */
+                setIsValidOnServer(true);
                 setJobIdOfDryRun(jobId);
             })
             .catch((error) => {
                 setIsRunningDryRun(false);
-                setErrorMessageFromDryRun(getAxiosErrorMessage(error));
+                setPolicyErrorMessage(getAxiosErrorMessage(error));
+                if (error.response?.status === 400) {
+                    setIsBadRequest(true);
+                }
             });
-    }, [values]);
+    }, [setIsBadRequest, setIsValidOnServer, setPolicyErrorMessage, values]);
 
     // Poll "dry run" job for preview of violations.
     useEffect(() => {
@@ -69,7 +89,7 @@ function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): React
                 })
                 .catch((error) => {
                     setIsRunningDryRun(false);
-                    setErrorMessageFromDryRun(getAxiosErrorMessage(error));
+                    setCheckDryRunErrorMessage(getAxiosErrorMessage(error));
                     setJobIdOfDryRun('');
                     setCounterToCheckDryRun(0);
                 });
@@ -104,6 +124,15 @@ function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): React
                         </Button>
                     </FlexItem>
                 </Flex>
+                {policyErrorMessage && (
+                    <Alert
+                        title={isBadRequest ? 'Policy is invalid' : 'Policy request failure'}
+                        variant="danger"
+                        isInline
+                    >
+                        {policyErrorMessage}
+                    </Alert>
+                )}
                 <Divider component="div" />
                 <PolicyDetailContent
                     clusters={clusters}
@@ -133,9 +162,9 @@ function ReviewPolicyForm({ clusters, notifiers }: ReviewPolicyFormProps): React
                                     <Spinner isSVG />
                                 </FlexItem>
                             </Flex>
-                        ) : errorMessageFromDryRun ? (
-                            <Alert title="Request failure for violations" variant="danger" isInline>
-                                {errorMessageFromDryRun}
+                        ) : checkDryRunErrorMessage ? (
+                            <Alert title="Violations request failure" variant="warning" isInline>
+                                {checkDryRunErrorMessage}
                             </Alert>
                         ) : (
                             <PreviewViolations alertsFromDryRun={alertsFromDryRun} />
