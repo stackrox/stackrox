@@ -1367,6 +1367,12 @@
         },
         "name": {
           "type": "string"
+        },
+        "livenessProbe": {
+          "$ref": "#/definitions/storageLivenessProbe"
+        },
+        "readinessProbe": {
+          "$ref": "#/definitions/storageReadinessProbe"
         }
       }
     },
@@ -1791,6 +1797,14 @@
       },
       "title": "Next available tag: 4"
     },
+    "storageLivenessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
     "storageManagerType": {
       "type": "string",
       "enum": [
@@ -2020,6 +2034,14 @@
           "$ref": "#/definitions/storageAzureProviderMetadata"
         },
         "verified": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageReadinessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
           "type": "boolean"
         }
       }

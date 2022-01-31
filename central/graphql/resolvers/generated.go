@@ -447,8 +447,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"config: ContainerConfig",
 		"id: ID!",
 		"image: ContainerImage",
+		"livenessProbe: LivenessProbe",
 		"name: String!",
 		"ports: [PortConfig]!",
+		"readinessProbe: ReadinessProbe",
 		"resources: Resources",
 		"secrets: [EmbeddedSecret]!",
 		"securityContext: SecurityContext",
@@ -740,6 +742,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LifecycleStage(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ListAlert_ResourceType(0)))
+	utils.Must(builder.AddType("LivenessProbe", []string{
+		"defined: Boolean!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
@@ -1078,6 +1083,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"GoogleProviderMetadata",
 		"AWSProviderMetadata",
 		"AzureProviderMetadata",
+	}))
+	utils.Must(builder.AddType("ReadinessProbe", []string{
+		"defined: Boolean!",
 	}))
 	utils.Must(builder.AddType("RequestComment", []string{
 		"createdAt: Time",
@@ -4781,6 +4789,11 @@ func (resolver *containerResolver) Image(ctx context.Context) (*containerImageRe
 	return resolver.root.wrapContainerImage(value, true, nil)
 }
 
+func (resolver *containerResolver) LivenessProbe(ctx context.Context) (*livenessProbeResolver, error) {
+	value := resolver.data.GetLivenessProbe()
+	return resolver.root.wrapLivenessProbe(value, true, nil)
+}
+
 func (resolver *containerResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -4789,6 +4802,11 @@ func (resolver *containerResolver) Name(ctx context.Context) string {
 func (resolver *containerResolver) Ports(ctx context.Context) ([]*portConfigResolver, error) {
 	value := resolver.data.GetPorts()
 	return resolver.root.wrapPortConfigs(value, nil)
+}
+
+func (resolver *containerResolver) ReadinessProbe(ctx context.Context) (*readinessProbeResolver, error) {
+	value := resolver.data.GetReadinessProbe()
+	return resolver.root.wrapReadinessProbe(value, true, nil)
 }
 
 func (resolver *containerResolver) Resources(ctx context.Context) (*resourcesResolver, error) {
@@ -7078,6 +7096,35 @@ func toListAlert_ResourceTypes(values *[]string) []storage.ListAlert_ResourceTyp
 		output[i] = toListAlert_ResourceType(&v)
 	}
 	return output
+}
+
+type livenessProbeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.LivenessProbe
+}
+
+func (resolver *Resolver) wrapLivenessProbe(value *storage.LivenessProbe, ok bool, err error) (*livenessProbeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &livenessProbeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapLivenessProbes(values []*storage.LivenessProbe, err error) ([]*livenessProbeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*livenessProbeResolver, len(values))
+	for i, v := range values {
+		output[i] = &livenessProbeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *livenessProbeResolver) Defined(ctx context.Context) bool {
+	value := resolver.data.GetDefined()
+	return value
 }
 
 func toManagerType(value *string) storage.ManagerType {
@@ -9392,6 +9439,35 @@ func (resolver *providerMetadataProviderResolver) ToAWSProviderMetadata() (*aWSP
 func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*azureProviderMetadataResolver, bool) {
 	res, ok := resolver.resolver.(*azureProviderMetadataResolver)
 	return res, ok
+}
+
+type readinessProbeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ReadinessProbe
+}
+
+func (resolver *Resolver) wrapReadinessProbe(value *storage.ReadinessProbe, ok bool, err error) (*readinessProbeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &readinessProbeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapReadinessProbes(values []*storage.ReadinessProbe, err error) ([]*readinessProbeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*readinessProbeResolver, len(values))
+	for i, v := range values {
+		output[i] = &readinessProbeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *readinessProbeResolver) Defined(ctx context.Context) bool {
+	value := resolver.data.GetDefined()
+	return value
 }
 
 type requestCommentResolver struct {
