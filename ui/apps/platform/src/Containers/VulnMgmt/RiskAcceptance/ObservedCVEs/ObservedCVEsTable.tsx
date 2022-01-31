@@ -197,13 +197,14 @@ function ObservedCVEsTable({
                                 <Td dataLabel="CVE">
                                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                         <FlexItem>{row.cve}</FlexItem>
-                                        {row.vulnerabilityRequest?.id && (
-                                            <FlexItem>
-                                                <PendingApprovalPopover
-                                                    vulnRequestId={row.vulnerabilityRequest.id}
-                                                />
-                                            </FlexItem>
-                                        )}
+                                        {row.vulnerabilityRequest?.id &&
+                                            !row.vulnerabilityRequest.expired && (
+                                                <FlexItem>
+                                                    <PendingApprovalPopover
+                                                        vulnRequestId={row.vulnerabilityRequest.id}
+                                                    />
+                                                </FlexItem>
+                                            )}
                                     </Flex>
                                 </Td>
                                 <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
