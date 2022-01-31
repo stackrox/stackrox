@@ -25,7 +25,7 @@ type CertificateRequester interface {
 // NewCertificateRequester creates a new certificate requester that communicates through
 // the specified channels and initializes a new request ID for reach request.
 // To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
-// This assumes that the certificate requester is the only consumer of receiveC.
+// This assumes that the returned certificate requester is the only consumer of `receiveC`.
 func NewCertificateRequester(sendC chan<- *central.MsgFromSensor,
 	receiveC <-chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
 	return &certificateRequesterImpl{
@@ -42,10 +42,13 @@ type certificateRequesterImpl struct {
 	requests sync.Map
 }
 
+// Start makes the certificate requester listen to `receiveC` and forward responses to any request that is running
+// as a call to RequestCertificates.
 func (r *certificateRequesterImpl) Start() {
 	go r.dispatchResponses()
 }
 
+// Stop makes the certificate stop forwarding responses to running requests.
 func (r *certificateRequesterImpl) Stop() {
 	r.stopC.Signal()
 }
@@ -71,6 +74,8 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 	}
 }
 
+// RequestCertificates makes a new request for a new set of local scanner certificates from central.
+// This assumes the certificate requester has been started by calling Start.
 func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
 	requestID := uuid.NewV4().String()
 	receiveC := make(chan *central.IssueLocalScannerCertsResponse, 1)
