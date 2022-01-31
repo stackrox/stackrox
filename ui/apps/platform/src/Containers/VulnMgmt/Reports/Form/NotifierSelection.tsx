@@ -1,5 +1,7 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
+import { FormikErrors, FormikTouched } from 'formik';
+
 import {
     Button,
     ButtonVariant,
@@ -20,6 +22,8 @@ type NotifierSelectionProps = {
     mailingLists: string[];
     setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void;
     handleBlur: (e: React.FocusEvent<any, Element>) => void;
+    errors: FormikErrors<any>;
+    touched: FormikTouched<any>;
 };
 
 function NotifierSelection({
@@ -27,6 +31,8 @@ function NotifierSelection({
     mailingLists,
     setFieldValue,
     handleBlur,
+    errors,
+    touched,
 }: NotifierSelectionProps): ReactElement {
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
 
@@ -101,8 +107,8 @@ function NotifierSelection({
             <FormLabelGroup
                 label="Distribution list"
                 fieldId="emailConfig.mailingLists"
-                touched={{}}
-                errors={{}}
+                touched={touched}
+                errors={errors}
                 helperText="Enter an audience, who will receive the scheduled report. If an audience is not entered, the recipient defined in the notifier will be used. Multiple email addresses can be entered with comma separators."
             >
                 <TextInput

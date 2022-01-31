@@ -14,11 +14,25 @@ describe('Vulnmanagement reports', () => {
     withAuth();
 
     describe('creating a report', () => {
+        let notifiers;
+        let resourcesScopes;
+
+        before(() => {
+            cy.fixture('integrations/notifiers.json').then((response) => {
+                notifiers = response;
+            });
+            cy.fixture('scopes/resourceScopes.json').then((response) => {
+                resourcesScopes = response;
+            });
+        });
+
         beforeEach(() => {
             cy.intercept('GET', api.report.configurations, { reportConfigs: [] }).as(
                 'getReportConfigurations'
             );
             cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
+            cy.intercept('GET', api.integrations.notifiers, notifiers).as('getNotifiers');
+            cy.intercept('GET', api.accessScopes.list, resourcesScopes).as('getResourceScopes');
         });
 
         it('should navigate to the Create Report view by button or directly', () => {
@@ -64,6 +78,46 @@ describe('Vulnmanagement reports', () => {
 
             getHelperElementByLabel('Report name').contains('A report name is required');
             cy.get(selectors.reportSection.buttons.create).should('be.disabled');
+
+            // TODO: add checks for FE validation error messages on the following fields
+            //       which are not pre-populated
+            //       1. On (days to run report)
+            //       2. CVE severities
+            //
+            // Note, the PatternFly select-multiple checkboxes variant does not support
+            // Formik blur in a straightforward way, so in order to add tests for lazy
+            // validation, we first have to come up with a workaround for that issue
+
+            // Step 2, check fields for invalid formats
+            getInputByLabel('Report name').type('Test report 1');
+            getInputByLabel('Description').type('A detailed description of the report');
+
+            // TODO: create a method to select from the PatternFly Select elements,
+            //       the following does not work
+            // getInputByLabel('Configure resource scope').select('UI test scope');
+
+            getInputByLabel('Distribution list')
+                .type('scooby,shaggy@mysteryinc.com', {
+                    parseSpecialCharSequences: false,
+                })
+                .blur();
+
+            getHelperElementByLabel('Distribution list').contains(
+                'List must be valid emails separated by a comma'
+            );
+
+            cy.get(selectors.reportSection.buttons.create).should('be.disabled');
+
+            // Step 3, check valid from and save
+            getInputByLabel('Distribution list')
+                .clear()
+                .type('scooby@mysteryinc.com,shaggy@mysteryinc.com', {
+                    parseSpecialCharSequences: false,
+                })
+                .blur();
+
+            // TODO: once we are able to manipulate the PatternFly select element, uncomment and complete the test
+            // cy.get(selectors.reportSection.buttons.create).should('be.enabled').click();
         });
     });
 });

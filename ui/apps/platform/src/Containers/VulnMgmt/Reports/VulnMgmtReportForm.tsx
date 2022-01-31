@@ -66,7 +66,26 @@ export const validationSchema = yup.object().shape({
     scopeId: yup.string().trim().required('A resource scope is required.'),
     emailConfig: yup.object().shape({
         notifierId: yup.string().trim().required('A notifier is required.'),
-        mailingLists: yup.array().of(yup.string()),
+        mailingLists: yup
+            .array()
+            .of(yup.string())
+            .test('valid-emails-test', '', (emails, { createError }) => {
+                let isValid = true;
+
+                emails?.forEach((email) => {
+                    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        isValid = false;
+                    }
+                });
+
+                return (
+                    isValid ||
+                    createError({
+                        message: 'List must be valid emails separated by a comma',
+                        path: 'emailConfig.mailingLists',
+                    })
+                );
+            }),
     }),
     schedule: yup.object().shape({
         intervalType: yup.string().oneOf(['WEEKLY', 'MONTHLY']).required(),
@@ -348,6 +367,8 @@ function VulnMgmtReportForm({
                                     mailingLists={values.emailConfig.mailingLists}
                                     setFieldValue={setFieldValue}
                                     handleBlur={handleBlur}
+                                    touched={touched}
+                                    errors={errors}
                                 />
                             </div>
                         </GridItem>
