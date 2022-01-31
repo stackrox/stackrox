@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -42,21 +43,21 @@ func (s *certificateRequesterSuite) TearDownTest() {
 	s.requester.Stop()
 }
 
-func (s *certificateRequesterSuite) TestNotRequestFailureIfNotStarted() {
+func (s *certificateRequesterSuite) TestRequestFailureIfStopped() {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	doneErrSig := concurrency.NewErrorSignal()
 
+	s.requester.Stop()
 	go func() {
 		certs, err := s.requester.RequestCertificates(ctx)
 		s.Nil(certs)
 		doneErrSig.SignalWithError(err)
 	}()
-	s.requester.Stop()
 
 	requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
 	s.Require().True(ok)
-	s.Equal(ErrCertificateRequesterNotStarted, requestErr)
+	s.Equal(ErrCertificateRequesterStopped, requestErr)
 }
 
 func (s *certificateRequesterSuite) TestRequestCancellation() {
@@ -79,7 +80,8 @@ func (s *certificateRequesterSuite) TestRequestSuccess() {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	go s.respondRequest(ctx, nil)
+	go respondRequest(ctx, s.T(), &s.interceptedRequestID, s.sendC, s.receiveC, nil)
+	// s.respondRequest(ctx, nil)
 
 	response, err := s.requester.RequestCertificates(ctx)
 	s.NoError(err)
@@ -91,7 +93,8 @@ func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
 	defer cancel()
 
 	// Request with different request ID should be ignored.
-	go s.respondRequest(ctx, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
+	go respondRequest(ctx, s.T(), &s.interceptedRequestID, s.sendC, s.receiveC, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
+	// s.respondRequest(ctx, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
 
 	certs, requestErr := s.requester.RequestCertificates(ctx)
 	s.Nil(certs)
@@ -99,12 +102,13 @@ func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
 }
 
 func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere() {
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	timeout := numConcurrentRequests*testTimeout
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
 
 	for i := 0; i < numConcurrentRequests; i++ {
-		go s.respondRequest(ctx, nil)
+		go respondRequest(ctx, s.T(), &s.interceptedRequestID, s.sendC, s.receiveC, nil)
 
 		go func() {
 			defer waitGroup.Add(-1)
@@ -113,29 +117,33 @@ func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere()
 		}()
 	}
 
-	ok := concurrency.WaitWithTimeout(&waitGroup, time.Duration(numConcurrentRequests)*testTimeout)
+	ok := concurrency.WaitWithTimeout(&waitGroup, timeout)
 	s.Require().True(ok)
 }
 
 // respondRequest reads a request from `s.sendC` and responds with `responseRequestID` as the requestID, or with
 // the same ID as the request if `responseRequestID` is "".
 // Before sending the response, it stores in s.responseRequestID the request ID for the requests read from `s.sendC`.
-func (s *certificateRequesterSuite) respondRequest(ctx context.Context, responseOverwrite *central.IssueLocalScannerCertsResponse) {
+func respondRequest(ctx context.Context, t *testing.T, requestID *atomic.Value,
+	sendC chan *central.MsgFromSensor,
+	receiveC chan *central.IssueLocalScannerCertsResponse, responseOverwrite *central.IssueLocalScannerCertsResponse) {
 	select {
 	case <-ctx.Done():
-	case request := <-s.sendC:
+	case request := <-sendC:
+		log.Warnf("respondRequest read request with id %q", request.GetIssueLocalScannerCertsRequest().GetRequestId()) // FIXME
 		interceptedRequestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
-		s.NotEmpty(interceptedRequestID)
+		assert.NotEmpty(t, interceptedRequestID)
 		var response *central.IssueLocalScannerCertsResponse
 		if responseOverwrite != nil {
 			response = responseOverwrite
 		} else {
 			response = &central.IssueLocalScannerCertsResponse{RequestId: interceptedRequestID}
 		}
-		s.interceptedRequestID.Store(response.GetRequestId())
+		requestID.Store(response.GetRequestId())
+		log.Warnf("respondRequest sending response %s", response) // FIXME
 		select {
 		case <-ctx.Done():
-		case s.receiveC <- response:
+		case receiveC <- response:
 		}
 	}
 }

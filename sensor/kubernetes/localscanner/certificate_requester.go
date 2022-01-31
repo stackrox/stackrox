@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	// ErrCertificateRequesterNotStarted is returned by RequestCertificates when the certificate
+	// ErrCertificateRequesterStopped is returned by RequestCertificates when the certificate
 	// requested is not initialized.
-	ErrCertificateRequesterNotStarted                      = errors.New("not started")
-	log                                                    = logging.LoggerForModule()
+	ErrCertificateRequesterStopped = errors.New("not started")
+	log                            = logging.LoggerForModule()
 	_                                 CertificateRequester = (*certificateRequesterImpl)(nil)
 )
 
@@ -52,7 +52,8 @@ func (r *certificateRequesterImpl) Start() {
 	r.stopC.Reset()
 }
 
-// Stop makes the certificate stop forwarding responses to running requests.
+// Stop makes the certificate stop forwarding responses to running requests. Subsequent calls to RequestCertificates
+// will fail with ErrCertificateRequesterStopped.
 func (r *certificateRequesterImpl) Stop() {
 	r.stopC.Signal()
 }
@@ -79,8 +80,7 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 }
 
 // RequestCertificates makes a new request for a new set of local scanner certificates from central.
-// This assumes the certificate requester has been started by calling Start, otherwise this
-// returns ErrCertificateRequesterNotStarted.
+// This assumes the certificate requester is started, otherwise this returns ErrCertificateRequesterStopped.
 func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
 	requestID := uuid.NewV4().String()
 	receiveC := make(chan *central.IssueLocalScannerCertsResponse, 1)
@@ -105,7 +105,7 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 	}
 	select {
 	case <-r.stopC.Done():
-		return r.stopC.ErrorWithDefault(ErrCertificateRequesterNotStarted)
+		return r.stopC.ErrorWithDefault(ErrCertificateRequesterStopped)
 	case <-ctx.Done():
 		return ctx.Err()
 	case r.sendC <- msg:
