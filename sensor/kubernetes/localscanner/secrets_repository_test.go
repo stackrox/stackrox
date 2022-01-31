@@ -19,18 +19,12 @@ import (
 )
 
 const (
-	namespace = "namespace"
+	namespace   = "namespace"
 	testTimeout = time.Second
 )
 
 var (
-	errForced    = errors.New("forced error")
-	serviceTypes = []storage.ServiceType{
-		storage.ServiceType_SENSOR_SERVICE,
-		storage.ServiceType_SCANNER_SERVICE,
-		storage.ServiceType_SCANNER_DB_SERVICE,
-		storage.ServiceType_CENTRAL_SERVICE,
-	}
+	errForced = errors.New("forced error")
 )
 
 func TestCertSecretsRepo(t *testing.T) {
@@ -122,24 +116,17 @@ type certSecretsRepoFixture struct {
 	secretsMap   map[storage.ServiceType]*v1.Secret
 }
 
-func (s *certSecretsRepoSuite) newFixture(verbToError string, secretNames ...string) *certSecretsRepoFixture {
-	s.Require().LessOrEqual(len(secretNames), len(serviceTypes))
-
-	secretsNamesMap := make(map[storage.ServiceType]string, len(secretNames))
-	secretsMap := make(map[storage.ServiceType]*v1.Secret, len(secretNames))
-	objects := make([]runtime.Object, len(secretNames))
-	for i, secretName := range secretNames {
-		secret := &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: namespace,
-			},
-		}
-		secretsNamesMap[serviceTypes[i]] = secretName
-		secretsMap[serviceTypes[i]] = secret
-		objects[i] = secret
+func (s *certSecretsRepoSuite) newFixture(verbToError string, secretName string) *certSecretsRepoFixture {
+	serviceType := storage.ServiceType_SCANNER_SERVICE
+	secretsNamesMap := map[storage.ServiceType]string{serviceType: secretName}
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+		},
 	}
-	clientSet := fake.NewSimpleClientset(objects...)
+	secretsMap := map[storage.ServiceType]*v1.Secret{serviceType: secret}
+	clientSet := fake.NewSimpleClientset(secret)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(verbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &v1.Secret{}, errForced
