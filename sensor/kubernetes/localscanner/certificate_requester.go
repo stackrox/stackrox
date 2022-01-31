@@ -56,7 +56,7 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 		case <-r.stopC.Done():
 			return
 		case msg := <-r.receiveC:
-			requestC, ok := r.requests.Load(msg.GetRequestId())
+			responseC, ok := r.requests.Load(msg.GetRequestId())
 			if !ok {
 				log.Debugf("request ID %q does not match any known request ID, skipping request",
 					msg.GetRequestId())
@@ -66,7 +66,7 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 			// Doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
 			// ever reads this, because requestC has buffer of 1, and we removed it from `r.request` above,
 			// in case we get more than 1 response for `msg.GetRequestId()`.
-			requestC.(chan *central.IssueLocalScannerCertsResponse) <- msg
+			responseC.(chan *central.IssueLocalScannerCertsResponse) <- msg
 		}
 	}
 }
