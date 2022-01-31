@@ -1,8 +1,0 @@
-<svg width="31" height="31" viewBox="0 0 31 31" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M3.57338 2H27.4266C28.2956 2 29 2.78342 29 3.74983V27.2502C29 28.2166 28.2956 29 27.4266 29H3.57338C2.70443 29 2 28.2166 2 27.2502L2 3.74983C2 2.78342 2.70443 2 3.57338 2V2Z" fill="#8C9CF0" fill-opacity="0.194848" stroke="#5771F7" stroke-width="1.61165" stroke-dasharray="1 1"/>
-<rect x="8" y="8" width="15" height="15" rx="1" fill="#DBE3FF" stroke="#4B5CB7"/>
-<line opacity="0.5" x1="15.5" y1="9" x2="15.5" y2="22" stroke="#A4B7FC" stroke-width="13" stroke-dasharray="0.9 0.9"/>
-<path d="M14.839 11.7621C15.1218 11.2346 15.8782 11.2346 16.161 11.7621L20.1194 19.1456C20.3873 19.6453 20.0253 20.25 19.4584 20.25H11.5416C10.9747 20.25 10.6127 19.6453 10.8806 19.1456L14.839 11.7621Z" fill="#DBE3FF" stroke="#4B5CB7" stroke-width="0.5"/>
-<line x1="15.5111" y1="13.5111" x2="15.5111" y2="16.6" stroke="#4B5CB7" stroke-width="0.8" stroke-linecap="round"/>
-<line x1="15.5111" y1="18.1778" x2="15.5111" y2="18.1555" stroke="#4B5CB7" stroke-width="0.8" stroke-linecap="round"/>
-</svg>
