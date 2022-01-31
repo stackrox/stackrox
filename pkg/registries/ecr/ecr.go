@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -117,7 +118,18 @@ func (e *ecr) Test() error {
 	if err := e.refreshDockerClient(); err != nil {
 		return err
 	}
-	return e.Registry.Test()
+
+	_, err := e.Registry.Client.Repositories()
+
+	// the following code taken from generic Test method
+	if err != nil {
+		logging.Errorf("error testing ECR integration: %v", err)
+		if e, _ := err.(*registry.ClientError); e != nil {
+			return errors.Errorf("error testing ECR integration (code: %d).Please check Central logs for full error", e.Code())
+		}
+		return err
+	}
+	return nil
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
