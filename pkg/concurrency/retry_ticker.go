@@ -18,6 +18,24 @@ type RetryTicker interface {
 	Stop()
 }
 
+type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error)
+
+// NewRetryTicker returns a new RetryTicker that calls the "tick function" `doFunc` repeatedly:
+// - When started, the RetryTicker calls `doFunc` immediately, and if that returns an error
+// then the RetryTicker will wait the time returned by `backoff.Step` before calling `doFunc` again.
+// - `doFunc` should return an error if ctx is cancelled. RetryTicker always calls `doFunc` with a context
+// with a timeout of `timeout`.
+// - On success `RetryTicker` will reset `backoff`, and wait the amount of time returned by `doFunc` before
+// running it again.
+func NewRetryTicker(doFunc tickFunc, timeout time.Duration, backoff wait.Backoff) RetryTicker {
+	return &retryTickerImpl{
+		doFunc:         doFunc,
+		timeout:        timeout,
+		initialBackoff: backoff,
+		backoff:        backoff,
+	}
+}
+
 type retryTickerImpl struct {
 	doFunc         tickFunc
 	timeout        time.Duration
@@ -27,14 +45,13 @@ type retryTickerImpl struct {
 	mutex          sync.Mutex
 }
 
-type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error)
-
 // Start calls t.f and schedules the next tick immediately.
 func (t *retryTickerImpl) Start() {
 	t.scheduleTick(0)
 }
 
-// Stop cancels this RetryTicker.
+// Stop cancels this RetryTicker. If Stop is called while the tick function is running then Stop does not
+// wait for the tick function to complete before returning.
 func (t *retryTickerImpl) Stop() {
 	t.setTickTimer(nil)
 }
@@ -61,15 +78,4 @@ func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
 		t.timer.Stop()
 	}
 	t.timer = timer
-}
-
-// NewRetryTicker returns a new RetryTicker with the minimal parameters. See Build method below for
-// details about how that is created.
-func NewRetryTicker(doFunc tickFunc, timeout time.Duration, backoff wait.Backoff) RetryTicker {
-	return &retryTickerImpl{
-		doFunc:         doFunc,
-		timeout:        timeout,
-		initialBackoff: backoff,
-		backoff:        backoff,
-	}
 }
