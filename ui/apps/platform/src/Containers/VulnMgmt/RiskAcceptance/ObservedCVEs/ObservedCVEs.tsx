@@ -3,9 +3,9 @@
 import React, { ReactElement } from 'react';
 import { Bullseye, PageSection, PageSectionVariants, Spinner } from '@patternfly/react-core';
 
-import usePagination from 'hooks/patternfly/usePagination';
 import ACSEmptyState from 'Components/ACSEmptyState';
 import useURLSort, { SortOption } from 'hooks/patternfly/useURLSort';
+import useURLPagination from 'hooks/patternfly/useURLPagination';
 import ObservedCVEsTable from './ObservedCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 
@@ -20,7 +20,7 @@ const defaultSortOption: SortOption = {
 };
 
 function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
-    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { page, perPage, onSetPage, onPerPageSelect } = useURLPagination();
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,

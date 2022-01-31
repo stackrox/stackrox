@@ -3,17 +3,12 @@ import { useLocation, useHistory } from 'react-router-dom';
 import { ThProps } from '@patternfly/react-table';
 
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import useURLSearchState from './useURLSearchState';
 
 export type SortOption = {
     field: string;
     direction: 'asc' | 'desc';
 };
-
-type SearchObject = {
-    sortOption?: SortOption;
-};
-
-type SortOptionFilter = SortOption | undefined;
 
 export type GetSortParams = (field: string) => ThProps['sort'] | undefined;
 
@@ -28,16 +23,12 @@ type UseTableSortResult = {
 };
 
 function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTableSortResult {
-    const history = useHistory();
-    const location = useLocation();
-    const sortOptionFilter: SortOptionFilter = getQueryObject<SearchObject>(
-        location.search
-    )?.sortOption;
+    const [sortOption, setSortOption] = useURLSearchState<SortOption>('sortOption');
 
     // get the sort option values from the URL, if available
     // otherwise, use the default sort option values
-    const activeSortField = sortOptionFilter?.field || defaultSortOption.field;
-    const activeSortDirection = sortOptionFilter?.direction || defaultSortOption.direction;
+    const activeSortField = sortOption?.field || defaultSortOption.field;
+    const activeSortDirection = sortOption?.direction || defaultSortOption.direction;
 
     // we'll use this to map the sort fields to an index PatternFly can use internally
     const [fieldToIndexMap, setFieldToIndexMap] = useState<Record<string, number>>({});
@@ -64,19 +55,11 @@ function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTa
             },
             onSort: (_event, _index, direction) => {
                 // modify the URL based on the new sort
-                const querySearchObject = getQueryObject<Record<string, string | string[]>>(
-                    location.search
-                );
-                const newSortOptionString = getQueryString({
-                    ...querySearchObject,
-                    sortOption: {
-                        field,
-                        direction,
-                    },
-                });
-                history.replace({
-                    search: newSortOptionString,
-                });
+                const newSortOption: SortOption = {
+                    field,
+                    direction
+                }
+                setSortOption(newSortOption);
             },
             columnIndex,
         };
