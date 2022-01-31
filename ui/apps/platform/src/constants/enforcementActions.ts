@@ -1,4 +1,4 @@
-import { EnforcementAction } from 'Containers/Violations/PatternFly/types/violationTypes';
+import { EnforcementAction } from 'Containers/Violations/types/violationTypes';
 
 export const ENFORCEMENT_ACTIONS: Record<EnforcementAction, string> = Object.freeze({
     UNSET_ENFORCEMENT: 'UNSET_ENFORCEMENT',

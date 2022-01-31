@@ -40,9 +40,7 @@ const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/
 const AsyncIntegrationsPage = asyncComponent(
     () => import('Containers/Integrations/IntegrationsPage')
 );
-const AsyncViolationsPage = asyncComponent(
-    () => import('Containers/Violations/PatternFly/ViolationsPage')
-);
+const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
 const AsyncPoliciesPagePatternFly = asyncComponent(
