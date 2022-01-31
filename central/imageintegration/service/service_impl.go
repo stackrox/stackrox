@@ -139,7 +139,7 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, imageIntegration 
 	return s.UpdateImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
 }
 
-// PostImageIntegration creates a image integration.
+// PostImageIntegration creates an image integration.
 func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*storage.ImageIntegration, error) {
 	if request.GetId() != "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id field should be empty when posting a new image integration")
@@ -206,7 +206,7 @@ func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration
 	return s.TestUpdatedImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
 }
 
-// TestImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
+// TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
 func (s *serviceImpl) TestUpdatedImageIntegration(ctx context.Context, request *v1.UpdateImageIntegrationRequest) (*v1.Empty, error) {
 	if err := s.validateIntegration(ctx, request.GetConfig()); err != nil {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
