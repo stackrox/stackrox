@@ -33,20 +33,12 @@ func (f *testTickFun) f(ctx context.Context) (nextTimeToTick time.Duration, err 
 	return args.Get(0).(time.Duration), args.Error(1)
 }
 
-func (f *testTickFun) OnTickSuccess(nextTimeToTick time.Duration) {
-	f.Called(nextTimeToTick)
-}
-
-func (f *testTickFun) OnTickError(err error) {
-	f.Called(err)
-}
-
 func TestRetryTicker(t *testing.T) {
 	testCases := map[string]struct {
-		forceError bool
+		expectError bool
 	}{
-		"success":  {forceError: false},
-		"oneError": {forceError: true},
+		"success":  {expectError: false},
+		"with error should retry": {expectError: true},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
@@ -57,12 +49,12 @@ func TestRetryTicker(t *testing.T) {
 			m := &testTickFun{}
 			var ticker RetryTicker
 
-			if !tc.forceError {
-				m.On("f", mock.Anything).Return(wait1, nil).Run(func(args mock.Arguments) {
+			if tc.expectError {
+				m.On("f", mock.Anything).Return(time.Duration(0), forcedErr).Run(func(args mock.Arguments) {
 					done1.Set(true)
 				}).Once()
 			} else {
-				m.On("f", mock.Anything).Return(time.Duration(0), forcedErr).Run(func(args mock.Arguments) {
+				m.On("f", mock.Anything).Return(wait1, nil).Run(func(args mock.Arguments) {
 					done1.Set(true)
 				}).Once()
 			}
@@ -75,10 +67,10 @@ func TestRetryTicker(t *testing.T) {
 			defer ticker.Stop()
 
 			assert.True(t, PollWithTimeout(done1.Get, pollingInterval, capTime))
-			if !tc.forceError {
-				assert.True(t, PollWithTimeout(done2.Get, pollingInterval, wait1+capTime))
-			} else {
+			if tc.expectError {
 				assert.True(t, PollWithTimeout(done2.Get, pollingInterval, backoff.Cap+capTime))
+			} else {
+				assert.True(t, PollWithTimeout(done2.Get, pollingInterval, wait1+capTime))
 			}
 
 			m.AssertExpectations(t)
