@@ -18,8 +18,12 @@ var (
 	_ certSecretsRepo = (*certSecretsRepoImpl)(nil)
 )
 
+// certSecretsRepo is in charge of persisting and retrieving a set of secrets corresponding to service types
+// into some permanent storage system.
 type certSecretsRepo interface {
+	// getSecrets retrieves the secrets from permanent storage.
 	getSecrets(ctx context.Context) (map[storage.ServiceType]*v1.Secret, error)
+	// putSecrets persists the secrets on permanent storage.
 	putSecrets(ctx context.Context, secrets map[storage.ServiceType]*v1.Secret) error
 }
 
@@ -30,7 +34,7 @@ type certSecretsRepoImpl struct {
 }
 
 // NewCertSecretsRepo creates a new certSecretsRepo that handles secrets with the specified names and
-// for the specified service types.
+// for the specified service types, and uses the k8s API for persistence.
 func NewCertSecretsRepo(secretNames map[storage.ServiceType]string,
 	backoff wait.Backoff, secretsClient corev1.SecretInterface) certSecretsRepo {
 	return &certSecretsRepoImpl{
