@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.EnvVarBuilder
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder
+import io.fabric8.kubernetes.api.model.ExecAction
 import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
@@ -35,6 +36,7 @@ import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
+import io.fabric8.kubernetes.api.model.Probe
 import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ResourceRequirements
@@ -2109,8 +2111,22 @@ class Kubernetes implements OrchestratorMain {
                 securityContext: new SecurityContext(privileged: deployment.isPrivileged,
                                                      readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
-                                                                                    drop: deployment.dropCapabilities))
+                                                                                    drop: deployment.dropCapabilities)),
         )
+        if (deployment.livenessProbeDefined) {
+            Probe livenessProbe = new Probe(
+                exec: new ExecAction(command: ["touch", "/tmp/healthy"]),
+                periodSeconds: 5,
+            )
+            container.setLivenessProbe(livenessProbe)
+        }
+        if (deployment.readinessProbeDefined) {
+            Probe readinessProbe = new Probe(
+                exec: new ExecAction(command: ["touch", "/tmp/ready"]),
+                periodSeconds: 5,
+            )
+            container.setReadinessProbe(readinessProbe)
+        }
 
         PodSpec podSpec = new PodSpec(
                 containers: [container],

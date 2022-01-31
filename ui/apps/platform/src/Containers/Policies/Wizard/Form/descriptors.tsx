@@ -116,8 +116,8 @@ const memoryResource = (label: string): GroupDescriptor => ({
 });
 
 // A form descriptor for every option (key) on the policy criteria form page.
-/* 
-    e.g. 
+/*
+    e.g.
     {
         label: 'Image Tag',
         name: 'Image Tag',
@@ -128,9 +128,9 @@ const memoryResource = (label: string): GroupDescriptor => ({
         canBooleanLogic: true,
     },
 
-    label: for legacy policy alert labels 
+    label: for legacy policy alert labels
     name: the string used to display UI and send to backend
-    negatedName: string used to display UI when negated 
+    negatedName: string used to display UI when negated
         (if this does not exist, the UI assumes that the field cannot be negated)
     longName: string displayed in the UI in the Policy Field Card (not in draggable key)
     category: the category grouping for the policy criteria (collapsible group in keys)
@@ -143,7 +143,7 @@ const memoryResource = (label: string): GroupDescriptor => ({
         (UI assumes false by default)
     defaultValue: the default value to set, if provided
     disabled: disables the field entirely
-    reverse: will reverse boolean value on store 
+    reverse: will reverse boolean value on store
  */
 
 export type DescriptorOption = {
@@ -1049,6 +1049,46 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+    },
+    {
+        label: 'Liveness probe',
+        name: 'Liveness Probe Defined',
+        shortName: 'Liveness probe',
+        longName: 'Liveness probe',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Defined',
+                value: true,
+            },
+            {
+                text: 'Not defined',
+                value: false,
+            },
+        ],
+        defaultValue: false,
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Readiness probe',
+        name: 'Readiness Probe Defined',
+        shortName: 'Readiness probe',
+        longName: 'Readiness probe',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Defined',
+                value: true,
+            },
+            {
+                text: 'Not defined',
+                value: false,
+            },
+        ],
+        defaultValue: false,
+        canBooleanLogic: false,
     },
 ];
 
