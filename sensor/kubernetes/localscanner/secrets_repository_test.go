@@ -20,6 +20,7 @@ import (
 
 const (
 	namespace = "namespace"
+	testTimeout = time.Second
 )
 
 var (
@@ -69,7 +70,7 @@ func (s *certSecretsRepoSuite) TestGet() {
 				doneErrSig.SignalWithError(err)
 			}()
 
-			err, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
+			err, ok := doneErrSig.WaitWithTimeout(testTimeout)
 			s.Require().True(ok)
 			s.checkExpectedError(tc.expectedErr, err)
 		})
@@ -99,7 +100,7 @@ func (s *certSecretsRepoSuite) TestPut() {
 				doneErrSig.SignalWithError(err)
 			}()
 
-			err, ok := doneErrSig.WaitWithTimeout(100 * time.Millisecond)
+			err, ok := doneErrSig.WaitWithTimeout(testTimeout)
 			s.Require().True(ok)
 			s.checkExpectedError(tc.expectedErr, err)
 		})
