@@ -28,8 +28,6 @@ type retryTickerImpl struct {
 }
 
 type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error)
-type onTickSuccessFunc func(nextTimeToTick time.Duration)
-type onTickErrorFunc func(tickErr error)
 
 // Start calls t.f and schedules the next tick immediately.
 func (t *retryTickerImpl) Start() {
@@ -63,13 +61,6 @@ func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
 		t.timer.Stop()
 	}
 	t.timer = timer
-}
-
-// RetryTickerBuilder is a builder for RetryTicker objects.
-type RetryTickerBuilder interface {
-	OnTickSuccess(onTickSuccessFunc) RetryTickerBuilder
-	OnTickError(onTickErrorFunc) RetryTickerBuilder
-	Build() RetryTicker
 }
 
 // NewRetryTicker returns a new RetryTicker with the minimal parameters. See Build method below for
