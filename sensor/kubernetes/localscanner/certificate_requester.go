@@ -3,6 +3,7 @@ package localscanner
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -11,8 +12,11 @@ import (
 )
 
 var (
-	log                      = logging.LoggerForModule()
-	_   CertificateRequester = (*certificateRequesterImpl)(nil)
+	// ErrCertificateRequesterNotStarted is returned by RequestCertificates when the certificate
+	// requested is not initialized.
+	ErrCertificateRequesterNotStarted                      = errors.New("not started")
+	log                                                    = logging.LoggerForModule()
+	_                                 CertificateRequester = (*certificateRequesterImpl)(nil)
 )
 
 // CertificateRequester requests a new set of local scanner certificates from central.
@@ -29,7 +33,6 @@ type CertificateRequester interface {
 func NewCertificateRequester(sendC chan<- *central.MsgFromSensor,
 	receiveC <-chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
 	return &certificateRequesterImpl{
-		stopC:    concurrency.NewErrorSignal(),
 		sendC:    sendC,
 		receiveC: receiveC,
 	}
@@ -46,6 +49,7 @@ type certificateRequesterImpl struct {
 // as a call to RequestCertificates.
 func (r *certificateRequesterImpl) Start() {
 	go r.dispatchResponses()
+	r.stopC.Reset()
 }
 
 // Stop makes the certificate stop forwarding responses to running requests.
@@ -75,7 +79,8 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 }
 
 // RequestCertificates makes a new request for a new set of local scanner certificates from central.
-// This assumes the certificate requester has been started by calling Start.
+// This assumes the certificate requester has been started by calling Start, otherwise this
+// returns ErrCertificateRequesterNotStarted.
 func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
 	requestID := uuid.NewV4().String()
 	receiveC := make(chan *central.IssueLocalScannerCertsResponse, 1)
@@ -99,6 +104,8 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 		},
 	}
 	select {
+	case <-r.stopC.Done():
+		return r.stopC.ErrorWithDefault(ErrCertificateRequesterNotStarted)
 	case <-ctx.Done():
 		return ctx.Err()
 	case r.sendC <- msg:

@@ -42,6 +42,23 @@ func (s *certificateRequesterSuite) TearDownTest() {
 	s.requester.Stop()
 }
 
+func (s *certificateRequesterSuite) TestNotRequestFailureIfNotStarted() {
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	doneErrSig := concurrency.NewErrorSignal()
+
+	go func() {
+		certs, err := s.requester.RequestCertificates(ctx)
+		s.Nil(certs)
+		doneErrSig.SignalWithError(err)
+	}()
+	s.requester.Stop()
+
+	requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
+	s.Require().True(ok)
+	s.Equal(ErrCertificateRequesterNotStarted, requestErr)
+}
+
 func (s *certificateRequesterSuite) TestRequestCancellation() {
 	requestCtx, cancelRequestCtx := context.WithCancel(context.Background())
 	doneErrSig := concurrency.NewErrorSignal()
