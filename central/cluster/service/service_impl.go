@@ -160,11 +160,7 @@ func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.
 	}
 	if cluster.GetCollectorImage() == "" {
 		flavor := defaults.GetImageFlavorFromEnv()
-		if cluster.SlimCollector {
-			cluster.CollectorImage = flavor.CollectorSlimImageNoTag()
-		} else {
-			cluster.CollectorImage = flavor.CollectorFullImageNoTag()
-		}
+		cluster.CollectorImage = flavor.CollectorFullImageNoTag()
 	}
 
 	defaults := &v1.ClusterDefaultsResponse{
