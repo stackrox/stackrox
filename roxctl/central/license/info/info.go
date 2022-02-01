@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
@@ -14,60 +13,35 @@ import (
 	"github.com/spf13/cobra"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/license"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
-type centralLicenseInfoCommand struct {
-	// Properties that are bound to cobra flags.
-	licenseData []byte
-	json        bool
-
-	// Properties that are injected or constructed.
-	env     environment.Environment
-	timeout time.Duration
-}
-
 // Command defines the command.. See usage strings for details.
-func Command(cliEnvironment environment.Environment) *cobra.Command {
-	centralLicenseInfoCmd := &centralLicenseInfoCommand{env: cliEnvironment}
+func Command() *cobra.Command {
+	var licenseData []byte
+	var json bool
 	c := &cobra.Command{
 		Use: "info",
-		RunE: util.RunENoArgs(func(cmd *cobra.Command) error {
-			if err := centralLicenseInfoCmd.construct(cmd); err != nil {
-				return err
+		RunE: util.RunENoArgs(func(*cobra.Command) error {
+			if len(licenseData) == 0 {
+				return errors.New("no license data supplied")
 			}
-			if err := centralLicenseInfoCmd.validate(cmd); err != nil {
-				return err
-			}
-			return centralLicenseInfoCmd.infoLicense()
+			return infoLicense(licenseData, json)
 		}),
 	}
 
-	c.Flags().Var(&flags.LicenseVar{Data: &centralLicenseInfoCmd.licenseData}, "license", flags.LicenseUsage)
-	c.Flags().BoolVar(&centralLicenseInfoCmd.json, "json", false, "output as json")
+	c.Flags().Var(&flags.LicenseVar{Data: &licenseData}, "license", flags.LicenseUsage)
+	c.Flags().BoolVar(&json, "json", false, "output as json")
 	return c
-}
-
-func (cmd *centralLicenseInfoCommand) construct(cbr *cobra.Command) error {
-	cmd.timeout = flags.Timeout(cbr)
-	return nil
-}
-
-func (cmd *centralLicenseInfoCommand) validate(cbr *cobra.Command) error {
-	if len(cmd.licenseData) == 0 {
-		return errors.New("no license data supplied")
-	}
-	return nil
 }
 
 var (
 	jsonMarshaler = &jsonpb.Marshaler{}
 )
 
-func (cmd *centralLicenseInfoCommand) infoLicense() error {
-	protoBytes, _, err := license.ParseLicenseKey(string(cmd.licenseData))
+func infoLicense(licenseData []byte, json bool) error {
+	protoBytes, _, err := license.ParseLicenseKey(string(licenseData))
 	if err != nil {
 		return errors.Wrap(err, "failed to parse license key")
 	}
@@ -77,7 +51,7 @@ func (cmd *centralLicenseInfoCommand) infoLicense() error {
 		return errors.Wrap(err, "failed to unmarshal license key")
 	}
 
-	if cmd.json {
+	if json {
 		if err := jsonMarshaler.Marshal(os.Stdout, license); err != nil {
 			return errors.Wrap(err, "failed to marshal json")
 		}

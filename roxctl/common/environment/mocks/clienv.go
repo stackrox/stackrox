@@ -52,22 +52,6 @@ func (mr *MockEnvironmentMockRecorder) ColorWriter() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ColorWriter", reflect.TypeOf((*MockEnvironment)(nil).ColorWriter))
 }
 
-// ConnectNames mocks base method.
-func (m *MockEnvironment) ConnectNames() (string, string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ConnectNames")
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// ConnectNames indicates an expected call of ConnectNames.
-func (mr *MockEnvironmentMockRecorder) ConnectNames() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectNames", reflect.TypeOf((*MockEnvironment)(nil).ConnectNames))
-}
-
 // GRPCConnection mocks base method.
 func (m *MockEnvironment) GRPCConnection() (*grpc.ClientConn, error) {
 	m.ctrl.T.Helper()

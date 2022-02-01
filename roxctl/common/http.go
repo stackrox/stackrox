@@ -47,7 +47,7 @@ func GetHTTPClient(timeout time.Duration) (*http.Client, error) {
 // and passes through the remaining params. It checks that the returned status code is 200, and returns an error if it is not.
 // The caller receives the http response object, which it is the caller's responsibility to close.
 func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string, body io.Reader) (*http.Response, error) {
-	req, err := newHTTPRequestWithAuth(method, path, body)
+	req, err := NewHTTPRequestWithAuth(method, path, body)
 	if err != nil {
 		return nil, err
 	}
@@ -101,9 +101,9 @@ func getURL(path string) (string, error) {
 	return fmt.Sprintf("%s://%s/%s", scheme, endpoint, strings.TrimLeft(path, "/")), nil
 }
 
-// newHTTPRequestWithAuth returns a new HTTP request, resolving the given path against the endpoint via `GetPath`, and
+// NewHTTPRequestWithAuth returns a new HTTP request, resolving the given path against the endpoint via `GetPath`, and
 // injecting authorization headers into the request.
-func newHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.Request, error) {
+func NewHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.Request, error) {
 	reqURL, err := getURL(path)
 	if err != nil {
 		return nil, err
