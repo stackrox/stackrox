@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+
 func (w *WorkloadManager) getNodes(workload NodeWorkload) []*corev1.Node {
 	nodes := make([]*corev1.Node, 0, workload.NumNodes)
 	for i := 0; i < workload.NumNodes; i++ {
