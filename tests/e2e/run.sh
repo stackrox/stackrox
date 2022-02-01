@@ -140,7 +140,6 @@ run_roxctl_tests() {
     "$TEST_ROOT/tests/roxctl/slim-collector.sh"
     "$TEST_ROOT/tests/roxctl/authz-trace.sh"
     "$TEST_ROOT/tests/roxctl/istio-support.sh"
-    "$TEST_ROOT/tests/roxctl/bundle-generation.sh"
     "$TEST_ROOT/tests/roxctl/helm-chart-generation.sh"
     CA="$SERVICE_CA_FILE" "$TEST_ROOT/tests/yamls/roxctl_verification.sh"
 }

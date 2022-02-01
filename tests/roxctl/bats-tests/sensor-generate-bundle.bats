@@ -35,7 +35,7 @@ run_generate_and_get_bundle_test() {
   local name="$1";shift
   generate_bundle "$flavor" --name "$name" "$@"
   assert_success
-  download_dir=$(fetch_bundle "$name")
+  download_dir="$(fetch_bundle "$name")"
   rm -rf "$download_dir"
   delete_cluster "$name"
 }
