@@ -138,7 +138,7 @@ function ReviewPolicyForm({
                 <PolicyDetailContent
                     clusters={clusters}
                     notifiers={notifiers}
-                    policy={values}
+                    policy={getServerPolicy(values)}
                     isReview
                 />
             </Flex>
