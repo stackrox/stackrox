@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,7 +18,6 @@ import (
 
 const (
 	namespace   = "stackrox-ns"
-	testTimeout = time.Second
 )
 
 var (
@@ -48,24 +45,18 @@ func (s *certSecretsRepoSuite) TestGet() {
 		s.Run(tcName, func() {
 			getCtx, cancelGetCtx := context.WithCancel(context.Background())
 			defer cancelGetCtx()
-			doneErrSig := concurrency.NewErrorSignal()
+			if tc.expectedErr == context.Canceled {
+				cancelGetCtx()
+			}
 
-			go func() {
-				if tc.expectedErr == context.Canceled {
-					cancelGetCtx()
-				}
-				secrets, err := tc.f.repo.getSecrets(getCtx)
-				if tc.expectedErr == nil {
-					s.Equal(len(tc.f.secretsMap), len(secrets))
-					for k, v := range tc.f.secretsMap {
-						s.Equal(v, secrets[k])
-					}
-				}
-				doneErrSig.SignalWithError(err)
-			}()
+			secrets, err := tc.f.repo.getSecrets(getCtx)
 
-			err, ok := doneErrSig.WaitWithTimeout(testTimeout)
-			s.Require().True(ok)
+			if tc.expectedErr == nil {
+				s.Equal(len(tc.f.secretsMap), len(secrets))
+				for k, v := range tc.f.secretsMap {
+					s.Equal(v, secrets[k])
+				}
+			}
 			s.checkExpectedError(tc.expectedErr, err)
 		})
 	}
@@ -84,18 +75,12 @@ func (s *certSecretsRepoSuite) TestPut() {
 		s.Run(tcName, func() {
 			putCtx, cancelPutCtx := context.WithCancel(context.Background())
 			defer cancelPutCtx()
-			doneErrSig := concurrency.NewErrorSignal()
+			if tc.expectedErr == context.Canceled {
+				cancelPutCtx()
+			}
 
-			go func() {
-				if tc.expectedErr == context.Canceled {
-					cancelPutCtx()
-				}
-				err := tc.f.repo.putSecrets(putCtx, tc.f.secretsMap)
-				doneErrSig.SignalWithError(err)
-			}()
+			err := tc.f.repo.putSecrets(putCtx, tc.f.secretsMap)
 
-			err, ok := doneErrSig.WaitWithTimeout(testTimeout)
-			s.Require().True(ok)
 			s.checkExpectedError(tc.expectedErr, err)
 		})
 	}
@@ -132,7 +117,7 @@ func (s *certSecretsRepoSuite) newFixture(verbToError string, secretName string)
 		return true, &v1.Secret{}, errForced
 	})
 	return &certSecretsRepoFixture{
-		repo:         NewCertSecretsRepo(secretsNamesMap, secretsClient),
+		repo:         newCertSecretsRepo(secretsNamesMap, secretsClient),
 		secretClient: secretsClient,
 		secretsMap:   secretsMap,
 	}
