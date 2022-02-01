@@ -408,17 +408,6 @@
       ],
       "default": "UI_NONE"
     },
-<<<<<<< HEAD
-=======
-    "EmbeddedImageScanComponentExecutable": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        }
-      }
-    },
->>>>>>> ROX-8401-registry-store
     "EmbeddedVulnerabilityVulnerabilityType": {
       "type": "string",
       "enum": [
@@ -932,12 +921,6 @@
       "properties": {
         "path": {
           "type": "string"
-        },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },
