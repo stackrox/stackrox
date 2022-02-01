@@ -27,6 +27,8 @@ import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
 import PolicyScopeForm from './Step4/PolicyScopeForm';
 import ReviewPolicyForm from './Step5/ReviewPolicyForm';
 
+import './PolicyWizard.css';
+
 type PolicyWizardProps = {
     pageAction: ExtendedPageAction;
     policy: Policy;
