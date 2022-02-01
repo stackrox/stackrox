@@ -30,7 +30,7 @@ export function createNotifierIntegration(
 export function fetchNotifierIntegrations(): Promise<NotifierIntegrationBase[]> {
     return axios
         .get<{ notifiers: NotifierIntegrationBase[] }>(notifierIntegrationsUrl)
-        .then((response) => response.data.notifiers);
+        .then((response) => response?.data?.notifiers ?? []);
 }
 
 /*

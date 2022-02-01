@@ -28,5 +28,5 @@ export type MitreAttackVector = {
 export function fetchMitreAttackVectors(): Promise<MitreAttackVector[]> {
     return axios
         .get<{ mitreAttackVectors: MitreAttackVector[] }>(mitreAttackVectorsURL)
-        .then((response) => response.data.mitreAttackVectors);
+        .then((response) => response?.data?.mitreAttackVectors ?? []);
 }
