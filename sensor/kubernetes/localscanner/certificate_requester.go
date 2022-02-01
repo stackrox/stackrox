@@ -13,7 +13,7 @@ import (
 
 var (
 	// ErrCertificateRequesterStopped is returned by RequestCertificates when the certificate
-	// requested is not initialized.
+	// requester is not initialized.
 	ErrCertificateRequesterStopped                      = errors.New("stopped")
 	log                                                 = logging.LoggerForModule()
 	_                              CertificateRequester = (*certificateRequesterImpl)(nil)
@@ -54,6 +54,7 @@ func (r *certificateRequesterImpl) Start() {
 
 // Stop makes the certificate stop forwarding responses to running requests. Subsequent calls to RequestCertificates
 // will fail with ErrCertificateRequesterStopped.
+// Currently active calls to RequestCertificates can be cancelled with the provided context.
 func (r *certificateRequesterImpl) Stop() {
 	r.stopC.Signal()
 }
@@ -66,7 +67,7 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 		case msg := <-r.receiveC:
 			responseC, ok := r.requests.Load(msg.GetRequestId())
 			if !ok {
-				log.Debugf("request ID %q does not match any known request ID, skipping request",
+				log.Debugf("request ID %q does not match any known request ID, dropping response",
 					msg.GetRequestId())
 				continue
 			}
@@ -109,7 +110,6 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 	case <-ctx.Done():
 		return ctx.Err()
 	case r.sendC <- msg:
-		log.Debugf("request to issue local Scanner certificates sent to Central successfully: %v", msg)
 		return nil
 	}
 }
