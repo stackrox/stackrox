@@ -1,6 +1,7 @@
 package enricher
 
 import (
+	"context"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -90,10 +91,12 @@ type cveSuppressor interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
+type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
+
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache,
-	scanCache expiringcache.Cache, healthReporter integrationhealth.Reporter) ImageEnricher {
+func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
+	imageGetter imageGetter, healthReporter integrationhealth.Reporter) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
@@ -107,8 +110,9 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
 
+		imageGetter: imageGetter,
+
 		asyncRateLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
-		scanCache:        scanCache,
 
 		metrics: newMetrics(subsystem),
 	}

@@ -32,7 +32,6 @@ func initialize() {
 		lifecycle.SingletonManager(),
 		notifierProcessor.Singleton(),
 		enrichment.ImageMetadataCacheSingleton(),
-		enrichment.ImageScanCacheSingleton(),
 		connection.ManagerSingleton())
 }
 

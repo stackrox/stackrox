@@ -78,7 +78,6 @@ type serviceImpl struct {
 	riskManager  manager.Manager
 
 	metadataCache expiringcache.Cache
-	scanCache     expiringcache.Cache
 
 	connManager connection.Manager
 
@@ -165,7 +164,6 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 // InvalidateScanAndRegistryCaches invalidates the image scan caches
 func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty) (*v1.Empty, error) {
 	s.metadataCache.RemoveAll()
-	s.scanCache.RemoveAll()
 	return &v1.Empty{}, nil
 }
 
