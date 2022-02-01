@@ -19,7 +19,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
-import PolicyDetailContent from '../../../Policies/PatternFly/Detail/PolicyDetailContent';
+import PolicyDetailContent from '../../Policies/PatternFly/Detail/PolicyDetailContent';
 import DeploymentDetails from './DeploymentDetails';
 import PolicyDetails from './PolicyDetails';
 import EnforcementDetails from './EnforcementDetails';

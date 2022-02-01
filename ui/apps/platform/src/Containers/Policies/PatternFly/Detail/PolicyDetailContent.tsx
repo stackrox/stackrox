@@ -46,7 +46,7 @@ function PolicyDetailContent({
 
     const { enforcementActions, eventSource, exclusions, scope, lifecycleStages } = policy;
     return (
-        <>
+        <div data-testid="policy-details">
             <PolicyOverview policy={policy} notifiers={notifiers} isReview={isReview} />
             <Title headingLevel="h2" className="pf-u-mb-md pf-u-pt-lg">
                 Policy behavior
@@ -77,7 +77,7 @@ function PolicyDetailContent({
                     <PolicyScopeSection scope={scope} exclusions={exclusions} clusters={clusters} />
                 </>
             )}
-        </>
+        </div>
     );
 }
 
