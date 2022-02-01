@@ -57,3 +57,14 @@ setup_deployment_env() {
     ci_export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
     ci_export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 }
+
+install_built_roxctl_in_gopath() {
+    require_environment "TEST_HOST_OS"
+    require_environment "GOPATH"
+
+    local roxctl="$SCRIPTS_ROOT/bin/$TEST_HOST_OS/roxctl"
+
+    require_executable "$roxctl" "roxctl should be built"
+
+    cp "$roxctl" "$GOPATH/bin/roxctl"
+}

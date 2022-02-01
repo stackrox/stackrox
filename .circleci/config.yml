@@ -137,7 +137,8 @@ setupRoxctl: &setupRoxctl
   run:
     name: Setup Roxctl from bin
     command: |
-      cp bin/linux/roxctl $GOPATH/bin/roxctl
+      source scripts/ci/lib.sh
+      install_built_roxctl_in_gopath
 
 setupLicense: &setupLicense
   run:
@@ -3786,7 +3787,6 @@ jobs:
           changed-path: '^migrator/.*$'
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-      - *setupRoxctl
 
       - setup-gcp
       - attach-gke-cluster:
