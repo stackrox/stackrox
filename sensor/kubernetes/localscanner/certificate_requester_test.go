@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -20,117 +20,123 @@ var (
 	testTimeout = time.Second
 )
 
-func TestCertificateRequester(t *testing.T) {
-	suite.Run(t, new(certificateRequesterSuite))
-}
-
-type certificateRequesterSuite struct {
-	suite.Suite
-	sendC                chan *central.MsgFromSensor
-	receiveC             chan *central.IssueLocalScannerCertsResponse
-	requester            CertificateRequester
-	interceptedRequestID atomic.Value
-}
-
-func (s *certificateRequesterSuite) SetupTest() {
-	s.sendC = make(chan *central.MsgFromSensor)
-	s.receiveC = make(chan *central.IssueLocalScannerCertsResponse)
-	s.requester = NewCertificateRequester(s.sendC, s.receiveC)
-	s.requester.Start()
-}
-
-func (s *certificateRequesterSuite) TearDownTest() {
-	s.requester.Stop()
-}
-
-func (s *certificateRequesterSuite) TestRequestFailureIfStopped() {
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+func TestCertificateRequesterRequestFailureIfStopped(t *testing.T) {
+	f := newFixture(0)
+	defer f.tearDown()
 	doneErrSig := concurrency.NewErrorSignal()
 
-	s.requester.Stop()
+	f.requester.Stop()
 	go func() {
-		certs, err := s.requester.RequestCertificates(ctx)
-		s.Nil(certs)
+		certs, err := f.requester.RequestCertificates(f.ctx)
+		assert.Nil(t, certs)
 		doneErrSig.SignalWithError(err)
 	}()
 
 	requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
-	s.Require().True(ok)
-	s.Equal(ErrCertificateRequesterStopped, requestErr)
+	require.True(t, ok)
+	assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
 }
 
-func (s *certificateRequesterSuite) TestRequestCancellation() {
-	requestCtx, cancelRequestCtx := context.WithCancel(context.Background())
+func TestCertificateRequesterRequestCancellation(t *testing.T) {
+	f := newFixture(0)
+	defer f.tearDown()
 	doneErrSig := concurrency.NewErrorSignal()
 
 	go func() {
-		certs, err := s.requester.RequestCertificates(requestCtx)
-		s.Nil(certs)
+		certs, err := f.requester.RequestCertificates(f.ctx)
+		assert.Nil(t, certs)
 		doneErrSig.SignalWithError(err)
 	}()
-	cancelRequestCtx()
+	f.cancelCtx()
 
 	requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
-	s.Require().True(ok)
-	s.Equal(context.Canceled, requestErr)
+	require.True(t, ok)
+	assert.Equal(t, context.Canceled, requestErr)
 }
 
-func (s *certificateRequesterSuite) TestRequestSuccess() {
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+func TestCertificateRequesterRequestSuccess(t *testing.T) {
+	f := newFixture(0)
+	defer f.tearDown()
 
-	go respondRequest(ctx, s.T(), &s.interceptedRequestID, s.sendC, s.receiveC, nil)
-	// s.respondRequest(ctx, nil)
+	go f.respondRequest(t, nil)
 
-	response, err := s.requester.RequestCertificates(ctx)
-	s.NoError(err)
-	s.Equal(s.interceptedRequestID.Load(), response.GetRequestId())
+	response, err := f.requester.RequestCertificates(f.ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, f.interceptedRequestID.Load(), response.GetRequestId())
 }
 
-func (s *certificateRequesterSuite) TestResponsesWithUnknownIDAreIgnored() {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
+func TestCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
+	f := newFixture(100 * time.Millisecond)
+	defer f.tearDown()
 
 	// Request with different request ID should be ignored.
-	go respondRequest(ctx, s.T(), &s.interceptedRequestID, s.sendC, s.receiveC, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
-	// s.respondRequest(ctx, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
+	go f.respondRequest(t, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
 
-	certs, requestErr := s.requester.RequestCertificates(ctx)
-	s.Nil(certs)
-	s.Equal(context.DeadlineExceeded, requestErr)
+	certs, requestErr := f.requester.RequestCertificates(f.ctx)
+	assert.Nil(t, certs)
+	assert.Equal(t, context.DeadlineExceeded, requestErr)
 }
 
-func (s *certificateRequesterSuite) TestRequestConcurrentRequestDoNotInterfere() {
-	timeout := numConcurrentRequests*testTimeout
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T) {
+	f := newFixture(0)
+	defer f.tearDown()
 	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
 
 	for i := 0; i < numConcurrentRequests; i++ {
-		go respondRequest(ctx, s.T(), &s.interceptedRequestID, s.sendC, s.receiveC, nil)
-
+		go f.respondRequest(t, nil)
 		go func() {
 			defer waitGroup.Add(-1)
-			_, err := s.requester.RequestCertificates(ctx)
-			s.NoError(err)
+			_, err := f.requester.RequestCertificates(f.ctx)
+			assert.NoError(t, err)
 		}()
 	}
-
-	ok := concurrency.WaitWithTimeout(&waitGroup, timeout)
-	s.Require().True(ok)
+	ok := concurrency.WaitWithTimeout(&waitGroup, time.Duration(numConcurrentRequests)*testTimeout)
+	require.True(t, ok)
 }
 
-// respondRequest reads a request from `s.sendC` and responds with `responseRequestID` as the requestID, or with
-// the same ID as the request if `responseRequestID` is "".
-// Before sending the response, it stores in s.responseRequestID the request ID for the requests read from `s.sendC`.
-func respondRequest(ctx context.Context, t *testing.T, requestID *atomic.Value,
-	sendC chan *central.MsgFromSensor,
-	receiveC chan *central.IssueLocalScannerCertsResponse, responseOverwrite *central.IssueLocalScannerCertsResponse) {
+type certificateRequesterFixture struct {
+	sendC                chan *central.MsgFromSensor
+	receiveC             chan *central.IssueLocalScannerCertsResponse
+	requester            CertificateRequester
+	interceptedRequestID *atomic.Value
+	ctx                  context.Context
+	cancelCtx            context.CancelFunc
+}
+
+// newFixture creates a new test fixture that uses `timeout` as context timeout if `timeout` is
+// not 0, and `testTimeout` otherwise.
+func newFixture(timeout time.Duration) *certificateRequesterFixture {
+	sendC := make(chan *central.MsgFromSensor)
+	receiveC := make(chan *central.IssueLocalScannerCertsResponse)
+	requester := NewCertificateRequester(sendC, receiveC)
+	var interceptedRequestID atomic.Value
+	if timeout == 0 {
+		timeout = testTimeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	requester.Start()
+	return &certificateRequesterFixture{
+		sendC:                sendC,
+		receiveC:             receiveC,
+		requester:            requester,
+		ctx:                  ctx,
+		cancelCtx:            cancel,
+		interceptedRequestID: &interceptedRequestID,
+	}
+}
+
+func (f *certificateRequesterFixture) tearDown() {
+	f.cancelCtx()
+	f.requester.Stop()
+}
+
+// respondRequest reads a request from `f.sendC` and responds with `responseOverwrite` if not nil, or with
+// a response with the same ID as the request otherwise.
+// Before sending the response, it stores in `f.interceptedRequestID` the request ID for the requests read from `f.sendC`.
+func (f *certificateRequesterFixture) respondRequest(t *testing.T, responseOverwrite *central.IssueLocalScannerCertsResponse) {
 	select {
-	case <-ctx.Done():
-	case request := <-sendC:
-		log.Warnf("respondRequest read request with id %q", request.GetIssueLocalScannerCertsRequest().GetRequestId()) // FIXME
+	case <-f.ctx.Done():
+	case request := <-f.sendC:
 		interceptedRequestID := request.GetIssueLocalScannerCertsRequest().GetRequestId()
 		assert.NotEmpty(t, interceptedRequestID)
 		var response *central.IssueLocalScannerCertsResponse
@@ -139,11 +145,10 @@ func respondRequest(ctx context.Context, t *testing.T, requestID *atomic.Value,
 		} else {
 			response = &central.IssueLocalScannerCertsResponse{RequestId: interceptedRequestID}
 		}
-		requestID.Store(response.GetRequestId())
-		log.Warnf("respondRequest sending response %s", response) // FIXME
+		f.interceptedRequestID.Store(response.GetRequestId())
 		select {
-		case <-ctx.Done():
-		case receiveC <- response:
+		case <-f.ctx.Done():
+		case f.receiveC <- response:
 		}
 	}
 }
