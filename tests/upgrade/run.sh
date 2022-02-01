@@ -33,6 +33,7 @@ test_upgrade() {
     fi
 
     preamble
+    setup_deployment_env false false
     remove_existing_stackrox_resources
 
     info "Deploying central"

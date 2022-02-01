@@ -3786,8 +3786,6 @@ jobs:
           changed-path: '^migrator/.*$'
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-      - setup-dep-env:
-          docker-login: false
       - *setupRoxctl
 
       - setup-gcp
