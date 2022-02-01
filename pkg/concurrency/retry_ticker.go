@@ -29,6 +29,7 @@ type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error
 // running it again.
 func NewRetryTicker(doFunc tickFunc, timeout time.Duration, backoff wait.Backoff) RetryTicker {
 	return &retryTickerImpl{
+		scheduler:      time.AfterFunc,
 		doFunc:         doFunc,
 		timeout:        timeout,
 		initialBackoff: backoff,
@@ -37,6 +38,7 @@ func NewRetryTicker(doFunc tickFunc, timeout time.Duration, backoff wait.Backoff
 }
 
 type retryTickerImpl struct {
+	scheduler      func(d time.Duration, f func()) *time.Timer
 	doFunc         tickFunc
 	timeout        time.Duration
 	initialBackoff wait.Backoff
@@ -57,7 +59,7 @@ func (t *retryTickerImpl) Stop() {
 }
 
 func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
-	t.setTickTimer(time.AfterFunc(timeToTick, func() {
+	t.setTickTimer(t.scheduler(timeToTick, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
 		defer cancel()
 

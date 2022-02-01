@@ -8,29 +8,44 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
-	pollingInterval = 10 * time.Millisecond
-	capTime         = 500 * time.Millisecond
-	longTime        = 5 * time.Second
-	backoff         = wait.Backoff{
+	testTimeout = 1 * time.Second
+	longTime    = 5 * time.Second
+	capTime     = 100 * time.Millisecond
+	backoff     = wait.Backoff{
 		Duration: capTime,
 		Factor:   1,
 		Jitter:   0,
-		Steps:    1,
+		Steps:    2,
 		Cap:      capTime,
 	}
 )
 
-type testTickFun struct {
+type testTickFunc struct {
 	mock.Mock
 }
 
-func (f *testTickFun) doTick(ctx context.Context) (timeToNextTick time.Duration, err error) {
+func (f *testTickFunc) doTick(ctx context.Context) (timeToNextTick time.Duration, err error) {
 	args := f.Called(ctx)
 	return args.Get(0).(time.Duration), args.Error(1)
+}
+
+func (f *testTickFunc) Step() time.Duration {
+	f.Called()
+	return 0
+}
+
+type afterFuncSpy struct {
+	mock.Mock
+}
+
+func (f *afterFuncSpy) afterFunc(d time.Duration, fn func()) *time.Timer {
+	f.Called(d)
+	return time.AfterFunc(d, fn)
 }
 
 func TestRetryTicker(t *testing.T) {
@@ -38,37 +53,41 @@ func TestRetryTicker(t *testing.T) {
 		timeToSecondTick time.Duration
 		firstErr         error
 	}{
-		"success":                 {timeToSecondTick: 2 * capTime, firstErr: nil},
+		"success":                 {timeToSecondTick: capTime, firstErr: nil},
 		"with error should retry": {timeToSecondTick: 0, firstErr: errors.New("forced")},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
-			var done1, done2 Flag
-			m := &testTickFun{}
-			var ticker RetryTicker
+			doneErrSig := NewErrorSignal()
+			mockFunc := &testTickFunc{}
+			schedulerSpy := &afterFuncSpy{}
 
-			m.On("doTick", mock.Anything).Return(tc.timeToSecondTick, tc.firstErr).Run(func(args mock.Arguments) {
-				done1.Set(true)
+			mockFunc.On("doTick", mock.Anything).Return(tc.timeToSecondTick, tc.firstErr).Once()
+			mockFunc.On("doTick", mock.Anything).Return(longTime, nil).Run(func(args mock.Arguments) {
+				doneErrSig.Signal()
 			}).Once()
-			m.On("doTick", mock.Anything).Return(longTime, nil).Run(func(args mock.Arguments) {
-				done2.Set(true)
-			}).Once()
-			ticker = NewRetryTicker(m.doTick, longTime, backoff)
+			mockFunc.On("doTick", mock.Anything).Return(longTime, nil).Maybe()
+
+			schedulerSpy.On("afterFunc", time.Duration(0), mock.Anything).Return(nil).Once()
+			if tc.firstErr == nil {
+				schedulerSpy.On("afterFunc", tc.timeToSecondTick, mock.Anything).Return(nil).Once()
+			} else {
+				schedulerSpy.On("afterFunc", backoff.Duration, mock.Anything).Return(nil).Once()
+			}
+			schedulerSpy.On("afterFunc", longTime, mock.Anything).Return(nil).Maybe()
+
+			newTicker := NewRetryTicker(mockFunc.doTick, longTime, backoff)
+			require.IsType(t, &retryTickerImpl{}, newTicker)
+			ticker := newTicker.(*retryTickerImpl)
+			ticker.scheduler = schedulerSpy.afterFunc
 
 			ticker.Start()
 			defer ticker.Stop()
 
-			// this should happen immediately, we add capTime to give some margin to make test more stable.
-			assert.True(t, PollWithTimeout(done1.Get, pollingInterval, capTime))
-
-			var expectedTimeToSecondAttempt time.Duration
-			if tc.firstErr == nil {
-				expectedTimeToSecondAttempt = tc.timeToSecondTick
-			} else {
-				expectedTimeToSecondAttempt = backoff.Cap
-			}
-			// we add capTime to give some margin to make test more stable.
-			assert.True(t, PollWithTimeout(done2.Get, pollingInterval, expectedTimeToSecondAttempt+capTime))
+			_, ok := doneErrSig.WaitWithTimeout(testTimeout)
+			assert.True(t, ok)
+			mockFunc.AssertExpectations(t)
+			schedulerSpy.AssertExpectations(t)
 		})
 	}
 }
