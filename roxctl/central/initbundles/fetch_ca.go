@@ -2,6 +2,7 @@ package initbundles
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -9,14 +10,14 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
-func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) error {
+func fetchCAConfig(outputFile string) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) er
 		return errors.Wrap(err, "writing init bundle")
 	}
 	if bundleOutput != os.Stdout {
-		cliEnvironment.Logger().InfofLn("The CA configuration has been written to file %q.", outputFile)
+		fmt.Fprintf(os.Stderr, "The CA configuration has been written to file %q.\n", outputFile)
 		if err := bundleOutput.Close(); err != nil {
 			return errors.Wrap(err, "closing output file for CA config")
 		}
@@ -57,7 +58,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) er
 	return nil
 }
 
-func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
+func fetchCACommand() *cobra.Command {
 	var outputFile string
 
 	c := &cobra.Command{
@@ -69,7 +70,7 @@ func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
 			} else if outputFile == "-" {
 				outputFile = ""
 			}
-			return fetchCAConfig(cliEnvironment, outputFile)
+			return fetchCAConfig(outputFile)
 		},
 	}
 	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the CA config")

@@ -1,9 +1,8 @@
 package list
 
 import (
-	"context"
+	"fmt"
 	"os"
-	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/golang/protobuf/jsonpb"
@@ -13,50 +12,30 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
-type centralUserPkiListCommand struct {
-	// Properties that are bound to cobra flags.
+var (
 	json bool
-
-	// Properties that are injected or constructed.
-	env     environment.Environment
-	timeout time.Duration
-}
+)
 
 // Command adds the userpki list command
-func Command(cliEnvironment environment.Environment) *cobra.Command {
-	centralUserPkiListCmd := &centralUserPkiListCommand{env: cliEnvironment}
+func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use: "list",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := centralUserPkiListCmd.construct(cmd); err != nil {
-				return err
-			}
-			return centralUserPkiListCmd.listProviders()
-		},
+		Use:  "list",
+		RunE: listProviders,
 	}
-	c.Flags().BoolVarP(&centralUserPkiListCmd.json, "json", "j", false, "Enable JSON output")
-	flags.AddTimeout(c)
+	c.Flags().BoolVarP(&json, "json", "j", false, "Enable JSON output")
 	return c
 }
 
-func (cmd *centralUserPkiListCommand) construct(cbr *cobra.Command) error {
-	cmd.timeout = flags.Timeout(cbr)
-	return nil
-}
-
-func (cmd *centralUserPkiListCommand) listProviders() error {
-	conn, err := cmd.env.GRPCConnection()
+func listProviders(cmd *cobra.Command, args []string) error {
+	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
 	}
 	defer utils.IgnoreError(conn.Close)
-
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
-	defer cancel()
+	ctx := pkgCommon.Context()
 
 	authClient := v1.NewAuthProviderServiceClient(conn)
 	groupClient := v1.NewGroupServiceClient(conn)
@@ -64,16 +43,16 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 	if err != nil {
 		return err
 	}
-	if cmd.json {
+	if json {
 		m := jsonpb.Marshaler{Indent: "  "}
 		err = m.Marshal(os.Stdout, providers)
 		if err == nil {
-			cmd.env.Logger().PrintfLn("")
+			fmt.Println()
 		}
 		return err
 	}
 	if len(providers.GetAuthProviders()) == 0 {
-		cmd.env.Logger().InfofLn("No user certificate providers configured")
+		fmt.Println("No user certificate providers configured")
 		return nil
 	}
 	groups, err := groupClient.GetGroups(ctx, &v1.GetGroupsRequest{})
@@ -89,31 +68,31 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 	}
 
 	for _, p := range providers.GetAuthProviders() {
-		PrintProviderDetails(cmd.env.Logger(), p, defaultRoles)
+		PrintProviderDetails(p, defaultRoles)
 	}
 	return nil
 }
 
 // PrintProviderDetails print the details of a provider.
-func PrintProviderDetails(logger environment.Logger, p *storage.AuthProvider, defaultRoles map[string]string) {
-	logger.PrintfLn("Provider: %s", p.GetName())
-	logger.PrintfLn("  ID: %s", p.GetId())
-	logger.PrintfLn("  Enabled: %t", p.GetEnabled())
+func PrintProviderDetails(p *storage.AuthProvider, defaultRoles map[string]string) {
+	fmt.Printf("Provider: %s\n", p.GetName())
+	fmt.Printf("  ID: %s\n", p.GetId())
+	fmt.Printf("  Enabled: %t\n", p.GetEnabled())
 	if len(defaultRoles) > 0 {
-		logger.PrintfLn("  Minimum access role: %q", defaultRoles[p.GetId()])
+		fmt.Printf("  Minimum access role: %q\n", defaultRoles[p.GetId()])
 	}
 	pem := p.GetConfig()[userpki.ConfigKeys]
 	certs, err := helpers.ParseCertificatesPEM([]byte(pem))
 	if err != nil {
-		logger.PrintfLn("  Certificates: %v", err)
+		fmt.Printf("  Certificates: %v\n", err)
 		return
 	}
 	if len(certs) == 0 {
-		logger.PrintfLn("  Certificates: none")
+		fmt.Print("  Certificates: none\n")
 	}
 	for i, cert := range certs {
-		logger.PrintfLn("  Certificate %d:", i+1)
-		logger.PrintfLn("    DN: %s", cert.Subject.String())
-		logger.PrintfLn("    Expiration: %s", cert.NotAfter)
+		fmt.Printf("  Certificate %d:\n", i+1)
+		fmt.Printf("    DN: %s\n", cert.Subject.String())
+		fmt.Printf("    Expiration: %s\n", cert.NotAfter)
 	}
 }

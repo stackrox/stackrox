@@ -3,7 +3,6 @@ package delete
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -14,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/central/userpki/list"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -23,46 +22,15 @@ var (
 	errProviderNotFound = errors.New("provider doesn't exist")
 )
 
-type centralUserPkiDeleteCommand struct {
-	// Properties that are bound to cobra flags.
-	providerArg string
-
-	// Properties that are injected or constructed.
-	env     environment.Environment
-	timeout time.Duration
-}
-
 // Command adds the userpki delete command
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command() *cobra.Command {
 
 	c := &cobra.Command{
-		Use: "delete id|name",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errNoProviderArg
-			}
-			centralUserPkiDeleteCommand := makeCentralUserPkiDeleteCommand(cliEnvironment, cmd, args)
-			deleteProvider, err := centralUserPkiDeleteCommand.prepareDeleteProvider()
-			if err != nil {
-				return err
-			}
-			if err := flags.CheckConfirmation(cmd); err != nil {
-				return err
-			}
-			return deleteProvider()
-		},
+		Use:  "delete id|name",
+		RunE: deleteProvider,
 	}
 	flags.AddForce(c)
-	flags.AddTimeout(c)
 	return c
-}
-
-func makeCentralUserPkiDeleteCommand(cliEnvironment environment.Environment, cmd *cobra.Command, args []string) *centralUserPkiDeleteCommand {
-	return &centralUserPkiDeleteCommand{
-		providerArg: args[0],
-		env:         cliEnvironment,
-		timeout:     flags.Timeout(cmd),
-	}
 }
 
 func getAuthProviderByID(ctx context.Context, svc v1.AuthProviderServiceClient, id string) (*storage.AuthProvider, error) {
@@ -84,29 +52,32 @@ func getAuthProviderByName(ctx context.Context, svc v1.AuthProviderServiceClient
 	return all[0], nil
 }
 
-func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, error) {
+func deleteProvider(c *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return errNoProviderArg
+	}
+	providerArg := args[0]
 
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := common.GetGRPCConnection()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer utils.IgnoreError(conn.Close)
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
-	defer cancel()
+	ctx := pkgCommon.Context()
 	authService := v1.NewAuthProviderServiceClient(conn)
 	groupService := v1.NewGroupServiceClient(conn)
 
 	var prov *storage.AuthProvider
 
-	_, err = uuid.FromString(cmd.providerArg)
+	_, err = uuid.FromString(providerArg)
 	if err == nil {
-		prov, err = getAuthProviderByID(ctx, authService, cmd.providerArg)
+		prov, err = getAuthProviderByID(ctx, authService, providerArg)
 	} else {
-		prov, err = getAuthProviderByName(ctx, authService, cmd.providerArg)
+		prov, err = getAuthProviderByName(ctx, authService, providerArg)
 	}
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 	group, err := groupService.GetGroup(ctx, &storage.GroupProperties{AuthProviderId: prov.GetId()})
 
@@ -114,40 +85,45 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 	if err == nil && group != nil {
 		defaultRoles[prov.GetId()] = group.GetRoleName()
 	}
-	list.PrintProviderDetails(cmd.env.Logger(), prov, defaultRoles)
+	list.PrintProviderDetails(prov, defaultRoles)
+	fmt.Println("Deleting provider and rolemappings.")
 
-	return func() error {
-		cmd.env.Logger().PrintfLn("Deleting provider and rolemappings.")
+	err = flags.CheckConfirmation(c)
+	if err != nil {
+		return err
+	}
 
-		_, err := authService.DeleteAuthProvider(ctx, &v1.ResourceByID{
-			Id: prov.GetId(),
-		})
+	_, err = authService.DeleteAuthProvider(ctx, &v1.ResourceByID{
+		Id: prov.GetId(),
+	})
 
-		if err != nil {
-			return err
+	if err != nil {
+		return err
+	}
+
+	groups, err := groupService.GetGroups(ctx, &v1.GetGroupsRequest{})
+	if err != nil {
+		return err
+	}
+	var relevantGroups []*storage.Group
+	for _, v := range groups.GetGroups() {
+		if v.GetProps().GetAuthProviderId() == providerArg {
+			relevantGroups = append(relevantGroups, v)
 		}
-
-		groups, err := groupService.GetGroups(ctx, &v1.GetGroupsRequest{})
-		if err != nil {
-			return err
-		}
-		var relevantGroups []*storage.Group
-		for _, v := range groups.GetGroups() {
-			if v.GetProps().GetAuthProviderId() == cmd.providerArg {
-				relevantGroups = append(relevantGroups, v)
-			}
-		}
-		if len(relevantGroups) != 0 {
-			_, err := groupService.BatchUpdate(ctx, &v1.GroupBatchUpdateRequest{
-				PreviousGroups: relevantGroups,
-				RequiredGroups: nil,
-			})
-
-			if err != nil {
-				return err
-			}
-		}
-		cmd.env.Logger().PrintfLn("Successfully deleted.")
+	}
+	if len(relevantGroups) == 0 {
+		fmt.Println("Successfully deleted.")
 		return nil
-	}, nil
+	}
+	_, err = groupService.BatchUpdate(ctx, &v1.GroupBatchUpdateRequest{
+		PreviousGroups: relevantGroups,
+		RequiredGroups: nil,
+	})
+
+	if err != nil {
+		return err
+	}
+	fmt.Println("Successfully deleted.")
+
+	return err
 }

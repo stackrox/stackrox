@@ -2,11 +2,10 @@ package create
 
 import (
 	"bytes"
-	"context"
 	"crypto/x509"
+	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
@@ -16,72 +15,45 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
-type centralUserPkiCreateCommand struct {
-	// Properties that are bound to cobra flags.
-	pemFiles []string
-	roleName string
-
-	// Properties that are injected or constructed.
-	env          environment.Environment
-	timeout      time.Duration
-	providerName string
-}
-
 var (
+	flagPEMFiles      []string
+	flagRoleName      string
 	errNoPEMFiles     = errors.New("no certificate files specified")
 	errNotCA          = errors.New("not a certificate authority")
 	errNoProviderName = errors.New("no provider name specified")
 )
 
 // Command adds the userpki create command
-func Command(cliEnvironment environment.Environment) *cobra.Command {
-	centralUserPkiCreateCmd := &centralUserPkiCreateCommand{env: cliEnvironment}
+func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use: "create name",
-		RunE: func(c *cobra.Command, args []string) error {
-			if err := centralUserPkiCreateCmd.validate(args); err != nil {
-				return err
-			}
-			if err := centralUserPkiCreateCmd.construct(c, args); err != nil {
-				return err
-			}
-			return centralUserPkiCreateCmd.createProvider()
-		},
+		Use:  "create name",
+		RunE: createProvider,
 	}
-	c.Flags().StringSliceVarP(&centralUserPkiCreateCmd.pemFiles, "cert", "c", nil, "Root CA certificate PEM files (can supply multiple)")
+	c.Flags().StringSliceVarP(&flagPEMFiles, "cert", "c", nil, "Root CA certificate PEM files (can supply multiple)")
 	utils.Must(c.MarkFlagRequired("cert"))
-	c.Flags().StringVarP(&centralUserPkiCreateCmd.roleName, "role", "r", "", "Minimum access role for users of this provider")
+	c.Flags().StringVarP(&flagRoleName, "role", "r", "", "Minimum access role for users of this provider")
 	utils.Must(c.MarkFlagRequired("role"))
 	return c
-}
-
-func (cmd *centralUserPkiCreateCommand) validate(args []string) error {
-	if len(cmd.pemFiles) == 0 {
-		return errNoPEMFiles
-	}
-	if len(args) != 1 {
-		return errNoProviderName
-	}
-	return nil
-}
-
-func (cmd *centralUserPkiCreateCommand) construct(cbr *cobra.Command, args []string) error {
-	cmd.providerName = args[0]
-	cmd.timeout = flags.Timeout(cbr)
-	return nil
 }
 
 func isSelfSigned(cert *x509.Certificate) bool {
 	return bytes.Equal(cert.RawSubject, cert.RawIssuer)
 }
 
-func (cmd *centralUserPkiCreateCommand) createProvider() error {
+func createProvider(c *cobra.Command, args []string) error {
+	if len(flagPEMFiles) == 0 {
+		return errNoPEMFiles
+	}
+	if len(args) != 1 {
+		return errNoProviderName
+	}
+	providerName := args[0]
+
 	var pems strings.Builder
-	for _, fn := range cmd.pemFiles {
+	for _, fn := range flagPEMFiles {
 		b, err := os.ReadFile(fn)
 		if err != nil {
 			return errors.Wrap(err, fn)
@@ -98,26 +70,25 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 		utils.Must(pems.WriteByte('\n'))
 	}
 
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
 	}
 	defer utils.IgnoreError(conn.Close)
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
-	defer cancel()
+	ctx := pkgCommon.Context()
 
 	authService := v1.NewAuthProviderServiceClient(conn)
 	groupService := v1.NewGroupServiceClient(conn)
 	roleService := v1.NewRoleServiceClient(conn)
-	_, err = roleService.GetRole(ctx, &v1.ResourceByID{Id: cmd.roleName})
+	_, err = roleService.GetRole(ctx, &v1.ResourceByID{Id: flagRoleName})
 	if err != nil {
-		return errors.Wrap(err, cmd.roleName)
+		return errors.Wrap(err, flagRoleName)
 	}
 
 	req := &v1.PostAuthProviderRequest{
 		Provider: &storage.AuthProvider{
 			Type:    userpki.TypeName,
-			Name:    cmd.providerName,
+			Name:    providerName,
 			Enabled: true,
 			Config: map[string]string{
 				userpki.ConfigKeys: pems.String(),
@@ -133,13 +104,13 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 		Props: &storage.GroupProperties{
 			AuthProviderId: provider.GetId(),
 		},
-		RoleName: cmd.roleName,
+		RoleName: flagRoleName,
 	})
 
 	if err != nil {
 		return err
 	}
 
-	cmd.env.Logger().PrintfLn("Provider created with ID %s", provider.GetId())
+	fmt.Printf("Provider created with ID %s\n", provider.GetId())
 	return nil
 }
