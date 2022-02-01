@@ -134,6 +134,7 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	return &v1.Empty{}, nil
 }
 
+// Deprecated: Use GetClusterDefaults instead.
 func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
 	anyAvailable, err := s.probeSources.AnyAvailable(ctx)
 	if err != nil {

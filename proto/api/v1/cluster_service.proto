@@ -79,6 +79,7 @@ service ClustersService {
         };
     }
 
+    // GetKernelSupportAvailable is deprecated in favor of GetClusterDefaults.
     rpc GetKernelSupportAvailable(Empty) returns (KernelSupportAvailableResponse) {
         option (google.api.http) = {
             get: "/v1/clusters-env/kernel-support-available"
