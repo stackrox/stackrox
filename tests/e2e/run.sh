@@ -41,6 +41,7 @@ test_e2e() {
     prepare_for_endpoints_test
 
     run_roxctl_tests
+    run_roxctl_bats_tests "roxctl-test-output"
 
     info "E2E API tests"
     make -C tests
