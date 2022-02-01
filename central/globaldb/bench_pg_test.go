@@ -30,7 +30,7 @@ type filter struct {
 }
 
 func BenchmarkTestPG(b *testing.B) {
-	source := "host=localhost port=5432 database=postgres user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
+	source := "host=localhost port=5431 database=postgres user=postgres password=Pass2020! sslmode=disable statement_timeout=6000000 pool_min_conns=90 pool_max_conns=90"
 	pgInitialize(source)
 	conn, err := pgDB.Acquire(context.Background())
 	require.NoError(b, err)
@@ -45,7 +45,7 @@ func BenchmarkTestPG(b *testing.B) {
 		}
 	})
 
-	for numberOfCids := 0; numberOfCids < numberOfIDs; numberOfCids = (numberOfCids + 1) * 2 {
+	for numberOfCids := 1022; numberOfCids < numberOfIDs; numberOfCids = (numberOfCids + 1) * 2 {
 		for numberOfNids := 0; numberOfNids < numberOfIDs; numberOfNids = (numberOfNids + 1) * 2 {
 			// prerun -- generate query and get expected count
 			query, err := generateQuery(cids[:numberOfCids], nids[:numberOfNids])
@@ -65,7 +65,7 @@ func prepareIDs() ([]int, []int) {
 	nids := make([]int, numberOfIDs)
 	for i := 0; i < numberOfIDs; i++ {
 		cids[i] = i
-		nids[i] = i
+		nids[i] = numberOfIDs + i
 	}
 
 	rand.Shuffle(len(cids), func(i, j int) {
