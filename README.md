@@ -14,7 +14,7 @@ Apollo. You may find references to these previous names in code or
 documentation.
 
 ## Community
-You can reach out to us through [Slack](https://cloud-native.slack.com/archives/C01TDE3GK0E) (#stackrox).  
+You can reach out to us through [Slack](https://cloud-native.slack.com/archives/C01TDE3GK0E) (#stackrox).
 For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackrox.io/).
 
 ## Table of contents
@@ -335,7 +335,7 @@ Now Central has been deployed. Use the UI to deploy Sensor.
 
 <details><summary>OpenShift</summary>
 
-Note: If using a host mount, you need to allow the container to access it by using  
+Note: If using a host mount, you need to allow the container to access it by using
 `sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
 
 Take the image-setup.sh script from this repo and run it to do the pull/push to
