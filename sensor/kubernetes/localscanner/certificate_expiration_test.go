@@ -9,11 +9,11 @@ import (
 )
 
 func TestGetSecretRenewalTimeFromCertificate(t *testing.T) {
-	now := time.Now()
+	beforeTime := time.Unix(0, 0)
 	afterOffset := 2 * 24 * time.Hour
 	scannerCert := &x509.Certificate{
-		NotBefore: now,
-		NotAfter:  now.Add(afterOffset),
+		NotBefore: beforeTime,
+		NotAfter:  beforeTime.Add(afterOffset),
 	}
 	certRenewalTime := getSecretRenewalTimeFromCertificate(scannerCert)
 	certDuration := time.Until(certRenewalTime)
