@@ -1,7 +1,14 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { FormikProvider, useFormik } from 'formik';
-import { Wizard, Breadcrumb, Title, BreadcrumbItem, Divider } from '@patternfly/react-core';
+import {
+    Wizard,
+    Breadcrumb,
+    Title,
+    BreadcrumbItem,
+    Divider,
+    PageSection,
+} from '@patternfly/react-core';
 
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
@@ -99,74 +106,78 @@ function PolicyWizard({
 
     return (
         <>
-            <Breadcrumb className="pf-u-mb-md">
-                <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
-                <BreadcrumbItem isActive>{policy?.name || 'Create policy'}</BreadcrumbItem>
-            </Breadcrumb>
-            <Title headingLevel="h1">{policy?.name || 'Create policy'}</Title>
-            <div className="pf-u-mb-md pf-u-mt-sm">
-                Design custom security policies for your environment
-            </div>
-            <Divider component="div" />
-            <FormikProvider value={formik}>
-                <Wizard
-                    navAriaLabel={`${pageAction} policy steps`}
-                    mainAriaLabel={`${pageAction} policy content`}
-                    onClose={closeWizard}
-                    onSave={submitForm}
-                    steps={[
-                        {
-                            id: 1,
-                            name: 'Policy details',
-                            component: <PolicyDetailsForm />,
-                            canJumpTo: stepIdReached >= 1,
-                            enableNext: isValidOnClient,
-                        },
-                        {
-                            id: 2,
-                            name: 'Policy behavior',
-                            component: <PolicyBehaviorForm />,
-                            canJumpTo: stepIdReached >= 2,
-                            enableNext: isValidOnClient,
-                        },
-                        {
-                            id: 3,
-                            name: 'Policy criteria',
-                            component: <PolicyCriteriaForm />,
-                            canJumpTo: stepIdReached >= 3,
-                            enableNext: isValidOnClient,
-                        },
-                        {
-                            id: 4,
-                            name: 'Policy scope',
-                            component: <PolicyScopeForm clusters={clusters} />,
-                            canJumpTo: stepIdReached >= 4,
-                            enableNext: isValidOnClient,
-                        },
-                        {
-                            id: 5,
-                            name: 'Review policy',
-                            component: (
-                                <ReviewPolicyForm
-                                    clusters={clusters}
-                                    isBadRequest={isBadRequest}
-                                    notifiers={notifiers}
-                                    policyErrorMessage={policyErrorMessage}
-                                    setIsBadRequest={setIsBadRequest}
-                                    setIsValidOnServer={setIsValidOnServer}
-                                    setPolicyErrorMessage={setPolicyErrorMessage}
-                                />
-                            ),
-                            nextButtonText: 'Save',
-                            canJumpTo: stepIdReached >= 5,
-                            enableNext: dirty && isValidOnServer && !isSubmitting,
-                        },
-                    ]}
-                    onBack={onBack}
-                    onGoToStep={onGoToStep}
-                    onNext={onNext}
-                />
-            </FormikProvider>
+            <PageSection variant="light" isFilled id="policy-page" className="pf-u-pb-0">
+                <Breadcrumb className="pf-u-mb-md">
+                    <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{policy?.name || 'Create policy'}</BreadcrumbItem>
+                </Breadcrumb>
+                <Title headingLevel="h1">{policy?.name || 'Create policy'}</Title>
+                <div className="pf-u-mb-md pf-u-mt-sm">
+                    Design custom security policies for your environment
+                </div>
+                <Divider component="div" />
+            </PageSection>
+            <PageSection variant="light" isFilled hasOverflowScroll className="pf-u-py-0">
+                <FormikProvider value={formik}>
+                    <Wizard
+                        navAriaLabel={`${pageAction} policy steps`}
+                        mainAriaLabel={`${pageAction} policy content`}
+                        onClose={closeWizard}
+                        onSave={submitForm}
+                        steps={[
+                            {
+                                id: 1,
+                                name: 'Policy details',
+                                component: <PolicyDetailsForm />,
+                                canJumpTo: stepIdReached >= 1,
+                                enableNext: isValidOnClient,
+                            },
+                            {
+                                id: 2,
+                                name: 'Policy behavior',
+                                component: <PolicyBehaviorForm />,
+                                canJumpTo: stepIdReached >= 2,
+                                enableNext: isValidOnClient,
+                            },
+                            {
+                                id: 3,
+                                name: 'Policy criteria',
+                                component: <PolicyCriteriaForm />,
+                                canJumpTo: stepIdReached >= 3,
+                                enableNext: isValidOnClient,
+                            },
+                            {
+                                id: 4,
+                                name: 'Policy scope',
+                                component: <PolicyScopeForm clusters={clusters} />,
+                                canJumpTo: stepIdReached >= 4,
+                                enableNext: isValidOnClient,
+                            },
+                            {
+                                id: 5,
+                                name: 'Review policy',
+                                component: (
+                                    <ReviewPolicyForm
+                                        clusters={clusters}
+                                        isBadRequest={isBadRequest}
+                                        notifiers={notifiers}
+                                        policyErrorMessage={policyErrorMessage}
+                                        setIsBadRequest={setIsBadRequest}
+                                        setIsValidOnServer={setIsValidOnServer}
+                                        setPolicyErrorMessage={setPolicyErrorMessage}
+                                    />
+                                ),
+                                nextButtonText: 'Save',
+                                canJumpTo: stepIdReached >= 5,
+                                enableNext: dirty && isValidOnServer && !isSubmitting,
+                            },
+                        ]}
+                        onBack={onBack}
+                        onGoToStep={onGoToStep}
+                        onNext={onNext}
+                    />
+                </FormikProvider>
+            </PageSection>
         </>
     );
 }

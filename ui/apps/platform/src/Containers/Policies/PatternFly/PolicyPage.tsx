@@ -144,7 +144,7 @@ function PolicyPage({
     }
 
     return (
-        <PageSection variant="light" isFilled id="policy-page">
+        <>
             <PageTitle title="Policies - Policy" />
             {isLoading ? (
                 <Bullseye>
@@ -169,7 +169,7 @@ function PolicyPage({
                     />
                 ))
             )}
-        </PageSection>
+        </>
     );
 }
 
