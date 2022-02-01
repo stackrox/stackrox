@@ -8,7 +8,7 @@ recommendations to proactively improve security by hardening the environment.
 StackRox integrates with every stage of container lifecycle: build, deploy and
 runtime.
 
-Note: the StackRox Kubernetes Security platform is built on the foundation of 
+Note: the StackRox Kubernetes Security platform is built on the foundation of
 the product formerly known as Prevent, which itself was called Mitigate and
 Apollo. You may find references to these previous names in code or
 documentation.
