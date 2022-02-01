@@ -31,7 +31,7 @@ describe('useURLSort', () => {
         );
 
         expect(result.current.sortOption.field).toEqual('Name');
-        expect(result.current.sortOption.direction).toEqual('desc');
+        expect(result.current.sortOption.reversed).toEqual(true);
     });
 
     it('should keep sorting to the "Status" field and change direction to "asc"', () => {
@@ -49,7 +49,7 @@ describe('useURLSort', () => {
         });
 
         expect(result.current.sortOption.field).toEqual('Name');
-        expect(result.current.sortOption.direction).toEqual('asc');
+        expect(result.current.sortOption.reversed).toEqual(false);
     });
 
     it('should change sorting to the "Status" field and direction to "desc"', () => {
@@ -67,6 +67,6 @@ describe('useURLSort', () => {
         });
 
         expect(result.current.sortOption.field).toEqual('Status');
-        expect(result.current.sortOption.direction).toEqual('desc');
+        expect(result.current.sortOption.reversed).toEqual(true);
     });
 });
