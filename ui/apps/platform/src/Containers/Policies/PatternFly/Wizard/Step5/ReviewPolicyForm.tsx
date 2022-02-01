@@ -8,6 +8,7 @@ import { Cluster } from 'types/cluster.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import { getServerPolicy } from '../../policies.utils';
 import PolicyDetailContent from '../../Detail/PolicyDetailContent';
 import PreviewViolations from './PreviewViolations';
 
@@ -50,7 +51,7 @@ function ReviewPolicyForm({
         setCheckDryRunErrorMessage('');
         setAlertsFromDryRun([]);
 
-        startDryRun(values)
+        startDryRun(getServerPolicy(values))
             .then(({ data: { jobId } }) => {
                 /*
                  * TODO after policiesSagas.js has been deleted:
@@ -137,7 +138,7 @@ function ReviewPolicyForm({
                 <PolicyDetailContent
                     clusters={clusters}
                     notifiers={notifiers}
-                    policy={values}
+                    policy={getServerPolicy(values)}
                     isReview
                 />
             </Flex>

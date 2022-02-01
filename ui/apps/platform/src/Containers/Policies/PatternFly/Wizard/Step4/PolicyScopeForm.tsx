@@ -34,6 +34,8 @@ function PolicyScopeForm({ clusters }) {
 
     const hasAuditLogEventSource = values.eventSource === 'AUDIT_LOG_EVENT';
     const hasBuildLifecycle = values.lifecycleStages.includes('BUILD');
+    const hasDeployOrRuntimeLifecycle =
+        values.lifecycleStages.includes('DEPLOY') || values.lifecycleStages.includes('RUNTIME');
 
     function addNewInclusionScope() {
         if (scope.length < MAX_INCLUSION_SCOPES) {
@@ -143,7 +145,11 @@ function PolicyScopeForm({ clusters }) {
                         </div>
                     </FlexItem>
                     <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
-                        <Button variant="secondary" onClick={addNewExclusionDeploymentScope}>
+                        <Button
+                            variant="secondary"
+                            isDisabled={!hasDeployOrRuntimeLifecycle}
+                            onClick={addNewExclusionDeploymentScope}
+                        >
                             Add exclusion scope
                         </Button>
                     </FlexItem>
