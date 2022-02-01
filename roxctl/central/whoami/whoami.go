@@ -2,41 +2,53 @@ package whoami
 
 import (
 	"context"
-	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
+type centralWhoAmICommand struct {
+	// Properties that are injected or constructed.
+	env     environment.Environment
+	timeout time.Duration
+}
+
 // Command defines the central command tree
-func Command() *cobra.Command {
-	c := &cobra.Command{
+func Command(cliEnvironment environment.Environment) *cobra.Command {
+	cbr := &cobra.Command{
 		Use: "whoami",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			timeout := flags.Timeout(c)
-			return whoami(timeout)
+			return makeCentralWhoAmICommand(cliEnvironment, c).whoami()
 		}),
 	}
 
-	flags.AddTimeout(c)
-	return c
+	flags.AddTimeout(cbr)
+	return cbr
 }
 
-func whoami(timeout time.Duration) error {
-	conn, err := common.GetGRPCConnection()
+func makeCentralWhoAmICommand(cliEnvironment environment.Environment, cbr *cobra.Command) *centralWhoAmICommand {
+	return &centralWhoAmICommand{
+		env:     cliEnvironment,
+		timeout: flags.Timeout(cbr),
+	}
+}
+
+func (cmd *centralWhoAmICommand) whoami() error {
+	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
 		return err
 	}
 	defer utils.IgnoreError(conn.Close)
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 
 	auth, err := v1.NewAuthServiceClient(conn).GetAuthStatus(ctx, &v1.Empty{})
@@ -63,30 +75,31 @@ func whoami(timeout time.Duration) error {
 	sort.Strings(resources)
 
 	// Print user information.
-	fmt.Println("User:")
-	fmt.Printf("  %s\n", auth.GetUserId())
+	cmd.env.Logger().PrintfLn("User:")
+	cmd.env.Logger().PrintfLn("  %s", auth.GetUserId())
 
 	// Print resource access information
-	printRoles(roles.GetRoles())
-	fmt.Println("Access:")
+	cmd.printRoles(roles.GetRoles())
+	cmd.env.Logger().PrintfLn("Access:")
 	for _, resource := range resources {
 		access := resourceToAccess[resource]
-		fmt.Printf("  %s %s\n", accessString(access), resource)
+		cmd.env.Logger().PrintfLn("  %s %s", accessString(access), resource)
 	}
 
 	return nil
 }
 
-func printRoles(roles []*storage.Role) {
-	fmt.Println("Roles:")
-	fmt.Print(" ")
+func (cmd *centralWhoAmICommand) printRoles(roles []*storage.Role) {
+	cmd.env.Logger().PrintfLn("Roles:")
+	sb := strings.Builder{}
+	sb.WriteRune(' ')
 	for i, r := range roles {
-		fmt.Print(r.GetName())
+		sb.WriteString(r.GetName())
 		if i != len(roles)-1 {
-			fmt.Print(", ")
+			sb.WriteString(", ")
 		}
 	}
-	fmt.Print("\n")
+	cmd.env.Logger().PrintfLn(sb.String())
 }
 
 func accessString(access storage.Access) string {

@@ -11,7 +11,7 @@ var (
 	cfg renderer.Config
 )
 
-func validateConfig(c renderer.Config) error {
+func validateConfig(c *renderer.Config) error {
 	if err := validateHostPath(c.HostPath); err != nil {
 		return err
 	}

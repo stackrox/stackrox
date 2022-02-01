@@ -71,9 +71,9 @@ func Command() *cobra.Command {
 	})
 
 	c.AddCommand(
-		central.Command(),
+		central.Command(cliEnvironment),
 		cluster.Command(cliEnvironment),
-		collector.Command(),
+		collector.Command(cliEnvironment),
 		deployment.Command(cliEnvironment),
 		logconvert.Command(),
 		image.Command(cliEnvironment),
