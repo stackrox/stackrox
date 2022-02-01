@@ -68,7 +68,7 @@ function PolicyDetailContent({
                     </>
                 )}
             </Formik>
-            {(scope.length > 0 || exclusions.length > 0) && (
+            {(scope?.length > 0 || exclusions?.length > 0) && (
                 <>
                     <Title headingLevel="h2" className="pf-u-mb-md pf-u-pt-lg">
                         Policy scope
