@@ -42,18 +42,21 @@ const validationSchemaStep2: yup.ObjectSchema<PolicyStep2> = yup.object().shape(
     // Schema omits enforcementActions, because code (not user) changes the value.
 });
 
-const validationSchemaStep3 = yup.object().shape({
+type PolicyStep3 = Pick<Policy, 'policySections'>;
+
+const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape({
     policySections: yup
         .array()
         .of(
             yup.object().shape({
+                sectionName: yup.string().trim().required(),
                 policyGroups: yup
                     .array()
                     .of(
                         yup.object().shape({
                             fieldName: yup.string().trim().required(),
-                            booleanOperator: yup.string().trim().oneOf(['OR', 'AND']),
-                            negate: yup.boolean(),
+                            booleanOperator: yup.string().oneOf(['OR', 'AND']).required(),
+                            negate: yup.boolean().required(),
                             values: yup
                                 .array()
                                 .of(
@@ -61,13 +64,16 @@ const validationSchemaStep3 = yup.object().shape({
                                         value: yup.string().trim().required(),
                                     })
                                 )
-                                .min(1),
+                                .min(1)
+                                .required(),
                         })
                     )
-                    .min(1),
+                    .min(1)
+                    .required(),
             })
         )
-        .min(1),
+        .min(1)
+        .required(),
 });
 
 const scopeSchema: yup.ObjectSchema<WizardScope> = yup.object().shape({
@@ -129,7 +135,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
     excludedImageNames: yup.array().of(yup.string().trim().required()).required(),
 });
 
-const validationSchemaDefault = yup.object().shape({});
+const validationSchemaStep5 = yup.object().shape({});
 
 export function getValidationSchema(stepId: number | string | undefined): yup.Schema {
     switch (stepId) {
@@ -142,6 +148,6 @@ export function getValidationSchema(stepId: number | string | undefined): yup.Sc
         case 4:
             return validationSchemaStep4;
         default:
-            return validationSchemaDefault;
+            return validationSchemaStep5;
     }
 }
