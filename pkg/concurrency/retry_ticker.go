@@ -49,6 +49,7 @@ type retryTickerImpl struct {
 
 // Start calls the tick function and schedules the next tick immediately.
 func (t *retryTickerImpl) Start() {
+	t.backoff = t.initialBackoff // reset backoff strategy
 	t.scheduleTick(0)
 }
 
@@ -65,7 +66,7 @@ func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 
 		nextTimeToTick, tickErr := t.doFunc(ctx)
 		if t.getTickTimer() == nil {
-			// timer was cancelled while tick function was running.
+			// ticker was stopped while tick function was running.
 			return
 		}
 		if tickErr != nil {
