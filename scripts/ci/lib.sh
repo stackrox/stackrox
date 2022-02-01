@@ -59,10 +59,18 @@ setup_deployment_env() {
 }
 
 install_built_roxctl_in_gopath() {
-    require_environment "TEST_HOST_OS"
     require_environment "GOPATH"
 
-    local roxctl="$SCRIPTS_ROOT/bin/$TEST_HOST_OS/roxctl"
+    local bin_os
+    if is_darwin; then
+        bin_os="darwin"
+    elif is_linux; then
+        bin_os="linux"
+    else
+        die "Only linux or darwin are supported for this test"
+    fi
+
+    local roxctl="$SCRIPTS_ROOT/bin/$bin_os/roxctl"
 
     require_executable "$roxctl" "roxctl should be built"
 
