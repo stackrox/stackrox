@@ -44,7 +44,7 @@ type retryTickerImpl struct {
 	initialBackoff wait.Backoff
 	backoff        wait.Backoff
 	timer          *time.Timer
-	mutex          sync.Mutex
+	mutex          sync.RWMutex
 }
 
 // Start calls the tick function and schedules the next tick immediately.
@@ -64,6 +64,10 @@ func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 		defer cancel()
 
 		nextTimeToTick, tickErr := t.doFunc(ctx)
+		if t.getTickTimer() == nil {
+			// timer was cancelled while tick function was running.
+			return
+		}
 		if tickErr != nil {
 			t.scheduleTick(t.backoff.Step())
 			return
@@ -80,4 +84,10 @@ func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
 		t.timer.Stop()
 	}
 	t.timer = timer
+}
+
+func (t *retryTickerImpl) getTickTimer() *time.Timer {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+	return t.timer
 }
