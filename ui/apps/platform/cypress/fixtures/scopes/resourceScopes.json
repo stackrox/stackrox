@@ -1,0 +1,26 @@
+{
+    "accessScopes": [
+        {
+            "id": "io.stackrox.authz.accessscope.denyall",
+            "name": "Deny All",
+            "description": "No access to scoped resources",
+            "rules": {
+                "includedClusters": [],
+                "includedNamespaces": [],
+                "clusterLabelSelectors": [],
+                "namespaceLabelSelectors": []
+            }
+        },
+        {
+            "id": "io.stackrox.authz.accessscope.b7c83aaa-afb9-4e8d-9870-a3fd477b8532",
+            "name": "UI test 2",
+            "description": "",
+            "rules": {
+                "includedClusters": ["security"],
+                "includedNamespaces": [],
+                "clusterLabelSelectors": [],
+                "namespaceLabelSelectors": []
+            }
+        }
+    ]
+}

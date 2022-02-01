@@ -34,7 +34,7 @@ export function createImageIntegration(
 export function fetchImageIntegrations(): Promise<ImageIntegrationBase[]> {
     return axios
         .get<{ integrations: ImageIntegrationBase[] }>(imageIntegrationsUrl)
-        .then((response) => response.data.integrations);
+        .then((response) => response?.data?.integrations ?? []);
 }
 
 /*

@@ -166,10 +166,12 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		CollectorSlimImageName: "rhacs-collector-slim-rhel8",
 		CollectorSlimImageTag:  v.CollectorVersion,
 
-		ScannerImageName:   "rhacs-scanner-rhel8",
-		ScannerImageTag:    v.ScannerVersion,
-		ScannerDBImageName: "rhacs-scanner-db-rhel8",
-		ScannerDBImageTag:  v.ScannerVersion,
+		ScannerImageName:       "rhacs-scanner-rhel8",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        v.ScannerVersion,
+		ScannerDBImageName:     "rhacs-scanner-db-rhel8",
+		ScannerDBSlimImageName: "scanner-db-slim",
+		ScannerDBImageTag:      v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://mirror.openshift.com/pub/rhacs/charts",

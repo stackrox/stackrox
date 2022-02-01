@@ -232,6 +232,46 @@ export function getClusterName(clusters: Cluster[], clusterId: string): string {
     return cluster?.name ?? clusterId;
 }
 
+/* PolicyWizard steps */
+
+export type WizardPolicyStep4 = {
+    scope: WizardScope[];
+    excludedDeploymentScopes: WizardExcludedDeployment[];
+    excludedImageNames: string[];
+};
+
+export type WizardExcludedDeployment = {
+    name?: string;
+    scope: WizardScope;
+};
+
+/*
+ * WizardScope whose label object whose properties have either empty string or undefined values
+ * corresponds to PolicyScope label value null.
+ */
+
+export type WizardScope = {
+    cluster?: string;
+    namespace?: string;
+    label: WizardScopeLabel | null;
+};
+
+export type WizardScopeLabel = {
+    key?: string;
+    value?: string;
+};
+
+export const initialScope: WizardScope = {
+    cluster: '',
+    namespace: '',
+    label: {},
+};
+
+export const initialExcludedDeployment: WizardExcludedDeployment = {
+    name: '',
+    scope: initialScope,
+};
+
 export function preFormatExclusionField(policy): Policy {
     const { exclusions } = policy;
     const clientPolicy: Policy = { ...policy };

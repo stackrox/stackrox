@@ -3,10 +3,10 @@ package debug
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
@@ -16,8 +16,8 @@ const (
 	dumpTimeout = 2 * time.Minute
 )
 
-// DumpCommand allows pulling logs, profiles, and metrics
-func DumpCommand() *cobra.Command {
+// dumpCommand allows pulling logs, profiles, and metrics
+func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var (
 		withLogs  bool
 		outputDir string
@@ -26,7 +26,7 @@ func DumpCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use: "dump",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			fmt.Fprint(os.Stderr, "Retrieving debug metrics. This may take a couple minutes...\n")
+			cliEnvironment.Logger().InfofLn("Retrieving debug metrics. This may take a couple of minutes...")
 			return retrieveDump(flags.Timeout(c), withLogs, outputDir)
 		}),
 	}

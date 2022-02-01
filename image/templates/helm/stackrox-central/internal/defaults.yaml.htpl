@@ -43,6 +43,7 @@ defaults:
     disable: false
     replicas: 3
     logLevel: INFO
+    mode: full
 
     autoscaling:
       disable: false

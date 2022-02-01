@@ -28,6 +28,7 @@ import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import PendingApprovalPopover from './PendingApprovalPopover';
+import CVESummaryLink from '../CVESummaryLink';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
@@ -196,14 +197,17 @@ function ObservedCVEsTable({
                                 />
                                 <Td dataLabel="CVE">
                                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                        <FlexItem>{row.cve}</FlexItem>
-                                        {row.vulnerabilityRequest?.id && (
-                                            <FlexItem>
-                                                <PendingApprovalPopover
-                                                    vulnRequestId={row.vulnerabilityRequest.id}
-                                                />
-                                            </FlexItem>
-                                        )}
+                                        <FlexItem>
+                                            <CVESummaryLink cve={row.cve} />
+                                        </FlexItem>
+                                        {row.vulnerabilityRequest?.id &&
+                                            !row.vulnerabilityRequest.expired && (
+                                                <FlexItem>
+                                                    <PendingApprovalPopover
+                                                        vulnRequestId={row.vulnerabilityRequest.id}
+                                                    />
+                                                </FlexItem>
+                                            )}
                                     </Flex>
                                 </Td>
                                 <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>

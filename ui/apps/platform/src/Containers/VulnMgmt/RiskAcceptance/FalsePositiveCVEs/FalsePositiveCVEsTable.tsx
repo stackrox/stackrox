@@ -23,6 +23,7 @@ import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import FalsePositiveCVEActionsColumn from './FalsePositiveCVEActionsColumns';
 import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
+import CVESummaryLink from '../CVESummaryLink';
 
 export type FalsePositiveCVEsTableProps = {
     rows: Vulnerability[];
@@ -151,7 +152,9 @@ function FalsePositiveCVEsTable({
                                         isSelected: selected[rowIndex],
                                     }}
                                 />
-                                <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="CVE">
+                                    <CVESummaryLink cve={row.cve} />
+                                </Td>
                                 <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />

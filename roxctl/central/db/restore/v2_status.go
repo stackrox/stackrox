@@ -2,7 +2,6 @@ package restore
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -11,49 +10,49 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/v2backuprestore"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func v2RestoreStatusCmd() *cobra.Command {
+func v2RestoreStatusCmd(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "status",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return showRestoreStatus(flags.Timeout(c))
+			return showRestoreStatus(cliEnvironment, flags.Timeout(c))
 		}),
 	}
 
 	return c
 }
 
-func printStatus(st *v1.DBRestoreProcessStatus) {
-	fmt.Println("ID:")
-	fmt.Println(" ", st.GetMetadata().GetId())
-	fmt.Println("State:")
-	fmt.Println(" ", st.GetState())
-	fmt.Println("Started at:")
-	fmt.Println(" ", protoconv.ConvertTimestampToTimeOrDefault(st.GetMetadata().GetStartTime(), time.Time{}))
-	fmt.Println("Started by:")
-	fmt.Println(" ", st.GetMetadata().GetInitiatingUserName())
+func printStatus(logger environment.Logger, st *v1.DBRestoreProcessStatus) {
+	logger.PrintfLn("ID:")
+	logger.PrintfLn(" ", st.GetMetadata().GetId())
+	logger.PrintfLn("State:")
+	logger.PrintfLn(" ", st.GetState())
+	logger.PrintfLn("Started at:")
+	logger.PrintfLn(" ", protoconv.ConvertTimestampToTimeOrDefault(st.GetMetadata().GetStartTime(), time.Time{}))
+	logger.PrintfLn("Started by:")
+	logger.PrintfLn(" ", st.GetMetadata().GetInitiatingUserName())
 	if lfi := st.GetMetadata().GetHeader().GetLocalFile(); lfi != nil {
-		fmt.Println("Source file:")
-		fmt.Printf("  %s (%d bytes)\n", lfi.GetPath(), lfi.GetBytesSize())
+		logger.PrintfLn("Source file:")
+		logger.PrintfLn("  %s (%d bytes)", lfi.GetPath(), lfi.GetBytesSize())
 	}
 	payloadSize := v2backuprestore.RestoreBodySize(st.GetMetadata().GetHeader().GetManifest())
 	numFiles := len(st.GetMetadata().GetHeader().GetManifest().GetFiles())
-	fmt.Println("Transfer progress:")
-	fmt.Printf("  %d/%d bytes (%.2f%%); %d/%d files processed\n", st.GetBytesRead(), payloadSize, float32(100*st.GetBytesRead())/float32(payloadSize), st.GetFilesProcessed(), numFiles)
+	logger.PrintfLn("Transfer progress:")
+	logger.PrintfLn("  %d/%d bytes (%.2f%%); %d/%d files processed", st.GetBytesRead(), payloadSize, float32(100*st.GetBytesRead())/float32(payloadSize), st.GetFilesProcessed(), numFiles)
 	if errMsg := st.GetError(); errMsg != "" {
-		fmt.Println("Error status:")
-		fmt.Println(" ", errMsg)
+		logger.PrintfLn("Error status:")
+		logger.PrintfLn(" ", errMsg)
 	}
 }
 
-func showRestoreStatus(timeout time.Duration) error {
-	conn, err := common.GetGRPCConnection()
+func showRestoreStatus(cliEnvironment environment.Environment, timeout time.Duration) error {
+	conn, err := cliEnvironment.GRPCConnection()
 	if err != nil {
 		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}
@@ -72,13 +71,13 @@ func showRestoreStatus(timeout time.Duration) error {
 
 	processStatus := activeRestoreProcessResp.GetActiveStatus()
 	if processStatus == nil {
-		fmt.Println("No restore process is currently in progress.")
+		cliEnvironment.Logger().PrintfLn("No restore process is currently in progress.")
 		return nil
 	}
 
-	fmt.Println("Active database restore process information")
-	fmt.Println("===========================================")
-	printStatus(processStatus)
+	cliEnvironment.Logger().PrintfLn("Active database restore process information")
+	cliEnvironment.Logger().PrintfLn("===========================================")
+	printStatus(cliEnvironment.Logger(), processStatus)
 
 	return nil
 }

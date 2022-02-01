@@ -53,7 +53,7 @@ export function fetchClustersAsArray(options?: RestSearchOption[]): Promise<Clus
         );
     }
     return axios.get<{ clusters: Cluster[] }>(`${clustersUrl}${queryString}`).then((response) => {
-        return response?.data?.clusters || [];
+        return response?.data?.clusters ?? [];
     });
 }
 
@@ -62,7 +62,7 @@ export function fetchClustersAsArray(options?: RestSearchOption[]): Promise<Clus
  */
 export function getClusterById(id: string): Promise<Cluster | null> {
     return axios.get<{ cluster: Cluster }>(`${clustersUrl}/${id}`).then((response) => {
-        return response?.data?.cluster || null;
+        return response?.data?.cluster ?? null;
     });
 }
 
@@ -75,7 +75,7 @@ export type AutoUpgradeConfig = {
  */
 export function getAutoUpgradeConfig(): Promise<AutoUpgradeConfig> {
     return axios.get<{ config: AutoUpgradeConfig }>(autoUpgradeConfigUrl).then((response) => {
-        return response?.data?.config || {};
+        return response?.data?.config ?? {};
     });
 }
 

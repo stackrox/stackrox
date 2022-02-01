@@ -493,7 +493,7 @@ parameters:
 
 orbs:
   win: circleci/windows@2.2.0
-  ci-artifacts: stackrox/ci-artifacts-orb@0.1.0
+  ci-artifacts: stackrox/ci-artifacts-orb@0.1.1
 
 executors:
   custom:
@@ -922,23 +922,8 @@ commands:
       - run:
           name: Setup deployment env
           command: |
-            <<# parameters.docker-login >>
-            docker login -u  "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin \<<<"${QUAY_RHACS_ENG_RO_PASSWORD}" quay.io
-            <</ parameters.docker-login >>
-            <<# parameters.use-websocket >>
-            cci-export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
-            <</ parameters.use-websocket >>
-            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
-            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
-
-            REPO=rhacs-eng
-            cci-export MONITORING_IMAGE "quay.io/$REPO/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
-            cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
-            cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
-            cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            source scripts/ci/lib.sh
+            setup_deployment_env "<< parameters.docker-login >>" "<< parameters.use-websocket >>"
 
   setup-gcp:
     steps:
@@ -2889,6 +2874,7 @@ jobs:
           name: Comment on PR
           command: |
             wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
+            echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
             sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
 
             export TAG=$(make --quiet tag)

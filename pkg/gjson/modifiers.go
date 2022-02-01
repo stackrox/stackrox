@@ -2,6 +2,7 @@ package gjson
 
 import (
 	"encoding/json"
+	"regexp"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -9,6 +10,15 @@ import (
 
 // CustomModifier is a type alias for a gjson.Modifier function used within gjson.AddModifier
 type CustomModifier = func(json, arg string) string
+
+var boolReplaceRegex = regexp.MustCompile(`.@boolReplace.*(})`)
+var listReplaceRegex = regexp.MustCompile(`.@list`)
+
+// modifiersRegexp provides a list of regex expressions that match all custom modifier prefixes for
+// sanitizing of queries.
+func modifiersRegexp() []*regexp.Regexp {
+	return []*regexp.Regexp{boolReplaceRegex, listReplaceRegex}
+}
 
 var customGJSONModifiers = map[string]CustomModifier{
 	"list":        ListModifier(),

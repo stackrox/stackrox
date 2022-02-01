@@ -21,7 +21,7 @@ export function fetchImagesById(options) {
     );
     return axios
         .get(`${imagesUrl}?${params}`)
-        .then((response) => ({ response: normalize(response.data.images, [imageSchema]) }));
+        .then((response) => ({ response: normalize(response?.data?.images ?? [], [imageSchema]) }));
 }
 
 /**
@@ -45,7 +45,7 @@ export function fetchImages(options = [], sortOption, page, pageSize) {
     );
     return axios
         .get(`${imagesUrl}?${params}`)
-        .then((response) => ({ response: normalize(response.data.images, [imageSchema]) }))
+        .then((response) => ({ response: normalize(response?.data?.images ?? [], [imageSchema]) }))
         .then((obj) => {
             if (obj.response.entities.image === undefined) {
                 return [];
@@ -57,14 +57,14 @@ export function fetchImages(options = [], sortOption, page, pageSize) {
 /**
  * Fetches list of count of images, using the input hooks to give the results.
  *
- * @returns Nothing. Responds through hooks.
+ * @returns {Promise<number, Error>}, fulfilled with count of images
  */
 export function fetchImageCount(options) {
     const params = queryString.stringify(
         { query: searchOptionsToQuery(options) },
         { arrayFormat: 'repeat' }
     );
-    return axios.get(`${imagesCountUrl}?${params}`).then((response) => response.data.count);
+    return axios.get(`${imagesCountUrl}?${params}`).then((response) => response?.data?.count ?? 0);
 }
 
 /**

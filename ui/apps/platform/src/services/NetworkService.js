@@ -268,7 +268,7 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
         url: `${networkPoliciesBaseUrl}?${params}`,
     };
     return axios(options).then((response) => {
-        const policies = response.data.networkPolicies;
+        const policies = response?.data?.networkPolicies;
         if (policies) {
             return { applyYaml: policies.map((policy) => policy.yaml).join('\n---\n') };
         }
@@ -288,7 +288,7 @@ export function getUndoNetworkModification(clusterId) {
         method: 'GET',
         url: `${networkPoliciesBaseUrl}/undo/${clusterId}`,
     };
-    return axios(options).then((response) => response.data.undoRecord.undoModification);
+    return axios(options).then((response) => response?.data?.undoRecord.undoModification ?? {});
 }
 
 /**
@@ -315,7 +315,7 @@ export function generateNetworkModification(clusterId, query, date, excludePorts
         method: 'GET',
         url: `${networkPoliciesBaseUrl}/generate/${clusterId}?deleteExisting=NONE&${params}`,
     };
-    return axios(options).then((response) => response.data.modification);
+    return axios(options).then((response) => response?.data?.modification ?? {});
 }
 
 /**

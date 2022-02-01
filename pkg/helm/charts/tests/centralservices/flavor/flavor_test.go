@@ -1,28 +1,31 @@
 package flavor
 
 import (
-	"fmt"
+	"path"
 	"testing"
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/helm/charts"
+	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stretchr/testify/require"
-	"helm.sh/helm/v3/pkg/chartutil"
 )
+
+const testDir = "testdata/helmtest"
 
 func customFlavor(t *testing.T) defaults.ImageFlavor {
 	return defaults.ImageFlavor{
-		MainRegistry:       "example.io",
-		MainImageName:      "custom-main",
-		MainImageTag:       "1.2.3",
-		ScannerImageName:   "custom-scanner",
-		ScannerImageTag:    "3.2.1",
-		ScannerDBImageName: "custom-scanner-db",
-		ScannerDBImageTag:  "3.2.1",
+		MainRegistry:           "example.io",
+		MainImageName:          "custom-main",
+		MainImageTag:           "1.2.3",
+		ScannerImageName:       "custom-scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        "3.2.1",
+		ScannerDBSlimImageName: "scanner-slim",
+		ScannerDBImageName:     "custom-scanner-db",
+
+		ScannerDBImageTag: "3.2.1",
 		ChartRepo: defaults.ChartRepo{
 			URL: "url",
 		},
@@ -57,26 +60,10 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 	for name, f := range imageFlavorCases {
 		imageFlavor := f()
 		t.Run(name, func(t *testing.T) {
-			helmImage := image.GetDefaultImage()
-			tpl, err := helmImage.GetCentralServicesChartTemplate()
-			require.NoError(t, err, "error retrieving chart template")
-			metaVals := charts.GetMetaValuesForFlavor(imageFlavor)
-			ch, err := tpl.InstantiateAndLoad(metaVals)
-			require.NoError(t, err, "error instantiating chart")
-
-			suite, err := helmTest.NewLoader("testdata/helmtest", helmTest.WithCustomFilePattern(fmt.Sprintf("%s.test.yaml", name))).LoadSuite()
-			require.NoError(t, err, "failed to load helmtest suite")
-
-			target := &helmTest.Target{
-				Chart: ch,
-				ReleaseOptions: chartutil.ReleaseOptions{
-					Name:      "stackrox-central-services",
-					Namespace: "stackrox",
-					IsInstall: true,
-				},
-			}
-
-			suite.Run(t, target)
+			helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
+				Flavor:       &imageFlavor,
+				HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, name))},
+			})
 		})
 	}
 }

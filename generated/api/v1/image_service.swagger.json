@@ -413,12 +413,6 @@
       "properties": {
         "path": {
           "type": "string"
-        },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },
@@ -650,6 +644,14 @@
         }
       }
     },
+    "storageCosignSignature": {
+      "type": "object",
+      "properties": {
+        "rawSignatureBase64Enc": {
+          "type": "string"
+        }
+      }
+    },
     "storageDataSource": {
       "type": "object",
       "properties": {
@@ -819,6 +821,12 @@
         "scan": {
           "$ref": "#/definitions/storageImageScan"
         },
+        "signatureVerificationData": {
+          "$ref": "#/definitions/storageImageSignatureVerificationData"
+        },
+        "signature": {
+          "$ref": "#/definitions/storageImageSignature"
+        },
         "components": {
           "type": "integer",
           "format": "int32"
@@ -857,7 +865,7 @@
           }
         }
       },
-      "title": "Next Tag: 15"
+      "title": "Next Tag: 17"
     },
     "storageImageLayer": {
       "type": "object",
@@ -908,7 +916,7 @@
           "title": "Version is used to determine if the metadata needs to be re-pulled"
         }
       },
-      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up"
+      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up\nNext Tag: 6"
     },
     "storageImageName": {
       "type": "object",
@@ -976,6 +984,57 @@
       ],
       "default": "UNSET"
     },
+    "storageImageSignature": {
+      "type": "object",
+      "properties": {
+        "signatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSignature"
+          }
+        }
+      }
+    },
+    "storageImageSignatureVerificationData": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageSignatureVerificationResult"
+          }
+        }
+      }
+    },
+    "storageImageSignatureVerificationResult": {
+      "type": "object",
+      "properties": {
+        "verificationTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "verifierId": {
+          "type": "string",
+          "description": "verifier_id correlates to the ID of the signature integration used to verify the signature."
+        },
+        "status": {
+          "$ref": "#/definitions/storageImageSignatureVerificationResultStatus"
+        }
+      },
+      "title": "Next Tag: 4"
+    },
+    "storageImageSignatureVerificationResultStatus": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "VERIFIED",
+        "FAILED_VERIFICATION",
+        "INVALID_SIGNATURE_ALGO",
+        "CORRUPTED_SIGNATURE"
+      ],
+      "default": "UNSET",
+      "description": "Status represents the status of the result.\n\n - VERIFIED: VERIFIED is set when the signature's verification was successful.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the signature's verification failed.\n - INVALID_SIGNATURE_ALGO: INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.\n - CORRUPTED_SIGNATURE: CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding."
+    },
     "storageLicense": {
       "type": "object",
       "properties": {
@@ -1022,6 +1081,14 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "storageSignature": {
+      "type": "object",
+      "properties": {
+        "cosign": {
+          "$ref": "#/definitions/storageCosignSignature"
         }
       }
     },

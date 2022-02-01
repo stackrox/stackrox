@@ -39,7 +39,6 @@ func New(policies datastore.DataStore,
 	manager lifecycle.Manager,
 	processor notifierProcessor.Processor,
 	metadataCache expiringcache.Cache,
-	scanCache expiringcache.Cache,
 	connectionManager connection.Manager) Service {
 	backgroundTaskManager := backgroundtasks.NewManager()
 	backgroundTaskManager.Start()
@@ -57,7 +56,6 @@ func New(policies datastore.DataStore,
 		processor: processor,
 
 		metadataCache: metadataCache,
-		scanCache:     scanCache,
 
 		validator:              newPolicyValidator(notifiers),
 		dryRunPolicyJobManager: backgroundTaskManager,

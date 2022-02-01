@@ -76,11 +76,10 @@ export type PolicyBaseExclusion = {
 export type PolicyScope = {
     cluster?: string;
     namespace?: string;
-    label?: KeyValue | null;
+    label?: PolicyScopeLabel | null;
 };
 
-// TODO import from where?
-export type KeyValue = {
+export type PolicyScopeLabel = {
     key: string;
     value: string;
 };
@@ -200,8 +199,10 @@ export type PolicyComponent = {
 };
 
 export type PolicyKeyValue = {
+    key: string;
+    value: string;
     envVarSource: EnvVarSource;
-} & KeyValue;
+};
 
 // TODO import from types/deployment.proto.ts
 export type EnvVarSource =

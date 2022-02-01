@@ -218,13 +218,13 @@ const PolicyImportDialogue = ({ closeAction, importPolicySuccess }) => {
                                 validationSchema={yup.object({
                                     newName: yup.string().when('resolution', {
                                         is: POLICY_DUPE_ACTIONS.RENAME,
-                                        then: yup
-                                            .string()
-                                            .trim()
-                                            .min(
-                                                MIN_POLICY_NAME_LENGTH,
-                                                `A policy name must be at least ${MIN_POLICY_NAME_LENGTH} characters.`
-                                            ),
+                                        then: (newNameSchema) =>
+                                            newNameSchema
+                                                .trim()
+                                                .min(
+                                                    MIN_POLICY_NAME_LENGTH,
+                                                    `A policy name must be at least ${MIN_POLICY_NAME_LENGTH} characters.`
+                                                ),
                                     }),
                                 })}
                                 onSubmit={noop}

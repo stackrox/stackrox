@@ -447,8 +447,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"config: ContainerConfig",
 		"id: ID!",
 		"image: ContainerImage",
+		"livenessProbe: LivenessProbe",
 		"name: String!",
 		"ports: [PortConfig]!",
+		"readinessProbe: ReadinessProbe",
 		"resources: Resources",
 		"secrets: [EmbeddedSecret]!",
 		"securityContext: SecurityContext",
@@ -494,6 +496,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ContainerRuntimeInfo", []string{
 		"type: ContainerRuntime!",
 		"version: String!",
+	}))
+	utils.Must(builder.AddType("CosignSignature", []string{
+		"rawSignatureBase64Enc: String!",
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
@@ -551,7 +556,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Email_AuthMethod(0)))
 	utils.Must(builder.AddType("EmbeddedImageScanComponent_Executable", []string{
-		"dependencies: [String!]!",
 		"path: String!",
 	}))
 	utils.Must(builder.AddType("EmbeddedSecret", []string{
@@ -627,6 +631,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"priority: Int!",
 		"riskScore: Float!",
 		"scan: ImageScan",
+		"signature: ImageSignature",
+		"signatureVerificationData: ImageSignatureVerificationData",
 	}))
 	utils.Must(builder.AddType("ImageComponent", []string{
 		"fixedBy: String!",
@@ -676,6 +682,18 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanTime: Time",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageScan_Note(0)))
+	utils.Must(builder.AddType("ImageSignature", []string{
+		"signatures: [Signature]!",
+	}))
+	utils.Must(builder.AddType("ImageSignatureVerificationData", []string{
+		"results: [ImageSignatureVerificationResult]!",
+	}))
+	utils.Must(builder.AddType("ImageSignatureVerificationResult", []string{
+		"status: ImageSignatureVerificationResult_Status!",
+		"verificationTime: Time",
+		"verifierId: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Image_Note(0)))
 	utils.Must(builder.AddType("Jira", []string{
 		"defaultFieldsJson: String!",
@@ -741,6 +759,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LifecycleStage(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ListAlert_ResourceType(0)))
+	utils.Must(builder.AddType("LivenessProbe", []string{
+		"defined: Boolean!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
@@ -1080,6 +1101,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"AWSProviderMetadata",
 		"AzureProviderMetadata",
 	}))
+	utils.Must(builder.AddType("ReadinessProbe", []string{
+		"defined: Boolean!",
+	}))
 	utils.Must(builder.AddType("RequestComment", []string{
 		"createdAt: Time",
 		"id: ID!",
@@ -1233,6 +1257,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"values: [String!]!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
+	utils.Must(builder.AddType("Signature", []string{
+		"cosign: CosignSignature",
+		"signature: SignatureSignature",
+	}))
+	utils.Must(builder.AddUnionType("SignatureSignature", []string{
+		"CosignSignature",
+	}))
 	utils.Must(builder.AddType("SimpleAccessScope", []string{
 		"description: String!",
 		"id: ID!",
@@ -4782,6 +4813,11 @@ func (resolver *containerResolver) Image(ctx context.Context) (*containerImageRe
 	return resolver.root.wrapContainerImage(value, true, nil)
 }
 
+func (resolver *containerResolver) LivenessProbe(ctx context.Context) (*livenessProbeResolver, error) {
+	value := resolver.data.GetLivenessProbe()
+	return resolver.root.wrapLivenessProbe(value, true, nil)
+}
+
 func (resolver *containerResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -4790,6 +4826,11 @@ func (resolver *containerResolver) Name(ctx context.Context) string {
 func (resolver *containerResolver) Ports(ctx context.Context) ([]*portConfigResolver, error) {
 	value := resolver.data.GetPorts()
 	return resolver.root.wrapPortConfigs(value, nil)
+}
+
+func (resolver *containerResolver) ReadinessProbe(ctx context.Context) (*readinessProbeResolver, error) {
+	value := resolver.data.GetReadinessProbe()
+	return resolver.root.wrapReadinessProbe(value, true, nil)
 }
 
 func (resolver *containerResolver) Resources(ctx context.Context) (*resourcesResolver, error) {
@@ -5124,6 +5165,35 @@ func (resolver *containerRuntimeInfoResolver) Type(ctx context.Context) string {
 
 func (resolver *containerRuntimeInfoResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
+	return value
+}
+
+type cosignSignatureResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CosignSignature
+}
+
+func (resolver *Resolver) wrapCosignSignature(value *storage.CosignSignature, ok bool, err error) (*cosignSignatureResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cosignSignatureResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCosignSignatures(values []*storage.CosignSignature, err error) ([]*cosignSignatureResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cosignSignatureResolver, len(values))
+	for i, v := range values {
+		output[i] = &cosignSignatureResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cosignSignatureResolver) RawSignatureBase64Enc(ctx context.Context) string {
+	value := resolver.data.GetRawSignatureBase64Enc()
 	return value
 }
 
@@ -5567,11 +5637,6 @@ func (resolver *Resolver) wrapEmbeddedImageScanComponent_Executables(values []*s
 		output[i] = &embeddedImageScanComponent_ExecutableResolver{root: resolver, data: v}
 	}
 	return output, nil
-}
-
-func (resolver *embeddedImageScanComponent_ExecutableResolver) Dependencies(ctx context.Context) []string {
-	value := resolver.data.GetDependencies()
-	return value
 }
 
 func (resolver *embeddedImageScanComponent_ExecutableResolver) Path(ctx context.Context) string {
@@ -6205,6 +6270,18 @@ func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, er
 	return resolver.root.wrapImageScan(value, true, nil)
 }
 
+func (resolver *imageResolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSignature()
+	return resolver.root.wrapImageSignature(value, true, nil)
+}
+
+func (resolver *imageResolver) SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSignatureVerificationData()
+	return resolver.root.wrapImageSignatureVerificationData(value, true, nil)
+}
+
 type imageComponentResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -6566,6 +6643,121 @@ func toImageScan_Notes(values *[]string) []storage.ImageScan_Note {
 	output := make([]storage.ImageScan_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toImageScan_Note(&v)
+	}
+	return output
+}
+
+type imageSignatureResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageSignature
+}
+
+func (resolver *Resolver) wrapImageSignature(value *storage.ImageSignature, ok bool, err error) (*imageSignatureResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageSignatureResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageSignatures(values []*storage.ImageSignature, err error) ([]*imageSignatureResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageSignatureResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageSignatureResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageSignatureResolver) Signatures(ctx context.Context) ([]*signatureResolver, error) {
+	value := resolver.data.GetSignatures()
+	return resolver.root.wrapSignatures(value, nil)
+}
+
+type imageSignatureVerificationDataResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageSignatureVerificationData
+}
+
+func (resolver *Resolver) wrapImageSignatureVerificationData(value *storage.ImageSignatureVerificationData, ok bool, err error) (*imageSignatureVerificationDataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageSignatureVerificationDataResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageSignatureVerificationDatas(values []*storage.ImageSignatureVerificationData, err error) ([]*imageSignatureVerificationDataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageSignatureVerificationDataResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageSignatureVerificationDataResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageSignatureVerificationDataResolver) Results(ctx context.Context) ([]*imageSignatureVerificationResultResolver, error) {
+	value := resolver.data.GetResults()
+	return resolver.root.wrapImageSignatureVerificationResults(value, nil)
+}
+
+type imageSignatureVerificationResultResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageSignatureVerificationResult
+}
+
+func (resolver *Resolver) wrapImageSignatureVerificationResult(value *storage.ImageSignatureVerificationResult, ok bool, err error) (*imageSignatureVerificationResultResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageSignatureVerificationResultResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageSignatureVerificationResults(values []*storage.ImageSignatureVerificationResult, err error) ([]*imageSignatureVerificationResultResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageSignatureVerificationResultResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageSignatureVerificationResultResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageSignatureVerificationResultResolver) Status(ctx context.Context) string {
+	value := resolver.data.GetStatus()
+	return value.String()
+}
+
+func (resolver *imageSignatureVerificationResultResolver) VerificationTime(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetVerificationTime()
+	return timestamp(value)
+}
+
+func (resolver *imageSignatureVerificationResultResolver) VerifierId(ctx context.Context) string {
+	value := resolver.data.GetVerifierId()
+	return value
+}
+
+func toImageSignatureVerificationResult_Status(value *string) storage.ImageSignatureVerificationResult_Status {
+	if value != nil {
+		return storage.ImageSignatureVerificationResult_Status(storage.ImageSignatureVerificationResult_Status_value[*value])
+	}
+	return storage.ImageSignatureVerificationResult_Status(0)
+}
+
+func toImageSignatureVerificationResult_Statuses(values *[]string) []storage.ImageSignatureVerificationResult_Status {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ImageSignatureVerificationResult_Status, len(*values))
+	for i, v := range *values {
+		output[i] = toImageSignatureVerificationResult_Status(&v)
 	}
 	return output
 }
@@ -7084,6 +7276,35 @@ func toListAlert_ResourceTypes(values *[]string) []storage.ListAlert_ResourceTyp
 		output[i] = toListAlert_ResourceType(&v)
 	}
 	return output
+}
+
+type livenessProbeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.LivenessProbe
+}
+
+func (resolver *Resolver) wrapLivenessProbe(value *storage.LivenessProbe, ok bool, err error) (*livenessProbeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &livenessProbeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapLivenessProbes(values []*storage.LivenessProbe, err error) ([]*livenessProbeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*livenessProbeResolver, len(values))
+	for i, v := range values {
+		output[i] = &livenessProbeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *livenessProbeResolver) Defined(ctx context.Context) bool {
+	value := resolver.data.GetDefined()
+	return value
 }
 
 func toManagerType(value *string) storage.ManagerType {
@@ -9400,6 +9621,35 @@ func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*az
 	return res, ok
 }
 
+type readinessProbeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ReadinessProbe
+}
+
+func (resolver *Resolver) wrapReadinessProbe(value *storage.ReadinessProbe, ok bool, err error) (*readinessProbeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &readinessProbeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapReadinessProbes(values []*storage.ReadinessProbe, err error) ([]*readinessProbeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*readinessProbeResolver, len(values))
+	for i, v := range values {
+		output[i] = &readinessProbeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *readinessProbeResolver) Defined(ctx context.Context) bool {
+	value := resolver.data.GetDefined()
+	return value
+}
+
 type requestCommentResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10618,6 +10868,53 @@ func toSeverities(values *[]string) []storage.Severity {
 		output[i] = toSeverity(&v)
 	}
 	return output
+}
+
+type signatureResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Signature
+}
+
+func (resolver *Resolver) wrapSignature(value *storage.Signature, ok bool, err error) (*signatureResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &signatureResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSignatures(values []*storage.Signature, err error) ([]*signatureResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*signatureResolver, len(values))
+	for i, v := range values {
+		output[i] = &signatureResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *signatureResolver) Cosign(ctx context.Context) (*cosignSignatureResolver, error) {
+	value := resolver.data.GetCosign()
+	return resolver.root.wrapCosignSignature(value, true, nil)
+}
+
+type signatureSignatureResolver struct {
+	resolver interface{}
+}
+
+func (resolver *signatureResolver) Signature() *signatureSignatureResolver {
+	if val := resolver.data.GetCosign(); val != nil {
+		return &signatureSignatureResolver{
+			resolver: &cosignSignatureResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *signatureSignatureResolver) ToCosignSignature() (*cosignSignatureResolver, bool) {
+	res, ok := resolver.resolver.(*cosignSignatureResolver)
+	return res, ok
 }
 
 type simpleAccessScopeResolver struct {
