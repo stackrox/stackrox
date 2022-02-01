@@ -1,28 +1,45 @@
 /* eslint-disable import/prefer-default-export */
 import * as yup from 'yup';
 
+import { Policy } from 'types/policy.proto';
+
 import { WizardPolicyStep4, WizardScope } from '../policies.utils';
 
-const validationSchemaStep1 = yup.object().shape({
+type PolicyStep1 = Pick<Policy, 'name' | 'severity' | 'categories'>;
+
+const validationSchemaStep1: yup.ObjectSchema<PolicyStep1> = yup.object().shape({
     name: yup.string().trim().required('Policy name is required'),
     severity: yup
         .string()
-        .trim()
-        .oneOf(['LOW_SEVERITY', 'MEDIUM_SEVERITY', 'HIGH_SEVERITY', 'CRITICAL_SEVERITY']),
-    categories: yup.array().of(yup.string().trim()).min(1, 'At least one category is required'), // TODO redundant? .required('Category is required'),
+        .oneOf(['LOW_SEVERITY', 'MEDIUM_SEVERITY', 'HIGH_SEVERITY', 'CRITICAL_SEVERITY'])
+        .required(),
+    categories: yup
+        .array()
+        .of(yup.string().required())
+        .min(1, 'At least one category is required')
+        .required(),
 });
 
-const validationSchemaStep2 = yup.object().shape({
-    eventSource: yup.string().when('lifecycleStages', {
-        is: (lifecycleStages: string[]) => lifecycleStages.includes('RUNTIME'),
-        then: (eventSourceSchema) =>
-            eventSourceSchema.oneOf(['DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT']),
-        otherwise: (eventSourceSchema) => eventSourceSchema.oneOf(['NOT_APPLICABLE']),
-    }),
+type PolicyStep2 = Pick<Policy, 'eventSource' | 'lifecycleStages'>;
+
+const validationSchemaStep2: yup.ObjectSchema<PolicyStep2> = yup.object().shape({
+    eventSource: yup
+        .string()
+        .oneOf(['NOT_APPLICABLE', 'DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT'])
+        .when('lifecycleStages', {
+            is: (lifecycleStages: string[]) => lifecycleStages.includes('RUNTIME'),
+            // Remove values of eventSource that are not relevant for lifecycle stage.
+            then: (eventSourceSchema) => eventSourceSchema.notOneOf(['NOT_APPLICABLE']),
+            otherwise: (eventSourceSchema) =>
+                eventSourceSchema.notOneOf(['DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT']),
+        })
+        .required(),
     lifecycleStages: yup
         .array()
-        .of(yup.string().trim().oneOf(['BUILD', 'DEPLOY', 'RUNTIME']))
-        .min(1, 'At least one lifecycle state is required'), // TODO redundant? .required('Lifecycle stage is required'),
+        .of(yup.string().oneOf(['BUILD', 'DEPLOY', 'RUNTIME']).required())
+        .min(1, 'At least one lifecycle stage is required')
+        .required(),
+    // Schema omits enforcementActions, because code (not user) changes the value.
 });
 
 const validationSchemaStep3 = yup.object().shape({
