@@ -5,6 +5,7 @@ import (
 
 	"crypto/x509"
 	"math/rand"
+
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,29 +34,29 @@ func GetSecretsCertRenewalTime(secrets map[storage.ServiceType]*v1.Secret) (time
 	return renewalTime, nil
 }
 
-func getSecretRenewalTime(secret *v1.Secret) (time.Time, error) {
-	certBytes := secret.Data[mtls.ServiceCertFileName]
+func getSecretRenewalTime(certSecret *v1.Secret) (time.Time, error) {
+	certBytes := certSecret.Data[mtls.ServiceCertFileName]
 	var (
-		scannerCert *x509.Certificate
+		cert *x509.Certificate
 		err         error
 	)
 	if len(certBytes) == 0 {
-		err = errors.Errorf("empty certificate for secret %s", secret.GetName())
+		err = errors.Errorf("empty certificate for certSecret %s", certSecret.GetName())
 	} else {
-		scannerCert, err = helpers.ParseCertificatePEM(certBytes)
+		cert, err = helpers.ParseCertificatePEM(certBytes)
 	}
 	if err != nil {
-		// Note this also covers a secret with no certificates stored, which should be refreshed immediately.
+		// Note this also covers a certSecret with no certificates stored, which should be refreshed immediately.
 		return time.Now(), err
 	}
 
-	return getSecretRenewalTimeFromCertificate(scannerCert), nil
+	return calculateRenewalTime(cert), nil
 }
 
-func getSecretRenewalTimeFromCertificate(certificate *x509.Certificate) time.Time {
-	certValidityDurationSecs := certificate.NotAfter.Sub(certificate.NotBefore).Seconds()
+func calculateRenewalTime(cert *x509.Certificate) time.Time {
+	certValidityDurationSecs := cert.NotAfter.Sub(cert.NotBefore).Seconds()
 	durationBeforeRenewalAttempt := time.Second *
 		(time.Duration(certValidityDurationSecs/2) - time.Duration(rand.Intn(int(certValidityDurationSecs/10))))
-	certRenewalTime := certificate.NotBefore.Add(durationBeforeRenewalAttempt)
+	certRenewalTime := cert.NotBefore.Add(durationBeforeRenewalAttempt)
 	return certRenewalTime
 }
