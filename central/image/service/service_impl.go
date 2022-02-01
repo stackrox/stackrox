@@ -215,8 +215,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// even if we weren't able to enrich it
 	}
 
-	img.Id = utils.GetImageID(img)
-	if img.GetId() != "" {
+	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
+	// contained a digest
+	if request.GetImage().GetId() != "" {
 		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 			log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
 		}
