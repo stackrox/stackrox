@@ -102,6 +102,14 @@ assert_components_registry() {
         run yq e 'select(documentIndex == 1) | .spec.template.spec.containers[] | select(.name == "db").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
+      sensor)
+        run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "sensor").image' "${dir}/sensor.yaml"
+        assert_output --regexp "$regex"
+        ;;
+      collector)
+        run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "collector").image' "${dir}/collector.yaml"
+        assert_output --regexp "$regex"
+        ;;
       *)
         fail "ERROR: unknown component: '$component'"
         ;;
@@ -128,6 +136,9 @@ registry_regex() {
       ;;
     stackrox.io)
       echo "stackrox\.io/$component:$version"
+      ;;
+    collector.stackrox.io)
+      echo "collector.stackrox\.io/$component:$version"
       ;;
     registry.redhat.io)
       echo "registry\.redhat\.io/advanced-cluster-security/rhacs-$component-rhel8:$version"
@@ -228,4 +239,14 @@ has_no_default_flavor_warning() {
 
 has_flag_collision_warning() {
   assert_line --partial "flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'"
+}
+
+generate_bundle() {
+  installation_flavor="$1";shift
+  unique_name="bats-cluster-$(date '+%s')"
+  echo "Generating cluster with name $unique_name"
+  run roxctl-development sensor generate "$installation_flavor" \
+        --insecure-skip-tls-verify -e "$API_ENDPOINT" --name "$unique_name" "$@" \
+        --output-dir="$out_dir"
+  assert_success
 }
