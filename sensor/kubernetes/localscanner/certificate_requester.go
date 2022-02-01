@@ -14,9 +14,9 @@ import (
 var (
 	// ErrCertificateRequesterStopped is returned by RequestCertificates when the certificate
 	// requested is not initialized.
-	ErrCertificateRequesterStopped = errors.New("not started")
-	log                            = logging.LoggerForModule()
-	_                                 CertificateRequester = (*certificateRequesterImpl)(nil)
+	ErrCertificateRequesterStopped                      = errors.New("stopped")
+	log                                                 = logging.LoggerForModule()
+	_                              CertificateRequester = (*certificateRequesterImpl)(nil)
 )
 
 // CertificateRequester requests a new set of local scanner certificates from central.
@@ -39,17 +39,17 @@ func NewCertificateRequester(sendC chan<- *central.MsgFromSensor,
 }
 
 type certificateRequesterImpl struct {
-	stopC    concurrency.ErrorSignal
 	sendC    chan<- *central.MsgFromSensor
 	receiveC <-chan *central.IssueLocalScannerCertsResponse
+	stopC    concurrency.ErrorSignal
 	requests sync.Map
 }
 
 // Start makes the certificate requester listen to `receiveC` and forward responses to any request that is running
 // as a call to RequestCertificates.
 func (r *certificateRequesterImpl) Start() {
-	go r.dispatchResponses()
 	r.stopC.Reset()
+	go r.dispatchResponses()
 }
 
 // Stop makes the certificate stop forwarding responses to running requests. Subsequent calls to RequestCertificates
