@@ -25,7 +25,7 @@ func RetrieveAuthToken() (string, error) {
 	if tokenFile := flags.APITokenFile(); tokenFile != "" {
 		// Error out if --token-file and --password is present on the command line.
 		if flags.Password() != "" {
-			return "", errors.New("Cannot use password- and token-based authentication at the same time")
+			return "", errors.New("cannot use password- and token-based authentication at the same time")
 		}
 
 		token, err := flags.ReadTokenFromFile(tokenFile)

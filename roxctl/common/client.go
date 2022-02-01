@@ -46,7 +46,7 @@ func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure boo
 		Transport: transport,
 	}
 
-	auth, err := NewAuth()
+	auth, err := newAuth()
 	if err != nil {
 		return nil, err
 	}
