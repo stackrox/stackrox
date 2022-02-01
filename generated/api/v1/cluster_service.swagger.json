@@ -95,6 +95,7 @@
     },
     "/v1/clusters-env/kernel-support-available": {
       "get": {
+        "summary": "GetKernelSupportAvailable is deprecated in favor of GetClusterDefaults.",
         "operationId": "ClustersService_GetKernelSupportAvailable",
         "responses": {
           "200": {

@@ -486,6 +486,7 @@ type ClustersServiceClient interface {
 	PostCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
 	PutCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
 	DeleteCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// GetKernelSupportAvailable is deprecated in favor of GetClusterDefaults.
 	GetKernelSupportAvailable(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*KernelSupportAvailableResponse, error)
 	GetClusterDefaults(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClusterDefaultsResponse, error)
 }
@@ -568,6 +569,7 @@ type ClustersServiceServer interface {
 	PostCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
 	PutCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
 	DeleteCluster(context.Context, *ResourceByID) (*Empty, error)
+	// GetKernelSupportAvailable is deprecated in favor of GetClusterDefaults.
 	GetKernelSupportAvailable(context.Context, *Empty) (*KernelSupportAvailableResponse, error)
 	GetClusterDefaults(context.Context, *Empty) (*ClusterDefaultsResponse, error)
 }
