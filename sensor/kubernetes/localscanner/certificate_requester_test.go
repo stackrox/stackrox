@@ -81,22 +81,40 @@ func TestCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 }
 
 func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T) {
-	f := newFixture(0)
-	f.requester.Start()
-	defer f.tearDown()
-	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
-
-	for i := 0; i < numConcurrentRequests; i++ {
-		// use jitter to simulate out of order responses.
-		go f.respondRequest(t, 100*time.Millisecond, nil)
-		go func() {
-			defer waitGroup.Add(-1)
-			_, err := f.requester.RequestCertificates(f.ctx)
-			assert.NoError(t, err)
-		}()
+	testCases := map[string]struct {
+		randomResponseDelay bool
+	}{
+		"decreasing response delay": {false},
+		"random response delay":     {true},
 	}
-	ok := concurrency.WaitWithTimeout(&waitGroup, time.Duration(numConcurrentRequests)*testTimeout)
-	require.True(t, ok)
+	for tcName, tc := range testCases {
+		t.Run(tcName, func(t *testing.T) {
+			f := newFixture(0)
+			f.requester.Start()
+			defer f.tearDown()
+			waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
+
+			for i := 0; i < numConcurrentRequests; i++ {
+				i := i
+				var responseDelay time.Duration
+				if tc.randomResponseDelay {
+					// randomly out of order responses.
+					responseDelay = time.Duration(rand.Intn(100)) * time.Millisecond
+				} else {
+					// responses are responded increasingly faster, so always out of order.
+					responseDelay = time.Duration(numConcurrentRequests-(i+1)) * 10 * time.Millisecond
+				}
+				go f.respondRequest(t, responseDelay, nil)
+				go func() {
+					defer waitGroup.Add(-1)
+					_, err := f.requester.RequestCertificates(f.ctx)
+					assert.NoError(t, err)
+				}()
+			}
+			ok := concurrency.WaitWithTimeout(&waitGroup, time.Duration(numConcurrentRequests)*testTimeout)
+			require.True(t, ok)
+		})
+	}
 }
 
 type certificateRequesterFixture struct {
@@ -135,10 +153,10 @@ func (f *certificateRequesterFixture) tearDown() {
 }
 
 // respondRequest reads a request from `f.sendC` and responds with `responseOverwrite` if not nil, or with
-// a response with the same ID as the request otherwise. If `jitter` is greater than 0 then this waits for a
-// random time between 0 and `jitter` before sending the response.
+// a response with the same ID as the request otherwise. If `responseDelay` is greater than 0 then this function
+// waits for that time before sending the response.
 // Before sending the response, it stores in `f.interceptedRequestID` the request ID for the requests read from `f.sendC`.
-func (f *certificateRequesterFixture) respondRequest(t *testing.T, jitter time.Duration, responseOverwrite *central.IssueLocalScannerCertsResponse) {
+func (f *certificateRequesterFixture) respondRequest(t *testing.T, responseDelay time.Duration, responseOverwrite *central.IssueLocalScannerCertsResponse) {
 	select {
 	case <-f.ctx.Done():
 	case request := <-f.sendC:
@@ -151,8 +169,8 @@ func (f *certificateRequesterFixture) respondRequest(t *testing.T, jitter time.D
 			response = &central.IssueLocalScannerCertsResponse{RequestId: interceptedRequestID}
 		}
 		f.interceptedRequestID.Store(response.GetRequestId())
-		if jitter > 0 {
-			time.Sleep(time.Duration(rand.Int63n(jitter.Milliseconds())) * time.Millisecond)
+		if responseDelay > 0 {
+			time.Sleep(responseDelay)
 		}
 		select {
 		case <-f.ctx.Done():
