@@ -6,12 +6,15 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
 	// ErrNoLocalScanner indicates there is no Secured Cluster-local Scanner.
 	ErrNoLocalScanner = errors.New("No local Scanner integrated")
+
+	log = logging.LoggerForModule()
 )
 
 // ScanImage runs the pipeline required to scan an image with a local Scanner.
@@ -19,7 +22,8 @@ var (
 func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, image *storage.ContainerImage) (*storage.Image, error) {
 	scannerClient := GRPCClientSingleton()
 	if scannerClient == nil {
-		return nil, ErrNoLocalScanner
+		log.Warn("No local scanner")
+		//return nil, ErrNoLocalScanner
 	}
 
 	imgData, err := scannerClient.GetImageAnalysis(ctx, image)
