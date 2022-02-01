@@ -13,31 +13,31 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-const (
+var (
 	authzTraceTimeout = 20 * time.Minute
 )
 
-// authzTraceCommand allows to download authz trace from Central.
-func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
+// AuthzTraceCommand allows to download authz trace from Central.
+func AuthzTraceCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use: "authz-trace",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			timeout := flags.Timeout(c)
-			return writeAuthzTraces(cliEnvironment, timeout)
+			return writeAuthzTraces(timeout)
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, authzTraceTimeout)
 	return c
 }
 
-func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration) error {
+func writeAuthzTraces(timeout time.Duration) error {
 	// Write traces directly to stdout without buffering. Sync iff supported,
 	// e.g., stdout is redirected to a file and not attached to the console.
 	traceOutput := os.Stdout
@@ -46,7 +46,7 @@ func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Durat
 		toSync = true
 	}
 
-	streamErr := streamAuthzTraces(cliEnvironment, timeout, traceOutput)
+	streamErr := streamAuthzTraces(timeout, traceOutput)
 
 	var syncErr error
 	if toSync {
@@ -59,12 +59,12 @@ func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Durat
 	return multierror.Append(streamErr, syncErr).ErrorOrNil()
 }
 
-func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration, traceOutput io.Writer) error {
+func streamAuthzTraces(timeout time.Duration, traceOutput io.Writer) error {
 	// pkgCommon.Context() is canceled on SIGINT, we will use that to stop on Ctrl-C.
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -12,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -65,7 +65,7 @@ func orchestratorCommand(shortName, longName string) *cobra.Command {
 	return c
 }
 
-func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *renderer.K8sConfig, shortName, longName string, getClusterType func() (storage.ClusterType, error)) *cobra.Command {
+func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName string, getClusterType func() (storage.ClusterType, error)) *cobra.Command {
 	c := orchestratorCommand(shortName, longName)
 	c.PersistentPreRunE = func(*cobra.Command, []string) error {
 		clusterType, err := getClusterType()
@@ -77,9 +77,9 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 		return nil
 	}
 
-	c.AddCommand(externalVolume(cliEnvironment))
-	c.AddCommand(hostPathVolume(cliEnvironment))
-	c.AddCommand(noVolume(cliEnvironment))
+	c.AddCommand(externalVolume())
+	c.AddCommand(hostPathVolume())
+	c.AddCommand(noVolume())
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags
@@ -102,9 +102,9 @@ func newK8sConfig() *renderer.K8sConfig {
 	return &renderer.K8sConfig{}
 }
 
-func k8s(cliEnvironment environment.Environment) *cobra.Command {
+func k8s() *cobra.Command {
 	k8sConfig := newK8sConfig()
-	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
+	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
@@ -126,15 +126,15 @@ func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
-func openshift(cliEnvironment environment.Environment) *cobra.Command {
+func openshift() *cobra.Command {
 	k8sConfig := newK8sConfig()
 
 	var openshiftVersion int
-	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "openshift", "Openshift", func() (storage.ClusterType, error) {
+	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", func() (storage.ClusterType, error) {
 		clusterType := storage.ClusterType_OPENSHIFT_CLUSTER
 		switch openshiftVersion {
 		case 0:
-			cliEnvironment.Logger().InfofLn("%s", noteOpenShift3xCompatibilityMode)
+			fmt.Fprintf(os.Stderr, "%s\n\n", noteOpenShift3xCompatibilityMode)
 		case 3:
 		case 4:
 			clusterType = storage.ClusterType_OPENSHIFT4_CLUSTER

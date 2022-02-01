@@ -51,11 +51,6 @@ func (c *cliEnvironmentImpl) ColorWriter() io.Writer {
 	}
 }
 
-// ConnectNames returns the endpoint and (SNI) server name
-func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
-	return common.ConnectNames()
-}
-
 type colorWriter struct {
 	colorfulPrinter printer.ColorfulPrinter
 	out             io.Writer
