@@ -53,7 +53,7 @@ func newGRPCClient(endpoint string) (*client, error) {
 
 	return &client{
 		client: scannerV1.NewImageScanServiceClient(conn),
-		conn: conn,
+		conn:   conn,
 	}, nil
 }
 
