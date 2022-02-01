@@ -45,7 +45,7 @@ type retryTickerImpl struct {
 	mutex          sync.Mutex
 }
 
-// Start calls t.f and schedules the next tick immediately.
+// Start calls the tick function and schedules the next tick immediately.
 func (t *retryTickerImpl) Start() {
 	t.scheduleTick(0)
 }

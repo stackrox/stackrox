@@ -28,7 +28,7 @@ type testTickFun struct {
 	mock.Mock
 }
 
-func (f *testTickFun) f(ctx context.Context) (timeToNextTick time.Duration, err error) {
+func (f *testTickFun) doTick(ctx context.Context) (timeToNextTick time.Duration, err error) {
 	args := f.Called(ctx)
 	return args.Get(0).(time.Duration), args.Error(1)
 }
@@ -47,13 +47,13 @@ func TestRetryTicker(t *testing.T) {
 			m := &testTickFun{}
 			var ticker RetryTicker
 
-			m.On("f", mock.Anything).Return(tc.timeToSecondTick, tc.firstErr).Run(func(args mock.Arguments) {
+			m.On("doTick", mock.Anything).Return(tc.timeToSecondTick, tc.firstErr).Run(func(args mock.Arguments) {
 				done1.Set(true)
 			}).Once()
-			m.On("f", mock.Anything).Return(longTime, nil).Run(func(args mock.Arguments) {
+			m.On("doTick", mock.Anything).Return(longTime, nil).Run(func(args mock.Arguments) {
 				done2.Set(true)
 			}).Once()
-			ticker = NewRetryTicker(m.f, longTime, backoff)
+			ticker = NewRetryTicker(m.doTick, longTime, backoff)
 
 			ticker.Start()
 			defer ticker.Stop()
