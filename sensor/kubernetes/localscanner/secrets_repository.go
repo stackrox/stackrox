@@ -43,11 +43,7 @@ func (r *certSecretsRepoImpl) getSecrets(ctx context.Context) (map[storage.Servi
 	secretsMap := make(map[storage.ServiceType]*v1.Secret, len(r.secretNames))
 	var getErr error
 	for serviceType, secretName := range r.secretNames {
-		var (
-			secret *v1.Secret
-			err    error
-		)
-		secret, err = r.secretsClient.Get(ctx, secretName, metav1.GetOptions{})
+		secret, err := r.secretsClient.Get(ctx, secretName, metav1.GetOptions{})
 		if err != nil {
 			getErr = multierror.Append(getErr, errors.Wrapf(err, "for secret %s", secretName))
 		} else {
@@ -69,8 +65,7 @@ func (r *certSecretsRepoImpl) putSecrets(ctx context.Context, secrets map[storag
 	for serviceType, secretName := range r.secretNames {
 		secret := secrets[serviceType]
 		if secret == nil {
-			putErr =
-				multierror.Append(putErr, errors.Errorf("no secret found for service type %s", serviceType))
+			putErr = multierror.Append(putErr, errors.Errorf("no secret found for service type %s", serviceType))
 		} else {
 			_, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{})
 			if err != nil {
