@@ -8,7 +8,7 @@ set +u
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 set -u
 
-source "$SCRIPTS_ROOT/scripts/lib.sh"
+source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
 
 setup_gcp() {
     info "Setting up GCP auth and config"
