@@ -3,17 +3,16 @@ package supportpackages
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/collector/supportpackages/upload"
-	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 // Command defines the central command tree
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "support-packages",
 	}
 
 	c.AddCommand(
-		upload.Command(cliEnvironment),
+		upload.Command(),
 	)
 	return c
 }
