@@ -49,6 +49,9 @@ describe('Vulnmanagement reports', () => {
 
             cy.wait('@searchOptions');
 
+            // Hard-coded wait is to ameliorate a tenacious flake in CI that has resisted all more gentle solutions
+            cy.wait(1000);
+
             cy.get(selectors.reportSection.createReportLink).click();
             cy.location('pathname').should('eq', `${url.reporting.list}`);
             cy.location('search').should('eq', '?action=create');
