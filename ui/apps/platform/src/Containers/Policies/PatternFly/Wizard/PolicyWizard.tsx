@@ -11,6 +11,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
+
+import { getServerPolicy } from '../policies.utils';
 import { getValidationSchema } from './policyValidationSchemas';
 import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
@@ -43,7 +45,9 @@ function PolicyWizard({
         onSubmit: (values: Policy, { setSubmitting }) => {
             setPolicyErrorMessage('');
             setIsBadRequest(false);
-            const request = pageAction === 'edit' ? savePolicy(values) : createPolicy(values);
+            const serverPolicy = getServerPolicy(values);
+            const request =
+                pageAction === 'edit' ? savePolicy(serverPolicy) : createPolicy(serverPolicy);
             request
                 .then(() => {
                     history.goBack();

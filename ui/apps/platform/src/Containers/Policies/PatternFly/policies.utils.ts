@@ -272,7 +272,18 @@ export const initialExcludedDeployment: WizardExcludedDeployment = {
     scope: initialScope,
 };
 
-export function preFormatExclusionField(policy): Policy {
+export function getClientWizardPolicy(policy): Policy {
+    return preFormatExclusionField(policy);
+}
+
+export function getServerPolicy(policy): Policy {
+    return postFormatExclusionField(policy);
+}
+
+/*
+ * Split server exclusions property into client-wizard excludedDeploymentScopes and excludedImageNames properties.
+ */
+function preFormatExclusionField(policy): Policy {
     const { exclusions } = policy;
     const clientPolicy: Policy = { ...policy };
 
@@ -286,7 +297,10 @@ export function preFormatExclusionField(policy): Policy {
     return clientPolicy;
 }
 
-export function postFormatExclusionField(policy): Policy {
+/*
+ * Merge client-wizard excludedDeploymentScopes and excludedImageNames properties into server exclusions property.
+ */
+function postFormatExclusionField(policy): Policy {
     const serverPolicy: Policy = { ...policy };
     serverPolicy.exclusions = [];
 
