@@ -153,9 +153,9 @@ func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent
 		}
 	}
 
-	executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.ProvidedExecutables))
-	for _, path := range feature.ProvidedExecutables {
-		exec := &storage.EmbeddedImageScanComponent_Executable{Path: path}
+	executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.Executables))
+	for _, executable := range feature.Executables {
+		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.Path}
 		executables = append(executables, exec)
 	}
 	component.Executables = executables
