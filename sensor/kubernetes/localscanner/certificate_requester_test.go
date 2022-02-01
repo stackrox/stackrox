@@ -21,24 +21,40 @@ var (
 )
 
 func TestCertificateRequesterRequestFailureIfStopped(t *testing.T) {
-	f := newFixture(0)
-	defer f.tearDown()
-	doneErrSig := concurrency.NewErrorSignal()
+	testCases := map[string]struct {
+		startRequester bool
+	}{
+		"requester not started":            {false},
+		"requester stopped before request": {true},
+	}
+	for tcName, tc := range testCases {
+		t.Run(tcName, func(t *testing.T) {
+			f := newFixture(0)
+			if tc.startRequester {
+				f.requester.Start()
+			}
+			defer f.tearDown()
+			doneErrSig := concurrency.NewErrorSignal()
 
-	f.requester.Stop()
-	go func() {
-		certs, err := f.requester.RequestCertificates(f.ctx)
-		assert.Nil(t, certs)
-		doneErrSig.SignalWithError(err)
-	}()
+			if tc.startRequester {
+				f.requester.Stop()
+			}
+			go func() {
+				certs, err := f.requester.RequestCertificates(f.ctx)
+				assert.Nil(t, certs)
+				doneErrSig.SignalWithError(err)
+			}()
 
-	requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
-	require.True(t, ok)
-	assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
+			requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
+			require.True(t, ok)
+			assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
+		})
+	}
 }
 
 func TestCertificateRequesterRequestCancellation(t *testing.T) {
 	f := newFixture(0)
+	f.requester.Start()
 	defer f.tearDown()
 	doneErrSig := concurrency.NewErrorSignal()
 
@@ -56,6 +72,7 @@ func TestCertificateRequesterRequestCancellation(t *testing.T) {
 
 func TestCertificateRequesterRequestSuccess(t *testing.T) {
 	f := newFixture(0)
+	f.requester.Start()
 	defer f.tearDown()
 
 	go f.respondRequest(t, nil)
@@ -67,6 +84,7 @@ func TestCertificateRequesterRequestSuccess(t *testing.T) {
 
 func TestCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	f := newFixture(100 * time.Millisecond)
+	f.requester.Start()
 	defer f.tearDown()
 
 	// Request with different request ID should be ignored.
@@ -79,6 +97,7 @@ func TestCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 
 func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T) {
 	f := newFixture(0)
+	f.requester.Start()
 	defer f.tearDown()
 	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
 
@@ -114,7 +133,6 @@ func newFixture(timeout time.Duration) *certificateRequesterFixture {
 		timeout = testTimeout
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	requester.Start()
 	return &certificateRequesterFixture{
 		sendC:                sendC,
 		receiveC:             receiveC,
