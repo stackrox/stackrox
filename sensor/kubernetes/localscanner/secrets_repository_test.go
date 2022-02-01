@@ -17,11 +17,13 @@ import (
 )
 
 const (
-	namespace   = "stackrox-ns"
+	namespace = "stackrox-ns"
 )
 
 var (
-	errForced = errors.New("forced error")
+	errForced          = errors.New("forced error")
+	serviceType        = storage.ServiceType_SCANNER_SERVICE
+	anotherServiceType = storage.ServiceType_SENSOR_SERVICE
 )
 
 func TestCertSecretsRepo(t *testing.T) {
@@ -86,6 +88,28 @@ func (s *certSecretsRepoSuite) TestPut() {
 	}
 }
 
+func (s *certSecretsRepoSuite) TestPutNilSecretSuccess() {
+	f := s.newFixture("", "foo")
+	f.secretsMap[serviceType] = nil
+	err := f.repo.putSecrets(context.Background(), f.secretsMap)
+	s.NoError(err)
+}
+
+func (s *certSecretsRepoSuite) TestPutNoSecretSuccess() {
+	f := s.newFixture("", "foo")
+	f.secretsMap = make(map[storage.ServiceType]*v1.Secret)
+	err := f.repo.putSecrets(context.Background(), f.secretsMap)
+	s.NoError(err)
+}
+
+func (s *certSecretsRepoSuite) TestPutUnknownSecretFail() {
+	f := s.newFixture("", "foo")
+	f.secretsMap[anotherServiceType] = f.secretsMap[serviceType]
+	delete(f.secretsMap, serviceType)
+	err := f.repo.putSecrets(context.Background(), f.secretsMap)
+	s.Error(err)
+}
+
 func (s *certSecretsRepoSuite) checkExpectedError(expectedErr, err error) {
 	if expectedErr != errForced {
 		s.Equal(expectedErr, err)
@@ -102,7 +126,6 @@ type certSecretsRepoFixture struct {
 }
 
 func (s *certSecretsRepoSuite) newFixture(verbToError string, secretName string) *certSecretsRepoFixture {
-	serviceType := storage.ServiceType_SCANNER_SERVICE
 	secretsNamesMap := map[storage.ServiceType]string{serviceType: secretName}
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

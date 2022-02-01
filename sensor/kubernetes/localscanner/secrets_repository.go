@@ -15,14 +15,17 @@ var (
 	_ certSecretsRepo = (*certSecretsRepoImpl)(nil)
 )
 
-// certSecretsRepo is in charge of persisting and retrieving a set of secrets corresponding to service types
-// into some permanent storage system, thus implementing the
+// certSecretsRepo is in charge of persisting and retrieving a set of secrets corresponding to a fixed
+// set of service types into k8s, thus implementing the
 // [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for a map from service types
-// to secrets.
+// to secrets and using the k8s API as persistence.
 type certSecretsRepo interface {
 	// getSecrets retrieves the secrets from permanent storage.
 	getSecrets(ctx context.Context) (map[storage.ServiceType]*v1.Secret, error)
 	// putSecrets persists the secrets on permanent storage.
+	// - Returns an error in case some service in `secret` is not in the set of service types handled by the repository.
+	// - `secrets` may miss an entry for some service type handled by the repository, in that case this only updates
+	//   the secrets for the service types in `secrets`.
 	putSecrets(ctx context.Context, secrets map[storage.ServiceType]*v1.Secret) error
 }
 
@@ -64,14 +67,17 @@ func (r *certSecretsRepoImpl) getSecrets(ctx context.Context) (map[storage.Servi
 
 func (r *certSecretsRepoImpl) putSecrets(ctx context.Context, secrets map[storage.ServiceType]*v1.Secret) error {
 	var putErr error
-	for serviceType, secretName := range r.secretNames {
-		secret := secrets[serviceType]
-		if secret == nil {
-			putErr = multierror.Append(putErr, errors.Errorf("no secret found for service type %s", serviceType))
+
+	for serviceType, secret := range secrets {
+		secretName, ok := r.secretNames[serviceType]
+		if !ok {
+			putErr = multierror.Append(putErr, errors.Errorf("unkown service type %s", serviceType))
 		} else {
-			_, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{})
-			if err != nil {
-				putErr = multierror.Append(putErr, errors.Wrapf(err, "for secret %s", secretName))
+			if secret != nil {
+				_, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{})
+				if err != nil {
+					putErr = multierror.Append(putErr, errors.Wrapf(err, "for secret %s", secretName))
+				}
 			}
 		}
 		// on context cancellation abort putting other secrets.
