@@ -16,7 +16,9 @@ var (
 )
 
 // certSecretsRepo is in charge of persisting and retrieving a set of secrets corresponding to service types
-// into some permanent storage system.
+// into some permanent storage system, thus implementing the
+// [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for a map from service types
+// to secrets.
 type certSecretsRepo interface {
 	// getSecrets retrieves the secrets from permanent storage.
 	getSecrets(ctx context.Context) (map[storage.ServiceType]*v1.Secret, error)
@@ -29,9 +31,9 @@ type certSecretsRepoImpl struct {
 	secretsClient corev1.SecretInterface
 }
 
-// NewCertSecretsRepo creates a new certSecretsRepo that handles secrets with the specified names and
+// newCertSecretsRepo creates a new certSecretsRepo that handles secrets with the specified names and
 // for the specified service types, and uses the k8s API for persistence.
-func NewCertSecretsRepo(secretNames map[storage.ServiceType]string,
+func newCertSecretsRepo(secretNames map[storage.ServiceType]string,
 	secretsClient corev1.SecretInterface) certSecretsRepo {
 	return &certSecretsRepoImpl{
 		secretNames:   secretNames,
