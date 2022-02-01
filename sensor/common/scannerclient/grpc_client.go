@@ -8,8 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/registries/types"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/sensor/common/registry"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
@@ -61,14 +62,16 @@ func newGRPCClient(endpoint string) (*client, error) {
 // 1. Retrieve image metadata.
 // 2. Request image analysis from Scanner, directly.
 // 3. Return image analysis results.
-func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*scannerV1.GetImageComponentsResponse, error) {
+func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*imageData, error) {
 	reg, err := getRegistry(image)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "determining image registry for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
 	}
 
-	// TODO: get image metadata
-	
+	metadata, err := reg.Metadata(types.ToImage(image))
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting image metadata for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+	}
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
@@ -84,10 +87,13 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	return resp, nil
+	return &imageData{
+		Metadata:                   metadata,
+		GetImageComponentsResponse: resp,
+	}, nil
 }
 
-func getRegistry(img *storage.ContainerImage) (types.Registry, error) {
+func getRegistry(img *storage.ContainerImage) (registryTypes.Registry, error) {
 	reg := img.GetName().GetRegistry()
 	regs := registry.Singleton().GetAllInNamespace(img.GetNamespace())
 	for _, r := range regs.GetAll() {
