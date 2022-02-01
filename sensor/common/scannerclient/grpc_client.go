@@ -72,11 +72,9 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 	if err != nil {
 		log.Errorf("getting image metadata for %s in namespace %q: %v", image.GetName().GetFullName(), image.GetNamespace(), err)
 		return nil, errors.Wrapf(err, "getting image metadata for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
-	} else {
-		log.Infof("Successfully got image metadata for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
 	}
 
-
+	log.Infof("Successfully got image metadata for %s in namespace %q: %v", image.GetName().GetFullName(), image.GetNamespace(), metadata)
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
