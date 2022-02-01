@@ -25,19 +25,12 @@ type ClusterServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
 	dataStore datastore.DataStore
 }
 
 func (suite *ClusterServiceTestSuite) SetupTest() {
-	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
-	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),

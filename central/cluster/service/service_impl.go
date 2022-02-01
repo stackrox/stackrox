@@ -150,22 +150,10 @@ func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.
 	if err != nil {
 		return nil, err
 	}
-	cluster := &storage.Cluster{
-		Type:                storage.ClusterType_GENERIC_CLUSTER,
-		SlimCollector:       kernelSupport,
-		AdmissionController: true,
-	}
-	if err := datastore.AddDefaults(cluster); err != nil {
-		return nil, err
-	}
-	if cluster.GetCollectorImage() == "" {
-		flavor := defaults.GetImageFlavorFromEnv()
-		cluster.CollectorImage = flavor.CollectorFullImageNoTag()
-	}
-
+	flavor := defaults.GetImageFlavorFromEnv()
 	defaults := &v1.ClusterDefaultsResponse{
-		MainImageRepository:      cluster.GetMainImage(),
-		CollectorImageRepository: cluster.GetCollectorImage(),
+		MainImageRepository:      flavor.MainImageNoTag(),
+		CollectorImageRepository: flavor.CollectorFullImageNoTag(),
 		KernelSupportAvailable:   kernelSupport,
 	}
 	return defaults, nil

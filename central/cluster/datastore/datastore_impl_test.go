@@ -1374,7 +1374,7 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 				AdmissionController: testCase.clusterType != storage.ClusterType_OPENSHIFT_CLUSTER &&
 					testCase.clusterType != storage.ClusterType_OPENSHIFT4_CLUSTER,
 			}
-			err := AddDefaults(cluster)
+			err := addDefaults(cluster)
 			suite.NoError(err)
 			suite.Equal(testCase.expectedSlimCollector, cluster.SlimCollector)
 			suite.Equal(testCase.expectedAdmissionController, cluster.AdmissionController)
@@ -1390,7 +1390,7 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 		cluster := &storage.Cluster{
 			MainImage: "somevalue",
 		}
-		suite.NoError(AddDefaults(cluster))
+		suite.NoError(addDefaults(cluster))
 		suite.Empty(cluster.GetCollectorImage())
 	})
 }

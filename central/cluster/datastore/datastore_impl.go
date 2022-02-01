@@ -856,17 +856,17 @@ func normalizeCluster(cluster *storage.Cluster) error {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
 
-	return AddDefaults(cluster)
+	return addDefaults(cluster)
 }
 
 func validateInput(cluster *storage.Cluster) error {
 	return clusterValidation.Validate(cluster).ToError()
 }
 
-// AddDefaults enriches the provided non-nil cluster object with defaults for
+// addDefaults enriches the provided non-nil cluster object with defaults for
 // fields that cannot stay empty.
 // `cluster.* bool` flags remain untouched.
-func AddDefaults(cluster *storage.Cluster) error {
+func addDefaults(cluster *storage.Cluster) error {
 	if cluster == nil {
 		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
 	}
