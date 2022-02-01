@@ -18,7 +18,7 @@ export function fetchSecrets(options) {
         { arrayFormat: 'repeat' }
     );
     return axios.get(`${secretsUrl}?${params}`).then((response) => ({
-        response: normalize(response.data.secrets, [secretSchema]),
+        response: normalize(response?.data?.secrets ?? [], [secretSchema]),
     }));
 }
 

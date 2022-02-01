@@ -122,5 +122,5 @@ export function computeEffectiveAccessScopeClusters(
                 },
             }
         )
-        .then((response) => response.data.clusters);
+        .then((response) => response?.data?.clusters ?? []);
 }

@@ -173,6 +173,10 @@ const policySidePanelSelectors = {
 const reportSection = {
     createReportLink: 'a:contains("Create report")',
     breadcrumbItems: '.pf-c-breadcrumb__item',
+    buttons: {
+        create: 'button:contains("Create")',
+        cancel: 'button:contains("Cancel")',
+    },
 };
 
 export const selectors = {
