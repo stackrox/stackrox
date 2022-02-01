@@ -140,6 +140,8 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 							},
 							NotPullable: true,
 						},
+						LivenessProbe:  &storage.LivenessProbe{Defined: false},
+						ReadinessProbe: &storage.ReadinessProbe{Defined: false},
 					},
 					{
 						Id:   "FooID:container2",
@@ -158,6 +160,8 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 						},
 						SecurityContext: &storage.SecurityContext{},
 						Resources:       &storage.Resources{},
+						LivenessProbe:   &storage.LivenessProbe{Defined: false},
+						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
 					},
 				},
 			},

@@ -1,6 +1,6 @@
 import queryString from 'qs';
 
-import { Alert, ListAlert } from 'Containers/Violations/PatternFly/types/violationTypes';
+import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 
 import axios from './instance';
 import searchOptionsToQuery from './searchOptionsToQuery';

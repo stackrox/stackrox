@@ -522,6 +522,12 @@
         },
         "name": {
           "type": "string"
+        },
+        "livenessProbe": {
+          "$ref": "#/definitions/storageLivenessProbe"
+        },
+        "readinessProbe": {
+          "$ref": "#/definitions/storageReadinessProbe"
         }
       }
     },
@@ -831,6 +837,14 @@
       },
       "title": "Next available tag: 9"
     },
+    "storageLivenessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
     "storagePermissionLevel": {
       "type": "string",
       "enum": [
@@ -872,6 +886,14 @@
         }
       },
       "title": "Next Available Tag: 6"
+    },
+    "storageReadinessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
     },
     "storageResources": {
       "type": "object",

@@ -46,6 +46,8 @@ class Deployment {
     Boolean createLoadBalancer = false
     Boolean createRoute = false
     Boolean automountServiceAccountToken = true
+    Boolean livenessProbeDefined = false
+    Boolean readinessProbeDefined = false
     String serviceName
     String serviceAccountName
 
@@ -262,6 +264,16 @@ class Deployment {
 
     Deployment setAutomountServiceAccountToken(Boolean automount) {
         this.automountServiceAccountToken = automount
+        return this
+    }
+
+    Deployment setLivenessProbeDefined(Boolean probeDefined) {
+        this.livenessProbeDefined = probeDefined
+        return this
+    }
+
+    Deployment setReadinessProbeDefined(Boolean probeDefined) {
+        this.readinessProbeDefined = probeDefined
         return this
     }
 

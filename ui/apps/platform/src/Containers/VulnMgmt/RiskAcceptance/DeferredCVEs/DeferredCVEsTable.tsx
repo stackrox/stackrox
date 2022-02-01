@@ -24,6 +24,7 @@ import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
 import DeferralExpirationDate from '../DeferralExpirationDate';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
+import CVESummaryLink from '../CVESummaryLink';
 
 export type DeferredCVEsTableProps = {
     rows: Vulnerability[];
@@ -153,7 +154,9 @@ function DeferredCVEsTable({
                                         isSelected: selected[rowIndex],
                                     }}
                                 />
-                                <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="CVE">
+                                    <CVESummaryLink cve={row.cve} />
+                                </Td>
                                 <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
