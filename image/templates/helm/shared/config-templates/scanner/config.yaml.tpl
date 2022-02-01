@@ -23,7 +23,7 @@ scanner:
 
   api:
     httpsPort: 8080
-    grpcPort: 8443
+    grpcPort: 8081
 
   updater:
     # Frequency with which the scanner will poll for vulnerability updates.
