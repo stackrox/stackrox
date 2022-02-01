@@ -249,7 +249,7 @@ func (w *deploymentWrap) GetDeployment() *storage.Deployment {
 func filterOnOwners(hierarchy references.ParentHierarchy, topLevelUID string, pods []*v1.Pod) []*v1.Pod {
 	filteredPods := pods[:0]
 	for _, p := range pods {
-		if hierarchy.IsValidChild(topLevelUID, string(p.UID)) {
+		if hierarchy.IsValidChild(topLevelUID, p) {
 			filteredPods = append(filteredPods, p)
 		}
 	}

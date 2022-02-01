@@ -8,9 +8,15 @@ const tabHeaderClassName =
 
 function NetworkEntityTabHeader({ title, isActive, onSelectTab, dataTestId }) {
     const className = isActive ? activeTabHeaderClassName : tabHeaderClassName;
+
+    function onSelectTabHandler(event) {
+        event.stopPropagation();
+        onSelectTab(event);
+    }
+
     return (
         <li key={title} className="ml-2 first:ml-0" data-testid={dataTestId}>
-            <button type="button" className={className} onClick={onSelectTab}>
+            <button type="button" className={className} onClick={onSelectTabHandler}>
                 {title}
             </button>
         </li>

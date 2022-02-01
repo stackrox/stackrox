@@ -8,29 +8,54 @@ import {
 } from '../../helpers/formHelpers';
 import sampleCert from '../../helpers/sampleCert';
 
+function visitNotifierIntegrations() {
+    cy.intercept('GET', api.roles.mypermissions).as('mypermissions');
+    cy.visit('/');
+    cy.wait('@mypermissions');
+
+    cy.intercept('GET', api.integrations.notifiers).as('getNotifiers');
+    cy.get(selectors.configure).click();
+    cy.get(selectors.navLink).click();
+    cy.wait('@getNotifiers');
+    cy.get(selectors.integrationsTitle);
+}
+
+function saveNotifierIntegration() {
+    cy.intercept('GET', api.integrations.notifiers).as('getNotifiers');
+    cy.intercept('POST', api.integrations.notifiers).as('postNotifier');
+    cy.get(selectors.buttons.save).should('be.enabled').click();
+    cy.wait('@postNotifier');
+    cy.wait('@getNotifiers');
+    cy.get(selectors.integrationsTitle);
+    // TODO even better if integration labels were string constants separate from Tile selector,
+    // therefore could be provided as a function argument:
+    // cy.get(`${selectors.integrationTitle}:contains("${integrationLabel}"));
+}
+
+function saveJiraIntegration() {
+    cy.intercept('GET', api.integrations.notifiers).as('getNotifiers');
+    // Mock request because backend pings your Jira on Save, not just on Test.
+    cy.intercept('POST', api.integrations.notifiers, {
+        body: { id: 'abcdefgh' },
+    }).as('postNotifier');
+    cy.get(selectors.buttons.save).should('be.enabled').click();
+    cy.wait('@postNotifier');
+    cy.wait('@getNotifiers');
+    cy.get(selectors.integrationsTitle);
+}
+
 describe('Notifiers Test', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.intercept('GET', api.integrations.notifiers, {
-            fixture: 'integrations/notifiers.json',
-        }).as('getNotifiers');
-
-        cy.visit('/');
-        cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click({ force: true });
-        cy.wait('@getNotifiers');
-    });
-
     describe('Notifier forms', () => {
         it('should create a new AWS Security Hub integration', () => {
+            visitNotifierIntegrations();
+
             const integrationName = generateNameWithDate('Nova AWS Security Hub');
 
             cy.get(selectors.awsSecurityHubTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/awsSecurityHub/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -74,10 +99,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('AWS account number').clear().type('939357552771').blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Email integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.emailTile).click();
 
             cy.get(selectors.buttons.new).click();
@@ -144,10 +171,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('Disable TLS certificate validation (insecure)').click();
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Generic Webhook integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.genericWebhookTile).click();
 
             cy.get(selectors.buttons.new).click();
@@ -195,10 +224,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('Value').type('mysteryinc').blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Google Cloud SCC integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.googleCloudSCCTile).click();
 
             cy.get(selectors.buttons.new).click();
@@ -250,10 +281,12 @@ describe('Notifiers Test', () => {
                 .blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Jira integration', () => {
+            visitNotifierIntegrations();
+
             // mocking create needed b/c backend Save actually pings your Jira on Save,
             //   not just on test
             cy.intercept('POST', api.integrations.notifiers, {
@@ -300,12 +333,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('Default project').clear().type('Unicorn').blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
-
-            cy.wait(['@CreateJira']);
+            saveJiraIntegration();
         });
 
         it('should create a new PagerDuty integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.pagerDutyTile).click();
 
             cy.get(selectors.buttons.new).click();
@@ -337,10 +370,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('PagerDuty integration key').type('key');
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Sumo Logic integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.sumologicTile).click();
 
             cy.get(selectors.buttons.new).click();
@@ -374,10 +409,12 @@ describe('Notifiers Test', () => {
                 .type('https://endpoint.sumologic.com/receiver/v1/http/');
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Splunk integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.splunkTile).click();
 
             cy.get(selectors.buttons.new).click();
@@ -439,10 +476,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('Source type for audit').clear().type('stackrox-audit-message');
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Slack integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.slackTile).click();
 
             cy.get(selectors.buttons.new).click();
@@ -484,15 +523,15 @@ describe('Notifiers Test', () => {
                 .blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Syslog integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.syslogTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/syslog/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -528,10 +567,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('Receiver port').clear().type('1').blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
 
         it('should create a new Teams integration', () => {
+            visitNotifierIntegrations();
+
             cy.get(selectors.teamsTile).click();
 
             cy.get(selectors.buttons.new).click();
@@ -563,7 +604,7 @@ describe('Notifiers Test', () => {
             getInputByLabel('Annotation key for Teams webhook').clear().type('teams');
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
+            saveNotifierIntegration();
         });
     });
 });

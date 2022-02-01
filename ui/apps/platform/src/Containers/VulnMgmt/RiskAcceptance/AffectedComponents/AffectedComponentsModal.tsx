@@ -51,7 +51,7 @@ function AffectedComponentsModal({
                 />
             </InputGroup>
             <Card isFlat className="pf-u-mt-lg">
-                <TableComposable aria-label="Components Table" variant="compact" borders>
+                <TableComposable aria-label="Affected Components Table" variant="compact" borders>
                     <Thead>
                         <Tr>
                             <Th>Component</Th>

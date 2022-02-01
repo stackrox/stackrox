@@ -4,13 +4,13 @@ go 1.16
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20220125184214-761202d6ab74
+require github.com/stackrox/scanner v0.0.0-20211030133935-e0a9b47f81de
 
 require (
 	cloud.google.com/go v0.94.1
 	cloud.google.com/go/containeranalysis v0.1.0
 	cloud.google.com/go/storage v1.12.0
-	github.com/BurntSushi/toml v0.4.1
+	github.com/BurntSushi/toml v1.0.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
@@ -96,7 +96,7 @@ require (
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
-	github.com/stackrox/helmtest v0.0.0-20211118112901-c6fc838e7f89
+	github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/testify v1.7.0
@@ -131,7 +131,7 @@ require (
 	k8s.io/client-go v0.22.2
 	k8s.io/kubectl v0.22.2
 	k8s.io/kubelet v0.22.2
-	k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e
+	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
 	sigs.k8s.io/controller-runtime v0.10.2
 	sigs.k8s.io/yaml v1.3.0
 )

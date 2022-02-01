@@ -759,5 +759,37 @@ func initializeFieldMetadata() FieldMetadata {
 		negationForbidden, operatorsForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.Replicas,
+		querybuilders.ForFieldLabel(search.Replicas),
+		violationmessages.ResourceContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return comparatorDecimalValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+	)
+
+	f.registerFieldMetadata(fieldnames.LivenessProbeDefined,
+		querybuilders.ForFieldLabel(search.LivenessProbeDefined),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+		negationForbidden, operatorsForbidden,
+	)
+
+	f.registerFieldMetadata(fieldnames.ReadinessProbeDefined,
+		querybuilders.ForFieldLabel(search.ReadinessProbeDefined),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+		negationForbidden, operatorsForbidden,
+	)
+
 	return f
 }

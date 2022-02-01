@@ -143,7 +143,14 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	if err != nil {
 		return nil, err
 	}
-
+	if enrichResult.ImageUpdated {
+		img.Id = utils.GetImageID(img)
+		if img.GetId() != "" {
+			if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+				return nil, err
+			}
+		}
+	}
 	utils.FilterSuppressedCVEsNoClone(img)
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(req.GetPolicyCategories())
 	alerts, err := s.buildTimeDetector.Detect(img, filter)
@@ -156,15 +163,6 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 
 	s.maybeSendNotifications(req, alerts)
-
-	if enrichResult.ImageUpdated {
-		img.Id = utils.GetImageID(img)
-		if img.GetId() != "" {
-			if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-				return nil, err
-			}
-		}
-	}
 
 	return &apiV1.BuildDetectionResponse{
 		Alerts: alerts,

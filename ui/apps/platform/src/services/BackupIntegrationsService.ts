@@ -40,7 +40,7 @@ export function createBackupIntegration(
 export function fetchBackupIntegrations(): Promise<BackupIntegrationBase[]> {
     return axios
         .get<{ externalBackups: BackupIntegrationBase[] }>(backupIntegrationsUrl)
-        .then((response) => response.data.externalBackups);
+        .then((response) => response?.data?.externalBackups ?? []);
 }
 
 /*

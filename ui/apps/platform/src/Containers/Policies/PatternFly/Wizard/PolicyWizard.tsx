@@ -3,9 +3,11 @@ import { useHistory } from 'react-router-dom';
 import { FormikProvider, useFormik } from 'formik';
 import { Wizard, Breadcrumb, Title, BreadcrumbItem, Divider } from '@patternfly/react-core';
 
+import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
 import { Cluster } from 'types/cluster.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -32,14 +34,34 @@ function PolicyWizard({
     const history = useHistory();
     const [stepId, setStepId] = useState(1);
     const [stepIdReached, setStepIdReached] = useState(1);
+    const [isValidOnServer, setIsValidOnServer] = useState(false);
+    const [policyErrorMessage, setPolicyErrorMessage] = useState('');
+    const [isBadRequest, setIsBadRequest] = useState(false);
 
     const formik = useFormik({
         initialValues: policy,
-        onSubmit: () => {},
+        onSubmit: (values: Policy, { setSubmitting }) => {
+            setPolicyErrorMessage('');
+            setIsBadRequest(false);
+            const request = pageAction === 'edit' ? savePolicy(values) : createPolicy(values);
+            request
+                .then(() => {
+                    history.goBack();
+                })
+                .catch((error) => {
+                    setPolicyErrorMessage(getAxiosErrorMessage(error));
+                    if (error.response?.status === 400) {
+                        setIsBadRequest(true);
+                    }
+                })
+                .finally(() => {
+                    setSubmitting(false);
+                });
+        },
         validateOnMount: true,
         validationSchema: getValidationSchema(stepId),
     });
-    const { isValid, validateForm } = formik;
+    const { dirty, isSubmitting, isValid: isValidOnClient, submitForm, validateForm } = formik;
 
     function closeWizard(): void {
         history.goBack();
@@ -87,44 +109,53 @@ function PolicyWizard({
                     navAriaLabel={`${pageAction} policy steps`}
                     mainAriaLabel={`${pageAction} policy content`}
                     onClose={closeWizard}
+                    onSave={submitForm}
                     steps={[
                         {
                             id: 1,
                             name: 'Policy details',
                             component: <PolicyDetailsForm />,
                             canJumpTo: stepIdReached >= 1,
-                            enableNext: isValid,
+                            enableNext: isValidOnClient,
                         },
                         {
                             id: 2,
                             name: 'Policy behavior',
                             component: <PolicyBehaviorForm />,
                             canJumpTo: stepIdReached >= 2,
-                            enableNext: isValid,
+                            enableNext: isValidOnClient,
                         },
                         {
                             id: 3,
                             name: 'Policy criteria',
                             component: <PolicyCriteriaForm />,
                             canJumpTo: stepIdReached >= 3,
-                            enableNext: isValid,
+                            enableNext: isValidOnClient,
                         },
                         {
                             id: 4,
                             name: 'Policy scope',
                             component: <PolicyScopeForm clusters={clusters} />,
                             canJumpTo: stepIdReached >= 4,
-                            enableNext: isValid,
+                            enableNext: isValidOnClient,
                         },
                         {
                             id: 5,
                             name: 'Review policy',
                             component: (
-                                <ReviewPolicyForm clusters={clusters} notifiers={notifiers} />
+                                <ReviewPolicyForm
+                                    clusters={clusters}
+                                    isBadRequest={isBadRequest}
+                                    notifiers={notifiers}
+                                    policyErrorMessage={policyErrorMessage}
+                                    setIsBadRequest={setIsBadRequest}
+                                    setIsValidOnServer={setIsValidOnServer}
+                                    setPolicyErrorMessage={setPolicyErrorMessage}
+                                />
                             ),
                             nextButtonText: 'Save',
                             canJumpTo: stepIdReached >= 5,
-                            enableNext: isValid,
+                            enableNext: dirty && isValidOnServer && !isSubmitting,
                         },
                     ]}
                     onBack={onBack}

@@ -109,7 +109,7 @@ func newEnricher(cache expiringcache.Cache) *enricher {
 	}
 }
 
-func (e *enricher) getImageFromCache(key imagecacheutils.ImageCacheKey) (*storage.Image, bool) {
+func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
 	value, _ := e.imageCache.Get(key).(*cacheValue)
 	if value == nil {
 		return nil, false

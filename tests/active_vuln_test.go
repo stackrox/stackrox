@@ -30,17 +30,17 @@ var (
 		{
 			version:          "1.14.0",
 			SHA:              "sha256:8b600a4d029481cc5b459f1380b30ff6cb98e27544fc02370de836e397e34030",
-			activeComponents: 5,
+			activeComponents: 1,
 		},
 		{
 			version:          "1.18.0",
 			SHA:              "sha256:e90ac5331fe095cea01b121a3627174b2e33e06e83720e9a934c7b8ccc9c55a0",
-			activeComponents: 11,
+			activeComponents: 6,
 		},
 		{
 			version:          "1.20.0",
 			SHA:              "sha256:ea4560b87ff03479670d15df426f7d02e30cb6340dcd3004cdfc048d6a1d54b4",
-			activeComponents: 11,
+			activeComponents: 6,
 		},
 	}
 	once sync.Once
@@ -110,15 +110,15 @@ func TestActiveVulnerability_SetImage(t *testing.T) {
 func checkActiveVulnerability(t *testing.T, image nginxImage, deploymentID string) {
 	waitForCondition(t, func() bool {
 		deployment := getDeploymentActiveStates(t, deploymentID)
-		return image.activeComponents <= getActiveComponentCount(deployment)
+		return image.activeComponents == getActiveComponentCount(deployment)
 	}, "active components populated", 5*time.Minute, 30*time.Second)
 	fromDeployment := getDeploymentActiveStates(t, deploymentID)
-	assert.LessOrEqual(t, image.activeComponents, getActiveComponentCount(fromDeployment))
+	assert.Equal(t, image.activeComponents, getActiveComponentCount(fromDeployment))
 	// The active vulns are not stable over time. But at least one vuln should exist.
 	assert.NotZero(t, getActiveVulnCount(t, fromDeployment))
 
 	fromImage := getImageActiveStates(t, image.SHA, deploymentID)
-	assert.LessOrEqual(t, image.activeComponents, getActiveComponentCount(fromImage))
+	assert.Equal(t, image.activeComponents, getActiveComponentCount(fromImage))
 	assert.Equal(t, getActiveVulnCount(t, fromDeployment), getActiveVulnCount(t, fromImage))
 }
 

@@ -279,6 +279,7 @@ export const report = {
 export const riskAcceptance = {
     getImageVulnerabilities: graphql('getImageVulnerabilities'),
     deferVulnerability: graphql('deferVulnerability'),
+    markVulnerabilityFalsePositive: graphql('markVulnerabilityFalsePositive'),
 };
 
 export const system = {

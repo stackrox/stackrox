@@ -23,7 +23,7 @@ message Deployment {
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\""];
     bool orchestrator_component                = 33 [(gogoproto.moretags) = "search:\"Orchestrator Component\""];
-    int64 replicas                             = 6;
+    int64 replicas                             = 6 [(gogoproto.moretags) = "policy:\"Replicas\""];
     // TODO(ROX-6895): "Label" search term is ambiguous.
     map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label,store\""];
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"Pod Label,store\""];
@@ -65,18 +65,21 @@ message ContainerImage {
 }
 
 message Container {
-    string id                           = 1;
-    ContainerConfig config              = 2;
+    string id                        = 1;
+    ContainerConfig config           = 2;
 
-    ContainerImage image                = 3;
-    SecurityContext security_context    = 4;
-    repeated Volume volumes             = 5;
-    repeated PortConfig ports           = 6 [(gogoproto.moretags) = "policy:\",ignore\" search:\"-\""]; // Policies use the port config on the top-level deployment.
-    repeated EmbeddedSecret secrets     = 7;
-    Resources resources                 = 8;
+    ContainerImage image             = 3;
+    SecurityContext security_context = 4;
+    repeated Volume volumes          = 5;
+    repeated PortConfig ports        = 6 [(gogoproto.moretags) = "policy:\",ignore\" search:\"-\""]; // Policies use the port config on the top-level deployment.
+    repeated EmbeddedSecret secrets  = 7;
+    Resources resources              = 8;
 
     reserved 9; // previously instances
-    string name                          = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
+    string name                      = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
+
+    LivenessProbe liveness_probe     = 11;
+    ReadinessProbe readiness_probe   = 12;
 }
 
 message Resources {
@@ -98,6 +101,14 @@ message Volume {
     bool read_only                     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
     string type                        = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
     MountPropagation mount_propagation = 6 [(gogoproto.moretags) = "policy:\"Mount Propagation\""];
+}
+
+message LivenessProbe {
+    bool defined = 1 [(gogoproto.moretags) = "policy:\"Liveness Probe Defined\""];
+}
+
+message ReadinessProbe {
+    bool defined = 1 [(gogoproto.moretags) = "policy:\"Readiness Probe Defined\""];
 }
 
 // Pod represents information for a currently running pod or deleted pod in an active deployment.

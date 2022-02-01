@@ -32,7 +32,7 @@ export function fetchReports(
     return axios
         .get<{ reportConfigs: ReportConfiguration[] }>(`${reportConfigurationsUrl}?${params}`)
         .then((response) => {
-            return response.data.reportConfigs;
+            return response?.data?.reportConfigs ?? [];
         });
 }
 
@@ -54,7 +54,7 @@ export function fetchReportsCount(options: RestSearchOption[] = []): Promise<num
     return axios
         .get<{ reportConfigs: ReportConfiguration[] }>(`${reportConfigurationsUrl}?${params}`)
         .then((response) => {
-            return response.data.reportConfigs.length;
+            return response?.data?.reportConfigs.length ?? 0;
         });
 }
 
@@ -62,7 +62,7 @@ export function fetchReportById(reportId: string): Promise<ReportConfiguration> 
     return axios
         .get<{ reportConfig: ReportConfiguration }>(`${reportConfigurationsUrl}/${reportId}`)
         .then((response) => {
-            return response?.data?.reportConfig;
+            return response?.data?.reportConfig ?? {};
         });
 }
 

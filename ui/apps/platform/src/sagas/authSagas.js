@@ -181,7 +181,7 @@ function* handleTestLoginAuthResponse(location, type, result) {
         }
         parsedResult.userID = user.userId || null;
         parsedResult.userAttributes = user.userAttributes || null;
-        parsedResult.roles = user.userInfo?.roles || null;
+        parsedResult.roles = user.userInfo?.roles || [];
     }
 
     // save the test response for the results page to display

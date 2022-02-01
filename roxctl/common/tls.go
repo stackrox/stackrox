@@ -22,6 +22,7 @@ Please do one of the following at your earliest convenience:
   3. Update all your roxctl usages to pass the --insecure-skip-tls-verify option, in order to
      suppress this warning and retain the old behavior of not validating TLS certificates in
      the future (NOT RECOMMENDED).
+
 `
 
 type insecureVerifierWithWarning struct {
@@ -38,7 +39,7 @@ func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certifica
 	_, err := leaf.Verify(verifyOpts)
 	if err != nil {
 		v.printWarningOnce.Do(func() {
-			fmt.Fprintln(os.Stderr, warningMsg)
+			fmt.Fprint(os.Stderr, warningMsg)
 			fmt.Fprintln(os.Stderr, "Certificate validation error:", err.Error())
 		})
 	}
