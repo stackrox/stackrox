@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load "../helpers.bash"
+load "helpers.bash"
 
 out_dir=""
 
@@ -34,6 +34,7 @@ run_generate_and_get_bundle_test() {
   local flavor="$1";shift
   local name="$1";shift
   generate_bundle "$flavor" --name "$name" "$@"
+  assert_success
   download_dir=$(fetch_bundle "$name")
   rm -rf "$download_dir"
   delete_cluster "$name"
@@ -49,4 +50,9 @@ run_generate_and_get_bundle_test() {
 
 @test "[openshift4] roxctl sensor generate and get-bundle" {
   run_generate_and_get_bundle_test openshift "oc4-test-cluster" --openshift-version 4
+}
+
+@test "roxctl sensor generate fails if bundle name is not provided" {
+  generate_bundle k8s
+  assert_failure
 }

@@ -294,7 +294,6 @@ generate_bundle() {
         --output-dir="$out_dir" \
         --timeout=10m \
         --continue-if-exists
-  assert_success
 }
 
 delete_cluster() {
