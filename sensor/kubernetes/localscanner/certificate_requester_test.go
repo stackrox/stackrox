@@ -2,6 +2,7 @@ package localscanner
 
 import (
 	"context"
+	"math/rand"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	numConcurrentRequests = 2
+	numConcurrentRequests = 10
 )
 
 var (
@@ -59,7 +60,7 @@ func TestCertificateRequesterRequestSuccess(t *testing.T) {
 	f.requester.Start()
 	defer f.tearDown()
 
-	go f.respondRequest(t, nil)
+	go f.respondRequest(t, 0, nil)
 
 	response, err := f.requester.RequestCertificates(f.ctx)
 	assert.NoError(t, err)
@@ -72,7 +73,7 @@ func TestCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	defer f.tearDown()
 
 	// Request with different request ID should be ignored.
-	go f.respondRequest(t, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
+	go f.respondRequest(t, 0, &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"})
 
 	certs, requestErr := f.requester.RequestCertificates(f.ctx)
 	assert.Nil(t, certs)
@@ -86,7 +87,8 @@ func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T
 	waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
 
 	for i := 0; i < numConcurrentRequests; i++ {
-		go f.respondRequest(t, nil)
+		// use jitter to simulate out of order responses.
+		go f.respondRequest(t, 100*time.Millisecond, nil)
 		go func() {
 			defer waitGroup.Add(-1)
 			_, err := f.requester.RequestCertificates(f.ctx)
@@ -133,9 +135,10 @@ func (f *certificateRequesterFixture) tearDown() {
 }
 
 // respondRequest reads a request from `f.sendC` and responds with `responseOverwrite` if not nil, or with
-// a response with the same ID as the request otherwise.
+// a response with the same ID as the request otherwise. If `jitter` is greater than 0 then this waits for a
+// random time between 0 and `jitter` before sending the response.
 // Before sending the response, it stores in `f.interceptedRequestID` the request ID for the requests read from `f.sendC`.
-func (f *certificateRequesterFixture) respondRequest(t *testing.T, responseOverwrite *central.IssueLocalScannerCertsResponse) {
+func (f *certificateRequesterFixture) respondRequest(t *testing.T, jitter time.Duration, responseOverwrite *central.IssueLocalScannerCertsResponse) {
 	select {
 	case <-f.ctx.Done():
 	case request := <-f.sendC:
@@ -148,6 +151,9 @@ func (f *certificateRequesterFixture) respondRequest(t *testing.T, responseOverw
 			response = &central.IssueLocalScannerCertsResponse{RequestId: interceptedRequestID}
 		}
 		f.interceptedRequestID.Store(response.GetRequestId())
+		if jitter > 0 {
+			time.Sleep(time.Duration(rand.Int63n(jitter.Milliseconds())) * time.Millisecond)
+		}
 		select {
 		case <-f.ctx.Done():
 		case f.receiveC <- response:
