@@ -2,6 +2,7 @@ package initbundles
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -11,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 type output struct {
@@ -19,11 +19,11 @@ type output struct {
 	filename string
 }
 
-func generateInitBundle(cliEnvironment environment.Environment, name string, outputs []output) error {
+func generateInitBundle(name string, outputs []output) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 
 	meta := resp.GetMeta()
 
-	cliEnvironment.Logger().InfofLn(`Successfully generated new init bundle.
+	fmt.Fprintf(os.Stderr, `Successfully generated new init bundle.
 
   Name:       %s
   Created at: %v
@@ -78,7 +78,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 			return errors.Wrapf(err, "writing init bundle to %s", stringutils.FirstNonEmpty(out.filename, "<stdout>"))
 		}
 		if outFile != os.Stdout {
-			cliEnvironment.Logger().InfofLn("The newly generated init bundle has been written to file %q.", outFile.Name())
+			fmt.Fprintf(os.Stderr, "The newly generated init bundle has been written to file %q.\n", outFile.Name())
 			if err := outFile.Close(); err != nil {
 				return errors.Wrapf(err, "closing output file %q", outFile.Name())
 			}
@@ -86,13 +86,14 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 		files[i] = nil
 	}
 
-	cliEnvironment.Logger().InfofLn("The init bundle needs to be stored securely, since it contains secrets.")
-	cliEnvironment.Logger().InfofLn("It is not possible to retrieve previously generated init bundles.")
+	fmt.Fprintln(os.Stderr, `
+Note: The init bundle needs to be stored securely, since it contains secrets.
+      It is not possible to retrieve previously generated init bundles.`)
 	return nil
 }
 
 // generateCommand implements the command for generating new init bundles.
-func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
+func generateCommand() *cobra.Command {
 	var outputFile string
 	var secretsOutputFile string
 
@@ -125,7 +126,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			if len(outputs) == 0 {
 				return errors.New("No output files specified with --output or --output-secrets (for stdout, specify '-')")
 			}
-			return generateInitBundle(cliEnvironment, name, outputs)
+			return generateInitBundle(name, outputs)
 		},
 	}
 	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the newly generated init bundle in Helm configuration form (- for stdout)")

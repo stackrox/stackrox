@@ -12,15 +12,15 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
-func listInitBundles(cliEnvironment environment.Environment) error {
+func listInitBundles() error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -57,11 +57,11 @@ func listInitBundles(cliEnvironment environment.Environment) error {
 }
 
 // listCommand implements the command for listing init bundles.
-func listCommand(cliEnvironment environment.Environment) *cobra.Command {
+func listCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use: "list",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return listInitBundles(cliEnvironment)
+			return listInitBundles()
 		}),
 	}
 	return c

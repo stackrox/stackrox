@@ -2,6 +2,7 @@ package backup
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,8 +17,8 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -27,31 +28,22 @@ const (
 )
 
 // Command defines the backup command.
-func Command(cliEnvironment environment.Environment, full *bool) *cobra.Command {
-	centralBackupCmd := &centralBackupCommand{env: cliEnvironment}
-
+func Command(full *bool) *cobra.Command {
+	var output string
 	c := &cobra.Command{
 		Use:          "backup",
 		SilenceUsage: true,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return centralBackupCmd.backup(flags.Timeout(c), *full)
+			return Backup(flags.Timeout(c), output, *full)
 		}),
 	}
 
-	c.Flags().StringVar(&centralBackupCmd.output, "output", "", `where to write the backup.
+	c.Flags().StringVar(&output, "output", "", `where to write the backup.
 If the provided path is a file path, the backup will be written to the file, overwriting it if it already exists. (The directory MUST exist.)
 If the provided path is a directory, the backup will be saved in that directory with the server-provided filename.
 If this argument is omitted, the backup will be saved in the current working directory with the server-provided filename.`)
 	flags.AddTimeoutWithDefault(c, 1*time.Hour)
 	return c
-}
-
-type centralBackupCommand struct {
-	// Properties that are bound to cobra flags.
-	output string
-
-	// Properties that are injected or constructed.
-	env environment.Environment
 }
 
 func parseUserProvidedOutput(userProvidedOutput string) (string, error) {
@@ -103,8 +95,8 @@ func getFilePath(respHeader http.Header, userProvidedOutput string) (string, err
 	return finalLocation, nil
 }
 
-// backup creates central backup.
-func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error {
+// Backup creates central backup.
+func Backup(timeout time.Duration, userProvidedOutput string, full bool) error {
 	deadline := time.Now().Add(timeout)
 
 	var endpoint string
@@ -114,12 +106,12 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 		endpoint = "/db/backup"
 	}
 
-	client, err := cmd.env.HTTPClient(0)
+	req, err := common.NewHTTPRequestWithAuth(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return err
 	}
 
-	req, err := client.NewReq(http.MethodGet, endpoint, nil)
+	client, err := common.GetHTTPClient(0)
 	if err != nil {
 		return err
 	}
@@ -147,7 +139,7 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 		return errors.Wrap(httputil.ResponseToError(resp), "Error when trying to get a backup.")
 	}
 
-	filename, err := getFilePath(resp.Header, cmd.output)
+	filename, err := getFilePath(resp.Header, userProvidedOutput)
 	if err != nil {
 		return err
 	}
@@ -162,6 +154,6 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 		return err
 	}
 
-	cmd.env.Logger().PrintfLn("Wrote backup file to %q", filename)
+	fmt.Printf("Wrote backup file to %q\n", filename)
 	return file.Close()
 }

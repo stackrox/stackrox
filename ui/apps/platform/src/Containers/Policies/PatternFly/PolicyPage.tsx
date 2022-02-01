@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Bullseye, PageSection, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import { fetchClustersAsArray } from 'services/ClustersService';
@@ -10,8 +10,8 @@ import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
-import { preFormatExclusionField } from 'Containers/Policies/PatternFly/policies.utils';
 
+import { getClientWizardPolicy } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
 
@@ -107,9 +107,11 @@ function PolicyPage({
             setIsLoading(true);
             getPolicy(policyId)
                 .then((data) => {
-                    const formattedPolicy = preFormatExclusionField(data);
+                    const clientWizardPolicy = getClientWizardPolicy(data);
                     setPolicy(
-                        pageAction === 'clone' ? clonePolicy(formattedPolicy) : formattedPolicy
+                        pageAction === 'clone'
+                            ? clonePolicy(clientWizardPolicy)
+                            : clientWizardPolicy
                     );
                 })
                 .catch((error) => {
@@ -142,7 +144,7 @@ function PolicyPage({
     }
 
     return (
-        <PageSection variant="light" isFilled id="policy-page">
+        <>
             <PageTitle title="Policies - Policy" />
             {isLoading ? (
                 <Bullseye>
@@ -167,7 +169,7 @@ function PolicyPage({
                     />
                 ))
             )}
-        </PageSection>
+        </>
     );
 }
 

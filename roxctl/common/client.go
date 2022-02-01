@@ -13,7 +13,6 @@ import (
 // RoxctlHTTPClient abstracts all HTTP-related functionalities required within roxctl
 type RoxctlHTTPClient interface {
 	DoReqAndVerifyStatusCode(path string, method string, code int, body io.Reader) (*http.Response, error)
-	Do(req *http.Request) (*http.Response, error)
 	NewReq(method string, path string, body io.Reader) (*http.Request, error)
 }
 
@@ -76,11 +75,6 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 	}
 
 	return resp, nil
-}
-
-// Do executes a http.Request
-func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
-	return client.http.Do(req)
 }
 
 // NewReq creates a new http.Request which will have all authentication metadata injected
