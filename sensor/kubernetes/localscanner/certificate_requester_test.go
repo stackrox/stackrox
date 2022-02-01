@@ -30,23 +30,14 @@ func TestCertificateRequesterRequestFailureIfStopped(t *testing.T) {
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
 			f := newFixture(0)
+			defer f.tearDown()
 			if tc.startRequester {
 				f.requester.Start()
-			}
-			defer f.tearDown()
-			doneErrSig := concurrency.NewErrorSignal()
-
-			if tc.startRequester {
 				f.requester.Stop()
 			}
-			go func() {
-				certs, err := f.requester.RequestCertificates(f.ctx)
-				assert.Nil(t, certs)
-				doneErrSig.SignalWithError(err)
-			}()
 
-			requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
-			require.True(t, ok)
+			certs, requestErr := f.requester.RequestCertificates(f.ctx)
+			assert.Nil(t, certs)
 			assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
 		})
 	}
@@ -56,17 +47,10 @@ func TestCertificateRequesterRequestCancellation(t *testing.T) {
 	f := newFixture(0)
 	f.requester.Start()
 	defer f.tearDown()
-	doneErrSig := concurrency.NewErrorSignal()
 
-	go func() {
-		certs, err := f.requester.RequestCertificates(f.ctx)
-		assert.Nil(t, certs)
-		doneErrSig.SignalWithError(err)
-	}()
 	f.cancelCtx()
-
-	requestErr, ok := doneErrSig.WaitWithTimeout(testTimeout)
-	require.True(t, ok)
+	certs, requestErr := f.requester.RequestCertificates(f.ctx)
+	assert.Nil(t, certs)
 	assert.Equal(t, context.Canceled, requestErr)
 }
 
