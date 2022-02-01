@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Bullseye, PageSection, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import { fetchClustersAsArray } from 'services/ClustersService';
@@ -144,7 +144,7 @@ function PolicyPage({
     }
 
     return (
-        <PageSection variant="light" isFilled id="policy-page">
+        <>
             <PageTitle title="Policies - Policy" />
             {isLoading ? (
                 <Bullseye>
@@ -169,7 +169,7 @@ function PolicyPage({
                     />
                 ))
             )}
-        </PageSection>
+        </>
     );
 }
 
