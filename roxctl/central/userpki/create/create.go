@@ -56,6 +56,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(c.MarkFlagRequired("cert"))
 	c.Flags().StringVarP(&centralUserPkiCreateCmd.roleName, "role", "r", "", "Minimum access role for users of this provider")
 	utils.Must(c.MarkFlagRequired("role"))
+	flags.AddTimeout(c)
 	return c
 }
 
