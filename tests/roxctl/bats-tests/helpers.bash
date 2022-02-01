@@ -75,6 +75,52 @@ wait_10s_for() {
   "${args[@]}" "$file"
 }
 
+assert_sensor_component() {
+  local dir="$1"
+  local regex="$2"
+
+  run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "sensor").image' "${dir}/sensor.yaml"
+  assert_output --regexp "$regex"
+}
+
+assert_collector_component() {
+   local dir="$1"
+   local regex="$2"
+
+   run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "collector").image' "${dir}/collector.yaml"
+   assert_output --regexp "$regex"
+}
+
+assert_secured_cluster_component_registry() {
+  local dir="$1"
+  local registry_slug="$2"
+  shift; shift;
+
+  [[ ! -d "$dir" ]] && fail "ERROR: not a directory: '$dir'"
+  (( $# < 1 )) && fail "ERROR: 0 components provided"
+
+  for component in "${@}"; do
+    regex="$(registry_regex "$registry_slug" "$component")"
+    case $component in
+      main)
+        run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "sensor").image' "${dir}/sensor.yaml"
+        assert_output --regexp "$regex"
+        ;;
+      collector)
+        run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "collector").image' "${dir}/collector.yaml"
+        assert_output --regexp "$regex"
+        ;;
+      collector-slim)
+        run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "collector").image' "${dir}/collector.yaml"
+        assert_output --regexp "$regex"
+        ;;
+      *)
+        fail "ERROR: unknown component: '$component'"
+        ;;
+    esac
+  done
+}
+
 assert_components_registry() {
   local dir="$1"
   local registry_slug="$2"
@@ -104,10 +150,6 @@ assert_components_registry() {
         ;;
       sensor)
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "sensor").image' "${dir}/sensor.yaml"
-        assert_output --regexp "$regex"
-        ;;
-      collector)
-        run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "collector").image' "${dir}/collector.yaml"
         assert_output --regexp "$regex"
         ;;
       *)
@@ -241,12 +283,23 @@ has_flag_collision_warning() {
   assert_line --partial "flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'"
 }
 
+bundle_unique_name() {
+  echo "bats-cluster-$(date '+%s')"
+}
+
 generate_bundle() {
   installation_flavor="$1";shift
-  unique_name="bats-cluster-$(date '+%s')"
-  echo "Generating cluster with name $unique_name"
   run roxctl-development sensor generate "$installation_flavor" \
-        --insecure-skip-tls-verify -e "$API_ENDPOINT" --name "$unique_name" "$@" \
-        --output-dir="$out_dir"
+        --insecure-skip-tls-verify -e "$API_ENDPOINT" "$@" \
+        --output-dir="$out_dir" \
+        --timeout=10m \
+        --continue-if-exists
+  assert_success
+}
+
+delete_cluster() {
+  local name="$1";shift
+  run roxctl-development cluster delete --name "$name" \
+    -e "$API_ENDPOINT"
   assert_success
 }

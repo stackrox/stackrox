@@ -5,6 +5,8 @@ load "../helpers.bash"
 out_dir=""
 original_flavor=""
 
+
+
 setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq || skip "Tests in this file require yq"
@@ -32,60 +34,75 @@ roxctl_cmd() {
 }
 
 setup() {
-  out_dir="$(mktemp -d -u)"
+  # out_dir="$(mktemp -d -u)"
+  out_dir="/tmp/bats/testrun-$(date '+%s')"
+  mkdir -p "$out_dir"
   # set_image_flavor "development_build"
 }
 
 teardown() {
-  rm -rf "$out_dir"
+  echo "aa"
+  # rm -rf "$out_dir"
   # set_image_flavor "$original_flavor"
 }
+
+dev_registry_regex="docker\.io/stackrox"
+any_version="[0-9]+\.[0-9]+\."
+any_version_latest="[0-9]+\.[0-9]+\.[0-9]+\-latest"
+any_version_slim="[0-9]+\.[0-9]+\.[0-9]+\-slim"
 
 @test "[k8s] roxctl sensor generate no overrides" {
   export_api_token
   generate_bundle k8s
-  assert_components_registry "$out_dir" "docker.io" "sensor" "collector"
+  assert_sensor_component "$out_dir" "$dev_registry_regex/main:$any_version"
+  assert_collector_component "$out_dir" "$dev_registry_regex/collector:$any_version_slim"
 }
 
-#@test "[k8s] roxctl sensor generate with main image override" {
-#  generate_bundle k8s "--main-image-repository=example.io/rhacs"
-#  assert_components_registry "$out_dir" "example.io/rhacs" "sensor" "collector"
-#}
-#
-#@test "[k8s] roxctl sensor generate with collector override" {
-#  generate_bundle k8s "--collector-image-repository=collector.example.io/rhacs"
-#  assert_components_registry "$out_dir" "docker.io/stackrox" "sensor"
-#  assert_components_registry "$out_dir" "collector.example.io/rhacs" "collector"
-#}
-#
-#@test "[k8s] roxctl sensor generate with both overrides" {
-# generate_bundle k8s "--main-image-repository=example.io/rhacs" "--collector-image-repository=collector.example.io/rhacs"
-#  assert_components_registry "$out_dir" "example.io/rhacs" "sensor"
-#  assert_components_registry "$out_dir" "collector.example.io/rhacs" "collector"
-#}
-#
-#@test "[openshift] roxctl sensor generate no overrides" {
-#  generate_bundleopenshift
-#  assert_components_registry "$out_dir" "docker.io/stackrox" "sensor" "collector"
-#}
-#
-#@test "[openshift] roxctl sensor generate with main image override" {
-#  generate_bundle openshift "--main-image-repository=example.io/rhacs"
-#  assert_components_registry "$out_dir" "example.io/rhacs" "sensor" "collector"
-#}
+@test "[k8s] roxctl sensor generate no overrides with collector full" {
+  export_api_token
+  generate_bundle k8s "--slim-collector=false"
+  assert_sensor_component "$out_dir" "$dev_registry_regex/main:$any_version"
+  assert_collector_component "$out_dir" "$dev_registry_regex/collector:$any_version_latest"
+}
+
+@test "[k8s] roxctl sensor generate with main image override. Collector should be derived from main override" {
+  generate_bundle k8s "--main-image-repository=example.com/stackrox/main"
+  assert_sensor_component "$out_dir" "example\.com/stackrox/main:$any_version"
+  assert_collector_component "$out_dir" "example\.com/stackrox/collector:$any_version_slim"
+}
+
+@test "[k8s] roxctl sensor generate with collector override" {
+  generate_bundle k8s "--collector-image-repository=example2.com/stackrox/collector"
+  assert_sensor_component "$out_dir" "$dev_registry_regex/main:$any_version"
+  assert_collector_component "$out_dir" "example2\.com/stackrox/collector:$any_version_slim"
+}
+
+@test "[k8s] roxctl sensor generate with both overrides" {
+ generate_bundle k8s "--main-image-repository=example.com/stackrox/main" "--collector-image-repository=example2.com/stackrox/collector"
+ assert_sensor_component "$out_dir" "example\.com/stackrox/main:$any_version"
+ assert_collector_component "$out_dir" "example2\.com/stackrox/collector:$any_version_slim"
+}
+
+@test "[openshift] roxctl sensor generate no overrides" {
+  generate_bundle openshift
+  assert_sensor_component "$out_dir" "$dev_registry_regex/main:$any_version"
+  assert_collector_component "$out_dir" "$dev_registry_regex/collector:$any_version_slim"
+}
+
+
 #
 #@test "[openshift] roxctl sensor generate with collector override" {
-#  generate_bundle openshift "--collector-image-repository=collector.example.io/rhacs"
+#  generate_bundle openshift "--collector-image-repository=example2.com"
 #  assert_components_registry "$out_dir" "docker.io/stackrox" "sensor"
-#  assert_components_registry "$out_dir" "collector.example.io/rhacs" "collector"
+#  assert_components_registry "$out_dir" "example2.com" "collector"
 #}
 #
 #@test "[openshift] roxctl sensor generate with both overrides" {
-# generate_bundle openshift "--main-image-repository=example.io/rhacs" "--collector-image-repository=collector.example.io/rhacs"
-#  assert_components_registry "$out_dir" "example.io/rhacs" "sensor"
-#  assert_components_registry "$out_dir" "collector.example.io/rhacs" "collector"
+# generate_bundle openshift "--main-image-repository=example.com" "--collector-image-repository=collector.example.com"
+#  assert_components_registry "$out_dir" "example.com" "sensor"
+#  assert_components_registry "$out_dir" "collector.example.com" "collector"
 #}
-#
+
 #@test "[stackrox.io] roxctl sensor generate with stackrox.io defaults" {
 #  set_image_flavor "stackrox.io"
 #  generate_bundle k8s

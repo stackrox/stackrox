@@ -1,0 +1,52 @@
+#!/usr/bin/env bats
+
+load "../helpers.bash"
+
+out_dir=""
+
+setup_file() {
+  echo "Testing roxctl version: '$(roxctl-development version)'" >&3
+  command -v yq || skip "Tests in this file require yq"
+  [[ -n "$API_ENDPOINT" ]] || skip "API_ENDPOINT environment variable required"
+  [[ -n "$ROX_PASSWORD" ]] || skip "ROX_PASSWORD environment variable required"
+  export_api_token
+}
+
+setup() {
+  out_dir="$(mktemp -d -u)"
+}
+
+teardown() {
+  rm -rf "$out_dir"
+}
+
+fetch_bundle() {
+  local name="$1";shift
+  bundle_output="$(mktemp -d -u)"
+  run roxctl-development sensor get-bundle "$name" \
+    -e "$API_ENDPOINT" \
+    --output-dir "$bundle_output" "$@"
+  assert_success
+  echo "$bundle_output"
+}
+
+run_generate_and_get_bundle_test() {
+  local flavor="$1";shift
+  local name="$1";shift
+  generate_bundle "$flavor" --name "$name" "$@"
+  download_dir=$(fetch_bundle "$name")
+  rm -rf "$download_dir"
+  delete_cluster "$name"
+}
+
+@test "[k8s] roxctl sensor generate and get-bundle" {
+  run_generate_and_get_bundle_test k8s "k8s-test-cluster"
+}
+
+@test "[openshift3] roxctl sensor generate and get-bundle" {
+  run_generate_and_get_bundle_test openshift "oc3-test-cluster" --openshift-version 3
+}
+
+@test "[openshift4] roxctl sensor generate and get-bundle" {
+  run_generate_and_get_bundle_test openshift "oc4-test-cluster" --openshift-version 4
+}
