@@ -14,11 +14,11 @@ const userHelpLiteralToken = `There is no token in file %q. The token file shoul
 To provide a token value directly, set the ROX_API_TOKEN environment variable.
 `
 
-// RetrieveAuthToken retrieves an authentication token. Token files specified on the command line have precedence over tokens
+// retrieveAuthToken retrieves an authentication token. Token files specified on the command line have precedence over tokens
 // configured in the environment.
 // Returns an empty token if neither a token file is specified nor a token is configured in the environment.
 // May print to stderr.
-func RetrieveAuthToken() (string, error) {
+func retrieveAuthToken() (string, error) {
 	var apiToken string
 
 	// Try to retrieve API token. First via --token-file parameter and then from the environment.

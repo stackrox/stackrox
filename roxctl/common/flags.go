@@ -56,7 +56,7 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 		return nil, errors.New("cannot force HTTP/1 mode if direct gRPC is enabled")
 	}
 
-	apiToken, err := RetrieveAuthToken()
+	apiToken, err := retrieveAuthToken()
 	if err != nil {
 		return nil, err
 	}

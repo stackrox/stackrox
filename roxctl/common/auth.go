@@ -16,16 +16,15 @@ type Auth interface {
 
 // newAuth creates a new Auth type which will be inferred based off of the values of flags.APITokenFile and flags.Password.
 func newAuth() (Auth, error) {
-	token, err := RetrieveAuthToken()
-	if err != nil {
+	token, err := retrieveAuthToken()
+	if err != nil && flags.APITokenFile() != "" && flags.Password() != "" {
 		return nil, err
 	}
 	if token == "" {
-		// If Password flag is set, use the basic authenticator
-		if flags.Password() != "" {
-			return &basicAuthenticator{pw: flags.Password()}, nil
+		if flags.Password() == "" {
+			return nil, errors.New("no token set via either token file or the environment variable ROX_API_TOKEN")
 		}
-		return nil, errors.New("no token set via either token file or the environment variable ROX_API_TOKEN")
+		return &basicAuthenticator{pw: flags.Password()}, nil
 	}
 	return &apiTokenAuthenticator{token}, nil
 }

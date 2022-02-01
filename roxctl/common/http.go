@@ -75,7 +75,7 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 
 // AddAuthToRequest adds the correct auth to the request
 func AddAuthToRequest(req *http.Request) error {
-	token, err := RetrieveAuthToken()
+	token, err := retrieveAuthToken()
 	if err != nil {
 		return errors.Wrap(err, "Failed to enrich HTTP request with authentication information")
 	}
