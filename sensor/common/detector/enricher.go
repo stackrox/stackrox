@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
@@ -57,11 +58,13 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.Conta
 		Image: ci,
 	})
 
-	// ScanImageInternal may return without error even if it was unable to find the image.
-	// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
-	// image is stored in an internal registry which Sensor can reach.
-	if err == nil && scannedImage.GetImage().GetMetadata() == nil {
-		scannedImage.Image, err = scannerclient.ScanImage(ctx, svc, ci)
+	if features.LocalImageScanning.Enabled() {
+		// ScanImageInternal may return without error even if it was unable to find the image.
+		// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
+		// image is stored in an internal registry which Sensor can reach.
+		if err == nil && scannedImage.GetImage().GetMetadata() == nil {
+			scannedImage.Image, err = scannerclient.ScanImage(ctx, svc, ci)
+		}
 	}
 
 	return scannedImage, err
