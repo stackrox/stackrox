@@ -33,16 +33,16 @@ func GetSecretsCertRenewalTime(secrets map[storage.ServiceType]*v1.Secret) (time
 	return renewalTime, nil
 }
 
-func getSecretRenewalTime(scannerSecret *v1.Secret) (time.Time, error) {
-	scannerCertBytes := scannerSecret.Data[mtls.ServiceCertFileName]
+func getSecretRenewalTime(secret *v1.Secret) (time.Time, error) {
+	certBytes := secret.Data[mtls.ServiceCertFileName]
 	var (
 		scannerCert *x509.Certificate
 		err         error
 	)
-	if len(scannerCertBytes) == 0 {
-		err = errors.Errorf("empty certificate for secret %s", scannerSecret.GetName())
+	if len(certBytes) == 0 {
+		err = errors.Errorf("empty certificate for secret %s", secret.GetName())
 	} else {
-		scannerCert, err = helpers.ParseCertificatePEM(scannerCertBytes)
+		scannerCert, err = helpers.ParseCertificatePEM(certBytes)
 	}
 	if err != nil {
 		// Note this also covers a secret with no certificates stored, which should be refreshed immediately.
@@ -52,10 +52,10 @@ func getSecretRenewalTime(scannerSecret *v1.Secret) (time.Time, error) {
 	return getSecretRenewalTimeFromCertificate(scannerCert), nil
 }
 
-func getSecretRenewalTimeFromCertificate(scannerCert *x509.Certificate) time.Time {
-	certValidityDurationSecs := scannerCert.NotAfter.Sub(scannerCert.NotBefore).Seconds()
+func getSecretRenewalTimeFromCertificate(certificate *x509.Certificate) time.Time {
+	certValidityDurationSecs := certificate.NotAfter.Sub(certificate.NotBefore).Seconds()
 	durationBeforeRenewalAttempt := time.Second *
 		(time.Duration(certValidityDurationSecs/2) - time.Duration(rand.Intn(int(certValidityDurationSecs/10))))
-	certRenewalTime := scannerCert.NotBefore.Add(durationBeforeRenewalAttempt)
+	certRenewalTime := certificate.NotBefore.Add(durationBeforeRenewalAttempt)
 	return certRenewalTime
 }
