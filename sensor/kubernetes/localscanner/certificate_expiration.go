@@ -5,7 +5,6 @@ import (
 
 	"crypto/x509"
 	"math/rand"
-
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,7 +37,7 @@ func getSecretRenewalTime(certSecret *v1.Secret) (time.Time, error) {
 	certBytes := certSecret.Data[mtls.ServiceCertFileName]
 	var (
 		cert *x509.Certificate
-		err         error
+		err  error
 	)
 	if len(certBytes) == 0 {
 		err = errors.Errorf("empty certificate for certSecret %s", certSecret.GetName())
@@ -53,6 +52,8 @@ func getSecretRenewalTime(certSecret *v1.Secret) (time.Time, error) {
 	return calculateRenewalTime(cert), nil
 }
 
+// In order to ensure certificates are rotated before expiration, this returns a renewal time no later than
+// half its expiration date.
 func calculateRenewalTime(cert *x509.Certificate) time.Time {
 	certValidityDurationSecs := cert.NotAfter.Sub(cert.NotBefore).Seconds()
 	durationBeforeRenewalAttempt := time.Second *
