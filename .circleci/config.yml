@@ -2,8 +2,6 @@ runOnAllTags: &runOnAllTags
   filters:
     tags:
       only: /.*/
-    branches:
-      ignore: /.*RS-454.*/
 
 # This runs a command only on rc builds,
 # which is a tagged build with a tag matching the below regex.
@@ -5111,6 +5109,8 @@ workflows:
           filters:
             branches:
               only: /.*RS-454.*/
+          requires:
+            - build
 
       - retrigger-master-workflow:
           context: custom-executor-pull

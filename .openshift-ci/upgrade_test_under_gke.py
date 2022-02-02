@@ -22,7 +22,7 @@ class UpgradeTest:
     def run(self):
         print("Executing the OpenShift CI upgrade test hook")
 
-        outcome = 0
+        exitstatus = 0
         try:
             self.provision()
             self.wait()
@@ -30,7 +30,7 @@ class UpgradeTest:
         # pylint: disable=broad-except
         except Exception as err:
             print(f"Exception raised {err}")
-            outcome = 1
+            exitstatus = 1
 
         if self.needs_post_analysis:
             try:
@@ -38,7 +38,7 @@ class UpgradeTest:
             # pylint: disable=broad-except
             except Exception as err:
                 print(f"Exception raised {err}")
-                outcome = 1
+                exitstatus = 1
 
         if self.needs_teardown:
             try:
@@ -46,9 +46,9 @@ class UpgradeTest:
             # pylint: disable=broad-except
             except Exception as err:
                 print(f"Exception raised {err}")
-                outcome = 1
+                exitstatus = 1
 
-        sys.exit(outcome)
+        sys.exit(exitstatus)
 
     def provision(self):
         cmd = subprocess.Popen(["scripts/ci/gke.sh", "provision_gke_cluster", Constants.CLUSTER_ID])
@@ -65,8 +65,7 @@ class UpgradeTest:
             raise RuntimeError("Wait for cluster failed")
 
     def run_test(self):
-        # cmd = subprocess.Popen(["tests/upgrade/run.sh"])
-        cmd = subprocess.Popen(["sleep", "60"])
+        cmd = subprocess.Popen(["tests/upgrade/run.sh"])
 
         self.needs_post_analysis = True
 
