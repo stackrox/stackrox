@@ -86,7 +86,7 @@ create_cluster() {
 
     VERSION_ARGS=(--release-channel "${GKE_RELEASE_CHANNEL}")
     get_supported_cluster_version
-    if [[ -n "${CLUSTER_VERSION}" ]]; then
+    if [[ -n "${CLUSTER_VERSION:-}" ]]; then
         echo "using cluster version: ${CLUSTER_VERSION}"
         VERSION_ARGS=(--cluster-version "${CLUSTER_VERSION}")
     fi
@@ -189,7 +189,7 @@ wait_for_cluster() {
 }
 
 get_supported_cluster_version() {
-    if [[ -n "${CLUSTER_VERSION}" ]]; then
+    if [[ -n "${CLUSTER_VERSION:-}" ]]; then
         local match
         match=$(gcloud container get-server-config --format json | jq "[.validMasterVersions | .[] | select(.|test(\"^${CLUSTER_VERSION}\"))][0]")
         if [[ -z "${match}" || "${match}" == "null" ]]; then
