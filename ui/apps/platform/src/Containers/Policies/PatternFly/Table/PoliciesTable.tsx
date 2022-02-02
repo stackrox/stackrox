@@ -215,7 +215,7 @@ function PoliciesTable({
                         className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
                     >
                         <SearchFilterInput
-                            className="w-full"
+                            className="w-full theme-light"
                             handleChangeSearchFilter={handleChangeSearchFilter}
                             placeholder="Filter policies"
                             searchCategory="POLICIES"
