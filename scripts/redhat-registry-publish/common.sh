@@ -78,20 +78,6 @@ version_check() {
       echo >&2 "Set SKIP_REPO_VERSION_CHECK=true in order to suppress this check for local testing."
       exit 1
     fi
-    local repo_collector_version
-    repo_collector_version="$(make --no-print-directory --quiet -C "${GITROOT}" collector-tag)"
-    if [[ "$repo_collector_version" != "$collector_version" ]]; then
-      echo >&2 "Collector version ${collector_version} does not match repository version ${repo_collector_version}."
-      echo >&2 "Set SKIP_REPO_VERSION_CHECK=true in order to suppress this check for local testing."
-      exit 1
-    fi
-    local repo_scanner_version
-    repo_scanner_version="$(make --no-print-directory --quiet -C "${GITROOT}" scanner-tag)"
-    if [[ "$repo_scanner_version" != "$scanner_version" ]]; then
-      echo >&2 "Scanner version ${scanner_version} does not match repository version ${repo_scanner_version}."
-      echo >&2 "Set SKIP_REPO_VERSION_CHECK=true in order to suppress this check for local testing."
-      exit 1
-    fi
   fi
 
   if [[ "${SKIP_IMAGE_VERSION_CHECK:-}" != "true" ]]; then
