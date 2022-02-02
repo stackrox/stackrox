@@ -82,10 +82,16 @@ func TestCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 
 func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T) {
 	testCases := map[string]struct {
-		randomResponseDelay bool
+		responseDelayFunc func(requestIndex int) (responseDelay time.Duration)
 	}{
-		"decreasing response delay": {false},
-		"random response delay":     {true},
+		"decreasing response delay": {func(requestIndex int) (responseDelay time.Duration) {
+			// responses are responded increasingly faster, so always out of order.
+			return time.Duration(numConcurrentRequests-(requestIndex+1)) * 10 * time.Millisecond
+		}},
+		"random response delay": {func(requestIndex int) (responseDelay time.Duration) {
+			// randomly out of order responses.
+			return time.Duration(rand.Intn(100)) * time.Millisecond
+		}},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
@@ -96,14 +102,7 @@ func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T
 
 			for i := 0; i < numConcurrentRequests; i++ {
 				i := i
-				var responseDelay time.Duration
-				if tc.randomResponseDelay {
-					// randomly out of order responses.
-					responseDelay = time.Duration(rand.Intn(100)) * time.Millisecond
-				} else {
-					// responses are responded increasingly faster, so always out of order.
-					responseDelay = time.Duration(numConcurrentRequests-(i+1)) * 10 * time.Millisecond
-				}
+				responseDelay := tc.responseDelayFunc(i)
 				go f.respondRequest(t, responseDelay, nil)
 				go func() {
 					defer waitGroup.Add(-1)
