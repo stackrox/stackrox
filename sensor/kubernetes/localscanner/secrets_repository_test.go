@@ -3,9 +3,11 @@ package localscanner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,22 +28,22 @@ var (
 	anotherServiceType = storage.ServiceType_SENSOR_SERVICE
 )
 
-func TestCertSecretsRepo(t *testing.T) {
-	suite.Run(t, new(certSecretsRepoSuite))
+func TestServiceCertificatesRepoSecretsImpl(t *testing.T) {
+	suite.Run(t, new(serviceCertificatesRepoSecretsImplSuite))
 }
 
-type certSecretsRepoSuite struct {
+type serviceCertificatesRepoSecretsImplSuite struct {
 	suite.Suite
 }
 
-func (s *certSecretsRepoSuite) TestGet() {
+func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 	testCases := map[string]struct {
 		expectedErr error
 		f           *certSecretsRepoFixture
 	}{
-		"successful get": {nil, s.newFixture("", "foo")},
-		"failed get":     {errForced, s.newFixture("get", "foo")},
-		"cancelled get":  {context.Canceled, s.newFixture("get", "foo")},
+		"successful get": {nil, s.newFixture("")},
+		"failed get":     {errForced, s.newFixture("get")},
+		"cancelled get":  {context.Canceled, s.newFixture("")},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -51,27 +53,23 @@ func (s *certSecretsRepoSuite) TestGet() {
 				cancelGetCtx()
 			}
 
-			secrets, err := tc.f.repo.getSecrets(getCtx)
-
+			certificates, err := tc.f.repo.getServiceCertificates(getCtx)
 			if tc.expectedErr == nil {
-				s.Equal(len(tc.f.secretsMap), len(secrets))
-				for k, v := range tc.f.secretsMap {
-					s.Equal(v, secrets[k])
-				}
+				s.Equal(tc.f.certificates, certificates)
 			}
 			s.checkExpectedError(tc.expectedErr, err)
 		})
 	}
 }
 
-func (s *certSecretsRepoSuite) TestPut() {
+func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 	testCases := map[string]struct {
 		expectedErr error
 		f           *certSecretsRepoFixture
 	}{
-		"successful put": {nil, s.newFixture("", "foo")},
-		"failed put":     {errForced, s.newFixture("update", "foo")},
-		"cancelled put":  {context.Canceled, s.newFixture("update", "foo")},
+		"successful put": {nil, s.newFixture("")},
+		"failed put":     {errForced, s.newFixture("update")},
+		"cancelled put":  {context.Canceled, s.newFixture("")},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -81,36 +79,38 @@ func (s *certSecretsRepoSuite) TestPut() {
 				cancelPutCtx()
 			}
 
-			err := tc.f.repo.putSecrets(putCtx, tc.f.secretsMap)
+			err := tc.f.repo.putServiceCertificates(putCtx, tc.f.certificates)
 
 			s.checkExpectedError(tc.expectedErr, err)
 		})
 	}
 }
 
-func (s *certSecretsRepoSuite) TestPutNilSecretSuccess() {
-	f := s.newFixture("", "foo")
-	f.secretsMap[serviceType] = nil
-	err := f.repo.putSecrets(context.Background(), f.secretsMap)
-	s.NoError(err)
-}
-
-func (s *certSecretsRepoSuite) TestPutNoSecretSuccess() {
-	f := s.newFixture("", "foo")
-	f.secretsMap = make(map[storage.ServiceType]*v1.Secret)
-	err := f.repo.putSecrets(context.Background(), f.secretsMap)
-	s.NoError(err)
-}
-
-func (s *certSecretsRepoSuite) TestPutUnknownSecretFail() {
-	f := s.newFixture("", "foo")
-	f.secretsMap[anotherServiceType] = f.secretsMap[serviceType]
-	delete(f.secretsMap, serviceType)
-	err := f.repo.putSecrets(context.Background(), f.secretsMap)
+func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithNilSecretFailure() {
+	f := s.newFixture("")
+	var secret *v1.Secret
+	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret}
+	_, err := newServiceCertificatesRepoWithSecretsPersistence(secrets, f.secretsClient)
 	s.Error(err)
 }
 
-func (s *certSecretsRepoSuite) checkExpectedError(expectedErr, err error) {
+func (s *serviceCertificatesRepoSecretsImplSuite) TestPutUnknownServiceTypeFailure() {
+	f := s.newFixture("")
+	certificates := f.certificates.GetServiceCerts()
+	s.Require().Len(certificates, 1)
+	certificates[0].ServiceType = anotherServiceType
+	err := f.repo.putServiceCertificates(context.Background(), f.certificates)
+	s.Error(err)
+}
+
+func (s *serviceCertificatesRepoSecretsImplSuite) TestPutMissingServiceTypeSuccess() {
+	f := s.newFixture("")
+	f.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+	err := f.repo.putServiceCertificates(context.Background(), f.certificates)
+	s.NoError(err)
+}
+
+func (s *serviceCertificatesRepoSecretsImplSuite) checkExpectedError(expectedErr, err error) {
 	if expectedErr != errForced {
 		s.Equal(expectedErr, err)
 	} else {
@@ -120,28 +120,47 @@ func (s *certSecretsRepoSuite) checkExpectedError(expectedErr, err error) {
 }
 
 type certSecretsRepoFixture struct {
-	repo         certSecretsRepo
-	secretClient corev1.SecretInterface
-	secretsMap   map[storage.ServiceType]*v1.Secret
+	repo          serviceCertificatesRepo
+	secretsClient corev1.SecretInterface
+	certificates *storage.TypedServiceCertificateSet
 }
 
-func (s *certSecretsRepoSuite) newFixture(verbToError string, secretName string) *certSecretsRepoFixture {
-	secretsNamesMap := map[storage.ServiceType]string{serviceType: secretName}
-	secret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespace,
+func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(verbToError string) *certSecretsRepoFixture {
+	serviceCertificate :=  &storage.TypedServiceCertificate{
+		ServiceType: serviceType,
+		Cert: &storage.ServiceCertificate{
+			CertPem: make([]byte, 0),
+			KeyPem: make([]byte, 1),
 		},
 	}
-	secretsMap := map[storage.ServiceType]*v1.Secret{serviceType: secret}
+	certificates := &storage.TypedServiceCertificateSet{
+		CaPem: make([]byte, 2),
+		ServiceCerts: []*storage.TypedServiceCertificate{
+			serviceCertificate,
+		},
+	}
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-secret", serviceType),
+			Namespace: namespace,
+		},
+		Data:  map[string][]byte{
+			mtls.CACertFileName:      certificates.GetCaPem(),
+			mtls.ServiceCertFileName: serviceCertificate.GetCert().GetCertPem(),
+			mtls.ServiceKeyFileName:  serviceCertificate.GetCert().GetKeyPem(),
+		},
+	}
+	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret}
 	clientSet := fake.NewSimpleClientset(secret)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(verbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &v1.Secret{}, errForced
 	})
+	repo, err := newServiceCertificatesRepoWithSecretsPersistence(secrets, secretsClient)
+	s.Require().NoError(err)
 	return &certSecretsRepoFixture{
-		repo:         newCertSecretsRepo(secretsNamesMap, secretsClient),
-		secretClient: secretsClient,
-		secretsMap:   secretsMap,
+		repo:          repo,
+		secretsClient: secretsClient,
+		certificates:  certificates,
 	}
 }
