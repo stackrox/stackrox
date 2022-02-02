@@ -1,14 +1,13 @@
 package errox
 
 import (
-	"os"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_errRox_Is(t *testing.T) {
+func TestRoxErrorIs(t *testing.T) {
 	errNotFound := makeSentinel("base not found")
 	errNotFound1 := makeSentinel("base not found")
 
@@ -43,36 +42,10 @@ func Test_errRox_Is(t *testing.T) {
 	assert.NotErrorIs(t, errors.New("some error"), errNotFound)
 }
 
-func TestWrap(t *testing.T) {
-	{
-		err := Wrap(NotFound, NotAuthorized)
-
-		assert.NotErrorIs(t, err, InvalidArgs)
-		assert.ErrorIs(t, err, NotFound)
-		assert.ErrorIs(t, err, NotAuthorized)
-	}
-
-	{
-		mine := Wrap(New(NotFound, "cannot load"), NotAuthorized)
-		assert.ErrorIs(t, mine, NotAuthorized)
-	}
-
-	{
-		mine := Wrap(errors.New("cannot load"), NotAuthorized)
-		assert.ErrorIs(t, mine, NotAuthorized)
-	}
-	assert.ErrorIs(t, Wrap(os.ErrNotExist, NotFound), os.ErrNotExist)
-}
-
 func TestError(t *testing.T) {
 	{
 		err := NotFound
 		assert.Equal(t, "not found", err.Error())
-	}
-
-	{
-		err := Wrap(NotFound, NotAuthorized)
-		assert.Equal(t, "not authorized: not found", err.Error())
 	}
 
 	{
@@ -81,32 +54,8 @@ func TestError(t *testing.T) {
 	}
 
 	{
-		mine := Wrap(New(NotFound, "cannot load"), NotAuthorized)
-		assert.Equal(t, "not authorized: cannot load", mine.Error())
-	}
-
-	{
-		mine := Wrap(errors.New("cannot load"), NotAuthorized)
-		assert.Equal(t, "not authorized: cannot load", mine.Error())
-	}
-
-	{
-		err := errors.New("no such file config.yaml")
-		err = Wrap(err, NotFound)
-		err = errors.WithMessage(err, "Opening settings")
-		assert.Equal(t, "Opening settings: not found: no such file config.yaml", err.Error())
-	}
-
-	{
 		err := Newf(InvalidArgs, "custom %s", "message")
 		assert.Equal(t, "custom message", err.Error())
 		assert.ErrorIs(t, err, InvalidArgs)
 	}
-}
-
-func TestErrorAs(t *testing.T) {
-	err := errors.Wrap(NotFound, "wrapped")
-	var re RoxError
-	assert.ErrorAs(t, err, &re)
-	assert.Equal(t, "not found", re.Error())
 }
