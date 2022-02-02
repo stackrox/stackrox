@@ -4829,6 +4829,13 @@ jobs:
             - nop-steps-stanza
       - destroy-aro-cluster
 
+  openshift-ci-upgrade-test:
+    executor: custom
+    steps:
+      - run:
+          name: Hello OpenShift CI
+          command: echo Hello
+
 workflows:
   version: 2
 
@@ -5092,6 +5099,15 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
+          requires:
+            - build
+
+      - openshift-ci-upgrade-test:
+          context:
+          - quay-rhacs-eng-readonly
+          filters:
+            branches:
+              only: /.*RS-454.*/
           requires:
             - build
 
