@@ -105,11 +105,8 @@ func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource 
 	scanStartTime := time.Now()
 	scan, err := scanner.GetVulnerabilities(image, components, notes)
 	e.metrics.SetImageVulnerabilityRetrievalTime(scanStartTime, scannerName, err)
-	if err != nil {
+	if err != nil || scan == nil {
 		return ScanNotDone, err
-	}
-	if scan == nil {
-		return ScanNotDone, nil
 	}
 
 	enrichImage(image, scan, dataSource)
