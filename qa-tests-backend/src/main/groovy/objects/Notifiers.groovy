@@ -366,7 +366,7 @@ class SyslogNotifier extends Notifier {
     }
 
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        def response = SplunkUtil.waitForSplunkSyslog(splunkPort, 30)
+        def response = SplunkUtil.waitForSplunkSyslog(splunkPort, 90)
         // We must have received at least one syslog message
         assert response.size() > 0
     }
