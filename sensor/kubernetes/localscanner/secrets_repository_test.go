@@ -94,11 +94,55 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithNilSecretFailur
 	s.Error(err)
 }
 
+func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataSuccess() {
+	f := s.newFixtureAdvancedOpts("", true)
+	expectedCertificates := &storage.TypedServiceCertificateSet{}
+	expectedCertificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+
+	certificates, err := f.repo.getServiceCertificates(context.Background())
+
+	s.NoError(err)
+	s.Equal(expectedCertificates, certificates)
+}
+
+func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSuccess() {
+	testCases := map[string]struct {
+		missingSecretDataKey string
+		setExpectedCertsFunc func(certificates *storage.TypedServiceCertificateSet)
+	}{
+		"missing CA": {
+			missingSecretDataKey: mtls.CACertFileName,
+			setExpectedCertsFunc: func(certificates *storage.TypedServiceCertificateSet) {
+				certificates.CaPem = nil
+			}},
+		"missing Cert": {
+			missingSecretDataKey: mtls.ServiceCertFileName,
+			setExpectedCertsFunc: func(certificates *storage.TypedServiceCertificateSet) {
+				s.getFirstServiceCertificate(certificates).Cert.CertPem = nil
+			},
+		},
+		"missing Key": {
+			missingSecretDataKey: mtls.ServiceKeyFileName,
+			setExpectedCertsFunc: func(certificates *storage.TypedServiceCertificateSet) {
+				s.getFirstServiceCertificate(certificates).Cert.KeyPem = nil
+			},
+		},
+	}
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			f := s.newFixtureAdvancedOpts("", false, tc.missingSecretDataKey)
+			certificates, err := f.repo.getServiceCertificates(context.Background())
+			tc.setExpectedCertsFunc(f.certificates)
+
+			s.NoError(err)
+			s.Equal(f.certificates, certificates)
+		})
+	}
+}
+
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutUnknownServiceTypeFailure() {
 	f := s.newFixture("")
-	certificates := f.certificates.GetServiceCerts()
-	s.Require().Len(certificates, 1)
-	certificates[0].ServiceType = anotherServiceType
+	s.getFirstServiceCertificate(f.certificates).ServiceType = anotherServiceType
 	err := f.repo.putServiceCertificates(context.Background(), f.certificates)
 	s.Error(err)
 }
@@ -119,18 +163,30 @@ func (s *serviceCertificatesRepoSecretsImplSuite) checkExpectedError(expectedErr
 	}
 }
 
+func (s *serviceCertificatesRepoSecretsImplSuite) getFirstServiceCertificate(
+	certificates *storage.TypedServiceCertificateSet) *storage.TypedServiceCertificate {
+	serviceCerts := certificates.GetServiceCerts()
+	s.Require().Len(serviceCerts, 1)
+	return serviceCerts[0]
+}
+
 type certSecretsRepoFixture struct {
 	repo          serviceCertificatesRepo
 	secretsClient corev1.SecretInterface
-	certificates *storage.TypedServiceCertificateSet
+	certificates  *storage.TypedServiceCertificateSet
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(verbToError string) *certSecretsRepoFixture {
-	serviceCertificate :=  &storage.TypedServiceCertificate{
+	return s.newFixtureAdvancedOpts(verbToError, false)
+}
+
+func (s *serviceCertificatesRepoSecretsImplSuite) newFixtureAdvancedOpts(verbToError string, emptySecretData bool,
+	missingSecretDataKeys ...string) *certSecretsRepoFixture {
+	serviceCertificate := &storage.TypedServiceCertificate{
 		ServiceType: serviceType,
 		Cert: &storage.ServiceCertificate{
 			CertPem: make([]byte, 0),
-			KeyPem: make([]byte, 1),
+			KeyPem:  make([]byte, 1),
 		},
 	}
 	certificates := &storage.TypedServiceCertificateSet{
@@ -144,11 +200,16 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(verbToError string)
 			Name:      fmt.Sprintf("%s-secret", serviceType),
 			Namespace: namespace,
 		},
-		Data:  map[string][]byte{
+	}
+	if !emptySecretData {
+		secret.Data = map[string][]byte{
 			mtls.CACertFileName:      certificates.GetCaPem(),
 			mtls.ServiceCertFileName: serviceCertificate.GetCert().GetCertPem(),
 			mtls.ServiceKeyFileName:  serviceCertificate.GetCert().GetKeyPem(),
-		},
+		}
+	}
+	for _, secretDataKey := range missingSecretDataKeys {
+		delete(secret.Data, secretDataKey)
 	}
 	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret}
 	clientSet := fake.NewSimpleClientset(secret)

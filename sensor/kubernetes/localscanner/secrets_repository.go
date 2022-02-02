@@ -40,7 +40,7 @@ type serviceCertificatesRepo interface {
 // - All secrets store the same CA PEM.
 // - No secret in secrets is nil.
 type serviceCertificatesRepoSecretsImpl struct {
-	secrets     map[storage.ServiceType]*v1.Secret
+	secrets       map[storage.ServiceType]*v1.Secret
 	secretsClient corev1.SecretInterface
 }
 
@@ -54,7 +54,7 @@ func newServiceCertificatesRepoWithSecretsPersistence(secrets map[storage.Servic
 		}
 	}
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets: secrets,
+		secrets:       secrets,
 		secretsClient: secretsClient,
 	}, nil
 }
@@ -87,7 +87,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 			ServiceType: serviceType,
 			Cert: &storage.ServiceCertificate{
 				CertPem: secretData[mtls.ServiceCertFileName],
-				KeyPem: secretData[mtls.ServiceKeyFileName],
+				KeyPem:  secretData[mtls.ServiceKeyFileName],
 			},
 		})
 
