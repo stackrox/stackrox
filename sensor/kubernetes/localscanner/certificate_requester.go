@@ -54,7 +54,8 @@ func (r *certificateRequesterImpl) Start() {
 
 // Stop makes the certificate stop forwarding responses to running requests. Subsequent calls to RequestCertificates
 // will fail with ErrCertificateRequesterStopped.
-// Currently active calls to RequestCertificates can be cancelled with the provided context.
+// Currently active calls to RequestCertificates will continue running until cancelled or timed out via the
+// provided context.
 func (r *certificateRequesterImpl) Stop() {
 	r.stopC.Signal()
 }
