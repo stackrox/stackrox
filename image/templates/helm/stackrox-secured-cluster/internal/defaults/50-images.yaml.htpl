@@ -1,6 +1,7 @@
 # This file contains the default image (registry + name + tag) settings) for all StackRox Secured Cluster
 # Services.
 
+# Initialize default meta values
 image:
   registry: [< required "" .MainRegistry >]
   main:
@@ -10,15 +11,18 @@ image:
     name: [< required "" .CollectorFullImageRemote >]
     slimName: [< required "" .CollectorSlimImageRemote >]
 ---
+# Add registry defaults
 image:
   main:
     registry: {{ ._rox.image.registry }}
   collector:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
 ---
+# Default to collector slim mode. If configured registry equals the default we can assume the cluster has internet connectivity.
 collector:
   slimMode: {{ eq ._rox.image.collector.registry "[< required "" .CollectorRegistry >]" }}
 ---
+# Configure repository (registry + name)
 image:
   main:
     repository: {{ list ._rox.image.main.registry ._rox.image.main.name | compact | join "/" }}
@@ -29,6 +33,7 @@ image:
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
     {{- end }}
 ---
+# Configure collector slim image full ref
 image:
   collector:
     {{- if and ._rox.collector.slimMode ._rox.image.collector.slim.fullRef }}
@@ -37,6 +42,7 @@ image:
     fullRef: {{ ._rox.image.collector.full.fullRef }}
     {{- end }}
 ---
+# Apply fullRef and configurations to images
 image:
   main:
     {{- if or ._rox.image.main.tag ._rox.image.main.fullRef }}
@@ -55,6 +61,7 @@ image:
     _abbrevImageRef: {{ ._rox.image.collector.repository }}
     {{- end }}
 ---
+# Configure tags and pull policies
 image:
   collector:
     {{- if ._rox.collector.slimMode }}
@@ -65,6 +72,7 @@ image:
     pullPolicy: Always
     {{- end }}
 ---
+# Add fullRef references to images
 image:
   main:
     fullRef: {{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}
