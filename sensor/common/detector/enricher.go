@@ -54,25 +54,25 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
-	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+
+	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 		Image: ci,
 	})
-
-	if features.LocalImageScanning.Enabled() {
-		// ScanImageInternal may return without error even if it was unable to find the image.
-		// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
-		// image is stored in an internal registry which Sensor can reach.
-		if err == nil && scannedImage.GetImage().GetMetadata() == nil {
-			scannedImage.Image, err = scannerclient.ScanImage(ctx, svc, ci)
-		}
-	}
-
-	return scannedImage, err
 }
 
-func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
-	defer c.signal.Signal()
+func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
+	defer cancel()
 
+	img, err := scannerclient.ScanImage(ctx, svc, ci)
+	return &v1.ScanImageInternalResponse{
+		Image: img,
+	}, err
+}
+
+type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error)
+
+func scanWithRetries(f scanFunc, ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -85,22 +85,45 @@ outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
 		timeSpentInBackoffSoFar := eb.GetElapsedTime()
-		scannedImage, err := scanImage(ctx, svc, ci)
+		scannedImage, err := f(ctx, svc, ci)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
-				// If the client is effectively rate limited, backoff and try again.
+				// If the client is effectively rate-limited, backoff and try again.
 				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
 					time.Sleep(eb.NextBackOff())
 					continue outer
 				}
 			}
-			c.image = types.ToImage(ci)
-			return
+
+			return scannedImage, err
 		}
+
 		metrics.ObserveTimeSpentInExponentialBackoff(timeSpentInBackoffSoFar)
-		c.image = scannedImage.GetImage()
+
+		return scannedImage, nil
+	}
+}
+
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
+	defer c.signal.Signal()
+
+	scannedImage, err := scanWithRetries(scanImage, ctx, svc, ci)
+
+	if features.LocalImageScanning.Enabled() {
+		// scanImage may return without error even if it was unable to find the image.
+		// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
+		// image is stored in an internal registry which Sensor can reach.
+		if err == nil && scannedImage.GetImage().GetMetadata() == nil {
+			scannedImage, err = scanWithRetries(scanImageLocal, ctx, svc, ci)
+		}
+	}
+
+	if err != nil {
+		c.image = types.ToImage(ci)
 		return
 	}
+
+	c.image = scannedImage.GetImage()
 }
 
 func newEnricher(cache expiringcache.Cache) *enricher {
