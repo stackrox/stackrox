@@ -1421,14 +1421,6 @@
     "v1Empty": {
       "type": "object"
     },
-    "v1GetImageVulnerabilitiesInternalResponse": {
-      "type": "object",
-      "properties": {
-        "image": {
-          "$ref": "#/definitions/storageImage"
-        }
-      }
-    },
     "v1GetWatchedImagesResponse": {
       "type": "object",
       "properties": {

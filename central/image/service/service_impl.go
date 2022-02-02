@@ -167,13 +167,12 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
-// prepareImageForResponse modifies the image to filter out data which is not needed for
-// scan responses.
-// Return the passed-in image.
-func prepareImageForResponse(img *storage.Image) *storage.Image {
+func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse {
 	utils.FilterSuppressedCVEsNoClone(img)
 	utils.StripCVEDescriptionsNoClone(img)
-	return img
+	return &v1.ScanImageInternalResponse{
+		Image: img,
+	}
 }
 
 func (s *serviceImpl) saveImage(img *storage.Image) {
@@ -202,9 +201,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
 		// Otherwise, fetch it from the DB.
 		if exists {
-			return &v1.ScanImageInternalResponse{
-				Image: prepareImageForResponse(img),
-			}, nil
+			return internalScanRespFromImage(img), nil
 		}
 	}
 
@@ -229,9 +226,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		s.saveImage(img)
 	}
 
-	return &v1.ScanImageInternalResponse{
-		Image: prepareImageForResponse(img),
-	}, nil
+	return internalScanRespFromImage(img), nil
 }
 
 // ScanImage scans an image and returns the result
@@ -261,7 +256,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // GetImageVulnerabilitiesInternal retrieves the vulnerabilities related to the image
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
-func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.GetImageVulnerabilitiesInternalResponse, error) {
+func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
 		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
 		if pkgUtils.Should(err) == nil {
@@ -280,9 +275,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
 		// Otherwise, fetch it from the DB.
 		if exists {
-			return &v1.GetImageVulnerabilitiesInternalResponse{
-				Image: prepareImageForResponse(img),
-			}, nil
+			return internalScanRespFromImage(img), nil
 		}
 	}
 
@@ -312,9 +305,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		s.saveImage(img)
 	}
 
-	return &v1.GetImageVulnerabilitiesInternalResponse{
-		Image: prepareImageForResponse(img),
-	}, nil
+	return internalScanRespFromImage(img), nil
 }
 
 // DeleteImages deletes images based on query

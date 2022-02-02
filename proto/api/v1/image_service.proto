@@ -50,10 +50,6 @@ message GetImageVulnerabilitiesInternalRequest {
     repeated scannerV1.Note notes      = 5;
 }
 
-message GetImageVulnerabilitiesInternalResponse {
-    storage.Image image = 1;
-}
-
 message DeleteImagesRequest {
     RawQuery query   = 1;
     bool     confirm = 2;
@@ -147,7 +143,7 @@ service ImageService {
     rpc ScanImageInternal (ScanImageInternalRequest) returns (ScanImageInternalResponse);
 
     // GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
-    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (GetImageVulnerabilitiesInternalResponse);
+    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse);
 
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
