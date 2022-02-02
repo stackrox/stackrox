@@ -1,9 +1,6 @@
 package generate
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,7 +27,7 @@ func openshift() *cobra.Command {
 			cluster.Type = storage.ClusterType_OPENSHIFT_CLUSTER
 			switch openshiftVersion {
 			case 0:
-				fmt.Fprintf(os.Stderr, "%s\n\n", noteOpenShift3xCompatibilityMode)
+				logger.WarnfLn(noteOpenShift3xCompatibilityMode)
 			case 3:
 			case 4:
 				cluster.Type = storage.ClusterType_OPENSHIFT4_CLUSTER
@@ -43,7 +40,7 @@ func openshift() *cobra.Command {
 			} else if *admissionControllerEvents && cluster.Type == storage.ClusterType_OPENSHIFT_CLUSTER {
 				// The below `Validate` call would also catch this, but catching it here allows us to print more
 				// CLI-relevant error messages that reference flag names.
-				fmt.Fprintf(os.Stderr, "%s\n\n", errorAdmCntrlNotSupportedOnOpenShift3x)
+				logger.ErrfLn(errorAdmCntrlNotSupportedOnOpenShift3x)
 				return errors.New("incompatible flag settings")
 			}
 			cluster.AdmissionControllerEvents = *admissionControllerEvents
@@ -53,7 +50,7 @@ func openshift() *cobra.Command {
 			if disableAuditLogCollection == nil {
 				disableAuditLogCollection = pointers.Bool(cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER)
 			} else if !*disableAuditLogCollection && cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER {
-				fmt.Fprintf(os.Stderr, "%s\n\n", errorAuditLogsNotSupportedOnOpenShift3x)
+				logger.ErrfLn(errorAuditLogsNotSupportedOnOpenShift3x)
 				return errors.New("incompatible flag settings")
 			}
 			cluster.DynamicConfig.DisableAuditLogs = *disableAuditLogCollection

@@ -3,7 +3,6 @@ package generate
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 	"google.golang.org/grpc/codes"
@@ -29,13 +29,13 @@ const (
 	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
 	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
 
-	warningDeprecatedAdmControllerCreateSet = `WARNING: The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
+	warningDeprecatedAdmControllerCreateSet = `The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-listen-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
 	errorDeprecatedAdmControllerCreateSet = `It is illegal to specify both the --create-admission-controller and --admission-controller-listen-on-creates flags.
 Please use --admission-controller-listen-on-creates exclusively in all invocations.`
 
-	warningDeprecatedAdmControllerEnableSet = `WARNING: The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
+	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
 	errorDeprecatedAdmControllerEnableSet = `It is illegal to specify both the --admission-controller-enabled and --admission-controller-enforce-on-creates flags.
@@ -60,6 +60,8 @@ var (
 	outputDir string
 
 	slimCollectorP *bool
+
+	logger environment.Logger
 )
 
 func isLegacyValidationError(err error) bool {
@@ -101,8 +103,8 @@ func fullClusterCreation(timeout time.Duration) error {
 			flavor = defaults.DevelopmentBuildImageFlavor()
 		}
 
-		fmt.Fprintf(os.Stderr, `WARNING: Running older version of central.
- Can't rely on central configuration to determine default values. Using %s as main registry.`, flavor.MainRegistry)
+		logger.WarnfLn("Running older version of central. Can't rely on central configuration to determine default values. Using %s as main registry.",
+			flavor.MainRegistry)
 
 		cluster.MainImage = flavor.MainImageNoTag()
 		id, err = createCluster(ctx, service)
@@ -144,45 +146,45 @@ func fullClusterCreation(timeout time.Duration) error {
 
 	if slimCollectorP != nil {
 		if cluster.SlimCollector && !env.KernelSupportAvailable {
-			fmt.Fprintf(os.Stderr, "%s\n\n", util.WarningSlimCollectorModeWithoutKernelSupport)
+			logger.WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
 		}
 	} else if cluster.GetSlimCollector() {
-		fmt.Fprintln(os.Stderr, infoDefaultingToSlimCollector)
+		logger.InfofLn(infoDefaultingToSlimCollector)
 	} else {
-		fmt.Fprintln(os.Stderr, infoDefaultingToComprehensiveCollector)
+		logger.InfofLn(infoDefaultingToComprehensiveCollector)
 	}
 
 	if env.Error != nil {
-		fmt.Fprintf(os.Stderr, `WARNING: Sensor bundle has been created successfully, but it was not possible to retrieve Central's
-  runtime environment information: %v.
-`, env.Error)
+		logger.WarnfLn("Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v",
+			env.Error)
 	}
 	return nil
 }
 
 // Command defines the sensor generate command tree
-func Command() *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
+	logger = cliEnvironment.Logger()
 	c := &cobra.Command{
 		Use: "generate",
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 			// Can be removed in a future release.
 			if c.PersistentFlags().Lookup("create-admission-controller").Changed && c.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-				fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerCreateSet)
+				logger.ErrfLn(errorDeprecatedAdmControllerCreateSet)
 				return errors.New("Specified deprecated flag --create-admission-controller and new flag --admission-controller-listen-on-creates at the same time")
 			}
 			if c.PersistentFlags().Lookup("create-admission-controller").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerCreateSet)
+				logger.WarnfLn(warningDeprecatedAdmControllerCreateSet)
 			}
 
 			// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
 			// Can be removed in a future release.
 			if c.PersistentFlags().Lookup("admission-controller-enabled").Changed && c.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-				fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerEnableSet)
+				logger.ErrfLn(errorDeprecatedAdmControllerEnableSet)
 				return errors.New("Specified deprecated flag --admission-controller-enabled and new flag --admission-controller-enforce-on-creates at the same time")
 			}
 			if c.PersistentFlags().Lookup("admission-controller-enabled").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerEnableSet)
+				logger.WarnfLn(warningDeprecatedAdmControllerEnableSet)
 			}
 			return nil
 		},

@@ -78,7 +78,7 @@ func Command() *cobra.Command {
 		logconvert.Command(),
 		image.Command(cliEnvironment),
 		scanner.Command(),
-		sensor.Command(),
+		sensor.Command(cliEnvironment),
 		helm.Command(cliEnvironment),
 		versionCommand(),
 		completion.Command(),
