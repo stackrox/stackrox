@@ -4,12 +4,12 @@ import (
 	"time"
 
 	"crypto/x509"
-	"math/rand"
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	v1 "k8s.io/api/core/v1"
+	"math/rand"
 )
 
 // GetSecretsCertRenewalTime computes the time when the service certificates stored in a set of
