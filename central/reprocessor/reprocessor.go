@@ -288,6 +288,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 	}, image)
 
 	if err != nil {
+		// TODO: don't want to do this for internal registry images...
 		log.Errorf("error enriching image: %v", err)
 		return nil, false
 	}
