@@ -21,6 +21,7 @@ const MAX_POLICY_SECTIONS = 16;
 function PolicyCriteriaForm() {
     const [descriptor, setDescriptor] = React.useState<Descriptor[]>([]);
     const { values, setFieldValue } = useFormikContext<Policy>();
+    const { criteriaLocked } = values;
 
     function addNewPolicySection() {
         if (values.policySections.length < MAX_POLICY_SECTIONS) {
@@ -42,18 +43,30 @@ function PolicyCriteriaForm() {
         }
     }, [values.eventSource]);
 
+    const headingElements = (
+        <>
+            <Title headingLevel="h2">Policy criteria</Title>
+            <div className="pf-u-mt-sm">
+                Construct policy rules by chaining criteria together with boolean logic.
+            </div>
+        </>
+    );
+
+    if (criteriaLocked) {
+        return (
+            <>
+                {headingElements}
+                <BooleanPolicyLogicSection readOnly />
+            </>
+        );
+    }
+
     return (
         <DndProvider backend={HTML5Backend}>
             <Flex>
                 <FlexItem flex={{ default: 'flex_1' }} className="pf-u-w-66">
                     <Flex direction={{ default: 'row' }}>
-                        <FlexItem flex={{ default: 'flex_1' }}>
-                            <Title headingLevel="h2">Policy criteria</Title>
-                            <div className="pf-u-mt-sm">
-                                Construct policy rules by chaining criteria together with boolean
-                                logic.
-                            </div>
-                        </FlexItem>
+                        <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
                         <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
                             <Button variant="secondary" onClick={addNewPolicySection}>
                                 Add a new condition

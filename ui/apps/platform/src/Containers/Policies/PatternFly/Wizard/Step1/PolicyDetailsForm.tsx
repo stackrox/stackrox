@@ -1,11 +1,18 @@
 import React, { ReactElement } from 'react';
 import { Title, Divider, Flex, FlexItem } from '@patternfly/react-core';
+import { useFormikContext } from 'formik';
+
+import MitreAttackVectorsView from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
+import { Policy } from 'types/policy.proto';
 
 import PolicyMetadataFormSection from './PolicyMetadataFormSection';
 import AttachNotifiersFormSection from './AttachNotifiersFormSection';
 import MitreAttackVectorsFormSection from './MitreAttackVectorsFormSection';
 
 function PolicyDetailsForm(): ReactElement {
+    const { values } = useFormikContext<Policy>();
+    const { id, mitreVectorsLocked } = values;
+
     return (
         <div>
             <Title headingLevel="h2">Policy details</Title>
@@ -31,7 +38,11 @@ function PolicyDetailsForm(): ReactElement {
                 private sector, in government, and in the cybersecurity product and service
                 community.
             </div>
-            <MitreAttackVectorsFormSection />
+            {mitreVectorsLocked ? (
+                <MitreAttackVectorsView policyId={id} />
+            ) : (
+                <MitreAttackVectorsFormSection />
+            )}
         </div>
     );
 }
