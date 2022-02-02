@@ -72,7 +72,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, ci *storage.
 
 type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error)
 
-func scanWithRetries(f scanFunc, ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
+func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage, f scanFunc) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -107,14 +107,14 @@ outer:
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
 	defer c.signal.Signal()
 
-	scannedImage, err := scanWithRetries(scanImage, ctx, svc, ci)
+	scannedImage, err := scanWithRetries(ctx, svc, ci, scanImage)
 
 	if features.LocalImageScanning.Enabled() {
 		// scanImage may return without error even if it was unable to find the image.
 		// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
 		// image is stored in an internal registry which Sensor can reach.
 		if err == nil && scannedImage.GetImage().GetMetadata() == nil {
-			scannedImage, err = scanWithRetries(scanImageLocal, ctx, svc, ci)
+			scannedImage, err = scanWithRetries(ctx, svc, ci, scanImageLocal)
 		}
 	}
 
