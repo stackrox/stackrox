@@ -4834,9 +4834,10 @@ jobs:
   openshift-ci-upgrade-test:
     executor: custom
     steps:
+      - checkout
       - run:
-          name: Hello OpenShift CI
-          command: echo Hello
+          name: Run the OpenShift CI upgrade test hook
+          command: .openshift-ci/upgrade-test.py
 
 workflows:
   version: 2
