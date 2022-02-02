@@ -169,7 +169,11 @@ func (f *certificateRequesterFixture) respondRequest(t *testing.T, responseDelay
 		}
 		f.interceptedRequestID.Store(response.GetRequestId())
 		if responseDelay > 0 {
-			time.Sleep(responseDelay)
+			select {
+			case <-f.ctx.Done():
+				return
+			case <-time.After(responseDelay):
+			}
 		}
 		select {
 		case <-f.ctx.Done():
