@@ -73,17 +73,23 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 	return resp, nil
 }
 
-// AddAuthToRequest adds the correct auth to the request
-func AddAuthToRequest(req *http.Request) error {
-	token, err := retrieveAuthToken()
-	if err != nil {
+// addAuthToRequest adds the correct auth to the request
+func addAuthToRequest(req *http.Request) error {
+	if err := checkAuthParameters(); err != nil {
 		return errors.Wrap(err, "Failed to enrich HTTP request with authentication information")
 	}
 
 	if flags.Password() != "" {
 		req.SetBasicAuth(basic.DefaultUsername, flags.Password())
-	} else if token != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	} else {
+		token, err := retrieveAuthToken()
+		if err != nil {
+			printAuthHelp()
+			return errors.Wrap(err, "Failed to enrich HTTP request with authentication information")
+		}
+		if token != "" {
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		}
 	}
 
 	return nil
@@ -119,7 +125,7 @@ func newHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.R
 	if req.URL.Scheme != "https" && !flags.UseInsecure() {
 		return nil, errors.Errorf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
 	}
-	err = AddAuthToRequest(req)
+	err = addAuthToRequest(req)
 	if err != nil {
 		return nil, err
 	}
