@@ -26,6 +26,7 @@ func getBaseConfig() Config {
 	}
 }
 
+
 func TestRender(t *testing.T) {
 	suite.Run(t, new(renderSuite))
 }
@@ -43,7 +44,7 @@ func (suite *renderSuite) SetupSuite() {
 	suite.testFlavor = flavorUtils.MakeImageFlavorForTest(suite.T())
 }
 
-func (suite *renderSuite) TeardownSuite() {
+func (suite *renderSuite) TearDownSuite() {
 	suite.restorer.Restore()
 	suite.envIsolator.RestoreAll()
 }
