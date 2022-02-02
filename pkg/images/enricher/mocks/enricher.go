@@ -10,6 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	enricher "github.com/stackrox/rox/pkg/images/enricher"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 // MockImageEnricher is a mock of ImageEnricher interface.
@@ -48,6 +49,21 @@ func (m *MockImageEnricher) EnrichImage(ctx enricher.EnrichmentContext, image *s
 func (mr *MockImageEnricherMockRecorder) EnrichImage(ctx, image interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImage", reflect.TypeOf((*MockImageEnricher)(nil).EnrichImage), ctx, image)
+}
+
+// EnrichWithVulnerabilities mocks base method.
+func (m *MockImageEnricher) EnrichWithVulnerabilities(ctx enricher.EnrichmentContext, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (enricher.EnrichmentResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichWithVulnerabilities", ctx, image, components, notes)
+	ret0, _ := ret[0].(enricher.EnrichmentResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EnrichWithVulnerabilities indicates an expected call of EnrichWithVulnerabilities.
+func (mr *MockImageEnricherMockRecorder) EnrichWithVulnerabilities(ctx, image, components, notes interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichWithVulnerabilities", reflect.TypeOf((*MockImageEnricher)(nil).EnrichWithVulnerabilities), ctx, image, components, notes)
 }
 
 // MockcveSuppressor is a mock of cveSuppressor interface.

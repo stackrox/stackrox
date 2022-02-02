@@ -8,9 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 )
 
-// EnrichImageByName takes an image name, and returns the corresponding
-// enriched image.
-// It returns a status.Error.
+// EnrichImageByName takes an image name, and returns the corresponding enriched image.
 func EnrichImageByName(enricher ImageEnricher, enrichmentCtx EnrichmentContext, name string) (*storage.Image, error) {
 	if name == "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "image name must be specified")

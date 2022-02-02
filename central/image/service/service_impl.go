@@ -167,11 +167,18 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
-func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse {
+// prepareImageForResponse modifies the image to filter out data which is not needed for
+// scan responses.
+// Return the passed-in image.
+func prepareImageForResponse(img *storage.Image) *storage.Image {
 	utils.FilterSuppressedCVEsNoClone(img)
 	utils.StripCVEDescriptionsNoClone(img)
-	return &v1.ScanImageInternalResponse{
-		Image: img,
+	return img
+}
+
+func (s *serviceImpl) saveImage(img *storage.Image) {
+	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
 	}
 }
 
@@ -195,7 +202,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
 		// Otherwise, fetch it from the DB.
 		if exists {
-			return internalScanRespFromImage(img), nil
+			return &v1.ScanImageInternalResponse{
+				Image: prepareImageForResponse(img),
+			}, nil
 		}
 	}
 
@@ -217,13 +226,12 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest
 	if request.GetImage().GetId() != "" {
-		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-			log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
-		}
+		s.saveImage(img)
 	}
 
-	// This modifies the image object
-	return internalScanRespFromImage(img), nil
+	return &v1.ScanImageInternalResponse{
+		Image: prepareImageForResponse(img),
+	}, nil
 }
 
 // ScanImage scans an image and returns the result
@@ -242,9 +250,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	// Save the image
 	img.Id = utils.GetImageID(img)
 	if img.GetId() != "" {
-		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-			return nil, err
-		}
+		s.saveImage(img)
 	}
 	if !request.GetIncludeSnoozed() {
 		utils.FilterSuppressedCVEsNoClone(img)
@@ -255,9 +261,60 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // GetImageVulnerabilitiesInternal retrieves the vulnerabilities related to the image
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
-// TODO(ROX-8401): Implement me.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.GetImageVulnerabilitiesInternalResponse, error) {
-	return nil, nil
+	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
+		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
+		if pkgUtils.Should(err) == nil {
+			return nil, s.Err()
+		}
+	}
+	defer s.internalScanSemaphore.Release(1)
+
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
+	// images
+	if request.GetImageId() != "" {
+		img, exists, err := s.datastore.GetImage(ctx, request.GetImageId())
+		if err != nil {
+			return nil, err
+		}
+		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
+		// Otherwise, fetch it from the DB.
+		if exists {
+			return &v1.GetImageVulnerabilitiesInternalResponse{
+				Image: prepareImageForResponse(img),
+			}, nil
+		}
+	}
+
+	// If no ID, then don't use caches as they could return stale data
+	fetchOpt := enricher.UseCachesIfPossible
+	if request.GetImageId() == "" {
+		fetchOpt = enricher.ForceRefetch
+	}
+	enrichmentCtx := enricher.EnrichmentContext{
+		FetchOpt: fetchOpt,
+		Internal: true,
+	}
+
+	img := &storage.Image{
+		Id:       request.GetImageId(),
+		Name:     request.GetImageName(),
+		Metadata: request.GetMetadata(),
+	}
+	_, err := s.enricher.EnrichWithVulnerabilities(enrichmentCtx, img, request.GetComponents(), request.GetNotes())
+	if err != nil {
+		return nil, err
+	}
+
+	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
+	// contained a digest
+	if request.GetImageId() != "" {
+		s.saveImage(img)
+	}
+
+	return &v1.GetImageVulnerabilitiesInternalResponse{
+		Image: prepareImageForResponse(img),
+	}, nil
 }
 
 // DeleteImages deletes images based on query

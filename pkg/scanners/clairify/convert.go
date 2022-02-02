@@ -150,3 +150,51 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 
 	return vuln
 }
+
+func convertImageToImageScan(metadata *storage.ImageMetadata, image *v1.Image) *storage.ImageScan {
+	components := convertFeatures(metadata, image.GetFeatures())
+	return &storage.ImageScan{
+		ScanTime:        gogoProto.TimestampNow(),
+		Components:      components,
+		OperatingSystem: image.GetNamespace(),
+	}
+}
+
+func convertFeatures(metadata *storage.ImageMetadata, features []*v1.Feature) []*storage.EmbeddedImageScanComponent {
+	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
+
+	components := make([]*storage.EmbeddedImageScanComponent, 0, len(features))
+	for _, feature := range features {
+		convertedComponent := convertFeature(feature)
+		if val, ok := layerSHAToIndex[feature.GetAddedByLayer()]; ok {
+			convertedComponent.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: val,
+			}
+		}
+		components = append(components, convertedComponent)
+	}
+
+	return components
+}
+
+func convertFeature(feature *v1.Feature) *storage.EmbeddedImageScanComponent {
+	component := &storage.EmbeddedImageScanComponent{
+		Name:     feature.GetName(),
+		Version:  feature.GetVersion(),
+		Location: feature.GetLocation(),
+		FixedBy:  feature.GetFixedBy(),
+	}
+
+	if source, ok := clair.VersionFormatsToSource[feature.GetFeatureType()]; ok {
+		component.Source = source
+	}
+	component.Vulns = convertVulnerabilities(feature.GetVulnerabilities(), storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.GetProvidedExecutables()))
+	for _, executable := range feature.GetProvidedExecutables() {
+		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath()}
+		executables = append(executables, exec)
+	}
+	component.Executables = executables
+
+	return component
+}
