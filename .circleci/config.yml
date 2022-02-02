@@ -939,10 +939,8 @@ commands:
       - run:
           name: Tear down GKE cluster
           command: |
-            ./scripts/ci/cleanup-deployment.sh || true
-
-            CLUSTER_NAME="${CLUSTER_NAME:-prevent-ci-${CIRCLE_JOB}}"
-            gcloud container clusters delete "$CLUSTER_NAME" --async
+            source scripts/ci/gke.sh
+            teardown_gke_cluster
 
           when: always
 
