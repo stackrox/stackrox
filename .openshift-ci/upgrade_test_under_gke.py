@@ -10,93 +10,78 @@ import sys
 class Constants:
     PROVISION_TIMEOUT = 20*60
     WAIT_TIMEOUT = 20*60
-    TEARDOWN_TIMEOUT = 20*60
+    TEST_TIMEOUT = 60*60
+    TEARDOWN_TIMEOUT = 5*60
     CLUSTER_ID = "upgrade-test"
 
-def run():
-    print("Executing the OpenShift CI upgrade test hook")
+class UpgradeTest:
+    def __init__(self):
+        self.needs_teardown = False
+        self.needs_post_analysis = False
 
-    provision()
+    def run(self):
+        print("Executing the OpenShift CI upgrade test hook")
 
-    wait()
+        outcome = 0
+        try:
+            self.provision()
+            self.wait()
+            self.run_test()
+        # pylint: disable=broad-except
+        except Exception as err:
+            print(f"Exception raised {err}")
+            outcome = 1
 
-    outcome = 0
-    try:
-        outcome = run_test()
-    # pylint: disable=broad-except
-    except Exception as err:
-        print(f"test run failed: {err}")
-        outcome = 1
+        if self.needs_post_analysis:
+            try:
+                self.post_test_analysis()
+            # pylint: disable=broad-except
+            except Exception as err:
+                print(f"Exception raised {err}")
+                outcome = 1
 
-    try:
-        gather_debug()
-    # pylint: disable=broad-except
-    except Exception as err:
-        print(f"gather debug failed: {err}")
-        outcome = 1
+        if self.needs_teardown:
+            try:
+                self.teardown()
+            # pylint: disable=broad-except
+            except Exception as err:
+                print(f"Exception raised {err}")
+                outcome = 1
 
-    teardown()
+        sys.exit(outcome)
 
-    sys.exit(outcome)
+    def provision(self):
+        cmd = subprocess.Popen(["scripts/ci/gke.sh", "provision_gke_cluster", Constants.CLUSTER_ID])
 
-def provision():
-    try:
-        cmd = subprocess.Popen(
-            ["scripts/ci/gke.sh", "provision_gke_cluster", Constants.CLUSTER_ID])
-    # pylint: disable=broad-except
-    except Exception as err:
-        # immediate exit - no need to teardown or debug further
-        print(f"provision failed: {err}")
-        sys.exit(1)
+        self.needs_teardown = True
 
-    try:
-        cmd.wait(Constants.PROVISION_TIMEOUT)
-    except subprocess.TimeoutExpired:
-        print("provision timed out")
-        teardown()
-        sys.exit(1)
+        if cmd.wait(Constants.PROVISION_TIMEOUT) != 0:
+            raise RuntimeError("Cluster provision failed")
 
-    if cmd.returncode != 0:
-        print(f"non zero exit from provision: {cmd.returncode}")
-        teardown()
-        sys.exit(1)
+    def wait(self):
+        cmd = subprocess.Popen(["scripts/ci/gke.sh", "wait_for_cluster"])
 
-def wait():
-    try:
-        cmd = subprocess.Popen(
-            ["scripts/ci/gke.sh", "wait_for_cluster"])
-    # pylint: disable=broad-except
-    except Exception as err:
-        print(f"wait failed: {err}")
-        teardown()
-        sys.exit(1)
+        if cmd.wait(Constants.WAIT_TIMEOUT) != 0:
+            raise RuntimeError("Wait for cluster failed")
 
-    try:
-        cmd.wait(Constants.WAIT_TIMEOUT)
-    except subprocess.TimeoutExpired:
-        print("wait timed out")
-        teardown()
-        sys.exit(1)
+    def run_test(self):
+        # cmd = subprocess.Popen(["tests/upgrade/run.sh"])
+        cmd = subprocess.Popen(["sleep", "60"])
 
-    if cmd.returncode != 0:
-        print(f"non zero exit from wait: {cmd.returncode}")
-        teardown()
-        sys.exit(1)
+        self.needs_post_analysis = True
 
-def run_test():
-    print(">>>> RUNTEST <<<<")
-    return 0
+        if cmd.wait(Constants.TEST_TIMEOUT) != 0:
+            raise RuntimeError("Test failed")
 
-def gather_debug():
-    print(">>>> GATHER DEBUG <<<<")
-    return 0
+    def post_test_analysis(self):
+        print(">>>> GATHER DEBUG <<<<")
+        return 0
 
-def teardown():
-    returncode = subprocess.Popen(
-        ["scripts/ci/gke.sh", "teardown_gke_cluster"]).wait(Constants.TEARDOWN_TIMEOUT)
-    if returncode != 0:
-        print(f"non zero exit from teardown: {returncode}")
-        sys.exit(1)
+    def teardown(self):
+        cmd = subprocess.Popen(["scripts/ci/gke.sh", "teardown_gke_cluster"])
+
+        if cmd.wait(Constants.TEARDOWN_TIMEOUT) != 0:
+            raise RuntimeError("Teardown failed")
 
 if __name__ == "__main__":
-    run()
+    UpgradeTest().run()
