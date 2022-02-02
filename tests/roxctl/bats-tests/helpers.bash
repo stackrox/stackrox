@@ -75,20 +75,12 @@ wait_10s_for() {
   "${args[@]}" "$file"
 }
 
-assert_sensor_component() {
+assert_single_registry() {
   local dir="$1"
-  local regex="$2"
-
-  run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "sensor").image' "${dir}/sensor.yaml"
+  local component="$2"
+  local regex="$3"
+  run yq e "select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == \"${component}\").image" "${dir}/${component}.yaml"
   assert_output --regexp "$regex"
-}
-
-assert_collector_component() {
-   local dir="$1"
-   local regex="$2"
-
-   run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "collector").image' "${dir}/collector.yaml"
-   assert_output --regexp "$regex"
 }
 
 assert_components_registry() {
@@ -246,13 +238,13 @@ has_flag_collision_warning() {
   assert_line --partial "flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'"
 }
 
-auth_roxctl() {
+roxctl_authenticated() {
   roxctl-development --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@"
 }
 
 generate_bundle() {
   installation_flavor="$1";shift
-  run auth_roxctl sensor generate "$installation_flavor" \
+  run roxctl_authenticated sensor generate "$installation_flavor" \
         --output-dir="$out_dir" \
         --timeout=10m \
         --continue-if-exists \
@@ -261,6 +253,6 @@ generate_bundle() {
 
 delete_cluster() {
   local name="$1";shift
-  run auth_roxctl cluster delete --name "$name"
+  run roxctl_authenticated cluster delete --name "$name"
   assert_success
 }

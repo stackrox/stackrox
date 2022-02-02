@@ -22,7 +22,7 @@ teardown() {
 fetch_bundle() {
   local name="$1";shift
   bundle_output="$(mktemp -d -u)"
-  run auth_roxctl sensor get-bundle "$name" \
+  run roxctl_authenticated sensor get-bundle "$name" \
     --output-dir "$bundle_output" "$@"
   assert_success
   rm -rf "$bundle_output"
