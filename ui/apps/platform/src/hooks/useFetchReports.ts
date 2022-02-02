@@ -19,7 +19,7 @@ type Result = {
 /*
  * This hook does an API call to the report configurations API to get the list of reports
  */
-function useFetchReport(
+function useFetchReports(
     filteredSearch: Record<string, string>,
     sortOption: RestSortOption,
     currentPage: number,
@@ -34,7 +34,7 @@ function useFetchReport(
     };
 
     const [result, setResult] = useState<Result>(defaultResultState);
-    const [refetchFlag, setRefetchFlag] = useState<number>(new Date().getTime());
+    const [refetchFlag, setRefetchFlag] = useState(0);
 
     const restSearch: RestSearchOption[] = convertToRestSearch(filteredSearch || {});
 
@@ -72,10 +72,10 @@ function useFetchReport(
     }, [refetchFlag, restSearch, sortOption, currentPage, perPage]);
 
     function triggerRefresh() {
-        setRefetchFlag(new Date().getTime());
+        setRefetchFlag((flag) => flag + 1);
     }
 
     return result;
 }
 
-export default useFetchReport;
+export default useFetchReports;
