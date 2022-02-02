@@ -75,7 +75,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, i
 	// load image with templates
 	templateImage := image.GetDefaultImage()
 	if flags.IsDebug() {
-		templateImage = image.NewImage(os.DirFS(flags.DebugChartPath()))
+		templateImage = flags.DebugHelmImage()
 	}
 
 	// Load and render template files.
@@ -122,7 +122,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		fmt.Sprintf("render RHACS chart flavor (deprecated: use '--%s=%s' instead)", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease))
 
 	if !buildinfo.ReleaseBuild {
-		flags.AddDebug(c)
+		flags.AddHelmChartDebugSetting(c)
 	}
 	flags.AddImageDefaults(c.PersistentFlags(), &imageFlavor)
 	return c

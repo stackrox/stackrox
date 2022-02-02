@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
@@ -85,6 +86,10 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		if err := injectImageTags(c); err != nil {
 			return err
 		}
+	}
+
+	if c.HelmImage == nil {
+		c.HelmImage = image.GetDefaultImage()
 	}
 
 	return nil

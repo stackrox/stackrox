@@ -100,13 +100,13 @@ teardown() {
 }
 
 @test "roxctl-development helm output central-services --debug should use the local directory" {
-  run_with_debug_flag roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir"
+  run_with_debug_flag_test roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_success
   assert_debug_templates_exist "$out_dir/templates"
 }
 
 @test "roxctl-development helm output central-services --debug should fail when debug dir does not exist" {
-  run_with_debug_flag_non_existing_dir roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir"
+  run roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir" --debug --debug-path "/non-existing-dir"
   assert_failure
   assert_output --partial "no such file or directory"
 }

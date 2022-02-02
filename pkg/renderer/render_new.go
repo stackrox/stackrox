@@ -1,13 +1,11 @@
 package renderer
 
 import (
-	"os"
 	"path"
 	"strings"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -73,7 +71,7 @@ func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles [
 }
 
 func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
-	helmImage := c.getHelmImage()
+	helmImage := c.HelmImage
 	valuesFiles, err := renderNewHelmValues(c)
 	if err != nil {
 		return nil, errors.Wrap(err, "rendering new helm values")
@@ -217,11 +215,4 @@ func renderNew(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.Fi
 	allFiles = append(allFiles, auxFiles...)
 
 	return allFiles, nil
-}
-
-func (c Config) getHelmImage() *image.Image {
-	if c.HelmImageDir == "" {
-		return image.GetDefaultImage()
-	}
-	return image.NewImage(os.DirFS(c.HelmImageDir))
 }

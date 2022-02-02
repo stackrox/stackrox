@@ -150,7 +150,7 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 			}
 		}
 		if flags.IsDebug() {
-			config.HelmImageDir = flags.DebugChartPath()
+			config.HelmImage = flags.DebugHelmImage()
 		}
 	}
 
@@ -306,7 +306,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		c.PersistentFlags().MarkHidden("with-config-file"))
 
 	if !buildinfo.ReleaseBuild {
-		flags.AddDebug(c)
+		flags.AddHelmChartDebugSetting(c)
 	}
 
 	c.AddCommand(centralGenerateCmd.interactive())
