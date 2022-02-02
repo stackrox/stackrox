@@ -9,6 +9,15 @@ SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 set -u
 
 source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
+source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
+
+provision_gke_cluster() {
+    info "Provisioning a GKE cluster"
+
+    setup_gcp
+    assign_env_variables "$@"
+    create_cluster
+}
 
 assign_env_variables() {
     info "Assigning environment variables for later steps"
@@ -20,6 +29,8 @@ assign_env_variables() {
     local cluster_id="$1"
     local num_nodes="${2:-3}"
     local machine_type="${3:-e2-standard-4}"
+
+    echo "$cluster_id $num_nodes $machine_type"
 
     ensure_CI
 

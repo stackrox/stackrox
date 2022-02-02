@@ -1178,19 +1178,11 @@ commands:
         default: e2-standard-4
 
     steps:
-      - setup-gcp
-
       - run:
-          name: Assign environment variables
+          name: Provision a GKE cluster
           command: |
             source scripts/ci/gke.sh
-            assign_env_variables "<< parameters.cluster-id >>" "<< parameters.num-nodes >>" "<< parameters.machine-type >>"
-
-      - run:
-          name: Create GKE cluster
-          command: |
-            source scripts/ci/gke.sh
-            create_cluster
+            provision_gke_cluster "<< parameters.cluster-id >>" "<< parameters.num-nodes >>" "<< parameters.machine-type >>"
 
       - run:
           name: Save cluster config
