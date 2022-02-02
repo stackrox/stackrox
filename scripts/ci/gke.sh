@@ -223,3 +223,13 @@ teardown_gke_cluster() {
 
     gcloud container clusters delete "$CLUSTER_NAME" --async
 }
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    if [[ "$#" -lt 1 ]]; then
+        usage
+        die "When invoked at the command line a method is required."
+    fi
+    fn="$1"
+    shift
+    "$fn" "$*"
+fi

@@ -4837,7 +4837,7 @@ jobs:
       - checkout
       - run:
           name: Run the OpenShift CI upgrade test hook
-          command: .openshift-ci/upgrade-test.py
+          command: .openshift-ci/upgrade_test_under_gke.py
 
 workflows:
   version: 2
