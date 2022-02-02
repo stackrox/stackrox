@@ -6,3 +6,5 @@
 roxctl/**/*     @stackrox/merlin
 pkg/auth/**/*   @stackrox/merlin
 pkg/sac/**/*    @stackrox/merlin
+
+pkg/images/defaults/**/* @stackrox/maple
