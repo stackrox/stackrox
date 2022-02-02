@@ -157,7 +157,7 @@ function ViolationsTablePage(): ReactElement {
     return (
         <PageSection variant="light" isFilled id="violations-table">
             <ReduxSearchInput
-                className="w-full"
+                className="w-full theme-light"
                 searchOptions={searchOptions}
                 searchModifiers={searchModifiers}
                 setSearchOptions={setSearchOptions}
