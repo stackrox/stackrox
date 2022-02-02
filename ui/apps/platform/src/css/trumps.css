@@ -84,6 +84,11 @@ body {
     align-self: center;
 }
 
+/* Override filter which simulates dark background color */
+.theme-dark .pf-c-table input[type='checkbox'] {
+    filter: inherit; /* replace invert(0.3) */
+}
+
 button.pf-c-tree-view__node {
     font-weight: inherit; /* override 600 from ui-components */
 }
