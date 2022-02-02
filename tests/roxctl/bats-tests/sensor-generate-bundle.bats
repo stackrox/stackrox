@@ -27,7 +27,7 @@ fetch_bundle() {
     -e "$API_ENDPOINT" \
     --output-dir "$bundle_output" "$@"
   assert_success
-  echo "$bundle_output"
+  rm -rf "$bundle_output"
 }
 
 run_generate_and_get_bundle_test() {
@@ -35,8 +35,7 @@ run_generate_and_get_bundle_test() {
   local name="$1";shift
   generate_bundle "$flavor" --name "$name" "$@"
   assert_success
-  download_dir="$(fetch_bundle "$name")"
-  rm -rf "$download_dir"
+  fetch_bundle "$name"
   delete_cluster "$name"
 }
 
