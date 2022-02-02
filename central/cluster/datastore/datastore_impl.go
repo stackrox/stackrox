@@ -905,7 +905,8 @@ func addDefaults(cluster *storage.Cluster) error {
 	if cluster.GetMainImage() == "" {
 		flavor := defaults.GetImageFlavorFromEnv()
 		cluster.MainImage = flavor.MainImageNoTag()
-		// cluster.CollectorImage may be kept empty as it is computed ad-hoc from the MainImage
+		// cluster.CollectorImage should be kept empty here on the save path
+		// because it is computed using complex rules from the MainImage on the load path.
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		cluster.CentralApiEndpoint = "central.stackrox:443"

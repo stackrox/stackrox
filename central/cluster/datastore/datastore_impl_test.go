@@ -76,6 +76,8 @@ type ClusterDataStoreTestSuite struct {
 	networkBaselineMgr  *networkBaselineMocks.MockManager
 }
 
+var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
+
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
