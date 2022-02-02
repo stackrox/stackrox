@@ -45,6 +45,7 @@ func (suite *renderSuite) SetupSuite() {
 
 func (suite *renderSuite) TeardownSuite() {
 	suite.restorer.Restore()
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
