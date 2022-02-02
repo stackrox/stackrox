@@ -4554,16 +4554,6 @@ jobs:
             ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim"
 
       - run:
-          name: Push image into quay.io repository backing registry.redhat.io
-          command: |
-            docker login -u "$RH_REGISTRY_QUAY_USERNAME" --password-stdin \<<<"$RH_REGISTRY_QUAY_PASSWORD" quay.io
-
-            MAIN_TAG="$(make --quiet tag)"
-
-            ./scripts/redhat-registry-publish/retag.sh "$MAIN_TAG" "$MAIN_TAG" "$MAIN_TAG"
-            DRY_RUN=false ./scripts/redhat-registry-publish/push.sh "$MAIN_TAG" "$MAIN_TAG" "$MAIN_TAG"
-
-      - run:
           name: Push collector & scanner images tagged with main-version to stackrox.io
           command: |
             docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
