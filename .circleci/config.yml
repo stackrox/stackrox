@@ -934,21 +934,6 @@ commands:
             source scripts/ci/gcp.sh
             setup_gcp
 
-  create-gke:
-    parameters:
-      wait:
-        type: boolean
-        default: true
-
-    steps:
-      - run:
-          name: Create GKE cluster
-          command: |
-            source .circleci/create-cluster.sh && create-cluster
-            <<# parameters.wait >>
-            wait-for-cluster
-            <</ parameters.wait >>
-
   teardown-gke:
     steps:
       - run:
@@ -1201,8 +1186,11 @@ commands:
             source scripts/ci/gke.sh
             assign_env_variables "<< parameters.cluster-id >>" "<< parameters.num-nodes >>" "<< parameters.machine-type >>"
 
-      - create-gke:
-          wait: false
+      - run:
+          name: Create GKE cluster
+          command: |
+            source scripts/ci/gke.sh
+            create_cluster
 
       - run:
           name: Save cluster config
@@ -1265,7 +1253,8 @@ commands:
       - run:
           name: Waiting for << parameters.cluster-id >> cluster to stabilize
           command: |
-            source .circleci/create-cluster.sh && wait-for-cluster
+            source scripts/ci/gke.sh
+            wait_for_cluster
 
   remove-existing-stackrox-resources:
     steps:

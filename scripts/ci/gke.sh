@@ -31,22 +31,173 @@ assign_env_variables() {
 
     local cluster_name="rox-ci-${cluster_id}-${CIRCLE_BUILD_NUM}"
     ci_export CLUSTER_NAME "$cluster_name"
-    echo "Assigned cluster name is $CLUSTER_NAME"
+    echo "Assigned cluster name is $cluster_name"
 
     ci_export NUM_NODES "$num_nodes"
-    echo "Number of nodes for cluster is $NUM_NODES"
+    echo "Number of nodes for cluster is $num_nodes"
 
     ci_export MACHINE_TYPE "$machine_type"
-    echo "Machine type is set as to $MACHINE_TYPE"
+    echo "Machine type is set as to $machine_type"
 
     local gke_release_channel="stable"
     if is_CIRCLECI; then
-        if .circleci/pr_has_label.sh ci-gke-release-channel-rapid; then
+        if "$SCRIPTS_ROOT/.circleci/pr_has_label.sh" ci-gke-release-channel-rapid; then
             gke_release_channel="rapid"
-        elif .circleci/pr_has_label.sh ci-gke-release-channel-regular; then
+        elif "$SCRIPTS_ROOT/.circleci/pr_has_label.sh" ci-gke-release-channel-regular; then
             gke_release_channel="regular"
         fi
     fi
     ci_export GKE_RELEASE_CHANNEL "$gke_release_channel"
-    echo "Using gke release channel: $GKE_RELEASE_CHANNEL"
+    echo "Using gke release channel: $gke_release_channel"
+}
+
+create_cluster() {
+    info "Creating a GKE cluster"
+
+    ensure_CI
+
+    if ! is_CIRCLECI; then
+        die "Support is missing for this CI environment"
+    fi
+    require_environment "CLUSTER_NAME"
+    require_environment "CIRCLE_JOB"
+    require_environment "CIRCLE_WORKFLOW_ID"
+
+    local ci_job_id="${CIRCLE_JOB}"
+    local ci_workflow_id="${CIRCLE_WORKFLOW_ID}"
+
+    ### Network Sizing ###
+    # The overall subnetwork ("--create-subnetwork") is used for nodes.
+    # The "cluster" secondary range is for pods ("--cluster-ipv4-cidr").
+    # The "services" secondary range is for ClusterIP services ("--services-ipv4-cidr").
+    # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
+
+    REGION=us-central1
+    NUM_NODES="${NUM_NODES:-3}"
+    GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU}"
+    POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
+    GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
+    MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
+
+    # # this function does not work in strict -e mode
+    # set +euo pipefail
+
+    echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
+
+    VERSION_ARGS=(--release-channel "${GKE_RELEASE_CHANNEL}")
+    get_supported_cluster_version
+    if [[ -n "${CLUSTER_VERSION}" ]]; then
+        echo "using cluster version: ${CLUSTER_VERSION}"
+        VERSION_ARGS=(--cluster-version "${CLUSTER_VERSION}")
+    fi
+
+    PSP_ARG=
+    if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
+        PSP_ARG="--enable-pod-security-policy"
+    fi
+    zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
+    success=0
+    for zone in $zones; do
+        if is_CIRCLECI; then
+            "$SCRIPTS_ROOT/.circleci/check-workflow-live.sh" || return 1
+        fi
+        echo "Trying zone $zone"
+        gcloud config set compute/zone "${zone}"
+        # shellcheck disable=SC2153
+        timeout 420 gcloud beta container clusters create \
+            --machine-type "${MACHINE_TYPE}" \
+            --num-nodes "${NUM_NODES}" \
+            --disk-type=pd-standard \
+            --disk-size=40GB \
+            --create-subnetwork range=/28 \
+            --cluster-ipv4-cidr=/20 \
+            --services-ipv4-cidr=/24 \
+            --enable-ip-alias \
+            --enable-network-policy \
+            --enable-autorepair \
+            "${VERSION_ARGS[@]}" \
+            --image-type "${GCP_IMAGE_TYPE}" \
+            --tags="stackrox-ci,stackrox-ci-${ci_job_id}" \
+            --labels="stackrox-ci=true,stackrox-ci-job=${ci_job_id},stackrox-ci-workflow=${ci_workflow_id}" \
+            ${PSP_ARG} \
+            "${CLUSTER_NAME}"
+        status="$?"
+        if [[ "${status}" == 0 ]]; then
+            success=1
+            break
+        elif [[ "${status}" == 124 ]]; then
+            echo >&2 "gcloud command timed out. Checking to see if cluster is still creating"
+            if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
+                echo >&2 "Create cluster did not create the cluster in Google. Trying a different zone..."
+            else
+                for i in {1..120}; do
+                    if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
+                        success=1
+                        break
+                    fi
+                    sleep 5
+                    echo "Currently have waited $((i * 5)) for cluster ${CLUSTER_NAME} in ${zone} to move to running state"
+                done
+            fi
+
+            if [[ "${success}" == 1 ]]; then
+                echo "Successfully launched cluster ${CLUSTER_NAME}"
+                break
+            fi
+            echo >&2 "Timed out after 10 more minutes. Trying another zone..."
+            echo >&2 "Deleting the cluster"
+            gcloud container clusters delete "${CLUSTER_NAME}" --async
+        fi
+    done
+
+    if [[ "${success}" == "0" ]]; then
+        echo "Cluster creation failed"
+        return 1
+    fi
+}
+
+wait_for_cluster() {
+    info "Waiting for a GKE cluster to stabilize"
+
+    while [[ $(kubectl -n kube-system get pod | tail +2 | wc -l) -lt 2 ]]; do
+        echo "Still waiting for kubernetes to create initial kube-system pods"
+        sleep 1
+    done
+
+    local grace_period=30
+    while true; do
+        kubectl -n kube-system get pod
+        local numstarting
+        numstarting=$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[].ready | select(. | not)] | length')
+        if ((numstarting == 0)); then
+            local last_start_ts
+            last_start_ts="$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[] | (.state.running.startedAt // (now | todate)) | fromdate] | max')"
+            local curr_ts
+            curr_ts="$(date '+%s')"
+            local remaining_grace_period
+            remaining_grace_period=$((last_start_ts + grace_period - curr_ts))
+            if ((remaining_grace_period <= 0)); then
+                break
+            fi
+            echo "Waiting for another $remaining_grace_period seconds for kube-system pods to stabilize"
+            sleep "$remaining_grace_period"
+        fi
+
+        echo "Waiting for ${numstarting} kube-system containers to be initialized"
+        sleep 10
+    done
+}
+
+get_supported_cluster_version() {
+    if [[ -n "${CLUSTER_VERSION}" ]]; then
+        local match
+        match=$(gcloud container get-server-config --format json | jq "[.validMasterVersions | .[] | select(.|test(\"^${CLUSTER_VERSION}\"))][0]")
+        if [[ -z "${match}" || "${match}" == "null" ]]; then
+            echo "A supported version cannot be found that matches ${CLUSTER_VERSION}."
+            echo "Valid master versions are:"
+            gcloud container get-server-config --format json | jq .validMasterVersions
+            exit 1
+        fi
+        CLUSTER_VERSION=$(sed -e 's/^"//' -e 's/"$//' <<<"${match}")
+    fi
 }
