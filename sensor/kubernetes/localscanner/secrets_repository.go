@@ -26,6 +26,8 @@ type certSecretsRepo interface {
 	// - Returns an error in case some service in `secret` is not in the set of service types handled by the repository.
 	// - `secrets` may miss an entry for some service type handled by the repository, in that case this only updates
 	//   the secrets for the service types in `secrets`.
+	// - This operation is idempotent but not atomic in sense that on error some of the secrets might be persisted
+	//   while others are not.
 	putSecrets(ctx context.Context, secrets map[storage.ServiceType]*v1.Secret) error
 }
 
