@@ -10,7 +10,7 @@ import (
 	probeSourcesMocks "github.com/stackrox/rox/central/probesources/mocks"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,6 +22,7 @@ func TestClusterService(t *testing.T) {
 type ClusterServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
+	ei       *envisolator.EnvIsolator
 
 	dataStore datastore.DataStore
 }
@@ -31,13 +32,15 @@ var _ suite.TearDownTestSuite = (*ClusterServiceTestSuite)(nil)
 func (suite *ClusterServiceTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.ei = envisolator.NewEnvIsolator(suite.T())
 
-	flavorUtils.MakeImageFlavorForTest(suite.T())
+	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
 
 func (suite *ClusterServiceTestSuite) TearDownTest() {
+	suite.ei.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
