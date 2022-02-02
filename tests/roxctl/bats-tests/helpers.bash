@@ -177,7 +177,7 @@ run_with_debug_flag_test() {
   [[ -n "$chart_debug_dir" ]] || fail "chart_debug_dir is unset"
 
   cp -r "$chart_src_dir" "$chart_debug_dir"
-  # creating a diff between original and custom chart templates
+  # creating a diff between original and custom chart template to verify that the custom chart is used instead of the default one
   touch "$chart_debug_dir/templates/helm/shared/templates/bats-test.yaml"
 
   run "$@" --debug --debug-path "$chart_debug_dir"
