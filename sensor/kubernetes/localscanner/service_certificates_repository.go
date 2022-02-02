@@ -2,6 +2,7 @@ package localscanner
 
 import (
 	"context"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -16,42 +17,47 @@ var (
 	_ serviceCertificatesRepo = (*serviceCertificatesRepoSecretsImpl)(nil)
 )
 
-// serviceCertificatesRepo is in charge of persisting and retrieving a set of secrets corresponding to a fixed
-// set of service types into k8s, thus implementing the
-// [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for a map from service types
-// to secrets and using the k8s API as persistence.
+// serviceCertificatesRepo is in charge of persisting and retrieving a set of service certificates, thus implementing
+// the [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for *storage.TypedServiceCertificateSet.
 type serviceCertificatesRepo interface {
-	// getSecrets retrieves the secrets from permanent storage.
-	// getSecrets(ctx context.Context) (map[storage.ServiceType]*v1.Secret, error) // FIXME update comments and delete
+	// getServiceCertificates retrieves the certificates from permanent storage.
 	getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
-	// putSecrets persists the secrets on permanent storage.
-	// - Returns an error in case some service in `secret` is not in the set of service types handled by the repository.
-	// - `secrets` may miss an entry for some service type handled by the repository, in that case this only updates
-	//   the secrets for the service types in `secrets`.
-	// - This operation is idempotent but not atomic in sense that on error some of the secrets might be persisted
-	//   while others are not.
-	// putSecrets(ctx context.Context, secrets map[storage.ServiceType]*v1.Secret) error // FIXME update comments and delete
+	// putServiceCertificates persists the certificates on permanent storage.
 	putServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
 }
 
 // serviceCertificatesRepoSecretsImpl is a serviceCertificatesRepo that uses k8s secrets for persistence.
+// All fields except Data are respected when persisting the secrets.
 // Invariants:
-// - secrets and secretsClient are read-only, but the elements of secrets are read-write.
-// - All secrets store the same CA PEM.
+// - secrets and secretsClient are read-only, except the field Data of the entries in secrets.
 // - No secret in secrets is nil.
+// - All secrets with non nil Data store the same CA PEM.
 type serviceCertificatesRepoSecretsImpl struct {
 	secrets       map[storage.ServiceType]*v1.Secret
 	secretsClient corev1.SecretInterface
 }
 
-// newServiceCertificatesRepoWithSecretsPersistence creates a new serviceCertificatesRepo that handles secrets with the specified names and
-// for the specified service types, and uses the k8s API for persistence.
+// newServiceCertificatesRepoWithSecretsPersistence creates a new serviceCertificatesRepoSecretsImpl that persists
+// certificates for the specified services in the corresponding k8s secrets.
 func newServiceCertificatesRepoWithSecretsPersistence(secrets map[storage.ServiceType]*v1.Secret,
 	secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
+	caMap := make(map[string]storage.ServiceType)
 	for serviceType, secret := range secrets {
 		if secret == nil {
 			return nil, errors.Errorf("nil secrets for service type %q", serviceType)
 		}
+		if secretData := secret.Data; secretData != nil {
+			caPem := secretData[mtls.CACertFileName]
+			caMap[string(caPem)] = serviceType
+		}
+	}
+	if len(caMap) > 1 {
+		serviceTypes := make([]string, 0)
+		for _, serviceType := range caMap {
+			serviceTypes = append(serviceTypes, serviceType.String())
+		}
+		return nil, errors.Errorf("found different CA PEM in secret Data for service types %q",
+			strings.Join(serviceTypes, ","))
 	}
 	return &serviceCertificatesRepoSecretsImpl{
 		secrets:       secrets,
@@ -80,7 +86,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 			continue
 		}
 		if certificates.GetCaPem() == nil {
-			// all secrets store the same CA PEM.
+			// all secrets with non nil Data store the same CA PEM.
 			certificates.CaPem = secretData[mtls.CACertFileName]
 		}
 		certificates.ServiceCerts = append(certificates.ServiceCerts, &storage.TypedServiceCertificate{
@@ -103,7 +109,9 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 	return certificates, nil
 }
 
-// putServiceCertificates edge cases:
+// putServiceCertificates is idempotent but not atomic in sense that on error some secrets might be persisted
+// while others are not.
+// Edge cases:
 // - Fails for certificates with a service type that doesn't appear in r.secrets, as we don't know where to store them.
 // - Not all services types in r.secrets are required to appear in certificates, missing service types are just skipped.
 func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error {

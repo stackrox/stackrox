@@ -94,6 +94,36 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithNilSecretFailur
 	s.Error(err)
 }
 
+func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithDifferentCASecretDataFailure() {
+	f := s.newFixture("")
+	secret1 := &v1.Secret{
+		Data: map[string][]byte{
+			mtls.CACertFileName: make([]byte, 0),
+		},
+	}
+	secret2 := &v1.Secret{
+		Data: map[string][]byte{
+			mtls.CACertFileName: make([]byte, 1),
+		},
+	}
+	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
+	_, err := newServiceCertificatesRepoWithSecretsPersistence(secrets, f.secretsClient)
+	s.Error(err)
+}
+
+func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithJustOneNoNilCASecretDataSuccess() {
+	f := s.newFixture("")
+	secret1 := &v1.Secret{
+		Data: map[string][]byte{
+			mtls.CACertFileName: make([]byte, 0),
+		},
+	}
+	secret2 := &v1.Secret{}
+	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
+	_, err := newServiceCertificatesRepoWithSecretsPersistence(secrets, f.secretsClient)
+	s.NoError(err)
+}
+
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataSuccess() {
 	f := s.newFixtureAdvancedOpts("", true)
 	expectedCertificates := &storage.TypedServiceCertificateSet{}
