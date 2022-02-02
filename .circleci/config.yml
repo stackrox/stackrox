@@ -5098,7 +5098,6 @@ workflows:
           context:
             - custom-executor-pull
             - docker-io-and-stackrox-io-push
-            - quay-rh-registry-push
           requires:
             - build
             - go-unit-tests
