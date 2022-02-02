@@ -9,7 +9,6 @@ setup_file() {
   command -v yq || skip "Tests in this file require yq"
   [[ -n "$API_ENDPOINT" ]] || skip "API_ENDPOINT environment variable required"
   [[ -n "$ROX_PASSWORD" ]] || skip "ROX_PASSWORD environment variable required"
-  export_api_token
 }
 
 setup() {
@@ -23,8 +22,7 @@ teardown() {
 fetch_bundle() {
   local name="$1";shift
   bundle_output="$(mktemp -d -u)"
-  run roxctl-development sensor get-bundle "$name" \
-    -e "$API_ENDPOINT" \
+  run auth_roxctl sensor get-bundle "$name" \
     --output-dir "$bundle_output" "$@"
   assert_success
   rm -rf "$bundle_output"

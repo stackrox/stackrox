@@ -246,10 +246,13 @@ has_flag_collision_warning() {
   assert_line --partial "flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'"
 }
 
+auth_roxctl() {
+  roxctl-development --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@"
+}
+
 generate_bundle() {
   installation_flavor="$1";shift
-  run roxctl-development sensor generate "$installation_flavor" \
-        --insecure-skip-tls-verify -e "$API_ENDPOINT" \
+  run auth_roxctl sensor generate "$installation_flavor" \
         --output-dir="$out_dir" \
         --timeout=10m \
         --continue-if-exists \
@@ -258,7 +261,6 @@ generate_bundle() {
 
 delete_cluster() {
   local name="$1";shift
-  run roxctl-development cluster delete --name "$name" \
-    -e "$API_ENDPOINT"
+  run auth_roxctl cluster delete --name "$name"
   assert_success
 }

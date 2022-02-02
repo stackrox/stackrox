@@ -10,7 +10,6 @@ setup_file() {
   command -v yq || skip "Tests in this file require yq"
   [[ -n "$API_ENDPOINT" ]] || skip "API_ENDPOINT environment variable required"
   [[ -n "$ROX_PASSWORD" ]] || skip "ROX_PASSWORD environment variable required"
-  export_api_token
 }
 
 setup() {
