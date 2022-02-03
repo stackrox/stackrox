@@ -53,6 +53,11 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 	for k, v := range c.SecretsByteMap {
 		c.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
 	}
+
+	if c.HelmImage == nil {
+		c.HelmImage = image.GetDefaultImage()
+	}
+
 	if mode == centralTLSOnly || mode == scannerTLSOnly {
 		return nil
 	}
@@ -86,10 +91,6 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		if err := injectImageTags(c); err != nil {
 			return err
 		}
-	}
-
-	if c.HelmImage == nil {
-		c.HelmImage = image.GetDefaultImage()
 	}
 
 	return nil
