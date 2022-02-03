@@ -8,6 +8,7 @@ set -euo pipefail
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 source "$TEST_ROOT/scripts/lib.sh"
+source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
 source "$TEST_ROOT/tests/scripts/setup-certs.sh"
 source "$TEST_ROOT/tests/e2e/lib.sh"
@@ -33,6 +34,8 @@ test_upgrade() {
     fi
 
     preamble
+    setup_deployment_env false false
+    install_built_roxctl_in_gopath
     remove_existing_stackrox_resources
 
     info "Deploying central"
@@ -371,7 +374,12 @@ test_upgrade_paths() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
+    mkdir -p "bin/$TEST_HOST_OS"
+    gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_OS/roxctl"
+    chmod +x "bin/$TEST_HOST_OS/roxctl"
+    PATH="bin/$TEST_HOST_OS:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_OS:$PATH" roxctl version
+    PATH="bin/$TEST_HOST_OS:$PATH" MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
 
     get_central_basic_auth_creds
 }

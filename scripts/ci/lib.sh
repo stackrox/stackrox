@@ -57,3 +57,22 @@ setup_deployment_env() {
     ci_export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
     ci_export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 }
+
+install_built_roxctl_in_gopath() {
+    require_environment "GOPATH"
+
+    local bin_os
+    if is_darwin; then
+        bin_os="darwin"
+    elif is_linux; then
+        bin_os="linux"
+    else
+        die "Only linux or darwin are supported for this test"
+    fi
+
+    local roxctl="$SCRIPTS_ROOT/bin/$bin_os/roxctl"
+
+    require_executable "$roxctl" "roxctl should be built"
+
+    cp "$roxctl" "$GOPATH/bin/roxctl"
+}
