@@ -65,11 +65,10 @@ func (q *waitableQueueImpl) push(qi *queuedItem) {
 	if qi.key != nil {
 		if oldQi, ok := q.dedupeMap[string(qi.key)]; ok {
 			*oldQi = *qi
-		} else {
-			q.dedupeMap[string(qi.key)] = qi
+			return
 		}
+		q.dedupeMap[string(qi.key)] = qi
 	}
-
 	q.base.push(qi)
 }
 
