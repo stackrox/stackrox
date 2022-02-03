@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/mtls"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -32,13 +31,17 @@ type serviceCertificatesRepo interface {
 // - secrets and secretsClient are read-only, except the field Data of the entries in secrets.
 // - No secret in secrets is nil.
 type serviceCertificatesRepoSecretsImpl struct {
-	secrets       map[storage.ServiceType]*v1.Secret
-	secretsClient corev1.SecretInterface
+	secrets             map[storage.ServiceType]*v1.Secret
+	secretsClient       corev1.SecretInterface
+	caCertFileName      string
+	serviceCertFileName string
+	serviceKeyFileName  string
 }
 
 // newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists
 // certificates for the specified services in the corresponding k8s secrets.
-func newServiceCertificatesRepo(secrets map[storage.ServiceType]*v1.Secret,
+func newServiceCertificatesRepo(caCertFileName, serviceCertFileName, serviceKeyFileName string,
+	secrets map[storage.ServiceType]*v1.Secret,
 	secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
 	for serviceType, secret := range secrets {
 		if secret == nil {
@@ -46,8 +49,11 @@ func newServiceCertificatesRepo(secrets map[storage.ServiceType]*v1.Secret,
 		}
 	}
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets:       secrets,
-		secretsClient: secretsClient,
+		secrets:             secrets,
+		secretsClient:       secretsClient,
+		caCertFileName:      caCertFileName,
+		serviceCertFileName: serviceCertFileName,
+		serviceKeyFileName:  serviceKeyFileName,
 	}, nil
 }
 
@@ -73,10 +79,10 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 			continue
 		}
 		if certificates.GetCaPem() == nil {
-			certificates.CaPem = secretData[mtls.CACertFileName]
+			certificates.CaPem = secretData[r.caCertFileName]
 			firstServiceTypeWithCA = serviceType
 		} else {
-			if !bytes.Equal(certificates.GetCaPem(), secretData[mtls.CACertFileName]) {
+			if !bytes.Equal(certificates.GetCaPem(), secretData[r.caCertFileName]) {
 				return nil, errors.Errorf("found different CA PEM in secret Data for service types %q and %q",
 					firstServiceTypeWithCA, serviceType)
 			}
@@ -84,8 +90,8 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 		certificates.ServiceCerts = append(certificates.ServiceCerts, &storage.TypedServiceCertificate{
 			ServiceType: serviceType,
 			Cert: &storage.ServiceCertificate{
-				CertPem: secretData[mtls.ServiceCertFileName],
-				KeyPem:  secretData[mtls.ServiceKeyFileName],
+				CertPem: secretData[r.serviceCertFileName],
+				KeyPem:  secretData[r.serviceKeyFileName],
 			},
 		})
 
@@ -118,9 +124,9 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.
 		}
 		// Invariant: no secret in r.secrets is nil.
 		secret.Data = map[string][]byte{
-			mtls.CACertFileName:      caPem,
-			mtls.ServiceCertFileName: cert.GetCert().GetCertPem(),
-			mtls.ServiceKeyFileName:  cert.GetCert().GetKeyPem(),
+			r.caCertFileName:      caPem,
+			r.serviceCertFileName: cert.GetCert().GetCertPem(),
+			r.serviceKeyFileName:  cert.GetCert().GetKeyPem(),
 		}
 		_, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {

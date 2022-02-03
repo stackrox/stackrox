@@ -84,7 +84,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferenteCAsFailure() 
 	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
 	clientSet := fake.NewSimpleClientset(secret1, secret2)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
-	repo, err := newServiceCertificatesRepo(secrets, secretsClient)
+	repo, err := newTestRepo(secrets, secretsClient)
 	s.Require().NoError(err)
 	_, err = repo.getServiceCertificates(context.Background())
 	s.Require().Error(err)
@@ -118,7 +118,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithNilSecretFailur
 	f := s.newFixture("")
 	var secret *v1.Secret
 	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret}
-	_, err := newServiceCertificatesRepo(secrets, f.secretsClient)
+	_, err := newTestRepo(secrets, f.secretsClient)
 	s.Error(err)
 }
 
@@ -131,7 +131,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithJustOneNoNilCAS
 	}
 	secret2 := &v1.Secret{}
 	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
-	_, err := newServiceCertificatesRepo(secrets, f.secretsClient)
+	_, err := newTestRepo(secrets, f.secretsClient)
 	s.NoError(err)
 }
 
@@ -258,11 +258,16 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixtureAdvancedOpts(verbToE
 	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(verbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &v1.Secret{}, errForced
 	})
-	repo, err := newServiceCertificatesRepo(secrets, secretsClient)
+	repo, err := newTestRepo(secrets, secretsClient)
 	s.Require().NoError(err)
 	return &certSecretsRepoFixture{
 		repo:          repo,
 		secretsClient: secretsClient,
 		certificates:  certificates,
 	}
+}
+
+func newTestRepo(secrets map[storage.ServiceType]*v1.Secret, secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
+	return newServiceCertificatesRepo(mtls.CACertFileName, mtls.ServiceCertFileName, mtls.ServiceKeyFileName,
+		secrets, secretsClient)
 }
