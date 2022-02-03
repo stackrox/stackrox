@@ -4832,7 +4832,8 @@ jobs:
   openshift-ci-upgrade-test:
     executor: custom
     steps:
-      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
       - run:
           name: Run the OpenShift CI upgrade test hook
           command: .openshift-ci/upgrade_test_under_gke.py
