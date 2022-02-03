@@ -4,10 +4,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Store stores cluster-internal registries by namespace.
@@ -82,6 +87,8 @@ func (rs *Store) UpsertRegistry(namespace, registry string, dce types.DockerConf
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
+
+	log.Debugf("Upserted registry %q into store", registry)
 
 	return nil
 }
