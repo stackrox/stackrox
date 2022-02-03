@@ -1,6 +1,7 @@
 package errox
 
 import (
+	"os"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -42,7 +43,7 @@ func TestRoxErrorIs(t *testing.T) {
 	assert.NotErrorIs(t, errors.New("some error"), errNotFound)
 }
 
-func TestError(t *testing.T) {
+func TestErrorMessage(t *testing.T) {
 	{
 		err := NotFound
 		assert.Equal(t, "not found", err.Error())
@@ -57,5 +58,11 @@ func TestError(t *testing.T) {
 		err := Newf(InvalidArgs, "custom %s", "message")
 		assert.Equal(t, "custom message", err.Error())
 		assert.ErrorIs(t, err, InvalidArgs)
+	}
+
+	{
+		err := New(os.ErrClosed, "not open")
+		assert.Equal(t, "not open", err.Error())
+		assert.ErrorIs(t, err, os.ErrClosed)
 	}
 }
