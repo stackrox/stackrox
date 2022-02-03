@@ -1,9 +1,9 @@
 {{/*
-  srox.injectedCABundle
+  srox.injectedCABundleVolume
 
   Configures ConfigMap volume to use in a deployment.
    */}}
-{{- define "srox.injectedCABundle" -}}
+{{- define "srox.injectedCABundleVolume" -}}
 {{- if eq ._rox.env.openshift 4 }}
 - name: trusted-ca-volume
   configMap:
@@ -16,11 +16,11 @@
 {{ end }}
 
 {{/*
-  srox.injectedCABundleMount
+  srox.injectedCABundleVolumeMount
 
   Mounts the srox.injectedCABundle volume to a container.
    */}}
-{{- define "srox.injectedCABundleMount" -}}
+{{- define "srox.injectedCABundleVolumeMount" -}}
 {{- if eq ._rox.env.openshift 4 }}
 - name: trusted-ca-volume
   mountPath: /etc/pki/injected-ca-trust/

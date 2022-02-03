@@ -136,7 +136,7 @@ spec:
           readOnly: true
         - name: scanner-db-password
           mountPath: /run/secrets/stackrox.io/secrets
-        {{- include "srox.injectedCABundleMount" . | nindent 8 }}
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       serviceAccountName: {{ ._rox.scanner.name }}
       volumes:
       - name: additional-ca-volume
@@ -163,7 +163,7 @@ spec:
       - name: scanner-db-password
         secret:
           secretName: {{ ._rox.scanner.name }}-db-password
-      {{- include "srox.injectedCABundle" . | nindent 6 }}
+      {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
 ---
 
 apiVersion: apps/v1

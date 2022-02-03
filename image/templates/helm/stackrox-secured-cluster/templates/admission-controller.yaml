@@ -104,7 +104,7 @@ spec:
             - name: additional-cas
               mountPath: /usr/local/share/ca-certificates/
               readOnly: true
-            {{- include "srox.injectedCABundleMount" . | nindent 12 }}
+            {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
       volumes:
         - name: certs
           secret:
@@ -135,7 +135,7 @@ spec:
           secret:
             secretName: additional-ca-sensor
             optional: true
-        {{- include "srox.injectedCABundle" . | nindent 8 }}
+        {{- include "srox.injectedCABundleVolume" . | nindent 8 }}
 ---
 
 apiVersion: v1
