@@ -62,6 +62,7 @@ func TestRetryTickerCallsTickFunction(t *testing.T) {
 			mockFunc := &testTickFunc{}
 			schedulerSpy := &afterFuncSpy{}
 			ticker := newRetryTicker(t, mockFunc.doTick)
+			defer ticker.Stop()
 			ticker.scheduler = schedulerSpy.afterFunc
 
 			mockFunc.On("doTick", mock.Anything).Return(tc.timeToSecondTick, tc.firstErr).Once()
@@ -76,11 +77,10 @@ func TestRetryTickerCallsTickFunction(t *testing.T) {
 				schedulerSpy.On("afterFunc", backoff.Duration, mock.Anything).Return(nil).Once()
 			}
 
-			ticker.Start()
-			defer ticker.Stop()
+			require.NoError(t, ticker.Start())
 
 			_, ok := doneErrSig.WaitWithTimeout(testTimeout)
-			assert.True(t, ok, "timeout exceeded")
+			require.True(t, ok, "timeout exceeded")
 			mockFunc.AssertExpectations(t)
 			schedulerSpy.AssertExpectations(t)
 		})
@@ -96,8 +96,9 @@ func TestRetryTickerStop(t *testing.T) {
 		require.True(t, ok)
 		return capTime, nil
 	})
+	defer ticker.Stop()
 
-	ticker.Start()
+	require.NoError(t, ticker.Start())
 	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
 	require.True(t, ok, "timeout exceeded")
 	ticker.Stop()
@@ -106,6 +107,27 @@ func TestRetryTickerStop(t *testing.T) {
 	// ensure `ticker.scheduleTick` does not schedule a new timer after stopping the ticker
 	time.Sleep(capTime)
 	assert.Nil(t, ticker.getTickTimer())
+}
+
+func TestRetryTickerStartWhileStarterFailure(t *testing.T) {
+	ticker := newRetryTicker(t, func(ctx context.Context) (timeToNextTick time.Duration, err error) {
+		return 0, nil
+	})
+	defer ticker.Stop()
+
+	require.NoError(t, ticker.Start())
+	assert.ErrorIs(t, ErrStartedTimer, ticker.Start())
+}
+
+func TestRetryTickerStartTwiceFailure(t *testing.T) {
+	ticker := newRetryTicker(t, func(ctx context.Context) (timeToNextTick time.Duration, err error) {
+		return 0, nil
+	})
+	defer ticker.Stop()
+
+	require.NoError(t, ticker.Start())
+	ticker.Stop()
+	require.ErrorIs(t, ErrStoppedTimer, ticker.Start())
 }
 
 func newRetryTicker(t *testing.T, doFunc tickFunc) *retryTickerImpl {
