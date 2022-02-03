@@ -19,6 +19,11 @@ func (e *roxError) Error() string {
 	return e.message
 }
 
+// Unwrap returns the base of the error.
+func (e *roxError) Unwrap() error {
+	return e.base
+}
+
 // New creates a new error based on base error.
 func New(base error, message string) error {
 	return &roxError{message, base}
@@ -27,9 +32,4 @@ func New(base error, message string) error {
 // Newf creates a new error based on base error with formatted message.
 func Newf(base error, format string, args ...interface{}) error {
 	return New(base, fmt.Sprintf(format, args...))
-}
-
-// Unwrap returns the base of the error.
-func (e *roxError) Unwrap() error {
-	return e.base
 }
