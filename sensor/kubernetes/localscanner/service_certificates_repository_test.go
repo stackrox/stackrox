@@ -62,6 +62,34 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 	}
 }
 
+func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferenteCAsFailure() {
+	secret1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret1",
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			mtls.CACertFileName: make([]byte, 0),
+		},
+	}
+	secret2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret2",
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			mtls.CACertFileName: make([]byte, 1),
+		},
+	}
+	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
+	clientSet := fake.NewSimpleClientset(secret1, secret2)
+	secretsClient := clientSet.CoreV1().Secrets(namespace)
+	repo, err := newServiceCertificatesRepoWithSecretsPersistence(secrets, secretsClient)
+	s.Require().NoError(err)
+	_, err = repo.getServiceCertificates(context.Background())
+	s.Require().Error(err)
+}
+
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 	testCases := map[string]struct {
 		expectedErr error
@@ -90,23 +118,6 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithNilSecretFailur
 	f := s.newFixture("")
 	var secret *v1.Secret
 	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret}
-	_, err := newServiceCertificatesRepoWithSecretsPersistence(secrets, f.secretsClient)
-	s.Error(err)
-}
-
-func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithDifferentCASecretDataFailure() {
-	f := s.newFixture("")
-	secret1 := &v1.Secret{
-		Data: map[string][]byte{
-			mtls.CACertFileName: make([]byte, 0),
-		},
-	}
-	secret2 := &v1.Secret{
-		Data: map[string][]byte{
-			mtls.CACertFileName: make([]byte, 1),
-		},
-	}
-	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
 	_, err := newServiceCertificatesRepoWithSecretsPersistence(secrets, f.secretsClient)
 	s.Error(err)
 }

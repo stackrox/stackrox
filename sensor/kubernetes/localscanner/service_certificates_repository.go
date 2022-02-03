@@ -1,8 +1,8 @@
 package localscanner
 
 import (
+	"bytes"
 	"context"
-	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -31,7 +31,6 @@ type serviceCertificatesRepo interface {
 // Invariants:
 // - secrets and secretsClient are read-only, except the field Data of the entries in secrets.
 // - No secret in secrets is nil.
-// - All secrets with non nil Data store the same CA PEM.
 type serviceCertificatesRepoSecretsImpl struct {
 	secrets       map[storage.ServiceType]*v1.Secret
 	secretsClient corev1.SecretInterface
@@ -41,23 +40,10 @@ type serviceCertificatesRepoSecretsImpl struct {
 // certificates for the specified services in the corresponding k8s secrets.
 func newServiceCertificatesRepoWithSecretsPersistence(secrets map[storage.ServiceType]*v1.Secret,
 	secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
-	caMap := make(map[string]storage.ServiceType)
 	for serviceType, secret := range secrets {
 		if secret == nil {
 			return nil, errors.Errorf("nil secrets for service type %q", serviceType)
 		}
-		if secretData := secret.Data; secretData != nil {
-			caPem := secretData[mtls.CACertFileName]
-			caMap[string(caPem)] = serviceType
-		}
-	}
-	if len(caMap) > 1 {
-		serviceTypes := make([]string, 0)
-		for _, serviceType := range caMap {
-			serviceTypes = append(serviceTypes, serviceType.String())
-		}
-		return nil, errors.Errorf("found different CA PEM in secret Data for service types %q",
-			strings.Join(serviceTypes, ","))
 	}
 	return &serviceCertificatesRepoSecretsImpl{
 		secrets:       secrets,
@@ -73,6 +59,7 @@ func newServiceCertificatesRepoWithSecretsPersistence(secrets map[storage.Servic
 func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+	var firstServiceTypeWithCA storage.ServiceType
 	var getErr error
 	for serviceType, secret := range r.secrets {
 		// Invariant: no secret in r.secrets is nil.
@@ -86,8 +73,13 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 			continue
 		}
 		if certificates.GetCaPem() == nil {
-			// all secrets with non nil Data store the same CA PEM.
 			certificates.CaPem = secretData[mtls.CACertFileName]
+			firstServiceTypeWithCA = serviceType
+		} else {
+			if !bytes.Equal(certificates.GetCaPem(), secretData[mtls.CACertFileName]) {
+				return nil, errors.Errorf("found different CA PEM in secret Data for service types %q and %q",
+					firstServiceTypeWithCA, serviceType)
+			}
 		}
 		certificates.ServiceCerts = append(certificates.ServiceCerts, &storage.TypedServiceCertificate{
 			ServiceType: serviceType,
