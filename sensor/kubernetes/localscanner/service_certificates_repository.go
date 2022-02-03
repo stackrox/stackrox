@@ -68,33 +68,9 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 	var firstServiceTypeWithCA storage.ServiceType
 	var getErr error
 	for serviceType, secret := range r.secrets {
-		// Invariant: no secret in r.secrets is nil.
-		retrievedSecret, err := r.secretsClient.Get(ctx, secret.Name, metav1.GetOptions{})
-		if err != nil {
-			getErr = multierror.Append(getErr, errors.Wrapf(err, "for secret %s", secret.Name))
-			continue
+		if err := r.getServiceCertificate(ctx, serviceType, secret, certificates, &firstServiceTypeWithCA); err != nil {
+			getErr = multierror.Append(getErr, err)
 		}
-		secretData := retrievedSecret.Data
-		if secretData == nil {
-			continue
-		}
-		if certificates.GetCaPem() == nil {
-			certificates.CaPem = secretData[r.caCertFileName]
-			firstServiceTypeWithCA = serviceType
-		} else {
-			if !bytes.Equal(certificates.GetCaPem(), secretData[r.caCertFileName]) {
-				return nil, errors.Errorf("found different CA PEM in secret Data for service types %q and %q",
-					firstServiceTypeWithCA, serviceType)
-			}
-		}
-		certificates.ServiceCerts = append(certificates.ServiceCerts, &storage.TypedServiceCertificate{
-			ServiceType: serviceType,
-			Cert: &storage.ServiceCertificate{
-				CertPem: secretData[r.serviceCertFileName],
-				KeyPem:  secretData[r.serviceKeyFileName],
-			},
-		})
-
 		// on context cancellation abort getting other secrets.
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
@@ -107,6 +83,39 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 	return certificates, nil
 }
 
+func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.Context,
+	serviceType storage.ServiceType, secret *v1.Secret,
+	certificates *storage.TypedServiceCertificateSet,
+	firstServiceTypeWithCA *storage.ServiceType) error {
+	// Invariant: no secret in r.secrets is nil.
+	retrievedSecret, err := r.secretsClient.Get(ctx, secret.Name, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "for service type %q", serviceType)
+	}
+	secretData := retrievedSecret.Data
+	if secretData == nil {
+		return errors.Wrapf(err, "missing for secret data for service type %q", serviceType)
+	}
+	if certificates.GetCaPem() == nil {
+		certificates.CaPem = secretData[r.caCertFileName]
+		*firstServiceTypeWithCA = serviceType
+	} else {
+		if !bytes.Equal(certificates.GetCaPem(), secretData[r.caCertFileName]) {
+			return errors.Errorf("found different CA PEM in secret Data for service types %q and %q",
+				firstServiceTypeWithCA, serviceType)
+		}
+	}
+	certificates.ServiceCerts = append(certificates.ServiceCerts, &storage.TypedServiceCertificate{
+		ServiceType: serviceType,
+		Cert: &storage.ServiceCertificate{
+			CertPem: secretData[r.serviceCertFileName],
+			KeyPem:  secretData[r.serviceKeyFileName],
+		},
+	})
+
+	return nil
+}
+
 // putServiceCertificates is idempotent but not atomic in sense that on error some secrets might be persisted
 // while others are not.
 // Edge cases:
@@ -116,21 +125,8 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.
 	var putErr error
 	caPem := certificates.GetCaPem()
 	for _, cert := range certificates.GetServiceCerts() {
-		secret, ok := r.secrets[cert.GetServiceType()]
-		if !ok {
-			// we don't know where to persist this.
-			putErr = multierror.Append(putErr, errors.Errorf("unkown service type %s", cert.GetServiceType()))
-			continue
-		}
-		// Invariant: no secret in r.secrets is nil.
-		secret.Data = map[string][]byte{
-			r.caCertFileName:      caPem,
-			r.serviceCertFileName: cert.GetCert().GetCertPem(),
-			r.serviceKeyFileName:  cert.GetCert().GetKeyPem(),
-		}
-		_, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{})
-		if err != nil {
-			putErr = multierror.Append(putErr, errors.Wrapf(err, "for secret %s", secret.Name))
+		if err := r.putServiceCertificate(ctx, caPem, cert); err != nil {
+			putErr = multierror.Append(putErr, err)
 		}
 
 		// on context cancellation abort putting other secrets.
@@ -140,4 +136,25 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.
 	}
 
 	return putErr
+}
+
+func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificate(ctx context.Context, caPem []byte,
+	cert *storage.TypedServiceCertificate) error {
+
+	secret, ok := r.secrets[cert.GetServiceType()]
+	if !ok {
+		// we don't know where to persist this.
+		return errors.Errorf("unkown service type %q", cert.GetServiceType())
+	}
+	// Invariant: no secret in r.secrets is nil.
+	secret.Data = map[string][]byte{
+		r.caCertFileName:      caPem,
+		r.serviceCertFileName: cert.GetCert().GetCertPem(),
+		r.serviceKeyFileName:  cert.GetCert().GetKeyPem(),
+	}
+	if _, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{}); err != nil {
+		return errors.Wrapf(err, "for service type %q", cert.GetServiceType())
+	}
+
+	return nil
 }

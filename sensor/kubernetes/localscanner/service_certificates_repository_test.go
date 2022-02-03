@@ -62,32 +62,47 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 	}
 }
 
-func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferenteCAsFailure() {
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret1",
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			mtls.CACertFileName: make([]byte, 0),
-		},
+func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
+	testCases := map[string]struct {
+		expectError  bool
+		secondCASize int
+	}{
+		"same CAs successful get":  {false, 0},
+		"different CAs failed get": {true, 1},
 	}
-	secret2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret2",
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			mtls.CACertFileName: make([]byte, 1),
-		},
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			secret1 := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret1",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					mtls.CACertFileName: make([]byte, 0),
+				},
+			}
+			secret2 := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret2",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					mtls.CACertFileName: make([]byte, tc.secondCASize),
+				},
+			}
+			secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
+			clientSet := fake.NewSimpleClientset(secret1, secret2)
+			secretsClient := clientSet.CoreV1().Secrets(namespace)
+			repo, err := newTestRepo(secrets, secretsClient)
+			s.Require().NoError(err)
+			_, err = repo.getServiceCertificates(context.Background())
+			if tc.expectError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+			}
+		})
 	}
-	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
-	clientSet := fake.NewSimpleClientset(secret1, secret2)
-	secretsClient := clientSet.CoreV1().Secrets(namespace)
-	repo, err := newTestRepo(secrets, secretsClient)
-	s.Require().NoError(err)
-	_, err = repo.getServiceCertificates(context.Background())
-	s.Require().Error(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
