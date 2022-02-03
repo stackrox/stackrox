@@ -28,12 +28,14 @@ func NewWaitableQueue() WaitableQueue {
 	return &waitableQueueImpl{
 		base:        newInternalQueue(),
 		notEmptySig: concurrency.NewSignal(),
+		dedupeMap:   make(map[string]*queuedItem),
 	}
 }
 
 type waitableQueueImpl struct {
 	lock sync.Mutex
 
+	dedupeMap   map[string]*queuedItem
 	base        internalQueue
 	notEmptySig concurrency.Signal
 }
@@ -43,24 +45,31 @@ func (q *waitableQueueImpl) NotEmpty() concurrency.Waitable {
 }
 
 func (q *waitableQueueImpl) Push(key []byte, value proto.Message) {
-	q.push(queuedItem{
+	q.push(&queuedItem{
 		key:   key,
 		value: value,
 	})
 }
 
 func (q *waitableQueueImpl) PushSignal(signal *concurrency.Signal) {
-	q.push(queuedItem{
+	q.push(&queuedItem{
 		signal: signal,
 	})
 }
 
-func (q *waitableQueueImpl) push(qi queuedItem) {
+func (q *waitableQueueImpl) push(qi *queuedItem) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	q.notEmptySig.Signal()
 
+	if len(qi.key) != 0 {
+		if oldQi, ok := q.dedupeMap[string(qi.key)]; ok {
+			*oldQi = *qi
+			return
+		}
+		q.dedupeMap[string(qi.key)] = qi
+	}
 	q.base.push(qi)
 }
 
@@ -77,7 +86,11 @@ func (q *waitableQueueImpl) Pop() ([]byte, proto.Message, *concurrency.Signal) {
 		q.notEmptySig.Reset()
 	}
 
-	qi := qiInter.(queuedItem)
+	qi := qiInter.(*queuedItem)
+	if len(qi.key) != 0 {
+		delete(q.dedupeMap, string(qi.key))
+	}
+
 	return qi.key, qi.value, qi.signal
 }
 
