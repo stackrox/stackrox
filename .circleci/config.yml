@@ -2128,6 +2128,20 @@ commands:
             docker cp openshift-4-automation:/data $PWD/<< parameters.cluster-name >>
           no_output_timeout: 60m
 
+  openshift-ci-mimic-env:
+    description: "Simulate an OpenShift CI Environment"
+    steps:
+      - run:
+          name: Compare with stored metrics
+          command: |
+            # Create a fake OpenShift Env
+            cci-export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
+            cci-export BUILD_ID "$CIRCLE_BUILD_NUM"
+            cci-export JOB_NAME "$CIRCLE_JOB"
+            cci-export OPENSHIFT_CI true
+            # Clear Circle CI Env
+            while read var; do cci-export $var ""; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
+
 jobs:
   ###
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
@@ -4834,17 +4848,10 @@ jobs:
       - checkout
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
+      - openshift-ci-mimic-env
       - run:
           name: Run the OpenShift CI upgrade test hook
           command: |
-            # Create a fake OpenShift Env
-            export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
-            export BUILD_ID="$CIRCLE_BUILD_NUM"
-            export JOB_NAME="$CIRCLE_JOB"
-            export OPENSHIFT_CI=true
-            # Clear Circle CI Env
-            while read var; do unset $var; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
-            # Run the hook
             .openshift-ci/upgrade_test_under_gke.py
 
 workflows:

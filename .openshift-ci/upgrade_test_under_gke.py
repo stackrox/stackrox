@@ -73,7 +73,7 @@ class UpgradeTest:
             raise RuntimeError("Test failed")
 
     def post_test_analysis(self):
-        print(">>>> GATHER DEBUG <<<<")
+        print("The future home for debug gathering and analysis")
         return 0
 
     def teardown(self):

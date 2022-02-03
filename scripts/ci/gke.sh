@@ -30,8 +30,6 @@ assign_env_variables() {
     local num_nodes="${2:-3}"
     local machine_type="${3:-e2-standard-4}"
 
-    echo "$cluster_id $num_nodes $machine_type"
-
     ensure_CI
 
     local build_num
