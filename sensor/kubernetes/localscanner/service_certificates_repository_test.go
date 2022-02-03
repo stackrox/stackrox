@@ -39,7 +39,7 @@ type serviceCertificatesRepoSecretsImplSuite struct {
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 	testCases := map[string]struct {
 		expectedErr error
-		f           *certSecretsRepoFixture
+		fixture     *certSecretsRepoFixture
 	}{
 		"successful get": {nil, s.newFixture("")},
 		"failed get":     {errForced, s.newFixture("get")},
@@ -53,9 +53,9 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 				cancelGetCtx()
 			}
 
-			certificates, err := tc.f.repo.getServiceCertificates(getCtx)
+			certificates, err := tc.fixture.repo.getServiceCertificates(getCtx)
 			if tc.expectedErr == nil {
-				s.Equal(tc.f.certificates, certificates)
+				s.Equal(tc.fixture.certificates, certificates)
 			}
 			s.checkExpectedError(tc.expectedErr, err)
 		})
@@ -108,7 +108,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 	testCases := map[string]struct {
 		expectedErr error
-		f           *certSecretsRepoFixture
+		fixture     *certSecretsRepoFixture
 	}{
 		"successful put": {nil, s.newFixture("")},
 		"failed put":     {errForced, s.newFixture("update")},
@@ -122,7 +122,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 				cancelPutCtx()
 			}
 
-			err := tc.f.repo.putServiceCertificates(putCtx, tc.f.certificates)
+			err := tc.fixture.repo.putServiceCertificates(putCtx, tc.fixture.certificates)
 
 			s.checkExpectedError(tc.expectedErr, err)
 		})
@@ -130,15 +130,15 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithNilSecretFailure() {
-	f := s.newFixture("")
+	fixture := s.newFixture("")
 	var secret *v1.Secret
 	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret}
-	_, err := newTestRepo(secrets, f.secretsClient)
+	_, err := newTestRepo(secrets, fixture.secretsClient)
 	s.Error(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithJustOneNoNilCASecretDataSuccess() {
-	f := s.newFixture("")
+	fixture := s.newFixture("")
 	secret1 := &v1.Secret{
 		Data: map[string][]byte{
 			mtls.CACertFileName: make([]byte, 0),
@@ -146,16 +146,16 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithJustOneNoNilCAS
 	}
 	secret2 := &v1.Secret{}
 	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
-	_, err := newTestRepo(secrets, f.secretsClient)
+	_, err := newTestRepo(secrets, fixture.secretsClient)
 	s.NoError(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataSuccess() {
-	f := s.newFixtureAdvancedOpts("", true)
+	fixture := s.newFixtureAdvancedOpts("", true)
 	expectedCertificates := &storage.TypedServiceCertificateSet{}
 	expectedCertificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 
-	certificates, err := f.repo.getServiceCertificates(context.Background())
+	certificates, err := fixture.repo.getServiceCertificates(context.Background())
 
 	s.NoError(err)
 	s.Equal(expectedCertificates, certificates)
@@ -186,27 +186,27 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
-			f := s.newFixtureAdvancedOpts("", false, tc.missingSecretDataKey)
-			certificates, err := f.repo.getServiceCertificates(context.Background())
-			tc.setExpectedCertsFunc(f.certificates)
+			fixture := s.newFixtureAdvancedOpts("", false, tc.missingSecretDataKey)
+			certificates, err := fixture.repo.getServiceCertificates(context.Background())
+			tc.setExpectedCertsFunc(fixture.certificates)
 
 			s.NoError(err)
-			s.Equal(f.certificates, certificates)
+			s.Equal(fixture.certificates, certificates)
 		})
 	}
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutUnknownServiceTypeFailure() {
-	f := s.newFixture("")
-	s.getFirstServiceCertificate(f.certificates).ServiceType = anotherServiceType
-	err := f.repo.putServiceCertificates(context.Background(), f.certificates)
+	fixture := s.newFixture("")
+	s.getFirstServiceCertificate(fixture.certificates).ServiceType = anotherServiceType
+	err := fixture.repo.putServiceCertificates(context.Background(), fixture.certificates)
 	s.Error(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutMissingServiceTypeSuccess() {
-	f := s.newFixture("")
-	f.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
-	err := f.repo.putServiceCertificates(context.Background(), f.certificates)
+	fixture := s.newFixture("")
+	fixture.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+	err := fixture.repo.putServiceCertificates(context.Background(), fixture.certificates)
 	s.NoError(err)
 }
 
