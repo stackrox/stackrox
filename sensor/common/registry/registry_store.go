@@ -15,18 +15,29 @@ import (
 type Store struct {
 	factory registries.Factory
 	// store maps a namespace to the names of registries accessible from within the namespace.
-	// The registry maps to its credentials.
 	store map[string]registries.Set
 
 	mutex sync.RWMutex
+
+	// test indicates if this is a test store or not.
+	test bool
 }
 
-// newRegistryStore creates a new registryStore.
+// newRegistryStore creates a new registry store.
 func newRegistryStore() *Store {
 	return &Store{
 		factory: registries.NewFactory(registries.WithRegistryCreators(dockerFactory.Creator)),
 		store:   make(map[string]registries.Set),
 	}
+}
+
+// NewTestRegistryStore creates a new registry store for testing purposes.
+// The main difference between this and a non-test registry store
+// is that this one does not attempt to reach out to the registry to check TLS.
+func NewTestRegistryStore() *Store {
+	rs := newRegistryStore()
+	rs.test = true
+	return rs
 }
 
 func (rs *Store) getRegistries(namespace string) registries.Set {
@@ -46,12 +57,16 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 func (rs *Store) UpsertRegistry(namespace, registry string, dce types.DockerConfigEntry) error {
 	regs := rs.getRegistries(namespace)
 
-	secure, err := tlscheck.CheckTLS(registry)
-	if err != nil {
-		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
+	var secure bool
+	if !rs.test {
+		var err error
+		secure, err = tlscheck.CheckTLS(registry)
+		if err != nil {
+			return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
+		}
 	}
 
-	err = regs.UpdateImageIntegration(&storage.ImageIntegration{
+	err := regs.UpdateImageIntegration(&storage.ImageIntegration{
 		Name:       registry,
 		Type:       "docker",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
