@@ -15,11 +15,11 @@ import (
 type Store struct {
 	factory registries.Factory
 	// store maps a namespace to the names of registries accessible from within the namespace.
-	// The registry maps to its credentials.
 	store map[string]registries.Set
 
 	mutex sync.RWMutex
 
+	// test indicates if this is a test store or not.
 	test bool
 }
 
