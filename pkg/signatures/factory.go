@@ -14,13 +14,14 @@ type SignatureVerifier interface {
 	VerifySignature(rawSignature []byte) (storage.ImageSignatureVerificationResult_Status, error)
 }
 
+// NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
 func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (SignatureVerifier, error) {
 	switch cfg := config.GetConfig().(type) {
 	case *storage.SignatureVerificationConfig_PublicKey:
-		return newPublicKeyVerifier(cfg), nil
+		return newPublicKeyVerifier(cfg)
 	default:
 		// Should theoretically never happen.
 		return nil, errorhelpers.NewErrInvariantViolation(fmt.Sprintf(
-			"invalid type for signature verification config: %t", cfg))
+			"invalid type for signature verification config: %T", cfg))
 	}
 }
