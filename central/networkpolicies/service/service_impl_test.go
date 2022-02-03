@@ -131,6 +131,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 
 func (suite *ServiceTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *ServiceTestSuite) TestAuth() {
