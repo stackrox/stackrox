@@ -36,9 +36,9 @@ type serviceCertificatesRepoSecretsImpl struct {
 	secretsClient corev1.SecretInterface
 }
 
-// newServiceCertificatesRepoWithSecretsPersistence creates a new serviceCertificatesRepoSecretsImpl that persists
+// newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists
 // certificates for the specified services in the corresponding k8s secrets.
-func newServiceCertificatesRepoWithSecretsPersistence(secrets map[storage.ServiceType]*v1.Secret,
+func newServiceCertificatesRepo(secrets map[storage.ServiceType]*v1.Secret,
 	secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
 	for serviceType, secret := range secrets {
 		if secret == nil {
