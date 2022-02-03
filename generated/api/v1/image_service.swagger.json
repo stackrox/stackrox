@@ -655,6 +655,9 @@
       "properties": {
         "rawSignatureBase64Enc": {
           "type": "string"
+        },
+        "signaturePayloadBase64Enc": {
+          "type": "string"
         }
       }
     },

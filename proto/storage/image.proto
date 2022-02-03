@@ -171,7 +171,8 @@ message Signature {
 }
 
 message CosignSignature {
-    string raw_signature_base64_enc = 1;
+    string raw_signature_base64_enc      = 1;
+    string signature_payload_base64_enc  = 2;
 }
 
 message V2Metadata {
