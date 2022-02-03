@@ -2132,7 +2132,7 @@ commands:
     description: "Simulate an OpenShift CI Environment"
     steps:
       - run:
-          name: Compare with stored metrics
+          name: Simulate an OpenShift CI Environment
           command: |
             # Create a fake OpenShift Env
             cci-export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
@@ -5127,8 +5127,7 @@ workflows:
             branches:
               only: /.*RS-454.*/
           requires:
-            - pre-build-cli
-            - pre-build-go-binaries
+            - build
 
       - retrigger-master-workflow:
           context: custom-executor-pull
