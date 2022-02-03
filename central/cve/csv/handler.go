@@ -66,6 +66,7 @@ var (
 		"CVE",
 		"CVE Type(s)",
 		"Fixable",
+		"Severity Rating",
 		"CVSS Score",
 		"Env Impact (%s)",
 		"Impact Score",
@@ -113,6 +114,7 @@ type cveRow struct {
 	cveID           string
 	cveTypes        string
 	fixable         string
+	severity        string
 	cvssScore       string
 	envImpact       string
 	impactScore     string
@@ -136,11 +138,12 @@ func newCSVResults(header []string, sort bool) csvResults {
 }
 
 func (c *csvResults) addRow(row cveRow) {
-	// cve, cveTypes, fixable, cvss score, env impact, impact score, deployments, images, nodes, components, scanned time, published time, summary
+	// cve, cveTypes, fixable, severity rating, cvss score, env impact, impact score, deployments, images, nodes, components, scanned time, published time, summary
 	value := []string{
 		row.cveID,
 		row.cveTypes,
 		row.fixable,
+		row.severity,
 		row.cvssScore,
 		row.envImpact,
 		row.impactScore,
@@ -197,6 +200,7 @@ func CVECSVHandler() http.HandlerFunc {
 				errorList.AddError(err)
 			}
 			dataRow.fixable = strconv.FormatBool(isFixable)
+			dataRow.severity = d.Severity(ctx)
 			dataRow.cvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
 			envImpact, err := d.EnvImpact(ctx)
 			if err != nil {
