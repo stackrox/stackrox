@@ -27,6 +27,10 @@ func (s *imageFlavorTestSuite) SetupTest() {
 	testutils.SetExampleVersion(s.T())
 }
 
+func (s *imageFlavorTestSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
+}
+
 func (s *imageFlavorTestSuite) getEnvShouldPanic() {
 	s.Panics(func() {
 		GetImageFlavorFromEnv()
