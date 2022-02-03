@@ -80,7 +80,7 @@ func TestRetryTickerCallsTickFunction(t *testing.T) {
 			defer ticker.Stop()
 
 			_, ok := doneErrSig.WaitWithTimeout(testTimeout)
-			assert.True(t, ok)
+			assert.True(t, ok, "timeout exceeded")
 			mockFunc.AssertExpectations(t)
 			schedulerSpy.AssertExpectations(t)
 		})
@@ -99,7 +99,7 @@ func TestRetryTickerStop(t *testing.T) {
 
 	ticker.Start()
 	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
-	require.True(t, ok)
+	require.True(t, ok, "timeout exceeded")
 	ticker.Stop()
 	stopErrSig.Signal()
 

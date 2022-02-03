@@ -49,7 +49,7 @@ type retryTickerImpl struct {
 
 // Start calls the tick function and schedules the next tick immediately.
 func (t *retryTickerImpl) Start() {
-	t.backoff = t.initialBackoff // reset backoff strategy
+	t.backoff = t.initialBackoff // initialize backoff strategy
 	t.scheduleTick(0)
 }
 
