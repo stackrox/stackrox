@@ -14,7 +14,9 @@ spec:
   port:
     targetPort: https
   tls:
-    termination: passthrough
+    termination: reencrypt
+    destinationCACertificate: |
+      {{- ._rox._ca.Cert | nindent 6 }}
   to:
     kind: Service
     name: central
@@ -33,7 +35,9 @@ spec:
   port:
     targetPort: https
   tls:
-    termination: passthrough
+    termination: reencrypt
+    destinationCACertificate: |
+      {{- ._rox._ca.Cert | nindent 6 }}
   to:
     kind: Service
     name: central
