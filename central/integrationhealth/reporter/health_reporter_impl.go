@@ -79,8 +79,12 @@ func (d *DatastoreBasedIntegrationHealthReporter) RemoveIntegrationHealth(id str
 	if err := d.integrationDS.RemoveIntegrationHealth(allAccessCtx, id); err != nil {
 		return errors.Wrapf(err, "Error removing health for integration %s", id)
 	}
-	d.healthRemoval <- id
-	return nil
+	select {
+	case d.healthRemoval <- id:
+		return nil
+	case <-d.stopSig.Done():
+		return nil
+	}
 }
 
 // UpdateIntegrationHealthAsync updates the health of the integration
