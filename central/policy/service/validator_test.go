@@ -47,6 +47,7 @@ func (s *PolicyValidatorTestSuite) SetupTest() {
 
 func (s *PolicyValidatorTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+	s.envIsolator.RestoreAll()
 }
 
 func (s *PolicyValidatorTestSuite) TestValidatesName() {
