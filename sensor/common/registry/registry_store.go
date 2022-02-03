@@ -88,7 +88,7 @@ func (rs *Store) UpsertRegistry(namespace, registry string, dce types.DockerConf
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
 
-	log.Debugf("Upserted registry %q into store", registry)
+	log.Debugf("Upserted registry %q for namespace %q into store", registry, namespace)
 
 	return nil
 }
