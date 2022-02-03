@@ -1486,7 +1486,8 @@ commands:
             fi
 
       - collect-k8s-logs
-      - store-k8s-logs
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-1
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -1518,7 +1519,8 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: << parameters.orchestrator-flavor >>
-      - store-k8s-logs
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-2
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data:
@@ -1829,7 +1831,8 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: openshift
-      - store-k8s-logs
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-1
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -1860,7 +1863,8 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: openshift
-      - store-k8s-logs
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-2
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data:
