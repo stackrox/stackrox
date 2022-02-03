@@ -3775,7 +3775,6 @@ jobs:
       - run:
           name: Upgrade tests
           command: |
-            ROX_LICENSE_KEY="${LONGTERM_LICENSE}" \
             ./tests/upgrade/run.sh
 
       - ci-artifacts/store:
@@ -4837,7 +4836,16 @@ jobs:
           at: /go/src/github.com/stackrox/rox
       - run:
           name: Run the OpenShift CI upgrade test hook
-          command: .openshift-ci/upgrade_test_under_gke.py
+          command: |
+            # Create a fake OpenShift Env
+            export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
+            export BUILD_ID="$CIRCLE_BUILD_NUM"
+            export JOB_NAME="$CIRCLE_JOB"
+            export OPENSHIFT_CI=true
+            # Clear Circle CI Env
+            while read var; do unset $var; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
+            # Run the hook
+            .openshift-ci/upgrade_test_under_gke.py
 
 workflows:
   version: 2
@@ -5112,7 +5120,8 @@ workflows:
             branches:
               only: /.*RS-454.*/
           requires:
-            - build
+            - pre-build-cli
+            - pre-build-go-binaries
 
       - retrigger-master-workflow:
           context: custom-executor-pull

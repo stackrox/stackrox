@@ -34,13 +34,18 @@ assign_env_variables() {
 
     ensure_CI
 
-    if ! is_CIRCLECI; then
+    local build_num
+    if is_CIRCLECI; then
+        require_environment "CIRCLE_BUILD_NUM"
+        build_num="${CIRCLE_BUILD_NUM}"
+    elif is_OPENSHIFT_CI; then
+        require_environment "BUILD_ID"
+        build_num="${BUILD_ID}"
+    else
         die "Support is missing for this CI environment"
     fi
 
-    require_environment "CIRCLE_BUILD_NUM"
-
-    local cluster_name="rox-ci-${cluster_id}-${CIRCLE_BUILD_NUM}"
+    local cluster_name="rox-ci-${cluster_id}-${build_num}"
     ci_export CLUSTER_NAME "$cluster_name"
     echo "Assigned cluster name is $cluster_name"
 
@@ -67,15 +72,23 @@ create_cluster() {
 
     ensure_CI
 
-    if ! is_CIRCLECI; then
+    require_environment "CLUSTER_NAME"
+
+    local tags="stackrox-ci"
+    local labels="stackrox-ci=true"
+    if is_CIRCLECI; then
+        require_environment "CIRCLE_JOB"
+        require_environment "CIRCLE_WORKFLOW_ID"
+        tags="${tags},stackrox-ci-${CIRCLE_JOB}"
+        labels="${labels},stackrox-ci-job=${CIRCLE_JOB},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}"
+    elif is_OPENSHIFT_CI; then
+        require_environment "JOB_NAME"
+        require_environment "BUILD_ID"
+        tags="${tags},stackrox-ci-${JOB_NAME}"
+        labels="${labels},stackrox-ci-job=${JOB_NAME},stackrox-ci-build-id=${BUILD_ID}"
+    else
         die "Support is missing for this CI environment"
     fi
-    require_environment "CLUSTER_NAME"
-    require_environment "CIRCLE_JOB"
-    require_environment "CIRCLE_WORKFLOW_ID"
-
-    local ci_job_id="${CIRCLE_JOB}"
-    local ci_workflow_id="${CIRCLE_WORKFLOW_ID}"
 
     ### Network Sizing ###
     # The overall subnetwork ("--create-subnetwork") is used for nodes.
@@ -128,8 +141,8 @@ create_cluster() {
             --enable-autorepair \
             "${VERSION_ARGS[@]}" \
             --image-type "${GCP_IMAGE_TYPE}" \
-            --tags="stackrox-ci,stackrox-ci-${ci_job_id}" \
-            --labels="stackrox-ci=true,stackrox-ci-job=${ci_job_id},stackrox-ci-workflow=${ci_workflow_id}" \
+            --tags="${tags}" \
+            --labels="${labels}" \
             ${PSP_ARG} \
             "${CLUSTER_NAME}"
         status="$?"

@@ -15,18 +15,24 @@ setup_gcp() {
 
     ensure_CI
 
-    if ! is_CIRCLECI; then
+    local service_account
+    if is_CIRCLECI; then
+        require_environment "GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
+        service_account="${GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX}"
+    elif is_OPENSHIFT_CI; then
+        require_environment "GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX"
+        service_account="${GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX}"
+    else
         die "Support is missing for this CI environment"
     fi
 
-    require_environment "GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
     require_executable "gcloud"
 
     if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "stackrox-ci" ]]; then
         echo "Current project is already set to stackrox-ci. Assuming configuration already applied."
         exit 0
     fi
-    gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
+    gcloud auth activate-service-account --key-file <(echo "$service_account")
     gcloud auth list
     gcloud config set project stackrox-ci
     gcloud config set compute/region us-central1
