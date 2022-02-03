@@ -33,6 +33,20 @@ func TestPartialValidation(t *testing.T) {
 				cluster.MainImage = ""
 			},
 		},
+		"Cluster with main image with tag should fail when ProhibitTag is set to true": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.MainImage = "docker.io/stackrox/main:some_tag"
+				cluster.ProhibitTag = true
+			},
+			expectedErrors: []string{"central image may not specify a tag. Please remove tag 'some_tag' to continue"},
+		},
+		"Cluster with main image with sha should fail when ProhibitDigest is set to true": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.MainImage = "docker.io/stackrox/main@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993"
+				cluster.ProhibitDigest = true
+			},
+			expectedErrors: []string{"central image may not specify a sha. Please remove sha 'sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993' to continue"},
+		},
 		"Cluster with configured collector image tag should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"

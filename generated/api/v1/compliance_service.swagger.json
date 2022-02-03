@@ -965,6 +965,12 @@
         },
         "managedBy": {
           "$ref": "#/definitions/storageManagerType"
+        },
+        "prohibitDigest": {
+          "type": "boolean"
+        },
+        "prohibitTag": {
+          "type": "boolean"
         }
       }
     },

@@ -33,8 +33,23 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		errorList.AddString("Cluster name is required")
 	}
 	if cluster.GetMainImage() != "" {
-		if _, err := reference.ParseAnyReference(cluster.GetMainImage()); err != nil {
+		ref, err := reference.ParseAnyReference(cluster.GetMainImage())
+		if err != nil {
 			errorList.AddError(errors.Wrapf(err, "invalid main image '%s'", cluster.GetMainImage()))
+		}
+		if cluster.ProhibitDigest {
+			digested, ok := ref.(reference.Digested)
+			if ok {
+				errorList.AddStringf("central image may not specify a sha. Please "+
+					"remove sha '%s' to continue", digested.Digest().String())
+			}
+		}
+		if cluster.ProhibitTag {
+			namedTagged, ok := ref.(reference.NamedTagged)
+			if ok {
+				errorList.AddStringf("central image may not specify a tag. Please "+
+					"remove tag '%s' to continue", namedTagged.Tag())
+			}
 		}
 	}
 	if cluster.GetCollectorImage() != "" {
@@ -43,11 +58,18 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 			errorList.AddError(errors.Wrapf(err, "invalid collector image '%s'", cluster.GetCollectorImage()))
 		}
 
-		if cluster.GetHelmConfig() == nil {
+		if cluster.GetHelmConfig() == nil || cluster.ProhibitTag {
 			namedTagged, ok := ref.(reference.NamedTagged)
 			if ok {
 				errorList.AddStringf("collector image may not specify a tag.  Please "+
 					"remove tag '%s' to continue", namedTagged.Tag())
+			}
+		}
+		if cluster.ProhibitDigest {
+			digested, ok := ref.(reference.Digested)
+			if ok {
+				errorList.AddStringf("collector image may not specify a sha. Please "+
+					"remove sha '%s' to continue", digested.Digest().String())
 			}
 		}
 	}
