@@ -249,8 +249,6 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 	d.podStore.addOrUpdatePod(p)
 	d.processFilter.UpdateByGivenContainers(p.DeploymentId, d.podStore.getContainersForDeployment(p.Namespace, p.DeploymentId))
 
-	log.Debugf("Action: %+v Pod: %+v", action, p)
-
 	return &central.SensorEvent{
 		Id:     p.GetId(),
 		Action: action,
