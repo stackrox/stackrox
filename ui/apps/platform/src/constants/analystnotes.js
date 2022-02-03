@@ -1,6 +1,0 @@
-const ANALYST_NOTES_TYPES = {
-    VIOLATION: 'VIOLATION',
-    PROCESS: 'PROCESS',
-};
-
-export default ANALYST_NOTES_TYPES;
