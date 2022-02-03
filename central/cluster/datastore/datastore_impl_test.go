@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -52,6 +53,7 @@ func TestClusterDataStore(t *testing.T) {
 type ClusterDataStoreTestSuite struct {
 	suite.Suite
 
+	ei          *envisolator.EnvIsolator
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
@@ -135,13 +137,14 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.networkBaselineMgr,
 	)
 	suite.NoError(err)
-	ei := envisolator.NewEnvIsolator(suite.T())
-	ei.Setenv("ROX_IMAGE_FLAVOR", "development_build")
+	suite.ei = envisolator.NewEnvIsolator(suite.T())
+	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
 
 func (suite *ClusterDataStoreTestSuite) TearDownTest() {
+	suite.ei.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
@@ -1367,7 +1370,7 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 			expectedDisableAuditLogs:    false,
 		},
 	}
-
+	flavor := defaults.GetImageFlavorFromEnv()
 	for name, testCase := range cases {
 		suite.Run(name, func() {
 			cluster := &storage.Cluster{
@@ -1383,7 +1386,7 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 			suite.Equal(testCase.expectedDisableAuditLogs, cluster.DynamicConfig.DisableAuditLogs)
 
 			suite.Equal(centralEndpoint, cluster.GetCentralApiEndpoint())
-			suite.Equal("docker.io/stackrox/main", cluster.GetMainImage())
+			suite.Equal(flavor.MainImageNoTag(), cluster.GetMainImage())
 			suite.Empty(cluster.GetCollectorImage())
 		})
 	}
