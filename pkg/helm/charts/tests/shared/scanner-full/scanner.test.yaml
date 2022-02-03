@@ -53,6 +53,14 @@ tests:
     .horizontalpodautoscalers["scanner"].spec.minReplicas | assertThat(. == 50)
     .horizontalpodautoscalers["scanner"].spec.maxReplicas | assertThat(. == 100)
 
+- name: "disable scanner cert generation"
+  set:
+    scanner.serviceTLS.generate: false
+    scanner.dbServiceTLS.generate: false
+  expect: |
+    .secrets["scanner-tls"].stringData | assertThat(.["cert.pem"] | length == 0)
+    .secrets["scanner-db-tls"].stringData | assertThat(.["key.pem"] | length == 0)
+
 - name: "scanner with OpenShift 3 and enabled SCCs"
   server:
     visibleSchemas:
