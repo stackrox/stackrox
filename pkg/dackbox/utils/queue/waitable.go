@@ -63,7 +63,7 @@ func (q *waitableQueueImpl) push(qi *queuedItem) {
 
 	q.notEmptySig.Signal()
 
-	if qi.key != nil {
+	if len(qi.key) != 0 {
 		if oldQi, ok := q.dedupeMap[string(qi.key)]; ok {
 			*oldQi = *qi
 			return
@@ -87,7 +87,7 @@ func (q *waitableQueueImpl) Pop() ([]byte, proto.Message, *concurrency.Signal) {
 	}
 
 	qi := qiInter.(*queuedItem)
-	if qi.key != nil {
+	if len(qi.key) != 0 {
 		delete(q.dedupeMap, string(qi.key))
 	}
 
