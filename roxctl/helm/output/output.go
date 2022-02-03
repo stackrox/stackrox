@@ -75,7 +75,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, i
 	// load image with templates
 	templateImage := image.GetDefaultImage()
 	if flags.IsDebug() {
-		templateImage = flags.DebugHelmImage()
+		templateImage = flags.GetDebugHelmImage()
 	}
 
 	// Load and render template files.

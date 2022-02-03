@@ -150,7 +150,7 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 			}
 		}
 		if flags.IsDebug() {
-			config.HelmImage = flags.DebugHelmImage()
+			config.HelmImage = flags.GetDebugHelmImage()
 		}
 	}
 

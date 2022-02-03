@@ -25,7 +25,7 @@ func IsDebug() bool {
 	return debug
 }
 
-// DebugHelmImage returns an image loaded from the local folder set by debugChartPath variable
-func DebugHelmImage() *image.Image {
+// GetDebugHelmImage returns an image loaded from the local folder set by debugChartPath variable
+func GetDebugHelmImage() *image.Image {
 	return image.NewImage(os.DirFS(debugChartPath))
 }
