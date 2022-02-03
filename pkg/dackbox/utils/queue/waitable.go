@@ -28,6 +28,7 @@ func NewWaitableQueue() WaitableQueue {
 	return &waitableQueueImpl{
 		base:        newInternalQueue(),
 		notEmptySig: concurrency.NewSignal(),
+		dedupeMap:   make(map[string]*queuedItem),
 	}
 }
 
