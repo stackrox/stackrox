@@ -12,6 +12,12 @@
             }
         },
         {
+            "id": "io.stackrox.authz.accessscope.unrestricted",
+            "name": "Unrestricted",
+            "description": "Access to all clusters and namespaces",
+            "rules": null
+        },
+        {
             "id": "io.stackrox.authz.accessscope.b7c83aaa-afb9-4e8d-9870-a3fd477b8532",
             "name": "UI test 2",
             "description": "",

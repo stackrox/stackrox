@@ -57,10 +57,6 @@ describe('Access Control Access scopes', () => {
     it('list has default names', () => {
         visitAccessScopes();
 
-        // Unrestricted is special case, because it does not have a link.
-        cy.get(`${selectors.list.tdName}:contains("Unrestricted")`);
-        cy.get(`${selectors.list.tdNameLink}:contains("Unrestricted")`).should('not.exist');
-
         defaultNames.forEach((name) => {
             cy.get(`${selectors.list.tdNameLink}:contains("${name}")`);
         });

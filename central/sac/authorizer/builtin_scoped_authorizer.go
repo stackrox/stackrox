@@ -292,7 +292,7 @@ var AccessScopeExcludeAll = &storage.SimpleAccessScope{
 var AccessScopeIncludeAll = &storage.SimpleAccessScope{
 	Id:          defaultRoles.EnsureValidAccessScopeID("unrestricted"),
 	Name:        "Unrestricted",
-	Description: "Full access to any resource",
+	Description: "Access to all clusters and namespaces",
 }
 
 // DefaultScopesIDs is a string set containing the names of all default (built-in) Roles.

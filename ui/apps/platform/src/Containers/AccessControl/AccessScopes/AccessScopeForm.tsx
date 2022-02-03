@@ -83,9 +83,12 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
      * A label selector or set requirement is temporarily invalid when it is added,
      * before its first requirement or value has been added.
      */
-    const isValidRules = getIsValidRules(values.rules);
-
+    const unrestrictedScopeId = 'io.stackrox.authz.accessscope.unrestricted';
+    const isValidRules = values.id !== unrestrictedScopeId && getIsValidRules(values.rules);
     useEffect(() => {
+        if (values.id === unrestrictedScopeId) {
+            return;
+        }
         setCounterComputing((counterPrev) => counterPrev + 1);
         computeEffectiveAccessScopeClusters(
             isValidRules ? values.rules : getTemporarilyValidRules(values.rules)
@@ -191,44 +194,76 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 />
             </FormGroup>
             {alertCompute}
-            <Flex
-                direction={{ default: 'row' }}
-                spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}
-            >
-                <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
-                    <FormGroup
-                        label="Allowed resources"
-                        fieldId="effectiveAccessScope"
-                        labelIcon={labelIconEffectiveAccessScope}
-                    >
-                        <EffectiveAccessScopeTable
-                            counterComputing={counterComputing}
-                            clusters={clusters}
-                            includedClusters={values.rules.includedClusters}
-                            includedNamespaces={values.rules.includedNamespaces}
-                            handleIncludedClustersChange={handleIncludedClustersChange}
-                            handleIncludedNamespacesChange={handleIncludedNamespacesChange}
-                            hasAction={hasAction}
-                        />
-                    </FormGroup>
-                </FlexItem>
-                <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
-                    <FormGroup
-                        label="Label selection rules"
-                        fieldId="labelInclusion"
-                        labelIcon={labelIconLabelInclusion}
-                    >
-                        <LabelInclusion
-                            clusterLabelSelectors={values.rules.clusterLabelSelectors}
-                            namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
-                            hasAction={hasAction}
-                            labelSelectorsEditingState={labelSelectorsEditingState}
-                            setLabelSelectorsEditingState={setLabelSelectorsEditingState}
-                            handleLabelSelectorsChange={handleLabelSelectorsChange}
-                        />
-                    </FormGroup>
-                </FlexItem>
-            </Flex>
+            {values.id !== unrestrictedScopeId && (
+                <Flex
+                    direction={{ default: 'row' }}
+                    spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}
+                >
+                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                        <FormGroup
+                            label="Allowed resources"
+                            fieldId="effectiveAccessScope"
+                            labelIcon={labelIconEffectiveAccessScope}
+                        >
+                            <EffectiveAccessScopeTable
+                                counterComputing={counterComputing}
+                                clusters={clusters}
+                                includedClusters={values.rules.includedClusters}
+                                includedNamespaces={values.rules.includedNamespaces}
+                                handleIncludedClustersChange={handleIncludedClustersChange}
+                                handleIncludedNamespacesChange={handleIncludedNamespacesChange}
+                                hasAction={hasAction}
+                            />
+                        </FormGroup>
+                    </FlexItem>
+                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                        <FormGroup
+                            label="Label selection rules"
+                            fieldId="labelInclusion"
+                            labelIcon={labelIconLabelInclusion}
+                        >
+                            <LabelInclusion
+                                clusterLabelSelectors={values.rules.clusterLabelSelectors}
+                                namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
+                                hasAction={hasAction}
+                                labelSelectorsEditingState={labelSelectorsEditingState}
+                                setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                                handleLabelSelectorsChange={handleLabelSelectorsChange}
+                            />
+                        </FormGroup>
+                    </FlexItem>
+                </Flex>
+            )}
+            {hasAction && (
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                    <ToolbarContent>
+                        <ToolbarGroup variant="button-group">
+                            <ToolbarItem>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickSubmit}
+                                    isDisabled={
+                                        !dirty ||
+                                        !isValid ||
+                                        !isValidRules ||
+                                        getIsEditingLabelSelectors(labelSelectorsEditingState) ||
+                                        isSubmitting
+                                    }
+                                    isLoading={isSubmitting}
+                                    isSmall
+                                >
+                                    Save
+                                </Button>
+                            </ToolbarItem>
+                            <ToolbarItem>
+                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                    Cancel
+                                </Button>
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
         </Form>
     );
 }
