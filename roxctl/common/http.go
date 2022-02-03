@@ -47,7 +47,7 @@ func GetHTTPClient(timeout time.Duration) (*http.Client, error) {
 // and passes through the remaining params. It checks that the returned status code is 200, and returns an error if it is not.
 // The caller receives the http response object, which it is the caller's responsibility to close.
 func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string, body io.Reader) (*http.Response, error) {
-	req, err := NewHTTPRequestWithAuth(method, path, body)
+	req, err := newHTTPRequestWithAuth(method, path, body)
 	if err != nil {
 		return nil, err
 	}
@@ -73,17 +73,23 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 	return resp, nil
 }
 
-// AddAuthToRequest adds the correct auth to the request
-func AddAuthToRequest(req *http.Request) error {
-	token, err := RetrieveAuthToken()
-	if err != nil {
+// addAuthToRequest adds the correct auth to the request
+func addAuthToRequest(req *http.Request) error {
+	if err := checkAuthParameters(); err != nil {
 		return errors.Wrap(err, "Failed to enrich HTTP request with authentication information")
 	}
 
 	if flags.Password() != "" {
 		req.SetBasicAuth(basic.DefaultUsername, flags.Password())
-	} else if token != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	} else {
+		token, err := retrieveAuthToken()
+		if err != nil {
+			printAuthHelp()
+			return errors.Wrap(err, "Failed to enrich HTTP request with authentication information")
+		}
+		if token != "" {
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		}
 	}
 
 	return nil
@@ -101,9 +107,9 @@ func getURL(path string) (string, error) {
 	return fmt.Sprintf("%s://%s/%s", scheme, endpoint, strings.TrimLeft(path, "/")), nil
 }
 
-// NewHTTPRequestWithAuth returns a new HTTP request, resolving the given path against the endpoint via `GetPath`, and
+// newHTTPRequestWithAuth returns a new HTTP request, resolving the given path against the endpoint via `GetPath`, and
 // injecting authorization headers into the request.
-func NewHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.Request, error) {
+func newHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.Request, error) {
 	reqURL, err := getURL(path)
 	if err != nil {
 		return nil, err
@@ -119,7 +125,7 @@ func NewHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.R
 	if req.URL.Scheme != "https" && !flags.UseInsecure() {
 		return nil, errors.Errorf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
 	}
-	err = AddAuthToRequest(req)
+	err = addAuthToRequest(req)
 	if err != nil {
 		return nil, err
 	}

@@ -10,10 +10,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -27,41 +29,77 @@ var (
 	ErrV2RestoreNotSupported = errors.New("server does not support V2 restore functionality")
 )
 
+type centralDbRestoreCommand struct {
+	// Properties that are bound to cobra flags.
+	file      string
+	interrupt bool
+
+	// Properties that are injected or constructed.
+	env     environment.Environment
+	timeout time.Duration
+	confirm func() error
+}
+
 // V2Command defines the new db restore command
-func V2Command() *cobra.Command {
-	var file string
+func V2Command(cliEnvironment environment.Environment) *cobra.Command {
+	centralDbRestoreCmd := &centralDbRestoreCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use: "restore <file>",
 		RunE: func(c *cobra.Command, args []string) error {
-			if len(args) > 1 {
-				return errors.Errorf("too many positional arguments (%d given)", len(args))
+			if err := validate(c, args); err != nil {
+				return err
 			}
-			if len(args) == 1 {
-				if file != "" {
-					return errors.New("legacy --file flag must not be used in conjunction with a positional argument")
-				}
-				file = args[0]
+			if err := centralDbRestoreCmd.construct(c, args); err != nil {
+				return err
 			}
-			if file == "" {
-				if len(args) == 0 {
-					return c.Usage()
-				}
-				return errors.New("file to restore from must be specified")
+			if err := centralDbRestoreCmd.validate(); err != nil {
+				return err
 			}
-			return restore(file, flags.Timeout(c), func(file *os.File, deadline time.Time) error {
-				return restoreV2(c, file, deadline)
+			return centralDbRestoreCmd.restore(func(file *os.File, deadline time.Time) error {
+				return centralDbRestoreCmd.restoreV2(file, deadline)
 			})
 		},
 	}
 
-	c.AddCommand(v2RestoreStatusCmd())
-	c.AddCommand(v2RestoreCancelCommand())
+	c.AddCommand(v2RestoreStatusCmd(cliEnvironment))
+	c.AddCommand(v2RestoreCancelCommand(cliEnvironment))
 
-	c.Flags().StringVar(&file, "file", "", "file to restore the DB from (deprecated; use positional argument)")
-	c.Flags().Bool("interrupt", false, "interrupt ongoing restore process (if any) to allow resuming")
+	c.Flags().StringVar(&centralDbRestoreCmd.file, "file", "", "file to restore the DB from (deprecated; use positional argument)")
+	c.Flags().BoolVar(&centralDbRestoreCmd.interrupt, "interrupt", false, "interrupt ongoing restore process (if any) to allow resuming")
 	flags.AddForce(c)
 
 	return c
+}
+
+func validate(cbr *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return cbr.Usage()
+	}
+	if len(args) > 1 {
+		return errors.WithMessagef(errorhelpers.ErrInvalidArgs, "too many positional arguments (%d given)", len(args))
+	}
+	if file, _ := cbr.Flags().GetString("file"); file != "" {
+		return errors.WithMessage(errorhelpers.ErrInvalidArgs, "legacy --file flag must not be used in conjunction with a positional argument")
+	}
+	return nil
+}
+
+func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string) error {
+	cmd.confirm = func() error {
+		return flags.CheckConfirmation(cbr)
+	}
+	cmd.timeout = flags.Timeout(cbr)
+	if cmd.file == "" {
+		cmd.file = args[0]
+	}
+	return nil
+}
+
+func (cmd *centralDbRestoreCommand) validate() error {
+	if cmd.file == "" {
+		return errors.WithMessage(errorhelpers.ErrInvalidArgs, "file to restore from must be specified")
+	}
+	return nil
 }
 
 func findManifestFile(fileName string, manifest *v1.DBExportManifest) (*v1.DBExportManifest_File, int, error) {
@@ -197,8 +235,8 @@ func assembleManifestFromZIP(file *os.File, supportedCompressionTypes map[v1.DBE
 // tryRestoreV2 attempts to restore the database using the V2 backup/restore API. If the API is not supported by
 // central, `ErrV2RestoreNotSupported` is returned. Otherwise, the error indicates whether the restore process was
 // successful.
-func tryRestoreV2(cmd *cobra.Command, file *os.File, deadline time.Time) error {
-	restorer, err := newV2Restorer(cmd, deadline)
+func (cmd *centralDbRestoreCommand) tryRestoreV2(confirm func() error, file *os.File, deadline time.Time) error {
+	restorer, err := cmd.newV2Restorer(confirm, deadline)
 	if err != nil {
 		return err
 	}
@@ -212,10 +250,10 @@ func tryRestoreV2(cmd *cobra.Command, file *os.File, deadline time.Time) error {
 	return httputil.ResponseToError(resp)
 }
 
-func restoreV2(cmd *cobra.Command, file *os.File, deadline time.Time) error {
-	err := tryRestoreV2(cmd, file, deadline)
+func (cmd *centralDbRestoreCommand) restoreV2(file *os.File, deadline time.Time) error {
+	err := cmd.tryRestoreV2(cmd.confirm, file, deadline)
 	if err == ErrV2RestoreNotSupported {
-		err = restoreV1(file, deadline)
+		err = cmd.restoreV1(file, deadline)
 	}
 	return err
 }
