@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
-	v1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -44,20 +43,26 @@ func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {
 	s.Require().NoError(err)
 	certPEMDays, err := issueCertificatePEM(mtls.WithValidityExpiringInDays())
 	s.Require().NoError(err)
-
-	secrets := map[storage.ServiceType]*v1.Secret{
-		storage.ServiceType_SCANNER_DB_SERVICE: {
-			Data: map[string][]byte{
-				mtls.ServiceCertFileName: certPEMHours,
+	certificates := &storage.TypedServiceCertificateSet{
+		CaPem: make([]byte, 0),
+		ServiceCerts: []*storage.TypedServiceCertificate{
+			{
+				ServiceType: storage.ServiceType_SCANNER_SERVICE,
+				Cert: &storage.ServiceCertificate{
+					CertPem: certPEMHours,
+				},
 			},
-		},
-		storage.ServiceType_SCANNER_SERVICE: {
-			Data: map[string][]byte{
-				mtls.ServiceCertFileName: certPEMDays,
+			{
+				ServiceType: storage.ServiceType_SCANNER_DB_SERVICE,
+				Cert: &storage.ServiceCertificate{
+					CertPem: certPEMDays,
+				},
 			},
 		},
 	}
-	certRenewalTime, err := GetSecretsCertRenewalTime(secrets)
+
+	certRenewalTime, err := GetCertsRenewalTime(certificates)
+
 	s.Require().NoError(err)
 	certDuration := time.Until(certRenewalTime)
 	s.LessOrEqual(certDuration, afterOffset/2)
