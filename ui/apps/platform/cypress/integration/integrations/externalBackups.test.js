@@ -1,29 +1,47 @@
-import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
+import { labels, selectors, url } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
-import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
+import {
+    generateNameWithDate,
+    getHelperElementByLabel,
+    getInputByLabel,
+} from '../../helpers/formHelpers';
+
+function assertBackupIntegrationTypeLabel(integrationType) {
+    const label = labels.backups[integrationType];
+    cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
+    cy.get(`${selectors.title2}:contains("${label}")`);
+}
+
+function getBackupIntegrationTypeUrl(integrationType) {
+    return `${url}/backups/${integrationType}`;
+}
+
+function visitBackupIntegrationType(integrationType) {
+    cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
+    cy.visit(getBackupIntegrationTypeUrl(integrationType));
+    cy.wait('@getBackupIntegrations');
+    assertBackupIntegrationTypeLabel(integrationType);
+}
+
+function saveBackupIntegrationType(integrationType) {
+    cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
+    cy.intercept('POST', api.integrations.externalBackups).as('postBackupIntegration');
+    cy.get(selectors.buttons.save).should('be.enabled').click();
+    cy.wait(['@postBackupIntegration', '@getBackupIntegrations']);
+    assertBackupIntegrationTypeLabel(integrationType);
+    cy.location('pathname').should('eq', getBackupIntegrationTypeUrl(integrationType));
+}
 
 describe('External Backups Test', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.intercept('GET', api.integrations.externalBackups, {
-            fixture: 'integrations/externalBackups.json',
-        }).as('getExternalBackups');
-
-        cy.visit('/');
-        cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click({ force: true });
-        cy.wait('@getExternalBackups');
-    });
-
     describe('External Backup forms', () => {
         it('should create a new S3 integration', () => {
-            cy.get(selectors.amazonS3Tile).click();
-
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
-            cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/backups/s3/create');
+            const integrationName = generateNameWithDate('Nova S3 Backup');
+            const integrationType = 's3';
+            visitBackupIntegrationType(integrationType);
+            cy.get(selectors.buttons.newIntegration).click();
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -51,9 +69,7 @@ describe('External Backups Test', () => {
             cy.get(selectors.buttons.save).should('be.disabled');
 
             // Step 2, check fields for invalid formats
-            getInputByLabel('Integration name')
-                .clear()
-                .type(`Nova S3 Backup ${new Date().toISOString()}`);
+            getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Bucket').type('stackrox');
             getInputByLabel('Region').type('us-west-2');
             getInputByLabel('Use container IAM role').click();
@@ -71,21 +87,14 @@ describe('External Backups Test', () => {
             getInputByLabel('Backups to retain').clear().type(1).blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
-
-            cy.wait('@getExternalBackups');
-
-            cy.location().should((loc) => {
-                expect(loc.pathname).to.eq('/main/integrations/backups/s3');
-            });
+            saveBackupIntegrationType(integrationType);
         });
 
         it('should create a new Google Cloud Storage integration', () => {
-            cy.get(selectors.googleCloudStorageTile).click();
-
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
-            cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/backups/gcs/create');
+            const integrationName = generateNameWithDate('Nova Google Cloud Backup');
+            const integrationType = 'gcs';
+            visitBackupIntegrationType(integrationType);
+            cy.get(selectors.buttons.newIntegration).click();
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -109,9 +118,7 @@ describe('External Backups Test', () => {
             cy.get(selectors.buttons.save).should('be.disabled');
 
             // Step 2, check fields for invalid formats
-            getInputByLabel('Integration name')
-                .clear()
-                .type(`Nova Google Cloud Backup ${new Date().toISOString()}`);
+            getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Bucket').type('stackrox');
             getInputByLabel('Backups to retain').type('0').blur(); // enter too low a value
             getInputByLabel('Service account (JSON)').type('{').blur(); // enter invalid JSON
@@ -136,13 +143,7 @@ describe('External Backups Test', () => {
                 .blur(); // enter invalid JSON
 
             cy.get(selectors.buttons.test).should('be.enabled');
-            cy.get(selectors.buttons.save).should('be.enabled').click();
-
-            cy.wait('@getExternalBackups');
-
-            cy.location().should((loc) => {
-                expect(loc.pathname).to.eq('/main/integrations/backups/gcs');
-            });
+            saveBackupIntegrationType(integrationType);
         });
     });
 });

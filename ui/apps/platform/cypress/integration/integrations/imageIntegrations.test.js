@@ -1,5 +1,5 @@
-import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
+import { labels, selectors, url } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     getHelperElementByLabel,
@@ -9,25 +9,41 @@ import {
     getSelectOption,
 } from '../../helpers/formHelpers';
 
+function assertImageIntegrationTypeLabel(integrationType) {
+    const label = labels.imageIntegrations[integrationType];
+    cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
+    cy.get(`${selectors.title2}:contains("${label}")`);
+}
+
+function getImageIntegrationTypeUrl(integrationType) {
+    return `${url}/imageIntegrations/${integrationType}`;
+}
+
+function visitImageIntegrationType(integrationType) {
+    cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
+    cy.visit(getImageIntegrationTypeUrl(integrationType));
+    cy.wait('@getImageIntegrations');
+    assertImageIntegrationTypeLabel(integrationType);
+}
+
+function saveImageIntegrationType(integrationType) {
+    cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
+    // Mock request.
+    cy.intercept('POST', api.integrations.imageIntegrations, {}).as('postImageIntegration');
+    cy.get(selectors.buttons.save).should('be.enabled').click();
+    cy.wait(['@postImageIntegration', '@getImageIntegrations']);
+    assertImageIntegrationTypeLabel(integrationType);
+    cy.location('pathname').should('eq', getImageIntegrationTypeUrl(integrationType));
+}
+
 describe('Image Integrations Test', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.intercept('GET', api.integrations.imageIntegrations, {
-            fixture: 'integrations/imageIntegrations.json',
-        }).as('getImageIntegrations');
-        cy.intercept('POST', api.integrations.imageIntegrations, {}).as('postImageIntegrations');
-
-        cy.visit('/');
-        cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click({ force: true });
-        cy.wait('@getImageIntegrations');
-    });
-
     it('should create a new StackRox Scanner integration', () => {
-        cy.get(selectors.clairifyTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('StackRox Scanner Test');
+        const integrationType = 'clairify';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -43,24 +59,20 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('Clairify Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getSelectButtonByLabel('Type').click();
         getSelectOption('Image Scanner').click();
         getInputByLabel('Endpoint').clear().type('https://scanner.stackrox:8080');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/clairify');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Generic Docker Registry integration', () => {
-        cy.get(selectors.dockerRegistryTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Generic Docker Registry Test');
+        const integrationType = 'docker';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -76,22 +88,18 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('Docker Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('registry-1.docker.io');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/docker');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Anchore integration', () => {
-        cy.get(selectors.anchoreScannerTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Anchore Test');
+        const integrationType = 'anchore';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -111,24 +119,20 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('Docker Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/anchore');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Amazon ECR integration', () => {
-        cy.get(selectors.amazonECRTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Amazon ECR Test');
+        const integrationType = 'ecr';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -146,23 +150,19 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid form and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('ECR Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Registry ID').clear().type('12345');
         getInputByLabel('Region').clear().type('us-west-1');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/ecr');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Google Container Registry integration', () => {
-        cy.get(selectors.googleContainerRegistryTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Google Container Registry Test');
+        const integrationType = 'google';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -184,7 +184,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('ECR Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getSelectButtonByLabel('Type').click();
         getSelectOption('Registry').click();
         getInputByLabel('Registry endpoint').clear().type('test.endpoint');
@@ -194,18 +194,14 @@ describe('Image Integrations Test', () => {
         });
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/google');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Microsoft Azure integration', () => {
-        cy.get(selectors.microsoftACRTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Microsoft Azure Test');
+        const integrationType = 'azure';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -223,24 +219,20 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('Azure Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').type('password');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/azure');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new JFrog Artifactory integration', () => {
-        cy.get(selectors.jFrogArtifactoryTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('JFrog Artifactory Test');
+        const integrationType = 'artifactory';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -258,26 +250,20 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name')
-            .clear()
-            .type(generateNameWithDate('JFrog Artifactory Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').type('password');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/artifactory');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Docker Trusted Registry integration', () => {
-        cy.get(selectors.dockerTrustedRegistryTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Docker Trusted Registry Test');
+        const integrationType = 'dtr';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -297,7 +283,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('DTR Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getSelectButtonByLabel('Type').click();
         getSelectOption('Registry').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
@@ -306,17 +292,14 @@ describe('Image Integrations Test', () => {
 
         cy.get(selectors.buttons.test).should('be.enabled');
         cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/dtr');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Quay integration', () => {
-        cy.get(selectors.quayTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Quay Test');
+        const integrationType = 'quay';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -334,25 +317,21 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('Quay Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getSelectButtonByLabel('Type').click();
         getSelectOption('Registry').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('OAuth token').clear().type('12345');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/quay');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Clair integration', () => {
-        cy.get(selectors.clairTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Clair Test');
+        const integrationType = 'clair';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -368,22 +347,18 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('Clair Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/clair');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Nexus integration', () => {
-        cy.get(selectors.sonatypeNexusTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Nexus Test');
+        const integrationType = 'nexus';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -401,24 +376,20 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('Nexus Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/nexus');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new Tenable integration', () => {
-        cy.get(selectors.tenableTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('Tenable Test');
+        const integrationType = 'tenable';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -436,25 +407,21 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('Tenable Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getSelectButtonByLabel('Type').click();
         getSelectOption('Registry').click();
         getInputByLabel('Access key').clear().type('12345');
         getInputByLabel('Secret key').clear().type('12345');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/tenable');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new IBM integration', () => {
-        cy.get(selectors.ibmCloudTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('IBM Test');
+        const integrationType = 'ibm';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -472,23 +439,19 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('IBM Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('API key').clear().type('12345');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/ibm');
-        });
+        saveImageIntegrationType(integrationType);
     });
 
     it('should create a new RHEL integration', () => {
-        cy.get(selectors.redHatTile).click();
-
-        cy.get(selectors.buttons.new).click();
+        const integrationName = generateNameWithDate('RHEL Test');
+        const integrationType = 'rhel';
+        visitImageIntegrationType(integrationType);
+        cy.get(selectors.buttons.newIntegration).click();
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -504,17 +467,12 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateNameWithDate('RHEL Test'));
+        getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
-        cy.wait('@postImageIntegrations');
-
-        cy.location().should((loc) => {
-            expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/rhel');
-        });
+        saveImageIntegrationType(integrationType);
     });
 });
