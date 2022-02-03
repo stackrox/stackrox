@@ -26,7 +26,6 @@ func getBaseConfig() Config {
 	}
 }
 
-
 func TestRender(t *testing.T) {
 	suite.Run(t, new(renderSuite))
 }
