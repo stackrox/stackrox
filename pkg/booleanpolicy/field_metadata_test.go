@@ -19,6 +19,10 @@ func (s *FieldMetadataValidationSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
+func (s *FieldMetadataValidationSuite) TearDownSuite() {
+	s.envIsolator.RestoreAll()
+}
+
 func TestAllFieldsMetadata(t *testing.T) {
 	suite.Run(t, new(FieldMetadataValidationSuite))
 }

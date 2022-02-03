@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
@@ -17,8 +17,8 @@ const (
 	diagnosticBundleDownloadTimeout = 20 * time.Second
 )
 
-// DownloadDiagnosticsCommand allows downloading the diagnostics bundle.
-func DownloadDiagnosticsCommand() *cobra.Command {
+// downloadDiagnosticsCommand allows downloading the diagnostics bundle.
+func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
 	var clusters []string
 	var since string
@@ -26,7 +26,7 @@ func DownloadDiagnosticsCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use: "download-diagnostics",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			fmt.Fprintln(os.Stderr, "Downloading diagnostic bundle...")
+			cliEnvironment.Logger().InfofLn("Downloading diagnostic bundle...")
 			return retrieveDiagnosticBundle(flags.Timeout(c), outputDir,
 				clusters, since)
 		}),

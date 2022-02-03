@@ -43,8 +43,9 @@ func (suite *renderSuite) SetupSuite() {
 	suite.testFlavor = flavorUtils.MakeImageFlavorForTest(suite.T())
 }
 
-func (suite *renderSuite) TeardownSuite() {
+func (suite *renderSuite) TearDownSuite() {
 	suite.restorer.Restore()
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
