@@ -4832,6 +4832,7 @@ jobs:
   openshift-ci-upgrade-test:
     executor: custom
     steps:
+      - checkout
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - run:
