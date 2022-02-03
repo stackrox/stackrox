@@ -130,7 +130,7 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                     validationSchema={Yup.object({
                         imageTag: Yup.string()
                             .matches(
-                                /(?:[a-z.]+\/)([a-z/]+)+(?::[0-9]+)?/,
+                                /([a-z.]+\/)([a-z0-9-]+\/)([a-z0-9-/]+)(?::[0-9\-.]+)?/,
                                 'Must be a valid path to a container image'
                             )
                             .required('Required'),
