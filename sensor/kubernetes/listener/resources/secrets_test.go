@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -66,10 +66,10 @@ var (
 )
 
 func TestOpenShiftRegistrySecret_311(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	testutils.RunWithFeatureFlagEnabled(t, features.LocalImageScanning, testOpenShiftRegistrySecret311)
+}
 
+func testOpenShiftRegistrySecret311(t *testing.T) {
 	regStore := registry.NewTestRegistryStore()
 	d := newSecretDispatcher(regStore)
 
@@ -94,10 +94,10 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 }
 
 func TestOpenShiftRegistrySecret_4x(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	testutils.RunWithFeatureFlagEnabled(t, features.LocalImageScanning, testOpenShiftRegistrySecret4x)
+}
 
+func testOpenShiftRegistrySecret4x(t *testing.T) {
 	regStore := registry.NewTestRegistryStore()
 	d := newSecretDispatcher(regStore)
 
