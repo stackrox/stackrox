@@ -851,7 +851,7 @@ func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
 	}
 
 	states, err := resolver.root.vulnReqQueryMgr.VulnsWithState(resolver.ctx,
-		common.Scope{
+		common.VulnReqScope{
 			Registry: img.GetName().GetRegistry(),
 			Remote:   img.GetName().GetRemote(),
 			Tag:      img.GetName().GetTag(),
@@ -904,7 +904,7 @@ func (resolver *cVEResolver) EffectiveVulnerabilityRequest(ctx context.Context) 
 	}
 
 	req, err := resolver.root.vulnReqQueryMgr.EffectiveVulnReq(ctx, resolver.data.GetId(),
-		common.Scope{
+		common.VulnReqScope{
 			Registry: img.GetName().GetRegistry(),
 			Remote:   img.GetName().GetRemote(),
 			Tag:      img.GetName().GetTag(),
