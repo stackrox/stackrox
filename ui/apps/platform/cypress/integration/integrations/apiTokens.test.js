@@ -68,7 +68,7 @@ describe('API Token tests', () => {
         visitAPITokens();
 
         cy.intercept('GET', '/v1/roles').as('getRoles');
-        cy.get(`tbody td a:contains("${apiTokenName}")`).click();
+        cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).click();
         cy.wait('@getRoles');
 
         cy.location('pathname').should('contain', viewAPITokenUrl);
@@ -87,6 +87,6 @@ describe('API Token tests', () => {
         cy.wait(['@revokeAPIToken', '@getAPITokens']);
 
         assertAPITokenTable();
-        cy.get(`tbody td a:contains("${apiTokenName}")`).should('not.exist');
+        cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).should('not.exist');
     });
 });

@@ -78,7 +78,7 @@ describe('Cluster Init Bundle tests', () => {
     it('should show the generated Cluster Init Bundle in the table, and be clickable', () => {
         visitClusterInitBundles();
 
-        cy.get(`tbody td a:contains("${clusterInitBundleName}")`).click();
+        cy.get(`${selectors.tableRowNameLink}:contains("${clusterInitBundleName}")`).click();
 
         cy.location('pathname').should('contain', viewClusterInitBundleUrl);
         cy.get(`${selectors.breadcrumbItem}:contains("${clusterInitBundleName}")`);
@@ -97,6 +97,8 @@ describe('Cluster Init Bundle tests', () => {
         cy.wait(['@revokeClusterInitBundle', '@getClusterInitBundles']);
 
         assertClusterInitBundleTable();
-        cy.get(`tbody td a:contains("${clusterInitBundleName}")`).should('not.exist');
+        cy.get(`${selectors.tableRowNameLink}:contains("${clusterInitBundleName}")`).should(
+            'not.exist'
+        );
     });
 });
