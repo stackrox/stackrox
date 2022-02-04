@@ -100,22 +100,46 @@ export const lifecycleStagesToEnforcementActionsMap: Record<LifecycleStage, Enfo
     RUNTIME: ['KILL_POD_ENFORCEMENT', 'FAIL_KUBE_REQUEST_ENFORCEMENT'],
 };
 
+export function hasEnforcementActionForLifecycleStage(
+    lifecycleStage: LifecycleStage,
+    enforcementActions: EnforcementAction[]
+) {
+    const enforcementActionsForLifecycleStage =
+        lifecycleStagesToEnforcementActionsMap[lifecycleStage];
+
+    return enforcementActions.some((enforcementAction) =>
+        enforcementActionsForLifecycleStage.includes(enforcementAction)
+    );
+}
+
 export function getEnforcementLifecycleStages(
     lifecycleStages: LifecycleStage[],
     enforcementActions: EnforcementAction[]
 ): LifecycleStage[] {
     return lifecycleStages.filter((lifecycleStage) => {
-        const enforcementActionsForLifecycleStage =
-            lifecycleStagesToEnforcementActionsMap[lifecycleStage];
-
-        return enforcementActions.some((enforcementAction) =>
-            enforcementActionsForLifecycleStage.includes(enforcementAction)
-        );
+        return hasEnforcementActionForLifecycleStage(lifecycleStage, enforcementActions);
     });
 }
 
 export function formatResponse(enforcementLifecycleStages: LifecycleStage[]): string {
     return enforcementLifecycleStages.length === 0 ? 'Inform' : 'Enforce';
+}
+
+export function appendEnforcementActionsForAddedLifecycleStage(
+    lifecycleStage: LifecycleStage,
+    enforcementActions: EnforcementAction[]
+): EnforcementAction[] {
+    return [...enforcementActions, ...lifecycleStagesToEnforcementActionsMap[lifecycleStage]];
+}
+
+export function filterEnforcementActionsForRemovedLifecycleStage(
+    lifecycleStage: LifecycleStage,
+    enforcementActions: EnforcementAction[]
+): EnforcementAction[] {
+    return enforcementActions.filter(
+        (enforcementAction) =>
+            !lifecycleStagesToEnforcementActionsMap[lifecycleStage].includes(enforcementAction)
+    );
 }
 
 // eventSource
