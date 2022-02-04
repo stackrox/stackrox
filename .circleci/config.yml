@@ -3497,6 +3497,26 @@ jobs:
   #   e.g. 'gke-ui-e2e-tests' or 'openshift-crio-api-e2e-tests'
   ###
 
+  local-roxctl-e2e-tests:
+    executor:
+      name: custom
+      resource_class: medium
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - *restoreGoModCache
+      - *setupRoxctl
+      - run:
+          name: Run roxctl Bats tests
+          command: |
+            source tests/e2e/run.sh
+            # Bats tests from the 'local' folder can be run locally without any prerequisites
+            MAIN_TAG=$(make --quiet tag) \
+              run_roxctl_bats_tests "roxctl-test-output" "local"
+      - store-test-results-and-artifacts:
+          path: roxctl-test-output
+
   gke-api-nongroovy-tests:
     executor:
       name: custom
@@ -3573,8 +3593,9 @@ jobs:
           name: Run roxctl Bats tests
           command: |
             source tests/e2e/run.sh
+            # Bats tests from the 'cluster' folder require running central
             MAIN_TAG=$(make --quiet tag) \
-              run_roxctl_bats_tests "roxctl-test-output"
+              run_roxctl_bats_tests "roxctl-test-output" "cluster"
 
       - store-test-results-and-artifacts:
           path: roxctl-test-output
@@ -4921,6 +4942,10 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-nongroovy-tests
+      - local-roxctl-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - pre-build-cli
       - provision-gke-ui-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-ui-e2e-tests:

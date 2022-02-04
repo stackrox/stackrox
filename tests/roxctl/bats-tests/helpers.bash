@@ -16,26 +16,36 @@ luname() {
 
 tmp_roxctl="tmp/roxctl-bats/bin"
 
-# roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
-roxctl-development() {
+# roxctl-development-cmd prints the path to roxctl built with GOTAGS=''. It builds the binary if needed
+roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
     make -s "cli-${_uname}" GOTAGS='' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
-  "${tmp_roxctl}/roxctl-dev" "$@"
+  echo "${tmp_roxctl}/roxctl-dev"
 }
 
-# roxctl-release runs roxctl built with GOTAGS='release'. It builds the binary if needed
-roxctl-release() {
+# roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
+roxctl-development() {
+   "$(roxctl-development-cmd)" "$@"
+}
+
+# roxctl-development-cmd prints the path to roxctl built with GOTAGS='release'. It builds the binary if needed
+roxctl-release-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
     make -s "cli-${_uname}" GOTAGS='release' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
-  "${tmp_roxctl}/roxctl-release" "$@"
+  echo "${tmp_roxctl}/roxctl-release"
+}
+
+# roxctl-release runs roxctl built with GOTAGS='release'. It builds the binary if needed
+roxctl-release() {
+  "$(roxctl-release-cmd)" "$@"
 }
 
 helm_template_central() {
@@ -55,26 +65,40 @@ assert_helm_template_central_registry() {
   assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$@"
 }
 
+wait_10s_for() {
+  local file="$1"; shift
+  local args=("${@}")
+  for _ in {1..10}; do
+    if "${args[@]}" "$file"; then return 0; fi
+    sleep 1
+  done
+  "${args[@]}" "$file"
+}
+
 assert_components_registry() {
   local dir="$1"
   local registry_slug="$2"
   shift; shift;
 
-  [[ ! -d "$dir" ]] && fail "ERROR: not a directory: '$dir'"
+  # The expect-based tests may be slow and flaky, so let's add timeouts to this assertion
+  wait_10s_for "$dir" "test" "-d" || fail "ERROR: not a directory: '$dir'"
   (( $# < 1 )) && fail "ERROR: 0 components provided"
 
   for component in "${@}"; do
     regex="$(registry_regex "$registry_slug" "$component")"
     case $component in
       main)
+        wait_10s_for "${dir}/01-central-12-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/01-central-12-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "central").image' "${dir}/01-central-12-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
       scanner)
+        wait_10s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "scanner").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
       scanner-db)
+        wait_10s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 1) | .spec.template.spec.containers[] | select(.name == "db").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
