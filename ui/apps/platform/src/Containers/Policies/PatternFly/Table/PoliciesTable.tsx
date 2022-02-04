@@ -312,7 +312,12 @@ function PoliciesTable({
                 </Toolbar>
             </PageSection>
             <Divider component="div" />
-            <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
+            <PageSection
+                isFilled
+                padding={{ default: 'noPadding' }}
+                hasOverflowScroll
+                id="policies-table"
+            >
                 <TableComposable isStickyHeader>
                     <Thead>
                         <Tr>
