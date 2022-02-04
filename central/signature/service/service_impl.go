@@ -79,7 +79,7 @@ func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.Resour
 }
 
 func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
-	integration.Id = generateSignatureIntegrationId()
+	integration.Id = generateSignatureIntegrationID()
 	if err := validateSignatureIntegration(integration); err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (s *serviceImpl) DeleteSignatureIntegration(ctx context.Context, id *v1.Res
 	return &v1.Empty{}, nil
 }
 
-func generateSignatureIntegrationId() string {
+func generateSignatureIntegrationID() string {
 	return signatureIntegrationIDPrefix + uuid.NewV4().String()
 }
 

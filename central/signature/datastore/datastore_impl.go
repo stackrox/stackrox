@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/signature/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -48,7 +47,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	if err != nil {
 		return err
 	} else if found {
-		return errors.New(fmt.Sprintf("Signature integration %s already exists", integration.GetId()))
+		return fmt.Errorf("signature integration %s already exists", integration.GetId())
 	}
 
 	return d.storage.Upsert(integration)
@@ -62,7 +61,7 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	if err != nil {
 		return err
 	} else if !found {
-		return errors.New(fmt.Sprintf("Signature integration %s doesn't exist", integration.GetId()))
+		return fmt.Errorf("signature integration %s doesn't exist", integration.GetId())
 	}
 
 	return d.storage.Upsert(integration)

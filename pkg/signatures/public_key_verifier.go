@@ -42,7 +42,11 @@ var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed or the base64 decoding failed.
 func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_PublicKey) (*publicKeyVerifier, error) {
-	base64EncPublicKeys := config.PublicKey.GetPublicKeysBase64Enc()
+	publicKeys := config.PublicKey.GetPublicKeys()
+	base64EncPublicKeys := make([]string, 0, len(publicKeys))
+	for _, publicKey := range publicKeys {
+		base64EncPublicKeys = append(base64EncPublicKeys, publicKey.GetPublicKeysBase64Enc())
+	}
 
 	parsedKeys := make([]crypto.PublicKey, 0, len(base64EncPublicKeys))
 	for _, base64EncKey := range base64EncPublicKeys {

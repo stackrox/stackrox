@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+// DataStore for signature integrations.
 type DataStore interface {
 	GetSignatureIntegration(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error)
 	GetSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error)
