@@ -56,7 +56,7 @@ func StringToSeverity(severity string) storage.VulnerabilitySeverity {
 		return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
 	case "important":
 		return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
-	case "crticial":
+	case "critical":
 		return storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
 	default:
 		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
