@@ -112,8 +112,8 @@ func (s *permissionRecordingSCC) NeedsPostFiltering() bool {
 	return s.wrapped.NeedsPostFiltering()
 }
 
-func (s *permissionRecordingSCC) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	panic("Implement me!")
+func (s *permissionRecordingSCC) EffectiveAccessScope(ctx context.Context) (*effectiveaccessscope.ScopeTree, error) {
+	return s.wrapped.EffectiveAccessScope(ctx)
 }
 
 func (s *permissionRecordingSCC) UsedPermissions() permissions.PermissionMap {

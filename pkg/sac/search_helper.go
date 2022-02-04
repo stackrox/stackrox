@@ -3,14 +3,21 @@ package sac
 import (
 	"context"
 	"math"
+	"time"
 
 	bleveSearchLib "github.com/blevesearch/bleve/search"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -100,61 +107,13 @@ func (h *searchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) sea
 	}
 }
 
-func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, /*[][]byte,*/ error) {
+func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result /*, [][]byte*/, error) {
 	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
 		return searcher.Search(q)
 	}
-
-	//4. Generate where clause from merged EASes and resource (easy part for Clusters, namespaces etc and hard part images, cves etc)
-	//eas, err := scopeChecker.EffectiveAccessScope(ctx)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//sacQB := search.NewQueryBuilder()
-	//switch h.resource.GetScope() {
-	//case permissions.GlobalScope:
-	//	return nil, errors.New("Effective Access Scope has no sense with globally-scoped resources")
-	//case permissions.ClusterScope:
-	//	nsScope = false
-	//case permissions.NamespaceScope:
-	//	nsScope = true
-	//default:
-	//	return nil, errors.Errorf("unknown resource scope %v", h.resource.GetScope())
-	//}
-
-	//if features.PostgresPOC.Enabled() {
-	//	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
-	/* 5. Append clause to SQL query */
-	//rows, err := postgres.RunSearchRequestValue(h.optionsMap.PrimaryCategory(), q, globaldb.GetPostgresDB(), h.optionsMap)
-	//	if err != nil {
-	//		if err == pgx.ErrNoRows {
-	//			return nil, nil
-	//		}
-	//		return nil, err
-	//	}
-	//	defer rows.Close()
-	//	var elems []*storage.ListAlert
-
-	//	for rows.Next() {
-	//		var id string
-	//		var data []byte
-	//		if err := rows.Scan(&id, &data); err != nil {
-	//			return nil, err
-	//		}
-	//		msg := new(storage.Alert)
-	//		buf := bytes.NewReader(data)
-	//		t := time.Now()
-	//		if err := jsonpb.Unmarshal(buf, msg); err != nil {
-	//			return nil, err
-	//		}
-	//		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "Alert")
-	//		elems = append(elems, convert.AlertToListAlert(msg))
-	//	}
-	//	return elems, nil
-	//}
 
 	// Make sure the cluster and perhaps namespace fields are part of the returned fields.
 	fieldQB := search.NewQueryBuilder()
@@ -231,6 +190,292 @@ func (h *searchHelper) filterResultsOnce(resourceScopeChecker ScopeChecker, resu
 }
 
 func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker ScopeChecker, results []search.Result) ([]search.Result, error) {
+	allowed, maybe := h.filterResultsOnce(resourceScopeChecker, results)
+	if len(maybe) > 0 {
+		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {
+			return nil, err
+		}
+		extraAllowed, maybe := h.filterResultsOnce(resourceScopeChecker, maybe)
+		if len(maybe) > 0 {
+			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", len(maybe)))
+		}
+		allowed = append(allowed, extraAllowed...)
+	}
+
+	return allowed, nil
+}
+
+// postgresql implementation
+
+type pgSearchHelper struct {
+	resource permissions.ResourceMetadata
+
+	resultsChecker searchResultsChecker
+
+	optionsMap search.OptionsMap
+
+	searchCategory v1.SearchCategory
+
+	statsLabel string
+
+	pool *pgxpool.Pool
+}
+
+func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.OptionsMap, searchCategory v1.SearchCategory, statsLabel string, pool *pgxpool.Pool) (search.Searcher, error) {
+	var nsScope bool
+
+	switch resourceMD.GetScope() {
+	case permissions.GlobalScope:
+		return nil, errors.New("search helper cannot be used with globally-scoped resources")
+	case permissions.ClusterScope:
+		nsScope = false
+	case permissions.NamespaceScope:
+		nsScope = true
+	default:
+		return nil, errors.Errorf("unknown resource scope %v", resourceMD.GetScope())
+	}
+
+	resultsChecker, err := newClusterNSFieldBaseResultsChecker(optionsMap, nsScope)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating search helper for resource %v", resourceMD)
+	}
+
+	return &pgSearchHelper{
+		resource:       resourceMD,
+		resultsChecker: resultsChecker,
+		optionsMap:     optionsMap,
+		searchCategory: searchCategory,
+		statsLabel:     statsLabel,
+		pool:           pool,
+	}, nil
+}
+
+func buildClusterLevelSACQueryFilter(sacTree *effectiveaccessscope.ScopeTree) *v1.Query {
+	if sacTree == nil {
+		return nil
+	}
+	if sacTree.State != effectiveaccessscope.Partial {
+		return nil
+	}
+	clusterIDs := sacTree.GetClusterIDs()
+	clusterQueries := make([]*v1.Query, 0, len(clusterIDs))
+	for _, clusterID := range clusterIDs {
+		clusterAccessScope := sacTree.GetClusterByID(clusterID)
+		if clusterAccessScope.State == effectiveaccessscope.Included {
+			clusterSubQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID)
+			clusterQueries = append(clusterQueries, clusterSubQuery.ProtoQuery())
+		}
+	}
+	if len(clusterQueries) == 0 {
+		return nil
+	}
+	return search.DisjunctionQuery(clusterQueries...)
+}
+
+func buildClusterNamespaceLevelSACQueryFilter(sacTree *effectiveaccessscope.ScopeTree) *v1.Query {
+	if sacTree == nil {
+		return nil
+	}
+	if sacTree.State != effectiveaccessscope.Partial {
+		return nil
+	}
+	clusterIDs := sacTree.GetClusterIDs()
+	clusterQueries := make([]*v1.Query, 0, len(clusterIDs))
+	for _, clusterID := range clusterIDs {
+		clusterAccessScope := sacTree.GetClusterByID(clusterID)
+		if clusterAccessScope.State == effectiveaccessscope.Included {
+			clusterSubQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID)
+			clusterQueries = append(clusterQueries, clusterSubQuery.ProtoQuery())
+		} else if clusterAccessScope.State == effectiveaccessscope.Partial {
+			clusterMatchQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID)
+			namespaceQueries := make([]*v1.Query, 0, len(clusterAccessScope.Namespaces))
+			for namespaceName, namespaceAccessScope := range clusterAccessScope.Namespaces {
+				if namespaceAccessScope.State == effectiveaccessscope.Included {
+					namespaceSubQuery := search.NewQueryBuilder().AddStrings(search.Namespace, namespaceName)
+					namespaceQueries = append(namespaceQueries, namespaceSubQuery.ProtoQuery())
+				}
+			}
+			if len(namespaceQueries) > 0 {
+				namespaceSubQuery := search.DisjunctionQuery(namespaceQueries...)
+				clusterSubQuery := search.ConjunctionQuery(clusterMatchQuery.ProtoQuery(), namespaceSubQuery)
+				clusterQueries = append(clusterQueries, clusterSubQuery)
+			}
+		}
+	}
+	if len(clusterQueries) == 0 {
+		return nil
+	}
+	return search.DisjunctionQuery(clusterQueries...)
+}
+
+func buildSACQueryFilter(sacTree *effectiveaccessscope.ScopeTree, scopeLevel permissions.ResourceScope) *v1.Query {
+	switch scopeLevel {
+	case permissions.ClusterScope:
+		return buildClusterLevelSACQueryFilter(sacTree)
+	case permissions.NamespaceScope:
+		return buildClusterNamespaceLevelSACQueryFilter(sacTree)
+	default:
+		return nil
+	}
+	return nil
+}
+
+func (h *pgSearchHelper) Search(ctx context.Context, q *v1.Query) ([]search.Result /*, [][]byte*/, error) {
+	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, err
+	} else if ok {
+		defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, h.statsLabel)
+		results, err := postgres.RunSearchRequest(h.searchCategory, q, h.pool, h.optionsMap)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return nil, nil
+			}
+			return nil, err
+		}
+		return results, nil
+	}
+
+	//4. Generate where clause from merged EASes and resource (easy part for Clusters, namespaces etc and hard part images, cves etc)
+	//eas, err := scopeChecker.EffectiveAccessScope(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//sacQB := search.NewQueryBuilder()
+	//switch h.resource.GetScope() {
+	//case permissions.GlobalScope:
+	//	return nil, errors.New("Effective Access Scope has no sense with globally-scoped resources")
+	//case permissions.ClusterScope:
+	//	nsScope = false
+	//case permissions.NamespaceScope:
+	//	nsScope = true
+	//default:
+	//	return nil, errors.Errorf("unknown resource scope %v", h.resource.GetScope())
+	//}
+
+	//if features.PostgresPOC.Enabled() {
+	//	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
+	/* 5. Append clause to SQL query */
+	//rows, err := postgres.RunSearchRequestValue(h.optionsMap.PrimaryCategory(), q, globaldb.GetPostgresDB(), h.optionsMap)
+	//	if err != nil {
+	//		if err == pgx.ErrNoRows {
+	//			return nil, nil
+	//		}
+	//		return nil, err
+	//	}
+	//	defer rows.Close()
+	//	var elems []*storage.ListAlert
+
+	//	for rows.Next() {
+	//		var id string
+	//		var data []byte
+	//		if err := rows.Scan(&id, &data); err != nil {
+	//			return nil, err
+	//		}
+	//		msg := new(storage.Alert)
+	//		buf := bytes.NewReader(data)
+	//		t := time.Now()
+	//		if err := jsonpb.Unmarshal(buf, msg); err != nil {
+	//			return nil, err
+	//		}
+	//		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "Alert")
+	//		elems = append(elems, convert.AlertToListAlert(msg))
+	//	}
+	//	return elems, nil
+	//}
+
+	sacSearchQuery := q
+	if scopeChecker.NeedsPostFiltering() {
+		// Make sure the cluster and perhaps namespace fields are part of the returned fields.
+		fieldQB := search.NewQueryBuilder()
+		for _, fieldLabel := range h.resultsChecker.SearchFieldLabels() {
+			fieldQB = fieldQB.AddStringsHighlighted(fieldLabel, search.WildcardString)
+		}
+		sacSearchQuery = search.ConjunctionQuery(q, fieldQB.ProtoQuery())
+	} else {
+		// Compute and inject scope query filter
+		eas, scopeErr := scopeChecker.EffectiveAccessScope(ctx)
+		if scopeErr != nil {
+			return nil, scopeErr
+		}
+		if eas.State == effectiveaccessscope.Excluded {
+			return nil, nil
+		} else if eas.State == effectiveaccessscope.Partial {
+			sacQueryFilter := buildSACQueryFilter(eas, h.resource.GetScope())
+			if sacQueryFilter != nil {
+				sacSearchQuery = search.ConjunctionQuery(q, sacQueryFilter)
+			}
+		}
+	}
+	sacSearchQuery.Pagination = &v1.QueryPagination{
+		Limit:       math.MaxInt32,
+		SortOptions: q.GetPagination().GetSortOptions(),
+	}
+
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, h.statsLabel)
+	results, err := postgres.RunSearchRequest(h.searchCategory, sacSearchQuery, h.pool, h.optionsMap)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	if scopeChecker.NeedsPostFiltering() {
+		return h.filterResults(ctx, scopeChecker, results)
+	}
+	return results, nil
+}
+
+func (h *pgSearchHelper) Count(ctx context.Context, q *v1.Query) (int, error) {
+	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return 0, err
+	} else if ok {
+		defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, h.statsLabel)
+		count, err := postgres.RunCountRequest(h.searchCategory, q, h.pool, h.optionsMap)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return 0, nil
+			}
+			return 0, err
+		}
+		return count, nil
+	}
+
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, h.statsLabel)
+	results, err := h.Search(ctx, q)
+	return len(results), err
+}
+
+func (h *pgSearchHelper) filterResultsOnce(resourceScopeChecker ScopeChecker, results []search.Result) (allowed []search.Result, maybe []search.Result) {
+	for _, result := range results {
+		resultFields := make(map[string]interface{}, 0)
+		for _, filterField := range h.resultsChecker.SearchFieldLabels() {
+			field, inOptions := h.optionsMap.Get(filterField.String())
+			if !inOptions {
+				continue
+			}
+			fieldPath := field.GetFieldPath()
+			_, inMatches := result.Matches[fieldPath]
+			if inMatches {
+				matches := result.Matches[fieldPath]
+				if len(matches) > 0 {
+					resultFields[fieldPath] = matches[0]
+				}
+			}
+		}
+		if res := h.resultsChecker.TryAllowed(resourceScopeChecker, resultFields); res == Allow {
+			allowed = append(allowed, result)
+		} else if res == Unknown {
+			maybe = append(maybe, result)
+		}
+	}
+	return
+}
+
+func (h *pgSearchHelper) filterResults(ctx context.Context, resourceScopeChecker ScopeChecker, results []search.Result) ([]search.Result, error) {
 	allowed, maybe := h.filterResultsOnce(resourceScopeChecker, results)
 	if len(maybe) > 0 {
 		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {

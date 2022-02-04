@@ -59,5 +59,37 @@ func (c allowFixedScopesCheckerCore) NeedsPostFiltering() bool {
 }
 
 func (c allowFixedScopesCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	panic("Implement me!")
+	// EffectiveAccessScope should only be called on a core of resource level
+	// Here we only know the level from the type of keys describing the children levels.
+	// The next level is described by c[0]
+	// 1. If no child core, match the TryAllowed Allow strategy
+	// 2. Cluster level sub-cores, build a partial ScopeTree and add each cluster subtree
+	// 3. Other level sub-cores,deny all
+	if len(c) == 0 {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
+	hasClusterLevelChildren := false
+	for k, _ := range c[0] {
+		switch k.ScopeKind() {
+		case ClusterScopeKind:
+			hasClusterLevelChildren = true
+		default:
+			hasClusterLevelChildren = false
+		}
+		break
+	}
+	if !hasClusterLevelChildren {
+		return effectiveaccessscope.RestrictedEffectiveAccessScope(), nil
+	}
+	clusterIDs := make([]string, 0, len(c[0]))
+	namespaces := make([]string, 0)
+	for k, _ := range c[0] {
+		clusterIDs = append(clusterIDs, k.String())
+	}
+	if len(c) > 1 {
+		for k, _ := range c[1] {
+			namespaces = append(namespaces, k.String())
+		}
+	}
+	return effectiveaccessscope.FromClusterIDsAndNamespaces(clusterIDs, namespaces), nil
 }

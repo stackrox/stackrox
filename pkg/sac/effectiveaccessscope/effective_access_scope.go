@@ -67,6 +67,30 @@ func RestrictedEffectiveAccessScope() *ScopeTree {
 	return newEffectiveAccessScopeTree(Excluded)
 }
 
+// FromClusterIDsAndNamespaces returns a minimal ScopeTree allowing access
+// only to the cluster-namespace pairs built from the input set
+func FromClusterIDsAndNamespaces(clusterIDs []string, namespaces []string) *ScopeTree {
+	if len(clusterIDs) == 0 {
+		return RestrictedEffectiveAccessScope()
+	}
+	eas := &ScopeTree{State: Partial}
+	for _, clusterId := range clusterIDs {
+		clusterSubTree := &clustersScopeSubTree{}
+		if len(namespaces) > 0 {
+			clusterSubTree.State = Partial
+			for _, namespace := range namespaces {
+				namespaceSubTree := &namespacesScopeSubTree{State: Included}
+				clusterSubTree.Namespaces[namespace] = namespaceSubTree
+			}
+		} else {
+			clusterSubTree.State = Included
+		}
+		eas.clusterIDToName[clusterId] = clusterId
+		eas.Clusters[clusterId] = clusterSubTree
+	}
+	return eas
+}
+
 // ComputeEffectiveAccessScope applies a simple access scope to provided
 // clusters and namespaces and yields ScopeTree. Empty access scope rules
 // mean nothing is included.
@@ -159,6 +183,15 @@ func (root *ScopeTree) String() string {
 // ToJSON yields a compacted JSON representation.
 func (root *ScopeTree) ToJSON() (string, error) {
 	return root.Compactify().ToJSON()
+}
+
+// GetClusterIDs returns the list of cluster IDs known by the scope tree
+func (root *ScopeTree) GetClusterIDs() []string {
+	clusterIDs := make([]string, 0, len(root.clusterIDToName))
+	for cid, _ := range root.clusterIDToName {
+		clusterIDs = append(clusterIDs, cid)
+	}
+	return clusterIDs
 }
 
 // GetClusterByID returns ClusterScopeSubTree for given cluster ID.
@@ -258,7 +291,13 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace *storag
 	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(matched, nodeAttributesForNamespace(namespace, detail))
 }
 
-func MergeEffectiveAccessScopes(tree1, tree2 ScopeTree) ScopeTree {
+func MergeEffectiveAccessScopes(tree1, tree2 *ScopeTree) *ScopeTree {
+	if tree1 == nil {
+		return tree2
+	}
+	if tree2 == nil {
+		return tree1
+	}
 	if tree1.State == Excluded {
 		return tree2
 	}
@@ -272,7 +311,7 @@ func MergeEffectiveAccessScopes(tree1, tree2 ScopeTree) ScopeTree {
 		return tree2
 	}
 
-	output := ScopeTree{State: Partial}
+	output := &ScopeTree{State: Partial}
 	for id, name := range tree1.clusterIDToName {
 		output.clusterIDToName[id] = name
 	}

@@ -41,5 +41,6 @@ func (c OneStepSCC) NeedsPostFiltering() bool {
 }
 
 func (c OneStepSCC) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	panic("Implement me!")
+	// Match the TryAllowed behaviour: Deny all
+	return effectiveaccessscope.RestrictedEffectiveAccessScope(), nil
 }

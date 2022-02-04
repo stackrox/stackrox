@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -62,7 +61,7 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 
 // SearchListAlerts retrieves Alerts from the indexer and storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
-	if features.PostgresPOC.Enabled() {
+	/*if features.PostgresPOC.Enabled() {
 		defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
 		rows, err := postgres.RunSearchRequestValue(v1.SearchCategory_ALERTS, q, globaldb.GetPostgresDB(), mappings.OptionsMap)
 		if err != nil {
@@ -91,7 +90,7 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 			elems = append(elems, convert.AlertToListAlert(msg))
 		}
 		return elems, nil
-	}
+	}*/
 	alerts, _, err := ds.searchListAlerts(ctx, q)
 	return alerts, err
 }
@@ -108,7 +107,7 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 	//assert len(results) == len(rows)
 	//convert rows to proper type (here []*storage.ListAlert)
 	// else ...
-	if features.PostgresPOC.Enabled() {
+	/*if features.PostgresPOC.Enabled() {
 		defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
 		// TODO - longer run : extract generic part in search helper
 		// TODO compute and inject query filter here
@@ -140,7 +139,7 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 			elems = append(elems, convert.AlertToListAlert(msg))
 		}
 		return elems, nil, nil
-	}
+	}*/
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
@@ -239,9 +238,15 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 ///////////////////////////////////////////////
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	// TODO integrate postgresql search helper here
-	filteredSearcher := alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher)
+	var filteredSearcher *search.Searcher
+	if features.PostgresPOC.Enabled() {
+		sacSearcher := sac.ForResource(resources.Alert).MustCreatePgSearchHelper(mappings.OptionsMap, v1.SearchCategory_ALERTS, "ListAlert", globaldb.GetPostgresDB())
+		filteredSearcher = &sacSearcher
+	} else {
+		sacSearcher := alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+		filteredSearcher = &sacSearcher
+	}
+	transformedSortFieldSearcher := sortfields.TransformSortFields(*filteredSearcher)
 	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	withDefaultViolationState := withDefaultActiveViolations(defaultSortedSearcher)

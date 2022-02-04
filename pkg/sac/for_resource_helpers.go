@@ -3,6 +3,8 @@ package sac
 import (
 	"context"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/search"
@@ -46,6 +48,14 @@ func (h ForResourceHelper) WriteAllowed(ctx context.Context, keys ...ScopeKey) (
 // search helper could not be created.
 func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap) SearchHelper {
 	searchHelper, err := NewSearchHelper(h.resourceMD, options)
+	utils.CrashOnError(err)
+	return searchHelper
+}
+
+// MustCreatePgSearchHelper creates and returns a search helper with the given options, or panics if the
+// search helper could not be created.
+func (h ForResourceHelper) MustCreatePgSearchHelper(options search.OptionsMap, searchCategory v1.SearchCategory, statsLabel string, pool *pgxpool.Pool) search.Searcher {
+	searchHelper, err := NewPgSearchHelper(h.resourceMD, options, searchCategory, statsLabel, pool)
 	utils.CrashOnError(err)
 	return searchHelper
 }

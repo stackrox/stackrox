@@ -89,14 +89,13 @@ func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
 }
 
 func (a *globalScopeChecker) NeedsPostFiltering() bool {
-	return true
-	// TODO : toggle to the following code once the scope filter extraction is implemented
 	// The scope is known and can therefore be injected as scope filter
-	//return false
+	return false
 }
 
 func (a *globalScopeChecker) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	panic("not implemented")
+	// Match Deny from TryAllowed
+	return effectiveaccessscope.RestrictedEffectiveAccessScope(), nil
 }
 
 func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
@@ -193,7 +192,18 @@ func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(_ context.Context) 
 	//1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
 	//2. For every role get it's effective access scope (EAS)
 	//3. Merge all EAS into a single tree
-	panic("implement me!")
+	if a.access < storage.Access_READ_ACCESS {
+		return effectiveaccessscope.RestrictedEffectiveAccessScope(), nil
+	}
+	var eas *effectiveaccessscope.ScopeTree
+	for _, role := range a.roles {
+		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
+		if err != nil {
+			return nil, err
+		}
+		eas = effectiveaccessscope.MergeEffectiveAccessScopes(eas, scope)
+	}
+	return eas, nil
 }
 
 func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {

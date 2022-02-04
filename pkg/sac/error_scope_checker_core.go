@@ -25,11 +25,9 @@ func (s errScopeCheckerCore) PerformChecks(ctx context.Context) error {
 }
 
 func (s errScopeCheckerCore) NeedsPostFiltering() bool {
-	// Return `true` to indicate post-filtering is required, which will perform
-	// the TryAllowed and PerformChecks steps to eventually yield an error
-	// TODO: implement alternative where pre-filter generation yields the error
-	// TODO: toggle logic to false once above todo is implemented
-	return true
+	// The sac flow when no post filtering is needed should rely on the
+	// EffectiveAccessScope function, which will surface the error.
+	return false
 }
 
 // ErrorAccessScopeCheckerCore returns an access scope checker that always returns an error.

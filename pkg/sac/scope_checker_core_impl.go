@@ -96,7 +96,10 @@ func (scc *ScopeCheckerCoreImpl) NeedsPostFiltering() bool {
 }
 
 func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	panic("Implement me!")
+	// This function should not be called, as the flow should go through unfiltered query followed by
+	// post-filtering of the results
+	// Allow unfiltered data access, the filtering will occur later in the search flow
+	return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 }
 
 // SetState sets the Allow/Deny/Unknown state of this ScopeCheckerCore, it should only be called by RootScopeCheckerCore
