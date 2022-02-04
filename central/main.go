@@ -391,6 +391,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		//
 		//`create index if not exists processindicators_id on processindicators using hash ((id));`,
 		//`create index if not exists processindicators_deploymentid on processindicators using hash (DeploymentId);`,
+		`create index if not exists alert_sac on alert(entity_deployment_namespace, entity_deployment_clusterid, state, id)`,
 	}
 
 	for _, index := range indexes {

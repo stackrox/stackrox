@@ -412,7 +412,10 @@ func (s *storeImpl) Walk(fn func(obj *storage.{{.Type}}) error) error {
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}
-		return fn(msg.(*storage.{{.Type}}))
+		walkErr := fn(msg.(*storage.{{.Type}}))
+		if walkErr != nil {
+			return walkErr
+		}
 	}
 	return nil
 }

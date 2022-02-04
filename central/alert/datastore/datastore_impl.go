@@ -125,7 +125,7 @@ func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
 	return ds.Count(ctx, activeQuery)
 }
 
-// AddAlert inserts an alert into storage and into the indexer
+// UpsertAlert inserts an alert into storage and into the indexer
 func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpsertAlert")
 
@@ -139,7 +139,7 @@ func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) 
 	return ds.updateAlertNoLock(alert)
 }
 
-// UpdateAlert updates an alert in storage and in the indexer
+// UpdateAlertBatch updates an alert in storage and in the indexer
 func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Alert, waitGroup *sync.WaitGroup, c chan error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpdateAlertBatch")
 
@@ -164,7 +164,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 	}
 }
 
-// UpdateAlert updates an alert in storage and in the indexer
+// UpsertAlerts updates a batch of alerts in storage and in the indexer
 func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage.Alert) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpsertAlerts")
 

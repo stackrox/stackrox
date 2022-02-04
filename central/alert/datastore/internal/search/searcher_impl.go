@@ -18,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -29,8 +28,6 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.ViolationTime.String(),
 		Reversed: true,

@@ -3,6 +3,7 @@ package sac
 import (
 	"context"
 	"math"
+	"strings"
 	"time"
 
 	bleveSearchLib "github.com/blevesearch/bleve/search"
@@ -251,6 +252,19 @@ func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap searc
 	}, nil
 }
 
+func exactSearchString(searchString string) string {
+	var builder strings.Builder
+	builder.WriteByte('"')
+	builder.WriteString(searchString)
+	builder.WriteByte('"')
+	return builder.String()
+}
+
+func appendSearchQuery(queries []*v1.Query, searchField search.FieldLabel, searchValue string) []*v1.Query {
+	subQuery := search.NewQueryBuilder().AddStrings(searchField, exactSearchString(searchValue))
+	return append(queries, subQuery.ProtoQuery())
+}
+
 func buildClusterLevelSACQueryFilter(sacTree *effectiveaccessscope.ScopeTree) *v1.Query {
 	if sacTree == nil {
 		return nil
@@ -263,8 +277,7 @@ func buildClusterLevelSACQueryFilter(sacTree *effectiveaccessscope.ScopeTree) *v
 	for _, clusterID := range clusterIDs {
 		clusterAccessScope := sacTree.GetClusterByID(clusterID)
 		if clusterAccessScope.State == effectiveaccessscope.Included {
-			clusterSubQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID)
-			clusterQueries = append(clusterQueries, clusterSubQuery.ProtoQuery())
+			clusterQueries = appendSearchQuery(clusterQueries, search.ClusterID, clusterID)
 		}
 	}
 	if len(clusterQueries) == 0 {
@@ -285,15 +298,14 @@ func buildClusterNamespaceLevelSACQueryFilter(sacTree *effectiveaccessscope.Scop
 	for _, clusterID := range clusterIDs {
 		clusterAccessScope := sacTree.GetClusterByID(clusterID)
 		if clusterAccessScope.State == effectiveaccessscope.Included {
-			clusterSubQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID)
-			clusterQueries = append(clusterQueries, clusterSubQuery.ProtoQuery())
+			clusterQueries = appendSearchQuery(clusterQueries, search.ClusterID, clusterID)
 		} else if clusterAccessScope.State == effectiveaccessscope.Partial {
-			clusterMatchQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID)
+			clusterSearchID := exactSearchString(clusterID)
+			clusterMatchQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterSearchID)
 			namespaceQueries := make([]*v1.Query, 0, len(clusterAccessScope.Namespaces))
 			for namespaceName, namespaceAccessScope := range clusterAccessScope.Namespaces {
 				if namespaceAccessScope.State == effectiveaccessscope.Included {
-					namespaceSubQuery := search.NewQueryBuilder().AddStrings(search.Namespace, namespaceName)
-					namespaceQueries = append(namespaceQueries, namespaceSubQuery.ProtoQuery())
+					namespaceQueries = appendSearchQuery(namespaceQueries, search.Namespace, namespaceName)
 				}
 			}
 			if len(namespaceQueries) > 0 {

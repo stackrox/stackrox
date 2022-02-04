@@ -336,7 +336,10 @@ func (s *storeImpl) Walk(fn func(obj *storage.NamespaceMetadata) error) error {
 		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
 			return err
 		}
-		return fn(&msg)
+		walkErr := fn(&msg)
+		if walkErr != nil {
+			return walkErr
+		}
 	}
 	return nil
 }
