@@ -6,6 +6,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- Improved accuracy of active component and vulnerability and presented it with higher confidence.
+  - Added `Active` state to list of components and list of vulnerabilities under Vulnerability Management within the scope of a specific deployment.
+  - Added `Inactive` state: the component or vulnerability was not run in the specific deployment.
+  - Added image scope so that the Active State can be determined in the scope of a deployment for a specific image.
+- The default gRPC port in Scanner's config map is changed to 8443, as that is what Scanner has actually been defaulting to this whole time.
+  - Note: Scanner had been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expected `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
+- Scanner now supports Alpine 3.15.
+- CVEs in Ubuntu images will no longer link to http://people.ubuntu.com/~ubuntu-security/cve/<CVE>. Now it links to https://ubuntu.com/security/<CVE>.
+
 ## [68.0]
 
 - AWS ECR integration supports AssumeRole authentication.
