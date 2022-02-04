@@ -283,6 +283,15 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixtureAdvancedOpts(verbToE
 }
 
 func newTestRepo(secrets map[storage.ServiceType]*v1.Secret, secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
-	return newServiceCertificatesRepo(mtls.CACertFileName, mtls.ServiceCertFileName, mtls.ServiceKeyFileName,
-		secrets, secretsClient)
+	secretsInfo := make(map[storage.ServiceType]serviceCertificateSecret)
+	for serviceType, secret := range secrets {
+		secretsInfo[serviceType] = serviceCertificateSecret{
+			secret:              secret,
+			caCertFileName:      mtls.CACertFileName,
+			serviceCertFileName: mtls.ServiceCertFileName,
+			serviceKeyFileName:  mtls.ServiceKeyFileName,
+		}
+	}
+
+	return newServiceCertificatesRepo(secretsInfo, secretsClient)
 }

@@ -31,8 +31,12 @@ type serviceCertificatesRepo interface {
 // - secrets and secretsClient are read-only, except the field Data of the entries in secrets.
 // - No secret in secrets is nil.
 type serviceCertificatesRepoSecretsImpl struct {
-	secrets             map[storage.ServiceType]*v1.Secret
-	secretsClient       corev1.SecretInterface
+	secrets       map[storage.ServiceType]serviceCertificateSecret
+	secretsClient corev1.SecretInterface
+}
+
+type serviceCertificateSecret struct {
+	secret              *v1.Secret
 	caCertFileName      string
 	serviceCertFileName string
 	serviceKeyFileName  string
@@ -40,20 +44,16 @@ type serviceCertificatesRepoSecretsImpl struct {
 
 // newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists
 // certificates for the specified services in the corresponding k8s secrets.
-func newServiceCertificatesRepo(caCertFileName, serviceCertFileName, serviceKeyFileName string,
-	secrets map[storage.ServiceType]*v1.Secret,
+func newServiceCertificatesRepo(secrets map[storage.ServiceType]serviceCertificateSecret,
 	secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
 	for serviceType, secret := range secrets {
-		if secret == nil {
+		if secret.secret == nil {
 			return nil, errors.Errorf("nil secrets for service type %q", serviceType)
 		}
 	}
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets:             secrets,
-		secretsClient:       secretsClient,
-		caCertFileName:      caCertFileName,
-		serviceCertFileName: serviceCertFileName,
-		serviceKeyFileName:  serviceKeyFileName,
+		secrets:       secrets,
+		secretsClient: secretsClient,
 	}, nil
 }
 
@@ -67,8 +67,8 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 	var firstServiceTypeWithCA storage.ServiceType
 	var getErr error
-	for serviceType, secret := range r.secrets {
-		if err := r.getServiceCertificate(ctx, serviceType, secret, certificates, &firstServiceTypeWithCA); err != nil {
+	for serviceType, secretInfo := range r.secrets {
+		if err := r.getServiceCertificate(ctx, serviceType, secretInfo, certificates, &firstServiceTypeWithCA); err != nil {
 			getErr = multierror.Append(getErr, err)
 		}
 		// on context cancellation abort getting other secrets.
@@ -84,11 +84,11 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.Context,
-	serviceType storage.ServiceType, secret *v1.Secret,
+	serviceType storage.ServiceType, secretInfo serviceCertificateSecret,
 	certificates *storage.TypedServiceCertificateSet,
 	firstServiceTypeWithCA *storage.ServiceType) error {
 	// Invariant: no secret in r.secrets is nil.
-	retrievedSecret, err := r.secretsClient.Get(ctx, secret.Name, metav1.GetOptions{})
+	retrievedSecret, err := r.secretsClient.Get(ctx, secretInfo.secret.Name, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "for service type %q", serviceType)
 	}
@@ -97,10 +97,10 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 		return errors.Wrapf(err, "missing for secret data for service type %q", serviceType)
 	}
 	if certificates.GetCaPem() == nil {
-		certificates.CaPem = secretData[r.caCertFileName]
+		certificates.CaPem = secretData[secretInfo.caCertFileName]
 		*firstServiceTypeWithCA = serviceType
 	} else {
-		if !bytes.Equal(certificates.GetCaPem(), secretData[r.caCertFileName]) {
+		if !bytes.Equal(certificates.GetCaPem(), secretData[secretInfo.caCertFileName]) {
 			return errors.Errorf("found different CA PEM in secret Data for service types %q and %q",
 				firstServiceTypeWithCA, serviceType)
 		}
@@ -108,8 +108,8 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	certificates.ServiceCerts = append(certificates.ServiceCerts, &storage.TypedServiceCertificate{
 		ServiceType: serviceType,
 		Cert: &storage.ServiceCertificate{
-			CertPem: secretData[r.serviceCertFileName],
-			KeyPem:  secretData[r.serviceKeyFileName],
+			CertPem: secretData[secretInfo.serviceCertFileName],
+			KeyPem:  secretData[secretInfo.serviceKeyFileName],
 		},
 	})
 
@@ -141,18 +141,18 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.
 func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificate(ctx context.Context, caPem []byte,
 	cert *storage.TypedServiceCertificate) error {
 
-	secret, ok := r.secrets[cert.GetServiceType()]
+	secretInfo, ok := r.secrets[cert.GetServiceType()]
 	if !ok {
 		// we don't know where to persist this.
 		return errors.Errorf("unkown service type %q", cert.GetServiceType())
 	}
 	// Invariant: no secret in r.secrets is nil.
-	secret.Data = map[string][]byte{
-		r.caCertFileName:      caPem,
-		r.serviceCertFileName: cert.GetCert().GetCertPem(),
-		r.serviceKeyFileName:  cert.GetCert().GetKeyPem(),
+	secretInfo.secret.Data = map[string][]byte{
+		secretInfo.caCertFileName:      caPem,
+		secretInfo.serviceCertFileName: cert.GetCert().GetCertPem(),
+		secretInfo.serviceKeyFileName:  cert.GetCert().GetKeyPem(),
 	}
-	if _, err := r.secretsClient.Update(ctx, secret, metav1.UpdateOptions{}); err != nil {
+	if _, err := r.secretsClient.Update(ctx, secretInfo.secret, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrapf(err, "for service type %q", cert.GetServiceType())
 	}
 
