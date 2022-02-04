@@ -13,6 +13,7 @@
   "paths": {
     "/v1/imagesignatureintegrations": {
       "get": {
+        "summary": "GetSignatureIntegrations returns all signature integrations.",
         "operationId": "SignatureIntegrationService_GetSignatureIntegrations",
         "responses": {
           "200": {
@@ -33,7 +34,7 @@
         ]
       },
       "post": {
-        "summary": "PostImageIntegration creates a image integration.",
+        "summary": "PostSignatureIntegration creates a signature integration.",
         "operationId": "SignatureIntegrationService_PostSignatureIntegration",
         "responses": {
           "200": {
@@ -66,7 +67,7 @@
     },
     "/v1/imagesignatureintegrations/{id}": {
       "get": {
-        "summary": "GetImageIntegration returns the image integration given its ID.",
+        "summary": "GetSignatureIntegration returns the signature integration given its ID.",
         "operationId": "SignatureIntegrationService_GetSignatureIntegration",
         "responses": {
           "200": {
@@ -95,7 +96,7 @@
         ]
       },
       "delete": {
-        "summary": "DeleteImageIntegration removes a image integration given its ID.",
+        "summary": "DeleteSignatureIntegration removes a signature integration given its ID.",
         "operationId": "SignatureIntegrationService_DeleteSignatureIntegration",
         "responses": {
           "200": {
@@ -124,7 +125,7 @@
         ]
       },
       "put": {
-        "summary": "PutImageIntegration modifies a given image integration, without using stored credential reconciliation.",
+        "summary": "PutSignatureIntegration modifies a given signature integration.",
         "operationId": "SignatureIntegrationService_PutSignatureIntegration",
         "responses": {
           "200": {
