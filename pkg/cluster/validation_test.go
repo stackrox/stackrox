@@ -53,6 +53,21 @@ func TestPartialValidation(t *testing.T) {
 			},
 			expectedErrors: []string{"collector image may not specify a tag.  Please remove tag '3.2.0-slim' to continue"},
 		},
+		"Cluster with collector image with tag should fail when ProhibitTag is set to true": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
+				cluster.ProhibitTag = true
+				cluster.HelmConfig = &storage.CompleteClusterConfig{} // Not really needed since ProhibitTag is checked first
+			},
+			expectedErrors: []string{"collector image may not specify a tag.  Please remove tag '3.2.0-slim' to continue"},
+		},
+		"Cluster with collector image with sha should fail when ProhibitDigest is set to true": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.CollectorImage = "docker.io/stackrox/collector@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993"
+				cluster.ProhibitDigest = true
+			},
+			expectedErrors: []string{"collector image may not specify a sha. Please remove sha 'sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993' to continue"},
+		},
 		"Cluster with configured collector image without tag is valid": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "docker.io/stackrox/collector"

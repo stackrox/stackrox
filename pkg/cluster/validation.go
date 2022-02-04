@@ -58,7 +58,7 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 			errorList.AddError(errors.Wrapf(err, "invalid collector image '%s'", cluster.GetCollectorImage()))
 		}
 
-		if cluster.GetHelmConfig() == nil || cluster.ProhibitTag {
+		if cluster.ProhibitTag || cluster.GetHelmConfig() == nil {
 			namedTagged, ok := ref.(reference.NamedTagged)
 			if ok {
 				errorList.AddStringf("collector image may not specify a tag.  Please "+
