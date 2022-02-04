@@ -10,7 +10,7 @@ import {
 } from '../../helpers/formHelpers';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
 
-function assertAPITokenLabel() {
+function assertAPITokenTable() {
     const label = labels.authProviders.apitoken;
     cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
     cy.get(`${selectors.title2}:contains("${label}")`);
@@ -24,7 +24,7 @@ function visitAPITokens() {
     cy.intercept('GET', api.integrations.apiTokens).as('getAPITokens');
     cy.visit(visitAPITokensUrl);
     cy.wait('@getAPITokens');
-    assertAPITokenLabel();
+    assertAPITokenTable();
 }
 
 describe('API Token tests', () => {
@@ -61,7 +61,7 @@ describe('API Token tests', () => {
         cy.get('[aria-label="Success Alert"]');
 
         cy.get(selectors.buttons.back).click();
-        assertAPITokenLabel();
+        assertAPITokenTable();
     });
 
     it('should show the generated API token in the table, and be clickable', () => {
@@ -86,7 +86,7 @@ describe('API Token tests', () => {
         cy.get(selectors.buttons.delete).click();
         cy.wait(['@revokeAPIToken', '@getAPITokens']);
 
-        assertAPITokenLabel();
+        assertAPITokenTable();
         cy.get(`tbody td a:contains("${apiTokenName}")`).should('not.exist');
     });
 });

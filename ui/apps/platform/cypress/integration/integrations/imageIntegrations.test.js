@@ -9,7 +9,7 @@ import {
     getSelectOption,
 } from '../../helpers/formHelpers';
 
-function assertImageIntegrationTypeLabel(integrationType) {
+function assertImageIntegrationTable(integrationType) {
     const label = labels.imageIntegrations[integrationType];
     cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
     cy.get(`${selectors.title2}:contains("${label}")`);
@@ -23,7 +23,7 @@ function visitImageIntegrationType(integrationType) {
     cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
     cy.visit(getImageIntegrationTypeUrl(integrationType));
     cy.wait('@getImageIntegrations');
-    assertImageIntegrationTypeLabel(integrationType);
+    assertImageIntegrationTable(integrationType);
 }
 
 function saveImageIntegrationType(integrationType) {
@@ -32,7 +32,7 @@ function saveImageIntegrationType(integrationType) {
     cy.intercept('POST', api.integrations.imageIntegrations, {}).as('postImageIntegration');
     cy.get(selectors.buttons.save).should('be.enabled').click();
     cy.wait(['@postImageIntegration', '@getImageIntegrations']);
-    assertImageIntegrationTypeLabel(integrationType);
+    assertImageIntegrationTable(integrationType);
     cy.location('pathname').should('eq', getImageIntegrationTypeUrl(integrationType));
 }
 

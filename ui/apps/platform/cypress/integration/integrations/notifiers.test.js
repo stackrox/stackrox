@@ -8,7 +8,7 @@ import {
 } from '../../helpers/formHelpers';
 import sampleCert from '../../helpers/sampleCert';
 
-function assertNotifierIntegrationTypeLabel(integrationType) {
+function assertNotifierntegrationTable(integrationType) {
     const label = labels.notifiers[integrationType];
     cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
     cy.get(`${selectors.title2}:contains("${label}")`);
@@ -22,7 +22,7 @@ function visitNotifierIntegrationType(integrationType) {
     cy.intercept('GET', api.integrations.notifiers).as('getNotifierIntegrations');
     cy.visit(getNotifierIntegrationTypeUrl(integrationType));
     cy.wait('@getNotifierIntegrations');
-    assertNotifierIntegrationTypeLabel(integrationType);
+    assertNotifierntegrationTable(integrationType);
 }
 
 function saveNotifierIntegrationType(integrationType) {
@@ -37,7 +37,7 @@ function saveNotifierIntegrationType(integrationType) {
     }
     cy.get(selectors.buttons.save).should('be.enabled').click();
     cy.wait(['@postNotifierIntegration', '@getNotifierIntegrations']);
-    assertNotifierIntegrationTypeLabel(integrationType);
+    assertNotifierntegrationTable(integrationType);
     cy.location('pathname').should('eq', getNotifierIntegrationTypeUrl(integrationType));
 }
 

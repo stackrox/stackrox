@@ -7,7 +7,7 @@ import {
     getInputByLabel,
 } from '../../helpers/formHelpers';
 
-function assertBackupIntegrationTypeLabel(integrationType) {
+function assertBackupIntegrationTable(integrationType) {
     const label = labels.backups[integrationType];
     cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
     cy.get(`${selectors.title2}:contains("${label}")`);
@@ -21,7 +21,7 @@ function visitBackupIntegrationType(integrationType) {
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
     cy.visit(getBackupIntegrationTypeUrl(integrationType));
     cy.wait('@getBackupIntegrations');
-    assertBackupIntegrationTypeLabel(integrationType);
+    assertBackupIntegrationTable(integrationType);
 }
 
 function saveBackupIntegrationType(integrationType) {
@@ -29,7 +29,7 @@ function saveBackupIntegrationType(integrationType) {
     cy.intercept('POST', api.integrations.externalBackups).as('postBackupIntegration');
     cy.get(selectors.buttons.save).should('be.enabled').click();
     cy.wait(['@postBackupIntegration', '@getBackupIntegrations']);
-    assertBackupIntegrationTypeLabel(integrationType);
+    assertBackupIntegrationTable(integrationType);
     cy.location('pathname').should('eq', getBackupIntegrationTypeUrl(integrationType));
 }
 

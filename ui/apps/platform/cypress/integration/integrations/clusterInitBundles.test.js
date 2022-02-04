@@ -8,7 +8,7 @@ import {
 } from '../../helpers/formHelpers';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
 
-function assertClusterInitBundleLabel() {
+function assertClusterInitBundleTable() {
     const label = labels.authProviders.clusterInitBundle;
     cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
     cy.get(`${selectors.title2}:contains("${label}")`);
@@ -22,7 +22,7 @@ function visitClusterInitBundles() {
     cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
     cy.visit(visitClusterInitBundlesUrl);
     cy.wait('@getClusterInitBundles');
-    assertClusterInitBundleLabel();
+    assertClusterInitBundleTable();
 }
 
 describe('Cluster Init Bundle tests', () => {
@@ -72,7 +72,7 @@ describe('Cluster Init Bundle tests', () => {
         );
 
         cy.get(selectors.buttons.back).click();
-        assertClusterInitBundleLabel();
+        assertClusterInitBundleTable();
     });
 
     it('should show the generated Cluster Init Bundle in the table, and be clickable', () => {
@@ -96,7 +96,7 @@ describe('Cluster Init Bundle tests', () => {
         cy.get(selectors.buttons.delete).click();
         cy.wait(['@revokeClusterInitBundle', '@getClusterInitBundles']);
 
-        assertClusterInitBundleLabel();
+        assertClusterInitBundleTable();
         cy.get(`tbody td a:contains("${clusterInitBundleName}")`).should('not.exist');
     });
 });
