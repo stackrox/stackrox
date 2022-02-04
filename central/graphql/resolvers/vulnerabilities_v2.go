@@ -12,6 +12,7 @@ import (
 	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/vulnerabilityrequest/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
@@ -849,7 +850,12 @@ func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
 		return ""
 	}
 
-	states, err := resolver.root.vulnReqMgr.VulnsWithState(resolver.ctx, img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag())
+	states, err := resolver.root.vulnReqQueryMgr.VulnsWithState(resolver.ctx,
+		common.VulnReqScope{
+			Registry: img.GetName().GetRegistry(),
+			Remote:   img.GetName().GetRemote(),
+			Tag:      img.GetName().GetTag(),
+		})
 	if err != nil {
 		log.Error(errors.Wrapf(err, "fetching vuln requests for image %s/%s:%s", img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag()))
 		return ""
@@ -897,7 +903,12 @@ func (resolver *cVEResolver) EffectiveVulnerabilityRequest(ctx context.Context) 
 		return nil, nil
 	}
 
-	req, err := resolver.root.vulnReqMgr.EffectiveVulnReq(ctx, img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag(), resolver.data.GetId())
+	req, err := resolver.root.vulnReqQueryMgr.EffectiveVulnReq(ctx, resolver.data.GetId(),
+		common.VulnReqScope{
+			Registry: img.GetName().GetRegistry(),
+			Remote:   img.GetName().GetRemote(),
+			Tag:      img.GetName().GetTag(),
+		})
 	if err != nil {
 		return nil, err
 	}
