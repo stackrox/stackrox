@@ -163,17 +163,24 @@ function PoliciesTablePage({
         fetchPolicies(query);
     }, [query]);
 
-    return (
-        <PageSection variant="light" isFilled id="policies-table">
-            {isLoading && (
+    if (isLoading) {
+        return (
+            <PageSection variant="light" isFilled id="policies-table-loading">
                 <Bullseye>
                     <Spinner isSVG />
                 </Bullseye>
-            )}
+            </PageSection>
+        );
+    }
+
+    return (
+        <>
             {errorMessage ? (
-                <Bullseye>
-                    <Alert variant="danger" title={errorMessage} />
-                </Bullseye>
+                <PageSection variant="light" isFilled id="policies-table-error">
+                    <Bullseye>
+                        <Alert variant="danger" title={errorMessage} />
+                    </Bullseye>
+                </PageSection>
             ) : (
                 <PoliciesTable
                     notifiers={notifiers}
@@ -217,7 +224,7 @@ function PoliciesTablePage({
                     </Alert>
                 ))}
             </AlertGroup>
-        </PageSection>
+        </>
     );
 }
 
