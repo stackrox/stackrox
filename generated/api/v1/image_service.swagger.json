@@ -413,6 +413,12 @@
       "properties": {
         "path": {
           "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
