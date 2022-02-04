@@ -75,7 +75,7 @@ wait_10s_for() {
   "${args[@]}" "$file"
 }
 
-assert_single_registry() {
+assert_bundle_registry() {
   local dir="$1"
   local component="$2"
   local regex="$3"

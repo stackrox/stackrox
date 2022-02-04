@@ -8,8 +8,8 @@ cluster_name="override-test-cluster"
 setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq || skip "Tests in this file require yq"
-  [[ -n "$API_ENDPOINT" ]] || skip "API_ENDPOINT environment variable required"
-  [[ -n "$ROX_PASSWORD" ]] || skip "ROX_PASSWORD environment variable required"
+  [[ -n "$API_ENDPOINT" ]] || fail "API_ENDPOINT environment variable required"
+  [[ -n "$ROX_PASSWORD" ]] || fail "ROX_PASSWORD environment variable required"
 }
 
 setup() {
@@ -22,52 +22,51 @@ teardown() {
 
 dev_registry_regex="docker\.io/stackrox"
 any_version="[0-9]+\.[0-9]+\."
-any_version_latest="[0-9]+\.[0-9]+\.[0-9]+\-latest"
-any_version_slim="[0-9]+\.[0-9]+\.[0-9]+\-slim"
+any_version_latest="${any_version}[0-9]+\-latest"
+any_version_slim="${any_version}[0-9]+\-slim"
 
 @test "roxctl sensor generate: no overrides" {
   generate_bundle k8s --name "$cluster_name"
   assert_success
-  assert_single_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
-  assert_single_registry "$out_dir" "collector" "$dev_registry_regex/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
+  assert_bundle_registry "$out_dir" "collector" "$dev_registry_regex/collector:$any_version_slim"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: no overrides with collector full" {
   generate_bundle k8s "--slim-collector=false" --name "$cluster_name"
   assert_success
-  assert_single_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
-  assert_single_registry "$out_dir" "collector" "$dev_registry_regex/collector:$any_version_latest"
+  assert_bundle_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
+  assert_bundle_registry "$out_dir" "collector" "$dev_registry_regex/collector:$any_version_latest"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: with main image override. Collector should be derived from main override" {
   generate_bundle k8s "--main-image-repository=example.com/stackrox/main" --name "$cluster_name"
   assert_success
-  assert_single_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version"
-  assert_single_registry "$out_dir" "collector" "example\.com/stackrox/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version"
+  assert_bundle_registry "$out_dir" "collector" "example\.com/stackrox/collector:$any_version_slim"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: with collector override" {
   generate_bundle k8s "--collector-image-repository=example2.com/stackrox/collector" --name "$cluster_name"
   assert_success
-  assert_single_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
-  assert_single_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
+  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_slim"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: with different overrides" {
   generate_bundle k8s "--main-image-repository=example.com/stackrox/main" "--collector-image-repository=example2.com/stackrox/collector" --name "$cluster_name"
   assert_success
-  assert_single_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version"
-  assert_single_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version"
+  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_slim"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: should fail if main image is provided with tag" {
-  # TODO(RS-389): once we no longer accept tags in the main image this test should pass
-  skip
+  skip "#TODO(RS-389): once we no longer accept tags in the main image this test should pass"
   generate_bundle k8s "--main-image-repository=example.com/stackrox/main:1.2.3" --name "$cluster_name"
   assert_failure
 }
