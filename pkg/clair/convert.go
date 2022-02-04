@@ -154,7 +154,6 @@ func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent
 			component.Vulns = append(component.Vulns, convertedVuln)
 		}
 	}
-
 	executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.Executables))
 	for _, executable := range feature.Executables {
 		imageComponentIds := make([]string, 0, len(executable.RequiredFeatures))
