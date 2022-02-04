@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# TODO: Move to stackrox/dev-tools/helmdiff.sh directory
-
-set -e
+set -euo pipefail
 
 DEV_TOOLS_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CHARTS="central-services secured-cluster-services"
@@ -53,14 +51,15 @@ cat <<EOF
 === ${TMP_ROOT} ===
 
 To compare helm charts:
-diff -ruN "${TMP_ROOT}/*-old" "${TMP_ROOT}/*-new"
+diff -ruN "${TMP_ROOT}/central-services-old" "${TMP_ROOT}/central-services-new"
+diff -ruN "${TMP_ROOT}/secured-cluster-services-old" "${TMP_ROOT}/secured-cluster-services-new"
 
 To compare stackrox-central-services chart installation (Kubernetes manifests):"
 diff -ruN \
   ${TMP_ROOT}/central-services-old-installation.yaml \
   ${TMP_ROOT}/central-services-new-installation.yaml
 
-To compare stackrox-central-services chart installation (Kubernetes manifests):"
+To compare secured-cluster-services chart installation (Kubernetes manifests):"
 diff -ruN \
   ${TMP_ROOT}/secured-cluster-services-old-installation.yaml \
   ${TMP_ROOT}/secured-cluster-services-new-installation.yaml
