@@ -29,6 +29,9 @@ test_upgrade() {
     export LOAD_BALANCER="lb"
     export MONITORING_SUPPORT="false"
     export CLUSTER_TYPE_FOR_TEST=K8S
+    require_environment "LONGTERM_LICENSE"
+    export ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
+
     if is_CI; then
         export ROXCTL_IMAGE_REPO="quay.io/$QUAY_REPO/roxctl"
     fi
@@ -68,7 +71,6 @@ preamble() {
 
     require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl"
     require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader"
-    require_environment "ROX_LICENSE_KEY"
 
     info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
     if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
