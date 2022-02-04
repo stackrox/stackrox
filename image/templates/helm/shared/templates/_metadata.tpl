@@ -164,10 +164,6 @@
 {{- $ := index . 0 -}}
 {{- $name := index . 1 -}}
 
-{{- if $._rox.globalPrefixInitialized -}}
-    {{- include "srox.initGlobalPrefix" (list $) -}}
-{{- end -}}
-
 {{- if eq $.Release.Namespace "stackrox" -}}
   {{- /* Standard namespace, use resource name as is. */ -}}
   {{- $name -}}
@@ -175,7 +171,6 @@
   {{- /* Add global prefix to resource name. */ -}}
   {{- printf "%s-%s" $._rox.globalPrefix (trimPrefix "stackrox-" $name) -}}
 {{- end -}}
-
 {{- end -}}
 
 {{/*
@@ -195,8 +190,5 @@
 
 {{ if ne $._rox.globalPrefix "stackrox" }}
   {{ include "srox.note" (list $ (printf "Global Kubernetes resources are prefixed with '%s'." $._rox.globalPrefix)) }}
-{{ end }}
-
-{{ $_ = set $._rox.globalPrefixInitialized true }}
-
-{{ end }}
+{{- end -}}
+{{- end -}}

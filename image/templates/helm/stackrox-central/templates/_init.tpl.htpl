@@ -58,6 +58,9 @@
   {{ end }}
 {{ end }}
 
+{{/* Initialize global prefix */}}
+{{- include "srox.initGlobalPrefix" (list $) -}}
+
 {{/*
     API Server setup. The problem with `.Capabilities.APIVersions` is that Helm does not
     allow setting overrides for those when using `helm template` or `--dry-run`. Thus,
