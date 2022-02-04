@@ -2,6 +2,7 @@ import static com.jayway.restassured.RestAssured.given
 
 import com.jayway.restassured.response.Response
 import io.grpc.StatusRuntimeException
+import java.util.concurrent.TimeUnit
 import orchestratormanager.OrchestratorTypes
 import org.yaml.snakeyaml.Yaml
 
@@ -32,6 +33,8 @@ import util.NetworkGraphUtil
 import util.Timer
 
 import org.junit.Assume
+import org.junit.Rule
+import org.junit.rules.Timeout
 import org.junit.experimental.categories.Category
 import spock.lang.Ignore
 import spock.lang.Shared
@@ -40,6 +43,9 @@ import spock.lang.Unroll
 
 @Stepwise
 class NetworkFlowTest extends BaseSpecification {
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
 
     // Deployment names
     static final private String UDPCONNECTIONTARGET = "udp-connection-target"
