@@ -10,6 +10,12 @@ set -u
 
 source "$SCRIPTS_ROOT/scripts/lib.sh"
 
+ensure_CI() {
+    if ! is_CI; then
+        die "A CI environment is required."
+    fi
+}
+
 ci_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: ci_export <env-name> <env-value>"
@@ -18,7 +24,7 @@ ci_export() {
     local env_name="$1"
     local env_value="$2"
 
-    if is_CIRCLECI && command -v cci-export > /dev/null; then
+    if command -v cci-export >/dev/null; then
         cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
@@ -39,7 +45,7 @@ setup_deployment_env() {
     require_environment QUAY_RHACS_ENG_RO_PASSWORD
 
     if [[ "$docker_login" == "true" ]]; then
-        docker login -u  "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin <<<"${QUAY_RHACS_ENG_RO_PASSWORD}" quay.io
+        docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
     fi
 
     if [[ "$use_websocket" == "true" ]]; then
