@@ -51,6 +51,8 @@ func newGRPCClient(endpoint string) (*client, error) {
 		return nil, errors.Wrap(err, "failed to connect to Scanner")
 	}
 
+	log.Infof("Connected to Scanner at %s", endpoint)
+
 	return &client{
 		client: scannerV1.NewImageScanServiceClient(conn),
 		conn:   conn,
