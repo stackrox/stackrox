@@ -10,37 +10,39 @@ import (
 
 func TestRoxErrorIs(t *testing.T) {
 	errNotFound := makeSentinel("base not found")
-	errNotFound1 := makeSentinel("base not found")
-
-	assert.NotErrorIs(t, errNotFound, errNotFound1)
-
-	errA := New(errNotFound, "a not found")
-	errA1 := New(errNotFound, "a not found")
-	errB := New(errNotFound, "b not found")
-	errAA := New(errA, "aa not found")
-
-	assert.ErrorIs(t, errA, errNotFound)
-	assert.ErrorIs(t, errB, errNotFound)
-	assert.ErrorIs(t, errAA, errNotFound)
-	assert.ErrorIs(t, errNotFound, errNotFound)
 	assert.NotErrorIs(t, AlreadyExists, errNotFound)
-	assert.NotErrorIs(t, errA, nil)
-	assert.NotErrorIs(t, errA, errA1)
-
-	assert.NotErrorIs(t, errB, errA)
-	assert.NotErrorIs(t, errA, errB)
-	assert.NotErrorIs(t, errB, errAA)
-	assert.NotErrorIs(t, errAA, errB)
-	assert.NotErrorIs(t, errA, errAA)
-	assert.ErrorIs(t, errAA, errA)
-	assert.NotErrorIs(t, errA, AlreadyExists)
-
-	assert.ErrorIs(t, errors.WithMessage(errA, "message"), errA)
-	assert.ErrorIs(t, errors.WithMessage(errAA, "message"), errA)
-	assert.NotErrorIs(t, errors.WithMessage(errB, "message"), errA)
-
+	assert.ErrorIs(t, errNotFound, errNotFound)
 	assert.NotErrorIs(t, errNotFound, errors.New("some error"))
 	assert.NotErrorIs(t, errors.New("some error"), errNotFound)
+
+	errNotFound1 := makeSentinel("base not found")
+	assert.NotErrorIs(t, errNotFound, errNotFound1)
+
+	fileNotFound := New(errNotFound, "file not found")
+	cpuNotFound := New(errNotFound, "CPU not found")
+	googleNotFound := New(errNotFound, "Google not found")
+	movieNotFound := New(fileNotFound, "movie not found")
+
+	assert.ErrorIs(t, fileNotFound, errNotFound)
+	assert.ErrorIs(t, googleNotFound, errNotFound)
+	assert.ErrorIs(t, movieNotFound, fileNotFound)
+	assert.ErrorIs(t, movieNotFound, errNotFound)
+
+	assert.NotErrorIs(t, fileNotFound, nil)
+	assert.NotErrorIs(t, fileNotFound, cpuNotFound)
+	assert.NotErrorIs(t, fileNotFound, movieNotFound)
+	assert.NotErrorIs(t, fileNotFound, AlreadyExists)
+	assert.NotErrorIs(t, fileNotFound, googleNotFound)
+
+	assert.NotErrorIs(t, googleNotFound, fileNotFound)
+	assert.NotErrorIs(t, googleNotFound, movieNotFound)
+
+	assert.NotErrorIs(t, movieNotFound, googleNotFound)
+
+	assert.ErrorIs(t, errors.WithMessage(fileNotFound, "message"), fileNotFound)
+	assert.ErrorIs(t, errors.WithMessage(movieNotFound, "message"), fileNotFound)
+
+	assert.NotErrorIs(t, errors.WithMessage(googleNotFound, "message"), fileNotFound)
 }
 
 func TestErrorMessage(t *testing.T) {

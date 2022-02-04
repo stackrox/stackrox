@@ -4,7 +4,8 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
+	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
 	"google.golang.org/grpc"
 )
 
@@ -12,7 +13,7 @@ import (
 // Note: this interceptor should ONLY be used in dev builds.
 func PanicOnInvariantViolationUnaryInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
-	if errors.Is(err, errorhelpers.ErrInvariantViolation) {
+	if errors.Is(err, errox.InvariantViolation) {
 		panic(err)
 	}
 	return resp, err
@@ -22,7 +23,7 @@ func PanicOnInvariantViolationUnaryInterceptor(ctx context.Context, req interfac
 // Note: this interceptor should ONLY be used in dev builds.
 func PanicOnInvariantViolationStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	err := handler(srv, ss)
-	if errors.Is(err, errorhelpers.ErrInvariantViolation) {
+	if errors.Is(err, errox.InvariantViolation) {
 		panic(err)
 	}
 	return err
@@ -31,10 +32,10 @@ func PanicOnInvariantViolationStreamInterceptor(srv interface{}, ss grpc.ServerS
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.
 func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
-	return resp, ErrToGRPCStatus(err).Err()
+	return resp, errox_grpc.ErrToGRPCStatus(err).Err()
 }
 
 // ErrorToGrpcCodeStreamInterceptor translates common errors defined in errorhelpers to GRPC codes.
 func ErrorToGrpcCodeStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	return ErrToGRPCStatus(handler(srv, ss)).Err()
+	return errox_grpc.ErrToGRPCStatus(handler(srv, ss)).Err()
 }

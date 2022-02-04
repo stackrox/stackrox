@@ -1,14 +1,15 @@
-package errors
+package grpc
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/errox"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// unwrapGRPCStatus unwraps the `err` chain to find an error
+// implementing `GRPCStatus()`.
 func unwrapGRPCStatus(err error) *status.Status {
 	var se interface{ GRPCStatus() *status.Status }
 	if errors.As(err, &se) {
@@ -23,21 +24,17 @@ func ErrToGRPCStatus(err error) *status.Status {
 		return se
 	}
 	var code codes.Code
+	// `status.FromError()` doesn't unwrap the `err` chain, so unwrap it here.
 	if se := unwrapGRPCStatus(err); se != nil {
 		code = se.Code()
 	} else {
-		code = roxErrorToGRPCCode(err)
+		code = RoxErrorToGRPCCode(err)
 	}
 	return status.New(code, err.Error())
 }
 
-// ErrToHTTPStatus maps known internal and gRPC errors to the appropriate
-// HTTP status code.
-func ErrToHTTPStatus(err error) int {
-	return runtime.HTTPStatusFromCode(ErrToGRPCStatus(err).Code())
-}
-
-func roxErrorToGRPCCode(err error) codes.Code {
+// RoxErrorToGRPCCode translates known sentinel errors to according gRPC codes.
+func RoxErrorToGRPCCode(err error) codes.Code {
 	switch {
 	case err == nil:
 		return codes.OK

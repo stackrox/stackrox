@@ -5,9 +5,10 @@ import (
 )
 
 // Sentinel errors for generic error classes.
-// Note that error messages are the only reliable indicator of
-// the error type in some cases, e.g., when embedded into a GraphQL response,
-// thus changing them might break error matching for some clients, e.g., the UI.
+//
+// Note that error messages are the only reliable indicator of the error type
+// in some cases, e.g., when embedded into a GraphQL response, thus changing
+// them might break error matching for some clients, e.g., the UI.
 var (
 	AlreadyExists             = makeSentinel("already exists")
 	InvalidArgs               = makeSentinel("invalid arguments")
