@@ -87,11 +87,9 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	}
 	if features.VulnRiskManagement.Enabled() {
 		// This handles updating image-cve edges and reprocessing affected deployments.
-		go func() {
-			if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, suppressCVEReqToVulnReq(request, createdAt)); err != nil {
-				log.Error(err)
-			}
-		}()
+		if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, suppressCVEReqToVulnReq(request, createdAt)); err != nil {
+			log.Error(err)
+		}
 	} else {
 		go s.reprocessDeployments()
 	}
