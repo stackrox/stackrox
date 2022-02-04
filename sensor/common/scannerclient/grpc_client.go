@@ -26,7 +26,7 @@ type client struct {
 // newGRPCClient creates a new Scanner client.
 func newGRPCClient(endpoint string) (*client, error) {
 	if endpoint == "" {
-		// No Scanner connection desired.
+		log.Info("No Scanner connection desired")
 		return nil, nil
 	}
 
