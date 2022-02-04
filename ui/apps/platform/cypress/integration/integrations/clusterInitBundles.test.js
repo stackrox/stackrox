@@ -6,6 +6,7 @@ import {
     getInputByLabel,
     generateNameWithRandomString,
 } from '../../helpers/formHelpers';
+import { visitIntegrationsTable } from '../../helpers/integrations';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
 
 function assertClusterInitBundleTable() {
@@ -19,9 +20,7 @@ const createClusterInitBundleUrl = `${url}/authProviders/clusterInitBundle/creat
 const viewClusterInitBundleUrl = `${url}/authProviders/clusterInitBundle/view/`; // followed by id
 
 function visitClusterInitBundles() {
-    cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
-    cy.visit(visitClusterInitBundlesUrl);
-    cy.wait('@getClusterInitBundles');
+    visitIntegrationsTable(visitClusterInitBundlesUrl);
     assertClusterInitBundleTable();
 }
 

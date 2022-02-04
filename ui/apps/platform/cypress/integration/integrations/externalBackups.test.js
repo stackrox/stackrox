@@ -6,6 +6,7 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
+import { visitIntegrationsTable } from '../../helpers/integrations';
 
 function assertBackupIntegrationTable(integrationType) {
     const label = labels.backups[integrationType];
@@ -18,6 +19,9 @@ function getBackupIntegrationTypeUrl(integrationType) {
 }
 
 function visitBackupIntegrationType(integrationType) {
+    visitIntegrationsTable(getBackupIntegrationTypeUrl(integrationType));
+    cy.intercept('GET', api.integrations.apiTokens).as('getAPITokens');
+    cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
     cy.visit(getBackupIntegrationTypeUrl(integrationType));
     cy.wait('@getBackupIntegrations');

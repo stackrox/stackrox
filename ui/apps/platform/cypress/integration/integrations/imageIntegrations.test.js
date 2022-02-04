@@ -8,6 +8,7 @@ import {
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';
+import { visitIntegrationsTable } from '../../helpers/integrations';
 
 function assertImageIntegrationTable(integrationType) {
     const label = labels.imageIntegrations[integrationType];
@@ -20,9 +21,7 @@ function getImageIntegrationTypeUrl(integrationType) {
 }
 
 function visitImageIntegrationType(integrationType) {
-    cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
-    cy.visit(getImageIntegrationTypeUrl(integrationType));
-    cy.wait('@getImageIntegrations');
+    visitIntegrationsTable(getImageIntegrationTypeUrl(integrationType));
     assertImageIntegrationTable(integrationType);
 }
 

@@ -6,6 +6,7 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
+import { visitIntegrationsTable } from '../../helpers/integrations';
 import sampleCert from '../../helpers/sampleCert';
 
 function assertNotifierntegrationTable(integrationType) {
@@ -19,9 +20,7 @@ function getNotifierIntegrationTypeUrl(integrationType) {
 }
 
 function visitNotifierIntegrationType(integrationType) {
-    cy.intercept('GET', api.integrations.notifiers).as('getNotifierIntegrations');
-    cy.visit(getNotifierIntegrationTypeUrl(integrationType));
-    cy.wait('@getNotifierIntegrations');
+    visitIntegrationsTable(getNotifierIntegrationTypeUrl(integrationType));
     assertNotifierntegrationTable(integrationType);
 }
 
