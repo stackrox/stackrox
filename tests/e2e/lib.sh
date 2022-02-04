@@ -210,9 +210,9 @@ wait_for_api() {
     fi
     set -e
 
-    export API_HOSTNAME="${API_HOSTNAME}"
-    export API_PORT="${API_PORT}"
-    export API_ENDPOINT="${API_ENDPOINT}"
+    ci-export API_HOSTNAME "${API_HOSTNAME}"
+    ci-export API_PORT "${API_PORT}"
+    ci-export API_ENDPOINT "${API_ENDPOINT}"
 }
 
 restore_56_1_backup() {

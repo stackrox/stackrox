@@ -190,9 +190,6 @@ waitForAPI: &waitForAPI
     command: |
       source tests/e2e/lib.sh
       wait_for_api
-      cci-export API_HOSTNAME "$API_HOSTNAME"
-      cci-export API_PORT "$API_PORT"
-      cci-export API_ENDPOINT "$API_ENDPOINT"
 
 alwaysWaitForAPI: &alwaysWaitForAPI
   run:
@@ -200,9 +197,6 @@ alwaysWaitForAPI: &alwaysWaitForAPI
     command: |
       source tests/e2e/lib.sh
       wait_for_api
-      cci-export API_HOSTNAME "$API_HOSTNAME"
-      cci-export API_PORT "$API_PORT"
-      cci-export API_ENDPOINT "$API_ENDPOINT"
     when: always
 
 waitForSensorK8s: &waitForSensorK8s
