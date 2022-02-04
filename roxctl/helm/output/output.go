@@ -3,7 +3,6 @@ package output
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -42,7 +41,7 @@ func getMetaValues(flavorName string, imageFlavorProvided, rhacs, release bool, 
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
 
-func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, imageFlavor string, flavorProvided, rhacs, debug bool, debugChartPath string, logger environment.Logger) error {
+func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, imageFlavor string, flavorProvided, rhacs bool, logger environment.Logger) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
@@ -75,8 +74,8 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, i
 
 	// load image with templates
 	templateImage := image.GetDefaultImage()
-	if debug {
-		templateImage = image.NewImage(os.DirFS(debugChartPath))
+	if flags.IsDebug() {
+		templateImage = flags.GetDebugHelmImage()
 	}
 
 	// Load and render template files.
@@ -103,8 +102,6 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, i
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
 	var removeOutputDir bool
-	var debug bool
-	var debugChartPath string
 	var rhacs bool
 	var imageFlavor string
 
@@ -116,7 +113,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			}
 			chartName := args[0]
 			flavorProvided := cmd.Flags().Changed(flags.ImageDefaultsFlagName)
-			return outputHelmChart(chartName, outputDir, removeOutputDir, imageFlavor, flavorProvided, rhacs, debug, debugChartPath, cliEnvironment.Logger())
+			return outputHelmChart(chartName, outputDir, removeOutputDir, imageFlavor, flavorProvided, rhacs, cliEnvironment.Logger())
 		},
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
@@ -125,9 +122,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		fmt.Sprintf("render RHACS chart flavor (deprecated: use '--%s=%s' instead)", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease))
 
 	if !buildinfo.ReleaseBuild {
-		defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/stackrox/image/")
-		c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
-		c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
+		flags.AddHelmChartDebugSetting(c)
 	}
 	flags.AddImageDefaults(c.PersistentFlags(), &imageFlavor)
 	return c

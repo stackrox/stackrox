@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -310,8 +312,34 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 	}
 
 	for _, fw := range fws {
-		if fw.Hidden || isNoInteractive(fw.Flag) {
+		if fw.Hidden || isNoInteractive(fw.Flag) || fw.Flag == nil {
 			continue
+		}
+
+		// set default values for image-{main,scanner,scanner-db} flags
+		if fw.Flag.Name == flags.FlagNameMainImage || fw.Flag.Name == flags.FlagNameScannerImage || fw.Flag.Name == flags.FlagNameScannerDBImage {
+			imgDefArg := argSlice.findArgByName(flags.FlagNameImageDefaults)
+			if imgDefArg == nil {
+				panic(fmt.Sprintf("unable to find flag '%s'", flags.FlagNameImageDefaults))
+			}
+			var flavor *defaults.ImageFlavor
+			if f, err := defaults.GetImageFlavorByName(imgDefArg.value, buildinfo.ReleaseBuild); err == nil {
+				flavor = &f
+			}
+			switch fw.Flag.Name {
+			case flags.FlagNameMainImage:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.MainImage()
+				}
+			case flags.FlagNameScannerImage:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.ScannerImage()
+				}
+			case flags.FlagNameScannerDBImage:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.ScannerDBImage()
+				}
+			}
 		}
 
 		depUnmet := false
@@ -334,6 +362,14 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 		for !processedSuccessfully {
 			value, commandline := processFlag(fw.Flag)
 
+			// validate value of image-defaults flag
+			if fw.Flag.Name == flags.FlagNameImageDefaults {
+				if _, err := defaults.GetImageFlavorByName(value, buildinfo.ReleaseBuild); value != "" && err != nil {
+					printlnToStderr(err.Error())
+					continue
+				}
+			}
+
 			// Verify flag parsing
 			if value != "" {
 				if err := fw.Value.Set(value); err != nil {
@@ -346,7 +382,7 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 				value = fw.Flag.Value.String()
 			}
 			processedSuccessfully = true
-			argSlice.addArg(arg{commandLine: commandline, flagName: fw.Name})
+			argSlice.addArg(arg{commandLine: commandline, value: value, flagName: fw.Name})
 			if childFlags, exists := fw.childFlags[value]; exists {
 				processFlagWraps(argSlice, childFlags)
 			}
@@ -356,6 +392,15 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 
 type argSlice struct {
 	args []arg
+}
+
+func (a *argSlice) findArgByName(name string) *arg {
+	for _, f := range a.args {
+		if f.flagName == name {
+			return &f
+		}
+	}
+	return nil
 }
 
 func (a *argSlice) addArg(arg arg) {
@@ -373,6 +418,7 @@ func (a *argSlice) flagNameIsSetExplicitly(flagName string) bool {
 
 type arg struct {
 	commandLine string
+	value       string
 	flagName    string
 }
 

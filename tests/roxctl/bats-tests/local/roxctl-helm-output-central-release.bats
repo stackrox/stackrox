@@ -1,12 +1,18 @@
 #!/usr/bin/env bats
 
-load "helpers.bash"
+load "../helpers.bash"
 
 out_dir=""
 
+setup_file() {
+  echo "Testing roxctl version: '$(roxctl-release version)'" >&3
+  command -v yq > /dev/null || skip "Tests in this file require yq"
+  # remove binaries from the previous runs
+  rm -f "$(roxctl-development-cmd)" "$(roxctl-development-release)"
+}
+
 setup() {
   out_dir="$(mktemp -d -u)"
-  command -v yq > /dev/null || skip "Tests in this file require yq"
 }
 
 teardown() {
@@ -78,4 +84,10 @@ teardown() {
   has_deprecation_warning
   has_no_default_flavor_warning
   has_flag_collision_warning
+}
+
+@test "roxctl-release helm output central-services --debug should fail" {
+  run roxctl-release helm output central-services --image-defaults=development_build --output-dir "$out_dir" --debug
+  assert_failure
+  assert_line --regexp "ERROR:[[:space:]]+unknown flag: --debug"
 }
