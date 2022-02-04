@@ -79,3 +79,9 @@ teardown() {
   has_no_default_flavor_warning
   has_flag_collision_warning
 }
+
+@test "roxctl-release helm output central-services --debug should fail" {
+  run roxctl-release helm output central-services --image-defaults=development_build --output-dir "$out_dir" --debug
+  assert_failure
+  assert_line --regexp "ERROR:[[:space:]]+unknown flag: --debug"
+}

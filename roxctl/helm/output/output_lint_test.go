@@ -93,7 +93,7 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 				if tt.flavor != "" {
 					tt.flavorProvided = true
 				}
-				err = outputHelmChart(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, false, "", env.Logger())
+				err = outputHelmChart(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, env.Logger())
 				if tt.wantErr {
 					assert.Error(s.T(), err)
 				} else {
@@ -123,8 +123,6 @@ func (s *HelmChartTestSuite) TestHelmLint() {
 }
 
 func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor string) {
-	const noDebug = false
-	const noDebugChartPath = ""
 	outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
 	t.Cleanup(func() {
 		_ = os.RemoveAll(outputDir)
@@ -134,7 +132,7 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	testIO, _, _, _ := environment.TestIO()
 	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
-	err = outputHelmChart(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, noDebug, noDebugChartPath, env.Logger())
+	err = outputHelmChart(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env.Logger())
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {

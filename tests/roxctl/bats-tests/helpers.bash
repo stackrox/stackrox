@@ -85,6 +85,14 @@ assert_components_registry() {
   done
 }
 
+# TODO ROX-9153 replace with bats-file
+assert_file_exist() {
+  local -r file="$1"
+  if [[ ! -e "$file" ]]; then
+    fail "ERROR: file '$file' does not exist"
+  fi
+}
+
 registry_regex() {
   local registry_slug="$1"
   local component="$2"
@@ -158,6 +166,26 @@ run_invalid_flavor_value_test() {
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
+}
+
+# run_with_debug_flag_test copies chart bundle content into a temporary folder, modifies it, and executes a given command with the debug flag
+run_with_debug_flag_test() {
+  # default debug path argument
+  local chart_src_dir="$GOPATH/src/github.com/stackrox/stackrox/image"
+  [[ -d "$chart_src_dir" ]] || skip "This test requires a chart template located on the file system"
+
+  [[ -n "$chart_debug_dir" ]] || fail "chart_debug_dir is unset"
+
+  cp -r "$chart_src_dir" "$chart_debug_dir"
+  # creating a diff between original and custom chart template to verify that the custom chart is used instead of the default one
+  touch "$chart_debug_dir/templates/helm/shared/templates/bats-test.yaml"
+
+  run "$@" --debug --debug-path "$chart_debug_dir"
+}
+
+assert_debug_templates_exist() {
+    local tpl_dir="${1}"
+    assert_file_exist "$tpl_dir/bats-test.yaml"
 }
 
 has_deprecation_warning() {

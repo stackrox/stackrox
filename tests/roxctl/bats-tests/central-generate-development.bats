@@ -11,10 +11,11 @@ setup_file() {
 
 setup() {
   export out_dir="$(mktemp -d -u)"
+  export chart_debug_dir="$(mktemp -d -u)"
 }
 
 teardown() {
-  rm -rf "$out_dir"
+  rm -rf "$out_dir" "$chart_debug_dir"
 }
 
 # DEV / K8S
@@ -108,3 +109,16 @@ teardown() {
 @test "roxctl-development roxctl central generate openshift --image-defaults=development should use docker.io registry" {
   run_image_defaults_registry_test roxctl-development openshift 'docker.io' 'docker.io' '--image-defaults' 'development_build'
 }
+
+@test "roxctl-development central generate k8s --debug should use the local directory" {
+  run_with_debug_flag_test roxctl-development central generate k8s none --output-dir "$out_dir"
+  assert_success
+  assert_debug_templates_exist "$out_dir/helm/chart/templates"
+}
+
+@test "roxctl-development central generate k8s --debug should fail when debug dir does not exist" {
+  run roxctl-development central generate k8s none --output-dir "$out_dir" --debug --debug-path "/non-existing-dir"
+  assert_failure
+  assert_output --partial "no such file or directory"
+}
+

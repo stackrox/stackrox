@@ -6,11 +6,12 @@ out_dir=""
 
 setup() {
   out_dir="$(mktemp -d -u)"
+  chart_debug_dir="$(mktemp -d -u)"
   command -v yq > /dev/null || skip "Tests in this file require yq"
 }
 
 teardown() {
-  rm -rf "$out_dir"
+  rm -rf "$out_dir" "$chart_debug_dir"
 }
 
 @test "roxctl-development helm output should support --rhacs flag" {
@@ -96,4 +97,16 @@ teardown() {
   has_deprecation_warning
   has_flag_collision_warning
   has_no_default_flavor_warning
+}
+
+@test "roxctl-development helm output central-services --debug should use the local directory" {
+  run_with_debug_flag_test roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir"
+  assert_success
+  assert_debug_templates_exist "$out_dir/templates"
+}
+
+@test "roxctl-development helm output central-services --debug should fail when debug dir does not exist" {
+  run roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir" --debug --debug-path "/non-existing-dir"
+  assert_failure
+  assert_output --partial "no such file or directory"
 }
