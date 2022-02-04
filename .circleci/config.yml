@@ -1530,10 +1530,6 @@ commands:
       - *restoreDB
       - check-stackrox-logs
       - *storeQALogs
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
 
       - teardown-anchore:
           cluster-id: << parameters.cluster-id >>
@@ -3900,10 +3896,6 @@ jobs:
             zip -r /tmp/pprof.zip /tmp/pprof
 
       - *storeProfilingResults
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
       - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
