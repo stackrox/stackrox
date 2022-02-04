@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	clientMetadata "github.com/stackrox/scanner/pkg/clairify/client/metadata"
@@ -156,7 +157,11 @@ func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent
 
 	executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.Executables))
 	for _, executable := range feature.Executables {
-		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.Path}
+		imageComponentIds := make([]string, 0, len(executable.RequiredFeatures))
+		for _, f := range executable.RequiredFeatures {
+			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion()))
+		}
+		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.Path, Dependencies: imageComponentIds}
 		executables = append(executables, exec)
 	}
 	component.Executables = executables

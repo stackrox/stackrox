@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
-	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager"
+	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -87,11 +87,9 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	}
 	if features.VulnRiskManagement.Enabled() {
 		// This handles updating image-cve edges and reprocessing affected deployments.
-		go func() {
-			if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, suppressCVEReqToVulnReq(request, createdAt)); err != nil {
-				log.Error(err)
-			}
-		}()
+		if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, suppressCVEReqToVulnReq(request, createdAt)); err != nil {
+			log.Error(err)
+		}
 	} else {
 		go s.reprocessDeployments()
 	}
@@ -113,11 +111,9 @@ func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.Unsuppress
 	}
 	if features.VulnRiskManagement.Enabled() {
 		// This handles updating image-cve edges and reprocessing affected deployments.
-		go func() {
-			if err := s.vulnReqMgr.UnSnoozeVulnerabilityOnRequest(ctx, unSuppressCVEReqToVulnReq(request)); err != nil {
-				log.Error(err)
-			}
-		}()
+		if err := s.vulnReqMgr.UnSnoozeVulnerabilityOnRequest(ctx, unSuppressCVEReqToVulnReq(request)); err != nil {
+			log.Error(err)
+		}
 	} else {
 		go s.reprocessDeployments()
 	}

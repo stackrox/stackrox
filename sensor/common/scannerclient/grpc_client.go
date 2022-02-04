@@ -26,7 +26,7 @@ type client struct {
 // newGRPCClient creates a new Scanner client.
 func newGRPCClient(endpoint string) (*client, error) {
 	if endpoint == "" {
-		// No Scanner connection desired.
+		log.Info("No Scanner connection desired")
 		return nil, nil
 	}
 
@@ -51,6 +51,8 @@ func newGRPCClient(endpoint string) (*client, error) {
 		return nil, errors.Wrap(err, "failed to connect to Scanner")
 	}
 
+	log.Infof("Connected to Scanner at %s", endpoint)
+
 	return &client{
 		client: scannerV1.NewImageScanServiceClient(conn),
 		conn:   conn,
@@ -73,7 +75,7 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 		return nil, errors.Wrapf(err, "getting image metadata for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
 	}
 
-	log.Debugf("Retrieved metadata for image %s in namespace %s: %v", image.GetName().GetFullName(), image.GetNamespace(), metadata)
+	log.Debugf("Retrieved metadata for image %s in namespace %s", image.GetName().GetFullName(), image.GetNamespace())
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{

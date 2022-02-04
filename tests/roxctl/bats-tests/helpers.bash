@@ -16,26 +16,36 @@ luname() {
 
 tmp_roxctl="tmp/roxctl-bats/bin"
 
-# roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
-roxctl-development() {
+# roxctl-development-cmd prints the path to roxctl built with GOTAGS=''. It builds the binary if needed
+roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
     make -s "cli-${_uname}" GOTAGS='' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
-  "${tmp_roxctl}/roxctl-dev" "$@"
+  echo "${tmp_roxctl}/roxctl-dev"
 }
 
-# roxctl-release runs roxctl built with GOTAGS='release'. It builds the binary if needed
-roxctl-release() {
+# roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
+roxctl-development() {
+   "$(roxctl-development-cmd)" "$@"
+}
+
+# roxctl-development-cmd prints the path to roxctl built with GOTAGS='release'. It builds the binary if needed
+roxctl-release-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
     make -s "cli-${_uname}" GOTAGS='release' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
-  "${tmp_roxctl}/roxctl-release" "$@"
+  echo "${tmp_roxctl}/roxctl-release"
+}
+
+# roxctl-release runs roxctl built with GOTAGS='release'. It builds the binary if needed
+roxctl-release() {
+  "$(roxctl-release-cmd)" "$@"
 }
 
 helm_template_central() {
@@ -55,26 +65,40 @@ assert_helm_template_central_registry() {
   assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$@"
 }
 
+wait_10s_for() {
+  local file="$1"; shift
+  local args=("${@}")
+  for _ in {1..10}; do
+    if "${args[@]}" "$file"; then return 0; fi
+    sleep 1
+  done
+  "${args[@]}" "$file"
+}
+
 assert_components_registry() {
   local dir="$1"
   local registry_slug="$2"
   shift; shift;
 
-  [[ ! -d "$dir" ]] && fail "ERROR: not a directory: '$dir'"
+  # The expect-based tests may be slow and flaky, so let's add timeouts to this assertion
+  wait_10s_for "$dir" "test" "-d" || fail "ERROR: not a directory: '$dir'"
   (( $# < 1 )) && fail "ERROR: 0 components provided"
 
   for component in "${@}"; do
     regex="$(registry_regex "$registry_slug" "$component")"
     case $component in
       main)
+        wait_10s_for "${dir}/01-central-12-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/01-central-12-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "central").image' "${dir}/01-central-12-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
       scanner)
+        wait_10s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "scanner").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
       scanner-db)
+        wait_10s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 1) | .spec.template.spec.containers[] | select(.name == "db").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
@@ -83,6 +107,14 @@ assert_components_registry() {
         ;;
     esac
   done
+}
+
+# TODO ROX-9153 replace with bats-file
+assert_file_exist() {
+  local -r file="$1"
+  if [[ ! -e "$file" ]]; then
+    fail "ERROR: file '$file' does not exist"
+  fi
 }
 
 registry_regex() {
@@ -158,6 +190,26 @@ run_invalid_flavor_value_test() {
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
   assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
+}
+
+# run_with_debug_flag_test copies chart bundle content into a temporary folder, modifies it, and executes a given command with the debug flag
+run_with_debug_flag_test() {
+  # default debug path argument
+  local chart_src_dir="$GOPATH/src/github.com/stackrox/stackrox/image"
+  [[ -d "$chart_src_dir" ]] || skip "This test requires a chart template located on the file system"
+
+  [[ -n "$chart_debug_dir" ]] || fail "chart_debug_dir is unset"
+
+  cp -r "$chart_src_dir" "$chart_debug_dir"
+  # creating a diff between original and custom chart template to verify that the custom chart is used instead of the default one
+  touch "$chart_debug_dir/templates/helm/shared/templates/bats-test.yaml"
+
+  run "$@" --debug --debug-path "$chart_debug_dir"
+}
+
+assert_debug_templates_exist() {
+    local tpl_dir="${1}"
+    assert_file_exist "$tpl_dir/bats-test.yaml"
 }
 
 has_deprecation_warning() {

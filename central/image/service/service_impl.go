@@ -51,8 +51,11 @@ var (
 			"/v1.ImageService/CountImages",
 			"/v1.ImageService/ListImages",
 		},
-		or.Or(idcheck.SensorsOnly(), idcheck.AdmissionControlOnly()): {
+		or.SensorOrAuthorizer(idcheck.AdmissionControlOnly()): {
 			"/v1.ImageService/ScanImageInternal",
+		},
+		idcheck.SensorsOnly(): {
+			"/v1.ImageService/GetImageVulnerabilitiesInternal",
 		},
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/DeleteImages",
