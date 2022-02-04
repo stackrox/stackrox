@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/logging"
@@ -141,6 +142,7 @@ type Config struct {
 	ConfigFileOverrides map[string]string
 
 	RenderOpts *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
+	HelmImage  *image.Image
 }
 
 func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {
