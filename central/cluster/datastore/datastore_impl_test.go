@@ -1305,97 +1305,155 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 
 func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 
-	cases := map[string]struct {
-		kernelSupport bool
-		clusterType   storage.ClusterType
+	suite.Run("Error on nil cluster", func() {
+		suite.Error(addDefaults(nil))
+	})
 
-		expectedSlimCollector       bool
-		expectedAdmissionController bool
-		expectedDisableAuditLogs    bool
-	}{
-		"No kernel suppport / Generic cluster": {
-			kernelSupport:               false,
-			clusterType:                 storage.ClusterType_GENERIC_CLUSTER,
-			expectedSlimCollector:       false,
-			expectedAdmissionController: true,
-			expectedDisableAuditLogs:    true,
-		},
-		"With kernel suppport / Generic cluster": {
-			kernelSupport:               true,
-			clusterType:                 storage.ClusterType_GENERIC_CLUSTER,
-			expectedSlimCollector:       true,
-			expectedAdmissionController: true,
-			expectedDisableAuditLogs:    true,
-		},
-		"No kernel suppport / K8s cluster": {
-			kernelSupport:               false,
-			clusterType:                 storage.ClusterType_KUBERNETES_CLUSTER,
-			expectedSlimCollector:       false,
-			expectedAdmissionController: true,
-			expectedDisableAuditLogs:    true,
-		},
-		"With kernel suppport / K8s cluster": {
-			kernelSupport:               true,
-			clusterType:                 storage.ClusterType_KUBERNETES_CLUSTER,
-			expectedSlimCollector:       true,
-			expectedAdmissionController: true,
-			expectedDisableAuditLogs:    true,
-		},
-		"No kernel suppport / Openshift cluster": {
-			kernelSupport:               false,
-			clusterType:                 storage.ClusterType_OPENSHIFT_CLUSTER,
-			expectedSlimCollector:       false,
-			expectedAdmissionController: false,
-			expectedDisableAuditLogs:    true,
-		},
-		"With kernel suppport / Openshift cluster": {
-			kernelSupport:               true,
-			clusterType:                 storage.ClusterType_OPENSHIFT_CLUSTER,
-			expectedSlimCollector:       true,
-			expectedAdmissionController: false,
-			expectedDisableAuditLogs:    true,
-		},
-		"No kernel suppport / Openshift 4 cluster": {
-			kernelSupport:               false,
-			clusterType:                 storage.ClusterType_OPENSHIFT4_CLUSTER,
-			expectedSlimCollector:       false,
-			expectedAdmissionController: false,
-			expectedDisableAuditLogs:    false,
-		},
-		"With kernel suppport / Openshift 4 cluster": {
-			kernelSupport:               true,
-			clusterType:                 storage.ClusterType_OPENSHIFT4_CLUSTER,
-			expectedSlimCollector:       true,
-			expectedAdmissionController: false,
-			expectedDisableAuditLogs:    false,
-		},
-	}
 	flavor := defaults.GetImageFlavorFromEnv()
-	for name, testCase := range cases {
-		suite.Run(name, func() {
-			cluster := &storage.Cluster{
-				Type:          testCase.clusterType,
-				SlimCollector: testCase.kernelSupport,
-				AdmissionController: testCase.clusterType != storage.ClusterType_OPENSHIFT_CLUSTER &&
-					testCase.clusterType != storage.ClusterType_OPENSHIFT4_CLUSTER,
+	suite.Run("Some default values are set for uninialized fields", func() {
+		cluster := &storage.Cluster{}
+		suite.NoError(addDefaults(cluster))
+		suite.Equal(flavor.MainImageNoTag(), cluster.GetMainImage())
+		suite.Empty(cluster.GetCollectorImage()) // must not be set
+		suite.Equal(centralEndpoint, cluster.GetCentralApiEndpoint())
+		suite.True(cluster.GetRuntimeSupport())
+		suite.Equal(storage.CollectionMethod_KERNEL_MODULE, cluster.GetCollectionMethod())
+		if tc := cluster.GetTolerationsConfig(); suite.NotNil(tc) {
+			suite.False(tc.GetDisabled())
+		}
+		if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
+			suite.True(dc.GetDisableAuditLogs())
+			if acc := dc.GetAdmissionControllerConfig(); suite.NotNil(acc) {
+				suite.False(acc.GetEnabled())
+				suite.Equal(int32(defaultAdmissionControllerTimeout),
+					acc.GetTimeoutSeconds())
 			}
-			err := addDefaults(cluster)
-			suite.NoError(err)
-			suite.Equal(testCase.expectedSlimCollector, cluster.SlimCollector)
-			suite.Equal(testCase.expectedAdmissionController, cluster.AdmissionController)
-			suite.Equal(testCase.expectedDisableAuditLogs, cluster.DynamicConfig.DisableAuditLogs)
+		}
+	})
 
-			suite.Equal(centralEndpoint, cluster.GetCentralApiEndpoint())
-			suite.Equal(flavor.MainImageNoTag(), cluster.GetMainImage())
-			suite.Empty(cluster.GetCollectorImage())
+	suite.Run("Provided values are either not overridden or properly updated", func() {
+		cluster := &storage.Cluster{
+			Id:                         fakeClusterID,
+			Name:                       "someName",
+			Type:                       storage.ClusterType_KUBERNETES_CLUSTER,
+			Labels:                     map[string]string{"key": "value"},
+			MainImage:                  "somevalue",
+			CollectorImage:             "someOtherValue",
+			CentralApiEndpoint:         "someEndpoint",
+			RuntimeSupport:             true,
+			CollectionMethod:           storage.CollectionMethod_EBPF,
+			AdmissionController:        true,
+			AdmissionControllerUpdates: true,
+			AdmissionControllerEvents:  true,
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+					Enabled: true,
+				},
+				RegistryOverride: "registryOverride",
+				DisableAuditLogs: false,
+			},
+			TolerationsConfig: &storage.TolerationsConfig{
+				Disabled: true,
+			},
+			Priority:      10,
+			SlimCollector: true,
+			HelmConfig:    &storage.CompleteClusterConfig{},
+			InitBundleId:  "someId",
+			ManagedBy:     storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR,
+		}
+		suite.NoError(addDefaults(cluster))
+
+		suite.Equal(fakeClusterID, cluster.GetId())
+		suite.Equal("someName", cluster.GetName())
+		suite.Equal(storage.ClusterType_KUBERNETES_CLUSTER, cluster.GetType())
+		suite.EqualValues(map[string]string{"key": "value"}, cluster.GetLabels())
+
+		suite.Equal("somevalue", cluster.GetMainImage())
+		suite.Equal("someOtherValue", cluster.GetCollectorImage())
+		suite.Equal("someEndpoint", cluster.GetCentralApiEndpoint())
+		suite.True(cluster.GetRuntimeSupport())
+		suite.Equal(storage.CollectionMethod_EBPF, cluster.GetCollectionMethod())
+		suite.True(cluster.GetAdmissionController())
+		suite.True(cluster.GetAdmissionControllerUpdates())
+		suite.True(cluster.GetAdmissionControllerEvents())
+		if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
+			suite.Equal("registryOverride", dc.GetRegistryOverride())
+			suite.True(dc.GetDisableAuditLogs()) // True for KUBERNETES_CLUSTER
+			if acc := dc.GetAdmissionControllerConfig(); suite.NotNil(acc) {
+				suite.True(acc.GetEnabled())
+			}
+		}
+		if tc := cluster.GetTolerationsConfig(); suite.NotNil(tc) {
+			suite.True(tc.GetDisabled())
+		}
+		suite.Equal(int64(10), cluster.GetPriority())
+		suite.True(cluster.SlimCollector)
+		suite.NotNil(cluster.GetHelmConfig())
+		suite.Equal("someId", cluster.GetInitBundleId())
+		suite.Equal(storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR, cluster.GetManagedBy())
+	})
+
+	suite.Run("Audit logs", func() {
+		suite.Run("Kubernetes cluster", func() {
+			cluster := &storage.Cluster{
+				Type: storage.ClusterType_KUBERNETES_CLUSTER,
+			}
+			suite.NoError(addDefaults(cluster))
+			if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
+				suite.True(dc.GetDisableAuditLogs())
+			}
 		})
-	}
+		suite.Run("Openshift 3 cluster", func() {
+			cluster := &storage.Cluster{
+				Type: storage.ClusterType_OPENSHIFT_CLUSTER,
+			}
+			suite.NoError(addDefaults(cluster))
+			if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
+				suite.True(dc.GetDisableAuditLogs())
+			}
+		})
+		suite.Run("Openshift 4 cluster", func() {
+			cluster := &storage.Cluster{
+				Type: storage.ClusterType_OPENSHIFT4_CLUSTER,
+			}
+			suite.NoError(addDefaults(cluster))
+			if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
+				suite.False(dc.GetDisableAuditLogs())
+			}
+		})
+	})
 
-	suite.Run("No collector image set when main image provided", func() {
+	suite.Run("Collector image not set when only main image is provided", func() {
 		cluster := &storage.Cluster{
 			MainImage: "somevalue",
 		}
 		suite.NoError(addDefaults(cluster))
 		suite.Empty(cluster.GetCollectorImage())
+	})
+
+	suite.Run("Error for bad timeout", func() {
+		cluster := &storage.Cluster{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+					TimeoutSeconds: -1,
+				}},
+		}
+		suite.Error(addDefaults(cluster))
+	})
+
+	suite.Run("Runtime support defined collection method", func() {
+		cluster := &storage.Cluster{
+			CollectionMethod: storage.CollectionMethod_KERNEL_MODULE,
+		}
+		suite.NoError(addDefaults(cluster))
+		suite.True(cluster.GetRuntimeSupport())
+	})
+
+	suite.Run("No runtime support for NO_COLLECTION collection method", func() {
+		cluster := &storage.Cluster{
+			CollectionMethod: storage.CollectionMethod_NO_COLLECTION,
+		}
+		suite.NoError(addDefaults(cluster))
+		suite.False(cluster.GetRuntimeSupport())
 	})
 }
