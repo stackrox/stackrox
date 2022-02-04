@@ -8,6 +8,7 @@ set -euo pipefail
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 source "$TEST_ROOT/scripts/lib.sh"
+source "$TEST_ROOT/scripts/ci/lib.sh"
 
 get_central_basic_auth_creds() {
     info "Getting central basic auth creds"
@@ -16,6 +17,9 @@ get_central_basic_auth_creds() {
     require_environment "DEPLOY_DIR"
 
     source "$TEST_ROOT/scripts/k8s/export-basic-auth-creds.sh" "$DEPLOY_DIR"
+
+    ci_export "ROX_USERNAME" "$ROX_USERNAME"
+    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
 
 setup_client_CA_auth_provider() {
