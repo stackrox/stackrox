@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load "helpers.bash"
+load "../helpers.bash"
 
 out_dir=""
 
