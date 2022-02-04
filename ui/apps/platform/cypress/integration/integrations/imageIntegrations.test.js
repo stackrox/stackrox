@@ -8,7 +8,7 @@ import {
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';
-import { visitIntegrationsTable } from '../../helpers/integrations';
+import { visitIntegrationsUrl } from '../../helpers/integrations';
 
 function assertImageIntegrationTable(integrationType) {
     const label = labels.imageIntegrations[integrationType];
@@ -21,7 +21,7 @@ function getImageIntegrationTypeUrl(integrationType) {
 }
 
 function visitImageIntegrationType(integrationType) {
-    visitIntegrationsTable(getImageIntegrationTypeUrl(integrationType));
+    visitIntegrationsUrl(getImageIntegrationTypeUrl(integrationType));
     assertImageIntegrationTable(integrationType);
 }
 

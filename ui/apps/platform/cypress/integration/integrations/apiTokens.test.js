@@ -8,7 +8,7 @@ import {
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';
-import { visitIntegrationsTable } from '../../helpers/integrations';
+import { visitIntegrationsUrl } from '../../helpers/integrations';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
 
 function assertAPITokenTable() {
@@ -22,7 +22,7 @@ const createAPITokenUrl = `${url}/authProviders/apitoken/create`;
 const viewAPITokenUrl = `${url}/authProviders/apitoken/view/`; // followed by id
 
 function visitAPITokens() {
-    visitIntegrationsTable(visitAPITokensUrl);
+    visitIntegrationsUrl(visitAPITokensUrl);
     assertAPITokenTable();
 }
 

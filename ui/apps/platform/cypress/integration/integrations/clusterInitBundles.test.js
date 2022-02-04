@@ -6,7 +6,7 @@ import {
     getInputByLabel,
     generateNameWithRandomString,
 } from '../../helpers/formHelpers';
-import { visitIntegrationsTable } from '../../helpers/integrations';
+import { visitIntegrationsUrl } from '../../helpers/integrations';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
 
 function assertClusterInitBundleTable() {
@@ -20,7 +20,7 @@ const createClusterInitBundleUrl = `${url}/authProviders/clusterInitBundle/creat
 const viewClusterInitBundleUrl = `${url}/authProviders/clusterInitBundle/view/`; // followed by id
 
 function visitClusterInitBundles() {
-    visitIntegrationsTable(visitClusterInitBundlesUrl);
+    visitIntegrationsUrl(visitClusterInitBundlesUrl);
     assertClusterInitBundleTable();
 }
 

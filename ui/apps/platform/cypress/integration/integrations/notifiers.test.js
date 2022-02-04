@@ -6,7 +6,7 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
-import { visitIntegrationsTable } from '../../helpers/integrations';
+import { visitIntegrationsUrl } from '../../helpers/integrations';
 import sampleCert from '../../helpers/sampleCert';
 
 function assertNotifierntegrationTable(integrationType) {
@@ -20,7 +20,7 @@ function getNotifierIntegrationTypeUrl(integrationType) {
 }
 
 function visitNotifierIntegrationType(integrationType) {
-    visitIntegrationsTable(getNotifierIntegrationTypeUrl(integrationType));
+    visitIntegrationsUrl(getNotifierIntegrationTypeUrl(integrationType));
     assertNotifierntegrationTable(integrationType);
 }
 

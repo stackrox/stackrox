@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import * as api from '../constants/apiEndpoints';
 
-export function visitIntegrationsTable(url) {
+export function visitIntegrationsUrl(url) {
     cy.intercept('GET', api.integrations.apiTokens).as('getAPITokens');
     cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
