@@ -182,7 +182,7 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 
 	flavor, err := defaults.GetImageFlavorByName(config.K8sConfig.ImageFlavorName, buildinfo.ReleaseBuild)
 	if err != nil {
-		return nil, fmt.Errorf("%w: '--image-defaults': %v", errorhelpers.ErrInvalidArgs, err)
+		return nil, fmt.Errorf("%w: '--%s': %v", errorhelpers.ErrInvalidArgs, flags.ImageDefaultsFlagName, err)
 	}
 
 	files, err := renderer.Render(config, flavor)

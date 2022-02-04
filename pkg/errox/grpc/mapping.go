@@ -5,33 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/errox"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
-
-// unwrapGRPCStatus unwraps the `err` chain to find an error
-// implementing `GRPCStatus()`.
-func unwrapGRPCStatus(err error) *status.Status {
-	var se interface{ GRPCStatus() *status.Status }
-	if errors.As(err, &se) {
-		return se.GRPCStatus()
-	}
-	return nil
-}
-
-// ErrToGRPCStatus wraps an error into a gRPC status with code.
-func ErrToGRPCStatus(err error) *status.Status {
-	if se, ok := status.FromError(err); ok {
-		return se
-	}
-	var code codes.Code
-	// `status.FromError()` doesn't unwrap the `err` chain, so unwrap it here.
-	if se := unwrapGRPCStatus(err); se != nil {
-		code = se.Code()
-	} else {
-		code = RoxErrorToGRPCCode(err)
-	}
-	return status.New(code, err.Error())
-}
 
 // RoxErrorToGRPCCode translates known sentinel errors to according gRPC codes.
 func RoxErrorToGRPCCode(err error) codes.Code {

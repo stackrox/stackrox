@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	errox_http "github.com/stackrox/rox/pkg/errox/http"
+	"github.com/stackrox/rox/pkg/grpc/errors"
 )
 
 func writeHTTPStatus(w http.ResponseWriter, err error) {
@@ -11,5 +11,5 @@ func writeHTTPStatus(w http.ResponseWriter, err error) {
 		return
 	}
 
-	http.Error(w, err.Error(), errox_http.ErrToHTTPStatus(err))
+	http.Error(w, err.Error(), errors.ErrToHTTPStatus(err))
 }

@@ -6,8 +6,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
-	errox_http "github.com/stackrox/rox/pkg/errox/http"
+	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -46,9 +45,9 @@ func StatusFromError(err error) int {
 		return he.HTTPStatusCode()
 	}
 
-	// `errox_http.ErrToHTTPStatus()` must handle both gRPC and known internal
+	// `grpc_errors.ErrToHTTPStatus()` must handle both gRPC and known internal
 	// sentinel errors.
-	return errox_http.ErrToHTTPStatus(err)
+	return grpc_errors.ErrToHTTPStatus(err)
 }
 
 // ErrorFromStatus returns a HTTP error for the given status, or nil if the status does not indicate an error.
@@ -88,7 +87,7 @@ func WriteGRPCStyleErrorf(w http.ResponseWriter, c codes.Code, format string, ar
 //   - else => 500 Internal Server Error with the appropriate message.
 func WriteError(w http.ResponseWriter, err error) {
 	w.WriteHeader(StatusFromError(err))
-	st := errox_grpc.ErrToGRPCStatus(err)
+	st := grpc_errors.ErrToGrpcStatus(err)
 	_ = new(jsonpb.Marshaler).Marshal(w, st.Proto())
 }
 
