@@ -27,7 +27,7 @@ function visitIntegrations() {
         '@getImageIntegrations',
         '@getNotifiers',
     ]);
-    cy.get(selectors.title1);
+    cy.get(`${selectors.title1}:contains("Integrations")`);
 }
 
 describe('Integrations page', () => {

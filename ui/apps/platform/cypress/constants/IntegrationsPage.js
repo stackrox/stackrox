@@ -9,7 +9,7 @@ export const selectors = {
     configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
     navLink: `${navigationSelectors.nestedNavLinks}:contains("Integrations")`,
     breadcrumbItem: '.pf-c-breadcrumb__item',
-    title1: 'h1:contains("Integrations")',
+    title1: 'h1', // for example, append :contains("Integrations")
     title2: 'h2', // for example, append :contains("${integrationLabel}")
     tile: 'a[data-testid="integration-tile"]',
     clusters: {
