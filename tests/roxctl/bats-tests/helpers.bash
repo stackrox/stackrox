@@ -65,10 +65,10 @@ assert_helm_template_central_registry() {
   assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$@"
 }
 
-wait_10s_for() {
+wait_20s_for() {
   local file="$1"; shift
   local args=("${@}")
-  for _ in {1..10}; do
+  for _ in {1..20}; do
     if "${args[@]}" "$file"; then return 0; fi
     sleep 1
   done
