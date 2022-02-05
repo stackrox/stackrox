@@ -35,6 +35,8 @@ RUN yum install -y snappy-devel zlib-devel bzip2-devel lz4-devel
 
 RUN curl -L https://dl.google.com/go/go${GOLANG_VERSION}.linux-amd64.tar.gz | tar -C /usr/local -zxvf -
 
+COPY debug.patch /tmp/
+RUN cd /usr/local/go/src && patch -p0 </tmp/debug.patch
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
