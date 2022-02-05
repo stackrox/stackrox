@@ -45,7 +45,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v1.2.2
+	github.com/go-logr/logr v0.4.0
 	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -109,7 +109,7 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.20.0
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
-	golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba
+	golang.org/x/net v0.0.0-20220127074510-2fabfed7e28f
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
@@ -129,8 +129,8 @@ require (
 	k8s.io/apimachinery v0.22.5
 	k8s.io/apiserver v0.22.5
 	k8s.io/client-go v0.22.5
-	k8s.io/kubectl v0.22.2
-	k8s.io/kubelet v0.22.2
+	k8s.io/kubectl v0.22.5
+	k8s.io/kubelet v0.22.5
 	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
 	sigs.k8s.io/controller-runtime v0.10.2
 	sigs.k8s.io/yaml v1.3.0
@@ -142,7 +142,9 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
+	github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20220125170349-50dfc2733d10 => github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20211216152112-d1271fea6383
 
+	github.com/google/go-containerregistry/pkg/authn/kubernetes v0.0.0-20220125170349-50dfc2733d10 => github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20211222182933-7c19fa370dbd
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819
 	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
@@ -172,6 +174,8 @@ replace (
 
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
+
+	knative.dev/pkg v0.0.0-20220121092305-3ba5d72e310a => knative.dev/pkg v0.0.0-20220111134415-80b253f23023
 )
 
 // Circular rox -> scanner -> rox dependency would pull in a long list of past rox versions, cluttering go.sum
