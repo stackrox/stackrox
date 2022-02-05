@@ -1,0 +1,125 @@
+diff -u -r ./crypto/tls/conn.go /tmp/go/go/src/crypto/tls/conn.go
+--- ./crypto/tls/conn.go	2021-10-07 21:58:29.000000000 +0200
++++ /tmp/go/go/src/crypto/tls/conn.go	2022-02-04 23:28:38.000000000 +0100
+@@ -17,6 +17,7 @@
+ 	"hash"
+ 	"io"
+ 	"net"
++	"os"
+ 	"sync"
+ 	"sync/atomic"
+ 	"time"
+@@ -115,6 +116,16 @@
+ 	activeCall int32
+
+ 	tmp [16]byte
++
++	creationStack []byte
++}
++
++func (c *Conn) ensureClosed() {
++	if err := c.Close(); err != net.ErrClosed {
++		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!! TLS Connection not closed at GC time! Creation stack: !!!!!!!!!!!!!!!")
++		fmt.Fprintln(os.Stderr, string(c.creationStack))
++		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!! Closing error: ", err, " !!!!!!!!!!!!!!!")
++	}
+ }
+
+ // Access to net.Conn methods.
+diff -u -r ./crypto/tls/tls.go /tmp/go/go/src/crypto/tls/tls.go
+--- ./crypto/tls/tls.go	2021-10-07 21:58:29.000000000 +0200
++++ /tmp/go/go/src/crypto/tls/tls.go	2022-02-04 23:30:37.000000000 +0100
+@@ -24,9 +24,15 @@
+ 	"fmt"
+ 	"net"
+ 	"os"
++	"runtime"
++	"runtime/debug"
+ 	"strings"
+ )
+
++func ensureConnClosed(c *Conn) {
++	c.ensureClosed()
++}
++
+ // Server returns a new TLS server side connection
+ // using conn as the underlying transport.
+ // The configuration config must be non-nil and must include
+@@ -35,7 +41,9 @@
+ 	c := &Conn{
+ 		conn:   conn,
+ 		config: config,
++		creationStack: debug.Stack(),
+ 	}
++	runtime.SetFinalizer(c, ensureConnClosed)
+ 	c.handshakeFn = c.serverHandshake
+ 	return c
+ }
+@@ -49,7 +57,9 @@
+ 		conn:     conn,
+ 		config:   config,
+ 		isClient: true,
++		creationStack: debug.Stack(),
+ 	}
++	runtime.SetFinalizer(c, ensureConnClosed)
+ 	c.handshakeFn = c.clientHandshake
+ 	return c
+ }
+diff -u -r ./net/http/roundtrip.go /tmp/go/go/src/net/http/roundtrip.go
+--- ./net/http/roundtrip.go	2021-10-07 21:58:29.000000000 +0200
++++ /tmp/go/go/src/net/http/roundtrip.go	2022-02-04 23:42:47.000000000 +0100
+@@ -7,6 +7,38 @@
+
+ package http
+
++import (
++	"fmt"
++	"io"
++	"os"
++	"runtime"
++	"runtime/debug"
++	"sync/atomic"
++)
++
++type closeTrackerReadCloser struct {
++	io.ReadCloser
++	creationStack []byte
++	closed int64
++}
++
++func (r *closeTrackerReadCloser) Close() error {
++	atomic.StoreInt64(&r.closed, 1)
++	return r.ReadCloser.Close()
++}
++
++func (r *closeTrackerReadCloser) ensureClosed() {
++	if atomic.LoadInt64(&r.closed) == 0 {
++		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!! HTTP Response Body not closed at GC time! Creation stack: !!!!!!!!!!!!!!!")
++		fmt.Fprintln(os.Stderr, string(r.creationStack))
++		_ = r.ReadCloser.Close()
++	}
++}
++
++func ensureBodyClosed(r *closeTrackerReadCloser) {
++	r.ensureClosed()
++}
++
+ // RoundTrip implements the RoundTripper interface.
+ //
+ // For higher-level HTTP client support (such as handling of cookies
+@@ -15,5 +47,14 @@
+ // Like the RoundTripper interface, the error types returned
+ // by RoundTrip are unspecified.
+ func (t *Transport) RoundTrip(req *Request) (*Response, error) {
+-	return t.roundTrip(req)
++	resp, err := t.roundTrip(req)
++	if resp != nil && resp.Body != nil {
++		body := &closeTrackerReadCloser{
++			ReadCloser: resp.Body,
++			creationStack: debug.Stack(),
++		}
++		runtime.SetFinalizer(body, ensureBodyClosed)
++		resp.Body = body
++	}
++	return resp, err
+ }
