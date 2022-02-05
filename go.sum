@@ -1920,8 +1920,8 @@ github.com/stackrox/bleve v0.0.0-20200807170555-6c4fa9f5e726 h1:mgY/2FQz67/zbDEk
 github.com/stackrox/bleve v0.0.0-20200807170555-6c4fa9f5e726/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
 github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855 h1:5pQczch8XO6MddfAHXdoYEVFMv5kqBBrpzJ/p5M5AkA=
 github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855/go.mod h1:hJeI5MbszujJq1W6nrGMoO0ACa85iQi5pqHl68id0h0=
-github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5 h1:p5sUiceOopvsnBVFcS+vKwWdV2Z/o+J/theHMyrGaqc=
-github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5/go.mod h1:tEU0CD7y2mq9HAWFZY48THyKPFy6oMv19UT5bnTvrRo=
+github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819 h1:1jcyovr8lC0vBax5TFNzpXOChl/sJr/IoLVUFkYEMpM=
+github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819/go.mod h1:tEU0CD7y2mq9HAWFZY48THyKPFy6oMv19UT5bnTvrRo=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q66zd4W72//Uk3uyVN50Mh/nFLbN9pb7CVK7mE=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7 h1:F4Gq3G5G07HQ/ECrg/+EQxFBmCTcq9ZDyLPI5LaDUKI=
