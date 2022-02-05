@@ -7,19 +7,26 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 
-	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/static"
 	"github.com/sigstore/sigstore/pkg/signature"
-	"github.com/sigstore/sigstore/pkg/signature/payload"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 )
 
-const publicKeyType = "PUBLIC KEY"
+const (
+	publicKeyType = "PUBLIC KEY"
+	sha256Algo    = "sha256"
+)
+
+var (
+	errNoImageSHA      = errors.New("no image SHA found")
+	errInvalidHashAlgo = errors.New("invalid hash algorithm used, must be SHA256")
+)
 
 type publicKeyVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
@@ -55,31 +62,32 @@ func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_PublicKey)
 	return &publicKeyVerifier{parsedPublicKeys: parsedKeys}, nil
 }
 
-func retrieveVerificationDataFromImage(img *storage.Image) ([]oci.Signature, gcrv1.Hash, error) {
+func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, gcrv1.Hash, error) {
+	imgSHA := imgUtils.GetSHA(image)
+	// If there is no digest associated with the image, we cannot safely do signature and claim verification.
+	if imgSHA == "" {
+		return nil, gcrv1.Hash{}, errNoImageSHA
+	}
+
 	// The hash is required for claim verification.
-	hash, err := gcrv1.NewHash(img.GetMetadata().GetV1().GetDigest())
+	hash, err := gcrv1.NewHash(imgSHA)
 	if err != nil {
 		return nil, gcrv1.Hash{}, errors.Wrap(err, "creating hash")
 	}
 
-	// We need a digest to create the payload.
-	digest, err := name.NewDigest(img.GetMetadata().GetV1().GetDigest())
-	if err != nil {
-		return nil, gcrv1.Hash{}, errors.Wrap(err, "creating digest")
-	}
-
-	// TODO(dhaus): Double check, if the payload is not / should not be a part of what we save on the image proto.
-	// The payload will be attached to the signature for claim verification.
-	sigPayload, err := payload.Cosign{Image: digest}.MarshalJSON()
-	if err != nil {
-		return nil, gcrv1.Hash{}, errors.Wrap(err, "creating signature payload")
+	if hash.Algorithm != sha256Algo {
+		return nil, gcrv1.Hash{}, errInvalidHashAlgo
 	}
 
 	// Each signature contains the base64 encoded version of it and the associated payload.
 	// In the future, this will also include potential rekor bundles for keyless verification.
-	signatures := make([]oci.Signature, 0, len(img.GetSignature().GetSignatures()))
-	for _, imgSig := range img.GetSignature().GetSignatures() {
-		sig, err := static.NewSignature(sigPayload, imgSig.GetCosign().GetRawSignatureBase64Enc())
+	signatures := make([]oci.Signature, 0, len(image.GetSignature().GetSignatures()))
+	for _, imgSig := range image.GetSignature().GetSignatures() {
+		payload, err := base64.StdEncoding.DecodeString(imgSig.GetCosign().GetSignaturePayloadBase64Enc())
+		if err != nil {
+			return nil, gcrv1.Hash{}, errors.Wrap(err, "decoding signature payload")
+		}
+		sig, err := static.NewSignature(payload, imgSig.GetCosign().GetRawSignatureBase64Enc())
 		if err != nil {
 			return nil, gcrv1.Hash{}, errors.Wrap(err, "creating OCI signatures")
 		}
@@ -90,30 +98,30 @@ func retrieveVerificationDataFromImage(img *storage.Image) ([]oci.Signature, gcr
 }
 
 // VerifySignature implements the SignatureVerifier interface.
-// TODO: Right now only a stub implementation for the first abstraction.
-func (c *publicKeyVerifier) VerifySignature(rawSignature []byte) (storage.ImageSignatureVerificationResult_Status, error) {
+// The signature of the storage.Image will be verified using cosign. It will include the verification via public key
+// as well as the claim verification of the payload of the signature.
+func (c *publicKeyVerifier) VerifySignature(image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
 	opts := &cosign.CheckOpts{}
 	ctx := context.Background()
 	// By default, verify the claim within the payload that is specified with the simple signing format.
 	// Right now, we are not supporting any additional annotations within the claim.
 	opts.ClaimVerifier = cosign.SimpleClaimVerifier
 
-	errList := errorhelpers.NewErrorList("public key signature verification")
-
-	// TODO(dhaus): Replace with the storage.Image once the func signature has been changed.
-	sigs, hash, err := retrieveVerificationDataFromImage(nil)
+	sigs, hash, err := retrieveVerificationDataFromImage(image)
 	if err != nil {
+		if errors.Is(err, errInvalidHashAlgo) {
+			return storage.ImageSignatureVerificationResult_INVALID_SIGNATURE_ALGO, err
+		}
 		return storage.ImageSignatureVerificationResult_CORRUPTED_SIGNATURE, err
 	}
+
+	errList := errorhelpers.NewErrorList("public key signature verification")
 
 	for _, key := range c.parsedPublicKeys {
 		// For now, only supporting SHA256 as algorithm.
 		v, err := signature.LoadVerifier(key, crypto.SHA256)
 		if err != nil {
-			errList.AddError(err)
-			// TODO(dhaus): What is the consensus here from a user point of view? Should we display the "highest priority"
-			// error, or the most common? In the case of multiple keys, we should potentially be able to provide a
-			// key based verification error (potentially). Otherwise, this is really weird.
+			errList.AddWrap(err, "creating verifier")
 			continue
 		}
 		opts.SigVerifier = v
@@ -124,9 +132,8 @@ func (c *publicKeyVerifier) VerifySignature(rawSignature []byte) (storage.ImageS
 			// If there is no error during the verification, the signature was successfully verified as well as the claims.
 			_, err = cosign.VerifyImageSignature(ctx, sig, hash, opts)
 
-			// Short circuit on the first public key that successfully verified the signature, since they are bundled within
-			// a signature integration.
-			// TODO(dhaus): In the future, we can return a list of public keys that successfully verified the signature.
+			// Short circuit on the first public key that successfully verified the signature, since they are bundled
+			// within a single signature integration.
 			if err == nil {
 				return storage.ImageSignatureVerificationResult_VERIFIED, nil
 			}
