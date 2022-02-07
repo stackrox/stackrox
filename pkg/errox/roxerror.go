@@ -30,8 +30,9 @@ func (e *roxError) Unwrap() error {
 // preserve the error base error in the chain but hide its message.
 //
 // Example:
-//     myPackageSentinel := errox.New(errox.NotFound, "gone")
-//     myPackageSentinel.Error() == "gone" // true
+//     myPackageError := errox.New(errox.NotFound, "file not found")
+//     myPackageError.Error() == "file not found" // true
+//     errors.Is(myPackageError, errox.NotFound)  // true
 func New(base error, message string) error {
 	return &roxError{message, base}
 }
@@ -41,8 +42,9 @@ func New(base error, message string) error {
 // allows to preserve the error base error in the chain but hide its message.
 //
 // Example:
-//     myPackageError := errox.Newf(errox.NotFound, "gone: %s", reason)
-//     myPackageError.Error() == "gone: <reason>" // true
+//     myPackageError := errox.Newf(errox.NotFound, "file '%s' not found", "sh")
+//     myPackageError.Error() == "file 'sh' not found" // true
+//     errors.Is(myPackageError, errox.NotFound)       // true
 func Newf(base error, format string, args ...interface{}) error {
 	return New(base, fmt.Sprintf(format, args...))
 }
