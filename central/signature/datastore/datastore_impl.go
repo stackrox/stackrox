@@ -47,7 +47,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	if err != nil {
 		return err
 	} else if found {
-		return fmt.Errorf("signature integration %s already exists", integration.GetId())
+		return fmt.Errorf("signature integration id=%s already exists, requested name=%q", integration.GetId(), integration.GetName())
 	}
 
 	return d.storage.Upsert(integration)
@@ -61,7 +61,7 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	if err != nil {
 		return err
 	} else if !found {
-		return fmt.Errorf("signature integration %s doesn't exist", integration.GetId())
+		return fmt.Errorf("signature integration id=%s doesn't exist, requested name=%q", integration.GetId(), integration.GetName())
 	}
 
 	return d.storage.Upsert(integration)
