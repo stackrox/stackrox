@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	forcedErr = errors.New("forced")
+	errForced = errors.New("forced")
 	timeout   = time.Second
 	backoff   = wait.Backoff{
 		Duration: 100 * time.Millisecond,
@@ -49,7 +49,7 @@ func (s *certRefresherSuite) TestTickerStartedAndStopped() {
 	s.dependenciesMock.On("Start").Once()
 	s.dependenciesMock.On("Stop").Once()
 
-	s.refresher.Start()
+	s.Require().NoError(s.refresher.Start())
 	s.refresher.Stop()
 
 	s.dependenciesMock.AssertExpectations(s.T())
@@ -86,7 +86,7 @@ func (s *certRefresherSuite) TestRefreshCertificateMissingCertificatesImmediateR
 
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Return(issueCertsResponse, nil)
 
-	s.refresher.Start()
+	s.Require().NoError(s.refresher.Start())
 
 	_, ok := doneSignal.WaitWithTimeout(timeout)
 	s.Require().True(ok)
@@ -103,9 +103,9 @@ func (s *certRefresherSuite) TestRefreshCertificateMissingCertificatesImmediateR
 		s.Error(err)
 		doneSignal.Signal()
 	})
-	s.dependenciesMock.On("GetServiceCertificates", mock.Anything).Return((*storage.TypedServiceCertificateSet)(nil), forcedErr).Once()
+	s.dependenciesMock.On("GetServiceCertificates", mock.Anything).Return((*storage.TypedServiceCertificateSet)(nil), errForced).Once()
 
-	s.refresher.Start()
+	s.Require().NoError(s.refresher.Start())
 
 	_, ok := doneSignal.WaitWithTimeout(timeout)
 	s.Require().True(ok)
@@ -124,9 +124,9 @@ func (s *certRefresherSuite) TestRefreshCertificateMissingCertificatesImmediateR
 	})
 	certificates := (*storage.TypedServiceCertificateSet)(nil)
 	s.dependenciesMock.On("GetServiceCertificates", mock.Anything).Return(certificates, nil).Once()
-	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), forcedErr)
+	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), errForced)
 
-	s.refresher.Start()
+	s.Require().NoError(s.refresher.Start())
 
 	_, ok := doneSignal.WaitWithTimeout(timeout)
 	s.Require().True(ok)
@@ -146,9 +146,9 @@ func (s *certRefresherSuite) TestRefreshCertificateMissingCertificatesImmediateR
 	certificates := (*storage.TypedServiceCertificateSet)(nil)
 	s.dependenciesMock.On("GetServiceCertificates", mock.Anything).Return(certificates, nil).Once()
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
-	s.dependenciesMock.On("requestCertificates", mock.Anything).Return((*central.IssueLocalScannerCertsResponse)(nil), forcedErr)
+	s.dependenciesMock.On("requestCertificates", mock.Anything).Return((*central.IssueLocalScannerCertsResponse)(nil), errForced)
 
-	s.refresher.Start()
+	s.Require().NoError(s.refresher.Start())
 
 	_, ok := doneSignal.WaitWithTimeout(timeout)
 	s.Require().True(ok)
@@ -172,12 +172,12 @@ func (s *certRefresherSuite) TestRefreshCertificateMissingCertificatesImmediateR
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Return(&central.IssueLocalScannerCertsResponse{
 		Response: &central.IssueLocalScannerCertsResponse_Error{
 			Error: &central.LocalScannerCertsIssueError{
-				Message: forcedErr.Error(),
+				Message: errForced.Error(),
 			},
 		},
 	}, nil)
 
-	s.refresher.Start()
+	s.Require().NoError(s.refresher.Start())
 
 	_, ok := doneSignal.WaitWithTimeout(timeout)
 	s.Require().True(ok)
@@ -202,9 +202,9 @@ func (s *certRefresherSuite) TestRefreshCertificateMissingCertificatesImmediateR
 		storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Return(issueCertsResponse, nil)
 	s.dependenciesMock.On("PutServiceCertificates", mock.Anything,
-		issueCertsResponse.GetCertificates()).Return(forcedErr).Once()
+		issueCertsResponse.GetCertificates()).Return(errForced).Once()
 
-	s.refresher.Start()
+	s.Require().NoError(s.refresher.Start())
 
 	_, ok := doneSignal.WaitWithTimeout(timeout)
 	s.Require().True(ok)

@@ -14,7 +14,7 @@ import (
 var (
 	certsDescription               = "local scanner credentials"
 	_                certRefresher = (*certRefresherImpl)(nil)
-	// TODO: replace by ROX-9129
+	// ErrEmptyCertificate TODO: replace by ROX-9129
 	ErrEmptyCertificate = errors.New("empty certificate")
 )
 
@@ -50,12 +50,12 @@ type certRefresherImpl struct {
 
 type requestCertificatesFunc func(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 
-// TODO: replace by ROX-9129
+// GetCertsRenewalTime TODO: replace by ROX-9129
 func GetCertsRenewalTime(certificates *storage.TypedServiceCertificateSet) (time.Time, error) {
 	return time.UnixMilli(0), nil
 }
 
-// TODO replace by serviceCertificatesRepo from ROX-9128
+// PutServiceCertificates TODO replace by serviceCertificatesRepo from ROX-9128
 type PutServiceCertificates interface {
 	// GetServiceCertificates retrieves the certificates from permanent storage.
 	GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
