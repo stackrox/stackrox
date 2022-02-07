@@ -4,12 +4,14 @@ load "../helpers.bash"
 
 out_dir=""
 cluster_name="override-test-cluster"
+central_flavor=""
 
 setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq || skip "Tests in this file require yq"
   [[ -n "$API_ENDPOINT" ]] || fail "API_ENDPOINT environment variable required"
   [[ -n "$ROX_PASSWORD" ]] || fail "ROX_PASSWORD environment variable required"
+  central_flavor="$(kubectl -n stackrox exec -it deployment/central -- env | grep -i ROX_IMAGE_FLAVOR | sed 's/ROX_IMAGE_FLAVOR=//')"
 }
 
 setup() {
@@ -18,6 +20,17 @@ setup() {
 
 teardown() {
   rm -rf "$out_dir"
+}
+
+registry_from_flavor() {
+  case "$central_flavor" in
+  "development_build")
+    echo "docker\.io/stackrox"
+    ;;
+  "stackrox.io")
+    echo "stackrox\.io"
+    ;;
+  esac
 }
 
 any_version="[0-9]+\.[0-9]+\."

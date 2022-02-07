@@ -257,17 +257,4 @@ delete_cluster() {
   assert_success
 }
 
-get_central_flavor() {
-  kubectl -n stackrox exec -it deployment/central -- env | grep -i ROX_IMAGE_FLAVOR | sed 's/ROX_IMAGE_FLAVOR=//'
-}
 
-registry_from_flavor() {
-  case "$(get_central_flavor)" in
-  "development_build")
-    echo "docker\.io/stackrox"
-    ;;
-  "stackrox.io")
-    echo "stackrox\.io"
-    ;;
-  esac
-}
