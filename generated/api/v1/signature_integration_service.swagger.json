@@ -175,6 +175,17 @@
         }
       }
     },
+    "SignatureIntegrationSignatureVerificationConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "cosignVerification": {
+          "$ref": "#/definitions/storageCosignPublicKeyVerification"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -237,19 +248,8 @@
         "signatureVerificationConfigs": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/storageSignatureVerificationConfig"
+            "$ref": "#/definitions/SignatureIntegrationSignatureVerificationConfig"
           }
-        }
-      }
-    },
-    "storageSignatureVerificationConfig": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "cosignVerification": {
-          "$ref": "#/definitions/storageCosignPublicKeyVerification"
         }
       }
     },
