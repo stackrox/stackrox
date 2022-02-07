@@ -14,7 +14,7 @@ for CHART in ${CHARTS}; do
   roxctl helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-new"
 done
 
-# TODO: Use smart branch root instead of master.
+# TODO(ebensh): Use smart branch root (if present) instead of master.
 git switch master
 for CHART in ${CHARTS}; do
   roxctl helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-old"
