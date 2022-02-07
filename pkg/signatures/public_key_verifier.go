@@ -41,8 +41,8 @@ var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 // newPublicKeyVerifier creates a public key verifier with the given configuration. The provided public keys
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed or the base64 decoding failed.
-func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_PublicKey) (*publicKeyVerifier, error) {
-	publicKeys := config.PublicKey.GetPublicKeys()
+func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_CosignVerification) (*publicKeyVerifier, error) {
+	publicKeys := config.CosignVerification.GetPublicKeys()
 	base64EncPublicKeys := make([]string, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
 		base64EncPublicKeys = append(base64EncPublicKeys, publicKey.GetPublicKeysBase64Enc())
