@@ -17,12 +17,4 @@ export function visitIntegrationsUrl(url) {
         '@getImageIntegrations',
         '@getNotifierIntegrations',
     ]);
-
-    /*
-     * Wait so New integration button does not become detached when IntegrationsTable element rerenders.
-     * Wait might become unnecessary if there is an alternative to callback function idiom:
-     * components={(props) => <Link {...props} … />} for Button element.
-     * Rendering via function instead of children might cause React to replace the button element.
-     */
-    cy.wait(100);
 }
