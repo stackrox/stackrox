@@ -1347,7 +1347,8 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 			AdmissionControllerEvents:  true,
 			DynamicConfig: &storage.DynamicClusterConfig{
 				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
-					Enabled: true,
+					Enabled:        true,
+					TimeoutSeconds: 73,
 				},
 				RegistryOverride: "registryOverride",
 				DisableAuditLogs: false,
@@ -1381,6 +1382,7 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 			suite.True(dc.GetDisableAuditLogs()) // True for KUBERNETES_CLUSTER
 			if acc := dc.GetAdmissionControllerConfig(); suite.NotNil(acc) {
 				suite.True(acc.GetEnabled())
+				suite.Equal(int32(73), acc.GetTimeoutSeconds())
 			}
 		}
 		if tc := cluster.GetTolerationsConfig(); suite.NotNil(tc) {
@@ -1421,6 +1423,18 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 				suite.False(dc.GetDisableAuditLogs())
 			}
 		})
+		suite.Run("Openshift 4 cluster with disabled logs", func() {
+			cluster := &storage.Cluster{
+				Type: storage.ClusterType_OPENSHIFT4_CLUSTER,
+				DynamicConfig: &storage.DynamicClusterConfig{
+					DisableAuditLogs: true,
+				},
+			}
+			suite.NoError(addDefaults(cluster))
+			if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
+				suite.True(dc.GetDisableAuditLogs())
+			}
+		})
 	})
 
 	suite.Run("Collector image not set when only main image is provided", func() {
@@ -1441,19 +1455,18 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 		suite.Error(addDefaults(cluster))
 	})
 
-	suite.Run("Runtime support defined collection method", func() {
-		cluster := &storage.Cluster{
-			CollectionMethod: storage.CollectionMethod_KERNEL_MODULE,
-		}
-		suite.NoError(addDefaults(cluster))
-		suite.True(cluster.GetRuntimeSupport())
-	})
-
-	suite.Run("No runtime support for NO_COLLECTION collection method", func() {
-		cluster := &storage.Cluster{
-			CollectionMethod: storage.CollectionMethod_NO_COLLECTION,
-		}
-		suite.NoError(addDefaults(cluster))
-		suite.False(cluster.GetRuntimeSupport())
-	})
+	for method, runtimeSupport := range map[storage.CollectionMethod]bool{
+		storage.CollectionMethod_UNSET_COLLECTION: true,
+		storage.CollectionMethod_NO_COLLECTION:    false,
+		storage.CollectionMethod_KERNEL_MODULE:    true,
+		storage.CollectionMethod_EBPF:             true,
+	} {
+		suite.Run(fmt.Sprintf("Runtime support for %s collection method", method), func() {
+			cluster := &storage.Cluster{
+				CollectionMethod: method,
+			}
+			suite.NoError(addDefaults(cluster))
+			suite.Equal(runtimeSupport, cluster.GetRuntimeSupport())
+		})
+	}
 }
