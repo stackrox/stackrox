@@ -1,5 +1,5 @@
 import React from 'react';
-import { Title, Flex, FlexItem, Divider, Button } from '@patternfly/react-core';
+import { Alert, Button, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
@@ -56,6 +56,14 @@ function PolicyCriteriaForm() {
         return (
             <>
                 {headingElements}
+                <Alert
+                    variant="info"
+                    isInline
+                    title="Editing policy criteria is disabled for system default policies"
+                    className="pf-u-mt-sm pf-u-mb-md"
+                >
+                    If you need to edit policy criteria, clone this policy or create a new policy.
+                </Alert>
                 <BooleanPolicyLogicSection readOnly />
             </>
         );
