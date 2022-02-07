@@ -321,7 +321,11 @@ func (l *loopImpl) getActiveImageIDs() ([]string, error) {
 func (l *loopImpl) waitForIndexing() {
 	indexingCompleted := concurrency.NewSignal()
 	l.indexQueue.PushSignal(&indexingCompleted)
-	<-indexingCompleted.Done()
+
+	select {
+	case <-indexingCompleted.Done():
+	case <-l.stopSig.Done():
+	}
 }
 
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption) {
