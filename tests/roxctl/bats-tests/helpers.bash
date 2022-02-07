@@ -256,5 +256,3 @@ delete_cluster() {
   run roxctl_authenticated cluster delete --name "$name"
   assert_success
 }
-
-
