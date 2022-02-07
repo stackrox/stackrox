@@ -93,9 +93,8 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 			secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
 			clientSet := fake.NewSimpleClientset(secret1, secret2)
 			secretsClient := clientSet.CoreV1().Secrets(namespace)
-			repo, err := newTestRepo(secrets, secretsClient)
-			s.Require().NoError(err)
-			_, err = repo.getServiceCertificates(context.Background())
+			repo := newTestRepo(secrets, secretsClient)
+			_, err := repo.getServiceCertificates(context.Background())
 			if tc.expectError {
 				s.Error(err)
 			} else {
@@ -111,7 +110,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 		fixture     *certSecretsRepoFixture
 	}{
 		"successful put": {nil, s.newFixture("")},
-		"failed put":     {errForced, s.newFixture("update")},
+		"failed put":     {errForced, s.newFixture("patch")},
 		"cancelled put":  {context.Canceled, s.newFixture("")},
 	}
 	for tcName, tc := range testCases {
@@ -127,27 +126,6 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 			s.checkExpectedError(tc.expectedErr, err)
 		})
 	}
-}
-
-func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithNilSecretFailure() {
-	fixture := s.newFixture("")
-	var secret *v1.Secret
-	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret}
-	_, err := newTestRepo(secrets, fixture.secretsClient)
-	s.Error(err)
-}
-
-func (s *serviceCertificatesRepoSecretsImplSuite) TestNewRepoWithJustOneNoNilCASecretDataSuccess() {
-	fixture := s.newFixture("")
-	secret1 := &v1.Secret{
-		Data: map[string][]byte{
-			mtls.CACertFileName: make([]byte, 0),
-		},
-	}
-	secret2 := &v1.Secret{}
-	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
-	_, err := newTestRepo(secrets, fixture.secretsClient)
-	s.NoError(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataSuccess() {
@@ -273,8 +251,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixtureAdvancedOpts(verbToE
 	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(verbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &v1.Secret{}, errForced
 	})
-	repo, err := newTestRepo(secrets, secretsClient)
-	s.Require().NoError(err)
+	repo := newTestRepo(secrets, secretsClient)
 	return &certSecretsRepoFixture{
 		repo:          repo,
 		secretsClient: secretsClient,
@@ -282,16 +259,16 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixtureAdvancedOpts(verbToE
 	}
 }
 
-func newTestRepo(secrets map[storage.ServiceType]*v1.Secret, secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
-	secretsInfo := make(map[storage.ServiceType]serviceCertificateSecret)
+func newTestRepo(secrets map[storage.ServiceType]*v1.Secret, secretsClient corev1.SecretInterface) serviceCertificatesRepo {
+	secretsSpec := make(map[storage.ServiceType]ServiceCertSecretSpec)
 	for serviceType, secret := range secrets {
-		secretsInfo[serviceType] = serviceCertificateSecret{
-			secret:              secret,
+		secretsSpec[serviceType] = ServiceCertSecretSpec{
+			secretName:          secret.Name,
 			caCertFileName:      mtls.CACertFileName,
 			serviceCertFileName: mtls.ServiceCertFileName,
 			serviceKeyFileName:  mtls.ServiceKeyFileName,
 		}
 	}
 
-	return newServiceCertificatesRepo(secretsInfo, secretsClient)
+	return &serviceCertificatesRepoSecretsImpl{secrets: secretsSpec, secretsClient: secretsClient}
 }
