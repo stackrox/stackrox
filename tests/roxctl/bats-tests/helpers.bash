@@ -81,7 +81,7 @@ assert_components_registry() {
   shift; shift;
 
   # The expect-based tests may be slow and flaky, so let's add timeouts to this assertion
-  wait_10s_for "$dir" "test" "-d" || fail "ERROR: not a directory: '$dir'"
+  wait_20s_for "$dir" "test" "-d" || fail "ERROR: not a directory: '$dir'"
   (( $# < 1 )) && fail "ERROR: 0 components provided"
 
   for component in "${@}"; do
