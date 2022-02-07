@@ -83,6 +83,9 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 	// In the future, this will also include potential rekor bundles for keyless verification.
 	signatures := make([]oci.Signature, 0, len(image.GetSignature().GetSignatures()))
 	for _, imgSig := range image.GetSignature().GetSignatures() {
+		if imgSig.GetCosign() == nil {
+			continue
+		}
 		payload, err := base64.StdEncoding.DecodeString(imgSig.GetCosign().GetSignaturePayloadBase64Enc())
 		if err != nil {
 			return nil, gcrv1.Hash{}, errors.Wrap(err, "decoding signature payload")
@@ -101,8 +104,9 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 // The signature of the storage.Image will be verified using cosign. It will include the verification via public key
 // as well as the claim verification of the payload of the signature.
 func (c *publicKeyVerifier) VerifySignature(image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
-	opts := &cosign.CheckOpts{}
-	ctx := context.Background()
+	var opts cosign.CheckOpts
+	var ctx = context.Background()
+
 	// By default, verify the claim within the payload that is specified with the simple signing format.
 	// Right now, we are not supporting any additional annotations within the claim.
 	opts.ClaimVerifier = cosign.SimpleClaimVerifier
@@ -130,7 +134,7 @@ func (c *publicKeyVerifier) VerifySignature(image *storage.Image) (storage.Image
 			// bundle verified will _always_ be false.
 			// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
 			// If there is no error during the verification, the signature was successfully verified as well as the claims.
-			_, err = cosign.VerifyImageSignature(ctx, sig, hash, opts)
+			_, err = cosign.VerifyImageSignature(ctx, sig, hash, &opts)
 
 			// Short circuit on the first public key that successfully verified the signature, since they are bundled
 			// within a single signature integration.
