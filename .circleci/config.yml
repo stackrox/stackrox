@@ -504,7 +504,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.26
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.28
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -931,41 +931,16 @@ commands:
       - run:
           name: Setup GCP env
           command: |
-            if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "stackrox-ci" ]]; then
-              echo "Current project is already set to stackrox-ci. Assuming configuration already applied."
-              exit 0
-            fi
-            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
-            gcloud auth list
-            gcloud config set project stackrox-ci
-            gcloud config set compute/region us-central1
-            gcloud config unset compute/zone
-            gcloud config set core/disable_prompts True
-
-  create-gke:
-    parameters:
-      wait:
-        type: boolean
-        default: true
-
-    steps:
-      - run:
-          name: Create GKE cluster
-          command: |
-            source .circleci/create-cluster.sh && create-cluster
-            <<# parameters.wait >>
-            wait-for-cluster
-            <</ parameters.wait >>
+            source scripts/ci/gcp.sh
+            setup_gcp
 
   teardown-gke:
     steps:
       - run:
           name: Tear down GKE cluster
           command: |
-            ./scripts/ci/cleanup-deployment.sh || true
-
-            CLUSTER_NAME="${CLUSTER_NAME:-prevent-ci-${CIRCLE_JOB}}"
-            gcloud container clusters delete "$CLUSTER_NAME" --async
+            source scripts/ci/gke.sh
+            teardown_gke_cluster
 
           when: always
 
@@ -1201,34 +1176,11 @@ commands:
         default: e2-standard-4
 
     steps:
-      - setup-gcp
-
       - run:
-          name: Assign environment variables
+          name: Provision a GKE cluster
           command: |
-            CLUSTER_NAME="rox-ci-<< parameters.cluster-id >>-${CIRCLE_BUILD_NUM}"
-            cci-export CLUSTER_NAME "$CLUSTER_NAME"
-            echo "Assigned cluster name is $CLUSTER_NAME"
-
-            NUM_NODES="<< parameters.num-nodes >>"
-            cci-export NUM_NODES "$NUM_NODES"
-            echo "Number of nodes for cluster is $NUM_NODES"
-
-            MACHINE_TYPE="<< parameters.machine-type >>"
-            cci-export MACHINE_TYPE "$MACHINE_TYPE"
-            echo "Machine type is set as to $MACHINE_TYPE"
-
-            GKE_RELEASE_CHANNEL="stable"
-            if .circleci/pr_has_label.sh ci-gke-release-channel-rapid; then
-              GKE_RELEASE_CHANNEL="rapid"
-            elif .circleci/pr_has_label.sh ci-gke-release-channel-regular; then
-              GKE_RELEASE_CHANNEL="regular"
-            fi
-            cci-export GKE_RELEASE_CHANNEL "$GKE_RELEASE_CHANNEL"
-            echo "Using gke release channel: $GKE_RELEASE_CHANNEL"
-
-      - create-gke:
-          wait: false
+            source scripts/ci/gke.sh
+            provision_gke_cluster "<< parameters.cluster-id >>" "<< parameters.num-nodes >>" "<< parameters.machine-type >>"
 
       - run:
           name: Save cluster config
@@ -1291,7 +1243,8 @@ commands:
       - run:
           name: Waiting for << parameters.cluster-id >> cluster to stabilize
           command: |
-            source .circleci/create-cluster.sh && wait-for-cluster
+            source scripts/ci/gke.sh
+            wait_for_cluster
 
   remove-existing-stackrox-resources:
     steps:
@@ -1530,10 +1483,6 @@ commands:
       - *restoreDB
       - check-stackrox-logs
       - *storeQALogs
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
 
       - teardown-anchore:
           cluster-id: << parameters.cluster-id >>
@@ -2174,6 +2123,20 @@ commands:
               create << parameters.cluster-name >>-"${CIRCLE_WORKFLOW_ID:0:7}" "${GCP_PROJECT}" openshift.ci.rox.systems
             docker cp openshift-4-automation:/data $PWD/<< parameters.cluster-name >>
           no_output_timeout: 60m
+
+  openshift-ci-mimic-env:
+    description: "Simulate an OpenShift CI Environment"
+    steps:
+      - run:
+          name: Simulate an OpenShift CI Environment
+          command: |
+            # Create a fake OpenShift Env
+            cci-export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
+            cci-export BUILD_ID "$CIRCLE_BUILD_NUM"
+            cci-export JOB_NAME "$CIRCLE_JOB"
+            cci-export OPENSHIFT_CI true
+            # Clear Circle CI Env
+            while read var; do cci-export $var ""; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
 
 jobs:
   ###
@@ -3822,7 +3785,6 @@ jobs:
       - run:
           name: Upgrade tests
           command: |
-            ROX_LICENSE_KEY="${LONGTERM_LICENSE}" \
             ./tests/upgrade/run.sh
 
       - ci-artifacts/store:
@@ -3900,10 +3862,6 @@ jobs:
             zip -r /tmp/pprof.zip /tmp/pprof
 
       - *storeProfilingResults
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
       - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
@@ -4876,6 +4834,18 @@ jobs:
             - nop-steps-stanza
       - destroy-aro-cluster
 
+  openshift-ci-upgrade-test:
+    executor: custom
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - openshift-ci-mimic-env
+      - run:
+          name: Run the OpenShift CI upgrade test hook
+          command: |
+            .openshift-ci/upgrade_test_under_gke.py
+
 workflows:
   version: 2
 
@@ -5139,6 +5109,15 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
+          requires:
+            - build
+
+      - openshift-ci-upgrade-test:
+          context:
+          - quay-rhacs-eng-readonly
+          filters:
+            branches:
+              only: /.*RS-454.*/
           requires:
             - build
 

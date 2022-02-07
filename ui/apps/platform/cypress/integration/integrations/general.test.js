@@ -1,20 +1,41 @@
-import { selectors } from '../../constants/IntegrationsPage';
+import * as api from '../../constants/apiEndpoints';
+import { url as dashboardUrl } from '../../constants/DashboardPage';
+import { labels, selectors, url } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 
-const toastShouldContain = (message) => {
-    cy.get('.toast-selector').should('contain', message).find('button').click({ force: true });
-};
+function getIntegrationTypeUrl(integrationSource, integrationType) {
+    return `${url}/${integrationSource}/${integrationType}`;
+}
+
+function visitIntegrations() {
+    cy.intercept('GET', api.roles.mypermissions).as('getMyPermissions'); // for left nav
+    cy.intercept('GET', api.search.options).as('getSearchOptions'); // near the end of the requests
+    cy.visit(dashboardUrl);
+    cy.wait(['@getMyPermissions', '@getSearchOptions']);
+
+    cy.intercept('GET', api.integrations.apiTokens).as('getApiTokens');
+    cy.intercept('GET', api.integrations.clusterInitBundles).as('getClusterInitBundles');
+    cy.intercept('GET', api.integrations.externalBackups).as('getExternalBackups');
+    cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
+    cy.intercept('GET', api.integrations.notifiers).as('getNotifiers');
+    cy.get(selectors.configure).click();
+    cy.get(selectors.navLink).click();
+    cy.wait([
+        '@getApiTokens',
+        '@getClusterInitBundles',
+        '@getExternalBackups',
+        '@getImageIntegrations',
+        '@getNotifiers',
+    ]);
+    cy.get(`${selectors.title1}:contains("Integrations")`);
+}
 
 describe('Integrations page', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.visit('/');
-        cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click({ force: true });
-    });
-
     it('Plugin tiles should all be the same height', () => {
+        visitIntegrations();
+
         let value = null;
         cy.get(selectors.plugins).each(($el) => {
             if (value) {
@@ -25,85 +46,93 @@ describe('Integrations page', () => {
         });
     });
 
-    it.skip('should test, create, update, and delete an integration with Slack', () => {
-        cy.get(selectors.slackTile).click();
-        cy.get(selectors.buttons.delete).should('not.exist');
-        cy.get(selectors.buttons.new).click();
+    it('should go to the table for a type of imageIntegrations', () => {
+        const integrationSourceLabel = 'Image Integrations'; // TODO might change from Title Case to Sentence case
+        const integrationTypeLabel = labels.imageIntegrations.docker;
+        const integrationTypeUrl = getIntegrationTypeUrl('imageIntegrations', 'docker');
 
-        // test that validation error happens when form is incomplete
-        cy.get(selectors.buttons.test).click();
-        toastShouldContain('error');
+        visitIntegrations();
 
-        const nameInput = `Slack Test ${Math.random().toString(36).substring(7)}`;
-        const defaultWebhook = 'https://hooks.slack.com/services/EXAMPLE';
-        const labelAnnotationKey = 'slack-test';
+        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
+        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
 
-        cy.get(selectors.slackForm.nameInput).type(nameInput);
-        cy.get(selectors.slackForm.defaultWebhook).type(defaultWebhook);
-        cy.get(selectors.slackForm.labelAnnotationKey).type(labelAnnotationKey);
+        // Verify that tests for a type of the source can visit directly.
+        cy.location('pathname').should('eq', integrationTypeUrl);
 
-        // the test button should not return an error with valid inputs
-        cy.get(selectors.buttons.test).click();
-        toastShouldContain('Integration test was successful');
-
-        // test creating an integration
-        cy.get(selectors.buttons.create).click({ force: true });
-        toastShouldContain('Successfully integrated slack');
-
-        // test updating an existing integration
-        cy.get(`${selectors.table.rows}:contains("${nameInput}")`).click();
-        cy.get(selectors.buttons.save).click({ force: true });
-        cy.get(selectors.buttons.closePanel).click({ force: true });
-        toastShouldContain('Successfully integrated slack');
-
-        // test deleting an integration
-        cy.get(`${selectors.table.rows}:contains("${nameInput}") input[type="checkbox"]`).check();
-        cy.get(selectors.buttons.delete).click({ force: true });
-        cy.get(selectors.buttons.confirm).click();
-        toastShouldContain('Successfully deleted 1 integration');
-        cy.get(`${selectors.table.rows}:contains("${nameInput}")`).should('not.exist');
+        cy.get(`${selectors.breadcrumbItem}:contains("${integrationTypeLabel}")`);
+        cy.get(`${selectors.title2}:contains("${integrationTypeLabel}")`);
+        cy.get(selectors.buttons.newIntegration);
     });
 
-    it.skip('should test, create, update, and delete an integration with DockerHub', () => {
-        cy.get(selectors.dockerRegistryTile).click();
-        cy.get(selectors.buttons.delete).should('not.exist');
-        cy.get(selectors.buttons.new).click();
+    it('should go to the table for a type of notifiers', () => {
+        const integrationSourceLabel = 'Notifier Integrations'; // TODO might change from Title Case to Sentence case
+        const integrationTypeLabel = labels.notifiers.slack;
+        const integrationTypeUrl = getIntegrationTypeUrl('notifiers', 'slack');
 
-        const nameInput = `Docker Registry ${Math.random().toString(36).substring(7)}`;
-        const endpointInput = 'registry-1.docker.io';
+        visitIntegrations();
 
-        cy.get(selectors.dockerRegistryForm.nameInput).type(nameInput);
+        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
+        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
 
-        cy.get(
-            `${selectors.dockerRegistryForm.typesSelect} .react-select__dropdown-indicator`
-        ).click();
-        cy.get('.react-select__menu-list > div:contains("Registry")').click();
+        // Verify that tests for a type of the source can visit directly.
+        cy.location('pathname').should('eq', integrationTypeUrl);
 
-        // test that validation error happens when form is incomplete
-        cy.get(selectors.buttons.test).click();
-        toastShouldContain('error');
+        cy.get(`${selectors.breadcrumbItem}:contains("${integrationTypeLabel}")`);
+        cy.get(`${selectors.title2}:contains("${integrationTypeLabel}")`);
+        cy.get(selectors.buttons.newIntegration);
+    });
 
-        cy.get(selectors.dockerRegistryForm.endpointInput).type(endpointInput);
+    it('should go to the table for a type of backups', () => {
+        const integrationSourceLabel = 'Backup Integrations'; // TODO might change from Title Case to Sentence case
+        const integrationTypeLabel = labels.backups.s3;
+        const integrationTypeUrl = getIntegrationTypeUrl('backups', 's3');
 
-        // the test button should not return an error with valid inputs
-        cy.get(selectors.buttons.test).click();
-        toastShouldContain('Integration test was successful');
+        visitIntegrations();
 
-        // test creating an integration
-        cy.get(selectors.buttons.create).click({ force: true });
-        toastShouldContain('Successfully integrated docker');
+        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
+        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
 
-        // test updating an existing integration
-        cy.get(`${selectors.table.rows}:contains("${nameInput}")`).click();
-        cy.get(selectors.buttons.save).click({ force: true });
-        cy.get(selectors.buttons.closePanel).click({ force: true });
-        toastShouldContain('Successfully integrated docker');
+        // Verify that tests for a type of the source can visit directly.
+        cy.location('pathname').should('eq', integrationTypeUrl);
 
-        // test deleting an integration
-        cy.get(`${selectors.table.rows}:contains("${nameInput}") input[type="checkbox"]`).check();
-        cy.get(selectors.buttons.delete).click({ force: true });
-        cy.get(selectors.buttons.confirm).click();
-        toastShouldContain('Successfully deleted 1 integration');
-        cy.get(`${selectors.table.rows}:contains("${nameInput}")`).should('not.exist');
+        cy.get(`${selectors.breadcrumbItem}:contains("${integrationTypeLabel}")`);
+        cy.get(`${selectors.title2}:contains("${integrationTypeLabel}")`);
+        cy.get(selectors.buttons.newIntegration);
+    });
+
+    it('should go to the table for apitoken type of authProviders', () => {
+        const integrationSourceLabel = 'Authentication Tokens'; // TODO might change from Title Case to Sentence case
+        const integrationTypeLabel = labels.authProviders.apitoken;
+        const integrationTypeUrl = getIntegrationTypeUrl('authProviders', 'apitoken');
+
+        visitIntegrations();
+
+        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
+        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
+
+        // Verify that tests for a type of the source can visit directly.
+        cy.location('pathname').should('eq', integrationTypeUrl);
+
+        cy.get(`${selectors.breadcrumbItem}:contains("${integrationTypeLabel}")`);
+        cy.get(`${selectors.title2}:contains("${integrationTypeLabel}")`);
+        cy.get(selectors.buttons.newApiToken);
+    });
+
+    it('should go to the table for clusterInitBundle type of authProviders', () => {
+        const integrationSourceLabel = 'Authentication Tokens'; // TODO might change from Title Case to Sentence case
+        const integrationTypeLabel = labels.authProviders.clusterInitBundle;
+        const integrationTypeUrl = getIntegrationTypeUrl('authProviders', 'clusterInitBundle');
+
+        visitIntegrations();
+
+        cy.get(`${selectors.title2}:contains("${integrationSourceLabel}")`);
+        cy.get(`${selectors.tile}:contains("${integrationTypeLabel}")`).click();
+
+        // Verify that tests for a type of the source can visit directly.
+        cy.location('pathname').should('eq', integrationTypeUrl);
+
+        cy.get(`${selectors.breadcrumbItem}:contains("${integrationTypeLabel}")`);
+        cy.get(`${selectors.title2}:contains("${integrationTypeLabel}")`);
+        cy.get(selectors.buttons.newClusterInitBundle).click();
     });
 });
