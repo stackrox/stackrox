@@ -61,6 +61,7 @@ func (s *serviceImpl) GetSignatureIntegrations(ctx context.Context, _ *v1.Empty)
 		return nil, errors.Wrap(err, "failed to retrieve signature integrations")
 	}
 	// List integrations in the same order for consistency across requests.
+	// Names are unique, thus we don't have to use sort.SliceStable
 	sort.Slice(integrations, func(i, j int) bool {
 		return integrations[i].GetName() < integrations[j].GetName()
 	})
