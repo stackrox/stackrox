@@ -15,6 +15,9 @@ import { actions as wizardActions } from 'reducers/policies/wizard';
 import { generatePolicyFromSearch } from 'services/PoliciesService';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { convertToRestSearch } from 'utils/searchUtils';
+import { knownBackendFlags } from 'utils/featureFlags';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { policiesBasePath, policiesBasePathPatternFly } from 'routePaths';
 
 function CreatePolicyFromSearch({
     history,
@@ -27,6 +30,9 @@ function CreatePolicyFromSearch({
     clearFormMessages,
 }) {
     const workflowState = useContext(workflowStateContext);
+    const isPoliciesPatternFlyEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_POLICIES_PATTERNFLY
+    );
 
     // this utility filters out incomplete search pairs
     const currentSearch = workflowState.getCurrentSearchState();
@@ -42,7 +48,9 @@ function CreatePolicyFromSearch({
         generatePolicyFromSearch(queryString)
             .then((response) => {
                 history.push({
-                    pathname: `/main/policies`,
+                    pathname: isPoliciesPatternFlyEnabled
+                        ? `${policiesBasePathPatternFly}/?action=generate`
+                        : policiesBasePath,
                 });
 
                 const newPolicy = {

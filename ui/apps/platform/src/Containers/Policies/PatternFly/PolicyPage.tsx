@@ -1,6 +1,9 @@
 import React, { ReactElement, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 
+import { selectors } from 'reducers';
 import PageTitle from 'Components/PageTitle';
 import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
@@ -57,6 +60,14 @@ const initialPolicy: Policy = {
     mitreVectorsLocked: false,
 };
 
+type WizardPolicyState = {
+    wizardPolicy: Policy;
+};
+
+const wizardPolicyState = createStructuredSelector<WizardPolicyState, { wizardPolicy: Policy }>({
+    wizardPolicy: selectors.getWizardPolicy,
+});
+
 type PolicyPageProps = {
     hasWriteAccessForPolicy: boolean;
     pageAction?: ExtendedPageAction;
@@ -68,6 +79,8 @@ function PolicyPage({
     pageAction,
     policyId,
 }: PolicyPageProps): ReactElement {
+    const { wizardPolicy } = useSelector(wizardPolicyState);
+
     const [policy, setPolicy] = useState<Policy>(initialPolicy);
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -97,9 +110,11 @@ function PolicyPage({
                 .finally(() => {
                     setIsLoading(false);
                 });
-        } else {
-            // action is 'create'
+        }
+        if (pageAction === 'create') {
             setPolicy(initialPolicy);
+        } else if (pageAction === 'generate') {
+            setPolicy(wizardPolicy);
         }
     }, [pageAction, policyId]);
 
