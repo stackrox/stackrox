@@ -530,15 +530,15 @@ func RegisterSignatureIntegrationServiceHandlerClient(ctx context.Context, mux *
 }
 
 var (
-	pattern_SignatureIntegrationService_GetSignatureIntegrations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "imagesignatureintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_SignatureIntegrationService_GetSignatureIntegrations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "signatureintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_SignatureIntegrationService_GetSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "imagesignatureintegrations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_SignatureIntegrationService_GetSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "signatureintegrations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_SignatureIntegrationService_PostSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "imagesignatureintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_SignatureIntegrationService_PostSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "signatureintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_SignatureIntegrationService_PutSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "imagesignatureintegrations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_SignatureIntegrationService_PutSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "signatureintegrations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_SignatureIntegrationService_DeleteSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "imagesignatureintegrations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_SignatureIntegrationService_DeleteSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "signatureintegrations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

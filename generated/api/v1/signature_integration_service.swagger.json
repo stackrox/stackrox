@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/imagesignatureintegrations": {
+    "/v1/signatureintegrations": {
       "get": {
         "summary": "GetSignatureIntegrations returns all signature integrations.",
         "operationId": "SignatureIntegrationService_GetSignatureIntegrations",
@@ -65,7 +65,7 @@
         ]
       }
     },
-    "/v1/imagesignatureintegrations/{id}": {
+    "/v1/signatureintegrations/{id}": {
       "get": {
         "summary": "GetSignatureIntegration returns the signature integration given its ID.",
         "operationId": "SignatureIntegrationService_GetSignatureIntegration",

@@ -18,21 +18,21 @@ service SignatureIntegrationService {
   // GetSignatureIntegrations returns all signature integrations.
   rpc GetSignatureIntegrations (Empty) returns (GetSignatureIntegrationsResponse) {
     option (google.api.http) = {
-      get: "/v1/imagesignatureintegrations"
+      get: "/v1/signatureintegrations"
     };
   }
 
   // GetSignatureIntegration returns the signature integration given its ID.
   rpc GetSignatureIntegration (ResourceByID) returns (storage.SignatureIntegration) {
     option (google.api.http) = {
-      get: "/v1/imagesignatureintegrations/{id}"
+      get: "/v1/signatureintegrations/{id}"
     };
   }
 
   // PostSignatureIntegration creates a signature integration.
   rpc PostSignatureIntegration (storage.SignatureIntegration) returns (storage.SignatureIntegration) {
     option (google.api.http) = {
-      post: "/v1/imagesignatureintegrations"
+      post: "/v1/signatureintegrations"
       body: "*"
     };
   }
@@ -40,7 +40,7 @@ service SignatureIntegrationService {
   // PutSignatureIntegration modifies a given signature integration.
   rpc PutSignatureIntegration (storage.SignatureIntegration) returns (Empty) {
     option (google.api.http) = {
-      put: "/v1/imagesignatureintegrations/{id}"
+      put: "/v1/signatureintegrations/{id}"
       body: "*"
     };
   }
@@ -48,7 +48,7 @@ service SignatureIntegrationService {
   // DeleteSignatureIntegration removes a signature integration given its ID.
   rpc DeleteSignatureIntegration (ResourceByID) returns (Empty) {
     option (google.api.http) = {
-      delete: "/v1/imagesignatureintegrations/{id}"
+      delete: "/v1/signatureintegrations/{id}"
     };
   }
 }

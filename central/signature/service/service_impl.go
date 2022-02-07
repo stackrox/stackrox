@@ -116,10 +116,10 @@ func generateSignatureIntegrationID() string {
 
 func validateSignatureIntegration(integration *storage.SignatureIntegration) error {
 	if integration.GetName() == "" {
-		return errors.New("name is not specified for integration")
+		return errorhelpers.NewErrInvalidArgs("name is not specified for integration")
 	}
 	if len(integration.GetSignatureVerificationConfigs()) == 0 {
-		return errors.New("integration should have at least one signature verification config")
+		return errorhelpers.NewErrInvalidArgs("integration should have at least one signature verification config")
 	}
 	return nil
 }
