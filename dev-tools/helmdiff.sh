@@ -3,6 +3,8 @@
 set -euo pipefail
 
 DEV_TOOLS_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROXCTL="$DEV_TOOLS_ROOT/roxctl.sh"
+
 CHARTS="central-services secured-cluster-services"
 TMP_ROOT=$(mktemp -d -t helm_diff_)
 WORKING_BRANCH=$(git branch --show-current)
@@ -11,13 +13,13 @@ echo "Generating temporary files in ${TMP_ROOT}"
 
 echo "Rendering from metatemplates to helm charts:"
 for CHART in ${CHARTS}; do
-  roxctl helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-new"
+  $ROXCTL helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-new"
 done
 
 # TODO: Use smart branch root instead of master.
 git switch master
 for CHART in ${CHARTS}; do
-  roxctl helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-old"
+  $ROXCTL helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-old"
 done
 git switch ${WORKING_BRANCH}
 
