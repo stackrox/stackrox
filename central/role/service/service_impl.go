@@ -62,7 +62,7 @@ var (
 )
 
 type serviceImpl struct {
-	roleDataStore datastore.DataStore
+	roleDataStore      datastore.DataStore
 	clusterDataStore   clusterDS.DataStore
 	namespaceDataStore namespaceDS.DataStore
 }
