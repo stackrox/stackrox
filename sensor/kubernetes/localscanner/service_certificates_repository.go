@@ -17,24 +17,24 @@ import (
 )
 
 var (
-	// ErrSensorDoesNotOwnCertSecrets indicates that this component won't be updating the certificates in
+	// ErrSensorDoesNotOwnCertSecrets indicates that this repository should not be updating the certificates in
 	// the secrets because the owner of the secrets is not the deployment for sensor.
 	ErrSensorDoesNotOwnCertSecrets = errors.New("sensor deployment does not own certificate secrets")
 
 	errForServiceFormat                         = "for service type %q"
-	_                   serviceCertificatesRepo = (*serviceCertificatesRepoSecretsImpl)(nil)
+	_                   ServiceCertificatesRepo = (*serviceCertificatesRepoSecretsImpl)(nil)
 )
 
-// serviceCertificatesRepo is in charge of persisting and retrieving a set of service certificates, thus implementing
+// ServiceCertificatesRepo is in charge of persisting and retrieving a set of service certificates, thus implementing
 // the [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for *storage.TypedServiceCertificateSet.
-type serviceCertificatesRepo interface {
-	// getServiceCertificates retrieves the certificates from permanent storage.
-	getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
-	// putServiceCertificates persists the certificates on permanent storage.
-	putServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
+type ServiceCertificatesRepo interface {
+	// GetServiceCertificates retrieves the certificates from permanent storage.
+	GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
+	// PutServiceCertificates persists the certificates on permanent storage.
+	PutServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
 }
 
-// serviceCertificatesRepoSecretsImpl is a serviceCertificatesRepo that uses k8s secrets for persistence.
+// serviceCertificatesRepoSecretsImpl is a ServiceCertificatesRepo that uses k8s secrets for persistence.
 type serviceCertificatesRepoSecretsImpl struct {
 	secrets       map[storage.ServiceType]ServiceCertSecretSpec
 	secretsClient corev1.SecretInterface
@@ -49,16 +49,14 @@ type ServiceCertSecretSpec struct {
 	serviceKeyFileName  string
 }
 
-// NewServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists
-// certificates for the specified services in k8s secrets with the secret name and secret data
-// path specified in ServiceCertSecretSpec.
+// NewServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
+// scanner and scanner DB in k8s secrets with the secret name and secret data path specified in ServiceCertSecretSpec.
 // Returns ErrSensorDoesNotOwnCertSecrets in case some secret doesn't have sensorDeployment as owner.
-// If some secret does not exist then it creates it in same namespace as sensorDeployment, and with
-// sensorDeployment as owner, populating the data of the new secrets with the corresponding certificates
-// in initialCerts.
+// In case some secret does not exist then it creates it in same namespace as sensorDeployment, and with
+// sensorDeployment as owner, populating the secret data with the corresponding certificates in initialCerts.
 func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec,
 	sensorDeployment *appsApiv1.Deployment, initialCerts *storage.TypedServiceCertificateSet,
-	secretsClient corev1.SecretInterface) (serviceCertificatesRepo, error) {
+	secretsClient corev1.SecretInterface) (ServiceCertificatesRepo, error) {
 	repo := &serviceCertificatesRepoSecretsImpl{
 		secrets: map[storage.ServiceType]ServiceCertSecretSpec{
 			storage.ServiceType_SCANNER_SERVICE:    scannerSpec,
@@ -73,12 +71,12 @@ func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec 
 	return repo, nil
 }
 
-// getServiceCertificates behaves as follows in case of missing data in the secrets:
+// GetServiceCertificates behaves as follows in case of missing data in the secrets:
 // - if a secret has no data then the certificates won't contain a TypedServiceCertificate for the corresponding
 //   service type.
 // - if the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate
 //   for that secret will contain a zero value.
-func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
+func (r *serviceCertificatesRepoSecretsImpl) GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 	var firstServiceTypeWithCA storage.ServiceType
@@ -103,11 +101,11 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	serviceType storage.ServiceType, secretSpec ServiceCertSecretSpec,
 	certificates *storage.TypedServiceCertificateSet,
 	firstServiceTypeWithCA *storage.ServiceType) error {
-	retrievedSecret, err := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
+	secret, err := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, errForServiceFormat, serviceType)
 	}
-	secretData := retrievedSecret.Data
+	secretData := secret.Data
 	if secretData == nil {
 		return errors.Wrapf(err, "missing for secret data for service type %q", serviceType)
 	}
@@ -131,12 +129,13 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	return nil
 }
 
-// putServiceCertificates is idempotent but not atomic in sense that on error some secrets might be persisted
+// PutServiceCertificates is idempotent but not atomic in sense that on error some secrets might be persisted
 // while others are not.
 // Edge cases:
 // - Fails for certificates with a service type that doesn't appear in r.secrets, as we don't know where to store them.
 // - Not all services types in r.secrets are required to appear in certificates, missing service types are just skipped.
-func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error {
+func (r *serviceCertificatesRepoSecretsImpl) PutServiceCertificates(ctx context.Context,
+	certificates *storage.TypedServiceCertificateSet) error {
 	var putErr error
 	caPem := certificates.GetCaPem()
 	for _, cert := range certificates.GetServiceCerts() {
@@ -165,32 +164,32 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificate(ctx context.C
 	if err != nil {
 		return errors.Wrapf(err, errForServiceFormat, cert.GetServiceType())
 	}
-	patch := []patchByteMap{{
+	patch := []patchSecretDataByteMap{{
 		Op:    "replace",
 		Path:  "/data",
 		Value: secretData,
 	}}
-	patchBytes, err := json.Marshal(patch)
-	if err != nil {
-		return errors.Wrapf(err, errForServiceFormat, cert.GetServiceType())
+	patchBytes, marshallingErr := json.Marshal(patch)
+	if marshallingErr != nil {
+		return errors.Wrapf(marshallingErr, errForServiceFormat, cert.GetServiceType())
 	}
-	if _, err = r.secretsClient.Patch(ctx, secretSpec.secretName, k8sTypes.JSONPatchType, patchBytes,
-		metav1.PatchOptions{}); err != nil {
-		return errors.Wrapf(err, errForServiceFormat, cert.GetServiceType())
+	if _, patchErr := r.secretsClient.Patch(ctx, secretSpec.secretName, k8sTypes.JSONPatchType, patchBytes,
+		metav1.PatchOptions{}); patchErr != nil {
+		return errors.Wrapf(patchErr, errForServiceFormat, cert.GetServiceType())
 	}
 
 	return nil
 }
 
-type patchByteMap struct {
+type patchSecretDataByteMap struct {
 	Op    string            `json:"op"`
 	Path  string            `json:"path"`
 	Value map[string][]byte `json:"value"`
 }
 
 // setupSecrets setups the k8s secrets where we store the certificates.
-// - In case the secret doesn't have sensorDeployment as owner, this returns ErrSensorDoesNotOwnCertSecrets.
-// - In case the secret doesn't exist this creates it setting sensorDeployment as owner, with cert stored
+// - In case a secret doesn't have sensorDeployment as owner, this returns ErrSensorDoesNotOwnCertSecrets.
+// - In case a secret doesn't exist this creates it setting sensorDeployment as owner, with cert stored
 // 	 in the secret data.
 func (r *serviceCertificatesRepoSecretsImpl) setupSecrets(ctx context.Context, sensorDeployment *appsApiv1.Deployment,
 	initialCerts *storage.TypedServiceCertificateSet) error {
@@ -220,9 +219,11 @@ func (r *serviceCertificatesRepoSecretsImpl) setupSecret(ctx context.Context,
 		}
 		newSecret, createErr := r.secretsClient.Create(ctx, &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:            secretName,
-				Namespace:       sensorDeployment.GetNamespace(),
-				OwnerReferences: ownerReferenceFor(sensorDeployment),
+				Name:      secretName,
+				Namespace: sensorDeployment.GetNamespace(),
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(sensorDeployment, sensorDeployment.GroupVersionKind()),
+				},
 			},
 			Data: secretData,
 		}, metav1.CreateOptions{})
@@ -247,12 +248,6 @@ func (r *serviceCertificatesRepoSecretsImpl) setupSecret(ctx context.Context,
 	}
 
 	return secret, nil
-}
-
-func ownerReferenceFor(sensorDeployment *appsApiv1.Deployment) []metav1.OwnerReference {
-	return []metav1.OwnerReference{
-		*metav1.NewControllerRef(sensorDeployment, sensorDeployment.GroupVersionKind()),
-	}
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) certificateForService(certs *storage.TypedServiceCertificateSet,
