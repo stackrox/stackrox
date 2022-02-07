@@ -3,8 +3,12 @@ import { Button, ButtonVariant, Flex, FlexItem, SelectOption } from '@patternfly
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import { fetchAccessScopes, AccessScope } from 'services/AccessScopesService';
 import ResourceScopeFormModal from './ResourceScopeFormModal';
+import {
+    fetchAccessScopes,
+    AccessScope,
+    getIsDefaultAccessScopeId,
+} from 'services/AccessScopesService';
 
 type ResourceScopeSelectionProps = {
     scopeId: string;
@@ -24,11 +28,7 @@ function ResourceScopeSelection({
             .then((response) => {
                 const resourceScopesList = response || [];
                 const filteredScopes = resourceScopesList.filter(
-                    (scope) =>
-                        ![
-                            'io.stackrox.authz.accessscope.denyall',
-                            'io.stackrox.authz.accessscope.unrestricted',
-                        ].includes(scope.id)
+                    (scope) => !getIsDefaultAccessScopeId(scope.id)
                 );
                 setResourceScopes(filteredScopes);
 

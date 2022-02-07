@@ -18,6 +18,7 @@ import {
     LabelSelector,
     LabelSelectorsKey,
     computeEffectiveAccessScopeClusters,
+    defaultAccessScopeIds,
 } from 'services/AccessScopesService';
 
 import {
@@ -83,10 +84,10 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
      * A label selector or set requirement is temporarily invalid when it is added,
      * before its first requirement or value has been added.
      */
-    const unrestrictedScopeId = 'io.stackrox.authz.accessscope.unrestricted';
-    const isValidRules = values.id !== unrestrictedScopeId && getIsValidRules(values.rules);
+    const isValidRules =
+        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
     useEffect(() => {
-        if (values.id === unrestrictedScopeId) {
+        if (values.id === defaultAccessScopeIds.Unrestricted) {
             return;
         }
         setCounterComputing((counterPrev) => counterPrev + 1);
@@ -194,7 +195,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 />
             </FormGroup>
             {alertCompute}
-            {values.id !== unrestrictedScopeId && (
+            {values.id !== defaultAccessScopeIds.Unrestricted && (
                 <Flex
                     direction={{ default: 'row' }}
                     spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}

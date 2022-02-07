@@ -154,7 +154,7 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		role := &storage.Role{
 			Name:          roleName,
 			Description:   attributes.description,
-			AccessScopeId: authorizer.AccessScopeIncludeAll.Id,
+			AccessScopeId: authorizer.AccessScopeIncludeAll.GetId(),
 		}
 
 		permissionSet := &storage.PermissionSet{

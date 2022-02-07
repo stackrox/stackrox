@@ -2,13 +2,13 @@ import axios from './instance';
 
 const accessScopessUrl = '/v1/simpleaccessscopes';
 
-const defaultAccessScopeIds = [
-    'io.stackrox.authz.accessscope.denyall',
-    'io.stackrox.authz.accessscope.unrestricted',
-];
+export const defaultAccessScopeIds = {
+    Unrestricted: 'io.stackrox.authz.accessscope.unrestricted',
+    DenyAll: 'io.stackrox.authz.accessscope.denyall',
+};
 
 export function getIsDefaultAccessScopeId(id: string): boolean {
-    return defaultAccessScopeIds.includes(id);
+    return Object.values(defaultAccessScopeIds).includes(id);
 }
 
 export type SimpleAccessScopeNamespace = {
