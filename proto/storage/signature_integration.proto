@@ -19,7 +19,7 @@ message SignatureVerificationConfig {
     string id = 1;
 
     oneof config {
-        CosignPublicKeyVerification public_key = 2;
+        CosignPublicKeyVerification cosign_verification = 2;
     }
 }
 

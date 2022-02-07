@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -120,6 +122,20 @@ func validateSignatureIntegration(integration *storage.SignatureIntegration) err
 	}
 	if len(integration.GetSignatureVerificationConfigs()) == 0 {
 		return errorhelpers.NewErrInvalidArgs("integration should have at least one signature verification config")
+	}
+	for _, verificationConfig := range integration.GetSignatureVerificationConfigs() {
+		cosignVerification := verificationConfig.GetCosignVerification()
+		if cosignVerification != nil {
+			publicKeys := cosignVerification.GetPublicKeys()
+			for index, publicKey := range publicKeys {
+				if publicKey.GetName() == "" {
+					return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("publicKeys[%d] has no name assigned", index))
+				}
+				if _, err := base64.StdEncoding.DecodeString(publicKey.GetPublicKeysBase64Enc()); err != nil {
+					return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("public key %q has invalid base64 encoding", publicKey.GetName()))
+				}
+			}
+		}
 	}
 	return nil
 }

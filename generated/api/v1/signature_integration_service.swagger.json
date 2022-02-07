@@ -248,7 +248,7 @@
         "id": {
           "type": "string"
         },
-        "publicKey": {
+        "cosignVerification": {
           "$ref": "#/definitions/storageCosignPublicKeyVerification"
         }
       }
