@@ -73,7 +73,7 @@ func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.Resour
 		return nil, errors.Wrapf(err, "failed to retrieve signature integration %s", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Signature integration %s not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "signature integration %s not found", id.GetId())
 	}
 	return signatureIntegration, nil
 }
