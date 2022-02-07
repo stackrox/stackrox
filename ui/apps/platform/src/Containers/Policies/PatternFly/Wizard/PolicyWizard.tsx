@@ -74,7 +74,14 @@ function PolicyWizard({
         validateOnMount: true,
         validationSchema: getValidationSchema(stepId),
     });
-    const { dirty, isSubmitting, isValid: isValidOnClient, submitForm, validateForm } = formik;
+    const {
+        dirty,
+        isSubmitting,
+        isValid: isValidOnClient,
+        submitForm,
+        validateForm,
+        values,
+    } = formik;
 
     function closeWizard(): void {
         history.goBack();
@@ -130,7 +137,12 @@ function PolicyWizard({
                             {
                                 id: 1,
                                 name: 'Policy details',
-                                component: <PolicyDetailsForm />,
+                                component: (
+                                    <PolicyDetailsForm
+                                        id={values.id}
+                                        mitreVectorsLocked={values.mitreVectorsLocked}
+                                    />
+                                ),
                                 canJumpTo: stepIdReached >= 1,
                                 enableNext: isValidOnClient,
                             },

@@ -1,18 +1,18 @@
 import React, { ReactElement } from 'react';
 import { Alert, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
-import { useFormikContext } from 'formik';
 
 import MitreAttackVectorsView from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
-import { Policy } from 'types/policy.proto';
 
 import PolicyMetadataFormSection from './PolicyMetadataFormSection';
 import AttachNotifiersFormSection from './AttachNotifiersFormSection';
 import MitreAttackVectorsFormSection from './MitreAttackVectorsFormSection';
 
-function PolicyDetailsForm(): ReactElement {
-    const { values } = useFormikContext<Policy>();
-    const { id, mitreVectorsLocked } = values;
+type PolicyDetailsFormProps = {
+    id: string;
+    mitreVectorsLocked: boolean;
+};
 
+function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): ReactElement {
     return (
         <div>
             <Title headingLevel="h2">Policy details</Title>
