@@ -177,7 +177,11 @@ function RoleForm({
                 <AccessScopesTable
                     fieldId="accessScopeId"
                     accessScopeId={values.accessScopeId}
-                    accessScopes={isActionable ? accessScopes : []}
+                    accessScopes={
+                        isActionable
+                            ? accessScopes
+                            : accessScopes.filter((as) => as.id === values.accessScopeId)
+                    }
                     handleChange={handleChange}
                     isDisabled={isViewing}
                 />
