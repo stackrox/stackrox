@@ -186,8 +186,8 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 		"custom main: custom tag / no collector": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main:custom", ""),
 			expectedMain:             "quay.io/rhacs/main:custom",
-			expectedCollectorFullRef: "quay.io/rhacs/collector:custom",
-			expectedCollectorSlimRef: "quay.io/rhacs/collector-slim:custom",
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"custom main: custom tag / default collector": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main:custom", defaultCollectorFullImageNoTag),
