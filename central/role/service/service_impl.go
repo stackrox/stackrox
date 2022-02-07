@@ -99,7 +99,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storag
 		return nil, errors.Wrapf(err, "failed to retrieve role %q", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role %q not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve role %q", id.GetId())
 	}
 	return role, nil
 }
@@ -113,12 +113,12 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 
 	// Check role request correctness.
 	if role.GetName() != "" && role.GetName() != roleRequest.GetName() {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Different role name in path and body")
+		return nil, errorhelpers.NewErrInvalidArgs("different role names in path and body")
 	}
 	role.Name = roleRequest.GetName()
 
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Setting global access is not supported")
+		return nil, errorhelpers.NewErrInvalidArgs("setting global access is not supported")
 	}
 	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
@@ -129,7 +129,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 
 func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Setting global access is not supported.")
+		return nil, errorhelpers.NewErrInvalidArgs("setting global access is not supported.")
 	}
 	err := s.roleDataStore.UpdateRole(ctx, role)
 	if err != nil {
@@ -180,7 +180,7 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 		return nil, errors.Wrapf(err, "failed to retrieve permission set %s", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve permission set %s: not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve permission set %s", id.GetId())
 	}
 
 	return permissionSet, nil
@@ -202,7 +202,7 @@ func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.
 
 func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*storage.PermissionSet, error) {
 	if permissionSet.GetId() != "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "setting id field is not allowed")
+		return nil, errorhelpers.NewErrInvalidArgs("setting id field is not allowed")
 	}
 	permissionSet.Id = role.GeneratePermissionSetID()
 
@@ -246,7 +246,7 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 		return nil, errors.Wrapf(err, "failed to retrieve access scope %s", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve access scope %s: not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve access scope %s", id.GetId())
 	}
 
 	return scope, nil
@@ -268,7 +268,7 @@ func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (
 
 func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error) {
 	if scope.GetId() != "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "setting id field is not allowed")
+		return nil, errorhelpers.NewErrInvalidArgs("setting id field is not allowed")
 	}
 	scope.Id = role.GenerateAccessScopeID()
 
