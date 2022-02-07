@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	testutilsMTLS "github.com/stackrox/rox/central/testutils/mtls"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+	testutilsMTLS "github.com/stackrox/rox/pkg/testutils/central/mtls"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )

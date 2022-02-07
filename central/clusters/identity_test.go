@@ -3,8 +3,8 @@ package clusters
 import (
 	"testing"
 
-	testutilsMTLS "github.com/stackrox/rox/central/testutils/mtls"
 	"github.com/stackrox/rox/generated/storage"
+	testutilsMTLS "github.com/stackrox/rox/pkg/testutils/central/mtls"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
