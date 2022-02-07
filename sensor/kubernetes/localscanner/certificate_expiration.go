@@ -1,13 +1,13 @@
 package localscanner
 
 import (
+	"crypto/x509"
+	"math/rand"
 	"time"
 
-	"crypto/x509"
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"math/rand"
 )
 
 var (
