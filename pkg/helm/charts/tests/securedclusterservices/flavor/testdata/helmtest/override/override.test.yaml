@@ -1,0 +1,13 @@
+tests:
+- name: should use custom tag (full)
+  set:
+    collector.slimMode: false
+  expect: |
+    assertMainIs("test.registry/main:custom")
+    assertCollectorIs("test.registry/collector:custom")
+- name: should use custom tag (slim)
+  set:
+    collector.slimMode: true
+  expect: |
+    assertMainIs("test.registry/main:custom")
+    assertCollectorIs("test.registry/collector:custom")

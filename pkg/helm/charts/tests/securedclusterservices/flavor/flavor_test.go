@@ -12,10 +12,27 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 )
 
 const testDir = "testdata/helmtest"
+
+func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
+	testbuildinfo.SetForTest(t)
+	testutils.SetVersion(t, testutils.GetExampleVersion(t))
+	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
+	helmChartTestUtils.RunHelmTestSuite(t, testDir, image.SecuredClusterServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
+		Flavor: &testFlavor,
+		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
+			values.ClusterName = "test"
+			values.ImageTag = "custom"
+			values.CollectorFullImageTag = "custom"
+			values.CollectorSlimImageTag = "custom"
+		},
+		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
+	})
+}
 
 func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)

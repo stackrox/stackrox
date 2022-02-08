@@ -7,8 +7,10 @@ import (
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 )
 
@@ -34,6 +36,21 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 		},
 		Versions: testutils.GetExampleVersion(t),
 	}
+}
+
+func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
+	testbuildinfo.SetForTest(t)
+	testutils.SetVersion(t, testutils.GetExampleVersion(t))
+	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
+	helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
+		Flavor: &testFlavor,
+		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
+			values.ImageTag = "custom"
+			values.ScannerImageTag = "custom"
+			values.ScannerDBImageTag = "custom"
+		},
+		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
+	})
 }
 
 func TestWithDifferentImageFlavors(t *testing.T) {
