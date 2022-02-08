@@ -27,15 +27,14 @@ type certRefresher interface {
 // with the timeout and backoff strategy specified, and the specified repository for persistence.
 // Once started, the certRefresher will periodically refresh the certificates before expiration.
 func newCertRefresher(requestCertificates requestCertificatesFunc, timeout time.Duration,
-	backoff wait.Backoff, repository PutServiceCertificates) *certRefresherImpl {
+	backoff wait.Backoff, repository ServiceCertificatesRepo) *certRefresherImpl {
 	refresher := &certRefresherImpl{
 		requestCertificates: requestCertificates,
 		getCertsRenewalTime: GetCertsRenewalTime,
 		repository:          repository,
 	}
 	refresher.createTicker = func() concurrency.RetryTicker {
-		ticker := concurrency.NewRetryTicker(refresher.RefreshCertificates, timeout, backoff)
-		return ticker
+		return concurrency.NewRetryTicker(refresher.RefreshCertificates, timeout, backoff)
 	}
 	return refresher
 }
@@ -43,7 +42,7 @@ func newCertRefresher(requestCertificates requestCertificatesFunc, timeout time.
 type certRefresherImpl struct {
 	requestCertificates requestCertificatesFunc
 	getCertsRenewalTime func(certificates *storage.TypedServiceCertificateSet) (time.Time, error)
-	repository          PutServiceCertificates
+	repository          ServiceCertificatesRepo
 	createTicker        func() concurrency.RetryTicker
 	ticker              concurrency.RetryTicker
 }
@@ -55,8 +54,8 @@ func GetCertsRenewalTime(certificates *storage.TypedServiceCertificateSet) (time
 	return time.UnixMilli(0), nil
 }
 
-// PutServiceCertificates TODO replace by serviceCertificatesRepo from ROX-9128
-type PutServiceCertificates interface {
+// ServiceCertificatesRepo TODO replace by serviceCertificatesRepo from ROX-9128
+type ServiceCertificatesRepo interface {
 	// GetServiceCertificates retrieves the certificates from permanent storage.
 	GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
 	// PutServiceCertificates persists the certificates on permanent storage.
@@ -126,13 +125,13 @@ func (r *certRefresherImpl) ensureCertificatesAreFresh(ctx context.Context) (tim
 }
 
 func (r *certRefresherImpl) getTimeToRefresh(certificates *storage.TypedServiceCertificateSet) (time.Duration, error) {
-	renewalTime, renewalTimeErr := r.getCertsRenewalTime(certificates)
-	if renewalTimeErr == ErrEmptyCertificate {
+	renewalTime, err := r.getCertsRenewalTime(certificates)
+	if err == ErrEmptyCertificate {
 		log.Errorf("some local scanner certificate is empty, will refresh certificates immediately")
 		return 0, nil
 	}
-	if renewalTimeErr != nil {
-		return 0, renewalTimeErr
+	if err != nil {
+		return 0, err
 	}
 
 	return time.Until(renewalTime), nil
