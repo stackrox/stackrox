@@ -34,20 +34,20 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
-func request_SignatureIntegrationService_GetSignatureIntegrations_0(ctx context.Context, marshaler runtime.Marshaler, client SignatureIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_SignatureIntegrationService_ListSignatureIntegrations_0(ctx context.Context, marshaler runtime.Marshaler, client SignatureIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq Empty
 	var metadata runtime.ServerMetadata
 
-	msg, err := client.GetSignatureIntegrations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListSignatureIntegrations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_SignatureIntegrationService_GetSignatureIntegrations_0(ctx context.Context, marshaler runtime.Marshaler, server SignatureIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_SignatureIntegrationService_ListSignatureIntegrations_0(ctx context.Context, marshaler runtime.Marshaler, server SignatureIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq Empty
 	var metadata runtime.ServerMetadata
 
-	msg, err := server.GetSignatureIntegrations(ctx, &protoReq)
+	msg, err := server.ListSignatureIntegrations(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -270,7 +270,7 @@ func local_request_SignatureIntegrationService_DeleteSignatureIntegration_0(ctx 
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterSignatureIntegrationServiceHandlerFromEndpoint instead.
 func RegisterSignatureIntegrationServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server SignatureIntegrationServiceServer) error {
 
-	mux.Handle("GET", pattern_SignatureIntegrationService_GetSignatureIntegrations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_SignatureIntegrationService_ListSignatureIntegrations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -281,7 +281,7 @@ func RegisterSignatureIntegrationServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_SignatureIntegrationService_GetSignatureIntegrations_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SignatureIntegrationService_ListSignatureIntegrations_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -289,7 +289,7 @@ func RegisterSignatureIntegrationServiceHandlerServer(ctx context.Context, mux *
 			return
 		}
 
-		forward_SignatureIntegrationService_GetSignatureIntegrations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SignatureIntegrationService_ListSignatureIntegrations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -426,7 +426,7 @@ func RegisterSignatureIntegrationServiceHandler(ctx context.Context, mux *runtim
 // "SignatureIntegrationServiceClient" to call the correct interceptors.
 func RegisterSignatureIntegrationServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client SignatureIntegrationServiceClient) error {
 
-	mux.Handle("GET", pattern_SignatureIntegrationService_GetSignatureIntegrations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_SignatureIntegrationService_ListSignatureIntegrations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -435,14 +435,14 @@ func RegisterSignatureIntegrationServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_SignatureIntegrationService_GetSignatureIntegrations_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SignatureIntegrationService_ListSignatureIntegrations_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_SignatureIntegrationService_GetSignatureIntegrations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SignatureIntegrationService_ListSignatureIntegrations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -530,7 +530,7 @@ func RegisterSignatureIntegrationServiceHandlerClient(ctx context.Context, mux *
 }
 
 var (
-	pattern_SignatureIntegrationService_GetSignatureIntegrations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "signatureintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_SignatureIntegrationService_ListSignatureIntegrations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "signatureintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_SignatureIntegrationService_GetSignatureIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "signatureintegrations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
@@ -542,7 +542,7 @@ var (
 )
 
 var (
-	forward_SignatureIntegrationService_GetSignatureIntegrations_0 = runtime.ForwardResponseMessage
+	forward_SignatureIntegrationService_ListSignatureIntegrations_0 = runtime.ForwardResponseMessage
 
 	forward_SignatureIntegrationService_GetSignatureIntegration_0 = runtime.ForwardResponseMessage
 

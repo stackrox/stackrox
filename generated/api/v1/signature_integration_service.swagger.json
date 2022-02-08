@@ -13,13 +13,13 @@
   "paths": {
     "/v1/signatureintegrations": {
       "get": {
-        "summary": "GetSignatureIntegrations returns all signature integrations.",
-        "operationId": "SignatureIntegrationService_GetSignatureIntegrations",
+        "summary": "ListSignatureIntegrations returns all signature integrations.",
+        "operationId": "SignatureIntegrationService_ListSignatureIntegrations",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1GetSignatureIntegrationsResponse"
+              "$ref": "#/definitions/v1ListSignatureIntegrationsResponse"
             }
           },
           "default": {
@@ -256,7 +256,7 @@
     "v1Empty": {
       "type": "object"
     },
-    "v1GetSignatureIntegrationsResponse": {
+    "v1ListSignatureIntegrationsResponse": {
       "type": "object",
       "properties": {
         "integrations": {

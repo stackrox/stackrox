@@ -24,7 +24,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.SignatureIntegration)): {
-			"/v1.SignatureIntegrationService/GetSignatureIntegrations",
+			"/v1.SignatureIntegrationService/ListSignatureIntegrations",
 			"/v1.SignatureIntegrationService/GetSignatureIntegration",
 		},
 		user.With(permissions.Modify(resources.SignatureIntegration)): {
@@ -33,7 +33,7 @@ var (
 			"/v1.SignatureIntegrationService/DeleteSignatureIntegration",
 		},
 	})
-	signatureIntegrationIDPrefix = "io.stackrox.authz.signatureintegration."
+	signatureIntegrationIDPrefix = "io.stackrox.signatureintegration."
 )
 
 type serviceImpl struct {
@@ -55,7 +55,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetSignatureIntegrations(ctx context.Context, _ *v1.Empty) (*v1.GetSignatureIntegrationsResponse, error) {
+func (s *serviceImpl) ListSignatureIntegrations(ctx context.Context, _ *v1.Empty) (*v1.ListSignatureIntegrationsResponse, error) {
 	integrations, err := s.datastore.GetAllSignatureIntegrations(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve signature integrations")
@@ -65,7 +65,7 @@ func (s *serviceImpl) GetSignatureIntegrations(ctx context.Context, _ *v1.Empty)
 	sort.Slice(integrations, func(i, j int) bool {
 		return integrations[i].GetName() < integrations[j].GetName()
 	})
-	return &v1.GetSignatureIntegrationsResponse{
+	return &v1.ListSignatureIntegrationsResponse{
 		Integrations: integrations,
 	}, nil
 }

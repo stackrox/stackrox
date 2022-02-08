@@ -119,7 +119,7 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegration() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
-func (s *signatureDataStoreTestSuite) TestGetSignatureIntegrations() {
+func (s *signatureDataStoreTestSuite) TestGetAllSignatureIntegrations() {
 	integrationID1 := "id1"
 	signatureIntegration := getSignatureIntegration(integrationID1, "name")
 	err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)

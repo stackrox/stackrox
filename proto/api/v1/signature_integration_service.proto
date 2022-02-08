@@ -10,13 +10,13 @@ import "storage/signature_integration.proto";
 
 package v1;
 
-message GetSignatureIntegrationsResponse {
+message ListSignatureIntegrationsResponse {
   repeated storage.SignatureIntegration integrations = 1;
 }
 
 service SignatureIntegrationService {
-  // GetSignatureIntegrations returns all signature integrations.
-  rpc GetSignatureIntegrations (Empty) returns (GetSignatureIntegrationsResponse) {
+  // ListSignatureIntegrations returns all signature integrations.
+  rpc ListSignatureIntegrations (Empty) returns (ListSignatureIntegrationsResponse) {
     option (google.api.http) = {
       get: "/v1/signatureintegrations"
     };

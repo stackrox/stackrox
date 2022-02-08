@@ -27,25 +27,25 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type GetSignatureIntegrationsResponse struct {
+type ListSignatureIntegrationsResponse struct {
 	Integrations         []*storage.SignatureIntegration `protobuf:"bytes,1,rep,name=integrations,proto3" json:"integrations,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
 	XXX_unrecognized     []byte                          `json:"-"`
 	XXX_sizecache        int32                           `json:"-"`
 }
 
-func (m *GetSignatureIntegrationsResponse) Reset()         { *m = GetSignatureIntegrationsResponse{} }
-func (m *GetSignatureIntegrationsResponse) String() string { return proto.CompactTextString(m) }
-func (*GetSignatureIntegrationsResponse) ProtoMessage()    {}
-func (*GetSignatureIntegrationsResponse) Descriptor() ([]byte, []int) {
+func (m *ListSignatureIntegrationsResponse) Reset()         { *m = ListSignatureIntegrationsResponse{} }
+func (m *ListSignatureIntegrationsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListSignatureIntegrationsResponse) ProtoMessage()    {}
+func (*ListSignatureIntegrationsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dda2156ddd73baf3, []int{0}
 }
-func (m *GetSignatureIntegrationsResponse) XXX_Unmarshal(b []byte) error {
+func (m *ListSignatureIntegrationsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetSignatureIntegrationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListSignatureIntegrationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_GetSignatureIntegrationsResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ListSignatureIntegrationsResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -55,33 +55,33 @@ func (m *GetSignatureIntegrationsResponse) XXX_Marshal(b []byte, deterministic b
 		return b[:n], nil
 	}
 }
-func (m *GetSignatureIntegrationsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetSignatureIntegrationsResponse.Merge(m, src)
+func (m *ListSignatureIntegrationsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSignatureIntegrationsResponse.Merge(m, src)
 }
-func (m *GetSignatureIntegrationsResponse) XXX_Size() int {
+func (m *ListSignatureIntegrationsResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *GetSignatureIntegrationsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetSignatureIntegrationsResponse.DiscardUnknown(m)
+func (m *ListSignatureIntegrationsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSignatureIntegrationsResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetSignatureIntegrationsResponse proto.InternalMessageInfo
+var xxx_messageInfo_ListSignatureIntegrationsResponse proto.InternalMessageInfo
 
-func (m *GetSignatureIntegrationsResponse) GetIntegrations() []*storage.SignatureIntegration {
+func (m *ListSignatureIntegrationsResponse) GetIntegrations() []*storage.SignatureIntegration {
 	if m != nil {
 		return m.Integrations
 	}
 	return nil
 }
 
-func (m *GetSignatureIntegrationsResponse) MessageClone() proto.Message {
+func (m *ListSignatureIntegrationsResponse) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *GetSignatureIntegrationsResponse) Clone() *GetSignatureIntegrationsResponse {
+func (m *ListSignatureIntegrationsResponse) Clone() *ListSignatureIntegrationsResponse {
 	if m == nil {
 		return nil
 	}
-	cloned := new(GetSignatureIntegrationsResponse)
+	cloned := new(ListSignatureIntegrationsResponse)
 	*cloned = *m
 
 	if m.Integrations != nil {
@@ -94,7 +94,7 @@ func (m *GetSignatureIntegrationsResponse) Clone() *GetSignatureIntegrationsResp
 }
 
 func init() {
-	proto.RegisterType((*GetSignatureIntegrationsResponse)(nil), "v1.GetSignatureIntegrationsResponse")
+	proto.RegisterType((*ListSignatureIntegrationsResponse)(nil), "v1.ListSignatureIntegrationsResponse")
 }
 
 func init() {
@@ -102,31 +102,31 @@ func init() {
 }
 
 var fileDescriptor_dda2156ddd73baf3 = []byte{
-	// 377 bytes of a gzipped FileDescriptorProto
+	// 382 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x92, 0x4f, 0x4b, 0xe3, 0x40,
-	0x18, 0xc6, 0x9b, 0xee, 0xb2, 0xb0, 0xb3, 0x7b, 0x58, 0x66, 0x0f, 0xcd, 0xa6, 0x6b, 0xa8, 0x69,
-	0x11, 0xed, 0x61, 0x42, 0xea, 0xcd, 0x9b, 0xa5, 0x22, 0xbd, 0x95, 0xf6, 0x22, 0x5e, 0xca, 0x18,
-	0x5f, 0xc2, 0x60, 0x3b, 0x13, 0x66, 0xa6, 0xc1, 0x22, 0x7a, 0xf0, 0x2b, 0x78, 0xf1, 0x23, 0x79,
-	0x14, 0xf4, 0x03, 0x48, 0xf5, 0x83, 0x48, 0xfe, 0x48, 0x5b, 0x48, 0x1a, 0xf1, 0x16, 0x5e, 0x9e,
-	0xe7, 0xfd, 0x3d, 0xcf, 0x9b, 0x41, 0x6d, 0x1a, 0x32, 0x37, 0xf2, 0x5c, 0xc5, 0x02, 0x4e, 0xf5,
-	0x4c, 0xc2, 0x98, 0x71, 0x0d, 0x81, 0xa4, 0x9a, 0x09, 0x3e, 0x56, 0x20, 0x23, 0xe6, 0x03, 0x09,
-	0xa5, 0xd0, 0x02, 0x57, 0x23, 0xcf, 0xfa, 0x1f, 0x08, 0x11, 0x4c, 0xc0, 0x8d, 0x6d, 0x94, 0x73,
-	0xa1, 0x13, 0xa1, 0x4a, 0x15, 0x16, 0xce, 0xb6, 0xc1, 0x34, 0xd4, 0xf3, 0x6c, 0xf6, 0x37, 0x9b,
-	0xf9, 0x62, 0x3a, 0x15, 0x3c, 0x1b, 0x36, 0x95, 0x16, 0x92, 0x06, 0x90, 0xcf, 0x4d, 0x45, 0x0e,
-	0xa0, 0xc6, 0x31, 0xe8, 0xd1, 0x87, 0xa2, 0xbf, 0x14, 0xa8, 0x21, 0xa8, 0x50, 0x70, 0x05, 0xf8,
-	0x10, 0xfd, 0x5e, 0x31, 0x2a, 0xd3, 0x68, 0x7c, 0xdb, 0xfd, 0xd5, 0xd9, 0x22, 0xd9, 0x7e, 0x92,
-	0xe7, 0x1e, 0xae, 0x59, 0x3a, 0xcf, 0xdf, 0x51, 0x3d, 0x4f, 0x36, 0x4a, 0xcb, 0x63, 0x8e, 0xcc,
-	0xa2, 0x18, 0xf8, 0x27, 0x89, 0x3c, 0x72, 0x14, 0xb7, 0xb5, 0x5a, 0xf1, 0x67, 0x59, 0x5e, 0x67,
-	0xfb, 0xf6, 0xe9, 0xed, 0xae, 0x5a, 0xc7, 0xff, 0xd6, 0x8e, 0xbe, 0x9a, 0x07, 0x4b, 0x54, 0x2b,
-	0x58, 0x83, 0xff, 0xc4, 0x8c, 0x21, 0x28, 0x31, 0x93, 0x3e, 0x74, 0xe7, 0xfd, 0x9e, 0xb5, 0xb9,
-	0xa9, 0xb3, 0x93, 0xe0, 0x1a, 0xd8, 0x2e, 0xc4, 0xb9, 0x57, 0xec, 0xfc, 0x1a, 0xdf, 0x20, 0x73,
-	0x20, 0x54, 0x3e, 0x74, 0x33, 0xa2, 0x2c, 0x41, 0x2b, 0x49, 0x60, 0x3b, 0xc5, 0x85, 0x0f, 0x8c,
-	0x36, 0xe6, 0xa8, 0x36, 0x98, 0x7d, 0x09, 0xbf, 0xfc, 0x03, 0xce, 0x5e, 0x82, 0x6a, 0x5a, 0x25,
-	0x65, 0x63, 0x1e, 0x45, 0x56, 0x0f, 0x26, 0xa0, 0xe1, 0x93, 0x67, 0x5e, 0xa1, 0x64, 0x27, 0x6d,
-	0x97, 0x50, 0xba, 0xe4, 0x61, 0x61, 0x1b, 0x8f, 0x0b, 0xdb, 0x78, 0x59, 0xd8, 0xc6, 0xfd, 0xab,
-	0x5d, 0x41, 0x26, 0x13, 0x44, 0x69, 0xea, 0x5f, 0x48, 0x71, 0x99, 0x3e, 0x71, 0x42, 0x43, 0x46,
-	0x22, 0xef, 0xb4, 0x1a, 0x79, 0x27, 0x95, 0xb3, 0x1f, 0xc9, 0x6c, 0xff, 0x3d, 0x00, 0x00, 0xff,
-	0xff, 0x77, 0x19, 0xbf, 0xb1, 0x94, 0x03, 0x00, 0x00,
+	0x18, 0xc6, 0x9b, 0xee, 0xb2, 0xb0, 0xb3, 0x7b, 0x58, 0x66, 0x0f, 0x6d, 0xd3, 0xdd, 0xd0, 0xa6,
+	0x2a, 0xda, 0xc3, 0x84, 0xd4, 0x9b, 0x37, 0x4b, 0x45, 0x0a, 0x1e, 0x4a, 0x7b, 0x11, 0x2f, 0x65,
+	0x8c, 0xaf, 0x61, 0xb0, 0x9d, 0x09, 0x33, 0xd3, 0x60, 0x11, 0x3d, 0xf8, 0x15, 0xbc, 0xf8, 0x91,
+	0x3c, 0x0a, 0x82, 0x67, 0xa9, 0x7e, 0x10, 0xc9, 0x1f, 0x69, 0x0b, 0x69, 0x23, 0xde, 0xc2, 0xcb,
+	0xf3, 0xbc, 0xbf, 0xe7, 0x79, 0x33, 0xa8, 0x49, 0x03, 0xe6, 0x84, 0xae, 0xa3, 0x98, 0xcf, 0xa9,
+	0x9e, 0x48, 0x18, 0x32, 0xae, 0xc1, 0x97, 0x54, 0x33, 0xc1, 0x87, 0x0a, 0x64, 0xc8, 0x3c, 0x20,
+	0x81, 0x14, 0x5a, 0xe0, 0x62, 0xe8, 0x9a, 0xff, 0x7c, 0x21, 0xfc, 0x11, 0x38, 0x91, 0x8d, 0x72,
+	0x2e, 0x74, 0x2c, 0x54, 0x89, 0xc2, 0xc4, 0xe9, 0x36, 0x18, 0x07, 0x7a, 0x9a, 0xce, 0xfe, 0xa6,
+	0x33, 0x4f, 0x8c, 0xc7, 0x82, 0xa7, 0xc3, 0x86, 0xd2, 0x42, 0x52, 0x1f, 0xb2, 0xb9, 0x89, 0xc8,
+	0x3e, 0x47, 0xf5, 0x23, 0xa6, 0xf4, 0xe0, 0x43, 0xd2, 0x9d, 0x2b, 0x54, 0x1f, 0x54, 0x20, 0xb8,
+	0x02, 0xbc, 0x8f, 0x7e, 0x2f, 0x38, 0x55, 0xd9, 0xa8, 0x7d, 0xdb, 0xfe, 0xd5, 0xfa, 0x4f, 0x52,
+	0x00, 0xc9, 0x72, 0xf7, 0x97, 0x2c, 0xad, 0xe7, 0xef, 0xa8, 0x9a, 0x25, 0x1b, 0x24, 0xed, 0x71,
+	0x80, 0x2a, 0x2b, 0x73, 0xe0, 0x9f, 0x24, 0x74, 0xc9, 0x41, 0xd4, 0xd7, 0xdc, 0x8c, 0x3e, 0x73,
+	0x13, 0xdb, 0xf5, 0xdb, 0xa7, 0xb7, 0xbb, 0x62, 0x15, 0x57, 0x96, 0xee, 0xbe, 0x98, 0x08, 0x4b,
+	0x54, 0x3a, 0x84, 0xcc, 0x35, 0xf8, 0x4f, 0x04, 0xe9, 0x83, 0x12, 0x13, 0xe9, 0x41, 0x7b, 0xda,
+	0xed, 0x98, 0xeb, 0xbb, 0xda, 0x5b, 0x31, 0xae, 0x86, 0xad, 0x95, 0x38, 0xe7, 0x8a, 0x9d, 0x5d,
+	0xe3, 0x1b, 0x54, 0xee, 0x89, 0xec, 0xec, 0x78, 0x3d, 0x22, 0x2f, 0xc1, 0x46, 0x9c, 0xc0, 0xb2,
+	0x57, 0x17, 0xde, 0x33, 0x9a, 0x98, 0xa3, 0x52, 0x6f, 0xf2, 0x25, 0xfc, 0xfc, 0x17, 0xd8, 0x3b,
+	0x31, 0xaa, 0x61, 0xe6, 0x94, 0x8d, 0x78, 0x14, 0x99, 0x1d, 0x18, 0x81, 0x86, 0x4f, 0x9e, 0x79,
+	0x81, 0x92, 0x9e, 0xb4, 0x99, 0x43, 0x69, 0x93, 0x87, 0x99, 0x65, 0x3c, 0xce, 0x2c, 0xe3, 0x65,
+	0x66, 0x19, 0xf7, 0xaf, 0x56, 0x01, 0x95, 0x99, 0x20, 0x4a, 0x53, 0xef, 0x42, 0x8a, 0xcb, 0xe4,
+	0x95, 0x13, 0x1a, 0x30, 0x12, 0xba, 0x27, 0xc5, 0xd0, 0x3d, 0x2e, 0x9c, 0xfe, 0x88, 0x67, 0xbb,
+	0xef, 0x01, 0x00, 0x00, 0xff, 0xff, 0x2c, 0x89, 0xa6, 0x36, 0x97, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -141,8 +141,8 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type SignatureIntegrationServiceClient interface {
-	// GetSignatureIntegrations returns all signature integrations.
-	GetSignatureIntegrations(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetSignatureIntegrationsResponse, error)
+	// ListSignatureIntegrations returns all signature integrations.
+	ListSignatureIntegrations(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListSignatureIntegrationsResponse, error)
 	// GetSignatureIntegration returns the signature integration given its ID.
 	GetSignatureIntegration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.SignatureIntegration, error)
 	// PostSignatureIntegration creates a signature integration.
@@ -161,9 +161,9 @@ func NewSignatureIntegrationServiceClient(cc grpc.ClientConnInterface) Signature
 	return &signatureIntegrationServiceClient{cc}
 }
 
-func (c *signatureIntegrationServiceClient) GetSignatureIntegrations(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetSignatureIntegrationsResponse, error) {
-	out := new(GetSignatureIntegrationsResponse)
-	err := c.cc.Invoke(ctx, "/v1.SignatureIntegrationService/GetSignatureIntegrations", in, out, opts...)
+func (c *signatureIntegrationServiceClient) ListSignatureIntegrations(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListSignatureIntegrationsResponse, error) {
+	out := new(ListSignatureIntegrationsResponse)
+	err := c.cc.Invoke(ctx, "/v1.SignatureIntegrationService/ListSignatureIntegrations", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +208,8 @@ func (c *signatureIntegrationServiceClient) DeleteSignatureIntegration(ctx conte
 
 // SignatureIntegrationServiceServer is the server API for SignatureIntegrationService service.
 type SignatureIntegrationServiceServer interface {
-	// GetSignatureIntegrations returns all signature integrations.
-	GetSignatureIntegrations(context.Context, *Empty) (*GetSignatureIntegrationsResponse, error)
+	// ListSignatureIntegrations returns all signature integrations.
+	ListSignatureIntegrations(context.Context, *Empty) (*ListSignatureIntegrationsResponse, error)
 	// GetSignatureIntegration returns the signature integration given its ID.
 	GetSignatureIntegration(context.Context, *ResourceByID) (*storage.SignatureIntegration, error)
 	// PostSignatureIntegration creates a signature integration.
@@ -224,8 +224,8 @@ type SignatureIntegrationServiceServer interface {
 type UnimplementedSignatureIntegrationServiceServer struct {
 }
 
-func (*UnimplementedSignatureIntegrationServiceServer) GetSignatureIntegrations(ctx context.Context, req *Empty) (*GetSignatureIntegrationsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSignatureIntegrations not implemented")
+func (*UnimplementedSignatureIntegrationServiceServer) ListSignatureIntegrations(ctx context.Context, req *Empty) (*ListSignatureIntegrationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSignatureIntegrations not implemented")
 }
 func (*UnimplementedSignatureIntegrationServiceServer) GetSignatureIntegration(ctx context.Context, req *ResourceByID) (*storage.SignatureIntegration, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSignatureIntegration not implemented")
@@ -244,20 +244,20 @@ func RegisterSignatureIntegrationServiceServer(s *grpc.Server, srv SignatureInte
 	s.RegisterService(&_SignatureIntegrationService_serviceDesc, srv)
 }
 
-func _SignatureIntegrationService_GetSignatureIntegrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SignatureIntegrationService_ListSignatureIntegrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SignatureIntegrationServiceServer).GetSignatureIntegrations(ctx, in)
+		return srv.(SignatureIntegrationServiceServer).ListSignatureIntegrations(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.SignatureIntegrationService/GetSignatureIntegrations",
+		FullMethod: "/v1.SignatureIntegrationService/ListSignatureIntegrations",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SignatureIntegrationServiceServer).GetSignatureIntegrations(ctx, req.(*Empty))
+		return srv.(SignatureIntegrationServiceServer).ListSignatureIntegrations(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -339,8 +339,8 @@ var _SignatureIntegrationService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*SignatureIntegrationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetSignatureIntegrations",
-			Handler:    _SignatureIntegrationService_GetSignatureIntegrations_Handler,
+			MethodName: "ListSignatureIntegrations",
+			Handler:    _SignatureIntegrationService_ListSignatureIntegrations_Handler,
 		},
 		{
 			MethodName: "GetSignatureIntegration",
@@ -363,7 +363,7 @@ var _SignatureIntegrationService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/signature_integration_service.proto",
 }
 
-func (m *GetSignatureIntegrationsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListSignatureIntegrationsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -373,12 +373,12 @@ func (m *GetSignatureIntegrationsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetSignatureIntegrationsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListSignatureIntegrationsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *GetSignatureIntegrationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ListSignatureIntegrationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -415,7 +415,7 @@ func encodeVarintSignatureIntegrationService(dAtA []byte, offset int, v uint64) 
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *GetSignatureIntegrationsResponse) Size() (n int) {
+func (m *ListSignatureIntegrationsResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -439,7 +439,7 @@ func sovSignatureIntegrationService(x uint64) (n int) {
 func sozSignatureIntegrationService(x uint64) (n int) {
 	return sovSignatureIntegrationService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetSignatureIntegrationsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListSignatureIntegrationsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -462,10 +462,10 @@ func (m *GetSignatureIntegrationsResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetSignatureIntegrationsResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListSignatureIntegrationsResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetSignatureIntegrationsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListSignatureIntegrationsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
