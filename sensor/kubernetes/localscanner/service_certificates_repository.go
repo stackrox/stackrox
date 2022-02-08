@@ -21,18 +21,8 @@ var (
 	// the secrets because the owner of the secrets is not the deployment for sensor.
 	ErrSensorDoesNotOwnCertSecrets = errors.New("sensor deployment does not own certificate secrets")
 
-	errForServiceFormat                         = "for service type %q"
-	_                   ServiceCertificatesRepo = (*serviceCertificatesRepoSecretsImpl)(nil)
+	errForServiceFormat = "for service type %q"
 )
-
-// ServiceCertificatesRepo is in charge of persisting and retrieving a set of service certificates, thus implementing
-// the [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for *storage.TypedServiceCertificateSet.
-type ServiceCertificatesRepo interface {
-	// GetServiceCertificates retrieves the certificates from permanent storage.
-	GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
-	// PutServiceCertificates persists the certificates on permanent storage.
-	PutServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
-}
 
 // serviceCertificatesRepoSecretsImpl is a ServiceCertificatesRepo that uses k8s secrets for persistence.
 type serviceCertificatesRepoSecretsImpl struct {
@@ -56,7 +46,7 @@ type ServiceCertSecretSpec struct {
 // sensorDeployment as owner, populating the secret data with the corresponding certificates in initialCerts.
 func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec,
 	sensorDeployment *appsApiv1.Deployment, initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
-	secretsClient corev1.SecretInterface) (ServiceCertificatesRepo, error) {
+	secretsClient corev1.SecretInterface) (*serviceCertificatesRepoSecretsImpl, error) {
 	repo := &serviceCertificatesRepoSecretsImpl{
 		secrets: map[storage.ServiceType]ServiceCertSecretSpec{
 			storage.ServiceType_SCANNER_SERVICE:    scannerSpec,

@@ -205,7 +205,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) getFirstServiceCertificate(
 }
 
 type certSecretsRepoFixture struct {
-	repo          ServiceCertificatesRepo
+	repo          *serviceCertificatesRepoSecretsImpl
 	secretsClient corev1.SecretInterface
 	certificates  *storage.TypedServiceCertificateSet
 }
@@ -259,7 +259,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixtureAdvancedOpts(verbToE
 	}
 }
 
-func newTestRepo(secrets map[storage.ServiceType]*v1.Secret, secretsClient corev1.SecretInterface) ServiceCertificatesRepo {
+func newTestRepo(secrets map[storage.ServiceType]*v1.Secret, secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
 	secretsSpec := make(map[storage.ServiceType]ServiceCertSecretSpec)
 	for serviceType, secret := range secrets {
 		secretsSpec[serviceType] = ServiceCertSecretSpec{
