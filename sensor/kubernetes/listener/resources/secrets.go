@@ -11,7 +11,7 @@ import (
 	"github.com/cloudflare/cfssl/certinfo"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -133,7 +133,7 @@ func newSecretDispatcher(regStore *registry.Store) *secretDispatcher {
 	}
 }
 
-func dockerConfigToImageIntegration(registry string, dce types.DockerConfigEntry) *storage.ImageIntegration {
+func dockerConfigToImageIntegration(registry string, dce config.DockerConfigEntry) *storage.ImageIntegration {
 	registryType := docker.GenericDockerRegistryType
 	if urlfmt.TrimHTTPPrefixes(registry) == redhatRegistryEndpoint {
 		registryType = rhel.RedHatRegistryType
@@ -155,7 +155,7 @@ func dockerConfigToImageIntegration(registry string, dce types.DockerConfigEntry
 }
 
 func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action central.ResourceAction) []*central.SensorEvent {
-	var dockerConfig types.DockerConfig
+	var dockerConfig config.DockerConfig
 	switch secret.Type {
 	case v1.SecretTypeDockercfg:
 		data, ok := secret.Data[v1.DockerConfigKey]
@@ -171,7 +171,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 		if !ok {
 			return nil
 		}
-		var dockerConfigJSON types.DockerConfigJSON
+		var dockerConfigJSON config.DockerConfigJSON
 		if err := json.Unmarshal(data, &dockerConfigJSON); err != nil {
 			log.Error(err)
 			return nil

@@ -1,9 +1,11 @@
 package registry
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
@@ -24,25 +26,31 @@ type Store struct {
 
 	mutex sync.RWMutex
 
-	// test indicates if this is a test store or not.
-	test bool
+	checkTLS CheckTLS
 }
 
-// newRegistryStore creates a new registry store.
-func newRegistryStore() *Store {
-	return &Store{
-		factory: registries.NewFactory(registries.WithRegistryCreators(dockerFactory.Creator)),
+// CheckTLS defines a function which checks if the given address is using TLS.
+// An example implementation of this is tlscheck.CheckTLS.
+type CheckTLS func(origAddr string) (bool, error)
+
+// NewRegistryStore creates a new registry store.
+// The passed-in TLSChecker is used to check if a registry uses TLS.
+// If no TLSChecker is passed in, tlscheck.CheckTLS is used by default.
+func NewRegistryStore(checkTLS CheckTLS) *Store {
+	store := &Store{
+		factory: registries.NewFactory(registries.FactoryOptions{
+			CreatorFuncs: []registries.CreatorWrapper{dockerFactory.Creator},
+		}),
 		store:   make(map[string]registries.Set),
-	}
-}
 
-// NewTestRegistryStore creates a new registry store for testing purposes.
-// The main difference between this and a non-test registry store
-// is that this one does not attempt to reach out to the registry to check TLS.
-func NewTestRegistryStore() *Store {
-	rs := newRegistryStore()
-	rs.test = true
-	return rs
+		checkTLS: tlscheck.CheckTLS,
+	}
+
+	if checkTLS != nil {
+		store.checkTLS = checkTLS
+	}
+
+	return store
 }
 
 func (rs *Store) getRegistries(namespace string) registries.Set {
@@ -59,19 +67,16 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 }
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
-func (rs *Store) UpsertRegistry(namespace, registry string, dce types.DockerConfigEntry) error {
+func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
 	regs := rs.getRegistries(namespace)
 
-	var secure bool
-	if !rs.test {
-		var err error
-		secure, err = tlscheck.CheckTLS(registry)
-		if err != nil {
-			return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
-		}
+	// TODO: pass a context here, as this can take time.
+	secure, err := rs.checkTLS(registry)
+	if err != nil {
+		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
-	err := regs.UpdateImageIntegration(&storage.ImageIntegration{
+	err = regs.UpdateImageIntegration(&storage.ImageIntegration{
 		Name:       registry,
 		Type:       "docker",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},

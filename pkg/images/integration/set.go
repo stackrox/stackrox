@@ -23,7 +23,7 @@ type Set interface {
 
 // NewSet returns a new Set instance.
 func NewSet(reporter integrationhealth.Reporter) Set {
-	registryFactory := registries.NewFactory()
+	registryFactory := registries.NewFactory(registries.FactoryOptions{})
 	registrySet := registries.NewSet(registryFactory)
 
 	scannerFactory := scanners.NewFactory(registrySet)
