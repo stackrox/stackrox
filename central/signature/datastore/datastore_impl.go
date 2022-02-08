@@ -2,13 +2,13 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/signature/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -17,6 +17,8 @@ var (
 
 type datastoreImpl struct {
 	storage store.SignatureIntegrationStore
+
+	lock sync.RWMutex
 }
 
 func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error) {
@@ -50,6 +52,11 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	if integration.GetId() != "" {
 		return errox.Newf(errox.InvalidArgs, "id should be empty when it's %q", integration.GetId())
 	}
+
+	// Protect against TOCTOU race condition.
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
 	integrationID, err := d.generateUniqueIntegrationID()
 	if err != nil {
 		return err
@@ -70,20 +77,35 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return errox.NewErrInvalidArgs(err.Error())
 	}
+
+	// Protect against TOCTOU race condition.
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	if err := d.verifyIntegrationIDExists(integration); err != nil {
+		return err
+	}
+
+	return d.storage.Upsert(integration)
+}
+
+func (d *datastoreImpl) verifyIntegrationIDExists(integration *storage.SignatureIntegration) error {
 	_, found, err := d.storage.Get(integration.GetId())
 	if err != nil {
 		return err
 	} else if !found {
-		return fmt.Errorf("signature integration id=%s doesn't exist, requested name=%q", integration.GetId(), integration.GetName())
+		return errox.Newf(errox.InvalidArgs, "signature integration id=%s doesn't exist, requested name=%q", integration.GetId(), integration.GetName())
 	}
-
-	return d.storage.Upsert(integration)
+	return nil
 }
 
 func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id string) error {
 	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
+
+	d.lock.Lock()
+	defer d.lock.Unlock()
 
 	return d.storage.Delete(id)
 }
