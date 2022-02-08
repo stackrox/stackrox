@@ -12,12 +12,13 @@ function MitreAttackLink({ href, id }: MitreAttackLinkProps): ReactElement {
     return (
         <Button
             variant="link"
-            component={(props) => (
-                <a {...props} href={href} target="_blank" rel="noopener noreferrer" />
-            )}
+            isInline
+            component="a"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
             icon={<ExternalLinkSquareAltIcon />}
             iconPosition="right"
-            isInline
         >
             {id}
         </Button>

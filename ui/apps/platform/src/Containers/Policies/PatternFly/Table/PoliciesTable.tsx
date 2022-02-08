@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
     Button,
+    ButtonVariant,
     Divider,
     Dropdown,
     DropdownItem,
@@ -24,6 +24,7 @@ import orderBy from 'lodash/orderBy';
 
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
@@ -401,15 +402,13 @@ function PoliciesTable({
                                         }}
                                     />
                                     <Td dataLabel="Policy">
-                                        <Button
-                                            variant="link"
+                                        <ButtonLink
+                                            variant={ButtonVariant.link}
                                             isInline
-                                            component={(props) => (
-                                                <Link {...props} to={`${policiesBasePath}/${id}`} />
-                                            )}
+                                            to={`${policiesBasePath}/${id}`}
                                         >
                                             {name}
-                                        </Button>
+                                        </ButtonLink>
                                     </Td>
                                     <Td dataLabel="Description">
                                         <Truncate

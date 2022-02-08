@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, Flex } from '@patternfly/react-core';
+import { ButtonVariant, Flex } from '@patternfly/react-core';
 import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import { userBasePath } from 'routePaths';
 
 const forbiddenIcon = (
@@ -32,14 +32,14 @@ function RolesForResourceAccess({ roleNames }: RolesForResourceAccessProps): Rea
         <Flex spaceItems={{ default: 'spaceItemsSm' }}>
             {permittedIcon}
             {roleNames.map((roleName) => (
-                <Button
+                <ButtonLink
                     key={roleName}
-                    variant="link"
+                    variant={ButtonVariant.link}
                     isInline
-                    component={(props) => <Link {...props} to={getUserRolePath(roleName)} />}
+                    to={getUserRolePath(roleName)}
                 >
                     {roleName}
-                </Button>
+                </ButtonLink>
             ))}
         </Flex>
     );
