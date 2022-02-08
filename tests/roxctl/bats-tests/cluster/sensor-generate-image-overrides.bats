@@ -4,12 +4,14 @@ load "../helpers.bash"
 
 out_dir=""
 cluster_name="override-test-cluster"
+central_flavor=""
 
 setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq || skip "Tests in this file require yq"
   [[ -n "$API_ENDPOINT" ]] || fail "API_ENDPOINT environment variable required"
   [[ -n "$ROX_PASSWORD" ]] || fail "ROX_PASSWORD environment variable required"
+  central_flavor="$(kubectl -n stackrox exec -it deployment/central -- env | grep -i ROX_IMAGE_FLAVOR | sed 's/ROX_IMAGE_FLAVOR=//')"
 }
 
 setup() {
@@ -20,7 +22,17 @@ teardown() {
   rm -rf "$out_dir"
 }
 
-dev_registry_regex="docker\.io/stackrox"
+registry_from_flavor() {
+  case "$central_flavor" in
+  "development_build")
+    echo "docker\.io/stackrox"
+    ;;
+  "stackrox.io")
+    echo "stackrox\.io"
+    ;;
+  esac
+}
+
 any_version="[0-9]+\.[0-9]+\."
 any_version_latest="${any_version}[0-9]+\-latest"
 any_version_slim="${any_version}[0-9]+\-slim"
@@ -28,16 +40,16 @@ any_version_slim="${any_version}[0-9]+\-slim"
 @test "roxctl sensor generate: no overrides" {
   generate_bundle k8s --name "$cluster_name"
   assert_success
-  assert_bundle_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "$dev_registry_regex/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/main:$any_version"
+  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/collector:$any_version_slim"
   delete_cluster "$cluster_name"
 }
 
 @test "roxctl sensor generate: no overrides with collector full" {
   generate_bundle k8s "--slim-collector=false" --name "$cluster_name"
   assert_success
-  assert_bundle_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "$dev_registry_regex/collector:$any_version_latest"
+  assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/main:$any_version"
+  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/collector:$any_version_latest"
   delete_cluster "$cluster_name"
 }
 
@@ -52,7 +64,7 @@ any_version_slim="${any_version}[0-9]+\-slim"
 @test "roxctl sensor generate: with collector override" {
   generate_bundle k8s "--collector-image-repository=example2.com/stackrox/collector" --name "$cluster_name"
   assert_success
-  assert_bundle_registry "$out_dir" "sensor" "$dev_registry_regex/main:$any_version"
+  assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/main:$any_version"
   assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_slim"
   delete_cluster "$cluster_name"
 }
