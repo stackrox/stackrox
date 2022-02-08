@@ -89,6 +89,7 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 			if key == "" {
 				key = image.GetImageFullName()
 			}
+			log.Infof("Removing image keys: key - %v (%v %v)", key, image.GetImageId(), image.GetImageFullName())
 			keysToDelete = append(keysToDelete, key)
 		}
 		h.imageCache.Remove(keysToDelete...)
