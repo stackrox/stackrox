@@ -12,9 +12,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	appsApiv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	appsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -49,25 +49,28 @@ var (
 
 // NewLocalScannerTLSIssuer creates a sensor component that will keep the local scanner certificates
 // up to date, using the specified retry parameters.
-func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace string) common.SensorComponent {
+func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace string,
+	podOwnerName string) common.SensorComponent {
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &localScannerTLSIssuerImpl{
-		secretsClient:     k8sClient.CoreV1().Secrets(sensorNamespace),
-		deploymentsClient: k8sClient.AppsV1().Deployments(sensorNamespace),
-		msgToCentralC:     msgToCentralC,
-		msgFromCentralC:   msgFromCentralC,
-		requester:         NewCertificateRequester(msgToCentralC, msgFromCentralC),
+		sensorNamespace: sensorNamespace,
+		podOwnerName:    podOwnerName,
+		k8sClient:       k8sClient,
+		msgToCentralC:   msgToCentralC,
+		msgFromCentralC: msgFromCentralC,
+		requester:       NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
 
 type localScannerTLSIssuerImpl struct {
-	secretsClient     corev1.SecretInterface
-	deploymentsClient appsv1.DeploymentInterface
-	msgToCentralC     chan *central.MsgFromSensor
-	msgFromCentralC   chan *central.IssueLocalScannerCertsResponse
-	requester         CertificateRequester
-	refresher         CertificateRefresher
+	sensorNamespace string
+	podOwnerName    string
+	k8sClient       kubernetes.Interface
+	msgToCentralC   chan *central.MsgFromSensor
+	msgFromCentralC chan *central.IssueLocalScannerCertsResponse
+	requester       CertificateRequester
+	refresher       CertificateRefresher
 }
 
 // CertificateRequester requests a new set of local scanner certificates from central.
@@ -120,7 +123,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return errors.New("already started")
 	}
 
-	sensorDeployment, getSensorDeploymentErr := i.getSensorDeployment(ctx)
+	sensorDeployment, getSensorDeploymentErr := i.fetchSensorDeployment(ctx)
 	if getSensorDeploymentErr != nil {
 		return errors.Wrap(getSensorDeploymentErr, "fetching sensor deployment")
 	}
@@ -128,7 +131,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	i.requester.Start()
 
 	certsRepo, createCertsRepoErr := NewServiceCertificatesRepo(ctx, scannerSpec, scannerDBSpec, sensorDeployment,
-		i.initialCertsSupplier(), i.secretsClient)
+		i.initialCertsSupplier(), i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
 	if createCertsRepoErr != nil {
 		return errors.Wrap(createCertsRepoErr, "creating service certificates repository")
 	}
@@ -212,15 +215,29 @@ func (i *localScannerTLSIssuerImpl) initialCertsSupplier() func(context.Context)
 	}
 }
 
-func (i *localScannerTLSIssuerImpl) getSensorDeployment(ctx context.Context) (*appsApiv1.Deployment, error) {
-	/*
-		FIXME
-		- Either using labels
-			- "app.kubernetes.io/name": "stackrox"
-			- "app.kubernetes.io/component": "sensor",
-			- "app.kubernetes.io/instance": "stackrox-secured-cluster-services",
-		- Or adding deployment UUID as an env var for sensor pod
-		- Or ??
-	*/
-	return nil, nil
+func (i *localScannerTLSIssuerImpl) fetchSensorDeployment(ctx context.Context) (*appsApiv1.Deployment, error) {
+	if i.podOwnerName == "" {
+		return nil, errors.New("fetching sensor deployment: empty pod owner name")
+	}
+
+	replicaSetClient := i.k8sClient.AppsV1().ReplicaSets(i.sensorNamespace)
+	ownerReplicaSet, getReplicaSetErr := replicaSetClient.Get(ctx, i.podOwnerName, metav1.GetOptions{})
+	if getReplicaSetErr != nil {
+		return nil, errors.Wrap(getReplicaSetErr, "fetching owner replica set")
+	}
+
+	replicaSetOwners := ownerReplicaSet.GetObjectMeta().GetOwnerReferences()
+	if len(replicaSetOwners) != 1 {
+		return nil, errors.Errorf("fetching sensor deployment: replica set %q has unexpected owners %v",
+			ownerReplicaSet.GetName(), replicaSetOwners)
+	}
+	replicaSetOwner := replicaSetOwners[0]
+
+	deploymentClient := i.k8sClient.AppsV1().Deployments(i.sensorNamespace)
+	sensorDeployment, getSensorDeploymentErr := deploymentClient.Get(ctx, replicaSetOwner.Name, metav1.GetOptions{})
+	if getSensorDeploymentErr != nil {
+		return nil, errors.Wrap(getReplicaSetErr, "fetching sensor deployment")
+	}
+
+	return sensorDeployment, nil
 }

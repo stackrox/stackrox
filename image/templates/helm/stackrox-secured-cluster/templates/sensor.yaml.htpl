@@ -108,6 +108,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: POD_OWNER_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.ownerReferences[0].name
         - name: ROX_CENTRAL_ENDPOINT
           value: {{ ._rox.centralEndpoint }}
         - name: ROX_ADVERTISED_ENDPOINT
