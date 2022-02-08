@@ -41,15 +41,14 @@ type certRefresherImpl struct {
 
 type requestCertificatesFunc func(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 
-// ServiceCertificatesRepo TODO replace by serviceCertificatesRepo from ROX-9128
+// ServiceCertificatesRepo is in charge of persisting and retrieving a set of service certificates, thus implementing
+// the [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for *storage.TypedServiceCertificateSet.
 type ServiceCertificatesRepo interface {
 	// GetServiceCertificates retrieves the certificates from permanent storage.
 	GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
 	// PutServiceCertificates persists the certificates on permanent storage.
 	PutServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
 }
-
-// END TODO replace by certSecretsRepo from ROX-9128
 
 func (r *certRefresherImpl) Start() error {
 	r.Stop()
