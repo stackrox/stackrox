@@ -141,15 +141,12 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type SignatureIntegrationServiceClient interface {
-	// ListSignatureIntegrations returns all signature integrations.
 	ListSignatureIntegrations(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListSignatureIntegrationsResponse, error)
-	// GetSignatureIntegration returns the signature integration given its ID.
 	GetSignatureIntegration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.SignatureIntegration, error)
-	// PostSignatureIntegration creates a signature integration.
+	// Integration id should not be set.
+	// Returns signature integration with id filled.
 	PostSignatureIntegration(ctx context.Context, in *storage.SignatureIntegration, opts ...grpc.CallOption) (*storage.SignatureIntegration, error)
-	// PutSignatureIntegration modifies a given signature integration.
 	PutSignatureIntegration(ctx context.Context, in *storage.SignatureIntegration, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteSignatureIntegration removes a signature integration given its ID.
 	DeleteSignatureIntegration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -208,15 +205,12 @@ func (c *signatureIntegrationServiceClient) DeleteSignatureIntegration(ctx conte
 
 // SignatureIntegrationServiceServer is the server API for SignatureIntegrationService service.
 type SignatureIntegrationServiceServer interface {
-	// ListSignatureIntegrations returns all signature integrations.
 	ListSignatureIntegrations(context.Context, *Empty) (*ListSignatureIntegrationsResponse, error)
-	// GetSignatureIntegration returns the signature integration given its ID.
 	GetSignatureIntegration(context.Context, *ResourceByID) (*storage.SignatureIntegration, error)
-	// PostSignatureIntegration creates a signature integration.
+	// Integration id should not be set.
+	// Returns signature integration with id filled.
 	PostSignatureIntegration(context.Context, *storage.SignatureIntegration) (*storage.SignatureIntegration, error)
-	// PutSignatureIntegration modifies a given signature integration.
 	PutSignatureIntegration(context.Context, *storage.SignatureIntegration) (*Empty, error)
-	// DeleteSignatureIntegration removes a signature integration given its ID.
 	DeleteSignatureIntegration(context.Context, *ResourceByID) (*Empty, error)
 }
 

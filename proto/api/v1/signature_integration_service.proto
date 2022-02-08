@@ -11,44 +11,41 @@ import "storage/signature_integration.proto";
 package v1;
 
 message ListSignatureIntegrationsResponse {
-  repeated storage.SignatureIntegration integrations = 1;
+    repeated storage.SignatureIntegration integrations = 1;
 }
 
 service SignatureIntegrationService {
-  // ListSignatureIntegrations returns all signature integrations.
-  rpc ListSignatureIntegrations (Empty) returns (ListSignatureIntegrationsResponse) {
-    option (google.api.http) = {
-      get: "/v1/signatureintegrations"
-    };
-  }
+    rpc ListSignatureIntegrations (Empty) returns (ListSignatureIntegrationsResponse) {
+        option (google.api.http) = {
+            get: "/v1/signatureintegrations"
+        };
+    }
 
-  // GetSignatureIntegration returns the signature integration given its ID.
-  rpc GetSignatureIntegration (ResourceByID) returns (storage.SignatureIntegration) {
-    option (google.api.http) = {
-      get: "/v1/signatureintegrations/{id}"
-    };
-  }
+    rpc GetSignatureIntegration (ResourceByID) returns (storage.SignatureIntegration) {
+        option (google.api.http) = {
+            get: "/v1/signatureintegrations/{id}"
+        };
+    }
 
-  // PostSignatureIntegration creates a signature integration.
-  rpc PostSignatureIntegration (storage.SignatureIntegration) returns (storage.SignatureIntegration) {
-    option (google.api.http) = {
-      post: "/v1/signatureintegrations"
-      body: "*"
-    };
-  }
+    // Integration id should not be set.
+    // Returns signature integration with id filled.
+    rpc PostSignatureIntegration (storage.SignatureIntegration) returns (storage.SignatureIntegration) {
+        option (google.api.http) = {
+            post: "/v1/signatureintegrations"
+            body: "*"
+        };
+    }
 
-  // PutSignatureIntegration modifies a given signature integration.
-  rpc PutSignatureIntegration (storage.SignatureIntegration) returns (Empty) {
-    option (google.api.http) = {
-      put: "/v1/signatureintegrations/{id}"
-      body: "*"
-    };
-  }
+    rpc PutSignatureIntegration (storage.SignatureIntegration) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/signatureintegrations/{id}"
+            body: "*"
+        };
+    }
 
-  // DeleteSignatureIntegration removes a signature integration given its ID.
-  rpc DeleteSignatureIntegration (ResourceByID) returns (Empty) {
-    option (google.api.http) = {
-      delete: "/v1/signatureintegrations/{id}"
-    };
-  }
+    rpc DeleteSignatureIntegration (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/signatureintegrations/{id}"
+        };
+    }
 }
