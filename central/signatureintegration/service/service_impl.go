@@ -80,7 +80,7 @@ func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.Resour
 func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
 	err := s.datastore.AddSignatureIntegration(ctx, integration)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to create signature integration id=%q, name=%q", integration.GetId(), integration.GetName())
 	}
 
 	return integration, nil
@@ -89,7 +89,7 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, integration 
 func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*v1.Empty, error) {
 	err := s.datastore.UpdateSignatureIntegration(ctx, integration)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to update signature integration id=%q, name=%q", integration.GetId(), integration.GetName())
 	}
 	return &v1.Empty{}, nil
 }
