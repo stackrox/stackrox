@@ -1,6 +1,8 @@
 package registry
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
@@ -29,11 +31,11 @@ type Store struct {
 
 // CheckTLS defines a function which checks if the given address is using TLS.
 // An example implementation of this is tlscheck.CheckTLS.
-type CheckTLS func(origAddr string) (bool, error)
+type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
 
 // NewRegistryStore creates a new registry store.
-// The passed-in TLSChecker is used to check if a registry uses TLS.
-// If no TLSChecker is passed in, tlscheck.CheckTLS is used by default.
+// The passed-in CheckTLS is used to check if a registry uses TLS.
+// If checkTLS is nil, tlscheck.CheckTLS is used by default.
 func NewRegistryStore(checkTLS CheckTLS) *Store {
 	store := &Store{
 		factory: registries.NewFactory(registries.FactoryOptions{
@@ -65,11 +67,10 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 }
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
-func (rs *Store) UpsertRegistry(namespace, registry string, dce config.DockerConfigEntry) error {
+func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
 	regs := rs.getRegistries(namespace)
 
-	// TODO: pass a context here, as this can take time.
-	secure, err := rs.checkTLS(registry)
+	secure, err := rs.checkTLS(ctx, registry)
 	if err != nil {
 		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
