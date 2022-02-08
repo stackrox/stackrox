@@ -56,7 +56,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetSignatureIntegrations(ctx context.Context, _ *v1.Empty) (*v1.GetSignatureIntegrationsResponse, error) {
-	integrations, err := s.datastore.GetSignatureIntegrations(ctx)
+	integrations, err := s.datastore.GetAllSignatureIntegrations(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve signature integrations")
 	}

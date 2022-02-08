@@ -26,7 +26,7 @@ func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) 
 	return d.storage.Get(id)
 }
 
-func (d *datastoreImpl) GetSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error) {
+func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error) {
 	if ok, err := signatureSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
@@ -36,7 +36,10 @@ func (d *datastoreImpl) GetSignatureIntegrations(ctx context.Context) ([]*storag
 		integrations = append(integrations, integration)
 		return nil
 	})
-	return integrations, err
+	if err != nil {
+		return nil, err
+	}
+	return integrations, nil
 }
 
 func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) error {

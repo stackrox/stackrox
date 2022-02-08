@@ -10,7 +10,7 @@ import (
 // DataStore for signature integrations.
 type DataStore interface {
 	GetSignatureIntegration(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error)
-	GetSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error)
+	GetAllSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error)
 	AddSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) error
 	UpdateSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) error
 	RemoveSignatureIntegration(ctx context.Context, id string) error

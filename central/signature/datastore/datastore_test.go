@@ -131,7 +131,7 @@ func (s *signatureDataStoreTestSuite) TestGetSignatureIntegrations() {
 	s.NoError(err)
 
 	// 1. All integrations are returned
-	integrations, err := s.dataStore.GetSignatureIntegrations(s.hasReadCtx)
+	integrations, err := s.dataStore.GetAllSignatureIntegrations(s.hasReadCtx)
 	s.NoError(err)
 	s.Len(integrations, 2)
 	sort.Slice(integrations, func(i, j int) bool {
@@ -140,7 +140,7 @@ func (s *signatureDataStoreTestSuite) TestGetSignatureIntegrations() {
 	s.Equal(integrationID1, integrations[0].GetId())
 	s.Equal(integrationID2, integrations[1].GetId())
 	// 2. Need read permission to get signature integrations
-	integrations, err = s.dataStore.GetSignatureIntegrations(s.noAccessCtx)
+	integrations, err = s.dataStore.GetAllSignatureIntegrations(s.noAccessCtx)
 	s.NoError(err)
 	s.Len(integrations, 0)
 }
