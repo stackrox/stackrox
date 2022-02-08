@@ -9,6 +9,7 @@ import io.stackrox.proto.storage.Vulnerability
 
 import common.Constants
 import groups.BAT
+import groups.TARGET
 import groups.Integration
 import objects.AnchoreScannerIntegration
 import objects.ClairScannerIntegration
@@ -175,7 +176,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration])
+    @Category([BAT, Integration, TARGET])
     def "Verify Image Registry+Scanner Integrations: #testName"() {
         cleanupSetupForRetry()
 
@@ -357,7 +358,7 @@ class ImageScanningTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT, Integration])
+    @Category([BAT, Integration, TARGET])
     def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #idx"() {
         Assume.assumeTrue(scanner.isTestable())
         cleanupSetupForRetry()
@@ -418,7 +419,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration])
+    @Category([BAT, Integration, TARGET])
     def "Verify Scan Results from Registries - #registry.name() - #component:#version - #image - #cve - #idx"() {
         cleanupSetupForRetry()
         ImageIntegrationService.addStackroxScannerIntegration()
@@ -519,7 +520,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration])
+    @Category([BAT, Integration, TARGET])
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
         cleanupSetupForRetry()

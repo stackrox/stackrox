@@ -288,6 +288,8 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 		return nil, false
 	}
 
+	log.Infof("Reprocessing %v and %v", image.GetId(), image.GetName().GetFullName())
+
 	result, err := l.imageEnricher.EnrichImage(imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
@@ -322,12 +324,9 @@ func (l *loopImpl) waitForIndexing() {
 	indexingCompleted := concurrency.NewSignal()
 	l.indexQueue.PushSignal(&indexingCompleted)
 
-	log.Info("Waiting for indexing")
 	select {
 	case <-indexingCompleted.Done():
-		log.Info("Indexing completed")
 	case <-l.stopSig.Done():
-		log.Info("Stop signal taken")
 	}
 }
 
