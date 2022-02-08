@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	certsDescription               = "local scanner credentials"
+	certsDescription = "local scanner credentials"
 	// ErrEmptyCertificate TODO: replace by ROX-9129
 	ErrEmptyCertificate = errors.New("empty certificate")
 )
