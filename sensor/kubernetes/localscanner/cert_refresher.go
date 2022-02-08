@@ -13,8 +13,6 @@ import (
 
 var (
 	certsDescription = "local scanner credentials"
-	// ErrEmptyCertificate TODO: replace by ROX-9129
-	ErrEmptyCertificate = errors.New("empty certificate")
 )
 
 // newCertRefresher returns a new certRefresher that uses `requestCertificates` to fetch certificates,
@@ -42,11 +40,6 @@ type certRefresherImpl struct {
 }
 
 type requestCertificatesFunc func(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
-
-// GetCertsRenewalTime TODO: replace by ROX-9129
-func GetCertsRenewalTime(certificates *storage.TypedServiceCertificateSet) (time.Time, error) {
-	return time.UnixMilli(0), nil
-}
 
 // ServiceCertificatesRepo TODO replace by serviceCertificatesRepo from ROX-9128
 type ServiceCertificatesRepo interface {
