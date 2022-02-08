@@ -160,7 +160,6 @@ func (s *signatureDataStoreTestSuite) TestGetSignatureIntegration() {
 func getSignatureIntegration(id, name string) *storage.SignatureIntegration {
 	signatureIntegration := &storage.SignatureIntegration{
 		Id:   id,
-		Type: "type",
 		Name: name,
 		SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
 			{

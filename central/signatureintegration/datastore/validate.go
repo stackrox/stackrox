@@ -40,10 +40,7 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		cosignVerification := verificationConfig.GetCosignVerification()
 		if cosignVerification != nil {
 			publicKeys := cosignVerification.GetPublicKeys()
-			for index, publicKey := range publicKeys {
-				if publicKey.GetName() == "" {
-					return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("publicKeys[%d] has no name assigned", index))
-				}
+			for _, publicKey := range publicKeys {
 				if _, err := base64.StdEncoding.DecodeString(publicKey.GetPublicKeysBase64Enc()); err != nil {
 					return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("public key %q has invalid base64 encoding", publicKey.GetName()))
 				}

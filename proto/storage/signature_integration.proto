@@ -24,8 +24,8 @@ message SignatureVerificationConfig {
 
 message CosignPublicKeyVerification {
     message PublicKey {
-      string name                   = 1;
-      string public_keys_base64_enc = 2;
+        string name                   = 1;
+        string public_keys_base64_enc = 2;
     }
     repeated PublicKey public_keys = 3;
 }
