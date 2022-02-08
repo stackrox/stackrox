@@ -55,7 +55,7 @@ type ServiceCertSecretSpec struct {
 // In case some secret does not exist then it creates it in same namespace as sensorDeployment, and with
 // sensorDeployment as owner, populating the secret data with the corresponding certificates in initialCerts.
 func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec,
-	sensorDeployment *appsApiv1.Deployment, initialCerts *storage.TypedServiceCertificateSet,
+	sensorDeployment *appsApiv1.Deployment, initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
 	secretsClient corev1.SecretInterface) (ServiceCertificatesRepo, error) {
 	repo := &serviceCertificatesRepoSecretsImpl{
 		secrets: map[storage.ServiceType]ServiceCertSecretSpec{
@@ -64,7 +64,7 @@ func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec 
 		},
 		secretsClient: secretsClient,
 	}
-	if err := repo.setupSecrets(ctx, sensorDeployment, initialCerts); err != nil {
+	if err := repo.setupSecrets(ctx, sensorDeployment, initialCertsSupplier); err != nil {
 		return nil, errors.Wrap(err, "setting up secrets")
 	}
 
@@ -192,13 +192,9 @@ type patchSecretDataByteMap struct {
 // - In case a secret doesn't exist this creates it setting sensorDeployment as owner, with cert stored
 // 	 in the secret data.
 func (r *serviceCertificatesRepoSecretsImpl) setupSecrets(ctx context.Context, sensorDeployment *appsApiv1.Deployment,
-	initialCerts *storage.TypedServiceCertificateSet) error {
+	initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error)) error {
 	for serviceType, secretSpec := range r.secrets {
-		serviceCert, err := r.certificateForService(initialCerts, serviceType)
-		if err != nil {
-			return errors.Wrapf(err, errForServiceFormat, serviceType)
-		}
-		_, err = r.setupSecret(ctx, initialCerts.GetCaPem(), serviceCert, sensorDeployment, secretSpec.secretName)
+		_, err := r.setupSecret(ctx, serviceType, initialCertsSupplier, sensorDeployment, secretSpec.secretName)
 		if err != nil {
 			return errors.Wrapf(err, errForServiceFormat, serviceType)
 		}
@@ -208,14 +204,23 @@ func (r *serviceCertificatesRepoSecretsImpl) setupSecrets(ctx context.Context, s
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) setupSecret(ctx context.Context,
-	caPem []byte, cert *storage.TypedServiceCertificate,
+	serviceType storage.ServiceType,
+	initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
 	sensorDeployment *appsApiv1.Deployment, secretName string) (*v1.Secret, error) {
 	secret, err := r.secretsClient.Get(ctx, secretName, metav1.GetOptions{})
 
 	if k8sErrors.IsNotFound(err) {
-		secretData, err := r.secretDataForCertificate(caPem, cert)
-		if err != nil {
-			return nil, err
+		initialCerts, getInitialCertsErr := initialCertsSupplier(ctx)
+		if getInitialCertsErr != nil {
+			return nil, getInitialCertsErr
+		}
+		cert, getCertErr := r.certificateForService(initialCerts, serviceType)
+		if getCertErr != nil {
+			return nil, getCertErr
+		}
+		secretData, dataForCertErr := r.secretDataForCertificate(initialCerts.GetCaPem(), cert)
+		if dataForCertErr != nil {
+			return nil, dataForCertErr
 		}
 		newSecret, createErr := r.secretsClient.Create(ctx, &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
