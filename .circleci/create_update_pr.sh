@@ -42,16 +42,14 @@ echo "Got PR response: $(cat "${pr_response_file}")"
 [[ "${status_code}" -eq 201 || "${status_code}" -eq 422 ]]
 
 if [[ "${status_code}" -eq 201 ]]; then
-  [[ -n "${CIRCLE_USERNAME}" ]] || { echo >&2 "No CIRCLE_USERNAME found"; exit 2; }
-
   pr_number="$(jq <"$pr_response_file" -r '.number')"
   [[ -n "${pr_number}" ]]
 
   curl -sS --fail \
- -X POST \
- -H "Authorization: token ${GITHUB_TOKEN}" \
- "https://api.github.com/repos/stackrox/${repo_name}/issues/${pr_number}/assignees" \
- -d"{
+  -X POST \
+  -H "Authorization: token ${GITHUB_TOKEN}" \
+  "https://api.github.com/repos/stackrox/${repo_name}/issues/${pr_number}/assignees" \
+  -d"{
     \"assignees\": [\"${CIRCLE_USERNAME}\"]
   }"
 fi
