@@ -82,18 +82,17 @@ func (r *certRefresherImpl) Stop() {
 // RefreshCertificates determines refreshes the certificate secrets if needed, and returns the time
 // until the next refresh.
 func (r *certRefresherImpl) RefreshCertificates(ctx context.Context) (timeToNextRefresh time.Duration, err error) {
-	timeToNextRefresh, err = r.refreshCertificates(ctx)
+	timeToNextRefresh, err = r.ensureCertificatesAreFresh(ctx)
 	if err != nil {
 		log.Errorf("refreshing %s: %s", certsDescription, err)
 		return 0, err
 	}
 
-	log.Infof("successfully refreshed %v", certsDescription)
 	log.Infof("%v scheduled to be refreshed in %s", certsDescription, timeToNextRefresh)
 	return timeToNextRefresh, err
 }
 
-func (r *certRefresherImpl) refreshCertificates(ctx context.Context) (timeToNextRefresh time.Duration, err error) {
+func (r *certRefresherImpl) ensureCertificatesAreFresh(ctx context.Context) (timeToNextRefresh time.Duration, err error) {
 	certificates, fetchErr := r.repository.GetServiceCertificates(ctx)
 	if fetchErr != nil {
 		return 0, fetchErr
@@ -120,6 +119,8 @@ func (r *certRefresherImpl) refreshCertificates(ctx context.Context) (timeToNext
 	if putErr := r.repository.PutServiceCertificates(ctx, certificates); putErr != nil {
 		return 0, putErr
 	}
+
+	log.Infof("successfully refreshed %v", certsDescription)
 
 	return r.getTimeToRefresh(certificates)
 }
