@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/serviceidentities/datastore/mocks"
-	testutilsMTLS "github.com/stackrox/rox/central/testutils/mtls"
 	"github.com/stackrox/rox/generated/storage"
+	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
