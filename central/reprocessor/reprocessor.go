@@ -264,8 +264,8 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
 				nReprocessed.Inc()
+				l.waitForIndexing()
 			}
-			l.waitForIndexing()
 		}(id)
 	}
 	select {
