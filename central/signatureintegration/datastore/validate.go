@@ -22,15 +22,10 @@ func GenerateSignatureIntegrationID() string {
 	return signatureIntegrationIDPrefix + uuid.NewV4().String()
 }
 
-// IsValidSignatureIntegrationID checks if id is in correct format.
-func IsValidSignatureIntegrationID(id string) bool {
-	return strings.HasPrefix(id, signatureIntegrationIDPrefix)
-}
-
 func ValidateSignatureIntegration(integration *storage.SignatureIntegration) error {
 	var multiErr error
 
-	if !IsValidSignatureIntegrationID(integration.GetId()) {
+	if !strings.HasPrefix(integration.GetId(), signatureIntegrationIDPrefix) {
 		err := errors.Errorf("id field must be in '%s*' format", signatureIntegrationIDPrefix)
 		multiErr = multierror.Append(multiErr, err)
 	}
