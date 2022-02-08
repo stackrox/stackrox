@@ -130,6 +130,9 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		if searchField == nil {
 			continue
 		}
+		if searchDataType < 0 {
+			panic(fmt.Sprintf("SearchDataType for field %s is invalid", fieldName))
+		}
 		searchField.Type = searchDataType
 		s.fields[FieldLabel(fieldName)] = searchField
 	}
@@ -147,6 +150,9 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 		return v1.SearchDataType_SEARCH_STRING
 	case reflect.Bool:
 		return v1.SearchDataType_SEARCH_BOOL
+	case reflect.Uint8:
+		// TODO(dhaus): Add unknown SearchDataType to the enum, move enum definition to go struct.
+		return v1.SearchDataType(-1)
 	case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
 		enum, ok := reflect.Zero(original).Interface().(protoreflect.ProtoEnum)
 		if !ok {
@@ -158,7 +164,7 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 		}
 		enumregistry.Add(prefix, enumDesc)
 		return v1.SearchDataType_SEARCH_ENUM
-	case reflect.Interface, reflect.Uint8:
+	case reflect.Interface:
 	default:
 		panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), prefix))
 	}
