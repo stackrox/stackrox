@@ -162,10 +162,10 @@ func getSignatureIntegration(id, name string) *storage.SignatureIntegration {
 		Id:   id,
 		Type: "type",
 		Name: name,
-		SignatureVerificationConfigs: []*storage.SignatureIntegration_SignatureVerificationConfig{
+		SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
 			{
 				Id: "configId",
-				Config: &storage.SignatureIntegration_SignatureVerificationConfig_CosignVerification{
+				Config: &storage.SignatureVerificationConfig_CosignVerification{
 					CosignVerification: &storage.CosignPublicKeyVerification{
 						PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 							{

@@ -18,7 +18,7 @@ type SignatureVerifier interface {
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
 func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (SignatureVerifier, error) {
 	switch cfg := config.GetConfig().(type) {
-	case *storage.SignatureVerificationConfig_PublicKey:
+	case *storage.SignatureVerificationConfig_CosignVerification:
 		return newPublicKeyVerifier(cfg)
 	default:
 		// Should theoretically never happen.
