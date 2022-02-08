@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# This script has a duplicate in: rox-ci-image/.circleci/create_update_pr.sh
-set -eo pipefail
+# This script has derived from: rox-ci-image/.circleci/create_update_pr.sh
+
+set -euo pipefail
 
 [[ -n "${GITHUB_TOKEN}" ]] || { echo >&2 "No GitHub token found"; exit 2; }
 
