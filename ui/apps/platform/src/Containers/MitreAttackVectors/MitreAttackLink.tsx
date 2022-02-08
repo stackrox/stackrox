@@ -8,7 +8,6 @@ type MitreAttackLinkProps = {
 };
 
 function MitreAttackLink({ href, id }: MitreAttackLinkProps): ReactElement {
-    /* eslint-disable jsx-a11y/control-has-associated-label, jsx-a11y/anchor-has-content */
     return (
         <Button
             variant="link"
@@ -23,7 +22,6 @@ function MitreAttackLink({ href, id }: MitreAttackLinkProps): ReactElement {
             {id}
         </Button>
     );
-    /* eslint-enable jsx-a11y/control-has-associated-label, jsx-a11y/anchor-has-content */
 }
 
 export default MitreAttackLink;
