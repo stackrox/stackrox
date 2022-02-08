@@ -59,6 +59,8 @@ func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace st
 		k8sClient:       k8sClient,
 		msgToCentralC:   msgToCentralC,
 		msgFromCentralC: msgFromCentralC,
+		certificateRefresherSupplier: newCertRefresher,
+		serviceCertificatesRepoSupplier: NewServiceCertificatesRepo,
 		requester:       NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
@@ -69,6 +71,8 @@ type localScannerTLSIssuerImpl struct {
 	k8sClient       kubernetes.Interface
 	msgToCentralC   chan *central.MsgFromSensor
 	msgFromCentralC chan *central.IssueLocalScannerCertsResponse
+	certificateRefresherSupplier certificateRefresherSupplier
+	serviceCertificatesRepoSupplier serviceCertificatesRepoSupplier
 	requester       CertificateRequester
 	refresher       CertificateRefresher
 }
@@ -86,6 +90,9 @@ type CertificateRefresher interface {
 	Start() error
 	Stop()
 }
+
+type certificateRefresherSupplier func(requestCertificates requestCertificatesFunc, timeout time.Duration,
+	backoff wait.Backoff, repository ServiceCertificatesRepo) CertificateRefresher
 
 // ServiceCertificatesRepo TODO replace by ROX-9148
 type ServiceCertificatesRepo interface{}
@@ -109,10 +116,16 @@ type ServiceCertSecretSpec struct {
 
 // NewServiceCertificatesRepo TODO replace by ROX-9128
 func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec,
-	sensorDeployment *appsApiv1.Deployment, initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
+	sensorDeployment *appsApiv1.Deployment,
+	initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
 	secretsClient corev1.SecretInterface) (ServiceCertificatesRepo, error) {
 	return nil, nil
 }
+
+type serviceCertificatesRepoSupplier func(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec,
+	sensorDeployment *appsApiv1.Deployment,
+	initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
+	secretsClient corev1.SecretInterface) (ServiceCertificatesRepo, error)
 
 func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Info("starting local scanner TLS issuer.")
@@ -130,12 +143,12 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 
 	i.requester.Start()
 
-	certsRepo, createCertsRepoErr := NewServiceCertificatesRepo(ctx, scannerSpec, scannerDBSpec, sensorDeployment,
+	certsRepo, createCertsRepoErr := i.serviceCertificatesRepoSupplier(ctx, scannerSpec, scannerDBSpec, sensorDeployment,
 		i.initialCertsSupplier(), i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
 	if createCertsRepoErr != nil {
 		return errors.Wrap(createCertsRepoErr, "creating service certificates repository")
 	}
-	i.refresher = newCertRefresher(i.requester.RequestCertificates, certRefreshTimeout, certRefreshBackoff, certsRepo)
+	i.refresher = i.certificateRefresherSupplier(i.requester.RequestCertificates, certRefreshTimeout, certRefreshBackoff, certsRepo)
 	if refreshStartErr := i.refresher.Start(); refreshStartErr != nil {
 		return errors.Wrap(refreshStartErr, "starting certificate refresher")
 	}
