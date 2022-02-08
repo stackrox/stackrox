@@ -87,6 +87,7 @@ func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 func (r *serviceCertificatesRepoSecretsImpl) GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+
 	var getErr error
 	for serviceType, _ := range r.secrets {
 		typedCertsSet, err := r.getServiceCertificate(ctx, serviceType)
@@ -124,6 +125,8 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	if err != nil {
 		return nil, errors.Wrapf(err, errForServiceFormat, serviceType)
 	}
+
+	//TODO: Maybe add error if ownership was not correct?
 
 	return &storage.TypedServiceCertificateSet{
 		ServiceCerts: []*storage.TypedServiceCertificate{{
@@ -166,6 +169,8 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificate(ctx context.C
 		// we don't know how to persist this.
 		return errors.Errorf("unkown service type %q", cert.GetServiceType())
 	}
+
+	//TODO: add error if ownership was not correct
 
 	_, err := r.secretsClient.Update(ctx, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
