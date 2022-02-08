@@ -68,13 +68,12 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
 func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
-	regs := rs.getRegistries(namespace)
-
 	secure, err := rs.checkTLS(ctx, registry)
 	if err != nil {
 		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
+	regs := rs.getRegistries(namespace)
 	err = regs.UpdateImageIntegration(&storage.ImageIntegration{
 		Name:       registry,
 		Type:       "docker",
