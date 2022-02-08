@@ -166,7 +166,7 @@
         "name": {
           "type": "string"
         },
-        "publicKeysPemEnc": {
+        "publicKeyPemEnc": {
           "type": "string"
         }
       }

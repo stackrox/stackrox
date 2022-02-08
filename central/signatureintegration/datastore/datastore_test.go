@@ -168,8 +168,8 @@ func getSignatureIntegration(id, name string) *storage.SignatureIntegration {
 					CosignVerification: &storage.CosignPublicKeyVerification{
 						PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 							{
-								Name:             "key1",
-								PublicKeysPemEnc: "abrrrrrrrrrr",
+								Name:            "key1",
+								PublicKeyPemEnc: "abrrrrrrrrrr",
 							},
 						},
 					},

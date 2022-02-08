@@ -61,7 +61,7 @@ func validateCosignVerification(config *storage.SignatureVerificationConfig_Cosi
 		multiErr = multierror.Append(multiErr, errors.New("no public keys are configured for cosign verification"))
 	}
 	for _, publicKey := range publicKeys {
-		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeysPemEnc()))
+		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
 		if keyBlock == nil || keyBlock.Type != signatures.PublicKeyType || rest != nil {
 			err := errox.Newf(errox.InvariantViolation, "failed to decode PEM block containing public key %q", publicKey.GetName())
 			multiErr = multierror.Append(multiErr, err)

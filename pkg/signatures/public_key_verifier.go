@@ -46,7 +46,7 @@ func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_CosignVeri
 	publicKeys := config.CosignVerification.GetPublicKeys()
 	pemEncPublicKeys := make([]string, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
-		pemEncPublicKeys = append(pemEncPublicKeys, publicKey.GetPublicKeysPemEnc())
+		pemEncPublicKeys = append(pemEncPublicKeys, publicKey.GetPublicKeyPemEnc())
 	}
 
 	parsedKeys := make([]crypto.PublicKey, 0, len(pemEncPublicKeys))
