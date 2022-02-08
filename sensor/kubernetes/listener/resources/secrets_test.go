@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -66,7 +67,7 @@ var (
 )
 
 // checkTLS is a dummy implementation of registry.CheckTLS
-func checkTLS(_ string) (bool, error) {
+func checkTLS(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 

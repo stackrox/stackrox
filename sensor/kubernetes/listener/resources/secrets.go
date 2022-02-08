@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -193,7 +194,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 		if features.LocalImageScanning.Enabled() {
 			if fromDefaultSA {
 				// Store the registry credentials so Sensor can reach it.
-				err := s.regStore.UpsertRegistry(secret.GetNamespace(), registry, dce)
+				err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
 				if err != nil {
 					log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 				}
