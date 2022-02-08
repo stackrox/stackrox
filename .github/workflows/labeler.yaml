@@ -9,6 +9,7 @@ on:
 jobs:
   label-pr:
     runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
     - uses: actions/labeler@v3
       with:

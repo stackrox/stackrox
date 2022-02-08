@@ -30,13 +30,13 @@ func getMetaValues(flavorName string, imageFlavorProvided, rhacs, release bool, 
 	handleRhacsWarnings(rhacs, imageFlavorProvided, logger)
 	if rhacs {
 		if imageFlavorProvided {
-			return nil, errorhelpers.NewErrInvalidArgsf("flag '--rhacs' is deprecated and must not be used together with '--%s'. Remove '--rhacs' flag and specify only '--%s'", flags.ImageDefaultsFlagName, flags.ImageDefaultsFlagName)
+			return nil, fmt.Errorf("%w: flag '--rhacs' is deprecated and must not be used together with '--%s'. Remove '--rhacs' flag and specify only '--%s'", errorhelpers.ErrInvalidArgs, flags.ImageDefaultsFlagName, flags.ImageDefaultsFlagName)
 		}
 		flavorName = defaults.ImageFlavorNameRHACSRelease
 	}
 	imageFlavor, err := defaults.GetImageFlavorByName(flavorName, release)
 	if err != nil {
-		return nil, errorhelpers.NewErrInvalidArgsf("'--%s': %v", flags.ImageDefaultsFlagName, err)
+		return nil, fmt.Errorf("%w: '--%s': %v", errorhelpers.ErrInvalidArgs, flags.ImageDefaultsFlagName, err)
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }

@@ -135,7 +135,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return nil
 	}
 
-	validTLS, err := tlscheck.CheckTLS(dockerIntegration.GetEndpoint())
+	validTLS, err := tlscheck.CheckTLS(ctx, dockerIntegration.GetEndpoint())
 	if err != nil {
 		return errors.Wrapf(err, "reaching out for TLS check to %s", imageIntegration.GetDocker().GetEndpoint())
 	}

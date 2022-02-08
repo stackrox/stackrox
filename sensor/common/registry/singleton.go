@@ -10,7 +10,7 @@ var (
 // Singleton returns a singleton of the registry storage.
 func Singleton() *Store {
 	once.Do(func() {
-		rStore = newRegistryStore()
+		rStore = NewRegistryStore(nil)
 	})
 	return rStore
 }
