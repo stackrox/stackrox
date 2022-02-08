@@ -322,9 +322,12 @@ func (l *loopImpl) waitForIndexing() {
 	indexingCompleted := concurrency.NewSignal()
 	l.indexQueue.PushSignal(&indexingCompleted)
 
+	log.Info("Waiting for indexing")
 	select {
 	case <-indexingCompleted.Done():
+		log.Info("Indexing completed")
 	case <-l.stopSig.Done():
+		log.Info("Stop signal taken")
 	}
 }
 
