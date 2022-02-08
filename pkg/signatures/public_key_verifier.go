@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
 
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
@@ -25,7 +26,7 @@ const (
 
 var (
 	errNoImageSHA      = errors.New("no image SHA found")
-	errInvalidHashAlgo = errors.New("invalid hash algorithm used, must be SHA256")
+	errInvalidHashAlgo = errors.New("invalid hash algorithm used")
 )
 
 type publicKeyVerifier struct {
@@ -76,7 +77,8 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 	}
 
 	if hash.Algorithm != sha256Algo {
-		return nil, gcrv1.Hash{}, errInvalidHashAlgo
+		return nil, gcrv1.Hash{}, fmt.Errorf("%w: invalid hasing algorithm %s used, only SHA256 is supported",
+			errInvalidHashAlgo, hash.Algorithm)
 	}
 
 	// Each signature contains the base64 encoded version of it and the associated payload.
@@ -86,11 +88,9 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 		if imgSig.GetCosign() == nil {
 			continue
 		}
-		payload, err := base64.StdEncoding.DecodeString(imgSig.GetCosign().GetSignaturePayloadBase64Enc())
-		if err != nil {
-			return nil, gcrv1.Hash{}, errors.Wrap(err, "decoding signature payload")
-		}
-		sig, err := static.NewSignature(payload, imgSig.GetCosign().GetRawSignatureBase64Enc())
+		b64Sig := base64.StdEncoding.EncodeToString(imgSig.GetCosign().GetRawSignature())
+
+		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig)
 		if err != nil {
 			return nil, gcrv1.Hash{}, errors.Wrap(err, "creating OCI signatures")
 		}
@@ -103,9 +103,8 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 // VerifySignature implements the SignatureVerifier interface.
 // The signature of the storage.Image will be verified using cosign. It will include the verification via public key
 // as well as the claim verification of the payload of the signature.
-func (c *publicKeyVerifier) VerifySignature(image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
+func (c *publicKeyVerifier) VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
 	var opts cosign.CheckOpts
-	var ctx = context.Background()
 
 	// By default, verify the claim within the payload that is specified with the simple signing format.
 	// Right now, we are not supporting any additional annotations within the claim.

@@ -1,6 +1,7 @@
 package signatures
 
 import (
+	"context"
 	"encoding/base64"
 	"testing"
 
@@ -73,7 +74,7 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(t, err, "creating image with signature")
 
-	status, err := pubKeyVerifier.VerifySignature(img)
+	status, err := pubKeyVerifier.VerifySignature(context.Background(), img)
 	assert.NoError(t, err, "verification should be successful")
 	assert.Equal(t, storage.ImageSignatureVerificationResult_VERIFIED, status, "status should be VERIFIED")
 }
@@ -100,7 +101,7 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(t, err, "creating image with signature")
 
-	status, err := pubKeyVerifier.VerifySignature(img)
+	status, err := pubKeyVerifier.VerifySignature(context.Background(), img)
 	assert.Error(t, err, "verification should be unsuccessful with non-verifiable public key")
 	assert.Equal(t, storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, status,
 		"status should be FAILED VERIFICATION")
@@ -135,9 +136,6 @@ func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 }
 
 func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
-	const defaultImgString = "docker.io/nginx@sha256:3a4d57227f02243dfc8a2849ec4a116646bed293b9e93cbf9d4a673a28ef6345"
-	const defaultImgHash = "sha256:3a4d57227f02243dfc8a2849ec4a116646bed293b9e93cbf9d4a673a28ef6345"
-	const defaultB64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8hkAnXI="
 
 	cases := map[string]struct {
 		imgString           string
@@ -149,20 +147,6 @@ func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 		"no image SHA available": {
 			imgString: "docker.io/nginx:latest",
 			err:       errNoImageSHA,
-		},
-		"invalid b64 signature": {
-			imgString:           defaultImgString,
-			imgHash:             defaultImgHash,
-			b64Signature:        "<",
-			b64SignaturePayload: "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ4YmQtNDY3MS1hNTQ2LTJlNzBhOTAwYjcwMiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmVlODliMDA1MjhmZjRmMDJmMjQwNWU0ZWUyMjE3NDNlYmMzZjhlOGRkMGJmZDVjNGMyMGEyZmEyYWFhN2VkZTMifSwidHlwZSI6ImNvc2lnbiBjb250YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ",
-			err:                 base64.CorruptInputError(344),
-		},
-		"invalid b64 signature payload": {
-			imgString:           defaultImgString,
-			imgHash:             defaultImgHash,
-			b64Signature:        defaultB64Signature,
-			b64SignaturePayload: "<",
-			err:                 base64.CorruptInputError(0),
 		},
 	}
 
@@ -182,14 +166,24 @@ func generateImageWithCosignSignature(imgString, b64Sig, b64SigPayload string) (
 	if err != nil {
 		return nil, err
 	}
+
+	sigBytes, err := base64.StdEncoding.DecodeString(b64Sig)
+	if err != nil {
+		return nil, err
+	}
+	sigPayloadBytes, err := base64.StdEncoding.DecodeString(b64SigPayload)
+	if err != nil {
+		return nil, err
+	}
+
 	img := types.ToImage(cimg)
 	img.Signature = &storage.ImageSignature{
 		Signatures: []*storage.Signature{
 			{
 				Signature: &storage.Signature_Cosign{
 					Cosign: &storage.CosignSignature{
-						RawSignatureBase64Enc:     b64Sig,
-						SignaturePayloadBase64Enc: b64SigPayload,
+						RawSignature:     sigBytes,
+						SignaturePayload: sigPayloadBytes,
 					},
 				},
 			},

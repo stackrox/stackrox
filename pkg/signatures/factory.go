@@ -1,6 +1,7 @@
 package signatures
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -11,7 +12,7 @@ import (
 type SignatureVerifier interface {
 	// VerifySignature will take a raw signature and verify it using a specific verification method.
 	// It will return a storage.ImageSignatureVerificationResult_Status and an error if the verification was unsuccessful.
-	VerifySignature(image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error)
+	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error)
 }
 
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
