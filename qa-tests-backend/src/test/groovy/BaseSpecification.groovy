@@ -43,6 +43,8 @@ class BaseSpecification extends Specification {
 
     static final String RUN_ID
 
+    static final String UNRESTRICTED_SCOPE_ID = "io.stackrox.authz.accessscope.unrestricted"
+
     static {
         String idStr
         try {
@@ -127,6 +129,7 @@ class BaseSpecification extends Specification {
 
             testRole = RoleOuterClass.Role.newBuilder()
                     .setName("Test Automation Role - ${RUN_ID}")
+                    .setAccessScopeId(UNRESTRICTED_SCOPE_ID)
                     .build()
 
             RoleService.deleteRole(testRole.name)
