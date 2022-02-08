@@ -57,6 +57,9 @@ func validateCosignVerification(config *storage.SignatureVerificationConfig_Cosi
 	var multiErr error
 
 	publicKeys := config.CosignVerification.GetPublicKeys()
+	if len(publicKeys) == 0 {
+		multiErr = multierror.Append(multiErr, errors.New("no public keys are configured for cosign verification"))
+	}
 	for _, publicKey := range publicKeys {
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeysPemEnc()))
 		if keyBlock == nil || keyBlock.Type != signatures.PublicKeyType || rest != nil {
