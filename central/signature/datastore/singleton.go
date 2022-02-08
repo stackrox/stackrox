@@ -15,7 +15,7 @@ var (
 
 func initialize() {
 	storage, err := rocksdb.New(globaldb.GetRocksDB())
-	utils.CrashOnError(errors.Wrap(err, "unable to create rocksdb store for image signatures"))
+	utils.CrashOnError(errors.Wrap(err, "unable to create rocksdb store for signature integrations"))
 	instance = New(storage)
 }
 

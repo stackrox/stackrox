@@ -2,7 +2,7 @@ package store
 
 import "github.com/stackrox/rox/generated/storage"
 
-// SignatureIntegrationStore provides storage functionality for image signature integrations.
+// SignatureIntegrationStore provides storage functionality for signature integrations.
 //go:generate mockgen-wrapper
 type SignatureIntegrationStore interface {
 	Get(id string) (*storage.SignatureIntegration, bool, error)

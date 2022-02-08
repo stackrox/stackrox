@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
-// Service provides the interface to the service for managing image signature integrations.
+// Service provides the interface to the service for managing signature integrations.
 type Service interface {
 	grpc.APIService
 

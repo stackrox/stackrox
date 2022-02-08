@@ -14,7 +14,7 @@ func initialize() {
 	instance = New(datastore.Singleton())
 }
 
-// Singleton returns the image signature service singleton.
+// Singleton returns the signature service singleton.
 func Singleton() Service {
 	once.Do(initialize)
 	return instance
