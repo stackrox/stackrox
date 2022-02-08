@@ -204,8 +204,11 @@ wait_for_api() {
     done
     echo
     if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-        kubectl -n stackrox get pod
         echo "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
+        echo "port-forwards:"
+        pgrep port-forward
+        echo "pods:"
+        kubectl -n stackrox get pod
         exit 1
     fi
     set -e
@@ -225,3 +228,13 @@ restore_56_1_backup() {
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    if [[ "$#" -lt 1 ]]; then
+        usage
+        die "When invoked at the command line a method is required."
+    fi
+    fn="$1"
+    shift
+    "$fn" "$*"
+fi

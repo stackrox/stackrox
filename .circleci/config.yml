@@ -4829,7 +4829,7 @@ jobs:
       - run:
           name: Run the OpenShift CI upgrade test hook
           command: |
-            .openshift-ci/upgrade_test_under_gke.py
+            .openshift-ci/gke_upgrade_test.py
 
 workflows:
   version: 2
