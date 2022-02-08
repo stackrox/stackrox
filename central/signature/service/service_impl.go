@@ -108,7 +108,7 @@ func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *
 func (s *serviceImpl) DeleteSignatureIntegration(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
 	err := s.datastore.RemoveSignatureIntegration(ctx, id.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to delete signature integration %s", id.GetId())
+		return nil, errors.Wrapf(err, "failed to delete signature integration %q", id.GetId())
 	}
 	return &v1.Empty{}, nil
 }
