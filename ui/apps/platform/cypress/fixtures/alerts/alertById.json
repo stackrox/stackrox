@@ -9,7 +9,7 @@
         "disabled": false,
         "categories": ["Network Configuration Change", "Reconnaissance"],
         "scope": [],
-        "enforcement_actions": ["UNSET_ENFORCEMENT"],
+        "enforcementActions": ["UNSET_ENFORCEMENT"],
         "notifiers": [],
         "imagePolicy": {
             "imageName": {
@@ -40,7 +40,8 @@
                 "args": ""
             }
         },
-        "lifecycleStage": "RUNTIME",
+        "lifecycleStages": ["RUNTIME"],
+        "eventSource": "NOT_APPLICABLE",
         "exclusions": [
             {
                 "name": "",

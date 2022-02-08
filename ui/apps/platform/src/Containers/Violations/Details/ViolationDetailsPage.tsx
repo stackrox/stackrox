@@ -7,6 +7,7 @@ import {
     Tabs,
     Tab,
     Title,
+    Divider,
     PageSection,
     Spinner,
     Bullseye,
@@ -16,6 +17,9 @@ import { violationsBasePath } from 'routePaths';
 import { fetchAlert } from 'services/AlertsService';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
+import PolicyDetailContent from '../../Policies/PatternFly/Detail/PolicyDetailContent';
 import DeploymentDetails from './DeploymentDetails';
 import PolicyDetails from './PolicyDetails';
 import EnforcementDetails from './EnforcementDetails';
@@ -29,6 +33,7 @@ function ViolationDetailsPage(): ReactElement {
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
     const { alertId } = useParams();
+    const isPoliciesPFEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_POLICIES_PATTERNFLY);
 
     function handleTabClick(_, tabIndex) {
         setActiveTabKey(tabIndex);
@@ -95,7 +100,17 @@ function ViolationDetailsPage(): ReactElement {
                     </Tab>
                 )}
                 <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
-                    <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
+                    {isPoliciesPFEnabled ? (
+                        <>
+                            <Title headingLevel="h2" className="pf-u-my-md">
+                                Policy overview
+                            </Title>
+                            <Divider component="div" className="pf-u-pb-md" />
+                            <PolicyDetailContent policy={policy} />
+                        </>
+                    ) : (
+                        <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
+                    )}
                 </Tab>
             </Tabs>
         </PageSection>

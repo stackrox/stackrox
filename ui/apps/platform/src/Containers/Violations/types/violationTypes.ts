@@ -1,16 +1,6 @@
-export type EnforcementAction =
-    | 'UNSET_ENFORCEMENT'
-    | 'SCALE_TO_ZERO_ENFORCEMENT'
-    | 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'
-    | 'KILL_POD_ENFORCEMENT'
-    | 'FAIL_BUILD_ENFORCEMENT'
-    | 'FAIL_KUBE_REQUEST_ENFORCEMENT'
-    | 'FAIL_DEPLOYMENT_CREATE_ENFORCEMENT'
-    | 'FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT';
+import { EnforcementAction, LifecycleStage, ListPolicy, Policy } from 'types/policy.proto';
 
-export type LifecycleStage = 'BUILD' | 'DEPLOY' | 'RUNTIME';
-
-type PolicySeverity = 'CRITICAL_SEVERITY' | 'HIGH_SEVERITY' | 'MEDIUM_SEVERITY' | 'LOW_SEVERITY';
+export type { EnforcementAction, LifecycleStage, Policy };
 
 interface ListBaseAlert {
     id: string;
@@ -24,13 +14,7 @@ interface ListBaseAlert {
     enforcementAction: EnforcementAction;
     enforcementCount: number;
     lifecycleStage: LifecycleStage;
-    policy: {
-        categories: string[];
-        description: string;
-        id: string;
-        name: string;
-        severity: PolicySeverity;
-    };
+    policy: ListPolicy;
     state: 'ACTIVE' | 'INACTIVE';
     tags: string[];
     time: string;
@@ -123,15 +107,6 @@ export type Deployment = {
     namespace: string;
     namespaceId: string;
     type: string;
-};
-
-export type Policy = {
-    categories: string[];
-    description: string;
-    id: string;
-    name: string;
-    severity: PolicySeverity;
-    policyVersion: string;
 };
 
 export type Alert = {

@@ -41,7 +41,7 @@ function PolicyBehaviorSection({
                         term="Response"
                         desc={formatResponse(enforcementLifecycleStages)}
                     />
-                    {enforcementLifecycleStages.length !== 0 && (
+                    {enforcementLifecycleStages?.length !== 0 && (
                         <DescriptionListItem
                             term="Enforcement"
                             desc={formatLifecycleStages(enforcementLifecycleStages)}

@@ -18,6 +18,8 @@ import {
 import { Policy } from 'types/policy.proto';
 import { Image } from 'types/image.proto';
 import { ListDeployment } from 'types/deployment.proto';
+import { Cluster } from 'types/cluster.proto';
+import { fetchClustersAsArray } from 'services/ClustersService';
 import { fetchImages } from 'services/ImagesService';
 import { fetchDeployments } from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
@@ -25,10 +27,11 @@ import PolicyScopeCard from './PolicyScopeCard';
 const MAX_INCLUSION_SCOPES = 10;
 const MAX_EXCLUSION_SCOPES = 10;
 
-function PolicyScopeForm({ clusters }) {
+function PolicyScopeForm() {
     const [isExcludeImagesOpen, setIsExcludeImagesOpen] = React.useState(false);
     const [images, setImages] = React.useState<Image[]>([]);
     const [deployments, setDeployments] = React.useState<ListDeployment[]>([]);
+    const [clusters, setClusters] = React.useState<Cluster[]>([]);
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
 
@@ -68,6 +71,16 @@ function PolicyScopeForm({ clusters }) {
             setFieldValue('excludedImageNames', [...excludedImageNames, selectedImage]);
         }
     }
+
+    React.useEffect(() => {
+        fetchClustersAsArray()
+            .then((data) => {
+                setClusters(data as Cluster[]);
+            })
+            .catch(() => {
+                // TODO
+            });
+    }, []);
 
     React.useEffect(() => {
         fetchImages()
