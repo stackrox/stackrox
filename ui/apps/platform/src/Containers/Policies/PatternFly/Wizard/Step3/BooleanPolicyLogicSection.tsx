@@ -31,7 +31,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
 
     return (
         <>
-            {values.policySections.map((_, sectionIndex) => (
+            {values.policySections?.map((_, sectionIndex) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <React.Fragment key={sectionIndex}>
                     <PolicySection
