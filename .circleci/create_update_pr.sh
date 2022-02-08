@@ -6,7 +6,7 @@ set -euo pipefail
 [[ -n "${GITHUB_TOKEN}" ]] || { echo >&2 "No GitHub token found"; exit 2; }
 
 usage() {
-  echo >&2 "Usage: $0 <branch_name> <repo_name>"
+  echo >&2 "Usage: $0 <branch_name> <repo_name> [<pr_title>]"
   exit 2
 }
 
