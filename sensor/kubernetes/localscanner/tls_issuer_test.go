@@ -19,18 +19,18 @@ import (
 )
 
 var (
-	sensorNamespace = "stackrox-ns"
+	sensorNamespace      = "stackrox-ns"
 	sensorReplicasetName = "sensor-replicaset"
 	sensorDeploymentName = "sensor-deployment"
-	errForced = errors.New("forced")
+	errForced            = errors.New("forced")
 )
 
 type localScannerTLSIssuerFixture struct {
 	k8sClient *fake.Clientset
 	requester *certificateRequesterMock
 	refresher *certificateRefresherMock
-	supplier *suppliersMock
-	issuer *localScannerTLSIssuerImpl
+	supplier  *suppliersMock
+	issuer    *localScannerTLSIssuerImpl
 }
 
 func newLocalScannerTLSIssuerFixture(withSensorDeployment, withReplicaSet bool) *localScannerTLSIssuerFixture {
@@ -42,14 +42,14 @@ func newLocalScannerTLSIssuerFixture(withSensorDeployment, withReplicaSet bool) 
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	fixture.issuer = &localScannerTLSIssuerImpl{
-		sensorNamespace: sensorNamespace,
-		podOwnerName:    sensorReplicasetName,
-		k8sClient: fixture.k8sClient,
-		msgToCentralC:   msgToCentralC,
-		msgFromCentralC: msgFromCentralC,
-		certificateRefresherSupplier: fixture.supplier.supplyCertificateRefresher,
+		sensorNamespace:                 sensorNamespace,
+		podOwnerName:                    sensorReplicasetName,
+		k8sClient:                       fixture.k8sClient,
+		msgToCentralC:                   msgToCentralC,
+		msgFromCentralC:                 msgFromCentralC,
+		certificateRefresherSupplier:    fixture.supplier.supplyCertificateRefresher,
 		serviceCertificatesRepoSupplier: fixture.supplier.supplyServiceCertificatesRepoSupplier,
-		requester: fixture.requester,
+		requester:                       fixture.requester,
 	}
 
 	return fixture
@@ -64,7 +64,7 @@ func (f *localScannerTLSIssuerFixture) assertExpectations(t *testing.T) {
 func (f *localScannerTLSIssuerFixture) mockForStart(refresherStartReturn error) {
 	f.requester.On("Start").Once()
 	f.refresher.On("Start").Once().Return(refresherStartReturn)
-	repo := struct{}{}// TODO ROX-9128 replace by nil casting to impl pointer
+	repo := struct{}{} // TODO ROX-9128 replace by nil casting to impl pointer
 	f.supplier.On("supplyServiceCertificatesRepoSupplier", mock.Anything, scannerSpec, scannerDBSpec,
 		mock.Anything, mock.Anything, mock.Anything).Once().Return(repo, nil)
 	f.supplier.On("supplyCertificateRefresher", mock.Anything,
@@ -112,7 +112,7 @@ func testK8sClient(withSensorDeployment, withReplicaSet bool) *fake.Clientset {
 	if withSensorDeployment {
 		sensorDeployment := &appsApiv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: sensorDeploymentName,
+				Name:      sensorDeploymentName,
 				Namespace: sensorNamespace,
 			},
 		}
@@ -121,14 +121,14 @@ func testK8sClient(withSensorDeployment, withReplicaSet bool) *fake.Clientset {
 			sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
 			sensorReplicaSet := &appsApiv1.ReplicaSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: sensorReplicasetName,
+					Name:      sensorReplicasetName,
 					Namespace: sensorNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: sensorDeploymentGVK.GroupVersion().String(),
-							Kind: sensorDeploymentGVK.Kind,
-							Name: sensorDeployment.GetName(),
-							UID: sensorDeployment.GetUID(),
+							Kind:       sensorDeploymentGVK.Kind,
+							Name:       sensorDeployment.GetName(),
+							UID:        sensorDeployment.GetUID(),
 						},
 					},
 				},

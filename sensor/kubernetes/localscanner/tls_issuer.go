@@ -54,27 +54,27 @@ func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace st
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &localScannerTLSIssuerImpl{
-		sensorNamespace: sensorNamespace,
-		podOwnerName:    podOwnerName,
-		k8sClient:       k8sClient,
-		msgToCentralC:   msgToCentralC,
-		msgFromCentralC: msgFromCentralC,
-		certificateRefresherSupplier: newCertRefresher,
+		sensorNamespace:                 sensorNamespace,
+		podOwnerName:                    podOwnerName,
+		k8sClient:                       k8sClient,
+		msgToCentralC:                   msgToCentralC,
+		msgFromCentralC:                 msgFromCentralC,
+		certificateRefresherSupplier:    newCertRefresher,
 		serviceCertificatesRepoSupplier: NewServiceCertificatesRepo,
-		requester:       NewCertificateRequester(msgToCentralC, msgFromCentralC),
+		requester:                       NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
 
 type localScannerTLSIssuerImpl struct {
-	sensorNamespace string
-	podOwnerName    string
-	k8sClient       kubernetes.Interface
-	msgToCentralC   chan *central.MsgFromSensor
-	msgFromCentralC chan *central.IssueLocalScannerCertsResponse
-	certificateRefresherSupplier certificateRefresherSupplier
+	sensorNamespace                 string
+	podOwnerName                    string
+	k8sClient                       kubernetes.Interface
+	msgToCentralC                   chan *central.MsgFromSensor
+	msgFromCentralC                 chan *central.IssueLocalScannerCertsResponse
+	certificateRefresherSupplier    certificateRefresherSupplier
 	serviceCertificatesRepoSupplier serviceCertificatesRepoSupplier
-	requester       CertificateRequester
-	refresher       CertificateRefresher
+	requester                       CertificateRequester
+	refresher                       CertificateRefresher
 }
 
 // CertificateRequester requests a new set of local scanner certificates from central.
