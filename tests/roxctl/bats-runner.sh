@@ -7,13 +7,17 @@ if (( $# != 2 )); then
   exit 1
 fi
 
-TESTS_OUTPUT="${1:-roxctl-test-output}"
+export TESTS_OUTPUT="${1:-roxctl-test-output}"
+mkdir -p "$TESTS_OUTPUT"
+mkdir -p "$TESTS_OUTPUT/diag"
+rm -rf "$TESTS_OUTPUT/outputs" # this one must not exist
+
 BATS_TESTS="${2:-tests/roxctl/bats-tests}"
 echo "Using Bats version: '$(bats --version)'"
 echo "Testing roxctl version: '$(roxctl version)'"
 
 # Requires Bats v1.5.0
-BATS_FLAGS=( "--print-output-on-failure" "--verbose-run" "--recursive" )
+BATS_FLAGS=( "--print-output-on-failure" "--verbose-run" "--recursive" "--gather-test-outputs-in" "$TESTS_OUTPUT/outputs" )
 if [[ -n "${CI:-}" ]]; then
   mkdir -p "$TESTS_OUTPUT"
   BATS_FLAGS+=( "--report-formatter" "junit" "--output" "$TESTS_OUTPUT" )

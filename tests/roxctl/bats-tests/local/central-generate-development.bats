@@ -123,4 +123,3 @@ teardown() {
   assert_failure
   assert_output --partial "no such file or directory"
 }
-

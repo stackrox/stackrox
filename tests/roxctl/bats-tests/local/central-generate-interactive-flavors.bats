@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 load "../helpers.bash"
+load "../helper-diagnostics.bash"
 
 out_dir=""
 
@@ -83,9 +84,9 @@ assert_prompts_rhacs() {
   assert_success
   assert_prompts_development
   assert_flavor_prompt_development
-  sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "docker.io" 'main'
-  assert_components_registry "$out_dir/scanner" "docker.io" 'scanner' 'scanner-db'
+  diagnose "$out_dir" "$status"
+  soft_assert_components_registry "$out_dir/central" "docker.io" 'main'
+  soft_assert_components_registry "$out_dir/scanner" "docker.io" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development central generate interactive flavor=stackrox.io" {
@@ -95,9 +96,9 @@ assert_prompts_rhacs() {
   assert_success
   assert_prompts_stackrox
   assert_flavor_prompt_development
-  sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "stackrox.io" 'main'
-  assert_components_registry "$out_dir/scanner" "stackrox.io" 'scanner' 'scanner-db'
+  diagnose "$out_dir" "$status"
+  soft_assert_components_registry "$out_dir/central" "stackrox.io" 'main'
+  soft_assert_components_registry "$out_dir/scanner" "stackrox.io" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development central generate interactive flavor=rhacs" {
@@ -107,9 +108,9 @@ assert_prompts_rhacs() {
   assert_success
   assert_prompts_rhacs
   assert_flavor_prompt_development
-  sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "registry.redhat.io" 'main'
-  assert_components_registry "$out_dir/scanner" "registry.redhat.io" 'scanner' 'scanner-db'
+  diagnose "$out_dir" "$status"
+  soft_assert_components_registry "$out_dir/central" "registry.redhat.io" 'main'
+  soft_assert_components_registry "$out_dir/scanner" "registry.redhat.io" 'scanner' 'scanner-db'
 }
 
 # RELEASE
@@ -127,9 +128,9 @@ assert_prompts_rhacs() {
   assert_success
   assert_prompts_stackrox
   assert_flavor_prompt_release
-  sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "stackrox.io" 'main'
-  assert_components_registry "$out_dir/scanner" "stackrox.io" 'scanner' 'scanner-db'
+  diagnose "$out_dir" "$status"
+  soft_assert_components_registry "$out_dir/central" "stackrox.io" 'main'
+  soft_assert_components_registry "$out_dir/scanner" "stackrox.io" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release central generate interactive flavor=rhacs" {
@@ -139,7 +140,7 @@ assert_prompts_rhacs() {
   assert_success
   assert_prompts_rhacs
   assert_flavor_prompt_release
-  sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "registry.redhat.io" 'main'
-  assert_components_registry "$out_dir/scanner" "registry.redhat.io" 'scanner' 'scanner-db'
+  diagnose "$out_dir" "$status"
+  soft_assert_components_registry "$out_dir/central" "registry.redhat.io" 'main'
+  soft_assert_components_registry "$out_dir/scanner" "registry.redhat.io" 'scanner' 'scanner-db'
 }

@@ -83,32 +83,53 @@ assert_bundle_registry() {
   assert_output --regexp "$regex"
 }
 
-assert_components_registry() {
-  local dir="$1"
-  local registry_slug="$2"
-  shift; shift;
+fail_test(){
+  if [[ "${1}" != "fail" ]]; then
+    echo "TEST FAILED: ${2}" >&3
+  else
+    fail "${2}"
+  fi
+}
 
-  # The expect-based tests may be slow and flaky, so let's add timeouts to this assertion
-  wait_20s_for "$dir" "test" "-d" || fail "ERROR: not a directory: '$dir'"
+assert_components_registry() {
+  hard_assert_components_registry "fail" "${@}"
+}
+
+soft_assert_components_registry() {
+  hard_assert_components_registry "soft" "${@}"
+}
+
+hard_assert_components_registry() {
+  local fail_method="$1"
+  local dir="$2"
+  local registry_slug="$3"
+  shift; shift; shift;
+
   (( $# < 1 )) && fail "ERROR: 0 components provided"
+
+  # Add timeouts to this assertion, beacuse the expect-based tests are flaky
+  wait_20s_for "$dir" "test" "-d" || fail_test "$fail_method" "ERROR: not a directory: '$dir'"
 
   for component in "${@}"; do
     regex="$(registry_regex "$registry_slug" "$component")"
     case $component in
       main)
-        wait_20s_for "${dir}/01-central-12-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/01-central-12-deployment.yaml'"
+        wait_20s_for "${dir}/01-central-12-deployment.yaml" "test" "-f" \
+          || fail_test "$fail_method" "ERROR: file missing: '${dir}/01-central-12-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "central").image' "${dir}/01-central-12-deployment.yaml"
-        assert_output --regexp "$regex"
+        assert_output --regexp "$regex" || fail_test "$fail_method"
         ;;
       scanner)
-        wait_20s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
+        wait_20s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" \
+          || fail_test "$fail_method" "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "scanner").image' "${dir}/02-scanner-06-deployment.yaml"
-        assert_output --regexp "$regex"
+        assert_output --regexp "$regex" || fail_test "$fail_method"
         ;;
       scanner-db)
-        wait_20s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
+        wait_20s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" \
+          || fail_test "$fail_method" "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 1) | .spec.template.spec.containers[] | select(.name == "db").image' "${dir}/02-scanner-06-deployment.yaml"
-        assert_output --regexp "$regex"
+        assert_output --regexp "$regex" || fail_test "$fail_method"
         ;;
       *)
         fail "ERROR: unknown component: '$component'"
