@@ -24,6 +24,8 @@
 [< end >]
 
 {{ if or (eq $scannerCfg.mode "") (eq $scannerCfg.mode "full") }}
+    {{ $_ := set $scannerCfg "name" "scanner" }}
+
     {{ include "srox.configureImage" (list $ $scannerCfg.image) }}
     {{ include "srox.configureImage" (list $ $scannerCfg.dbImage) }}
 
@@ -36,6 +38,8 @@
     [< if not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
     {{ include "srox.fail" "Scanner's slim mode currently not supported" }}
     [< end >]
+    {{ $_ := set $scannerCfg "name" "scanner-slim" }}
+
     {{ include "srox.configureImage" (list $ $scannerCfg.slimImage) }}
     {{ include "srox.configureImage" (list $ $scannerCfg.slimDBImage) }}
 {{ else }}

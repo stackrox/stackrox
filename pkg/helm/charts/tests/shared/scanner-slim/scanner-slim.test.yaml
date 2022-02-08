@@ -15,7 +15,9 @@ tests:
     scanner:
       mode: slim
   expect: |
-    .deployments["scanner"].spec.template.spec.containers[0].image | contains("slim")
-    .deployments["scanner-db"].spec.template.spec.containers[0].image | contains("slim")
-    .secrets["scanner-tls"] | assertThat(. == null)
-    .secrets["scanner-db-tls"] | assertThat(. == null)
+    .deployments["scanner-slim"].spec.template.spec.containers[0].image | contains("slim")
+    .deployments["scanner-slim-db"].spec.template.spec.containers[0].image | contains("slim")
+    .deployments["scanner"] | assertThat(. == null)
+    .deployments["scanner-db"] | assertThat(. == null)
+    .secrets["scanner-slim-tls"] | assertThat(. == null)
+    .secrets["scanner-slim-db-tls"] | assertThat(. == null)
