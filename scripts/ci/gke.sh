@@ -225,10 +225,13 @@ get_supported_cluster_version() {
 }
 
 refresh_gke_token() {
+    info "Starting a GKE token refresh loop"
+
     local real_kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
 
     # refresh token every 15m
     while sleep 900; do
+        info "Refreshing the GKE auth token"
         gcloud config config-helper --force-auth-refresh >/dev/null
         echo >/tmp/kubeconfig-new
         chmod 0600 /tmp/kubeconfig-new
