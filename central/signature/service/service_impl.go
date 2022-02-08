@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
-	"fmt"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -17,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -33,7 +30,6 @@ var (
 			"/v1.SignatureIntegrationService/DeleteSignatureIntegration",
 		},
 	})
-	signatureIntegrationIDPrefix = "io.stackrox.signatureintegration."
 )
 
 type serviceImpl struct {
@@ -82,10 +78,6 @@ func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.Resour
 }
 
 func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
-	integration.Id = generateSignatureIntegrationID()
-	if err := validateSignatureIntegration(integration); err != nil {
-		return nil, err
-	}
 	err := s.datastore.AddSignatureIntegration(ctx, integration)
 	if err != nil {
 		return nil, err
@@ -95,9 +87,6 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, integration 
 }
 
 func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*v1.Empty, error) {
-	if err := validateSignatureIntegration(integration); err != nil {
-		return nil, err
-	}
 	err := s.datastore.UpdateSignatureIntegration(ctx, integration)
 	if err != nil {
 		return nil, err
@@ -111,32 +100,4 @@ func (s *serviceImpl) DeleteSignatureIntegration(ctx context.Context, id *v1.Res
 		return nil, errors.Wrapf(err, "failed to delete signature integration %q", id.GetId())
 	}
 	return &v1.Empty{}, nil
-}
-
-func generateSignatureIntegrationID() string {
-	return signatureIntegrationIDPrefix + uuid.NewV4().String()
-}
-
-func validateSignatureIntegration(integration *storage.SignatureIntegration) error {
-	if integration.GetName() == "" {
-		return errorhelpers.NewErrInvalidArgs("name is not specified for integration")
-	}
-	if len(integration.GetSignatureVerificationConfigs()) == 0 {
-		return errorhelpers.NewErrInvalidArgs("integration should have at least one signature verification config")
-	}
-	for _, verificationConfig := range integration.GetSignatureVerificationConfigs() {
-		cosignVerification := verificationConfig.GetCosignVerification()
-		if cosignVerification != nil {
-			publicKeys := cosignVerification.GetPublicKeys()
-			for index, publicKey := range publicKeys {
-				if publicKey.GetName() == "" {
-					return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("publicKeys[%d] has no name assigned", index))
-				}
-				if _, err := base64.StdEncoding.DecodeString(publicKey.GetPublicKeysBase64Enc()); err != nil {
-					return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("public key %q has invalid base64 encoding", publicKey.GetName()))
-				}
-			}
-		}
-	}
-	return nil
 }

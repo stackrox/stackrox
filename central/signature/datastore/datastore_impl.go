@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/signature/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -46,11 +47,17 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	_, found, err := d.storage.Get(integration.GetId())
+	if integration.GetId() != "" {
+		return errox.Newf(errox.InvalidArgs, "id should be empty when it's %q", integration.GetId())
+	}
+	integrationID, err := d.generateUniqueIntegrationID()
 	if err != nil {
 		return err
-	} else if found {
-		return fmt.Errorf("signature integration id=%s already exists, requested name=%q", integration.GetId(), integration.GetName())
+	}
+	integration.Id = integrationID
+
+	if err := ValidateSignatureIntegration(integration); err != nil {
+		return errox.NewErrInvalidArgs(err.Error())
 	}
 
 	return d.storage.Upsert(integration)
@@ -59,6 +66,9 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) error {
 	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
 		return err
+	}
+	if err := ValidateSignatureIntegration(integration); err != nil {
+		return errox.NewErrInvalidArgs(err.Error())
 	}
 	_, found, err := d.storage.Get(integration.GetId())
 	if err != nil {
@@ -76,4 +86,15 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	}
 
 	return d.storage.Delete(id)
+}
+
+func (d *datastoreImpl) generateUniqueIntegrationID() (string, error) {
+	id := GenerateSignatureIntegrationID()
+	_, found, err := d.storage.Get(id)
+	if err != nil {
+		return "", err
+	} else if found {
+		return d.generateUniqueIntegrationID()
+	}
+	return id, nil
 }
