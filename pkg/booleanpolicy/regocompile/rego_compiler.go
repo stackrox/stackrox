@@ -90,7 +90,7 @@ func (r *regoBasedEvaluator) Evaluate(obj pathutil.AugmentedValue) (*evaluator.R
 		}
 		res.Matches = append(res.Matches, match)
 	}
-	return res, false
+	return res, true
 }
 
 // MustCreateRegoCompiler is a wrapper around CreateRegoCompiler that panics if there's an error.
