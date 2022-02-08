@@ -153,7 +153,6 @@ class ImageScanningTest extends BaseSpecification {
             orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
             imageToCleanup = deployment.image
         }
-        integrationIds.each { ImageIntegrationService.deleteImageIntegration(it) }
         if (imageToCleanup != null) {
             ImageService.clearImageCaches()
             try {
@@ -163,6 +162,8 @@ class ImageScanningTest extends BaseSpecification {
                 println "Image delete threw an exception: ${e}, this is OK for some retry cases."
             }
         }
+        integrationIds.each { ImageIntegrationService.deleteImageIntegration(it) }
+
         if (deleteStackroxScanner) {
             ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         }
