@@ -142,8 +142,10 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
-	github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20220125170349-50dfc2733d10 => github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20211216152112-d1271fea6383
 
+	// Both dependencies are requiring k8s.io/klog/v2@v2.40.1, which introduces a breaking change within
+	// go-logr-logr dependency. For the time being, use older versions of the package.
+	github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20220125170349-50dfc2733d10 => github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20211216152112-d1271fea6383
 	github.com/google/go-containerregistry/pkg/authn/kubernetes v0.0.0-20220125170349-50dfc2733d10 => github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20211222182933-7c19fa370dbd
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819
 	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3
@@ -175,6 +177,8 @@ replace (
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 
+	// knative.dev/pkg upgraded from k8s.io/klog@v1.0.0 to k8s.io/klog/v2@v2.40.1, which introduces a breaking
+	// change within the go-logr/logr dependency. For the time being, use older versions of the package.
 	knative.dev/pkg v0.0.0-20220121092305-3ba5d72e310a => knative.dev/pkg v0.0.0-20220111134415-80b253f23023
 )
 
