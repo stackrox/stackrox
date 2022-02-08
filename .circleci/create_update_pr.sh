@@ -3,7 +3,8 @@
 
 set -euo pipefail
 
-[[ -n "${GITHUB_TOKEN}" ]] || { echo >&2 "No GitHub token found"; exit 2; }
+[[ -n "${GITHUB_TOKEN}" ]] || { echo >&2 "Not found: GITHUB_TOKEN"; exit 2; }
+[[ -n "${CIRCLE_USERNAME}" ]] || { echo >&2 "Not found: CIRCLE_USERNAME"; exit 2; }
 
 usage() {
   echo >&2 "Usage: $0 <branch_name> <repo_name> [<pr_title>]"
