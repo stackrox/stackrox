@@ -17,9 +17,7 @@ repo_name="$2"
 
 pr_response_file="$(mktemp)"
 
-message="Hello,
-This is an automated PR created to bump the base image.
-It was created from ${CIRCLE_PULL_REQUEST}."
+message="This is automated PR created by the CI."
 
 status_code="$(curl -sS \
   -w '%{http_code}' \
@@ -40,7 +38,7 @@ echo "Got PR response: $(cat "${pr_response_file}")"
 [[ "${status_code}" -eq 201 || "${status_code}" -eq 422 ]]
 
 if [[ "${status_code}" -eq 201 ]]; then
-  [[ -n "${CIRCLE_USERNAME}" ]] || die "No CIRCLE_USERNAME found."
+  [[ -n "${CIRCLE_USERNAME}" ]] || { echo >&2 "No CIRCLE_USERNAME found"; exit 2; }
 
   pr_number="$(jq <"$pr_response_file" -r '.number')"
   [[ -n "${pr_number}" ]]

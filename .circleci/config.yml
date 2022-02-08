@@ -4463,7 +4463,7 @@ jobs:
           name: Check out collector source code
           command: |
             mkdir -p /tmp/collector
-            git -C /tmp clone git@github.com:stackrox/collector.git
+            git -C /tmp clone --depth=2 --no-single-branch git@github.com:stackrox/collector.git
 
       - run:
           name: Add current release version to RELEASED_VERSIONS file
