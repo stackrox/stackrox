@@ -1396,45 +1396,23 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 	})
 
 	suite.Run("Audit logs", func() {
-		suite.Run("Kubernetes cluster", func() {
-			cluster := &storage.Cluster{
-				Type: storage.ClusterType_KUBERNETES_CLUSTER,
-			}
-			suite.NoError(addDefaults(cluster))
-			if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
-				suite.True(dc.GetDisableAuditLogs())
-			}
-		})
-		suite.Run("Openshift 3 cluster", func() {
-			cluster := &storage.Cluster{
-				Type: storage.ClusterType_OPENSHIFT_CLUSTER,
-			}
-			suite.NoError(addDefaults(cluster))
-			if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
-				suite.True(dc.GetDisableAuditLogs())
-			}
-		})
-		suite.Run("Openshift 4 cluster", func() {
-			cluster := &storage.Cluster{
-				Type: storage.ClusterType_OPENSHIFT4_CLUSTER,
-			}
-			suite.NoError(addDefaults(cluster))
-			if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
-				suite.False(dc.GetDisableAuditLogs())
-			}
-		})
-		suite.Run("Openshift 4 cluster with disabled logs", func() {
-			cluster := &storage.Cluster{
-				Type: storage.ClusterType_OPENSHIFT4_CLUSTER,
-				DynamicConfig: &storage.DynamicClusterConfig{
-					DisableAuditLogs: true,
-				},
-			}
-			suite.NoError(addDefaults(cluster))
-			if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
-				suite.True(dc.GetDisableAuditLogs())
-			}
-		})
+		for name, testCase := range map[string]struct {
+			cluster              *storage.Cluster
+			expectedDisabledLogs bool
+		}{
+			"Kubernetes cluster":  {&storage.Cluster{Type: storage.ClusterType_KUBERNETES_CLUSTER}, true},
+			"Openshift 3 cluster": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT_CLUSTER}, true},
+			"Openshift 4 cluster": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT4_CLUSTER}, false},
+			"Openshift 4 cluster with disabled logs": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT4_CLUSTER,
+				DynamicConfig: &storage.DynamicClusterConfig{DisableAuditLogs: true}}, true},
+		} {
+			suite.Run(name, func() {
+				suite.NoError(addDefaults(testCase.cluster))
+				if dc := testCase.cluster.GetDynamicConfig(); suite.NotNil(dc) {
+					suite.Equal(testCase.expectedDisabledLogs, dc.GetDisableAuditLogs())
+				}
+			})
+		}
 	})
 
 	suite.Run("Collector image not set when only main image is provided", func() {
