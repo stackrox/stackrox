@@ -10,8 +10,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
-	testutilsMTLS "github.com/stackrox/rox/central/testutils/mtls"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
