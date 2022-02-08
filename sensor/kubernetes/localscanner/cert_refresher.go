@@ -13,15 +13,9 @@ import (
 
 var (
 	certsDescription               = "local scanner credentials"
-	_                certRefresher = (*certRefresherImpl)(nil)
 	// ErrEmptyCertificate TODO: replace by ROX-9129
 	ErrEmptyCertificate = errors.New("empty certificate")
 )
-
-type certRefresher interface {
-	Start() error
-	Stop()
-}
 
 // newCertRefresher returns a new certRefresher that uses `requestCertificates` to fetch certificates,
 // with the timeout and backoff strategy specified, and the specified repository for persistence.
