@@ -498,8 +498,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	utils.Must(builder.AddType("CosignSignature", []string{
-		"rawSignatureBase64Enc: String!",
-		"signaturePayloadBase64Enc: String!",
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
@@ -5194,13 +5192,13 @@ func (resolver *Resolver) wrapCosignSignatures(values []*storage.CosignSignature
 	return output, nil
 }
 
-func (resolver *cosignSignatureResolver) RawSignatureBase64Enc(ctx context.Context) string {
-	value := resolver.data.GetRawSignatureBase64Enc()
+func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
+	value := resolver.data.GetRawSignature()
 	return value
 }
 
-func (resolver *cosignSignatureResolver) SignaturePayloadBase64Enc(ctx context.Context) string {
-	value := resolver.data.GetSignaturePayloadBase64Enc()
+func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
+	value := resolver.data.GetSignaturePayload()
 	return value
 }
 

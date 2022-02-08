@@ -158,7 +158,7 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 		}
 		enumregistry.Add(prefix, enumDesc)
 		return v1.SearchDataType_SEARCH_ENUM
-	case reflect.Interface:
+	case reflect.Interface, reflect.Uint8:
 	default:
 		panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), prefix))
 	}
