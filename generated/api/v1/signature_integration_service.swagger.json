@@ -238,9 +238,6 @@
     "storageSignatureVerificationConfig": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string"
-        },
         "cosignVerification": {
           "$ref": "#/definitions/storageCosignPublicKeyVerification"
         }
