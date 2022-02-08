@@ -18,7 +18,8 @@ type regoCompilerForType struct {
 	fieldToMetaPathMap *pathutil.FieldToMetaPathMap
 }
 
-type RegoCompilerForType interface {
+// A RegoCompiler compiles a rego-based evaluator for the given query.
+type RegoCompiler interface {
 	CompileRegoBasedEvaluator(query *query.Query) (evaluator.Evaluator, error)
 }
 
@@ -26,6 +27,11 @@ type regoBasedEvaluator struct {
 	q rego.PreparedEvalQuery
 }
 
+// convertBindingToResult converts a set of variable bindings to a result.
+// It has to do a bunch of type assertions, since rego can return arbitrary values.
+// We know that our rego programs are constructed to return map[string][]interface{},
+// so this takes advantage of that to traverse them. It also converts each returned value
+// into a string.
 func convertBindingToResult(binding interface{}) (m map[string][]string, err error) {
 	panicked := true
 	defer func() {
@@ -76,8 +82,6 @@ func (r *regoBasedEvaluator) Evaluate(obj pathutil.AugmentedValue) (*evaluator.R
 	}
 
 	res := &evaluator.Result{}
-	// Our queries are constructed so that each binding will be a map[string][]interface{}.
-	// rego, however will store this as a map[string]interface{}, with each value being an []interface{}
 	for _, binding := range outBindings {
 		match, err := convertBindingToResult(binding)
 		if err != nil {
@@ -86,16 +90,18 @@ func (r *regoBasedEvaluator) Evaluate(obj pathutil.AugmentedValue) (*evaluator.R
 		}
 		res.Matches = append(res.Matches, match)
 	}
-	return res, true
+	return res, false
 }
 
-func MustCreateRegoCompiler(objMeta *pathutil.AugmentedObjMeta) RegoCompilerForType {
+// MustCreateRegoCompiler is a wrapper around CreateRegoCompiler that panics if there's an error.
+func MustCreateRegoCompiler(objMeta *pathutil.AugmentedObjMeta) RegoCompiler {
 	r, err := CreateRegoCompiler(objMeta)
 	utils.Must(err)
 	return r
 }
 
-func CreateRegoCompiler(objMeta *pathutil.AugmentedObjMeta) (RegoCompilerForType, error) {
+// CreateRegoCompiler creates a rego compiler for the given object meta.
+func CreateRegoCompiler(objMeta *pathutil.AugmentedObjMeta) (RegoCompiler, error) {
 	fieldToMetaPathMap, err := objMeta.MapSearchTagsToPaths()
 	if err != nil {
 		return nil, err
@@ -120,15 +126,16 @@ func (r *regoCompilerForType) CompileRegoBasedEvaluator(query *query.Query) (eva
 }
 
 type fieldMatchData struct {
-	matchers matchersForField
+	matchers []regoMatchFunc
 	name     string
 	path     string
 }
 
 func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
+	// We need to get a unique set of array indexes for each path in the rego code.
+	// That is tracked in this map.
 	pathsToArrayIndexes := make(map[string]int)
-
-	var fieldToMatchers []fieldMatchData
+	var fieldsAndMathcers []fieldMatchData
 
 	for _, fieldQuery := range query.FieldQueries {
 		field := fieldQuery.Field
@@ -140,7 +147,8 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 		for i, elem := range metaPathToField {
 			constructedPath.WriteString(elem.FieldName)
 			if i == len(metaPathToField)-1 {
-				continue
+				// For the last element, we don't want to index into it, or add a "." at the end.
+				break
 			}
 			if elem.Type.Kind() == reflect.Slice || elem.Type.Kind() == reflect.Array {
 				pathKey := constructedPath.String()
@@ -157,7 +165,7 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("generating matchers for field query %+v: %w", fieldQuery, err)
 		}
-		fieldToMatchers = append(fieldToMatchers, fieldMatchData{
+		fieldsAndMathcers = append(fieldsAndMathcers, fieldMatchData{
 			matchers: matchersForField,
 			name:     field,
 			path:     constructedPath.String(),
@@ -169,19 +177,20 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 		args.IndexesToDeclare = append(args.IndexesToDeclare, i)
 	}
 	var funcLengths []int
-	for _, matchData := range fieldToMatchers {
-		for _, f := range matchData.matchers.funcs {
+	for _, matchData := range fieldsAndMathcers {
+		for _, f := range matchData.matchers {
 			args.Functions = append(args.Functions, f.functionCode)
 		}
-		funcLengths = append(funcLengths, len(matchData.matchers.funcs))
+		funcLengths = append(funcLengths, len(matchData.matchers))
 	}
-	if err := runForEachProcessProduct(funcLengths, func(indexes []int) error {
+	// We need to generate one rule for each cross product, since we are OR-ing between them.
+	if err := runForEachCrossProduct(funcLengths, func(indexes []int) error {
 		condition := condition{}
-		for i, matchData := range fieldToMatchers {
+		for i, matchData := range fieldsAndMathcers {
 			condition.Fields = append(condition.Fields, fieldInCondition{
 				Name:     matchData.name,
 				JSONPath: matchData.path,
-				FuncName: matchData.matchers.funcs[indexes[i]].functionName,
+				FuncName: matchData.matchers[indexes[i]].functionName,
 			})
 		}
 		args.Conditions = append(args.Conditions, condition)
@@ -192,7 +201,16 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 	return generateMainProgram(args)
 }
 
-func runForEachProcessProduct(arrayLengths []int, f func([]int) error) error {
+// This takes a list of array lengths, and invokes the func for every combination of the array indexes.
+// For example, given array lengths [2, 3, 1],
+// f will be called with
+// [0, 0, 0]
+// [0, 1, 0]
+// [0, 2, 0]
+// [1, 0, 0]
+// [1, 1, 0]
+// [1, 2, 0]
+func runForEachCrossProduct(arrayLengths []int, f func([]int) error) error {
 	for _, l := range arrayLengths {
 		if l == 0 {
 			return nil

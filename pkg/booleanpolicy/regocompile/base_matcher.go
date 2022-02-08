@@ -31,6 +31,8 @@ var (
 )
 
 var (
+	// ErrRegoNotYetSupported is an error that indicates that a certain query is not yet supported by rego.
+	// It will be removed once rego is supported for all queries.
 	ErrRegoNotYetSupported = errors.New("as-yet unsupported rego path")
 )
 
@@ -149,13 +151,9 @@ type regoMatchFunc struct {
 	functionName string
 }
 
-type matchersForField struct {
-	funcs []regoMatchFunc
-}
-
-func generateMatchersForField(fieldQuery *query.FieldQuery, typ reflect.Type) (matchersForField, error) {
+func generateMatchersForField(fieldQuery *query.FieldQuery, typ reflect.Type) ([]regoMatchFunc, error) {
 	if fieldQuery.Operator == query.And || fieldQuery.Negate {
-		return matchersForField{}, ErrRegoNotYetSupported
+		return nil, ErrRegoNotYetSupported
 	}
 	var generators []regoMatchFuncGenerator
 	if fieldQuery.MatchAll {
@@ -166,19 +164,19 @@ func generateMatchersForField(fieldQuery *query.FieldQuery, typ reflect.Type) (m
 		var err error
 		generators, err = generateBaseMatcherHelper(fieldQuery, typ)
 		if err != nil {
-			return matchersForField{}, err
+			return nil, err
 		}
 	}
 	if len(generators) == 0 {
-		return matchersForField{}, fmt.Errorf("got no generators for fieldQuery %+v", fieldQuery)
+		return nil, fmt.Errorf("got no generators for fieldQuery %+v", fieldQuery)
 	}
-	m := matchersForField{}
+	var funcs []regoMatchFunc
 	for _, gen := range generators {
 		code, err := gen.GenerateRego()
 		if err != nil {
-			return matchersForField{}, err
+			return nil, err
 		}
-		m.funcs = append(m.funcs, regoMatchFunc{functionCode: code, functionName: gen.FuncName()})
+		funcs = append(funcs, regoMatchFunc{functionCode: code, functionName: gen.FuncName()})
 	}
-	return m, nil
+	return funcs, nil
 }

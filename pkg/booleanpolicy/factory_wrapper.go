@@ -12,7 +12,7 @@ import (
 
 type factoryWrapper struct {
 	legacyFactory   evaluator.Factory
-	opaBasedFactory regocompile.RegoCompilerForType
+	opaBasedFactory regocompile.RegoCompiler
 }
 
 func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator, error) {
