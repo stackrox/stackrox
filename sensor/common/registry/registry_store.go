@@ -1,8 +1,6 @@
 package registry
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
@@ -67,7 +65,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 }
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
-func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
+func (rs *Store) UpsertRegistry(namespace, registry string, dce config.DockerConfigEntry) error {
 	regs := rs.getRegistries(namespace)
 
 	// TODO: pass a context here, as this can take time.
