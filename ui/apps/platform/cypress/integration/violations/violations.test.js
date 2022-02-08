@@ -220,7 +220,6 @@ describe('Violations page', () => {
         cy.wait('@alertById');
         cy.get(ViolationsPageSelectors.details.policyTab).click();
         cy.get(PoliciesPageSelectors.policyDetailsPanel.detailsSection).should('exist');
-        cy.get(PoliciesPageSelectors.policyDetailsPanel.idValueDiv).should('exist');
     });
 
     it('should sort violations when clicking on a table header', () => {
