@@ -11,9 +11,11 @@ usage() {
 
 branch_name="$1"
 repo_name="$2"
+pr_title="${3:-"Untitled"}"
 
 [[ -n "$branch_name" ]] || usage
 [[ -n "$repo_name" ]] || usage
+[[ -n "$pr_title" ]] || usage
 
 pr_response_file="$(mktemp)"
 
@@ -26,7 +28,7 @@ status_code="$(curl -sS \
   -H "Authorization: token ${GITHUB_TOKEN}" \
   "https://api.github.com/repos/stackrox/${repo_name}/pulls" \
   -d"{
-  \"title\": \"Update rox-ci-image\",
+  \"title\": \"${pr_title}\",
   \"body\": $(jq -sR <<<"$message"),
   \"head\": \"${branch_name}\",
   \"base\": \"master\"
