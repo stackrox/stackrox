@@ -22,13 +22,13 @@ var (
 	log = logging.LoggerForModule()
 
 	scannerSpec = ServiceCertSecretSpec{
-		secretName: "scanner-slim-tls",
+		secretName:          "scanner-slim-tls",
 		caCertFileName:      "ca.pem", // FIXME review this and for db
 		serviceCertFileName: "cert.pem",
 		serviceKeyFileName:  "key.pem",
 	}
 	scannerDBSpec = ServiceCertSecretSpec{
-		secretName: "scanner-slim-db-tls",
+		secretName:          "scanner-slim-db-tls",
 		caCertFileName:      "ca.pem",
 		serviceCertFileName: "cert.pem",
 		serviceKeyFileName:  "key.pem",
@@ -77,20 +77,25 @@ type CertificateRequester interface {
 	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 }
 
+// CertificateRefresher periodically checks the expiration of a set of certificates, and if needed
+// requests new certificates to central and updates those certificates.
 type CertificateRefresher interface {
 	Start() error
 	Stop()
 }
 
 // ServiceCertificatesRepo TODO replace by ROX-9148
-type ServiceCertificatesRepo interface {}
+type ServiceCertificatesRepo interface{}
+
 // requestCertificatesFunc TODO replace by ROX-9148
 type requestCertificatesFunc func(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
+
 // newCertRefresher TODO replace by ROX-9148
 func newCertRefresher(requestCertificates requestCertificatesFunc, timeout time.Duration,
 	backoff wait.Backoff, repository ServiceCertificatesRepo) CertificateRefresher {
 	return nil
 }
+
 // ServiceCertSecretSpec TODO replace by ROX-9128
 type ServiceCertSecretSpec struct {
 	secretName          string
@@ -98,6 +103,7 @@ type ServiceCertSecretSpec struct {
 	serviceCertFileName string
 	serviceKeyFileName  string
 }
+
 // NewServiceCertificatesRepo TODO replace by ROX-9128
 func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec,
 	sensorDeployment *appsApiv1.Deployment, initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
@@ -184,9 +190,9 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 // initialCertsSupplier request the certificates at most once, and returns the memoized response to that single request.
 func (i *localScannerTLSIssuerImpl) initialCertsSupplier() func(context.Context) (*storage.TypedServiceCertificateSet, error) {
 	var (
-		requestOnce sync.Once
+		requestOnce  sync.Once
 		certificates *storage.TypedServiceCertificateSet
-		requestErr error
+		requestErr   error
 	)
 	requestCertificates := i.requester.RequestCertificates
 	return func(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
