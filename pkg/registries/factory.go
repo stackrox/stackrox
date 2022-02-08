@@ -26,8 +26,10 @@ type Factory interface {
 	CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error)
 }
 
+// CreatorWrapper is a wrapper around a Creator which also returns the registry's name.
 type CreatorWrapper func() (string, func(integration *storage.ImageIntegration) (types.Registry, error))
 
+// AllCreatorFuncs defines all known registry creators.
 var AllCreatorFuncs = []CreatorWrapper{
 	artifactRegistryFactory.Creator,
 	artifactoryFactory.Creator,

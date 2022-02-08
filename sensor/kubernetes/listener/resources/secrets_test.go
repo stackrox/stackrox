@@ -65,12 +65,17 @@ var (
 	}
 )
 
+// checkTLS is a dummy implementation of registry.CheckTLS
+func checkTLS(_ string) (bool, error) {
+	return false, nil
+}
+
 func TestOpenShiftRegistrySecret_311(t *testing.T) {
 	testutils.RunWithFeatureFlagEnabled(t, features.LocalImageScanning, testOpenShiftRegistrySecret311)
 }
 
 func testOpenShiftRegistrySecret311(t *testing.T) {
-	regStore := registry.NewTestRegistryStore()
+	regStore := registry.NewRegistryStore(checkTLS)
 	d := newSecretDispatcher(regStore)
 
 	_ = d.ProcessEvent(openshift311DockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
@@ -98,7 +103,7 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 }
 
 func testOpenShiftRegistrySecret4x(t *testing.T) {
-	regStore := registry.NewTestRegistryStore()
+	regStore := registry.NewRegistryStore(checkTLS)
 	d := newSecretDispatcher(regStore)
 
 	_ = d.ProcessEvent(openshift4xDockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)

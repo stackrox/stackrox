@@ -39,7 +39,7 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 		factory: registries.NewFactory(registries.FactoryOptions{
 			CreatorFuncs: []registries.CreatorWrapper{dockerFactory.Creator},
 		}),
-		store:   make(map[string]registries.Set),
+		store: make(map[string]registries.Set),
 
 		checkTLS: tlscheck.CheckTLS,
 	}
