@@ -38,14 +38,15 @@ class SACv2Test extends SACTest {
         def remoteQaTest2 = createAccessScope(DEFAULT_CLUSTER_NAME, "qa-test2")
 
         def noaccess = createRole(noaccessScope.id, allResourcesAccess)
+        def unrestricted = "io.stackrox.authz.accessscope.unrestricted"
 
         tokenToRoles = [
                 (NOACCESSTOKEN)                   : [noaccess],
-                (ALLACCESSTOKEN)                  : [createRole("", allResourcesAccess)],
+                (ALLACCESSTOKEN)                  : [createRole(unrestricted, allResourcesAccess)],
                 "deployments-access-token"        : [createRole(remoteQaTest2.id,
                         ["Deployment": READ_ACCESS, "Risk": READ_ACCESS])],
                 "getSummaryCountsToken"           : [createRole(remoteQaTest1.id, allResourcesAccess)],
-                "listSecretsToken"                : [createRole("", ["Secret": READ_ACCESS])],
+                "listSecretsToken"                : [createRole(unrestricted, ["Secret": READ_ACCESS])],
                 "searchAlertsToken"               : [createRole(remoteQaTest1.id, ["Alert": READ_ACCESS]), noaccess],
                 "searchDeploymentsToken"          : [createRole(remoteQaTest1.id,
                         ["Deployment": READ_ACCESS]), noaccess],
@@ -56,7 +57,7 @@ class SACv2Test extends SACTest {
                         ["Deployment": READ_ACCESS, "Image": READ_ACCESS]), noaccess],
                 "stackroxNetFlowsToken"           : [createRole(createAccessScope(DEFAULT_CLUSTER_NAME, "stackrox").id,
                         ["Deployment": READ_ACCESS, "NetworkGraph": READ_ACCESS]),
-                                                     createRole("", ["Cluster": READ_ACCESS]), noaccess],
+                                                     createRole(unrestricted, ["Cluster": READ_ACCESS]), noaccess],
                 "kubeSystemDeploymentsImagesToken": [createRole(createAccessScope(
                         DEFAULT_CLUSTER_NAME, "kube-system").id, ["Deployment": READ_ACCESS, "Image": READ_ACCESS]),
                                                      noaccess],
