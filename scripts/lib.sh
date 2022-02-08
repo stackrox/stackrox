@@ -23,11 +23,15 @@ die() {
 }
 
 is_CI() {
-    [[ -n "${CI:-}" || -n "${CIRCLECI:-}" ]]
+    [[ "${CI:-}" == "true" ]]
 }
 
 is_CIRCLECI() {
-    [[ -n "${CIRCLECI:-}" ]]
+    [[ "${CIRCLECI:-}" == "true" ]]
+}
+
+is_OPENSHIFT_CI() {
+    [[ "${OPENSHIFT_CI:-}" == "true" ]]
 }
 
 is_darwin() {

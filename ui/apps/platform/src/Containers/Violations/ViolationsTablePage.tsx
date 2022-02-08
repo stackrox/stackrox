@@ -20,6 +20,8 @@ import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 
+import './ViolationsTablePage.css';
+
 function runAfter5Seconds(fn: () => void) {
     return new Promise(() => {
         setTimeout(fn, 5000);
@@ -155,16 +157,18 @@ function ViolationsTablePage(): ReactElement {
     }
 
     return (
-        <PageSection variant="light" isFilled id="violations-table">
-            <ReduxSearchInput
-                className="w-full theme-light"
-                searchOptions={searchOptions}
-                searchModifiers={searchModifiers}
-                setSearchOptions={setSearchOptions}
-                setSearchSuggestions={setSearchSuggestions}
-                defaultOption={defaultOption}
-                autoCompleteCategories={['ALERTS']}
-            />
+        <>
+            <PageSection variant="light" id="violations-table">
+                <ReduxSearchInput
+                    className="w-full theme-light"
+                    searchOptions={searchOptions}
+                    searchModifiers={searchModifiers}
+                    setSearchOptions={setSearchOptions}
+                    setSearchSuggestions={setSearchSuggestions}
+                    defaultOption={defaultOption}
+                    autoCompleteCategories={['ALERTS']}
+                />
+            </PageSection>
             {currentPageAlertsErrorMessage ? (
                 <Bullseye>
                     <Alert variant="danger" title={currentPageAlertsErrorMessage} />
@@ -186,7 +190,7 @@ function ViolationsTablePage(): ReactElement {
                     columns={columns}
                 />
             )}
-        </PageSection>
+        </>
     );
 }
 

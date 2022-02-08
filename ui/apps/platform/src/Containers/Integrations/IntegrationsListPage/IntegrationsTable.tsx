@@ -16,6 +16,7 @@ import resolvePath from 'object-resolve-path';
 import pluralize from 'pluralize';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import useTableSelection from 'hooks/useTableSelection';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
@@ -129,18 +130,13 @@ function IntegrationsTable({
                         )}
                         {permissions[source].write && (
                             <FlexItem spacer={{ default: 'spacerMd' }}>
-                                <Button
+                                <ButtonLink
+                                    to={getPathToCreate(source, type)}
                                     variant={ButtonVariant.primary}
-                                    component={(props) => (
-                                        <Link
-                                            {...props}
-                                            to={getPathToCreate(source, type)}
-                                            data-testid="add-integration"
-                                        />
-                                    )}
+                                    data-testid="add-integration"
                                 >
                                     {newButtonText}
-                                </Button>
+                                </ButtonLink>
                             </FlexItem>
                         )}
                     </Flex>

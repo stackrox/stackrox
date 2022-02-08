@@ -198,7 +198,7 @@ function ViolationsTablePanel({
             </Flex>
             <Divider component="div" />
             <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
-                <TableComposable variant="compact">
+                <TableComposable variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
                             <Th

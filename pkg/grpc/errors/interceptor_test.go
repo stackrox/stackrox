@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -165,30 +166,26 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 }
 
 func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
-	tests := []struct {
-		name    string
+	tests := map[string]struct {
 		handler grpc.StreamHandler
 		err     error
 		panics  bool
 	}{
-		{
-			name: "Error is nil -> do nothing, just pass through",
+		"Error is nil -> do nothing, just pass through": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
 				return nil
 			},
 			err:    nil,
 			panics: false,
 		},
-		{
-			name: "Error is ErrInvariantViolation -> panic",
+		"Error is ErrInvariantViolation -> panic": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
 				return errorhelpers.NewErrInvariantViolation("some explanation")
 			},
 			err:    nil,
 			panics: true,
 		},
-		{
-			name: "Error is not ErrInvariantViolation -> do nothing, just pass through",
+		"Error is not ErrInvariantViolation -> do nothing, just pass through": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
 				return errorhelpers.ErrNotFound
 			},
@@ -196,8 +193,8 @@ func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 			panics: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if tt.panics {
 				assert.Panics(t, func() {
 					_ = PanicOnInvariantViolationStreamInterceptor(nil, nil, nil, tt.handler)
@@ -211,6 +208,39 @@ func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 			}
 			require.NotNil(t, err)
 			assert.ErrorIs(t, err, tt.err)
+		})
+	}
+}
+
+type myError struct {
+	code    codes.Code
+	message string
+}
+
+func (e *myError) GRPCStatus() *status.Status {
+	return status.New(e.code, e.message)
+}
+
+func (e *myError) Error() string {
+	return e.message
+}
+
+func TestErrToGRPCStatus(t *testing.T) {
+	tests := map[string]struct {
+		err  error
+		code codes.Code
+	}{
+		"Sentinel":         {errox.AlreadyExists, codes.AlreadyExists},
+		"Wrapped Sentinel": {errors.WithMessage(errox.AlreadyExists, "double"), codes.AlreadyExists},
+		"NotFound":         {&myError{codes.NotFound, "not found"}, codes.NotFound},
+		"Wrapped":          {errors.Wrap(&myError{codes.NotFound, "not found"}, "wrapped"), codes.NotFound},
+		"Wrappped":         {errors.WithMessage(errors.Wrap(&myError{codes.NotFound, "not found"}, "wrapped"), "with message"), codes.NotFound},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := ErrToGrpcStatus(tt.err)
+			assert.Equal(t, tt.code, s.Code())
+			assert.Equal(t, tt.err.Error(), s.Message())
 		})
 	}
 }

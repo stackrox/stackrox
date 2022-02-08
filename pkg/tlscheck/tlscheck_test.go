@@ -1,6 +1,7 @@
 package tlscheck
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,7 +35,7 @@ func checkTLSWithRetry(server *httptest.Server) (bool, error) {
 	err := retry.WithRetry(
 		func() error {
 			var err error
-			tls, err = CheckTLS(server.Listener.Addr().String())
+			tls, err = CheckTLS(context.Background(), server.Listener.Addr().String())
 			return err
 		},
 		retry.Tries(3),
