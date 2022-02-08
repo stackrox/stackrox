@@ -45,6 +45,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
@@ -160,6 +161,10 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
 	if err != nil {
 		return nil, errors.Wrap(err, "creating central client")
+	}
+
+	if !features.LocalImageScanning.Enabled() {
+		components = append(components, localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace))
 	}
 
 	s := sensor.NewSensor(
