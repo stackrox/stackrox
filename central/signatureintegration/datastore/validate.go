@@ -1,14 +1,15 @@
 package datastore
 
 import (
-	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -37,14 +38,30 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		multiErr = multierror.Append(err)
 	}
 	for _, verificationConfig := range integration.GetSignatureVerificationConfigs() {
-		cosignVerification := verificationConfig.GetCosignVerification()
-		if cosignVerification != nil {
-			publicKeys := cosignVerification.GetPublicKeys()
-			for _, publicKey := range publicKeys {
-				if _, err := base64.StdEncoding.DecodeString(publicKey.GetPublicKeysBase64Enc()); err != nil {
-					return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("public key %q has invalid base64 encoding", publicKey.GetName()))
-				}
-			}
+		switch cfg := verificationConfig.GetConfig().(type) {
+		case *storage.SignatureVerificationConfig_CosignVerification:
+			err := validateCosignVerification(cfg)
+			multiErr = multierror.Append(multiErr, err)
+		default:
+			// Should theoretically never happen.
+			err := errox.NewErrInvariantViolation(fmt.Sprintf(
+				"invalid type for signature verification config: %T", cfg))
+			multiErr = multierror.Append(err)
+		}
+	}
+
+	return multiErr
+}
+
+func validateCosignVerification(config *storage.SignatureVerificationConfig_CosignVerification) error {
+	var multiErr error
+
+	publicKeys := config.CosignVerification.GetPublicKeys()
+	for _, publicKey := range publicKeys {
+		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeysPemEnc()))
+		if keyBlock == nil || keyBlock.Type != signatures.PublicKeyType || rest != nil {
+			err := errox.Newf(errox.InvariantViolation, "failed to decode PEM block containing public key %q", publicKey.GetName())
+			multiErr = multierror.Append(multiErr, err)
 		}
 	}
 

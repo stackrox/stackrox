@@ -31,6 +31,7 @@ var (
 	errHashCreation          = errors.New("creating hash")
 	errCorruptedSignature    = errors.New("corrupted signature")
 )
+const PublicKeyType = "PUBLIC KEY"
 
 type publicKeyVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
@@ -43,22 +44,16 @@ var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 // It will return an error if the provided public keys could not be parsed or the base64 decoding failed.
 func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_CosignVerification) (*publicKeyVerifier, error) {
 	publicKeys := config.CosignVerification.GetPublicKeys()
-	base64EncPublicKeys := make([]string, 0, len(publicKeys))
+	pemEncPublicKeys := make([]string, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
-		base64EncPublicKeys = append(base64EncPublicKeys, publicKey.GetPublicKeysBase64Enc())
+		pemEncPublicKeys = append(pemEncPublicKeys, publicKey.GetPublicKeysPemEnc())
 	}
 
-	parsedKeys := make([]crypto.PublicKey, 0, len(base64EncPublicKeys))
-	for _, base64EncKey := range base64EncPublicKeys {
-		// Each key should be base64 encoded.
-		decodedKey, err := base64.StdEncoding.DecodeString(base64EncKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "decoding base64 encoded key")
-		}
-
+	parsedKeys := make([]crypto.PublicKey, 0, len(pemEncPublicKeys))
+	for _, pemKey := range pemEncPublicKeys {
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
-		keyBlock, rest := pem.Decode(decodedKey)
-		if keyBlock == nil || keyBlock.Type != publicKeyType || len(rest) > 0 {
+		keyBlock, rest := pem.Decode([]byte(pemKey))
+		if keyBlock == nil || keyBlock.Type != PublicKeyType || len(rest) > 0 {
 			return nil, errox.New(errox.InvariantViolation,
 				"failed to decode PEM block containing public key")
 		}
