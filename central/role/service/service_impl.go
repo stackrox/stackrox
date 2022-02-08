@@ -62,11 +62,7 @@ var (
 )
 
 type serviceImpl struct {
-	roleDataStore datastore.DataStore
-
-	// TODO(ROX-7076): The built-in authorization plugin is supposed to take
-	//   over fetching clusters and namespaces. It would do it in a smarter way
-	//   than just going to the datastore for every request.
+	roleDataStore      datastore.DataStore
 	clusterDataStore   clusterDS.DataStore
 	namespaceDataStore namespaceDS.DataStore
 }
@@ -305,8 +301,6 @@ func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.Resour
 	return &v1.Empty{}, nil
 }
 
-// TODO(ROX-7076): Instead of fetching all clusters and namespaces for each
-//   request, rely on optimizations made by built-in scoped authorizer.
 func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error) {
 	// If we're here, service-level authz has already verified that the caller
 	// has at least READ permission on the Role resource.
