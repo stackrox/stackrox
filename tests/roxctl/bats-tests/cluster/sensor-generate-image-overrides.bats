@@ -33,6 +33,28 @@ registry_from_flavor() {
   esac
 }
 
+collector_full_from_flavor() {
+   case "$central_flavor" in
+   "development_build")
+     echo "collector:$any_version_latest"
+     ;;
+   "stackrox.io")
+     echo "collector:$any_version"
+     ;;
+   esac
+}
+
+collector_slim_from_flavor() {
+    case "$central_flavor" in
+     "development_build")
+       echo "collector:$any_version_slim"
+       ;;
+     "stackrox.io")
+       echo "collector-slim:$any_version"
+       ;;
+     esac
+}
+
 any_version="[0-9]+\.[0-9]+\."
 any_version_latest="${any_version}[0-9]+\-latest"
 any_version_slim="${any_version}[0-9]+\-slim"
@@ -41,7 +63,7 @@ any_version_slim="${any_version}[0-9]+\-slim"
   generate_bundle k8s --name "$cluster_name"
   assert_success
   assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/$(collector_slim_from_flavor)"
   delete_cluster "$cluster_name"
 }
 
@@ -49,7 +71,7 @@ any_version_slim="${any_version}[0-9]+\-slim"
   generate_bundle k8s "--slim-collector=false" --name "$cluster_name"
   assert_success
   assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/collector:$any_version_latest"
+  assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/$(collector_full_from_flavor)"
   delete_cluster "$cluster_name"
 }
 
@@ -57,7 +79,7 @@ any_version_slim="${any_version}[0-9]+\-slim"
   generate_bundle k8s "--main-image-repository=example.com/stackrox/main" --name "$cluster_name"
   assert_success
   assert_bundle_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "example\.com/stackrox/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "collector" "example\.com/stackrox/$(collector_slim_from_flavor)"
   delete_cluster "$cluster_name"
 }
 
@@ -65,7 +87,7 @@ any_version_slim="${any_version}[0-9]+\-slim"
   generate_bundle k8s "--collector-image-repository=example2.com/stackrox/collector" --name "$cluster_name"
   assert_success
   assert_bundle_registry "$out_dir" "sensor" "$(registry_from_flavor)/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/$(collector_slim_from_flavor)"
   delete_cluster "$cluster_name"
 }
 
@@ -73,7 +95,7 @@ any_version_slim="${any_version}[0-9]+\-slim"
   generate_bundle k8s "--main-image-repository=example.com/stackrox/main" "--collector-image-repository=example2.com/stackrox/collector" --name "$cluster_name"
   assert_success
   assert_bundle_registry "$out_dir" "sensor" "example\.com/stackrox/main:$any_version"
-  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/collector:$any_version_slim"
+  assert_bundle_registry "$out_dir" "collector" "example2\.com/stackrox/$(collector_slim_from_flavor)"
   delete_cluster "$cluster_name"
 }
 
