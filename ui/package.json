@@ -51,5 +51,6 @@
         "chalk-cli": "^4.1.0",
         "lerna": "^3.22.1",
         "postinstall-postinstall": "^2.1.0"
-    }
+    },
+    "dependencies": {}
 }
