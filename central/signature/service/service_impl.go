@@ -73,7 +73,7 @@ func (s *serviceImpl) GetSignatureIntegrations(ctx context.Context, _ *v1.Empty)
 func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.ResourceByID) (*storage.SignatureIntegration, error) {
 	signatureIntegration, found, err := s.datastore.GetSignatureIntegration(ctx, id.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve signature integration %s", id.GetId())
+		return nil, errors.Wrapf(err, "failed to retrieve signature integration %q", id.GetId())
 	}
 	if !found {
 		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "signature integration %s not found", id.GetId())
