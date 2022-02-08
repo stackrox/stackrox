@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/role/resources"
-	signatureRocksdb "github.com/stackrox/rox/central/signature/store/rocksdb"
+	signatureRocksdb "github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"

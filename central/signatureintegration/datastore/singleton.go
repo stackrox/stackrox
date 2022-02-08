@@ -3,7 +3,7 @@ package datastore
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/signature/store/rocksdb"
+	"github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
