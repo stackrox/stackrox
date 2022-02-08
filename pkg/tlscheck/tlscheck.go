@@ -19,7 +19,7 @@ const (
 )
 
 // CheckTLS checks if the address is using TLS
-func CheckTLS(origAddr string) (bool, error) {
+func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
 	addr := urlfmt.TrimHTTPPrefixes(origAddr)
 	if addrSplits := strings.SplitN(addr, "/", 2); len(addrSplits) > 0 {
 		addr = addrSplits[0]
@@ -37,7 +37,7 @@ func CheckTLS(origAddr string) (bool, error) {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	conn, err := proxy.AwareDialContextTLS(ctx, fmt.Sprintf("%s:%s", host, port), nil)
