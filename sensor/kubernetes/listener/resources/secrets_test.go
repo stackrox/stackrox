@@ -66,8 +66,9 @@ var (
 	}
 )
 
-// checkTLS is a dummy implementation of registry.CheckTLS
-func checkTLS(_ context.Context, _ string) (bool, error) {
+// alwaysInsecureCheckTLS is an implementation of registry.CheckTLS
+// which always says the given address is insecure.
+func alwaysInsecureCheckTLS(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
@@ -76,7 +77,7 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 }
 
 func testOpenShiftRegistrySecret311(t *testing.T) {
-	regStore := registry.NewRegistryStore(checkTLS)
+	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
 
 	_ = d.ProcessEvent(openshift311DockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
@@ -104,7 +105,7 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 }
 
 func testOpenShiftRegistrySecret4x(t *testing.T) {
-	regStore := registry.NewRegistryStore(checkTLS)
+	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
 
 	_ = d.ProcessEvent(openshift4xDockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
