@@ -146,12 +146,12 @@ func (s *signatureDataStoreTestSuite) TestGetAllSignatureIntegrations() {
 }
 
 func (s *signatureDataStoreTestSuite) TestGetSignatureIntegration() {
-	// 1. Need read permission to get signature integration
 	signatureIntegration := newSignatureIntegration("name")
 	savedIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
 	s.NoError(err)
 	s.NotNil(savedIntegration)
 
+	// 1. Need read permission to get signature integration
 	result, found, err := s.dataStore.GetSignatureIntegration(s.noAccessCtx, savedIntegration.GetId())
 	s.NoError(err)
 	s.False(found)

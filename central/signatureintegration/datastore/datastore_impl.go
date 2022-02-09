@@ -7,12 +7,14 @@ import (
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	signatureSAC = sac.ForResource(resources.SignatureIntegration)
+	log          = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -92,16 +94,6 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	return d.storage.Upsert(integration)
 }
 
-func (d *datastoreImpl) verifyIntegrationIDExists(integration *storage.SignatureIntegration) error {
-	_, found, err := d.storage.Get(integration.GetId())
-	if err != nil {
-		return err
-	} else if !found {
-		return errox.Newf(errox.InvalidArgs, "signature integration id=%s doesn't exist, requested name=%q", integration.GetId(), integration.GetName())
-	}
-	return nil
-}
-
 func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id string) error {
 	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
 		return err
@@ -113,12 +105,23 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	return d.storage.Delete(id)
 }
 
+func (d *datastoreImpl) verifyIntegrationIDExists(integration *storage.SignatureIntegration) error {
+	_, found, err := d.storage.Get(integration.GetId())
+	if err != nil {
+		return err
+	} else if !found {
+		return errox.Newf(errox.InvalidArgs, "signature integration id=%s, requested name=%q doesn't exist", integration.GetId(), integration.GetName())
+	}
+	return nil
+}
+
 func (d *datastoreImpl) generateUniqueIntegrationID() (string, error) {
 	id := GenerateSignatureIntegrationID()
 	_, found, err := d.storage.Get(id)
 	if err != nil {
 		return "", err
 	} else if found {
+		log.Warnf("Clash on signature integration id %s", id)
 		return d.generateUniqueIntegrationID()
 	}
 	return id, nil
