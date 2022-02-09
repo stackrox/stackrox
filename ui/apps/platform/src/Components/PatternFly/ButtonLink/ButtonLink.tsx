@@ -6,6 +6,8 @@ import styles from '@patternfly/react-styles/css/components/Button/button';
 
 type ButtonLinkProps = {
     children: ReactNode;
+    className?: string;
+    isInline?: boolean;
     to: string;
     variant: ButtonVariant;
 };
@@ -22,11 +24,23 @@ type ButtonLinkProps = {
  * https://www.patternfly.org/v4/components/button#router-link
  * https://reactjs.org/docs/render-props.html#be-careful-when-using-render-props-with-reactpurecomponent
  */
-function ButtonLink({ children, to, variant }: ButtonLinkProps): ReactElement {
-    const className = css(styles.button, styles.modifiers[variant]);
-
+function ButtonLink({
+    children,
+    className = '',
+    isInline = false,
+    to,
+    variant,
+}: ButtonLinkProps): ReactElement {
     return (
-        <Link className={className} to={to}>
+        <Link
+            className={css(
+                styles.button,
+                styles.modifiers[variant],
+                isInline && variant === ButtonVariant.link && styles.modifiers.inline,
+                className
+            )}
+            to={to}
+        >
             {children}
         </Link>
     );

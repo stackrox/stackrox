@@ -11,6 +11,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/cluster-defaults": {
+      "get": {
+        "operationId": "ClustersService_GetClusterDefaults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ClusterDefaultsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "ClustersService"
+        ]
+      }
+    },
     "/v1/clusters": {
       "get": {
         "operationId": "ClustersService_GetClusters",
@@ -71,30 +93,9 @@
         ]
       }
     },
-    "/v1/clusters-env/cluster-defaults": {
-      "get": {
-        "operationId": "ClustersService_GetClusterDefaults",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1ClusterResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "tags": [
-          "ClustersService"
-        ]
-      }
-    },
     "/v1/clusters-env/kernel-support-available": {
       "get": {
+        "summary": "GetKernelSupportAvailable is deprecated in favor of GetClusterDefaults.",
         "operationId": "ClustersService_GetKernelSupportAvailable",
         "responses": {
           "200": {
@@ -792,6 +793,20 @@
         "since": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "v1ClusterDefaultsResponse": {
+      "type": "object",
+      "properties": {
+        "mainImageRepository": {
+          "type": "string"
+        },
+        "collectorImageRepository": {
+          "type": "string"
+        },
+        "kernelSupportAvailable": {
+          "type": "boolean"
         }
       }
     },

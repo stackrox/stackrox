@@ -1,4 +1,4 @@
-package mtls
+package testutils
 
 import (
 	"errors"

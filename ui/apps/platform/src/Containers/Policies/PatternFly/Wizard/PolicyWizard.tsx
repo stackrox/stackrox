@@ -12,8 +12,6 @@ import {
 
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
-import { Cluster } from 'types/cluster.proto';
-import { NotifierIntegration } from 'types/notifier.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -32,16 +30,9 @@ import './PolicyWizard.css';
 type PolicyWizardProps = {
     pageAction: ExtendedPageAction;
     policy: Policy;
-    clusters: Cluster[];
-    notifiers: NotifierIntegration[];
 };
 
-function PolicyWizard({
-    pageAction,
-    policy,
-    clusters,
-    notifiers,
-}: PolicyWizardProps): ReactElement {
+function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const history = useHistory();
     const [stepId, setStepId] = useState(1);
     const [stepIdReached, setStepIdReached] = useState(1);
@@ -74,7 +65,14 @@ function PolicyWizard({
         validateOnMount: true,
         validationSchema: getValidationSchema(stepId),
     });
-    const { dirty, isSubmitting, isValid: isValidOnClient, submitForm, validateForm } = formik;
+    const {
+        dirty,
+        isSubmitting,
+        isValid: isValidOnClient,
+        submitForm,
+        validateForm,
+        values,
+    } = formik;
 
     function closeWizard(): void {
         history.goBack();
@@ -130,7 +128,12 @@ function PolicyWizard({
                             {
                                 id: 1,
                                 name: 'Policy details',
-                                component: <PolicyDetailsForm />,
+                                component: (
+                                    <PolicyDetailsForm
+                                        id={values.id}
+                                        mitreVectorsLocked={values.mitreVectorsLocked}
+                                    />
+                                ),
                                 canJumpTo: stepIdReached >= 1,
                                 enableNext: isValidOnClient,
                             },
@@ -151,7 +154,7 @@ function PolicyWizard({
                             {
                                 id: 4,
                                 name: 'Policy scope',
-                                component: <PolicyScopeForm clusters={clusters} />,
+                                component: <PolicyScopeForm />,
                                 canJumpTo: stepIdReached >= 4,
                                 enableNext: isValidOnClient,
                             },
@@ -160,9 +163,7 @@ function PolicyWizard({
                                 name: 'Review policy',
                                 component: (
                                     <ReviewPolicyForm
-                                        clusters={clusters}
                                         isBadRequest={isBadRequest}
-                                        notifiers={notifiers}
                                         policyErrorMessage={policyErrorMessage}
                                         setIsBadRequest={setIsBadRequest}
                                         setIsValidOnServer={setIsValidOnServer}

@@ -4,8 +4,6 @@ import { useFormikContext } from 'formik';
 
 import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
-import { Cluster } from 'types/cluster.proto';
-import { NotifierIntegration } from 'types/notifier.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { getServerPolicy } from '../../policies.utils';
@@ -15,9 +13,7 @@ import PreviewViolations from './PreviewViolations';
 import './ReviewPolicyForm.css';
 
 type ReviewPolicyFormProps = {
-    clusters: Cluster[];
     isBadRequest: boolean;
-    notifiers: NotifierIntegration[];
     policyErrorMessage: string;
     setIsBadRequest: (isBadRequest: boolean) => void;
     setIsValidOnServer: (isValidOnServer: boolean) => void;
@@ -25,9 +21,7 @@ type ReviewPolicyFormProps = {
 };
 
 function ReviewPolicyForm({
-    clusters,
     isBadRequest,
-    notifiers,
     policyErrorMessage,
     setIsBadRequest,
     setIsValidOnServer,
@@ -135,12 +129,7 @@ function ReviewPolicyForm({
                     </Alert>
                 )}
                 <Divider component="div" />
-                <PolicyDetailContent
-                    clusters={clusters}
-                    notifiers={notifiers}
-                    policy={getServerPolicy(values)}
-                    isReview
-                />
+                <PolicyDetailContent policy={getServerPolicy(values)} isReview />
             </Flex>
             {showPolicyResults && (
                 <>

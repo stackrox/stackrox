@@ -1,11 +1,18 @@
 import React, { ReactElement } from 'react';
-import { Title, Divider, Flex, FlexItem } from '@patternfly/react-core';
+import { Alert, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
+
+import MitreAttackVectorsView from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
 
 import PolicyMetadataFormSection from './PolicyMetadataFormSection';
 import AttachNotifiersFormSection from './AttachNotifiersFormSection';
 import MitreAttackVectorsFormSection from './MitreAttackVectorsFormSection';
 
-function PolicyDetailsForm(): ReactElement {
+type PolicyDetailsFormProps = {
+    id: string;
+    mitreVectorsLocked: boolean;
+};
+
+function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): ReactElement {
     return (
         <div>
             <Title headingLevel="h2">Policy details</Title>
@@ -31,7 +38,21 @@ function PolicyDetailsForm(): ReactElement {
                 private sector, in government, and in the cybersecurity product and service
                 community.
             </div>
-            <MitreAttackVectorsFormSection />
+            {mitreVectorsLocked ? (
+                <>
+                    <Alert
+                        variant="info"
+                        isInline
+                        title="Editing MITRE ATT&CK is disabled for system default policies"
+                        className="pf-u-mt-sm"
+                    >
+                        If you need to edit MITRE ATT&CK, clone this policy or create a new policy.
+                    </Alert>
+                    <MitreAttackVectorsView policyId={id} />
+                </>
+            ) : (
+                <MitreAttackVectorsFormSection />
+            )}
         </div>
     );
 }

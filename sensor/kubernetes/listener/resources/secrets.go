@@ -198,18 +198,19 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 				if err != nil {
 					log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 				}
-
-				continue
 			}
 		}
-		ii := dockerConfigToImageIntegration(registry, dce)
-		sensorEvents = append(sensorEvents, &central.SensorEvent{
-			// Only update is supported at this time.
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_ImageIntegration{
-				ImageIntegration: ii,
-			},
-		})
+
+		if !features.LocalImageScanning.Enabled() || !fromDefaultSA {
+			ii := dockerConfigToImageIntegration(registry, dce)
+			sensorEvents = append(sensorEvents, &central.SensorEvent{
+				// Only update is supported at this time.
+				Action: central.ResourceAction_UPDATE_RESOURCE,
+				Resource: &central.SensorEvent_ImageIntegration{
+					ImageIntegration: ii,
+				},
+			})
+		}
 
 		registries = append(registries, &storage.ImagePullSecret_Registry{
 			Name:     registry,
