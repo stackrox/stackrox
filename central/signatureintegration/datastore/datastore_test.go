@@ -95,6 +95,7 @@ func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegration() {
 	nonExistingIntegration := newSignatureIntegration("idonotexist")
 	err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, nonExistingIntegration)
 	s.Error(err)
+	s.ErrorIs(err, errox.InvalidArgs)
 
 	// 3. Need write permission to update integration
 	err = s.dataStore.UpdateSignatureIntegration(s.hasReadCtx, signatureIntegration)
