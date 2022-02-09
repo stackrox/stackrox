@@ -31,7 +31,7 @@ var (
 	errHashCreation          = errors.New("creating hash")
 	errCorruptedSignature    = errors.New("corrupted signature")
 )
-// PublicKeyType is PEM block type which all public keys should have.
+// PublicKeyType is PEM block type which we support.
 const PublicKeyType = "PUBLIC KEY"
 
 type publicKeyVerifier struct {
@@ -43,8 +43,8 @@ var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 // newPublicKeyVerifier creates a public key verifier with the given configuration. The provided public keys
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed or the base64 decoding failed.
-func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_CosignVerification) (*publicKeyVerifier, error) {
-	publicKeys := config.CosignVerification.GetPublicKeys()
+func newPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*publicKeyVerifier, error) {
+	publicKeys := config.GetPublicKeys()
 	pemEncPublicKeys := make([]string, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
 		pemEncPublicKeys = append(pemEncPublicKeys, publicKey.GetPublicKeyPemEnc())
@@ -55,7 +55,7 @@ func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_CosignVeri
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
 		keyBlock, rest := pem.Decode([]byte(pemKey))
 		if keyBlock == nil || keyBlock.Type != PublicKeyType || len(rest) > 0 {
-			return nil, errox.New(errox.InvariantViolation,
+			return nil, errox.NewErrInvariantViolation(
 				"failed to decode PEM block containing public key")
 		}
 

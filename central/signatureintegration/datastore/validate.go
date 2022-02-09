@@ -36,7 +36,7 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 	}
 	if len(integration.GetSignatureVerificationConfigs()) == 0 {
 		err := errors.New("integration must have at least one signature verification config")
-		multiErr = multierror.Append(err)
+		multiErr = multierror.Append(multiErr, err)
 	}
 	for _, verificationConfig := range integration.GetSignatureVerificationConfigs() {
 		switch cfg := verificationConfig.GetConfig().(type) {
@@ -49,7 +49,7 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 			// Should theoretically never happen.
 			err := errox.NewErrInvariantViolation(fmt.Sprintf(
 				"invalid type for signature verification config: %T", cfg))
-			multiErr = multierror.Append(err)
+			multiErr = multierror.Append(multiErr, err)
 		}
 	}
 

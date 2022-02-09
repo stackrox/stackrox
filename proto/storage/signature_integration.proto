@@ -7,7 +7,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-message SignatureIntegration {;
+message SignatureIntegration {
     string id   = 1;
     string name = 2;
 
@@ -22,7 +22,7 @@ message SignatureVerificationConfig {
 
 message CosignPublicKeyVerification {
     message PublicKey {
-        string name                   = 1;
+        string name               = 1;
         string public_key_pem_enc = 2;
     }
     repeated PublicKey public_keys = 3;

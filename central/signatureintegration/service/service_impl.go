@@ -11,7 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -67,14 +67,14 @@ func (s *serviceImpl) ListSignatureIntegrations(ctx context.Context, _ *v1.Empty
 }
 
 func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.ResourceByID) (*storage.SignatureIntegration, error) {
-	signatureIntegration, found, err := s.datastore.GetSignatureIntegration(ctx, id.GetId())
+	integration, found, err := s.datastore.GetSignatureIntegration(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve signature integration %q", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve signature integration %s", id.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "failed to retrieve signature integration %q", id.GetId())
 	}
-	return signatureIntegration, nil
+	return integration, nil
 }
 
 func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedIntegration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
