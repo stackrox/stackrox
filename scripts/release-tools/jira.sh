@@ -8,6 +8,8 @@ MENU_OPTIONS=(
   "Quit"
 )
 
+FIX_VERSION="68.0 (01/31)" # copy this from JIRA
+
 main() {
   local action="${1}"
   PS3='Choose action: '
@@ -28,9 +30,9 @@ exec_option() {
   local num_options="${#MENU_OPTIONS[@]}"
   local last_option="$((num_options-1))"
   case "$1" in
-    "${MENU_OPTIONS[$last_option]}"|"$((last_option+1))"|q|Q) exit 0;;&
-    "${MENU_OPTIONS[0]}"|1) not_done_yet;;&
-    "${MENU_OPTIONS[1]}"|2) tickets_to_verify;;&
+    "${MENU_OPTIONS[$last_option]}"|"$((last_option+1))"|q|Q) exit 0;;
+    "${MENU_OPTIONS[0]}"|1) not_done_yet;;
+    "${MENU_OPTIONS[1]}"|2) tickets_to_verify;;
     *) echo "invalid option: '$1'";;
   esac
 }
@@ -54,15 +56,15 @@ is_ticket_checked() {
 
 tickets_to_verify() {
   local QRY
-  read -r -d '' QRY <<'EOF'
+  read -r -d '' QRY <<EOF
   (project = ROX OR project = "Rox Services" OR project = "Red Hat Advanced Cluster Security" )
-    AND fixVersion = "68.0 (01/31)"
+    AND fixVersion = "$FIX_VERSION"
     AND issuetype != "STORY"
     AND status = Done
     ORDER BY key ASC, status DESC, priority DESC
 EOF
 
-  echo "This is automatically-generated list of tickets that have set \`FixVersions=68.0\`."
+  echo "This is automatically-generated list of tickets that have set \`FixVersions=$FIX_VERSION\`."
   echo "I kindly ask the respective assignees to use the demo clusters and verify that their fixes and features are working correctly."
   echo "When you verify tickets, please ping me to update the list and place it in the bottom (non-ping) section."
   echo ""
@@ -76,14 +78,14 @@ EOF
 
 not_done_yet() {
   local QRY
-  read -r -d '' QRY <<'EOF'
+  read -r -d '' QRY <<EOF
   (project = ROX OR project = "Rox Services" OR project = "Red Hat Advanced Cluster Security" )
-    AND fixVersion = "68.0 (01/31)"
+    AND fixVersion = "$FIX_VERSION"
     AND status != Done
     ORDER BY created DESC
 EOF
 
-  echo "This is automatically-generated list of tickets that have set \`FixVersions=68.0\` but are not done yet."
+  echo "This is automatically-generated list of tickets that have set \`FixVersions=$FIX_VERSION\` but are not done yet."
   echo "Respective assignees are kindly asked to finish the tickets soon."
   echo "Tickets marked as done will not appear on this list - the list has been generated automatically."
   echo ""

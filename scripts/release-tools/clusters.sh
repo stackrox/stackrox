@@ -15,7 +15,7 @@ main() {
   local cluster_name="${cluster_prefix}-${RELEASE//./-}-rc${RC_NUMBER}"
   PS3="Choose action: "
   if [[ -n "$action" ]]; then
-    exec_option "$action"
+    exec_option "$action" "$cluster_prefix"
     exit 0
   fi
   RED='\033[0;31m'
@@ -62,6 +62,8 @@ create_rc_openshift_cluster() {
   require_binary oc
 
   local cluster_prefix="$1"
+  [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
+
   export CLUSTER_NAME="${cluster_prefix}-${RELEASE//./-}-rc${RC_NUMBER}"
   infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan 168h --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started"
   ## wait
