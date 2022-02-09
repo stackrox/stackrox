@@ -11,7 +11,7 @@ import (
 
 // An Evaluator evaluates an augmented object, and produces a result that has been filtered to linked matches.
 type Evaluator interface {
-	Evaluate(obj pathutil.AugmentedValue) (*Result, bool)
+	Evaluate(obj *pathutil.AugmentedObj) (*Result, bool)
 }
 
 // A Factory knows how to create evaluators.
@@ -55,15 +55,15 @@ func (f *factoryImpl) GenerateEvaluator(q *query.Query) (Evaluator, error) {
 
 type evaluatorFunc func(pathutil.AugmentedValue) (*Result, bool)
 
-func (f evaluatorFunc) Evaluate(value pathutil.AugmentedValue) (*Result, bool) {
-	return f(value)
+func (f evaluatorFunc) Evaluate(obj *pathutil.AugmentedObj) (*Result, bool) {
+	return f(obj.Value())
 }
 
 type panicCatchingEvaluator struct {
 	internal Evaluator
 }
 
-func (e *panicCatchingEvaluator) Evaluate(obj pathutil.AugmentedValue) (res *Result, matched bool) {
+func (e *panicCatchingEvaluator) Evaluate(obj *pathutil.AugmentedObj) (res *Result, matched bool) {
 	// Ensure that we correctly catch calls to panic(nil) by
 	// making sure that the defer is not called before the call to
 	// e.internal.Evaluate returns successfully.

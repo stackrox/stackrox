@@ -6,7 +6,7 @@ import (
 
 type alwaysTrueType struct{}
 
-func (alwaysTrueType) Evaluate(pathutil.AugmentedValue) (*Result, bool) {
+func (alwaysTrueType) Evaluate(obj *pathutil.AugmentedObj) (*Result, bool) {
 	return &Result{}, true
 }
 

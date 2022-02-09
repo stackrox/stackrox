@@ -2,15 +2,12 @@ package regocompile
 
 import (
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -77,8 +74,6 @@ var (
 			pathutil.NewAugmentedObjMeta(([]NestedBare)(nil)).AddPlainObjectAt([]string{"SecondNestedSlice"}, ([]*SecondNested)(nil)),
 		),
 	)
-
-	ts2020Apr01 = protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2020-04-01T00:00:00Z"))
 )
 
 type testCase struct {
@@ -100,14 +95,6 @@ func resultWithSingleMatch(fieldName string, values ...string) *evaluator.Result
 	return &evaluator.Result{Matches: []map[string][]string{{fieldName: values}}}
 }
 
-func addContextMatchToResult(r *evaluator.Result, fieldName string, values ...string) *evaluator.Result {
-	for _, match := range r.Matches {
-		match[fieldName] = values
-	}
-	r.Matches = append(r.Matches, map[string][]string{fieldName: values})
-	return r
-}
-
 func runTestCases(t *testing.T, testCases []testCase) {
 	for _, testCase := range testCases {
 		c := testCase
@@ -115,7 +102,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 			t.Run("on fully hydrated object", func(t *testing.T) {
 				evaluator, err := compilerInstance.CompileRegoBasedEvaluator(c.q)
 				require.NoError(t, err)
-				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj).Value())
+				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj))
 				assertResultsAsExpected(t, c, res, matched)
 			})
 			t.Run("on augmented object", func(t *testing.T) {
@@ -137,7 +124,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 				topLevelAugmentedObj := pathutil.NewAugmentedObj(topLevelBare)
 				require.NoError(t, topLevelAugmentedObj.AddPlainObjAt(base, pathutil.FieldStep("Base")))
 				require.NoError(t, topLevelAugmentedObj.AddAugmentedObjAt(nestedAugmentedObj, pathutil.FieldStep("NestedSlice")))
-				res, matched := evaluator.Evaluate(topLevelAugmentedObj.Value())
+				res, matched := evaluator.Evaluate(topLevelAugmentedObj)
 				assertResultsAsExpected(t, c, res, matched)
 			})
 		})

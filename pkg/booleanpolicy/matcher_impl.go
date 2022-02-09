@@ -36,7 +36,7 @@ func (p *processMatcherImpl) checkWhetherProcessMatches(cache *CacheReceptacle, 
 		}
 	}
 	for _, eval := range p.processOnlyEvaluators {
-		_, matched := eval.Evaluate(augmentedProcess.Value())
+		_, matched := eval.Evaluate(augmentedProcess)
 		if matched {
 			return true, nil
 		}
@@ -108,7 +108,7 @@ func (m *kubeEventMatcherImpl) checkWhetherKubeEventMatches(cache *CacheReceptac
 	}
 
 	for _, eval := range m.kubeEventOnlyEvaluators {
-		if _, matched := eval.Evaluate(augmentedEvent.Value()); matched {
+		if _, matched := eval.Evaluate(augmentedEvent); matched {
 			return true, nil
 		}
 	}
@@ -150,7 +150,7 @@ func (m *networkFlowMatcherImpl) checkWhetherFlowMatches(
 		}
 	}
 	for _, eval := range m.networkFlowOnlyEvaluators {
-		_, matched := eval.Evaluate(augmentedNetworkFlow.Value())
+		_, matched := eval.Evaluate(augmentedNetworkFlow)
 		if matched {
 			return true, nil
 		}
@@ -185,7 +185,7 @@ type matcherImpl struct {
 }
 
 func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.AugmentedObj) (*evaluator.Result, error) {
-	finalResult, matched := sectionAndEval.evaluator.Evaluate(obj.Value())
+	finalResult, matched := sectionAndEval.evaluator.Evaluate(obj)
 	if !matched {
 		return nil, nil
 	}

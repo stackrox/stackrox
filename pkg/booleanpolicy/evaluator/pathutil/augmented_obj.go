@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/open-policy-agent/opa/ast"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -213,7 +216,10 @@ func (t *augmentTree) getFullValue() (map[string]interface{}, error) {
 	return out, nil
 }
 
-func addAugmentedObjToTreeAtPath(rootTree *augmentTree, path *Path, subObj *AugmentedObj) error {
+func (o *AugmentedObj) addAugmentedObjToTreeAtPath(rootTree *augmentTree, path *Path, subObj *AugmentedObj) error {
+	if o.regoParsed.Get() {
+		return errors.New("cannot add to the object after rego preprocessing is done")
+	}
 	currentTree := rootTree
 	for _, step := range path.steps {
 		if currentTree.children == nil {
@@ -255,6 +261,11 @@ func addAugmentedObjToTreeAtPath(rootTree *augmentTree, path *Path, subObj *Augm
 // Callers must use NewAugmentedObj to create one.
 type AugmentedObj struct {
 	augmentTreeRoot augmentTree
+
+	parsedRego    ast.Value
+	parsedRegoErr error
+	prepRegoOnce  sync.Once
+	regoParsed    concurrency.Flag
 }
 
 // NewAugmentedObj returns a ready-to-use instance of AugmentedObj, where the core
@@ -268,7 +279,7 @@ func NewAugmentedObj(actualObj interface{}) *AugmentedObj {
 
 // AddAugmentedObjAt augments this object with the passed subObj, at the given path.
 func (o *AugmentedObj) AddAugmentedObjAt(subObj *AugmentedObj, steps ...Step) error {
-	return addAugmentedObjToTreeAtPath(&o.augmentTreeRoot, NewPath(steps...), subObj)
+	return o.addAugmentedObjToTreeAtPath(&o.augmentTreeRoot, NewPath(steps...), subObj)
 }
 
 // AddPlainObjAt is a convenience wrapper around AddAugmentedObjAt for sub-objects
@@ -280,6 +291,35 @@ func (o *AugmentedObj) AddPlainObjAt(subObj interface{}, steps ...Step) error {
 // Value returns an AugmentedValue, which starts off at the "root" of the augmented object.
 func (o *AugmentedObj) Value() AugmentedValue {
 	return &augmentedValue{underlying: *o.augmentTreeRoot.value, currentNode: &o.augmentTreeRoot}
+}
+
+// ParsedRegoValue returns the parsed rego value of this augmented object.
+// It is intended to be called once, after the augmented object is constructed.
+// Attempts to add augments after this is called will return an error.
+func (o *AugmentedObj) ParsedRegoValue() (ast.Value, error) {
+	o.prepRegoOnce.Do(func() {
+		o.regoParsed.Set(true)
+		fullValue, err := o.GetFullValue()
+		if err != nil {
+			o.parsedRegoErr = err
+			return
+		}
+		value, err := ast.InterfaceToValue(fullValue)
+		if err != nil {
+			o.parsedRegoErr = err
+			return
+		}
+		o.parsedRego = value
+	})
+	return o.parsedRego, o.parsedRegoErr
+}
+
+// GetFullValue returns the full augmented value as a `map[string]interface{}`.
+// Sub-values are typed as map[string]interface{} if it's an object, as []interface{}
+// if it's a slice.
+// See the unit test where this is exercised for clarity on the desired output.
+func (o *AugmentedObj) GetFullValue() (map[string]interface{}, error) {
+	return o.augmentTreeRoot.getFullValue()
 }
 
 // An AugmentedValue is a wrapper around a reflect.Value which can be traversed in a way
@@ -294,12 +334,6 @@ type AugmentedValue interface {
 	// It panics if Index(i) on the reflect.Value panics.
 	Index(int) AugmentedValue
 	PathFromRoot() *Path
-
-	// GetFullValue returns the full augmented value as a `map[string]interface{}`.
-	// Sub-values are typed as map[string]interface{} if it's an object, as []interface{}
-	// if it's a slice.
-	// See the unit test where this is exercised for clarity on the desired output.
-	GetFullValue() (map[string]interface{}, error)
 }
 
 type augmentedValue struct {
@@ -309,10 +343,6 @@ type augmentedValue struct {
 
 	currentNode *augmentTree
 	underlying  reflect.Value
-}
-
-func (v *augmentedValue) GetFullValue() (map[string]interface{}, error) {
-	return v.currentNode.getFullValue()
 }
 
 func (v *augmentedValue) Elem() AugmentedValue {

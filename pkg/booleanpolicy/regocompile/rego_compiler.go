@@ -52,15 +52,15 @@ func convertBindingToResult(binding interface{}) (m map[string][]string, err err
 	return m, nil
 }
 
-func (r *regoBasedEvaluator) Evaluate(obj pathutil.AugmentedValue) (*evaluator.Result, bool) {
-	inMemVal, err := obj.GetFullValue()
+func (r *regoBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Result, bool) {
+	parsedInput, err := obj.ParsedRegoValue()
 	// If there is an error here, it is a programming error. Let's not panic in prod over it.
 	if err != nil {
 		utils.Should(err)
 		return nil, false
 	}
 
-	resultSet, err := r.q.Eval(context.Background(), rego.EvalInput(inMemVal))
+	resultSet, err := r.q.Eval(context.Background(), rego.EvalParsedInput(parsedInput))
 	// If there is an error here, it is a programming error. Let's not panic in prod over it.
 	if err != nil {
 		utils.Should(err)

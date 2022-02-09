@@ -15,7 +15,7 @@ func TestAugmentedObj(t *testing.T) {
 	mapObj := &objWithMap{AugmentedMap: map[string]string{"mapKey": "augment"}}
 	o := NewAugmentedObj(topLevelObj)
 
-	fullValue, err := o.Value().GetFullValue()
+	fullValue, err := o.GetFullValue()
 	require.NoError(t, err)
 	assert.Equal(t, map[string]interface{}{
 		"A": 1,
@@ -44,7 +44,7 @@ func TestAugmentedObj(t *testing.T) {
 	// Test the error case.
 	assert.Error(t, o.AddPlainObjAt(stringObj, FieldStep("IntObj")))
 
-	fullValue, err = o.Value().GetFullValue()
+	fullValue, err = o.GetFullValue()
 	require.NoError(t, err)
 	assert.Equal(t, map[string]interface{}{
 		"A": 1,

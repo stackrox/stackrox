@@ -119,7 +119,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 			t.Run("on fully hydrated object", func(t *testing.T) {
 				evaluator, err := factoryInstance.GenerateEvaluator(c.q)
 				require.NoError(t, err)
-				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj).Value())
+				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj))
 				assertResultsAsExpected(t, c, res, matched)
 			})
 			t.Run("on augmented object", func(t *testing.T) {
@@ -141,7 +141,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 				topLevelAugmentedObj := pathutil.NewAugmentedObj(topLevelBare)
 				require.NoError(t, topLevelAugmentedObj.AddPlainObjAt(base, pathutil.FieldStep("Base")))
 				require.NoError(t, topLevelAugmentedObj.AddAugmentedObjAt(nestedAugmentedObj, pathutil.FieldStep("NestedSlice")))
-				res, matched := evaluator.Evaluate(topLevelAugmentedObj.Value())
+				res, matched := evaluator.Evaluate(topLevelAugmentedObj)
 				assertResultsAsExpected(t, c, res, matched)
 			})
 		})
