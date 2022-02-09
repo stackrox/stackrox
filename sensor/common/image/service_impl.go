@@ -65,9 +65,9 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 
 	if features.LocalImageScanning.Enabled() {
 		// ScanImageInternal may return without error even if it was unable to find the image.
-		// Check the metadata here: if Central cannot retrieve the metadata, perhaps the
-		// image is stored in an internal registry which Scanner can reach.
-		if img.GetMetadata() == nil {
+		// Check the metadata and scan here: if Central cannot retrieve the metadata nor scan,
+		// perhaps the image is stored in an internal registry which Sensor can reach.
+		if img.GetMetadata() == nil && img.GetScan() == nil {
 			img, err = scannerclient.ScanImage(ctx, s.centralClient, req.GetImage())
 			if err != nil {
 				return nil, errors.Wrap(err, "scanning image via local scanner")
