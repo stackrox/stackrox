@@ -124,20 +124,17 @@ func convertStruct(val reflect.Value, out *map[string]interface{}) error {
 
 // takeSteps takes the given steps into the object, so that the augmented object can be inserted
 // in the right spot.
-func takeSteps(m *map[string]interface{}, steps []Step) (*map[string]interface{}, error) {
-	if len(steps) == 0 {
-		return m, nil
-	}
+func takeSteps(m *map[string]interface{}, steps []Step) (*map[string]interface{}, string, error) {
 	var currentValue interface{} = *m
 	for i := 0; i < len(steps)-1; i++ {
 		step := steps[i]
 		if idx := step.Index(); idx >= 0 {
 			asSlice, ok := currentValue.([]interface{})
 			if !ok {
-				return nil, fmt.Errorf("couldn't take index step %d (among steps %+v): expected a slice", idx, steps)
+				return nil, "", fmt.Errorf("couldn't take index step %d (among steps %+v): expected a slice", idx, steps)
 			}
 			if idx >= len(asSlice) {
-				return nil, fmt.Errorf("couldn't take index step %d (among steps %+v): slice too short (length %d)", idx, steps, len(asSlice))
+				return nil, "", fmt.Errorf("couldn't take index step %d (among steps %+v): slice too short (length %d)", idx, steps, len(asSlice))
 			}
 			currentValue = asSlice[idx]
 			continue
@@ -145,7 +142,7 @@ func takeSteps(m *map[string]interface{}, steps []Step) (*map[string]interface{}
 		field := step.Field()
 		asMapStringInterface, ok := currentValue.(map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("couldn't take field step %s (among steps %+v): expected a slice", field, steps)
+			return nil, "", fmt.Errorf("couldn't take field step %s (among steps %+v): expected a slice", field, steps)
 		}
 		currentValue = asMapStringInterface[field]
 	}
@@ -154,34 +151,48 @@ func takeSteps(m *map[string]interface{}, steps []Step) (*map[string]interface{}
 	// value to populate into.
 	field := steps[len(steps)-1].Field()
 	if field == "" {
-		return nil, fmt.Errorf("invalid augment (after steps %+v): last step should be a field", steps)
+		return nil, "", fmt.Errorf("invalid augment (after steps %+v): last step should be a field", steps)
 	}
 	asMapStringInterface, ok := currentValue.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("steps %+v invalid: value at the end (%+v) is not an object", steps, currentValue)
+		return nil, "", fmt.Errorf("steps %+v invalid: value at the end (%+v) is not an object", steps, currentValue)
 	}
-	childOut := make(map[string]interface{})
-	asMapStringInterface[field] = childOut
-	return &childOut, nil
+	return &asMapStringInterface, field, nil
+}
+
+func (t *augmentTree) populateFromValueFromThisNodeOnly(stepsSoFar []Step, out *map[string]interface{}) error {
+	valPtr := t.getValue()
+	if valPtr == nil {
+		return nil
+	}
+	val := *valPtr
+	// If it's a pointer to a struct, dereference it.
+	if kind := val.Kind(); kind == reflect.Ptr {
+		if val.IsNil() {
+			return nil
+		}
+		val = val.Elem()
+	}
+	// If no steps, then we're at the root object.
+	// Just populate it directly.
+	if len(stepsSoFar) == 0 {
+		return convertStruct(val, out)
+	}
+	subObj, field, err := takeSteps(out, stepsSoFar)
+	if err != nil {
+		return err
+	}
+	convertedValue, err := convertValue(val)
+	if err != nil {
+		return err
+	}
+	(*subObj)[field] = convertedValue
+	return nil
 }
 
 func (t *augmentTree) populateValue(stepsSoFar []Step, out *map[string]interface{}) error {
-	valPtr := t.getValue()
-	if valPtr != nil {
-		val := *valPtr
-		// If it's a pointer to a struct, dereference it.
-		if kind := val.Kind(); kind == reflect.Ptr {
-			if !val.IsNil() {
-				val = val.Elem()
-				subOut, err := takeSteps(out, stepsSoFar)
-				if err != nil {
-					return err
-				}
-				if err := convertStruct(val, subOut); err != nil {
-					return err
-				}
-			}
-		}
+	if err := t.populateFromValueFromThisNodeOnly(stepsSoFar, out); err != nil {
+		return err
 	}
 	for nextStep, child := range t.children {
 		allSteps := append([]Step{}, stepsSoFar...)
