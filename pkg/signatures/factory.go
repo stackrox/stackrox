@@ -2,16 +2,16 @@ package signatures
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // SignatureVerifier is responsible for verifying signatures using a specific signature verification method.
 type SignatureVerifier interface {
 	// VerifySignature will take a raw signature and verify it using a specific verification method.
-	// It will return a storage.ImageSignatureVerificationResult_Status and an error if the verification was unsuccessful.
+	// It will return a storage.ImageSignatureVerificationResult_Status and
+	// an error if the verification was unsuccessful.
 	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error)
 }
 
@@ -22,7 +22,7 @@ func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (Signatur
 		return newPublicKeyVerifier(cfg)
 	default:
 		// Should theoretically never happen.
-		return nil, errorhelpers.NewErrInvariantViolation(fmt.Sprintf(
-			"invalid type for signature verification config: %T", cfg))
+		return nil, errox.Newf(errox.InvariantViolation,
+			"invalid type for signature verification config: %T", cfg)
 	}
 }

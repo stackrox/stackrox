@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/types"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +32,7 @@ func TestNewPublicKeyVerifier(t *testing.T) {
 		"non PEM encoded public key": {
 			base64EncKey: "anVzdHNvbWV0ZXh0Cg==",
 			fail:         true,
-			err:          errorhelpers.ErrInvariantViolation,
+			err:          errox.InvariantViolation,
 		},
 	}
 
@@ -98,13 +98,45 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 
 	require.NoError(t, err, "creating public key verifier")
 
+	emptyPubKeyVerifier, err := newPublicKeyVerifier(&storage.SignatureVerificationConfig_PublicKey{
+		PublicKey: &storage.CosignPublicKeyVerification{}})
+	require.NoError(t, err, "creating empty public key verifier")
+
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(t, err, "creating image with signature")
 
-	status, err := pubKeyVerifier.VerifySignature(context.Background(), img)
-	assert.Error(t, err, "verification should be unsuccessful with non-verifiable public key")
-	assert.Equal(t, storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, status,
-		"status should be FAILED VERIFICATION")
+	cases := map[string]struct {
+		verifier *publicKeyVerifier
+		img      *storage.Image
+		err      error
+		status   storage.ImageSignatureVerificationResult_Status
+	}{
+		"fail with non-verifiable public key": {
+			img:      img,
+			verifier: pubKeyVerifier,
+			status:   storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+		},
+		"fail with empty public key verifier": {
+			img:      img,
+			verifier: emptyPubKeyVerifier,
+			status:   storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+			err:      errNoKeysToVerifyAgainst,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			status, err := c.verifier.VerifySignature(context.Background(), c.img)
+			assert.Equal(t, c.status, status, "status should be FAILED verification")
+			assert.Error(t, err, "verification should be unsuccessful")
+			if c.err != nil {
+				assert.ErrorIs(t, err, c.err)
+			}
+		})
+	}
+}
+
+func TestPublicKeyVerifier_VerifySignature_EmptyKeys(t *testing.T) {
 }
 
 func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
@@ -136,29 +168,14 @@ func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 }
 
 func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
+	const imgString = "docker.io/nginx:latest"
 
-	cases := map[string]struct {
-		imgString           string
-		imgHash             string
-		b64Signature        string
-		b64SignaturePayload string
-		err                 error
-	}{
-		"no image SHA available": {
-			imgString: "docker.io/nginx:latest",
-			err:       errNoImageSHA,
-		},
-	}
+	img, err := generateImageWithCosignSignature(imgString, "", "")
+	require.NoError(t, err, "error creating image")
 
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			img, err := generateImageWithCosignSignature(c.imgString, c.b64Signature, c.b64SignaturePayload)
-			require.NoError(t, err, "error creating image")
-			_, _, err = retrieveVerificationDataFromImage(img)
-			assert.Error(t, err)
-			assert.ErrorIs(t, err, c.err)
-		})
-	}
+	_, _, err = retrieveVerificationDataFromImage(img)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, errNoImageSHA)
 }
 
 func generateImageWithCosignSignature(imgString, b64Sig, b64SigPayload string) (*storage.Image, error) {

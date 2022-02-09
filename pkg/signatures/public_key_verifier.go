@@ -9,13 +9,14 @@ import (
 	"fmt"
 
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/static"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 )
 
@@ -25,15 +26,17 @@ const (
 )
 
 var (
-	errNoImageSHA      = errors.New("no image SHA found")
-	errInvalidHashAlgo = errors.New("invalid hash algorithm used")
+	errNoImageSHA            = errors.New("no image SHA found")
+	errInvalidHashAlgo       = errors.New("invalid hash algorithm used")
+	errNoKeysToVerifyAgainst = errors.New("no keys to verify against")
 )
 
 type publicKeyVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
 }
 
-// newPublicKeyVerifier creates a public key verifier with the given configuration.
+// newPublicKeyVerifier creates a public key verifier with the given configuration. The provided public keys
+// MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed or the base64 decoding failed.
 func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_PublicKey) (*publicKeyVerifier, error) {
 	base64EncPublicKeys := config.PublicKey.GetPublicKeysBase64Enc()
@@ -49,7 +52,7 @@ func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_PublicKey)
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
 		keyBlock, rest := pem.Decode(decodedKey)
 		if keyBlock == nil || keyBlock.Type != publicKeyType || len(rest) > 0 {
-			return nil, errorhelpers.NewErrInvariantViolation(
+			return nil, errox.New(errox.InvariantViolation,
 				"failed to decode PEM block containing public key")
 		}
 
@@ -101,9 +104,14 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 }
 
 // VerifySignature implements the SignatureVerifier interface.
-// The signature of the storage.Image will be verified using cosign. It will include the verification via public key
+// The signature of the image will be verified using cosign. It will include the verification via public key
 // as well as the claim verification of the payload of the signature.
 func (c *publicKeyVerifier) VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
+	// Short circuit if we do not have any public keys configured to verify against.
+	if len(c.parsedPublicKeys) == 0 {
+		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, errNoKeysToVerifyAgainst
+	}
+
 	var opts cosign.CheckOpts
 
 	// By default, verify the claim within the payload that is specified with the simple signing format.
@@ -118,13 +126,12 @@ func (c *publicKeyVerifier) VerifySignature(ctx context.Context, image *storage.
 		return storage.ImageSignatureVerificationResult_CORRUPTED_SIGNATURE, err
 	}
 
-	errList := errorhelpers.NewErrorList("public key signature verification")
-
+	var allVerifyErrs error
 	for _, key := range c.parsedPublicKeys {
 		// For now, only supporting SHA256 as algorithm.
 		v, err := signature.LoadVerifier(key, crypto.SHA256)
 		if err != nil {
-			errList.AddWrap(err, "creating verifier")
+			allVerifyErrs = multierror.Append(allVerifyErrs, errors.Wrap(err, "creating verifier"))
 			continue
 		}
 		opts.SigVerifier = v
@@ -132,7 +139,8 @@ func (c *publicKeyVerifier) VerifySignature(ctx context.Context, image *storage.
 			// The bundle references a rekor bundle within the transparency log. Since we do not support this, the
 			// bundle verified will _always_ be false.
 			// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
-			// If there is no error during the verification, the signature was successfully verified as well as the claims.
+			// If there is no error during the verification, the signature was successfully verified
+			// as well as the claims.
 			_, err = cosign.VerifyImageSignature(ctx, sig, hash, &opts)
 
 			// Short circuit on the first public key that successfully verified the signature, since they are bundled
@@ -140,9 +148,9 @@ func (c *publicKeyVerifier) VerifySignature(ctx context.Context, image *storage.
 			if err == nil {
 				return storage.ImageSignatureVerificationResult_VERIFIED, nil
 			}
-			errList.AddError(err)
+			allVerifyErrs = multierror.Append(allVerifyErrs, err)
 		}
 	}
 
-	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, errList.ToError()
+	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, allVerifyErrs
 }
