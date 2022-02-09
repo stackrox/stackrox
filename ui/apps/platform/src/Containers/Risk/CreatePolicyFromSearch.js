@@ -1,7 +1,6 @@
 import React, { useContext, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Plus } from 'react-feather';
 
@@ -15,9 +14,11 @@ import { actions as wizardActions } from 'reducers/policies/wizard';
 import { generatePolicyFromSearch } from 'services/PoliciesService';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { convertToRestSearch } from 'utils/searchUtils';
+import { knownBackendFlags } from 'utils/featureFlags';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { policiesBasePath, policiesBasePathPatternFly } from 'routePaths';
 
 function CreatePolicyFromSearch({
-    history,
     openWizard,
     setWizardPolicy,
     setWizardStage,
@@ -27,6 +28,10 @@ function CreatePolicyFromSearch({
     clearFormMessages,
 }) {
     const workflowState = useContext(workflowStateContext);
+    const isPoliciesPatternFlyEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_POLICIES_PATTERNFLY
+    );
+    const history = useHistory();
 
     // this utility filters out incomplete search pairs
     const currentSearch = workflowState.getCurrentSearchState();
@@ -42,7 +47,10 @@ function CreatePolicyFromSearch({
         generatePolicyFromSearch(queryString)
             .then((response) => {
                 history.push({
-                    pathname: `/main/policies`,
+                    pathname: isPoliciesPatternFlyEnabled
+                        ? policiesBasePathPatternFly
+                        : policiesBasePath,
+                    search: isPoliciesPatternFlyEnabled ? '?action=generate' : '',
                 });
 
                 const newPolicy = {
@@ -103,7 +111,6 @@ CreatePolicyFromSearch.propTypes = {
     removeToast: PropTypes.func.isRequired,
     addFormMessage: PropTypes.func.isRequired,
     clearFormMessages: PropTypes.func.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
 const mapDispatchToProps = {
@@ -116,4 +123,4 @@ const mapDispatchToProps = {
     clearFormMessages: formMessageActions.clearFormMessages,
 };
 
-export default withRouter(connect(null, mapDispatchToProps)(CreatePolicyFromSearch));
+export default connect(null, mapDispatchToProps)(CreatePolicyFromSearch);

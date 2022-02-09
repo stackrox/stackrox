@@ -1,5 +1,5 @@
 import React from 'react';
-import { Title, Divider } from '@patternfly/react-core';
+import { Title, Divider, Flex } from '@patternfly/react-core';
 
 import PolicyCriteriaCategory from './PolicyCriteriaCategory';
 
@@ -24,7 +24,7 @@ function PolicyCriteriaKeys({ keys }) {
     }, [keys]);
 
     return (
-        <>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
             <Title headingLevel="h2">Drag out policy fields</Title>
             <Divider component="div" className="pf-u-mb-sm pf-u-mt-md" />
             {Object.keys(categories).map((category) => (
@@ -33,7 +33,7 @@ function PolicyCriteriaKeys({ keys }) {
                     <Divider component="div" className="pf-u-mb-sm pf-u-mt-sm" />
                 </div>
             ))}
-        </>
+        </Flex>
     );
 }
 

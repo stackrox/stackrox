@@ -1,0 +1,5 @@
+div.or-divider {
+    background-color: var(--pf-global--BorderColor--100);
+    width: 1px;
+    height: 100%;
+}

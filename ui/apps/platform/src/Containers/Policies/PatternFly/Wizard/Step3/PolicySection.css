@@ -1,0 +1,16 @@
+.policy-section-card-header {
+    border-bottom: 1px solid var(--pf-global--BorderColor--100);
+    position: sticky;
+    top: 0;
+    background-color: var(--pf-global--BackgroundColor--100);
+    z-index: 100;
+}
+
+.policy-section-card-body {
+    overflow: auto;
+    padding-top: var(--pf-global--spacer--md);
+}
+
+#policy-sections article.pf-c-card {
+    min-width: fit-content;
+}

@@ -18,7 +18,6 @@ function PolicyMetadataFormSection(): ReactElement {
                         helperText="Provide a descriptive and unique policy name"
                         fieldId="policy-name"
                         label="Name"
-                        className="pf-u-pt-md"
                         isRequired
                     >
                         <TextInput
@@ -35,7 +34,6 @@ function PolicyMetadataFormSection(): ReactElement {
                 helperText="Select a severity level for this policy"
                 fieldId="policy-severity"
                 label="Severity"
-                className="pf-u-pt-md"
                 isRequired
             >
                 <Flex direction={{ default: 'row' }}>
@@ -96,7 +94,6 @@ function PolicyMetadataFormSection(): ReactElement {
                         helperText="Enter details about the policy"
                         fieldId="policy-description"
                         label="Description"
-                        className="pf-u-pt-md"
                     >
                         <TextArea
                             id={field.name}
@@ -113,7 +110,6 @@ function PolicyMetadataFormSection(): ReactElement {
                         helperText="Enter an explanation about why this policy exists"
                         fieldId="policy-rationale"
                         label="Rationale"
-                        className="pf-u-pt-md"
                     >
                         <TextArea
                             id={field.name}
@@ -130,7 +126,6 @@ function PolicyMetadataFormSection(): ReactElement {
                         helperText="Enter steps to resolve the violations of this policy"
                         fieldId="policy-guidance"
                         label="Guidance"
-                        className="pf-u-pt-md"
                     >
                         <TextArea
                             id={field.name}

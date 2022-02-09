@@ -20,6 +20,8 @@ import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import PolicyGroupCard from './PolicyGroupCard';
 import PolicySectionDropTarget from './PolicySectionDropTarget';
 
+import './PolicySection.css';
+
 type PolicySectionProps = {
     sectionIndex: number;
     descriptors: Descriptor[];
@@ -43,8 +45,8 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
     }
 
     return (
-        <Card isFlat isCompact className={`${!readOnly ? 'pf-u-w-66' : ''}`}>
-            <CardHeader className="pf-u-p-0">
+        <Card isFlat isCompact className={`${!readOnly ? 'pf-u-w-66' : ''} pf-u-h-100`}>
+            <CardHeader className="policy-section-card-header pf-u-p-0">
                 <CardTitle className="pf-u-display-flex pf-u-align-self-stretch">
                     <Flex
                         alignItems={{ default: 'alignItemsCenter' }}
@@ -86,8 +88,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                     </CardActions>
                 )}
             </CardHeader>
-            <Divider component="div" />
-            <CardBody>
+            <CardBody className="policy-section-card-body">
                 {policyGroups.map((group, groupIndex) => {
                     const descriptor = descriptors.find(
                         (descriptorField) =>
