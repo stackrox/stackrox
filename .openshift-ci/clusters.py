@@ -6,7 +6,7 @@ Clusters used in test
 
 import subprocess
 
-from common import popen_cleanup
+from common import popen_graceful_kill
 
 
 class NullCluster:
@@ -40,7 +40,7 @@ class GKECluster:
                 if exitstatus != 0:
                     raise RuntimeError(f"Cluster provision failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
-                popen_cleanup(cmd)
+                popen_graceful_kill(cmd)
                 raise err
 
         subprocess.run(
@@ -58,7 +58,7 @@ class GKECluster:
 
     def teardown(self):
         try:
-            popen_cleanup(self.refresh_token_cmd)
+            popen_graceful_kill(self.refresh_token_cmd)
         except Exception as err:
             print(f"Could not terminate the token refresh: {err}")
 

@@ -1,7 +1,7 @@
 import subprocess
 
 
-def popen_cleanup(cmd):
+def popen_graceful_kill(cmd):
     cmd.terminate()
     try:
         cmd.wait(5)

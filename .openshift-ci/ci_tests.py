@@ -6,7 +6,7 @@ Available tests
 
 import subprocess
 
-from common import popen_cleanup
+from common import popen_graceful_kill
 
 
 class NullTest:
@@ -27,5 +27,5 @@ class UpgradeTest:
                 if exitstatus != 0:
                     raise RuntimeError(f"Test failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
-                popen_cleanup(cmd)
+                popen_graceful_kill(cmd)
                 raise err
