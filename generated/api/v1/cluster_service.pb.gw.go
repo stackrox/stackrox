@@ -682,7 +682,7 @@ var (
 
 	pattern_ClustersService_GetKernelSupportAvailable_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "clusters-env", "kernel-support-available"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ClustersService_GetClusterDefaults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "clusters-env", "cluster-defaults"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ClustersService_GetClusterDefaults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "cluster-defaults"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
