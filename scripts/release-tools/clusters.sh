@@ -65,7 +65,7 @@ create_rc_openshift_cluster() {
   [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
 
   export CLUSTER_NAME="${cluster_prefix}-${RELEASE//./-}-rc${RC_NUMBER}"
-  infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan 168h --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started"
+  infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan 168h --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started or the cluster already exists"
   ## wait
   while ! cluster_ready "${CLUSTER_NAME}"; do
     echo "Cluster ${CLUSTER_NAME} not ready yet. Waiting 15 seconds..."
