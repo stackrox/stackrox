@@ -114,7 +114,6 @@ func (r *regoCompilerForType) CompileRegoBasedEvaluator(query *query.Query) (eva
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile rego: %w", err)
 	}
-	fmt.Println(regoModule)
 	q, err := rego.New(
 		rego.Query("out = data.policy.main.violations"),
 		rego.Module("main.policy", regoModule),
@@ -135,7 +134,7 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 	// We need to get a unique set of array indexes for each path in the rego code.
 	// That is tracked in this map.
 	pathsToArrayIndexes := make(map[string]int)
-	var fieldsAndMathcers []fieldMatchData
+	var fieldsAndMatchers []fieldMatchData
 
 	for _, fieldQuery := range query.FieldQueries {
 		field := fieldQuery.Field
@@ -165,7 +164,7 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("generating matchers for field query %+v: %w", fieldQuery, err)
 		}
-		fieldsAndMathcers = append(fieldsAndMathcers, fieldMatchData{
+		fieldsAndMatchers = append(fieldsAndMatchers, fieldMatchData{
 			matchers: matchersForField,
 			name:     field,
 			path:     constructedPath.String(),
@@ -177,7 +176,7 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 		args.IndexesToDeclare = append(args.IndexesToDeclare, i)
 	}
 	var funcLengths []int
-	for _, matchData := range fieldsAndMathcers {
+	for _, matchData := range fieldsAndMatchers {
 		for _, f := range matchData.matchers {
 			args.Functions = append(args.Functions, f.functionCode)
 		}
@@ -186,7 +185,7 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 	// We need to generate one rule for each cross product, since we are OR-ing between them.
 	if err := runForEachCrossProduct(funcLengths, func(indexes []int) error {
 		condition := condition{}
-		for i, matchData := range fieldsAndMathcers {
+		for i, matchData := range fieldsAndMatchers {
 			condition.Fields = append(condition.Fields, fieldInCondition{
 				Name:     matchData.name,
 				JSONPath: matchData.path,
