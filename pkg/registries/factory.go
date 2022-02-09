@@ -26,29 +26,34 @@ type Factory interface {
 	CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error)
 }
 
-type creatorWrapper func() (string, func(integration *storage.ImageIntegration) (types.Registry, error))
+// CreatorWrapper is a wrapper around a Creator which also returns the registry's name.
+type CreatorWrapper func() (string, func(integration *storage.ImageIntegration) (types.Registry, error))
+
+// AllCreatorFuncs defines all known registry creators.
+var AllCreatorFuncs = []CreatorWrapper{
+	artifactRegistryFactory.Creator,
+	artifactoryFactory.Creator,
+	dockerFactory.Creator,
+	dtrFactory.Creator,
+	ecrFactory.Creator,
+	googleFactory.Creator,
+	quayFactory.Creator,
+	tenableFactory.Creator,
+	nexusFactory.Creator,
+	azureFactory.Creator,
+	rhelFactory.Creator,
+	ibmFactory.Creator,
+}
 
 // NewFactory creates a new scanner factory.
-func NewFactory() Factory {
+func NewFactory(opts FactoryOptions) Factory {
 	reg := &factoryImpl{
 		creators: make(map[string]Creator),
 	}
 
-	// Add registries to factory.
-	//////////////////////////////
-	creatorFuncs := []creatorWrapper{
-		artifactRegistryFactory.Creator,
-		artifactoryFactory.Creator,
-		dockerFactory.Creator,
-		dtrFactory.Creator,
-		ecrFactory.Creator,
-		googleFactory.Creator,
-		quayFactory.Creator,
-		tenableFactory.Creator,
-		nexusFactory.Creator,
-		azureFactory.Creator,
-		rhelFactory.Creator,
-		ibmFactory.Creator,
+	creatorFuncs := AllCreatorFuncs
+	if len(opts.CreatorFuncs) > 0 {
+		creatorFuncs = opts.CreatorFuncs
 	}
 
 	for _, creatorFunc := range creatorFuncs {

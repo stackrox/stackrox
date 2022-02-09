@@ -21,7 +21,7 @@ func TestAnchore(t *testing.T) {
 		t.Skipf("Skipping Anchore integration test")
 	}
 
-	registryFactory := registries.NewFactory()
+	registryFactory := registries.NewFactory(registries.FactoryOptions{})
 	registrySet := registries.NewSet(registryFactory)
 
 	err := registrySet.UpdateImageIntegration(&storage.ImageIntegration{
