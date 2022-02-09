@@ -110,7 +110,7 @@ func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
 
 	err := ValidateSimpleAccessScopeRules(scope.GetRules())
 	if err != nil {
-		multiErr = multierror.Append(err)
+		multiErr = multierror.Append(multiErr, err)
 	}
 
 	return multiErr
