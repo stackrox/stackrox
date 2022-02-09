@@ -77,10 +77,10 @@ func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.Resour
 	return signatureIntegration, nil
 }
 
-func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
-	err := s.datastore.AddSignatureIntegration(ctx, integration)
+func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedIntegration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
+	integration, err := s.datastore.AddSignatureIntegration(ctx, requestedIntegration)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create signature integration id=%q, name=%q", integration.GetId(), integration.GetName())
+		return nil, errors.Wrapf(err, "failed to create signature integration id=%q, name=%q", requestedIntegration.GetId(), requestedIntegration.GetName())
 	}
 
 	return integration, nil

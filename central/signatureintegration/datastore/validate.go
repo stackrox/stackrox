@@ -41,7 +41,9 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		switch cfg := verificationConfig.GetConfig().(type) {
 		case *storage.SignatureVerificationConfig_CosignVerification:
 			err := validateCosignVerification(cfg)
-			multiErr = multierror.Append(multiErr, err)
+			if err != nil {
+				multiErr = multierror.Append(multiErr, err)
+			}
 		default:
 			// Should theoretically never happen.
 			err := errox.NewErrInvariantViolation(fmt.Sprintf(
@@ -62,7 +64,7 @@ func validateCosignVerification(config *storage.SignatureVerificationConfig_Cosi
 	}
 	for _, publicKey := range publicKeys {
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
-		if keyBlock == nil || keyBlock.Type != signatures.PublicKeyType || rest != nil {
+		if keyBlock == nil || keyBlock.Type != signatures.PublicKeyType || len(rest) > 0 {
 			err := errors.Errorf("failed to decode PEM block containing public key %q", publicKey.GetName())
 			multiErr = multierror.Append(multiErr, err)
 		}

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	signatureRocksdb "github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -51,45 +52,47 @@ func (s *signatureDataStoreTestSuite) SetupTest() {
 
 func (s *signatureDataStoreTestSuite) TestAddSignatureIntegration() {
 	// 1. Added integration can be accessed via GetSignatureIntegration
-	integrationID := "addId"
-	signatureIntegration := getSignatureIntegration(integrationID, "name")
-	err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
+	integration := newSignatureIntegration("name")
+	savedIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, integration)
 	s.NoError(err)
+	s.NotNil(savedIntegration)
 
-	integration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, integrationID)
+	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
 	s.NoError(err)
-	s.Equal(signatureIntegration, integration)
+	s.Equal(savedIntegration, acquiredIntegration)
 
-	// 2. Cannot add new integration with already existing id
-	signatureIntegration = getSignatureIntegration(integrationID, "name2")
-	err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
-	s.Error(err)
+	// 2. Name should be unique
+	integration = newSignatureIntegration("name")
+	savedIntegration, err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, integration)
+	s.ErrorIs(err, errox.AlreadyExists)
+	s.Nil(savedIntegration)
 
 	// 3. Need write permission to add new integration
-	signatureIntegration = getSignatureIntegration(integrationID, "name2")
-	err = s.dataStore.AddSignatureIntegration(s.hasReadCtx, signatureIntegration)
+	integration = newSignatureIntegration("name2")
+	savedIntegration, err = s.dataStore.AddSignatureIntegration(s.hasReadCtx, integration)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	s.Nil(savedIntegration)
 }
 
 func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegration() {
-	integrationID := "updateId"
-	signatureIntegration := getSignatureIntegration(integrationID, "name")
-	err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
+	signatureIntegration := newSignatureIntegration("name")
+	savedIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
 	s.NoError(err)
+	s.NotNil(savedIntegration)
 
 	// 1. Modifications to integration are visible via GetSignatureIntegration
-	signatureIntegration.Name = "name2"
-	err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, signatureIntegration)
+	savedIntegration.Name = "name2"
+	err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
 
-	integration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, integrationID)
+	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
 	s.NoError(err)
-	s.Equal(signatureIntegration, integration)
+	s.Equal(savedIntegration, acquiredIntegration)
 
 	// 2. Cannot update non-existing integration
-	nonExistingIntegration := getSignatureIntegration("idonotexist", "name")
+	nonExistingIntegration := newSignatureIntegration("idonotexist")
 	err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, nonExistingIntegration)
 	s.Error(err)
 
@@ -99,46 +102,42 @@ func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegration() {
 }
 
 func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegration() {
-	integrationID := "removeId"
-	signatureIntegration := getSignatureIntegration(integrationID, "name")
-	err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
+	signatureIntegration := newSignatureIntegration("name")
+	savedIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
 	s.NoError(err)
+	s.NotNil(savedIntegration)
 
 	// 1. Removed integration is not accessible via GetSignatureIntegration
-	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, integrationID)
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
 	s.NoError(err)
-	_, found, _ := s.dataStore.GetSignatureIntegration(s.hasReadCtx, integrationID)
+	_, found, _ := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.False(found)
 
-	// 2. Can add integration with the same id after removal
-	err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
-	s.NoError(err)
-
-	// 3. Need write permission to remove integration
+	// 2. Need write permission to remove integration
 	err = s.dataStore.RemoveSignatureIntegration(s.hasReadCtx, "nonExistentRemoveId")
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *signatureDataStoreTestSuite) TestGetAllSignatureIntegrations() {
-	integrationID1 := "id1"
-	signatureIntegration := getSignatureIntegration(integrationID1, "name")
-	err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
+	signatureIntegration := newSignatureIntegration("name1")
+	savedIntegration1, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
 	s.NoError(err)
+	s.NotNil(savedIntegration1)
 
-	integrationID2 := "id2"
-	signatureIntegration = getSignatureIntegration(integrationID2, "name2")
-	err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
+	signatureIntegration = newSignatureIntegration("name2")
+	savedIntegration2, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
 	s.NoError(err)
+	s.NotNil(savedIntegration2)
 
 	// 1. All integrations are returned
 	integrations, err := s.dataStore.GetAllSignatureIntegrations(s.hasReadCtx)
 	s.NoError(err)
 	s.Len(integrations, 2)
 	sort.Slice(integrations, func(i, j int) bool {
-		return integrations[i].GetId() < integrations[j].GetId()
+		return integrations[i].GetName() < integrations[j].GetName()
 	})
-	s.Equal(integrationID1, integrations[0].GetId())
-	s.Equal(integrationID2, integrations[1].GetId())
+	s.Equal(savedIntegration1.GetId(), integrations[0].GetId())
+	s.Equal(savedIntegration2.GetId(), integrations[1].GetId())
 	// 2. Need read permission to get signature integrations
 	integrations, err = s.dataStore.GetAllSignatureIntegrations(s.noAccessCtx)
 	s.NoError(err)
@@ -147,19 +146,19 @@ func (s *signatureDataStoreTestSuite) TestGetAllSignatureIntegrations() {
 
 func (s *signatureDataStoreTestSuite) TestGetSignatureIntegration() {
 	// 1. Need read permission to get signature integration
-	integrationID := "getId"
-	signatureIntegration := getSignatureIntegration(integrationID, "name")
-	err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
+	signatureIntegration := newSignatureIntegration("name")
+	savedIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
 	s.NoError(err)
+	s.NotNil(savedIntegration)
 
-	_, found, err := s.dataStore.GetSignatureIntegration(s.noAccessCtx, integrationID)
+	result, found, err := s.dataStore.GetSignatureIntegration(s.noAccessCtx, savedIntegration.GetId())
 	s.NoError(err)
 	s.False(found)
+	s.Nil(result)
 }
 
-func getSignatureIntegration(id, name string) *storage.SignatureIntegration {
+func newSignatureIntegration(name string) *storage.SignatureIntegration {
 	signatureIntegration := &storage.SignatureIntegration{
-		Id:   id,
 		Name: name,
 		SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
 			{
@@ -168,7 +167,7 @@ func getSignatureIntegration(id, name string) *storage.SignatureIntegration {
 						PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 							{
 								Name:            "key1",
-								PublicKeyPemEnc: "abrrrrrrrrrr",
+								PublicKeyPemEnc: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAryQICCl6NZ5gDKrnSztO\n3Hy8PEUcuyvg/ikC+VcIo2SFFSf18a3IMYldIugqqqZCs4/4uVW3sbdLs/6PfgdX\n7O9D22ZiFWHPYA2k2N744MNiCD1UE+tJyllUhSblK48bn+v1oZHCM0nYQ2NqUkvS\nj+hwUU3RiWl7x3D2s9wSdNt7XUtW05a/FXehsPSiJfKvHJJnGOX0BgTvkLnkAOTd\nOrUZ/wK69Dzu4IvrN4vs9Nes8vbwPa/ddZEzGR0cQMt0JBkhk9kU/qwqUseP1QRJ\n5I1jR4g8aYPL/ke9K35PxZWuDp3U0UPAZ3PjFAh+5T+fc7gzCs9dPzSHloruU+gl\nFQIDAQAB\n-----END PUBLIC KEY-----",
 							},
 						},
 					},

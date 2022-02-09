@@ -45,12 +45,12 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 	return integrations, nil
 }
 
-func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) error {
+func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
 	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
-		return err
+		return nil, err
 	}
 	if integration.GetId() != "" {
-		return errox.Newf(errox.InvalidArgs, "id should be empty when it's %q", integration.GetId())
+		return nil, errox.Newf(errox.InvalidArgs, "id should be empty when it's %q", integration.GetId())
 	}
 
 	// Protect against TOCTOU race condition.
@@ -59,15 +59,18 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 
 	integrationID, err := d.generateUniqueIntegrationID()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	integration.Id = integrationID
 
 	if err := ValidateSignatureIntegration(integration); err != nil {
-		return errox.NewErrInvalidArgs(err.Error())
+		return nil, errox.NewErrInvalidArgs(err.Error())
 	}
-
-	return d.storage.Upsert(integration)
+	err = d.storage.Upsert(integration)
+	if err != nil {
+		return nil, err
+	}
+	return integration, nil
 }
 
 func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) error {
