@@ -1,7 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
 import {
-    Button,
     ButtonVariant,
     Flex,
     FlexItem,
@@ -15,6 +13,7 @@ import {
 import { integrationsPath } from 'routePaths';
 import { getIntegrationLabel } from 'Containers/Integrations/utils/integrationUtils';
 import PageTitle from 'Components/PageTitle';
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useIntegrationPermissions from './hooks/useIntegrationPermissions';
 import usePageState from './hooks/usePageState';
@@ -56,12 +55,9 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
                     </FlexItem>
                     {pageState === 'VIEW_DETAILS' && permissions[source].write && (
                         <FlexItem align={{ default: 'alignRight' }}>
-                            <Button
-                                variant={ButtonVariant.secondary}
-                                component={(props) => <Link {...props} to={integrationEditPath} />}
-                            >
+                            <ButtonLink variant={ButtonVariant.secondary} to={integrationEditPath}>
                                 Edit
-                            </Button>
+                            </ButtonLink>
                         </FlexItem>
                     )}
                 </Flex>
