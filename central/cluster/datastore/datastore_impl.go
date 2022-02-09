@@ -848,22 +848,6 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
-// GetClusterDefaults is consumed by the API to provide the user with the default secured cluster values.
-func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
-	cluster := &storage.Cluster{}
-	if err := addDefaults(cluster); err != nil {
-		return nil, err
-	}
-
-	// Collector image default is not supposed to be stored in cluster object but only used to display to the user
-	// on the UI.
-	flavor := defaults.GetImageFlavorFromEnv()
-	if cluster.GetCollectorImage() == "" {
-		cluster.CollectorImage = flavor.CollectorFullImageNoTag()
-	}
-	return cluster, nil
-}
-
 func normalizeCluster(cluster *storage.Cluster) error {
 	if cluster == nil {
 		return errorhelpers.NewErrInvariantViolation("cannot normalize nil cluster object")
@@ -881,11 +865,11 @@ func validateInput(cluster *storage.Cluster) error {
 
 // addDefaults enriches the provided non-nil cluster object with defaults for
 // fields that cannot stay empty.
+// `cluster.* bool` flags remain untouched.
 func addDefaults(cluster *storage.Cluster) error {
 	if cluster == nil {
 		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
 	}
-
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
 		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
@@ -918,9 +902,11 @@ func addDefaults(cluster *storage.Cluster) error {
 	if acConfig.GetTimeoutSeconds() == 0 {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
 	}
-	flavor := defaults.GetImageFlavorFromEnv()
 	if cluster.GetMainImage() == "" {
+		flavor := defaults.GetImageFlavorFromEnv()
 		cluster.MainImage = flavor.MainImageNoTag()
+		// cluster.CollectorImage should be kept empty here on the save path
+		// because it is computed using complex rules from the MainImage on the load path.
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		cluster.CentralApiEndpoint = "central.stackrox:443"

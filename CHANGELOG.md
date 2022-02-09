@@ -5,6 +5,8 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- API changes/deprecations:
+  - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaults (GET /v1/cluster-defaults)` instead.
 
 - Improved accuracy of active component and vulnerability and presented it with higher confidence.
   - Added `Active` state to list of components and list of vulnerabilities under Vulnerability Management within the scope of a specific deployment.

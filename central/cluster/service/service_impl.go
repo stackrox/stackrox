@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
@@ -133,6 +134,7 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	return &v1.Empty{}, nil
 }
 
+// Deprecated: Use GetClusterDefaults instead.
 func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
 	anyAvailable, err := s.probeSources.AnyAvailable(ctx)
 	if err != nil {
@@ -144,13 +146,16 @@ func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty
 	return result, nil
 }
 
-func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.ClusterResponse, error) {
-	cluster, err := s.datastore.GetClusterDefaults(ctx)
+func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
+	kernelSupport, err := s.probeSources.AnyAvailable(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result := &v1.ClusterResponse{
-		Cluster: cluster,
+	flavor := defaults.GetImageFlavorFromEnv()
+	defaults := &v1.ClusterDefaultsResponse{
+		MainImageRepository:      flavor.MainImageNoTag(),
+		CollectorImageRepository: flavor.CollectorFullImageNoTag(),
+		KernelSupportAvailable:   kernelSupport,
 	}
-	return result, nil
+	return defaults, nil
 }
