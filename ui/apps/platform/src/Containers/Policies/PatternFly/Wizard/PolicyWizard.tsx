@@ -117,13 +117,20 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                 </div>
                 <Divider component="div" />
             </PageSection>
-            <PageSection variant="light" isFilled hasOverflowScroll className="pf-u-py-0">
+            <PageSection
+                variant="light"
+                isFilled
+                hasOverflowScroll
+                padding={{ default: 'noPadding' }}
+                className="pf-u-h-100"
+            >
                 <FormikProvider value={formik}>
                     <Wizard
                         navAriaLabel={`${pageAction} policy steps`}
                         mainAriaLabel={`${pageAction} policy content`}
                         onClose={closeWizard}
                         onSave={submitForm}
+                        hasNoBodyPadding
                         steps={[
                             {
                                 id: 1,
