@@ -36,6 +36,7 @@ class PostClusterTest:
         self.collect_collector_metrics()
         self.get_central_debug_dump()
         self.get_central_diagnostics()
+        self.grab_central_data()
         if self.exitstatus != 0:
             for args in self.failed_commands:
                 print(f"Post failure in: {args}")
@@ -75,6 +76,12 @@ class PostClusterTest:
     def get_central_diagnostics(self):
         self._run_with_best_effort(
             ["scripts/ci/lib.sh", "get_central_diagnostics", "diagnostic-bundle"],
+            timeout=PostClusterTest.COLLECT_TIMEOUT,
+        )
+
+    def grab_central_data(self):
+        self._run_with_best_effort(
+            ["scripts/grab-data-from-central.sh", "central-data"],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
 
