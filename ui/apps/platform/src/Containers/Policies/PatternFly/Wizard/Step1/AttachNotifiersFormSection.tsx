@@ -43,7 +43,7 @@ function AttachNotifiersFormSection() {
     }
 
     return (
-        <>
+        <div className="pf-u-px-lg">
             <Title headingLevel="h2">Attach notifiers</Title>
             <div className="pf-u-mb-md pf-u-mt-sm">
                 Forward policy violations to external tooling by selecting one or more notifiers
@@ -96,7 +96,7 @@ function AttachNotifiersFormSection() {
                     </Bullseye>
                 </>
             )}
-        </>
+        </div>
     );
 }
 

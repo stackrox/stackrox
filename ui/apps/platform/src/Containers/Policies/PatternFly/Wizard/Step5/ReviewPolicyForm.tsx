@@ -98,47 +98,58 @@ function ReviewPolicyForm({
 
     /* eslint-disable no-nested-ternary */
     return (
-        <Flex>
+        <Flex
+            spaceItems={{ default: 'spaceItemsNone' }}
+            fullWidth={{ default: 'fullWidth' }}
+            flexWrap={{ default: 'nowrap' }}
+        >
             <Flex
-                flex={{ default: 'flex_1' }}
                 direction={{ default: 'column' }}
-                alignSelf={{ default: 'alignSelfStretch' }}
-                className="review-policy"
+                spaceItems={{ default: 'spaceItemsNone' }}
+                fullWidth={{ default: 'fullWidth' }}
             >
-                <Flex>
-                    <FlexItem flex={{ default: 'flex_1' }}>
-                        <Title headingLevel="h2">Review policy</Title>
-                        <div>Review policy settings and violations.</div>
-                    </FlexItem>
-                    <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
-                        <Button
-                            variant="secondary"
-                            onClick={() => setShowPolicyResults(!showPolicyResults)}
+                <Flex
+                    flex={{ default: 'flex_1' }}
+                    direction={{ default: 'column' }}
+                    alignSelf={{ default: 'alignSelfStretch' }}
+                    className="review-policy pf-u-p-lg"
+                >
+                    <Flex>
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <Title headingLevel="h2">Review policy</Title>
+                            <div className="pf-u-mt-sm">Review policy settings and violations.</div>
+                        </FlexItem>
+                        <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
+                            <Button
+                                variant="secondary"
+                                onClick={() => setShowPolicyResults(!showPolicyResults)}
+                            >
+                                Preview policy violations
+                            </Button>
+                        </FlexItem>
+                    </Flex>
+                    {policyErrorMessage && (
+                        <Alert
+                            title={isBadRequest ? 'Policy is invalid' : 'Policy request failure'}
+                            variant="danger"
+                            isInline
                         >
-                            Policy results
-                        </Button>
-                    </FlexItem>
+                            {policyErrorMessage}
+                        </Alert>
+                    )}
                 </Flex>
-                {policyErrorMessage && (
-                    <Alert
-                        title={isBadRequest ? 'Policy is invalid' : 'Policy request failure'}
-                        variant="danger"
-                        isInline
-                    >
-                        {policyErrorMessage}
-                    </Alert>
-                )}
                 <Divider component="div" />
-                <PolicyDetailContent policy={getServerPolicy(values)} isReview />
+                <FlexItem className="pf-u-p-lg">
+                    <PolicyDetailContent policy={getServerPolicy(values)} isReview />
+                </FlexItem>
             </Flex>
             {showPolicyResults && (
                 <>
                     <Divider component="div" isVertical />
                     <Flex
-                        flex={{ default: 'flex_1' }}
                         direction={{ default: 'column' }}
                         alignSelf={{ default: 'alignSelfStretch' }}
-                        className="preview-violations"
+                        className="preview-violations pf-u-p-lg"
                     >
                         <Title headingLevel="h2">Preview violations</Title>
                         <div className="pf-u-mb-md pf-u-mt-sm">
