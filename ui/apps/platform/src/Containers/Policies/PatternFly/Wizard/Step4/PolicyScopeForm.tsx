@@ -129,7 +129,7 @@ function PolicyScopeForm() {
                 </Flex>
                 <FlexItem>
                     <Grid hasGutter>
-                        {scope.map((_, index) => (
+                        {scope?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem span={4} rowSpan={4} key={index}>
                                 <PolicyScopeCard
@@ -169,7 +169,7 @@ function PolicyScopeForm() {
                 </Flex>
                 <FlexItem>
                     <Grid hasGutter>
-                        {excludedDeploymentScopes.map((_, index) => (
+                        {excludedDeploymentScopes?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem span={4} rowSpan={4} key={index}>
                                 <PolicyScopeCard
@@ -214,7 +214,7 @@ function PolicyScopeForm() {
                                 onClear={() => setFieldValue('excludedImageNames', [])}
                                 placeholderText="Select images to exclude"
                             >
-                                {images.map((image) => (
+                                {images?.map((image) => (
                                     <SelectOption key={image.name} value={image.name}>
                                         {image.name}
                                     </SelectOption>
