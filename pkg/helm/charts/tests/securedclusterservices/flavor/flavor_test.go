@@ -26,9 +26,9 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 		Flavor: &testFlavor,
 		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
 			values.ClusterName = "test"
-			values.ImageTag = "custom"
-			values.CollectorFullImageTag = "custom"
-			values.CollectorSlimImageTag = "custom"
+			values.ImageTag = "custom-main"
+			values.CollectorFullImageTag = "custom-collector-full"
+			values.CollectorSlimImageTag = "custom-collector-slim"
 		},
 		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
 	})
