@@ -2,7 +2,6 @@ package regocompile
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -60,8 +59,6 @@ func (r *regoBasedEvaluator) Evaluate(obj pathutil.AugmentedValue) (*evaluator.R
 		utils.Should(err)
 		return nil, false
 	}
-	marshaled, _ := json.MarshalIndent(inMemVal, "", " ")
-	fmt.Println(string(marshaled))
 
 	resultSet, err := r.q.Eval(context.Background(), rego.EvalInput(inMemVal))
 	// If there is an error here, it is a programming error. Let's not panic in prod over it.
@@ -118,7 +115,6 @@ func (r *regoCompilerForType) CompileRegoBasedEvaluator(query *query.Query) (eva
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile rego: %w", err)
 	}
-	fmt.Println(regoModule)
 	q, err := rego.New(
 		rego.Query("out = data.policy.main.violations"),
 		rego.Module("main.policy", regoModule),
