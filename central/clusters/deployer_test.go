@@ -139,13 +139,43 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			expectedCollectorFullRef: defaultCollectorFullImage,
 			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
-		"default main / custom collector": {
+		"default main / default collector: custom tag": {
+			cluster:                  makeTestCluster(defaultMainImageNoTag, fmt.Sprintf("%s:custom", defaultCollectorFullImageNoTag)),
+			expectedMain:             defaultMainImage,
+			expectedCollectorFullRef: flavor.CollectorFullImage(),
+			expectedCollectorSlimRef: flavor.CollectorSlimImage(),
+		},
+		"default main / custom collector: with namespace": {
 			cluster:                  makeTestCluster(defaultMainImage, "quay.io/rhacs/collector"),
 			expectedMain:             defaultMainImage,
 			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
 			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
+		"default main / custom collector: with namespace & custom tag": {
+			cluster:                  makeTestCluster(defaultMainImage, "quay.io/rhacs/collector:custom"),
+			expectedMain:             defaultMainImage,
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
+		"default main / custom collector: without namespace": {
+			cluster:                  makeTestCluster(defaultMainImage, "example.io/collector"),
+			expectedMain:             defaultMainImage,
+			expectedCollectorFullRef: fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
+		"default main / custom collector: without namespace & custom tag": {
+			cluster:                  makeTestCluster(defaultMainImage, "example.io/collector:custom"),
+			expectedMain:             defaultMainImage,
+			expectedCollectorFullRef: fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
 		"default main: custom tag / no collector": {
+			cluster:                  makeTestCluster(fmt.Sprintf("%s:custom", defaultMainImageNoTag), ""),
+			expectedMain:             fmt.Sprintf("%s:custom", defaultMainImageNoTag),
+			expectedCollectorFullRef: defaultCollectorFullImage,
+			expectedCollectorSlimRef: defaultCollectorSlimImage,
+		},
+		"default main: custom tag / default collector": {
 			cluster:                  makeTestCluster(fmt.Sprintf("%s:custom", defaultMainImageNoTag), ""),
 			expectedMain:             fmt.Sprintf("%s:custom", defaultMainImageNoTag),
 			expectedCollectorFullRef: defaultCollectorFullImage,
@@ -177,11 +207,29 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			expectedCollectorFullRef: defaultCollectorFullImage,
 			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
-		"custom main / custom collector": {
+		"custom main / custom collector: with namespace": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
 			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
 			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
 			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
+		"custom main / custom collector: with namespace & custom tag": {
+			cluster:                  makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector:custom"),
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
+		"custom main / custom collector: without namespace": {
+			cluster:                  makeTestCluster("quay.io/rhacs/main", "example.io/collector"),
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
+		"custom main / custom collector: without namespace & custom tag": {
+			cluster:                  makeTestCluster("quay.io/rhacs/main", "example.io/collector:custom"),
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("example.io/collector:%s", flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"custom main: custom tag / no collector": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main:custom", ""),
