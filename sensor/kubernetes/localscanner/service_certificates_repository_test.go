@@ -128,15 +128,12 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 	}
 }
 
-func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataSuccess() {
+func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataFailure() {
 	fixture := s.newFixtureAdvancedOpts("", true)
-	expectedCertificates := &storage.TypedServiceCertificateSet{}
-	expectedCertificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 
-	certificates, err := fixture.repo.GetServiceCertificates(context.Background())
+	_, err := fixture.repo.GetServiceCertificates(context.Background())
 
-	s.NoError(err)
-	s.Equal(expectedCertificates, certificates)
+	s.ErrorIs(err, ErrMissingSecretData)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSuccess() {
