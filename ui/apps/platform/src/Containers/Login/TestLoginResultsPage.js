@@ -36,6 +36,7 @@ function getMessage(response) {
         );
     });
 
+    // None is likely already filtered by the backend but we keep this code to be robust.
     const displayRoles = response.roles
         .filter((role) => {
             return role.name !== `None`;

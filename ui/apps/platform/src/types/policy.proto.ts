@@ -34,6 +34,8 @@ export type Policy = {
     exclusions: PolicyExclusion[];
     scope: PolicyScope[];
     enforcementActions: EnforcementAction[];
+    excludedImageNames: string[]; // For internal use only.
+    excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
     SORT_name: string; // For internal use only.
     SORT_lifecycleStage: string; // For internal use only.
     SORT_enforcement: boolean; // For internal use only.
@@ -74,11 +76,10 @@ export type PolicyBaseExclusion = {
 export type PolicyScope = {
     cluster?: string;
     namespace?: string;
-    label?: KeyValue | null;
+    label?: PolicyScopeLabel | null;
 };
 
-// TODO import from where?
-export type KeyValue = {
+export type PolicyScopeLabel = {
     key: string;
     value: string;
 };
@@ -198,8 +199,10 @@ export type PolicyComponent = {
 };
 
 export type PolicyKeyValue = {
+    key: string;
+    value: string;
     envVarSource: EnvVarSource;
-} & KeyValue;
+};
 
 // TODO import from types/deployment.proto.ts
 export type EnvVarSource =

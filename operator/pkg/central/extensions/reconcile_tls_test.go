@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func verifyCentralCert(t *testing.T, data secretDataMap) {
@@ -93,7 +93,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		},
 		"When no secrets exist and scanner is disabled but secured cluster exists, a managed central-tls secret and init bundle secrets should be created": {
 			Spec: basicSpecWithScanner(false),
-			Other: []client.Object{&platform.SecuredCluster{
+			Other: []ctrlClient.Object{&platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secured-cluster-services",
 					Namespace: testNamespace,

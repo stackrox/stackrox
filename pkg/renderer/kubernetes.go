@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
@@ -36,11 +37,27 @@ const (
 )
 
 func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) error {
+	// Ensure that default values are taken from the flavor if not provided explicitly in the parameteres
+	if c.K8sConfig.MainImage == "" {
+		c.K8sConfig.MainImage = imageFlavor.MainImage()
+	}
+	if c.K8sConfig.ScannerImage == "" {
+		c.K8sConfig.ScannerImage = imageFlavor.ScannerImage()
+	}
+	if c.K8sConfig.ScannerDBImage == "" {
+		c.K8sConfig.ScannerDBImage = imageFlavor.ScannerDBImage()
+	}
+
 	// Make all items in SecretsByteMap base64 encoded
 	c.SecretsBase64Map = make(map[string]string)
 	for k, v := range c.SecretsByteMap {
 		c.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
 	}
+
+	if c.HelmImage == nil {
+		c.HelmImage = image.GetDefaultImage()
+	}
+
 	if mode == centralTLSOnly || mode == scannerTLSOnly {
 		return nil
 	}

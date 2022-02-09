@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/registry"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -21,7 +22,7 @@ import (
 
 // Dispatcher is responsible for processing resource events, and returning the sensor events that should be emitted
 // in response.
-//go:generate mockgen-wrapper Dispatcher
+//go:generate mockgen-wrapper
 type Dispatcher interface {
 	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent
 }
@@ -61,6 +62,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
 	rbacUpdater := rbac.NewStore()
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)
+	registryStore := registry.Singleton()
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
@@ -70,7 +72,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
 		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:          newSecretDispatcher(),
+		secretDispatcher:          newSecretDispatcher(registryStore),
 		networkPolicyDispatcher:   newNetworkPolicyDispatcher(),
 		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
 		serviceAccountDispatcher:  newServiceAccountDispatcher(),

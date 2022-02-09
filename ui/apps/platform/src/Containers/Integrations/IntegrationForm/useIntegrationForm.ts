@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useFormik, FormikProps } from 'formik';
-import { BaseSchema } from 'yup';
+import { Schema } from 'yup';
 
 import { IntegrationOptions } from 'services/IntegrationsService';
 
@@ -9,7 +9,7 @@ import useIntegrationActions from '../hooks/useIntegrationActions';
 
 export type UseIntegrationForm<T> = {
     initialValues: T;
-    validationSchema: BaseSchema | (() => BaseSchema);
+    validationSchema: Schema | (() => Schema);
 };
 
 export type UseIntegrationFormResult<T> = FormikProps<T> & {

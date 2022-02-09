@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -11,10 +12,13 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -27,11 +31,17 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
 	maxImagesReturned = 1000
+
+	maxSemaphoreWaitTime = 5 * time.Second
 )
 
 var (
@@ -68,11 +78,14 @@ type serviceImpl struct {
 	riskManager  manager.Manager
 
 	metadataCache expiringcache.Cache
-	scanCache     expiringcache.Cache
+
+	connManager connection.Manager
 
 	enricher enricher.ImageEnricher
 
 	watchedImages watchedImageDataStore.DataStore
+
+	internalScanSemaphore *semaphore.Weighted
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -151,20 +164,27 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 // InvalidateScanAndRegistryCaches invalidates the image scan caches
 func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty) (*v1.Empty, error) {
 	s.metadataCache.RemoveAll()
-	s.scanCache.RemoveAll()
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) saveImage(img *storage.Image) {
-	// Save the image if we received an ID from sensor
-	// Otherwise, our inferred ID may not match
-	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
+func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse {
+	utils.FilterSuppressedCVEsNoClone(img)
+	utils.StripCVEDescriptionsNoClone(img)
+	return &v1.ScanImageInternalResponse{
+		Image: img,
 	}
 }
 
-// ScanImage handles an image request from Sensor
+// ScanImageInternal handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
+		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
+		if pkgUtils.Should(err) == nil {
+			return nil, s.Err()
+		}
+	}
+	defer s.internalScanSemaphore.Release(1)
+
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
 	if request.GetImage().GetId() != "" {
@@ -174,10 +194,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		}
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
-			utils.FilterSuppressedCVEsNoClone(img)
-			return &v1.ScanImageInternalResponse{
-				Image: utils.StripCVEDescriptions(img),
-			}, nil
+			return internalScanRespFromImage(img), nil
 		}
 	}
 
@@ -196,16 +213,16 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		// even if we weren't able to enrich it
 	}
 
-	// asynchronously upsert images as this rpc should be performant
-	if img.GetId() != "" {
-		go s.saveImage(img.Clone())
+	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
+	// contained a digest
+	if request.GetImage().GetId() != "" {
+		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+			log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
+		}
 	}
 
 	// This modifies the image object
-	utils.FilterSuppressedCVEsNoClone(img)
-	return &v1.ScanImageInternalResponse{
-		Image: utils.StripCVEDescriptions(img),
-	}, nil
+	return internalScanRespFromImage(img), nil
 }
 
 // ScanImage scans an image and returns the result
@@ -264,6 +281,22 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 	if err := s.datastore.DeleteImages(ctx, idSlice...); err != nil {
 		return nil, err
 	}
+
+	keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(idSlice))
+	for _, id := range idSlice {
+		keys = append(keys, &central.InvalidateImageCache_ImageKey{
+			ImageId: id,
+		})
+	}
+
+	s.connManager.BroadcastMessage(&central.MsgToSensor{
+		Msg: &central.MsgToSensor_InvalidateImageCache{
+			InvalidateImageCache: &central.InvalidateImageCache{
+				ImageKeys: keys,
+			},
+		},
+	})
+
 	return response, nil
 }
 

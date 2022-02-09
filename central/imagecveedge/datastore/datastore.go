@@ -12,7 +12,7 @@ import (
 )
 
 // DataStore is an intermediary to Image/CVE edge storage.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)

@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
  * https://overreacted.io/making-setinterval-declarative-with-react-hooks/
  *
  * @param   {function}  callback  the code you want called at every interval
- * @param   {number}  delay     the number of milliseconds between function executions
+ * @param   {number | null}  delay     the number of milliseconds between function executions
  */
 export default function useInterval(callback, delay) {
     const savedCallback = useRef();

@@ -62,6 +62,9 @@ export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementReportsPathWithParam = `${vulnManagementPath}/reports/:reportId`;
 
 export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
+export const vulnManagementPendingApprovalsPath = `${vulnManagementRiskAcceptancePath}/pending-approvals`;
+export const vulnManagementApprovedDeferralsPath = `${vulnManagementRiskAcceptancePath}/approved-deferrals`;
+export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcceptancePath}/approved-false-positives`;
 
 /**
  * New Framwork-related route paths

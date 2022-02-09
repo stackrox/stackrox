@@ -292,6 +292,7 @@ func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
 	w.populateVolumesAndSecrets(podSpec)
 	w.populatePorts(podSpec)
 	w.populateResources(podSpec)
+	w.populateProbes(podSpec)
 }
 
 func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
@@ -576,6 +577,22 @@ func (w *DeploymentWrap) populatePorts(podSpec v1.PodSpec) {
 			}
 			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, portConfig)
 			w.Ports = append(w.Ports, portConfig)
+		}
+	}
+}
+
+func (w *DeploymentWrap) populateProbes(podSpec v1.PodSpec) {
+	for i, c := range podSpec.Containers {
+		if c.LivenessProbe == nil || *c.LivenessProbe == (v1.Probe{}) {
+			w.Deployment.Containers[i].LivenessProbe = &storage.LivenessProbe{Defined: false}
+		} else {
+			w.Deployment.Containers[i].LivenessProbe = &storage.LivenessProbe{Defined: true}
+		}
+
+		if c.ReadinessProbe == nil || *c.ReadinessProbe == (v1.Probe{}) {
+			w.Deployment.Containers[i].ReadinessProbe = &storage.ReadinessProbe{Defined: false}
+		} else {
+			w.Deployment.Containers[i].ReadinessProbe = &storage.ReadinessProbe{Defined: true}
 		}
 	}
 }

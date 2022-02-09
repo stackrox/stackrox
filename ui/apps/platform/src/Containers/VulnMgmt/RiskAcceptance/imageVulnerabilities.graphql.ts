@@ -1,7 +1,24 @@
 import { gql } from '@apollo/client';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
-import { Scope } from 'types/vuln_request.proto';
+import { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
+import { SlimUser } from 'types/user.proto';
+import { DeferralRequest, RequestComment, RequestStatus, Scope } from 'types/vuln_request.proto';
+
+export type VulnerabilityRequest = {
+    id: string;
+    targetState: VulnerabilityState;
+    status: RequestStatus;
+    expired: boolean;
+    requestor: SlimUser;
+    approvers: SlimUser[];
+    comments: RequestComment[];
+    scope: Scope;
+    deferralReq: DeferralRequest;
+    updatedDeferralReq: DeferralRequest;
+    cves: {
+        ids: string[];
+    };
+};
 
 // This type is specific to the way we query using GraphQL
 export type Vulnerability = {
@@ -13,10 +30,16 @@ export type Vulnerability = {
     scoreVersion: string;
     discoveredAtImage: string;
     components: EmbeddedImageScanComponent[];
+    vulnerabilityRequest: VulnerabilityRequest;
 };
 
 // This type is specific to the way we query using GraphQL
-export type EmbeddedImageScanComponent = { id: string; name: string; fixedIn: string };
+export type EmbeddedImageScanComponent = {
+    id: string;
+    name: string;
+    version: string;
+    fixedIn: string;
+};
 
 export type GetImageVulnerabilitiesData = {
     image: {
@@ -25,9 +48,9 @@ export type GetImageVulnerabilitiesData = {
             remote: string;
             tag: string;
         };
+        vulnCount: number;
+        vulns: Vulnerability[];
     };
-    vulnerabilityCount: number;
-    vulnerabilities: Vulnerability[];
 };
 
 export type GetImageVulnerabilitiesVars = {
@@ -52,20 +75,62 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                 remote
                 tag
             }
-        }
-        vulnerabilityCount(query: $vulnsQuery)
-        vulnerabilities(query: $vulnsQuery, pagination: $pagination) {
-            id: cve
-            cve
-            isFixable
-            severity
-            scoreVersion
-            cvss
-            discoveredAtImage
-            components {
-                id
-                name
-                fixedIn
+            vulnCount(query: $vulnsQuery)
+            vulns(query: $vulnsQuery, pagination: $pagination) {
+                id: cve
+                cve
+                isFixable
+                severity
+                scoreVersion
+                cvss
+                discoveredAtImage
+                components {
+                    id
+                    name
+                    version
+                    fixedIn
+                }
+                vulnerabilityRequest: effectiveVulnerabilityRequest {
+                    id
+                    targetState
+                    status
+                    expired
+                    requestor {
+                        id
+                        name
+                    }
+                    approvers {
+                        id
+                        name
+                    }
+                    comments {
+                        createdAt
+                        id
+                        message
+                        user {
+                            id
+                            name
+                        }
+                    }
+                    deferralReq {
+                        expiresOn
+                        expiresWhenFixed
+                    }
+                    updatedDeferralReq {
+                        expiresOn
+                        expiresWhenFixed
+                    }
+                    scope {
+                        imageScope {
+                            registry
+                            remote
+                            tag
+                        }
+                    }
+                    cves {
+                        ids
+                    }
+                }
             }
         }
     }
@@ -76,7 +141,7 @@ export type DeferVulnerabilityRequest = {
     comment: string;
     scope: Scope;
     expiresWhenFixed?: boolean;
-    expiresOn?: string;
+    expiresOn?: string | number;
 };
 
 export const DEFER_VULNERABILITY = gql`

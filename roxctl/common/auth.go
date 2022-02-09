@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
@@ -15,16 +17,44 @@ type Auth interface {
 	SetAuth(req *http.Request) error
 }
 
-// NewAuth create a new Auth type which will be inferred based off of the values of flags.APITokenFile and flags.Password
-func NewAuth() (Auth, error) {
+func checkAuthParameters() error {
 	if flags.APITokenFile() != "" && flags.Password() != "" {
-		return nil, errors.New("cannot use password- and token-based authentication at the same time")
+		return errors.New("cannot use password- and token-based authentication at the same time")
 	}
-	// If Password flag is set, use the basic authenticator
+	if flags.APITokenFile() == "" && env.TokenEnv.Setting() == "" && flags.Password() == "" {
+		return errors.New("no token set via either token file or the environment variable ROX_API_TOKEN")
+	}
+
+	return nil
+}
+
+const userHelpLiteralToken = `There is no token in file %q. The token file should only contain a single authentication token.
+To provide a token value directly, set the ROX_API_TOKEN environment variable.
+`
+
+func printAuthHelp() {
+	if !strings.Contains(flags.APITokenFile(), "/") {
+		// Specified token file looks somewhat like a literal token, try to help the user.
+		fmt.Fprintf(os.Stderr, userHelpLiteralToken, flags.APITokenFile())
+	}
+}
+
+// newAuth creates a new Auth type which will be inferred based off of the values of flags.APITokenFile and flags.Password.
+func newAuth() (Auth, error) {
+	if err := checkAuthParameters(); err != nil {
+		return nil, err
+	}
+
 	if flags.Password() != "" {
 		return &basicAuthenticator{pw: flags.Password()}, nil
 	}
-	return newAPITokenAuthenticator()
+
+	token, err := retrieveAuthToken()
+	if err != nil {
+		printAuthHelp()
+		return nil, err
+	}
+	return &apiTokenAuthenticator{token}, nil
 }
 
 type basicAuthenticator struct {
@@ -39,22 +69,6 @@ func (b *basicAuthenticator) SetAuth(req *http.Request) error {
 
 type apiTokenAuthenticator struct {
 	token string
-}
-
-func newAPITokenAuthenticator() (*apiTokenAuthenticator, error) {
-	if flags.APITokenFile() == "" && env.TokenEnv.Setting() == "" {
-		return nil, errors.New("no token set via either token file or the environment variable ROX_API_TOKEN")
-	}
-	tokenAuthenticator := &apiTokenAuthenticator{}
-	tokenAuthenticator.token = env.TokenEnv.Setting()
-	if tokenFile := flags.APITokenFile(); tokenFile != "" {
-		token, err := flags.ReadTokenFromFile(tokenFile)
-		if err != nil {
-			return nil, err
-		}
-		tokenAuthenticator.token = token
-	}
-	return tokenAuthenticator, nil
 }
 
 // SetAuth sets the required authorization header with a token in bearer format on the given http.Request

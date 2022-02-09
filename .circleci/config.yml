@@ -128,18 +128,6 @@ getECRDockerPullPassword: &getECRDockerPullPassword
       cci-export AWS_ECR_DOCKER_PULL_PASSWORD "${PASS}"
       exit 0
 
-setImageFlavor: &setImageFlavor
-  run:
-    name: Set ROX_IMAGE_FLAVOR
-    command: |
-      FLAVOR="development_build"
-      # Use 'stackrox_io_release' flavor on release and RC builds
-      if [[ "${CIRCLE_TAG}" =~ ^[0-9]+(\.[0-9]+)?\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
-        FLAVOR="stackrox_io_release"
-      fi
-      echo "Setting image flavor: '$FLAVOR' for CIRCLE_TAG: '$CIRCLE_TAG'"
-      cci-export ROX_IMAGE_FLAVOR "$FLAVOR"
-
 refreshAlpineBaseImage: &refreshAlpineBaseImage
   run:
     name: Refresh base image
@@ -149,7 +137,8 @@ setupRoxctl: &setupRoxctl
   run:
     name: Setup Roxctl from bin
     command: |
-      cp bin/linux/roxctl $GOPATH/bin/roxctl
+      source scripts/ci/lib.sh
+      install_built_roxctl_in_gopath
 
 setupLicense: &setupLicense
   run:
@@ -454,6 +443,7 @@ checkToRunSeparateRaceConditionTestPipe: &checkToRunSeparateRaceConditionTestPip
   check-to-run:
     run-on-master: true
     run-on-tags: true
+    label: ci-race-tests
 
 version: 2.1
 
@@ -493,10 +483,18 @@ parameters:
   rox_license_key:
     type: string
     default: ""
+  ci_machine_image:
+    type: string
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
+    default: "ubuntu-2004:202111-02"
+  release_rc_tag_bash_regex:
+    type: string
+    # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
+    default: '^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
 
 orbs:
   win: circleci/windows@2.2.0
-  ci-artifacts: stackrox/ci-artifacts-orb@0.0.11
+  ci-artifacts: stackrox/ci-artifacts-orb@0.1.1
 
 executors:
   custom:
@@ -828,7 +826,7 @@ commands:
     - run:
         name: Verify that docs are up to date
         command: |
-          [[ "$CIRCLE_TAG" =~ ^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$ ]] || {
+          [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]] || {
             echo "Skipping step as this is not a release or RC build ..."
             exit 0
           }
@@ -856,6 +854,52 @@ commands:
             exit 1
           }
 
+  check-scanner-and-collector-release-step:
+    parameters:
+      fail-on-rc:
+        type: boolean
+    steps:
+    - run:
+        name: Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release
+        command: |
+          function is_release() {
+            [[ "$1" =~ << pipeline.parameters.release_rc_tag_bash_regex >> && -z "${BASH_REMATCH[3]}" ]]
+          }
+          function is_rc() {
+            [[ "$1" =~ << pipeline.parameters.release_rc_tag_bash_regex >> && -n "${BASH_REMATCH[3]}" ]]
+          }
+          # Self-test to make sure functions actually work.
+          is_release "3.67.2" && is_rc "3.67.2-rc.1" && ! is_release "3.67.2-rc.1" && ! is_rc "3.67.2"
+          ! is_release "3.68.x-23-g8a2e05d0ec-dirty" && ! is_rc "3.68.x-23-g8a2e05d0ec-dirty"
+
+          set -x
+          main_release_like=0
+          main_rc=0
+          main_tag="$(make --quiet tag)"
+          if is_release "$main_tag"; then
+            main_release_like=1
+          fi
+          if is_rc "$main_tag"; then
+            main_release_like=1
+            main_rc=1
+          fi
+
+          release_mismatch=0
+          if ! is_release "$(make --quiet collector-tag)" && [[ "$main_release_like" == "1" ]]; then
+            echo >&2 "Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
+            release_mismatch=1
+          fi
+          if ! is_release "$(make --quiet scanner-tag)" && [[ "$main_release_like" == "1" ]]; then
+            echo >&2 "Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
+            release_mismatch=1
+          fi
+
+          if [[ "$release_mismatch" == "1" && ( "$main_rc" == "0" || "<< parameters.fail-on-rc >>" == "true" ) ]]; then
+            # Note that the script avoids doing early exits in order for the most of its logic to be executed drung
+            # regular pipeline runs so that it does not get rusty by the time of the release.
+            exit 1
+          fi
+
   setup-go-build-env:
     steps:
       - run:
@@ -879,64 +923,24 @@ commands:
       - run:
           name: Setup deployment env
           command: |
-            <<# parameters.docker-login >>
-            docker login -u  "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin \<<<"${QUAY_RHACS_ENG_RO_PASSWORD}" quay.io
-            <</ parameters.docker-login >>
-            <<# parameters.use-websocket >>
-            cci-export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
-            <</ parameters.use-websocket >>
-            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
-            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
-
-            REPO=rhacs-eng
-            cci-export MONITORING_IMAGE "quay.io/$REPO/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
-            cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
-            cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
-            cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            source scripts/ci/lib.sh
+            setup_deployment_env "<< parameters.docker-login >>" "<< parameters.use-websocket >>"
 
   setup-gcp:
     steps:
       - run:
           name: Setup GCP env
           command: |
-            if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "stackrox-ci" ]]; then
-              echo "Current project is already set to stackrox-ci. Assuming configuration already applied."
-              exit 0
-            fi
-            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
-            gcloud auth list
-            gcloud config set project stackrox-ci
-            gcloud config set compute/region us-central1
-            gcloud config unset compute/zone
-            gcloud config set core/disable_prompts True
-
-  create-gke:
-    parameters:
-      wait:
-        type: boolean
-        default: true
-
-    steps:
-      - run:
-          name: Create GKE cluster
-          command: |
-            source .circleci/create-cluster.sh && create-cluster
-            <<# parameters.wait >>
-            wait-for-cluster
-            <</ parameters.wait >>
+            source scripts/ci/gcp.sh
+            setup_gcp
 
   teardown-gke:
     steps:
       - run:
           name: Tear down GKE cluster
           command: |
-            ./scripts/ci/cleanup-deployment.sh || true
-
-            CLUSTER_NAME="${CLUSTER_NAME:-prevent-ci-${CIRCLE_JOB}}"
-            gcloud container clusters delete "$CLUSTER_NAME" --async
+            source scripts/ci/gke.sh
+            teardown_gke_cluster
 
           when: always
 
@@ -1172,34 +1176,11 @@ commands:
         default: e2-standard-4
 
     steps:
-      - setup-gcp
-
       - run:
-          name: Assign environment variables
+          name: Provision a GKE cluster
           command: |
-            CLUSTER_NAME="rox-ci-<< parameters.cluster-id >>-${CIRCLE_BUILD_NUM}"
-            cci-export CLUSTER_NAME "$CLUSTER_NAME"
-            echo "Assigned cluster name is $CLUSTER_NAME"
-
-            NUM_NODES="<< parameters.num-nodes >>"
-            cci-export NUM_NODES "$NUM_NODES"
-            echo "Number of nodes for cluster is $NUM_NODES"
-
-            MACHINE_TYPE="<< parameters.machine-type >>"
-            cci-export MACHINE_TYPE "$MACHINE_TYPE"
-            echo "Machine type is set as to $MACHINE_TYPE"
-
-            GKE_RELEASE_CHANNEL="stable"
-            if .circleci/pr_has_label.sh ci-gke-release-channel-rapid; then
-              GKE_RELEASE_CHANNEL="rapid"
-            elif .circleci/pr_has_label.sh ci-gke-release-channel-regular; then
-              GKE_RELEASE_CHANNEL="regular"
-            fi
-            cci-export GKE_RELEASE_CHANNEL "$GKE_RELEASE_CHANNEL"
-            echo "Using gke release channel: $GKE_RELEASE_CHANNEL"
-
-      - create-gke:
-          wait: false
+            source scripts/ci/gke.sh
+            provision_gke_cluster "<< parameters.cluster-id >>" "<< parameters.num-nodes >>" "<< parameters.machine-type >>"
 
       - run:
           name: Save cluster config
@@ -1262,7 +1243,8 @@ commands:
       - run:
           name: Waiting for << parameters.cluster-id >> cluster to stabilize
           command: |
-            source .circleci/create-cluster.sh && wait-for-cluster
+            source scripts/ci/gke.sh
+            wait_for_cluster
 
   remove-existing-stackrox-resources:
     steps:
@@ -1457,6 +1439,8 @@ commands:
             fi
 
       - collect-k8s-logs
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-1
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -1488,6 +1472,8 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: << parameters.orchestrator-flavor >>
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-2
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data:
@@ -1496,12 +1482,7 @@ commands:
       - *storeCentralBackupArtifact
       - *restoreDB
       - check-stackrox-logs
-      - store-k8s-logs
       - *storeQALogs
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
 
       - teardown-anchore:
           cluster-id: << parameters.cluster-id >>
@@ -1799,6 +1780,8 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: openshift
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-1
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -1829,12 +1812,13 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: openshift
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-2
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data:
           destination: central-data-part2
       - check-stackrox-logs
-      - store-k8s-logs
       - *storeQALogs
 
       - destroy-openshift-cluster:
@@ -2140,6 +2124,20 @@ commands:
             docker cp openshift-4-automation:/data $PWD/<< parameters.cluster-name >>
           no_output_timeout: 60m
 
+  openshift-ci-mimic-env:
+    description: "Simulate an OpenShift CI Environment"
+    steps:
+      - run:
+          name: Simulate an OpenShift CI Environment
+          command: |
+            # Create a fake OpenShift Env
+            cci-export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
+            cci-export BUILD_ID "$CIRCLE_BUILD_NUM"
+            cci-export JOB_NAME "$CIRCLE_JOB"
+            cci-export OPENSHIFT_CI true
+            # Clear Circle CI Env
+            while read var; do cci-export $var ""; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
+
 jobs:
   ###
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
@@ -2155,7 +2153,7 @@ jobs:
             # Cannot use .circleci/is-nightly-tag.sh because this job doesn't have access to git
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
               webhook_url="$NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK"
-            elif [[ "$CIRCLE_TAG" =~ ^[[:digit:]]+(\.[[:digit:]]+)*(-rc.[[:digit:]]+)?$ ]]; then
+            elif [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]]; then
               webhook_url="$RELEASE_WORKFLOW_NOTIFY_WEBHOOK"
             else
               exit 0
@@ -2170,11 +2168,13 @@ jobs:
   go-unit-tests:
     executor: custom
     resource_class: large
+    environment:
+      ROX_IMAGE_FLAVOR: development_build
     steps:
       - pre-go-unit-tests
       - run:
           name: Run Go unit tests
-          command: GOTAGS= make go-unit-tests
+          command: make go-unit-tests GOTAGS=''
       - post-go-unit-tests:
           path: go-unit-junit-reports
 
@@ -2182,12 +2182,12 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      ROX_IMAGE_FLAVOR: stackrox_io_release
+      ROX_IMAGE_FLAVOR: stackrox.io
     steps:
       - pre-go-unit-tests
       - run:
           name: Run Go unit tests with release tag
-          command: GOTAGS=release make go-unit-tests
+          command: make go-unit-tests GOTAGS=release
       - post-go-unit-tests:
           path: go-unit-release-junit-reports
 
@@ -2259,12 +2259,20 @@ jobs:
     - check-docs-step:
         only-on-release: false
 
+  # This serves as a reminder for the release manager to make sure Scanner and Collector versions are set to release.
+  check-scanner-and-collector-release-job:
+    executor: custom
+    resource_class: small
+    steps:
+    - checkout
+    - check-scanner-and-collector-release-step:
+        fail-on-rc: true
+
   check-generated-files-up-to-date:
     executor: custom
     resource_class: medium
     steps:
       - checkout
-
       - *restoreGoModCache
       - setup-go-build-env
       - run:
@@ -2273,7 +2281,8 @@ jobs:
           command: |
             git ls-files --others --exclude-standard >/tmp/untracked
             make proto-generated-srcs
-            make go-generated-srcs
+            # Print the timestamp along with each new line of output, so we can track how long each command takes
+            make go-generated-srcs 2>&1 | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
             git diff --exit-code HEAD
             { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
             if [[ -s /tmp/untracked-new ]]; then
@@ -2286,7 +2295,6 @@ jobs:
           name: Ensure that all TODO references to fixed tickets are gone
           command: |
             .circleci/check-pr-fixes.sh
-
       - run:
           name: Ensure that there are no TODO references that the developer has marked as blocking a merge
           command: |
@@ -2657,12 +2665,13 @@ jobs:
       - cleanup-clusters-on-fail
 
   pre-build-go-binaries:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
-      - GOPATH: /home/circleci/go
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.2.17
+      GOPATH: /home/circleci/go
+      KOPS_AUTOMATION_VERSION: 0.0.9
+      EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
       - checkout
@@ -2687,7 +2696,6 @@ jobs:
       - *restoreGoBuildBinaryCache
       - setup-dep-env:
           docker-login: true
-
       - run:
           name: Build the main Go binaries
           command: |
@@ -2730,6 +2738,8 @@ jobs:
       - checkout-with-submodules
       - check-docs-step:
           only-on-release: true
+      - check-scanner-and-collector-release-step:
+          fail-on-rc: false
 
       - setup_remote_docker:
           version: 20.10.7
@@ -2745,7 +2755,6 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - *setImageFlavor
 
       - run:
           name: Generate OSS notice
@@ -2835,6 +2844,7 @@ jobs:
           name: Comment on PR
           command: |
             wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
+            echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
             sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
 
             export TAG=$(make --quiet tag)
@@ -2880,7 +2890,7 @@ jobs:
             make RACE=true CIRCLE_TAG="$(make --quiet tag)" main-image
 
       - run:
-          name: Push new image
+          name: Push new main-image with '-rcd' suffix
           command: |
             TAG="$(make --quiet tag)"
 
@@ -2890,6 +2900,21 @@ jobs:
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             QUAY_REPO="rhacs-eng"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
+
+      - run:
+          # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly set CIRCLE_TAG value.
+          # This results in the release image flavor set. Release image flavor expects unified image tags for collector,
+          # scanner and scanner-db images. Here we ensure that such images with unified tags exist.
+          name: Retag scanner, scanner-db and collector images with '-rcd' suffix
+          command: |
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "quay.io/rhacs-eng/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "quay.io/rhacs-eng/collector:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
@@ -2917,7 +2942,6 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-      - *setImageFlavor
 
       - run:
           name: Build Operator Bundle image
@@ -3063,8 +3087,8 @@ jobs:
 
             QUAY_REPO="rhacs-eng"
             for img in scale grpc-server; do
-              docker push "docker.io/stackrox/${img}:${TAG}" | cat
-              docker push "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
+              ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/${img}:${TAG}" | cat
+              ./scripts/ci/push-as-manifest-list.sh "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
             done
 
       - cleanup-clusters-on-fail
@@ -3083,7 +3107,8 @@ jobs:
           machine-type: e2-standard-8
 
   provision-openshift-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-tests
@@ -3094,7 +3119,8 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   provision-openshift-crio-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-crio-tests
@@ -3162,7 +3188,8 @@ jobs:
           when: on_fail
 
   provision-kops-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
     steps:
@@ -3433,6 +3460,26 @@ jobs:
   #   e.g. 'gke-ui-e2e-tests' or 'openshift-crio-api-e2e-tests'
   ###
 
+  local-roxctl-e2e-tests:
+    executor:
+      name: custom
+      resource_class: medium
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - *restoreGoModCache
+      - *setupRoxctl
+      - run:
+          name: Run roxctl Bats tests
+          command: |
+            source tests/e2e/run.sh
+            # Bats tests from the 'local' folder can be run locally without any prerequisites
+            MAIN_TAG=$(make --quiet tag) \
+              run_roxctl_bats_tests "roxctl-test-output" "local"
+      - store-test-results-and-artifacts:
+          path: roxctl-test-output
+
   gke-api-nongroovy-tests:
     executor:
       name: custom
@@ -3506,16 +3553,12 @@ jobs:
             cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
 
       - run:
-          name: Setup prerequisites for Bats tests
-          command: |
-            source tests/e2e/run.sh
-            install_yq
-      - run:
           name: Run roxctl Bats tests
           command: |
             source tests/e2e/run.sh
+            # Bats tests from the 'cluster' folder require running central
             MAIN_TAG=$(make --quiet tag) \
-              run_roxctl_bats_tests "roxctl-test-output"
+              run_roxctl_bats_tests "roxctl-test-output" "cluster"
 
       - store-test-results-and-artifacts:
           path: roxctl-test-output
@@ -3732,12 +3775,8 @@ jobs:
           run-on-master: true
           run-on-tags: true
           changed-path: '^migrator/.*$'
-      - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-      - setup-dep-env:
-          docker-login: true
-      - *setupRoxctl
 
       - setup-gcp
       - attach-gke-cluster:
@@ -3746,7 +3785,6 @@ jobs:
       - run:
           name: Upgrade tests
           command: |
-            ROX_LICENSE_KEY="${LONGTERM_LICENSE}" \
             ./tests/upgrade/run.sh
 
       - ci-artifacts/store:
@@ -3824,10 +3862,6 @@ jobs:
             zip -r /tmp/pprof.zip /tmp/pprof
 
       - *storeProfilingResults
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
       - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
@@ -3859,7 +3893,7 @@ jobs:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
-      - COLLECTION_METHOD: ebpf
+      - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
@@ -3885,7 +3919,7 @@ jobs:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
-      - COLLECTION_METHOD: ebpf
+      - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
@@ -3922,6 +3956,7 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - checkout
@@ -4013,6 +4048,7 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - checkout
@@ -4121,6 +4157,8 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
 
     steps:
       - run-qa-tests:
@@ -4161,6 +4199,8 @@ jobs:
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
 
     steps:
       - run-qa-tests:
@@ -4367,9 +4407,9 @@ jobs:
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
             cd go/src/github.com/stackrox/rox
-            version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed -E 's/.*main:([^" ]+).*/\1/g')"
+            version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed -E 's/.*main.*:([^" ]+).*/\1/g')"
             version_from_roxctl="$(./bin/windows/roxctl.exe version)"
-            echo "Versions: from YAML ${version_from_yaml}; from roxctl ${version_from_roxctl}"
+            printf "Versions:\n  from YAML: %s\nfrom roxctl: %s\n" "${version_from_yaml}" "${version_from_roxctl}"
             test "${version_from_yaml}" = "${version_from_roxctl}"
 
   race-condition-tests:
@@ -4390,6 +4430,8 @@ jobs:
       ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
       IS_RACE_BUILD: "true"
       ROX_VULN_RISK_MANAGEMENT: "true"
+      ROX_VULN_REPORTING: "true"
+
 
     steps:
       - run-qa-tests:
@@ -4421,25 +4463,36 @@ jobs:
           name: Check out collector source code
           command: |
             mkdir -p /tmp/collector
-            cd /tmp/collector
-            git clone git@github.com:stackrox/collector.git .
+            git -C /tmp clone --depth=2 --no-single-branch git@github.com:stackrox/collector.git
 
       - run:
           name: Add current release version to RELEASED_VERSIONS file
           command: |
             collector_version="$(cat COLLECTOR_VERSION)"
-            cd /tmp/collector
-            git checkout master && git pull
+            cd /tmp/collector || exit
+            gitbot(){
+                git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" "${@}"
+            }
+            gitbot checkout master && gitbot pull
+
+            branch_name="release-${CIRCLE_TAG}/update-RELEASED_VERSIONS"
+            if gitbot fetch --quiet origin "${branch_name}"; then
+                gitbot checkout "${branch_name}"
+                gitbot pull --quiet --set-upstream origin "${branch_name}"
+            else
+                gitbot checkout -b "${branch_name}"
+                gitbot push --set-upstream origin "${branch_name}"
+            fi
 
             # We need to make sure the file ends with a newline so as not to corrupt it when appending.
             [[ ! -f RELEASED_VERSIONS ]] || sed -i'' -e '$a\' RELEASED_VERSIONS
-
             echo "${collector_version} ${CIRCLE_TAG}  # Rox release ${CIRCLE_TAG} by ${CIRCLE_USERNAME} at $(date)" \
-              >>RELEASED_VERSIONS
-            git add RELEASED_VERSIONS
-            git -c "user.name=roxbot" -c "user.email=roxbot@stackrox.com" commit \
-                -m "Automatic update of RELEASED_VERSIONS file for Rox release ${CIRCLE_TAG}"
-            git push
+                >>RELEASED_VERSIONS
+            gitbot add RELEASED_VERSIONS
+            gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${CIRCLE_TAG}"
+            gitbot push origin "${branch_name}"
+
+            .circleci/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS"
 
   push-release:
     executor: custom
@@ -4492,18 +4545,6 @@ jobs:
             ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}"        "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}"
             ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest"
             ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim"
-
-      - run:
-          name: Push image into quay.io repository backing registry.redhat.io
-          command: |
-            docker login -u "$RH_REGISTRY_QUAY_USERNAME" --password-stdin \<<<"$RH_REGISTRY_QUAY_PASSWORD" quay.io
-
-            MAIN_TAG="$(make --quiet tag)"
-            SCANNER_TAG="$(make --quiet scanner-tag)"
-            COLLECTOR_TAG="$(make --quiet collector-tag)"
-
-            ./scripts/redhat-registry-publish/retag.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
-            DRY_RUN=false ./scripts/redhat-registry-publish/push.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
 
       - run:
           name: Push collector & scanner images tagged with main-version to stackrox.io
@@ -4564,10 +4605,10 @@ jobs:
             central_services_chart_dir="$(mktemp -d)"
             secured_cluster_services_chart_dir="$(mktemp -d)"
             roxctl="./bin/$(uname | tr A-Z a-z)/roxctl"
-            "$roxctl" helm output central-services --output-dir "${central_services_chart_dir}/stackrox"
-            "$roxctl" helm output central-services --rhacs --output-dir "${central_services_chart_dir}/rhacs"
-            "$roxctl" helm output secured-cluster-services --output-dir "${secured_cluster_services_chart_dir}/stackrox"
-            "$roxctl" helm output secured-cluster-services --rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
+            "$roxctl" helm output central-services --image-defaults=stackrox.io --output-dir "${central_services_chart_dir}/stackrox"
+            "$roxctl" helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
+            "$roxctl" helm output secured-cluster-services --image-defaults=stackrox.io --output-dir "${secured_cluster_services_chart_dir}/stackrox"
+            "$roxctl" helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
             .circleci/publish-helm-charts "$(make --quiet tag)" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
 
   scan-images-in-quay:
@@ -4731,6 +4772,8 @@ jobs:
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
 
     steps:
       - run-qa-tests:
@@ -4774,6 +4817,7 @@ jobs:
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - run-qa-tests:
@@ -4800,6 +4844,18 @@ jobs:
           destroy-cluster:
             - nop-steps-stanza
       - destroy-aro-cluster
+
+  openshift-ci-upgrade-test:
+    executor: custom
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - openshift-ci-mimic-env
+      - run:
+          name: Run the OpenShift CI upgrade test hook
+          command: |
+            .openshift-ci/upgrade_test_under_gke.py
 
 workflows:
   version: 2
@@ -4867,6 +4923,10 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-nongroovy-tests
+      - local-roxctl-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - pre-build-cli
       - provision-gke-ui-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-ui-e2e-tests:
@@ -5016,6 +5076,10 @@ workflows:
           <<: *runOnlyOnReleaseCandidateBuilds
           context:
           - custom-executor-pull
+      - check-scanner-and-collector-release-job:
+          <<: *runOnlyOnReleaseCandidateBuilds
+          context:
+          - custom-executor-pull
 
       - provision-openshift-aro-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5043,7 +5107,6 @@ workflows:
           context:
             - custom-executor-pull
             - docker-io-and-stackrox-io-push
-            - quay-rh-registry-push
           requires:
             - build
             - go-unit-tests
@@ -5057,6 +5120,15 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
+          requires:
+            - build
+
+      - openshift-ci-upgrade-test:
+          context:
+          - quay-rhacs-eng-readonly
+          filters:
+            branches:
+              only: /.*RS-454.*/
           requires:
             - build
 

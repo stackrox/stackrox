@@ -1,29 +1,29 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
-    Button,
-    ButtonVariant,
     Divider,
     DropdownItem,
-    InputGroup,
     Pagination,
-    TextInput,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { SearchIcon } from '@patternfly/react-icons';
 
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/usePermissions';
+import useAuthStatus from 'hooks/useAuthStatus';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
 import FalsePositiveCVEActionsColumn from './FalsePositiveCVEActionsColumns';
+import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
+import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
+import CVESummaryLink from '../CVESummaryLink';
 
 export type FalsePositiveCVEsTableProps = {
     rows: Vulnerability[];
@@ -54,6 +54,8 @@ function FalsePositiveCVEsTable({
     const { undoVulnRequests } = useRiskAcceptance({
         requestIDs: vulnsToBeAssessed?.requestIDs || [],
     });
+    const { hasReadWriteAccess } = usePermissions();
+    const { currentUser } = useAuthStatus();
 
     function cancelAssessment() {
         setVulnsToBeAssessed(null);
@@ -65,37 +67,27 @@ function FalsePositiveCVEsTable({
         updateTable();
     }
 
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const selectedIds = getSelectedIds();
-    const vulnRequestIds = rows
-        .filter((row) => selectedIds.includes(row.id))
+    const selectedFalsePositivesToReobserve = rows
+        .filter((row) => {
+            return (
+                selectedIds.includes(row.id) &&
+                (canApproveRequests ||
+                    (canCreateRequests &&
+                        row.vulnerabilityRequest.requestor.id === currentUser.userId))
+            );
+        })
         .map((row) => {
-            // @TODO: Once backend adds resolver for vulnRequests, access that and return the request id
-            // This will fail when sending the API request for now
-            return row.id;
+            return row.vulnerabilityRequest.id;
         });
 
     return (
         <>
             <Toolbar id="toolbar">
                 <ToolbarContent>
-                    <ToolbarItem>
-                        {/* @TODO: This is just a place holder. Put the correct search filter here */}
-                        <InputGroup>
-                            <TextInput
-                                name="textInput1"
-                                id="textInput1"
-                                type="search"
-                                aria-label="search input example"
-                            />
-                            <Button
-                                variant={ButtonVariant.control}
-                                aria-label="search button for search input"
-                            >
-                                <SearchIcon />
-                            </Button>
-                        </InputGroup>
-                    </ToolbarItem>
-                    <ToolbarItem variant="separator" />
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
@@ -105,12 +97,12 @@ function FalsePositiveCVEsTable({
                                     setVulnsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'UNDO',
-                                        requestIDs: vulnRequestIds,
+                                        requestIDs: selectedFalsePositivesToReobserve,
                                     })
                                 }
-                                isDisabled={vulnRequestIds.length === 0}
+                                isDisabled={selectedFalsePositivesToReobserve.length === 0}
                             >
-                                Reobserve CVEs ({vulnRequestIds.length})
+                                Reobserve CVEs ({selectedFalsePositivesToReobserve.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -136,16 +128,21 @@ function FalsePositiveCVEsTable({
                             }}
                         />
                         <Th>CVE</Th>
+                        <Th>Fixable</Th>
                         <Th>Severity</Th>
+                        <Th modifier="fitContent">Scope</Th>
                         <Th>Affected Components</Th>
                         <Th>Comments</Th>
-                        <Th>Expiration</Th>
-                        <Th>Apply to</Th>
                         <Th>Approver</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
+                        const canReobserveCVE =
+                            canApproveRequests ||
+                            (canCreateRequests &&
+                                row.vulnerabilityRequest.requestor.id === currentUser.userId);
+
                         return (
                             <Tr key={row.cve}>
                                 <Td
@@ -155,21 +152,37 @@ function FalsePositiveCVEsTable({
                                         isSelected: selected[rowIndex],
                                     }}
                                 />
-                                <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="CVE">
+                                    <CVESummaryLink cve={row.cve} />
+                                </Td>
+                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
+                                </Td>
+                                <Td dataLabel="Scope">
+                                    <VulnerabilityRequestScope
+                                        scope={row.vulnerabilityRequest.scope}
+                                    />
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
-                                <Td dataLabel="Comments">-</Td>
-                                <Td dataLabel="Expiration">-</Td>
-                                <Td dataLabel="Apply to">-</Td>
-                                <Td dataLabel="Approver">-</Td>
+                                <Td dataLabel="Comments">
+                                    <RequestCommentsButton
+                                        comments={row.vulnerabilityRequest.comments}
+                                        cve={row.vulnerabilityRequest.cves.ids[0]}
+                                    />
+                                </Td>
+                                <Td dataLabel="Approver">
+                                    {row.vulnerabilityRequest.approvers
+                                        .map((user) => user.name)
+                                        .join(',')}
+                                </Td>
                                 <Td className="pf-u-text-align-right">
                                     <FalsePositiveCVEActionsColumn
                                         row={row}
                                         setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                        canReobserveCVE={canReobserveCVE}
                                     />
                                 </Td>
                             </Tr>

@@ -47,7 +47,7 @@ type zipHandler struct {
 }
 
 func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions, certs sensor.Certs) ([]*zip.File, error) {
-	imageFlavor := defaults.GetImageFlavorByBuildType()
+	imageFlavor := defaults.GetImageFlavorFromEnv()
 	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, &imageFlavor, renderOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get required cluster information")

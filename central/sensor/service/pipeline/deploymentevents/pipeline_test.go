@@ -62,6 +62,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
+	suite.envIsolator.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 

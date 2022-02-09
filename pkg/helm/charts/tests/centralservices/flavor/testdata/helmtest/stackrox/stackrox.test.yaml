@@ -1,0 +1,6 @@
+tests:
+- name: validate image defaults
+  expect: |
+    assertCentral("stackrox.io/main:3.0.99.0")
+    assertScanner("stackrox.io/scanner:3.0.99.0")
+    assertScannerDB("stackrox.io/scanner-db:3.0.99.0")

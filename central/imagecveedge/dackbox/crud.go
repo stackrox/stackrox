@@ -24,13 +24,13 @@ var (
 	// Upserter writes storage.ImageCVEEdges directly to the store.
 	Upserter = crud.NewUpserter(
 		crud.WithKeyFunction(crud.PrefixKey(Bucket, keyFunc)),
-		crud.AddToIndexIfFeatureEnabled(features.VulnRiskManagement),
+		crud.AddToIndexIfAnyFeaturesEnabled([]features.FeatureFlag{features.VulnRiskManagement, features.VulnReporting}),
 	)
 
 	// Deleter deletes the edges from the store.
 	Deleter = crud.NewDeleter(
 		crud.Shared(),
-		crud.RemoveFromIndexIfFeatureEnabled(features.VulnRiskManagement),
+		crud.RemoveFromIndexIfAnyFeatureEnabled([]features.FeatureFlag{features.VulnRiskManagement, features.VulnReporting}),
 	)
 )
 

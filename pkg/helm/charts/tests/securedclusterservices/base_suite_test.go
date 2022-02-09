@@ -7,8 +7,11 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -95,10 +98,19 @@ enableOpenShiftMonitoring: true
 
 type baseSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
 }
 
 func TestBase(t *testing.T) {
 	suite.Run(t, new(baseSuite))
+}
+
+func (s *baseSuite) SetupTest() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+}
+
+func (s *baseSuite) TeardownTest() {
+	s.envIsolator.RestoreAll()
 }
 
 func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...string) (*chart.Chart, map[string]string) {
@@ -159,6 +171,10 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 func (s *baseSuite) TestAllGeneratableExplicit() {
 	// Ensures that allValuesExplicit causes all templates to be rendered non-empty, including the one
 	// containing generated values.
+	// TODO(ROX-8793): The tests will be enabled in a follow-up ticket because the current implementation breaks helm chart rendering.
+	if !buildinfo.ReleaseBuild {
+		s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
+	}
 
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 	s.Require().NotEmpty(rendered)

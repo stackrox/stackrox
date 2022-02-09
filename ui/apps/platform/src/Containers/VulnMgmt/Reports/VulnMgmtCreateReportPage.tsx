@@ -4,6 +4,7 @@ import {
     BreadcrumbItem,
     Divider,
     PageSection,
+    PageSectionVariants,
     Text,
     TextContent,
     Title,
@@ -18,7 +19,7 @@ import { emptyReportValues } from './VulnMgmtReport.utils';
 function VulnMgmtCreateReportPage(): ReactElement {
     return (
         <>
-            <PageSection variant="light">
+            <PageSection variant={PageSectionVariants.light}>
                 <PageTitle title="Vulnerability Management - Create report" />
                 <Breadcrumb className="pf-u-mb-md">
                     <BreadcrumbItemLink to={vulnManagementReportsPath}>

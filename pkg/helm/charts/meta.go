@@ -4,86 +4,83 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/version"
 )
 
-// MetaValuesKey exists exclusively to protect MetaValues from losing typing and becoming exchangeable with
-// map[string]interface{}. By doing this we get the opportunity to more reliably trace MetaValues usage throughout the
-// codebase.
-// TODO(RS-379): Switch MetaValues to be struct and get rid of MetaValuesKey.
-type MetaValuesKey string
-
 // MetaValues are the values to be passed to the StackRox chart templates.
-type MetaValues map[MetaValuesKey]interface{}
+type MetaValues struct {
+	Versions                         version.Versions
+	MainRegistry                     string
+	ImageRemote                      string
+	CollectorRegistry                string
+	CollectorFullImageRemote         string
+	CollectorSlimImageRemote         string
+	CollectorFullImageTag            string
+	CollectorSlimImageTag            string
+	ScannerImageRemote               string
+	ScannerSlimImageRemote           string
+	ScannerImageTag                  string
+	ScannerDBImageRemote             string
+	ScannerDBSlimImageRemote         string
+	ScannerDBImageTag                string
+	RenderMode                       string
+	ChartRepo                        defaults.ChartRepo
+	ImagePullSecrets                 defaults.ImagePullSecrets
+	Operator                         bool
+	FeatureFlags                     map[string]interface{}
+	CertsOnly                        bool
+	ClusterType                      string
+	ClusterName                      string
+	KubectlOutput                    bool
+	ImageTag                         string
+	PublicEndpoint                   string
+	AdvertisedEndpoint               string
+	CollectionMethod                 string
+	TolerationsEnabled               bool
+	CreateUpgraderSA                 bool
+	EnvVars                          map[string]string
+	K8sCommand                       string
+	K8sConfig                        map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
+	OfflineMode                      bool
+	SlimCollector                    bool
+	AdmissionController              bool
+	AdmissionControlListenOnUpdates  bool
+	AdmissionControlListenOnEvents   bool
+	DisableBypass                    bool
+	TimeoutSeconds                   int32
+	ScanInline                       bool
+	AdmissionControllerEnabled       bool
+	AdmissionControlEnforceOnUpdates bool
+}
 
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
-func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) MetaValues {
+func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 	metaValues := MetaValues{
-		"Versions":                 imageFlavor.Versions,
-		"MainRegistry":             imageFlavor.MainRegistry,
-		"ImageRemote":              imageFlavor.MainImageName,
-		"CollectorRegistry":        imageFlavor.CollectorRegistry,
-		"CollectorFullImageRemote": imageFlavor.CollectorImageName,
-		"CollectorSlimImageRemote": imageFlavor.CollectorSlimImageName,
-		"CollectorFullImageTag":    imageFlavor.CollectorImageTag,
-		"CollectorSlimImageTag":    imageFlavor.CollectorSlimImageTag,
-		"RenderMode":               "",
-		"ChartRepo":                imageFlavor.ChartRepo,
-		"ImagePullSecrets":         imageFlavor.ImagePullSecrets,
-		"Operator":                 false,
+		Versions:                 imageFlavor.Versions,
+		MainRegistry:             imageFlavor.MainRegistry,
+		ImageRemote:              imageFlavor.MainImageName,
+		ImageTag:                 imageFlavor.MainImageTag,
+		CollectorRegistry:        imageFlavor.CollectorRegistry,
+		CollectorFullImageRemote: imageFlavor.CollectorImageName,
+		CollectorSlimImageRemote: imageFlavor.CollectorSlimImageName,
+		CollectorFullImageTag:    imageFlavor.CollectorImageTag,
+		CollectorSlimImageTag:    imageFlavor.CollectorSlimImageTag,
+		ScannerImageRemote:       imageFlavor.ScannerImageName,
+		ScannerSlimImageRemote:   imageFlavor.ScannerSlimImageName,
+		ScannerImageTag:          imageFlavor.ScannerImageTag,
+		ScannerDBImageRemote:     imageFlavor.ScannerDBImageName,
+		ScannerDBSlimImageRemote: imageFlavor.ScannerDBSlimImageName,
+		ScannerDBImageTag:        imageFlavor.ScannerDBImageTag,
+		RenderMode:               "",
+		ChartRepo:                imageFlavor.ChartRepo,
+		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
+		Operator:                 false,
 	}
 
 	if !buildinfo.ReleaseBuild {
-		metaValues["FeatureFlags"] = getFeatureFlags()
+		metaValues.FeatureFlags = getFeatureFlags()
 	}
-
-	return metaValues
-}
-
-// RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
-func RHACSMetaValues() MetaValues {
-	// TODO: remove once RHACS flavor is added to `images` package
-	flavor := defaults.GetImageFlavorByBuildType()
-	metaValues := MetaValues{
-		"Versions": flavor.Versions,
-		// TODO(RS-380): these registries will change once we have the RHACS flavor. For now they will remain hardcoded here.
-		"MainRegistry":             "registry.redhat.io/rh-acs",
-		"ImageRemote":              "main",
-		"CollectorRegistry":        "registry.redhat.io/rh-acs",
-		"CollectorFullImageRemote": "collector",
-		"CollectorSlimImageRemote": "collector",
-		"CollectorFullImageTag":    flavor.CollectorImageTag,
-		"CollectorSlimImageTag":    flavor.CollectorSlimImageTag,
-		"RenderMode":               "",
-		"ChartRepo": defaults.ChartRepo{
-			URL: "http://mirror.openshift.com/pub/rhacs/charts",
-		},
-		"ImagePullSecrets": defaults.ImagePullSecrets{
-			AllowNone: true,
-		},
-		"Operator": false,
-	}
-
-	// TODO(RS-380): move or remove this block - this override is done only for the operator
-	if !buildinfo.ReleaseBuild {
-		metaValues["MainRegistry"] = mainRegistryOverride.Setting()
-		metaValues["CollectorRegistry"] = collectorRegistryOverride.Setting()
-		metaValues["FeatureFlags"] = getFeatureFlags()
-	}
-
-	return metaValues
-}
-
-// ToRaw converts MetaValues to map[string]interface{} for use in Go templating.
-// Go templating does not like our MetaValuesKey and prefers to have string as a key in the map.
-// Unfortunately, an attempt to cast MetaValues to map[string]interface{} does not compile, therefore we need to copy
-// the map.
-// TODO(RS-379): Switch MetaVals to struct and get rid of ToRaw function.
-func (m MetaValues) ToRaw() map[string]interface{} {
-	result := make(map[string]interface{}, len(m))
-	for k, v := range m {
-		result[string(k)] = v
-	}
-	return result
+	return &metaValues
 }
 
 func getFeatureFlags() map[string]interface{} {

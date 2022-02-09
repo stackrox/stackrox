@@ -11,7 +11,7 @@ import (
 )
 
 // DataStore is the interface for accessing stored compliance data
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	QueryControlResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceControlResult, error)
 

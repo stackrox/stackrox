@@ -6,12 +6,18 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	buildTestutils "github.com/stackrox/rox/pkg/buildinfo/testutils"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -34,17 +40,19 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	flavor := flavorUtils.MakeImageFlavorForTest(t)
+	testutils.SetExampleVersion(t)
+	buildTestutils.SetBuildTimestamp(t, time.Now())
+
+	flavorName := defaults.ImageFlavorNameDevelopmentBuild
+	if buildinfo.ReleaseBuild {
+		flavorName = defaults.ImageFlavorNameStackRoxIORelease
+	}
 	config := renderer.Config{
 		Version:     version.GetMainVersion(),
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &renderer.K8sConfig{
-			AppName: "someApp",
-			CommonConfig: renderer.CommonConfig{
-				MainImage:      flavor.MainImage(),
-				ScannerImage:   flavor.ScannerImage(),
-				ScannerDBImage: flavor.ScannerDBImage(),
-			},
+			AppName:          "someApp",
+			ImageFlavorName:  flavorName,
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			OfflineMode:      false,
 		},
@@ -76,13 +84,15 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 		},
 	}
 
+	io, _, _, _ := environment.TestIO()
+	logger := environment.NewLogger(io, printer.DefaultColorPrinter())
+
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
 			// Note: This test is not for parallel run.
 			config.OutputDir = filepath.Join(tmpDir, testCase.testDir)
 			config.BackupBundle = testCase.backupBundle
-
-			require.NoError(t, OutputZip(config))
+			require.NoError(t, OutputZip(logger, config))
 
 			// Load values-private.yaml file
 			values, err := chartutil.ReadValuesFile(filepath.Join(config.OutputDir, "values-private.yaml"))

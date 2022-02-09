@@ -18,6 +18,7 @@ import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaFieldValue from './PolicyCriteriaFieldValue';
 import AndOrOperatorField from './AndOrOperatorField';
+import './PolicyGroupCard.css';
 
 type PolicyGroupCardProps = {
     descriptor: Descriptor;
@@ -68,17 +69,22 @@ function PolicyGroupCard({
 
     const headerText = group.negate
         ? descriptor.negatedName
-        : descriptor?.longName || descriptor?.shortName || descriptor?.name;
+        : descriptor.longName ?? descriptor.shortName ?? descriptor.name;
 
     return (
         <>
             <Card isFlat isCompact>
                 <CardHeader className="pf-u-p-0">
                     <CardTitle className="pf-u-pl-md">
-                        <Flex alignItems={{ default: 'alignItemsCenter' }}>{headerText}:</Flex>
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            className="pf-u-py-sm pf-u-text-wrap-on-sm"
+                        >
+                            {headerText}:
+                        </Flex>
                     </CardTitle>
-                    <CardActions hasNoOffset>
-                        {descriptor?.negatedName && (
+                    <CardActions hasNoOffset className="policy-group-card">
+                        {descriptor.negatedName && (
                             <>
                                 <Divider component="div" isVertical />
                                 <Checkbox
@@ -86,17 +92,22 @@ function PolicyGroupCard({
                                     isChecked={group.negate}
                                     onChange={handleNegate}
                                     id={`${group.fieldName}-negate`}
+                                    isDisabled={readOnly}
                                 />
                             </>
                         )}
-                        <Divider isVertical component="div" />
-                        <Button
-                            variant="plain"
-                            className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
-                            onClick={onDeleteGroup}
-                        >
-                            <TrashIcon />
-                        </Button>
+                        {!readOnly && (
+                            <>
+                                <Divider isVertical component="div" />
+                                <Button
+                                    variant="plain"
+                                    className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
+                                    onClick={onDeleteGroup}
+                                >
+                                    <TrashIcon />
+                                </Button>
+                            </>
+                        )}
                     </CardActions>
                 </CardHeader>
                 <Divider component="div" />
@@ -115,6 +126,7 @@ function PolicyGroupCard({
                                         length={group.values.length}
                                         descriptor={descriptor}
                                         handleRemoveValue={handleRemoveValue(valueIndex)}
+                                        readOnly={readOnly}
                                     />
                                     {/* only show and/or operator if not at end of array */}
                                     {valueIndex !== group.values.length - 1 && (
@@ -130,7 +142,7 @@ function PolicyGroupCard({
                         );
                     })}
                     {/* this is because there can't be multiple boolean values */}
-                    {!readOnly && descriptor?.type !== 'radioGroup' && (
+                    {!readOnly && descriptor.type !== 'radioGroup' && (
                         <Flex
                             direction={{ default: 'column' }}
                             alignItems={{ default: 'alignItemsCenter' }}
@@ -147,13 +159,15 @@ function PolicyGroupCard({
                     )}
                 </CardBody>
             </Card>
-            <Flex
-                direction={{ default: 'row' }}
-                className="pf-u-my-sm"
-                justifyContent={{ default: 'justifyContentCenter' }}
-            >
-                — and —
-            </Flex>
+            {(policyGroups.length - 1 !== groupIndex || !readOnly) && (
+                <Flex
+                    direction={{ default: 'row' }}
+                    className="pf-u-my-sm"
+                    justifyContent={{ default: 'justifyContentCenter' }}
+                >
+                    — and —
+                </Flex>
+            )}
         </>
     );
 }

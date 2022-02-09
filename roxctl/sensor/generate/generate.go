@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -61,6 +62,13 @@ var (
 	slimCollectorP *bool
 )
 
+func isLegacyValidationError(err error) bool {
+	return err != nil &&
+		status.Code(err) == codes.Internal &&
+		cluster.MainImage == "" &&
+		status.Convert(err).Message() == "Cluster Validation error: invalid main image '': invalid reference format"
+}
+
 func fullClusterCreation(timeout time.Duration) error {
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
@@ -82,9 +90,26 @@ func fullClusterCreation(timeout time.Duration) error {
 	}
 
 	id, err := createCluster(ctx, service)
+
+	// Backward compatibility: if the central hasn't accepted the provided cluster
+	// then fill default values as RHACS.
+	if isLegacyValidationError(err) {
+		var flavor defaults.ImageFlavor
+		if buildinfo.ReleaseBuild {
+			flavor = defaults.RHACSReleaseImageFlavor()
+		} else {
+			flavor = defaults.DevelopmentBuildImageFlavor()
+		}
+
+		fmt.Fprintf(os.Stderr, `WARNING: Running older version of central.
+ Can't rely on central configuration to determine default values. Using %s as main registry.`, flavor.MainRegistry)
+
+		cluster.MainImage = flavor.MainImageNoTag()
+		id, err = createCluster(ctx, service)
+	}
+
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
 	// then return an error
-
 	if err != nil {
 		if status.Code(err) == codes.AlreadyExists && continueIfExists {
 			// Need to get the clusters and get the one with the name
@@ -163,15 +188,12 @@ func Command() *cobra.Command {
 		},
 	}
 
-	// TODO(RS-396): set empty defaults on `sensor generate`. Defaults should not depend on env variable.
-	flavor := defaults.GetImageFlavorByBuildType()
-
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
 	c.PersistentFlags().BoolVar(&continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")
 	c.PersistentFlags().StringVar(&cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&cluster.MainImage, "main-image-repository", flavor.MainImageNoTag(), "image repository sensor should be deployed with")
-	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (leave blank to use default)")
+	c.PersistentFlags().StringVar(&cluster.MainImage, "main-image-repository", "", "image repository sensor should be deployed with (if unset, a default will be used)")
+	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, a default will be derived according to the effective --main-image-repository value)")
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
 

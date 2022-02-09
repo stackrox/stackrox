@@ -1,5 +1,5 @@
 plugins {
-    id "com.google.protobuf" version "0.8.17"
+    id "com.google.protobuf" version "0.8.18"
     id "groovy"
     id "codenarc"
 }
@@ -149,7 +149,9 @@ test {
     outputs.upToDateWhen { false }
 }
 
-task checkSensorCollectorHealth(dependsOn: 'classes', type: JavaExec) {
-    main = 'checkSensorCollectorHealth'
-    classpath = sourceSets.main.runtimeClasspath
+task runSampleScript(dependsOn: 'classes', type: JavaExec) {
+    if (project.hasProperty("runScript")) {
+        main = "sampleScripts." + project.getProperty("runScript")
+        classpath = sourceSets.main.runtimeClasspath
+    }
 }

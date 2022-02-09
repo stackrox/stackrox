@@ -28,11 +28,15 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -49,6 +53,7 @@ func TestClusterDataStore(t *testing.T) {
 type ClusterDataStoreTestSuite struct {
 	suite.Suite
 
+	ei          *envisolator.EnvIsolator
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
@@ -72,6 +77,8 @@ type ClusterDataStoreTestSuite struct {
 	mockProvider        *graphMocks.MockProvider
 	networkBaselineMgr  *networkBaselineMocks.MockManager
 }
+
+var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
@@ -130,13 +137,18 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.networkBaselineMgr,
 	)
 	suite.NoError(err)
+	suite.ei = envisolator.NewEnvIsolator(suite.T())
+	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+	testbuildinfo.SetForTest(suite.T())
+	testutils.SetExampleVersion(suite.T())
 }
 
 func (suite *ClusterDataStoreTestSuite) TearDownTest() {
+	suite.ei.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
-//// Test that when the cluster we try to remove does not exist, we return an error.
+// Test that when the cluster we try to remove does not exist, we return an error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	// Return false for the cluster not existing.
 	suite.clusters.EXPECT().Get(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
@@ -1289,4 +1301,150 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 		})
 	}
 
+}
+
+func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
+
+	suite.Run("Error on nil cluster", func() {
+		suite.Error(addDefaults(nil))
+	})
+
+	flavor := defaults.GetImageFlavorFromEnv()
+	suite.Run("Some default values are set for uninialized fields", func() {
+		cluster := &storage.Cluster{}
+		suite.NoError(addDefaults(cluster))
+		suite.Equal(flavor.MainImageNoTag(), cluster.GetMainImage())
+		suite.Empty(cluster.GetCollectorImage()) // must not be set
+		suite.Equal(centralEndpoint, cluster.GetCentralApiEndpoint())
+		suite.True(cluster.GetRuntimeSupport())
+		suite.Equal(storage.CollectionMethod_KERNEL_MODULE, cluster.GetCollectionMethod())
+		if tc := cluster.GetTolerationsConfig(); suite.NotNil(tc) {
+			suite.False(tc.GetDisabled())
+		}
+		if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
+			suite.True(dc.GetDisableAuditLogs())
+			if acc := dc.GetAdmissionControllerConfig(); suite.NotNil(acc) {
+				suite.False(acc.GetEnabled())
+				suite.Equal(int32(defaultAdmissionControllerTimeout),
+					acc.GetTimeoutSeconds())
+			}
+		}
+	})
+
+	suite.Run("Provided values are either not overridden or properly updated", func() {
+		cluster := &storage.Cluster{
+			Id:                         fakeClusterID,
+			Name:                       "someName",
+			Type:                       storage.ClusterType_KUBERNETES_CLUSTER,
+			Labels:                     map[string]string{"key": "value"},
+			MainImage:                  "somevalue",
+			CollectorImage:             "someOtherValue",
+			CentralApiEndpoint:         "someEndpoint",
+			RuntimeSupport:             true,
+			CollectionMethod:           storage.CollectionMethod_EBPF,
+			AdmissionController:        true,
+			AdmissionControllerUpdates: true,
+			AdmissionControllerEvents:  true,
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+					Enabled:        true,
+					TimeoutSeconds: 73,
+				},
+				RegistryOverride: "registryOverride",
+				DisableAuditLogs: false,
+			},
+			TolerationsConfig: &storage.TolerationsConfig{
+				Disabled: true,
+			},
+			Priority:      10,
+			SlimCollector: true,
+			HelmConfig:    &storage.CompleteClusterConfig{},
+			InitBundleId:  "someId",
+			ManagedBy:     storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR,
+		}
+		suite.NoError(addDefaults(cluster))
+
+		suite.Equal(fakeClusterID, cluster.GetId())
+		suite.Equal("someName", cluster.GetName())
+		suite.Equal(storage.ClusterType_KUBERNETES_CLUSTER, cluster.GetType())
+		suite.EqualValues(map[string]string{"key": "value"}, cluster.GetLabels())
+
+		suite.Equal("somevalue", cluster.GetMainImage())
+		suite.Equal("someOtherValue", cluster.GetCollectorImage())
+		suite.Equal("someEndpoint", cluster.GetCentralApiEndpoint())
+		suite.True(cluster.GetRuntimeSupport())
+		suite.Equal(storage.CollectionMethod_EBPF, cluster.GetCollectionMethod())
+		suite.True(cluster.GetAdmissionController())
+		suite.True(cluster.GetAdmissionControllerUpdates())
+		suite.True(cluster.GetAdmissionControllerEvents())
+		if dc := cluster.GetDynamicConfig(); suite.NotNil(dc) {
+			suite.Equal("registryOverride", dc.GetRegistryOverride())
+			suite.True(dc.GetDisableAuditLogs()) // True for KUBERNETES_CLUSTER
+			if acc := dc.GetAdmissionControllerConfig(); suite.NotNil(acc) {
+				suite.True(acc.GetEnabled())
+				suite.Equal(int32(73), acc.GetTimeoutSeconds())
+			}
+		}
+		if tc := cluster.GetTolerationsConfig(); suite.NotNil(tc) {
+			suite.True(tc.GetDisabled())
+		}
+		suite.Equal(int64(10), cluster.GetPriority())
+		suite.True(cluster.SlimCollector)
+		suite.NotNil(cluster.GetHelmConfig())
+		suite.Equal("someId", cluster.GetInitBundleId())
+		suite.Equal(storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR, cluster.GetManagedBy())
+	})
+
+	suite.Run("Audit logs", func() {
+		for name, testCase := range map[string]struct {
+			cluster              *storage.Cluster
+			expectedDisabledLogs bool
+		}{
+			"Kubernetes cluster":  {&storage.Cluster{Type: storage.ClusterType_KUBERNETES_CLUSTER}, true},
+			"Openshift 3 cluster": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT_CLUSTER}, true},
+			"Openshift 4 cluster": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT4_CLUSTER}, false},
+			"Openshift 4 cluster with disabled logs": {&storage.Cluster{Type: storage.ClusterType_OPENSHIFT4_CLUSTER,
+				DynamicConfig: &storage.DynamicClusterConfig{DisableAuditLogs: true}}, true},
+		} {
+			suite.Run(name, func() {
+				suite.NoError(addDefaults(testCase.cluster))
+				if dc := testCase.cluster.GetDynamicConfig(); suite.NotNil(dc) {
+					suite.Equal(testCase.expectedDisabledLogs, dc.GetDisableAuditLogs())
+				}
+			})
+		}
+	})
+
+	suite.Run("Collector image not set when only main image is provided", func() {
+		cluster := &storage.Cluster{
+			MainImage: "somevalue",
+		}
+		suite.NoError(addDefaults(cluster))
+		suite.Empty(cluster.GetCollectorImage())
+	})
+
+	suite.Run("Error for bad timeout", func() {
+		cluster := &storage.Cluster{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+					TimeoutSeconds: -1,
+				}},
+		}
+		suite.Error(addDefaults(cluster))
+	})
+
+	for method, runtimeSupport := range map[storage.CollectionMethod]bool{
+		storage.CollectionMethod_UNSET_COLLECTION: true,
+		storage.CollectionMethod_NO_COLLECTION:    false,
+		storage.CollectionMethod_KERNEL_MODULE:    true,
+		storage.CollectionMethod_EBPF:             true,
+	} {
+		suite.Run(fmt.Sprintf("Runtime support for %s collection method", method), func() {
+			cluster := &storage.Cluster{
+				CollectionMethod: method,
+			}
+			suite.NoError(addDefaults(cluster))
+			suite.Equal(runtimeSupport, cluster.GetRuntimeSupport())
+		})
+	}
 }

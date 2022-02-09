@@ -87,6 +87,16 @@ message GetWatchedImagesResponse {
     repeated storage.WatchedImage watched_images = 1;
 }
 
+// ScanImageInternalResponseDetails contains proto messages that are added to details
+// when returning errors from the ScanImageInternal endpoint.
+message ScanImageInternalResponseDetails {
+    // TooManyParallelScans tells sensor that there are too many parallel scans, and that it will need to
+    // retry later.
+    message TooManyParallelScans {
+    }
+}
+
+
 // ImageService APIs manages image metadata.
 service ImageService {
 

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -20,47 +20,53 @@ var (
 	levelList = strings.Join(levels, " | ")
 )
 
+type centralDebugLogLevelCommand struct {
+	// Properties that are bound to cobra flags.
+	level   string
+	modules []string
+
+	// Properties that are injected or constructed.
+	env     environment.Environment
+	timeout time.Duration
+}
+
 // Command defines the debug command tree
-func Command() *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "debug",
 	}
-	c.AddCommand(LogLevelCommand())
-	c.AddCommand(DumpCommand())
-	c.AddCommand(DownloadDiagnosticsCommand())
-	c.AddCommand(AuthzTraceCommand())
-
-	flags.AddTimeout(c)
+	c.AddCommand(logLevelCommand(cliEnvironment))
+	c.AddCommand(dumpCommand(cliEnvironment))
+	c.AddCommand(downloadDiagnosticsCommand(cliEnvironment))
+	c.AddCommand(authzTraceCommand(cliEnvironment))
 	return c
 }
 
 // LogLevelCommand allows getting and setting the Log Level for StackRox services.
-func LogLevelCommand() *cobra.Command {
-	var (
-		level   string
-		modules []string
-	)
+func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
+	levelCmd := &centralDebugLogLevelCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
 		Use:   "log",
 		Short: `"log" to get current log level; "log --level=<level>" to set log level`,
 		Long:  `"log" to get current log level; "log --level=<level>" to set log level`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			timeout := flags.Timeout(c)
-			if level == "" {
-				return getLogLevel(modules, timeout)
+			levelCmd.timeout = flags.Timeout(c)
+			if levelCmd.level == "" {
+				return levelCmd.getLogLevel()
 			}
-			return setLogLevel(level, modules, timeout)
+			return levelCmd.setLogLevel()
 		}),
 	}
-	c.Flags().StringVarP(&level, "level", "l", "",
+	c.Flags().StringVarP(&levelCmd.level, "level", "l", "",
 		fmt.Sprintf("the log level to set the modules to (%s) ", levelList))
-	c.Flags().StringSliceVarP(&modules, "modules", "m", nil, "the modules to which to apply the command")
+	c.Flags().StringSliceVarP(&levelCmd.modules, "modules", "m", nil, "the modules to which to apply the command")
+	flags.AddTimeout(c)
 	return c
 }
 
-func getLogLevel(modules []string, timeout time.Duration) error {
-	conn, err := common.GetGRPCConnection()
+func (cmd *centralDebugLogLevelCommand) getLogLevel() error {
+	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -68,39 +74,40 @@ func getLogLevel(modules []string, timeout time.Duration) error {
 		_ = conn.Close()
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 
 	client := v1.NewDebugServiceClient(conn)
-	logResponse, err := client.GetLogLevel(ctx, &v1.GetLogLevelRequest{Modules: modules})
+	logResponse, err := client.GetLogLevel(ctx, &v1.GetLogLevelRequest{Modules: cmd.modules})
 	if err != nil {
 		return err
 	}
 
-	printGetLogLevelResponse(logResponse)
+	cmd.printGetLogLevelResponse(logResponse)
 	return nil
 }
 
-func printGetLogLevelResponse(r *v1.LogLevelResponse) {
+func (cmd *centralDebugLogLevelCommand) printGetLogLevelResponse(r *v1.LogLevelResponse) {
 	const rowFormat = "%-40s  %s"
 	indent := ""
 	if r.GetLevel() != "" {
-		fmt.Printf("Current log level is %s\n", r.GetLevel())
+		cmd.env.Logger().PrintfLn("Current log level is %s", r.GetLevel())
 		if len(r.GetModuleLevels()) > 0 {
-			fmt.Println("Modules with a different log level:")
+			cmd.env.Logger().PrintfLn("Modules with a different log level:")
 			indent = "  "
 		}
 	}
 	if len(r.GetModuleLevels()) > 0 {
-		fmt.Printf(indent+rowFormat+"\n", "Module", "Level")
+		cmd.env.Logger().PrintfLn(indent+rowFormat, "Module", "Level")
+		cmd.env.Logger().PrintfLn("")
 		for _, modLvl := range r.GetModuleLevels() {
-			fmt.Printf(indent+rowFormat+"\n", modLvl.GetModule(), modLvl.GetLevel())
+			cmd.env.Logger().PrintfLn(indent+rowFormat, modLvl.GetModule(), modLvl.GetLevel())
 		}
 	}
 }
 
-func setLogLevel(level string, modules []string, timeout time.Duration) error {
-	conn, err := common.GetGRPCConnection()
+func (cmd *centralDebugLogLevelCommand) setLogLevel() error {
+	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -109,15 +116,15 @@ func setLogLevel(level string, modules []string, timeout time.Duration) error {
 	}()
 
 	client := v1.NewDebugServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 
-	_, err = client.SetLogLevel(ctx, &v1.LogLevelRequest{Level: level, Modules: modules})
+	_, err = client.SetLogLevel(ctx, &v1.LogLevelRequest{Level: cmd.level, Modules: cmd.modules})
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Successfully set log level")
+	cmd.env.Logger().PrintfLn("Successfully set log level")
 	return nil
 }
 

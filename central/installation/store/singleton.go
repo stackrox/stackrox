@@ -36,9 +36,6 @@ func Singleton() Store {
 		if err != nil {
 			panic(err)
 		}
-
-		// TODO: remove
-		log.Infof("Installation info added with id: %s", info.Id)
 		storeSingleton = store
 	})
 	return storeSingleton

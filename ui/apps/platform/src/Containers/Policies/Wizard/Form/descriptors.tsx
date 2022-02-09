@@ -10,7 +10,7 @@ import {
     severityRatings,
 } from 'messages/common';
 
-const equalityOptions = [
+const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
     {
         label: 'Is greater than or equal to',
@@ -24,7 +24,7 @@ const equalityOptions = [
     { label: 'Is less than', value: '<' },
 ];
 
-const cpuResource = (label) => ({
+const cpuResource = (label: string): GroupDescriptor => ({
     label,
     name: startCase(label),
     shortName: label,
@@ -47,7 +47,7 @@ const cpuResource = (label) => ({
     canBooleanLogic: true,
 });
 
-const capabilities = [
+const capabilities: DescriptorOption[] = [
     'AUDIT_CONTROL',
     'AUDIT_READ',
     'AUDIT_WRITE',
@@ -88,12 +88,12 @@ const capabilities = [
     'WAKE_ALARM',
 ].map((cap) => ({ label: cap, value: cap }));
 
-const APIVerbs = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDATE'].map((verb) => ({
+const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDATE'].map((verb) => ({
     label: verb,
     value: verb,
 }));
 
-const memoryResource = (label) => ({
+const memoryResource = (label: string): GroupDescriptor => ({
     label,
     name: startCase(label),
     shortName: label,
@@ -116,8 +116,8 @@ const memoryResource = (label) => ({
 });
 
 // A form descriptor for every option (key) on the policy criteria form page.
-/* 
-    e.g. 
+/*
+    e.g.
     {
         label: 'Image Tag',
         name: 'Image Tag',
@@ -128,9 +128,9 @@ const memoryResource = (label) => ({
         canBooleanLogic: true,
     },
 
-    label: for legacy policy alert labels 
+    label: for legacy policy alert labels
     name: the string used to display UI and send to backend
-    negatedName: string used to display UI when negated 
+    negatedName: string used to display UI when negated
         (if this does not exist, the UI assumes that the field cannot be negated)
     longName: string displayed in the UI in the Policy Field Card (not in draggable key)
     category: the category grouping for the policy criteria (collapsible group in keys)
@@ -143,15 +143,17 @@ const memoryResource = (label) => ({
         (UI assumes false by default)
     defaultValue: the default value to set, if provided
     disabled: disables the field entirely
-    reverse: will reverse boolean value on store 
+    reverse: will reverse boolean value on store
  */
 
+export type DescriptorOption = {
+    label: string;
+    value: string;
+};
+
 export type SubComponent = {
-    type: string;
-    options?: {
-        label: string;
-        value: string;
-    }[];
+    type: 'number' | 'select' | 'text'; // add more if needed
+    options?: DescriptorOption[];
     subpath: string;
     placeholder?: string;
     label?: string;
@@ -160,24 +162,56 @@ export type SubComponent = {
     step?: number;
 };
 
-export type Descriptor = {
+export type BaseDescriptor = {
     label?: string;
     name: string;
     longName?: string;
     shortName?: string;
     negatedName?: string;
     category: string;
-    type: string;
-    subComponents?: SubComponent[];
-    radioButtons?: { text: string; value: string | boolean }[];
-    options?: { label: string; value: string }[];
-    placeholder?: string;
+    type: DescriptorType;
     canBooleanLogic?: boolean;
-    default?: boolean;
-    defaultValue?: string | boolean;
     disabled?: boolean;
-    reverse?: boolean;
 };
+
+export type DescriptorType = 'group' | 'multiselect' | 'number' | 'radioGroup' | 'select' | 'text';
+
+export type Descriptor =
+    | GroupDescriptor
+    | NumberDescriptor
+    | RadioGroupDescriptor
+    | SelectDescriptor
+    | TextDescriptor;
+
+export type GroupDescriptor = {
+    type: 'group';
+    subComponents: SubComponent[];
+    default?: boolean;
+} & BaseDescriptor;
+
+export type NumberDescriptor = {
+    type: 'number';
+    placeholder?: string;
+} & BaseDescriptor;
+
+export type RadioGroupDescriptor = {
+    type: 'radioGroup';
+    radioButtons: { text: string; value: string | boolean }[];
+    defaultValue?: string | boolean;
+    reverse?: boolean;
+} & BaseDescriptor;
+
+export type SelectDescriptor = {
+    type: 'multiselect' | 'select';
+    options: DescriptorOption[];
+    placeholder?: string;
+    reverse?: boolean;
+} & BaseDescriptor;
+
+export type TextDescriptor = {
+    type: 'text';
+    placeholder?: string;
+} & BaseDescriptor;
 
 export const policyConfigurationDescriptor: Descriptor[] = [
     {
@@ -315,8 +349,8 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             {
                 type: 'number',
                 placeholder: '0-10',
-                max: 10,
-                min: 0,
+                max: 10.0,
+                min: 0.0,
                 step: 0.1,
                 subpath: 'value',
             },
@@ -337,6 +371,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
             {
                 type: 'select',
+                placeholder: 'Select a severity',
                 options: Object.keys(severityRatings).map((key) => ({
                     label: severityRatings[key],
                     value: key,
@@ -990,6 +1025,69 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         shortName: 'Kubernetes user groups',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Replicas',
+        name: 'Replicas',
+        shortName: 'Replicas',
+        longName: 'Replicas',
+        category: policyCriteriaCategories.DEPLOYMENT_METADATA,
+        type: 'group',
+        subComponents: [
+            {
+                type: 'select',
+                options: equalityOptions,
+                subpath: 'key',
+            },
+            {
+                type: 'number',
+                placeholder: '# of replicas',
+                min: 0,
+                step: 1,
+                subpath: 'value',
+            },
+        ],
+        canBooleanLogic: true,
+    },
+    {
+        label: 'Liveness probe',
+        name: 'Liveness Probe Defined',
+        shortName: 'Liveness probe',
+        longName: 'Liveness probe',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Defined',
+                value: true,
+            },
+            {
+                text: 'Not defined',
+                value: false,
+            },
+        ],
+        defaultValue: false,
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Readiness probe',
+        name: 'Readiness Probe Defined',
+        shortName: 'Readiness probe',
+        longName: 'Readiness probe',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Defined',
+                value: true,
+            },
+            {
+                text: 'Not defined',
+                value: false,
+            },
+        ],
+        defaultValue: false,
         canBooleanLogic: false,
     },
 ];

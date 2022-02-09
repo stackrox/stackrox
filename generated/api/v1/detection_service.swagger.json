@@ -656,6 +656,12 @@
         },
         "name": {
           "type": "string"
+        },
+        "livenessProbe": {
+          "$ref": "#/definitions/storageLivenessProbe"
+        },
+        "readinessProbe": {
+          "$ref": "#/definitions/storageReadinessProbe"
         }
       }
     },
@@ -1046,6 +1052,14 @@
         "RUNTIME"
       ],
       "default": "DEPLOY"
+    },
+    "storageLivenessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
     },
     "storageNetworkEntityInfoType": {
       "type": "string",
@@ -1529,6 +1543,14 @@
             "$ref": "#/definitions/ProcessSignalLineageInfo"
           },
           "title": "Process LineageInfo"
+        }
+      }
+    },
+    "storageReadinessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
         }
       }
     },

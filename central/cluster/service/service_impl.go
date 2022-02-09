@@ -17,10 +17,9 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -29,6 +28,7 @@ var (
 			"/v1.ClustersService/GetClusters",
 			"/v1.ClustersService/GetCluster",
 			"/v1.ClustersService/GetKernelSupportAvailable",
+			"/v1.ClustersService/GetClusterDefaults",
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
 			"/v1.ClustersService/PostCluster",
@@ -65,12 +65,8 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 	if request.GetId() != "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id field should be empty when posting a new cluster")
 	}
-
 	id, err := s.datastore.AddCluster(ctx, request)
 	if err != nil {
-		if errors.Is(err, errorhelpers.ErrAlreadyExists) {
-			return nil, status.Error(codes.AlreadyExists, err.Error())
-		}
 		return nil, err
 	}
 	request.Id = id
@@ -138,6 +134,7 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	return &v1.Empty{}, nil
 }
 
+// Deprecated: Use GetClusterDefaults instead.
 func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
 	anyAvailable, err := s.probeSources.AnyAvailable(ctx)
 	if err != nil {
@@ -147,4 +144,18 @@ func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty
 		KernelSupportAvailable: anyAvailable,
 	}
 	return result, nil
+}
+
+func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
+	kernelSupport, err := s.probeSources.AnyAvailable(ctx)
+	if err != nil {
+		return nil, err
+	}
+	flavor := defaults.GetImageFlavorFromEnv()
+	defaults := &v1.ClusterDefaultsResponse{
+		MainImageRepository:      flavor.MainImageNoTag(),
+		CollectorImageRepository: flavor.CollectorFullImageNoTag(),
+		KernelSupportAvailable:   kernelSupport,
+	}
+	return defaults, nil
 }

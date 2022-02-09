@@ -7,7 +7,7 @@ function IconWithCount({ Icon, count, isLoading }) {
         <Flex alignItems={{ default: 'alignItemsCenter' }}>
             {isLoading ? (
                 <Bullseye>
-                    <Spinner size="lg" />
+                    <Spinner isSVG size="lg" />
                 </Bullseye>
             ) : (
                 <>

@@ -12,6 +12,7 @@ import {
     PolicyEventSource,
     PolicyExcludedDeployment,
     PolicyExclusion,
+    Policy,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -99,22 +100,46 @@ export const lifecycleStagesToEnforcementActionsMap: Record<LifecycleStage, Enfo
     RUNTIME: ['KILL_POD_ENFORCEMENT', 'FAIL_KUBE_REQUEST_ENFORCEMENT'],
 };
 
+export function hasEnforcementActionForLifecycleStage(
+    lifecycleStage: LifecycleStage,
+    enforcementActions: EnforcementAction[]
+) {
+    const enforcementActionsForLifecycleStage =
+        lifecycleStagesToEnforcementActionsMap[lifecycleStage];
+
+    return enforcementActions.some((enforcementAction) =>
+        enforcementActionsForLifecycleStage.includes(enforcementAction)
+    );
+}
+
 export function getEnforcementLifecycleStages(
     lifecycleStages: LifecycleStage[],
     enforcementActions: EnforcementAction[]
 ): LifecycleStage[] {
     return lifecycleStages.filter((lifecycleStage) => {
-        const enforcementActionsForLifecycleStage =
-            lifecycleStagesToEnforcementActionsMap[lifecycleStage];
-
-        return enforcementActions.some((enforcementAction) =>
-            enforcementActionsForLifecycleStage.includes(enforcementAction)
-        );
+        return hasEnforcementActionForLifecycleStage(lifecycleStage, enforcementActions);
     });
 }
 
 export function formatResponse(enforcementLifecycleStages: LifecycleStage[]): string {
     return enforcementLifecycleStages.length === 0 ? 'Inform' : 'Enforce';
+}
+
+export function appendEnforcementActionsForAddedLifecycleStage(
+    lifecycleStage: LifecycleStage,
+    enforcementActions: EnforcementAction[]
+): EnforcementAction[] {
+    return [...enforcementActions, ...lifecycleStagesToEnforcementActionsMap[lifecycleStage]];
+}
+
+export function filterEnforcementActionsForRemovedLifecycleStage(
+    lifecycleStage: LifecycleStage,
+    enforcementActions: EnforcementAction[]
+): EnforcementAction[] {
+    return enforcementActions.filter(
+        (enforcementAction) =>
+            !lifecycleStagesToEnforcementActionsMap[lifecycleStage].includes(enforcementAction)
+    );
 }
 
 // eventSource
@@ -229,4 +254,93 @@ export function getLabelAndNotifierIdsForTypes(
 export function getClusterName(clusters: Cluster[], clusterId: string): string {
     const cluster = clusters.find(({ id }) => id === clusterId);
     return cluster?.name ?? clusterId;
+}
+
+/* PolicyWizard steps */
+
+export type WizardPolicyStep4 = {
+    scope: WizardScope[];
+    excludedDeploymentScopes: WizardExcludedDeployment[];
+    excludedImageNames: string[];
+};
+
+export type WizardExcludedDeployment = {
+    name?: string;
+    scope: WizardScope;
+};
+
+/*
+ * WizardScope whose label object whose properties have either empty string or undefined values
+ * corresponds to PolicyScope label value null.
+ */
+
+export type WizardScope = {
+    cluster?: string;
+    namespace?: string;
+    label: WizardScopeLabel | null;
+};
+
+export type WizardScopeLabel = {
+    key?: string;
+    value?: string;
+};
+
+export const initialScope: WizardScope = {
+    cluster: '',
+    namespace: '',
+    label: {},
+};
+
+export const initialExcludedDeployment: WizardExcludedDeployment = {
+    name: '',
+    scope: initialScope,
+};
+
+export function getClientWizardPolicy(policy): Policy {
+    return preFormatExclusionField(policy);
+}
+
+export function getServerPolicy(policy): Policy {
+    return postFormatExclusionField(policy);
+}
+
+/*
+ * Split server exclusions property into client-wizard excludedDeploymentScopes and excludedImageNames properties.
+ */
+function preFormatExclusionField(policy): Policy {
+    const { exclusions } = policy;
+    const clientPolicy: Policy = { ...policy };
+
+    clientPolicy.excludedImageNames =
+        exclusions.filter((o) => !!o.image?.name).map((o) => o.image.name as string) ?? [];
+
+    clientPolicy.excludedDeploymentScopes = exclusions
+        .filter((o) => !!o.deployment?.name || !!o.deployment?.scope)
+        .map((o) => o.deployment as PolicyExcludedDeployment);
+
+    return clientPolicy;
+}
+
+/*
+ * Merge client-wizard excludedDeploymentScopes and excludedImageNames properties into server exclusions property.
+ */
+function postFormatExclusionField(policy): Policy {
+    const serverPolicy: Policy = { ...policy };
+    serverPolicy.exclusions = [];
+
+    const { excludedDeploymentScopes } = policy;
+    if (excludedDeploymentScopes && excludedDeploymentScopes.length) {
+        serverPolicy.exclusions = serverPolicy.exclusions.concat(
+            excludedDeploymentScopes.map((deployment) => ({ deployment }))
+        );
+    }
+
+    const { excludedImageNames } = policy;
+    if (excludedImageNames && excludedImageNames.length > 0) {
+        serverPolicy.exclusions = serverPolicy.exclusions.concat(
+            excludedImageNames.map((name) => ({ image: { name } }))
+        );
+    }
+
+    return serverPolicy;
 }

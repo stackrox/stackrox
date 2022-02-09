@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/renderer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -17,15 +17,15 @@ const (
 
 // ReconcileScannerDBPasswordExtension returns an extension that takes care of creating the scanner-db-password
 // secret ahead of time.
-func ReconcileScannerDBPasswordExtension(client client.Client) extensions.ReconcileExtension {
+func ReconcileScannerDBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
 	return wrapExtension(reconcileScannerDBPassword, client)
 }
 
-func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client client.Client, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
-			ctrlClient: client,
+			client:     client,
 			centralObj: c,
 		},
 	}

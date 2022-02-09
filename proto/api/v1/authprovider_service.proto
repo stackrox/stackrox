@@ -65,7 +65,11 @@ message ExchangeTokenResponse {
 }
 
 message AvailableProviderTypesResponse {
-    repeated string auth_provider_types = 1;
+    message AuthProviderType {
+        string          type                 = 1;
+        repeated string suggested_attributes = 2;
+    }
+    repeated AuthProviderType auth_provider_types = 1;
 }
 
 service AuthProviderService {

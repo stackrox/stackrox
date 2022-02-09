@@ -10,6 +10,7 @@ import {
 import { useParams } from 'react-router-dom';
 import { connect } from 'react-redux';
 
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
@@ -26,7 +27,6 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 
 import IntegrationsTable from './IntegrationsTable';
 import useIntegrations from '../hooks/useIntegrations';
-import ConfirmationModal from './ConfirmationModal';
 import {
     DeleteAPITokensConfirmationText,
     DeleteIntegrationsConfirmationText,
@@ -94,6 +94,8 @@ function IntegrationsListPage({
             />
             {isAPIToken && (
                 <ConfirmationModal
+                    ariaLabel="Confirm delete"
+                    confirmText="Delete"
                     isOpen={deletingIntegrationIds.length !== 0}
                     onConfirm={onConfirmDeletingIntegrationIds}
                     onCancel={onCancelDeleteIntegrationIds}
@@ -118,6 +120,8 @@ function IntegrationsListPage({
             )}
             {!isAPIToken && !isClusterInitBundle && (
                 <ConfirmationModal
+                    ariaLabel="Confirm delete"
+                    confirmText="Delete"
                     isOpen={deletingIntegrationIds.length !== 0}
                     onConfirm={onConfirmDeletingIntegrationIds}
                     onCancel={onCancelDeleteIntegrationIds}

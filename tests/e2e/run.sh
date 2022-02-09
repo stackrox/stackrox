@@ -41,6 +41,7 @@ test_e2e() {
     prepare_for_endpoints_test
 
     run_roxctl_tests
+    run_roxctl_bats_tests "roxctl-test-output"
 
     info "E2E API tests"
     make -C tests
@@ -114,22 +115,22 @@ prepare_for_endpoints_test() {
     start_port_forwards_for_test
 }
 
-install_yq() {
-  # Intstall yq to allow more precise test assertions
-  # TODO(RS-404) Remove this function after adding yq to apollo-ci
-  if is_CI; then
-    if ! command -v yq >/dev/null 2>&1; then
-        sudo wget https://github.com/mikefarah/yq/releases/download/v4.15.1/yq_linux_amd64 -O /usr/bin/yq
-        sudo chmod 0755 /usr/bin/yq
-    fi
-  else
-      require_executable yq
-  fi
-}
-
 run_roxctl_bats_tests() {
+    local output="${1}"
+    local suite="${2}"
+    if (( $# != 2 )); then
+      die "Error: run_roxctl_bats_tests requires 2 arguments: run_roxctl_bats_tests <test_output> <suite>"
+    fi
+    [[ -d "$TEST_ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $TEST_ROOT/tests/roxctl/bats-tests/$suite"
+
+    # TODO(RS-449): Move expect installation to the CI image
+    if is_CI; then
+      if ! command -v expect >/dev/null 2>&1; then
+        sudo apt-get update && sudo apt-get install --no-install-recommends -y expect
+      fi
+    fi
     info "Running Bats e2e tests on development roxctl"
-    "$TEST_ROOT/tests/roxctl/bats-runner.sh" "$TEST_ROOT/tests/roxctl/bats-tests/"
+    "$TEST_ROOT/tests/roxctl/bats-runner.sh" "$output" "$TEST_ROOT/tests/roxctl/bats-tests/$suite"
 }
 
 run_roxctl_tests() {
@@ -139,7 +140,6 @@ run_roxctl_tests() {
     "$TEST_ROOT/tests/roxctl/slim-collector.sh"
     "$TEST_ROOT/tests/roxctl/authz-trace.sh"
     "$TEST_ROOT/tests/roxctl/istio-support.sh"
-    "$TEST_ROOT/tests/roxctl/bundle-generation.sh"
     "$TEST_ROOT/tests/roxctl/helm-chart-generation.sh"
     CA="$SERVICE_CA_FILE" "$TEST_ROOT/tests/yamls/roxctl_verification.sh"
 }

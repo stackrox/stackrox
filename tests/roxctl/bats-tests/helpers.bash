@@ -16,26 +16,36 @@ luname() {
 
 tmp_roxctl="tmp/roxctl-bats/bin"
 
-# roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
-roxctl-development() {
+# roxctl-development-cmd prints the path to roxctl built with GOTAGS=''. It builds the binary if needed
+roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    GOTAGS='' make "cli-${_uname}"
+    make -s "cli-${_uname}" GOTAGS='' 2>&3
     mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
-  "${tmp_roxctl}/roxctl-dev" "$@"
+  echo "${tmp_roxctl}/roxctl-dev"
+}
+
+# roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
+roxctl-development() {
+   "$(roxctl-development-cmd)" "$@"
+}
+
+# roxctl-development-cmd prints the path to roxctl built with GOTAGS='release'. It builds the binary if needed
+roxctl-release-cmd() {
+  if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
+    _uname="$(luname)"
+    mkdir -p "$tmp_roxctl"
+    make -s "cli-${_uname}" GOTAGS='release' 2>&3
+    mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
+  fi
+  echo "${tmp_roxctl}/roxctl-release"
 }
 
 # roxctl-release runs roxctl built with GOTAGS='release'. It builds the binary if needed
 roxctl-release() {
-  if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
-    _uname="$(luname)"
-    mkdir -p "$tmp_roxctl"
-    GOTAGS='release' make "cli-${_uname}"
-    mv "bin/${_uname}/roxctl" "${tmp_roxctl}/roxctl-release"
-  fi
-  "${tmp_roxctl}/roxctl-release" "$@"
+  "$(roxctl-release-cmd)" "$@"
 }
 
 helm_template_central() {
@@ -55,26 +65,48 @@ assert_helm_template_central_registry() {
   assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$@"
 }
 
+wait_20s_for() {
+  local file="$1"; shift
+  local args=("${@}")
+  for _ in {1..20}; do
+    if "${args[@]}" "$file"; then return 0; fi
+    sleep 1
+  done
+  "${args[@]}" "$file"
+}
+
+assert_bundle_registry() {
+  local dir="$1"
+  local component="$2"
+  local regex="$3"
+  run yq e "select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == \"${component}\").image" "${dir}/${component}.yaml"
+  assert_output --regexp "$regex"
+}
+
 assert_components_registry() {
   local dir="$1"
   local registry_slug="$2"
   shift; shift;
 
-  [[ ! -d "$dir" ]] && fail "ERROR: not a directory: '$dir'"
+  # The expect-based tests may be slow and flaky, so let's add timeouts to this assertion
+  wait_20s_for "$dir" "test" "-d" || fail "ERROR: not a directory: '$dir'"
   (( $# < 1 )) && fail "ERROR: 0 components provided"
 
   for component in "${@}"; do
     regex="$(registry_regex "$registry_slug" "$component")"
     case $component in
       main)
+        wait_20s_for "${dir}/01-central-12-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/01-central-12-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "central").image' "${dir}/01-central-12-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
       scanner)
+        wait_20s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "scanner").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
       scanner-db)
+        wait_20s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
         run yq e 'select(documentIndex == 1) | .spec.template.spec.containers[] | select(.name == "db").image' "${dir}/02-scanner-06-deployment.yaml"
         assert_output --regexp "$regex"
         ;;
@@ -83,6 +115,14 @@ assert_components_registry() {
         ;;
     esac
   done
+}
+
+# TODO ROX-9153 replace with bats-file
+assert_file_exist() {
+  local -r file="$1"
+  if [[ ! -e "$file" ]]; then
+    fail "ERROR: file '$file' does not exist"
+  fi
 }
 
 registry_regex() {
@@ -97,14 +137,122 @@ registry_regex() {
     stackrox.io)
       echo "stackrox\.io/$component:$version"
       ;;
-    registry.redhat.io-short)
-      echo "registry\.redhat\.io/rh-acs/$component:$version"
-      ;;
     registry.redhat.io)
-      echo "registry\.redhat\.io/advanced-cluster-security/rhacs-rhel8-$component:$version"
+      echo "registry\.redhat\.io/advanced-cluster-security/rhacs-$component-rhel8:$version"
+      ;;
+    example.com)
+      echo "example\.com/$component:$version"
+      ;;
+    example2.com)
+      echo "example2\.com/$component:$version"
       ;;
     *)
       fail "ERROR: unknown registry-slug: '$registry_slug'"
       ;;
   esac
+}
+
+# Central-generate
+
+# run_image_defaults_registry_test runs `roxctl central generate` and asserts the image registries match the expected values.
+# Parameters:
+# $1 - path to roxctl binary
+# $2 - orchestrator (k8s, openshift)
+# $3 - registry-slug for expected main registry (see 'registry_regex()' for the list of currently supported registry-slugs)
+# $4 - registry-slug for expected scanner and scanner-db registries (see 'registry_regex()' for the list of currently supported registry-slugs)
+# $@ - open-ended list of other parameters that should be passed into 'roxctl central generate'
+run_image_defaults_registry_test() {
+  local roxctl_bin="$1"; shift;
+  local orch="$1"; shift;
+  local expected_main_registry="$1"; shift;
+  local expected_scanner_registry="$1"; shift;
+  local extra_params=("${@}")
+
+  [[ -n "$out_dir" ]] || fail "out_dir is unset"
+
+  run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$out_dir"
+  assert_success
+  assert_components_registry "$out_dir/central" "$expected_main_registry" 'main'
+  assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" 'scanner' 'scanner-db'
+}
+
+# run_no_rhacs_flag_test asserts that 'roxctl central generate' fails when presented with `--rhacs` parameter
+run_no_rhacs_flag_test() {
+  local roxctl_bin="$1"
+  local orch="$2"
+
+  run "$roxctl_bin" central generate --rhacs "$orch" pvc --output-dir "$(mktemp -d -u)"
+  assert_failure
+  assert_output --partial "unknown flag: --rhacs"
+  run "$roxctl_bin" central generate "$orch" --rhacs pvc --output-dir "$(mktemp -d -u)"
+  assert_failure
+  assert_output --partial "unknown flag: --rhacs"
+}
+
+# run_invalid_flavor_value_test asserts that 'roxctl central generate' fails when presented invalid value of `--image-defaults` parameter
+run_invalid_flavor_value_test() {
+  local roxctl_bin="$1"; shift;
+  local orch="$1"; shift;
+  local extra_params=("${@}")
+
+  run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
+  assert_failure
+  assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
+}
+
+# run_with_debug_flag_test copies chart bundle content into a temporary folder, modifies it, and executes a given command with the debug flag
+run_with_debug_flag_test() {
+  # default debug path argument
+  local chart_src_dir="$GOPATH/src/github.com/stackrox/stackrox/image"
+  [[ -d "$chart_src_dir" ]] || skip "This test requires a chart template located on the file system"
+
+  [[ -n "$chart_debug_dir" ]] || fail "chart_debug_dir is unset"
+
+  cp -r "$chart_src_dir" "$chart_debug_dir"
+  # creating a diff between original and custom chart template to verify that the custom chart is used instead of the default one
+  touch "$chart_debug_dir/templates/helm/shared/templates/bats-test.yaml"
+
+  run "$@" --debug --debug-path "$chart_debug_dir"
+}
+
+assert_debug_templates_exist() {
+    local tpl_dir="${1}"
+    assert_file_exist "$tpl_dir/bats-test.yaml"
+}
+
+has_deprecation_warning() {
+  assert_line --regexp "WARN:[[:space:]]+'--rhacs' is deprecated, please use '--image-defaults=rhacs' instead"
+}
+
+flavor_warning_regexp="WARN:[[:space:]]+Default image registries have changed. Images will be taken from 'registry.redhat.io'. Specify '--image-defaults=stackrox.io' command line argument to use images from 'stackrox.io' registries."
+
+has_default_flavor_warning() {
+  assert_line --regexp "$flavor_warning_regexp"
+}
+
+has_no_default_flavor_warning() {
+  refute_line --regexp "$flavor_warning_regexp"
+}
+
+has_flag_collision_warning() {
+  assert_line --partial "flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'"
+}
+
+roxctl_authenticated() {
+  roxctl-development --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@"
+}
+
+generate_bundle() {
+  installation_flavor="$1";shift
+  run roxctl_authenticated sensor generate "$installation_flavor" \
+        --output-dir="$out_dir" \
+        --timeout=10m \
+        --continue-if-exists \
+        "$@"
+}
+
+delete_cluster() {
+  local name="$1";shift
+  run roxctl_authenticated cluster delete --name "$name"
+  assert_success
 }

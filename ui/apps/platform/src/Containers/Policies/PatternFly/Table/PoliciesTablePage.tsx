@@ -20,7 +20,7 @@ import {
     updatePoliciesDisabledState,
 } from 'services/PoliciesService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
-import useToasts from 'hooks/useToasts';
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { getSearchOptionsForCategory } from 'services/SearchService';
 import { ListPolicy } from 'types/policy.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
@@ -109,8 +109,9 @@ function PoliciesTablePage({
                     onClearAll();
                 }
             })
-            .catch(({ response }) => {
-                addToast(`Could not export the ${policyText}`, 'danger', response.data.message);
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                addToast(`Could not export the ${policyText}`, 'danger', message);
             });
     }
 
@@ -162,17 +163,24 @@ function PoliciesTablePage({
         fetchPolicies(query);
     }, [query]);
 
+    if (isLoading) {
+        return (
+            <PageSection variant="light" isFilled id="policies-table-loading">
+                <Bullseye>
+                    <Spinner isSVG />
+                </Bullseye>
+            </PageSection>
+        );
+    }
+
     return (
-        <PageSection variant="light" isFilled id="policies-table">
-            {isLoading && (
-                <Bullseye>
-                    <Spinner />
-                </Bullseye>
-            )}
+        <>
             {errorMessage ? (
-                <Bullseye>
-                    <Alert variant="danger" title={errorMessage} />
-                </Bullseye>
+                <PageSection variant="light" isFilled id="policies-table-error">
+                    <Bullseye>
+                        <Alert variant="danger" title={errorMessage} />
+                    </Bullseye>
+                </PageSection>
             ) : (
                 <PoliciesTable
                     notifiers={notifiers}
@@ -198,7 +206,7 @@ function PoliciesTablePage({
                 fetchPoliciesWithQuery={() => fetchPolicies(query)}
             />
             <AlertGroup isToast isLiveRegion>
-                {toasts.map(({ key, variant, title, children }) => (
+                {toasts.map(({ key, variant, title, children }: Toast) => (
                     <Alert
                         variant={AlertVariant[variant]}
                         title={title}
@@ -206,7 +214,7 @@ function PoliciesTablePage({
                         actionClose={
                             <AlertActionCloseButton
                                 title={title}
-                                variantLabel={`${variant as string} alert`}
+                                variantLabel={`${variant} alert`}
                                 onClose={() => removeToast(key)}
                             />
                         }
@@ -216,7 +224,7 @@ function PoliciesTablePage({
                     </Alert>
                 ))}
             </AlertGroup>
-        </PageSection>
+        </>
     );
 }
 

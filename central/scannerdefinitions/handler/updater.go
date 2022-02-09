@@ -18,7 +18,7 @@ const (
 
 // updater periodically updates a file by downloading the contents from the downloadURL.
 type updater struct {
-	file *file.Metadata
+	file *file.File
 
 	client      *http.Client
 	downloadURL string
@@ -28,7 +28,7 @@ type updater struct {
 }
 
 // newUpdater creates a new updater.
-func newUpdater(file *file.Metadata, client *http.Client, downloadURL string, interval time.Duration) *updater {
+func newUpdater(file *file.File, client *http.Client, downloadURL string, interval time.Duration) *updater {
 	return &updater{
 		file:        file,
 		client:      client,
@@ -78,9 +78,16 @@ func (u *updater) doUpdate() error {
 	if err != nil {
 		return errors.Wrap(err, "constructing request")
 	}
-	// No need to grab a read lock on u.file.LastModifiedTime
-	// as a parallel write to this read is not possible.
-	req.Header.Set(ifModifiedSinceHeader, u.file.GetLastModifiedTime().Format(http.TimeFormat))
+
+	// The returned *os.File is not used, but we need to be sure to close the file
+	// to prevent leaking file descriptor.
+	f, modTime, err := u.file.Open()
+	if err != nil {
+		return errors.Wrapf(err, "reading modified time of file %s", u.file.Path())
+	}
+	defer utils.IgnoreError(f.Close)
+
+	req.Header.Set(ifModifiedSinceHeader, modTime.Format(http.TimeFormat))
 
 	resp, err := u.client.Do(req)
 	if err != nil {
@@ -100,5 +107,5 @@ func (u *updater) doUpdate() error {
 		return errors.Errorf("unable to determine upstream definitions file's modified time: %v", err)
 	}
 
-	return file.Write(u.file, resp.Body, lastModified)
+	return u.file.Write(resp.Body, lastModified)
 }

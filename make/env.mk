@@ -8,7 +8,7 @@ colon := :
 # work with the first element only.
 
 ifeq ($(findstring :, $(GOPATH)), $(colon))
-GOPATH := $(patsubst :%,,$(GOPATH))
+GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
 export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOPRIVATE GOBIN GOPROXY

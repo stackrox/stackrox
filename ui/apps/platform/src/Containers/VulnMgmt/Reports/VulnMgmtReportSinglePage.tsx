@@ -1,41 +1,52 @@
-/* eslint-disable no-nested-ternary */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useState, ReactElement } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { Alert, Bullseye, PageSection, Spinner } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import useFetchReport from 'hooks/useFetchReport';
+import usePermissions from 'hooks/usePermissions';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { getQueryObject, ExtendedPageAction } from 'utils/queryStringUtils';
+import { getQueryObject } from 'utils/queryStringUtils';
 import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
 import VulnMgmtReportDetail from './Detail/VulnMgmtReportDetail';
+import VulnMgmtEditReportPage from './Detail/VulnMgmtEditReportPage';
 
 function VulnMgmtReportPage(): ReactElement {
     const { search } = useLocation();
-    // TODO: use the action param to determini if we are editing the report
+    const [refresh, setRefresh] = useState<number>(new Date().getTime());
+
+    function refreshQuery() {
+        setRefresh(new Date().getTime());
+    }
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+
     const queryObject = getQueryObject<VulnMgmtReportQueryObject>(search);
-    // eslint-disable-next-line no-unused-vars
     const { action } = queryObject;
     const { reportId } = useParams();
 
-    const result = useFetchReport(reportId);
+    const result = useFetchReport(reportId, refresh);
 
     const { report, isLoading, error } = result;
 
     return (
         <>
             <PageTitle title={`Vulnerability Management - Report: ${report?.name || ''}`} />
-            {isLoading ? (
+            {isLoading && (
                 <PageSection isFilled id="report-page">
                     <Bullseye>
-                        <Spinner />
+                        <Spinner isSVG />
                     </Bullseye>
                 </PageSection>
-            ) : error ? (
+            )}
+            {error && (
                 <Alert title="Request failure for report" variant="danger" isInline>
                     {getAxiosErrorMessage(error)}
                 </Alert>
+            )}
+            {action === 'edit' && hasVulnReportWriteAccess && !!report ? (
+                <VulnMgmtEditReportPage report={report} refreshQuery={refreshQuery} />
             ) : (
                 !!report && <VulnMgmtReportDetail report={report} />
             )}

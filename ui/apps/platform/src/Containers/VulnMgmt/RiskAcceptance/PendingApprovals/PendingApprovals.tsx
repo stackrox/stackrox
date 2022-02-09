@@ -1,42 +1,70 @@
 import React, { ReactElement } from 'react';
-import { Bullseye, Spinner } from '@patternfly/react-core';
 
 import usePagination from 'hooks/patternfly/usePagination';
-
+import queryService from 'utils/queryService';
+import useSearch from 'hooks/useSearch';
+import { SearchFilter } from 'types/search';
+import { PageSection, PageSectionVariants } from '@patternfly/react-core';
+import ACSEmptyState from 'Components/ACSEmptyState';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 
+function setDefaultSearchFields(searchFilter: SearchFilter): SearchFilter {
+    let modifiedSearchObject = { ...searchFilter };
+    if (!modifiedSearchObject['Request Status']) {
+        modifiedSearchObject['Request Status'] = ['Pending', 'APPROVED_PENDING_UPDATE'];
+    }
+    modifiedSearchObject = { ...modifiedSearchObject, 'Expired Request': 'false' };
+    return modifiedSearchObject;
+}
+
 function PendingApprovals(): ReactElement {
+    const { searchFilter, setSearchFilter } = useSearch();
+
+    const modifiedSearchObject = setDefaultSearchFields(searchFilter);
+    /*
+     * Due to backend limitations with the inability to index on the Request ID,
+     * we must pass the search query for "Request ID" using
+     * a separate GraphQL variable
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const requestID = modifiedSearchObject['Request ID'];
+    delete modifiedSearchObject['Request ID'];
+    const query = queryService.objectToWhereClause(modifiedSearchObject);
+
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
     const { isLoading, data, refetchQuery } = useVulnerabilityRequests({
-        query: 'Request Status:PENDING,APPROVED_PENDING_UPDATE+Expired Request:false',
+        query,
+        requestID,
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
             sortOption: {
-                field: 'id',
+                field: 'Last Updated',
                 reversed: false,
             },
         },
     });
 
-    if (isLoading) {
+    const rows = data?.vulnerabilityRequests || [];
+    const itemCount = data?.vulnerabilityRequestsCount || 0;
+
+    if (!isLoading && rows && rows.length === 0) {
         return (
-            <Bullseye>
-                <Spinner size="sm" />
-            </Bullseye>
+            <PageSection variant={PageSectionVariants.light} isFilled>
+                <ACSEmptyState title="No pending requests to approve." />
+            </PageSection>
         );
     }
-
-    const rows = data?.results || [];
 
     return (
         <PendingApprovalsTable
             rows={rows}
             updateTable={refetchQuery}
             isLoading={isLoading}
-            // @TODO: When backend puts "vulnerabilityRequestsCount" into GraphQL, use that
-            itemCount={rows.length}
+            itemCount={itemCount}
+            searchFilter={searchFilter}
+            setSearchFilter={setSearchFilter}
             page={page}
             perPage={perPage}
             onSetPage={onSetPage}

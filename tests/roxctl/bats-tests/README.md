@@ -7,7 +7,7 @@ In order to run the tests locally, we need to install Bats (in version at least 
 Bats can be installed with:
 
 ```shell
-$ brew install bats
+$ brew install bats-core
 # (output suppressed)
 
 $ bats --version
@@ -21,8 +21,8 @@ Installation:
 
 ```shell
 mkdir -p "$HOME/bats-core/"
-git clone --depth=1 https://github.com/bats-core/bats-assert "$HOME/bats-core/"
-git clone --depth=1 https://github.com/bats-core/bats-support "$HOME/bats-core/"
+git -C "$HOME/bats-core/" clone --depth=1 https://github.com/bats-core/bats-assert
+git -C "$HOME/bats-core/" clone --depth=1 https://github.com/bats-core/bats-support
 ```
 
 The helpers are installed correctly if the following tests are passing:
@@ -66,5 +66,5 @@ To run the tests locally, you may simply execute a bats file:
 or run the entire suite:
 
 ```shell
-bats tests/roxctl/bats-tests/*.bats
+bats --recursive tests/roxctl/bats-tests/
 ```

@@ -1,5 +1,5 @@
-import { selectors, url as integrationsUrl } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
+import { labels, selectors, url } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     getHelperElementByLabel,
@@ -8,28 +8,36 @@ import {
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';
-import { getTableRowActionButtonByName, getTableRowLinkByName } from '../../helpers/tableHelpers';
+import { visitIntegrationsUrl } from '../../helpers/integrations';
+import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
+
+function assertAPITokenTable() {
+    const label = labels.authProviders.apitoken;
+    cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
+    cy.get(`${selectors.title2}:contains("${label}")`);
+}
+
+const visitAPITokensUrl = `${url}/authProviders/apitoken`;
+const createAPITokenUrl = `${url}/authProviders/apitoken/create`;
+const viewAPITokenUrl = `${url}/authProviders/apitoken/view/`; // followed by id
+
+function visitAPITokens() {
+    visitIntegrationsUrl(visitAPITokensUrl);
+    assertAPITokenTable();
+}
 
 describe('API Token tests', () => {
     withAuth();
 
     const apiTokenName = generateNameWithDate('API Token Test');
 
-    beforeEach(() => {
-        cy.intercept('GET', api.integrations.apiTokens).as('getAPITokens');
-        cy.intercept('POST', api.integration.apiToken.generate).as('generateAPIToken');
-        cy.intercept('PATCH', api.integration.apiToken.revoke).as('revokeAPIToken');
-
-        cy.visit('/');
-        cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click({ force: true });
-        cy.wait('@getAPITokens');
-    });
-
     it('should create a new API Token integration', () => {
-        cy.get(selectors.apiTokenTile).click();
+        visitAPITokens();
 
+        cy.intercept('GET', '/v1/roles').as('getRoles');
         cy.get(selectors.buttons.newApiToken).click();
+        cy.wait('@getRoles');
+        cy.location('pathname').should('eq', createAPITokenUrl);
 
         // Step 0, should start out with disabled Generate button
         cy.get(selectors.buttons.generate).should('be.disabled');
@@ -45,29 +53,39 @@ describe('API Token tests', () => {
         getSelectButtonByLabel('Role').click();
         getSelectOption('Admin').click();
 
+        cy.intercept('GET', api.integrations.apiTokens).as('getAPITokens');
+        cy.intercept('POST', api.integration.apiToken.generate).as('generateAPIToken');
         cy.get(selectors.buttons.generate).should('be.enabled').click();
-        cy.wait('@generateAPIToken');
-
-        cy.location('pathname').should('eq', `${integrationsUrl}/authProviders/apitoken/create`);
+        cy.wait(['@generateAPIToken', '@getAPITokens']);
         cy.get('[aria-label="Success Alert"]');
+
+        cy.get(selectors.buttons.back).click();
+        assertAPITokenTable();
     });
 
     it('should show the generated API token in the table, and be clickable', () => {
-        cy.get(selectors.apiTokenTile).click();
+        visitAPITokens();
 
-        getTableRowLinkByName(apiTokenName).click();
+        cy.intercept('GET', '/v1/roles').as('getRoles');
+        cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).click();
+        cy.wait('@getRoles');
 
-        cy.location('pathname').should('contain', 'view');
+        cy.location('pathname').should('contain', viewAPITokenUrl);
+        cy.get(`${selectors.breadcrumbItem}:contains("${apiTokenName}")`);
     });
 
     it('should be able to revoke the API token', () => {
-        cy.get(selectors.apiTokenTile).click();
+        visitAPITokens();
 
         getTableRowActionButtonByName(apiTokenName).click();
+
+        cy.intercept('GET', api.integrations.apiTokens).as('getAPITokens');
+        cy.intercept('PATCH', api.integration.apiToken.revoke).as('revokeAPIToken');
         cy.get('button:contains("Delete Integration")').click();
         cy.get(selectors.buttons.delete).click();
-        cy.wait('@revokeAPIToken');
+        cy.wait(['@revokeAPIToken', '@getAPITokens']);
 
-        getTableRowActionButtonByName(apiTokenName).should('not.exist');
+        assertAPITokenTable();
+        cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).should('not.exist');
     });
 });

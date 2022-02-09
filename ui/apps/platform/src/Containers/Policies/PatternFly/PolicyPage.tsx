@@ -1,16 +1,13 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Bullseye, PageSection, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
-import { fetchClustersAsArray } from 'services/ClustersService';
-import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
-import { Cluster } from 'types/cluster.proto';
-import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
+import { getClientWizardPolicy } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
 
@@ -48,6 +45,8 @@ const initialPolicy: Policy = {
     exclusions: [],
     scope: [],
     enforcementActions: [],
+    excludedImageNames: [],
+    excludedDeploymentScopes: [],
     SORT_name: '', // For internal use only.
     SORT_lifecycleStage: '', // For internal use only.
     SORT_enforcement: false, // For internal use only.
@@ -69,33 +68,9 @@ function PolicyPage({
     pageAction,
     policyId,
 }: PolicyPageProps): ReactElement {
-    const [clusters, setClusters] = useState<Cluster[]>([]);
-
-    const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
-
     const [policy, setPolicy] = useState<Policy>(initialPolicy);
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        fetchClustersAsArray()
-            .then((data) => {
-                setClusters(data as Cluster[]);
-            })
-            .catch(() => {
-                // TODO
-            });
-    }, []);
-
-    useEffect(() => {
-        fetchNotifierIntegrations()
-            .then((data) => {
-                setNotifiers(data as NotifierIntegration[]);
-            })
-            .catch(() => {
-                // TODO
-            });
-    }, []);
 
     useEffect(() => {
         setPolicyError(null);
@@ -104,7 +79,12 @@ function PolicyPage({
             setIsLoading(true);
             getPolicy(policyId)
                 .then((data) => {
-                    setPolicy(pageAction === 'clone' ? clonePolicy(data) : data);
+                    const clientWizardPolicy = getClientWizardPolicy(data);
+                    setPolicy(
+                        pageAction === 'clone'
+                            ? clonePolicy(clientWizardPolicy)
+                            : clientWizardPolicy
+                    );
                 })
                 .catch((error) => {
                     setPolicy(initialPolicy);
@@ -136,11 +116,11 @@ function PolicyPage({
     }
 
     return (
-        <PageSection variant="light" isFilled id="policy-page">
+        <>
             <PageTitle title="Policies - Policy" />
             {isLoading ? (
                 <Bullseye>
-                    <Spinner />
+                    <Spinner isSVG />
                 </Bullseye>
             ) : (
                 policyError || // TODO ROX-8487: Improve PolicyPage when request fails
@@ -148,15 +128,13 @@ function PolicyPage({
                     <PolicyWizard pageAction={pageAction} policy={policy} />
                 ) : (
                     <PolicyDetail
-                        clusters={clusters}
                         handleUpdateDisabledState={handleUpdateDisabledState}
                         hasWriteAccessForPolicy={hasWriteAccessForPolicy}
-                        notifiers={notifiers}
                         policy={policy}
                     />
                 ))
             )}
-        </PageSection>
+        </>
     );
 }
 

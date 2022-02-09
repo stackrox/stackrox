@@ -11,22 +11,23 @@ import {
 } from '@patternfly/react-core';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
+import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 
-type FieldProps = {
+type PolicyCriteriaFieldInputProps = {
     descriptor: Descriptor;
-    readOnly: boolean;
+    readOnly?: boolean;
     name: string;
 };
 
-function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
+function PolicyCriteriaFieldInput({
+    descriptor,
+    readOnly = false,
+    name,
+}: PolicyCriteriaFieldInputProps): React.ReactElement {
     const [field, , helper] = useField(name);
     const [isSelectOpen, setIsSelectOpen] = React.useState(false);
     const { value } = field;
     const { setValue } = helper;
-
-    // TODO: Add group/nested fields
-    // this is to accomodate for recursive Fields (when type is 'group')
-    // const path = descriptor.subpath ? name : `${name}.value`;
 
     function handleChangeValue(val) {
         setValue({ value: val });
@@ -54,12 +55,14 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
         setIsSelectOpen(!isSelectOpen);
     }
 
+    /* eslint-disable default-case */
     switch (descriptor.type) {
         case 'text':
             return (
                 <TextInput
                     value={value.value}
                     type="text"
+                    id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
                 />
@@ -67,19 +70,16 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
         case 'radioGroup':
             return (
                 <ToggleGroup>
-                    {descriptor?.radioButtons?.map(({ text, value: radioValue }) => {
-                        return (
-                            <React.Fragment key={text}>
-                                <ToggleGroupItem
-                                    text={text}
-                                    buttonId={text}
-                                    isDisabled={readOnly}
-                                    isSelected={value.value === radioValue}
-                                    onChange={handleChangeSelectedValue(radioValue)}
-                                />
-                            </React.Fragment>
-                        );
-                    })}
+                    {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
+                        <ToggleGroupItem
+                            key={text}
+                            text={text}
+                            buttonId={text}
+                            isDisabled={readOnly}
+                            isSelected={value.value === radioValue}
+                            onChange={handleChangeSelectedValue(radioValue)}
+                        />
+                    ))}
                 </ToggleGroup>
             );
         case 'number':
@@ -87,6 +87,7 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
                 <TextInput
                     value={value.value}
                     type="number"
+                    id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
                     placeholder={descriptor.placeholder}
@@ -108,9 +109,9 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
                         placeholderText={descriptor.placeholder}
                     >
                         {descriptor?.options?.map((option) => (
-                            <React.Fragment key={option.value}>
-                                <SelectOption value={option.value}>{option.label}</SelectOption>
-                            </React.Fragment>
+                            <SelectOption key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectOption>
                         ))}
                     </Select>
                 </FormGroup>
@@ -132,17 +133,32 @@ function PolicyCriteriaFieldInput({ descriptor, readOnly, name }: FieldProps) {
                         placeholderText={descriptor.placeholder}
                         variant={SelectVariant.typeaheadMulti}
                     >
-                        {descriptor?.options?.map((option) => (
-                            <React.Fragment key={option.value}>
-                                <SelectOption value={option.value}>{option.label}</SelectOption>
-                            </React.Fragment>
+                        {descriptor.options?.map((option) => (
+                            <SelectOption key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectOption>
                         ))}
                     </Select>
                 </FormGroup>
             );
-        default:
-            throw new Error(`Unknown field type: ${descriptor.type}`);
+        case 'group': {
+            /* eslint-disable react/no-array-index-key */
+            return (
+                <>
+                    {descriptor.subComponents?.map((subComponent, index) => (
+                        <PolicyCriteriaFieldSubInput
+                            key={index}
+                            subComponent={subComponent}
+                            readOnly={readOnly}
+                            name={`${name}.${subComponent.subpath}`}
+                        />
+                    ))}
+                </>
+            );
+            /* eslint-enable react/no-array-index-key */
+        }
     }
+    /* eslint-enable default-case */
 }
 
 export default PolicyCriteriaFieldInput;

@@ -38,6 +38,9 @@ const (
 	// verify internal cluster services.
 	// This could be i.e. the openshiftAPIUrl or other internal services.
 	internalServicesCAPath = "/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	// injectedCAPath points to the bundle of user-provided and system CA certificates
+	// merged by the Cluster Network Operator.
+	injectedCAPath = "/etc/pki/injected-ca-trust/tls-ca-bundle.pem"
 )
 
 var (
@@ -143,9 +146,9 @@ func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthRe
 	// OpenShift doesn't provide emails in their users API response, see
 	// https://docs.openshift.com/container-platform/4.9/rest_api/user_and_group_apis/user-user-openshift-io-v1.html
 	attributes := map[string][]string{
-		"userid": {id.UserID},
-		"name":   {id.Username},
-		"groups": id.Groups,
+		authproviders.UseridAttribute: {id.UserID},
+		authproviders.NameAttribute:   {id.Username},
+		authproviders.GroupsAttribute: id.Groups,
 	}
 
 	return &authproviders.AuthResponse{
@@ -193,7 +196,7 @@ func getOpenShiftSettings() (openShiftSettings, error) {
 		return openShiftSettings{}, errors.Wrap(err, "reading service account token")
 	}
 
-	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath)
+	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
 	if err != nil {
 		return openShiftSettings{}, err
 	}

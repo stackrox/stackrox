@@ -5,16 +5,16 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: scanner
+  name: {{ ._rox.scanner.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "networkpolicy" "scanner") | nindent 4 }}
+    {{- include "srox.labels" (list . "networkpolicy" ._rox.scanner.name) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "networkpolicy" "scanner") | nindent 4 }}
+    {{- include "srox.annotations" (list . "networkpolicy" ._rox.scanner.name) | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      app: scanner
+      app: {{ ._rox.scanner.name }}
   ingress:
   - from:
     - podSelector:
@@ -33,21 +33,21 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: scanner-db
+  name: {{ ._rox.scanner.name }}-db
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "networkpolicy" "scanner-db") | nindent 4 }}
+    {{- include "srox.labels" (list . "networkpolicy" (print ._rox.scanner.name "-db")) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "networkpolicy" "scanner-db") | nindent 4 }}
+    {{- include "srox.annotations" (list . "networkpolicy" (print ._rox.scanner.name "-db")) | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      app: scanner-db
+      app: {{ ._rox.scanner.name }}-db
   ingress:
   - from:
     - podSelector:
         matchLabels:
-          app: scanner
+          app: {{ ._rox.scanner.name }}
     ports:
     - port: 5432
       protocol: TCP

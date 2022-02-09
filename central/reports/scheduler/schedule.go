@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -18,17 +19,23 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifiers"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"gopkg.in/robfig/cron.v2"
+)
+
+const (
+	numDeploymentsLimit = 50
 )
 
 var (
@@ -44,7 +51,7 @@ var (
 								name
 								images {
 									name {
-										fullName
+										full_name:fullName
 									}
 									components {
 										name
@@ -61,20 +68,23 @@ var (
         fixedByVersion
         isFixable
         discoveredAtImage
+		link
     }`
 
-	vulnReportEmailTemplate = `Hi,
-
-	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report for {{.WhichVulns}} for {{.DateStr}}.
+	vulnReportEmailTemplate = `
+	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
+
+	noVulnsFoundEmailTemplate = `
+	Red Hat Advanced Cluster Security for Kubernetes has found zero vulnerabilities associated with the running container images owned by your organization.`
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
 
 // Scheduler maintains the schedules for reports
 type Scheduler interface {
-	UpsertReportSchedule(cronSpec string, reportConfig *storage.ReportConfiguration) error
+	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
 	RemoveReportSchedule(reportConfigID string)
 	SubmitReport(request *ReportRequest)
 	Start()
@@ -114,7 +124,9 @@ type reportEmailFormat struct {
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report configurations
-func New() Scheduler {
+func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
+	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDatastore.DataStore, roleDS roleDataStore.DataStore,
+	notificationProcessor processor.Processor) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 
@@ -125,12 +137,12 @@ func New() Scheduler {
 	s := &scheduler{
 		reportConfigToEntryIDs: make(map[string]cron.EntryID),
 		cron:                   cronScheduler,
-		reportConfigDatastore:  reportConfigDS.Singleton(),
-		notifierDatastore:      notifierDataStore.Singleton(),
-		clusterDatastore:       clusterDataStore.Singleton(),
-		namespaceDatastore:     namespaceDatastore.Singleton(),
-		roleDatastore:          roleDataStore.Singleton(),
-		notificationProcessor:  processor.Singleton(),
+		reportConfigDatastore:  reportConfigDS,
+		notifierDatastore:      notifierDS,
+		clusterDatastore:       clusterDS,
+		namespaceDatastore:     namespaceDS,
+		roleDatastore:          roleDS,
+		notificationProcessor:  notificationProcessor,
 		reportsToRun:           make(chan *ReportRequest, 100),
 		Schema:                 ourSchema,
 
@@ -140,17 +152,8 @@ func New() Scheduler {
 	return s
 }
 
-func (s *scheduler) reportClosure(reportConfigID string) func() {
+func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
 	return func() {
-		reportConfig, found, err := s.reportConfigDatastore.GetReportConfiguration(context.Background(), reportConfigID)
-		if !found {
-			log.Errorf("report config %s not found", reportConfigID)
-			return
-		}
-		if err != nil {
-			log.Errorf("error getting report config %s: %s", reportConfigID, err)
-			return
-		}
 		log.Infof("Submitting report request for '%s' at %v", reportConfig.GetName(), time.Now().Format(time.RFC850))
 		s.SubmitReport(&ReportRequest{
 			ReportConfig: reportConfig,
@@ -160,11 +163,14 @@ func (s *scheduler) reportClosure(reportConfigID string) func() {
 	}
 }
 
-func (s *scheduler) UpsertReportSchedule(cronSpec string, reportConfig *storage.ReportConfiguration) error {
+func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-
-	entryID, err := s.cron.AddFunc(cronSpec, s.reportClosure(reportConfig.GetId()))
+	cronSpec, err := schedule.ConvertToCronTab(reportConfig.GetSchedule())
+	if err != nil {
+		return err
+	}
+	entryID, err := s.cron.AddFunc(cronSpec, s.reportClosure(reportConfig))
 	if err != nil {
 		return err
 	}
@@ -198,7 +204,7 @@ func (s *scheduler) runReports() {
 		case <-s.stoppedSig.Done():
 			return
 		case req := <-s.reportsToRun:
-			log.Infof("Executing report %s at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
+			log.Infof("Executing report '%s' at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
 			err := s.sendReportResults(req)
 			if err != nil {
 				log.Errorf("error executing report %s: %s", req.ReportConfig.GetName(), err)
@@ -227,7 +233,10 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 			LastRunTime:  timestamp.Now().GogoProtobuf(),
 			ErrorMsg:     "",
 		}
-		req.ReportConfig.LastSuccessfulRunTime = timestamp.Now().GogoProtobuf()
+		req.ReportConfig.LastSuccessfulRunTime = types.TimestampNow()
+	}
+	if err = s.UpsertReportSchedule(req.ReportConfig); err != nil {
+		return err
 	}
 	return s.reportConfigDatastore.UpdateReportConfiguration(req.Ctx, req.ReportConfig)
 }
@@ -252,7 +261,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
 	}
 
-	qb := NewVulnReportQueryBuilder(clusters, namespaces, scope, rc.GetVulnReportFilters(),
+	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, rc.GetVulnReportFilters(),
 		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
 	reportQuery, err := qb.BuildQuery()
 	if err != nil {
@@ -264,20 +273,24 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	if !ok {
 		return errors.Errorf("incorrect notifier type in report config '%s'", rc.GetName())
 	}
-
+	// Get the results of running the report query
 	reportData, err := s.getReportData(req.Ctx, reportQuery)
 	if err != nil {
 		return err
 	}
-
-	zippedCSVData, err := Format(reportData)
+	// Format results into CSV
+	zippedCSVData, err := common.Format(reportData)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}
-
-	messageText, err := formatMessage(rc)
-	if err != nil {
-		return errors.Wrap(err, "error formatting the report email text")
+	// If it is an empty report, do not send an attachment in the final notification email and the email body
+	// will indicate that no vulns were found
+	messageText := noVulnsFoundEmailTemplate
+	if zippedCSVData != nil {
+		messageText, err = formatMessage(rc)
+		if err != nil {
+			return errors.Wrap(err, "error formatting the report email text")
+		}
 	}
 
 	if err = retry.WithRetry(func() error {
@@ -299,12 +312,12 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 	data := &reportEmailFormat{
-		WhichVulns: "all vulnerabilities",
-		DateStr:    time.Now().Format("January 02 2006"),
+		WhichVulns: "for all vulnerabilities",
+		DateStr:    time.Now().Format("January 02, 2006"),
 	}
-	if rc.GetVulnReportFilters().SinceLastReport {
-		data.WhichVulns = fmt.Sprintf("new vulnerabilities since %s",
-			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02 2006"))
+	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
+		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
+			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
 	tmpl, err := template.New("emailBody").Parse(vulnReportEmailTemplate)
 	if err != nil {
@@ -318,25 +331,46 @@ func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 	return tpl.String(), nil
 }
 
-func (s *scheduler) getReportData(ctx context.Context, rQuery *reportQuery) ([]result, error) {
-	r := make([]result, len(rQuery.scopeQueries))
-	for _, sq := range rQuery.scopeQueries {
-		response := s.Schema.Exec(ctx,
-			reportDataQuery, "getVulnReportData", map[string]interface{}{
-				"scopequery": sq,
-				"cvequery":   rQuery.cveFieldsQuery,
-			})
-		if len(response.Errors) > 0 {
-			return []result{}, response.Errors[0].Err
-		}
-
-		var resultData result
-		if err := json.Unmarshal(response.Data, &resultData); err != nil {
-			return []result{}, err
+func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
+	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
+	for _, sq := range rQuery.ScopeQueries {
+		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery)
+		if err != nil {
+			return nil, err
 		}
 		r = append(r, resultData)
 	}
 	return r, nil
+}
+
+func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string) (common.Result, error) {
+	offset := 0
+	var resultData common.Result
+	for {
+		response := s.Schema.Exec(ctx,
+			reportDataQuery, "getVulnReportData", map[string]interface{}{
+				"scopequery": scopeQuery,
+				"cvequery":   cveQuery,
+				"pagination": map[string]interface{}{
+					"offset": offset,
+					"limit":  numDeploymentsLimit,
+				},
+			})
+		if len(response.Errors) > 0 {
+			log.Errorf("error running graphql query: %s", response.Errors[0].Message)
+			return common.Result{}, response.Errors[0].Err
+		}
+		var r common.Result
+		if err := json.Unmarshal(response.Data, &r); err != nil {
+			return common.Result{}, err
+		}
+		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
+		if len(r.Deployments) < numDeploymentsLimit {
+			break
+		}
+		offset += len(r.Deployments)
+	}
+	return resultData, nil
 }
 
 func (s *scheduler) Start() {

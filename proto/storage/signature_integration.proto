@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message SignatureIntegration {
+    string id   = 1;
+    string name = 2;
+
+    repeated SignatureVerificationConfig signature_verification_configs = 3;
+}
+
+message SignatureVerificationConfig {
+    string id = 1;
+
+    oneof config {
+        CosignPublicKeyVerification public_key = 2;
+    }
+}
+
+message CosignPublicKeyVerification {
+    repeated string public_keys_base64_enc = 2;
+}

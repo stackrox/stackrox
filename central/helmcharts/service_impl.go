@@ -64,7 +64,7 @@ func (s *service) serveChart(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	flavor := defaults.GetImageFlavorByBuildType()
+	flavor := defaults.GetImageFlavorFromEnv()
 
 	// Render template files.
 	renderedChartFiles, err := helmImage.LoadAndInstantiateChartTemplate(chartPathPrefix, pkgCharts.GetMetaValuesForFlavor(flavor))

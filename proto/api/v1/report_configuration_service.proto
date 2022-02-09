@@ -29,7 +29,8 @@ message PostReportConfigurationRequest {
 }
 
 message UpdateReportConfigurationRequest {
-    storage.ReportConfiguration report_config = 1;
+    string id = 1;
+    storage.ReportConfiguration report_config = 2;
 }
 
 service ReportConfigurationService {
@@ -53,10 +54,10 @@ service ReportConfigurationService {
         };
     }
 
-    // PutReportConfigutarion updates a report configuration
+    // UpdateReportConfiguration updates a report configuration
     rpc UpdateReportConfiguration (UpdateReportConfigurationRequest) returns (Empty) {
         option (google.api.http) = {
-            put: "/v1/report/configurations"
+            put: "/v1/report/configurations/{id}"
             body: "*"
         };
     }

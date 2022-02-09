@@ -209,7 +209,7 @@ func saml2AssertionInfoToExternalClaim(assertionInfo *saml2.AssertionInfo) *toke
 				getAttribute(assertionInfo, surnameAttributes...))),
 	}
 	claim.Attributes = make(map[string][]string)
-	claim.Attributes["userid"] = []string{claim.UserID}
+	claim.Attributes[authproviders.UseridAttribute] = []string{claim.UserID}
 
 	// We store claims as both friendly name and name for easy of use.
 	for _, value := range assertionInfo.Values {

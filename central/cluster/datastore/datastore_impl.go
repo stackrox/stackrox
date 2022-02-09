@@ -31,6 +31,7 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -848,6 +849,10 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
+	if cluster == nil {
+		return errorhelpers.NewErrInvariantViolation("cannot normalize nil cluster object")
+	}
+
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
 
@@ -858,7 +863,13 @@ func validateInput(cluster *storage.Cluster) error {
 	return clusterValidation.Validate(cluster).ToError()
 }
 
+// addDefaults enriches the provided non-nil cluster object with defaults for
+// fields that cannot stay empty.
+// `cluster.* bool` flags remain untouched.
 func addDefaults(cluster *storage.Cluster) error {
+	if cluster == nil {
+		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
+	}
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
 		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
@@ -890,6 +901,15 @@ func addDefaults(cluster *storage.Cluster) error {
 	}
 	if acConfig.GetTimeoutSeconds() == 0 {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
+	}
+	if cluster.GetMainImage() == "" {
+		flavor := defaults.GetImageFlavorFromEnv()
+		cluster.MainImage = flavor.MainImageNoTag()
+		// cluster.CollectorImage should be kept empty here on the save path
+		// because it is computed using complex rules from the MainImage on the load path.
+	}
+	if cluster.GetCentralApiEndpoint() == "" {
+		cluster.CentralApiEndpoint = "central.stackrox:443"
 	}
 	return nil
 }

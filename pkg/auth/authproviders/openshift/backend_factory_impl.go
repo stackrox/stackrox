@@ -64,3 +64,9 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 func (f *factory) MergeConfig(newConfig, _ map[string]string) map[string]string {
 	return newConfig
 }
+
+func (f *factory) GetSuggestedAttributes() []string {
+	return []string{authproviders.UseridAttribute,
+		authproviders.NameAttribute,
+		authproviders.GroupsAttribute}
+}

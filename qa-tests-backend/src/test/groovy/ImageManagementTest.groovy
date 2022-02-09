@@ -84,15 +84,15 @@ class ImageManagementTest extends BaseSpecification {
         "Data inputs are: "
 
         imageName               | imageRegistry | imageRemote       | imageTag         | expected
-        "ubuntu:14.04"          | "docker.io"   | "library/ubuntu"  | "14.04"          | "ubuntu:14.04"
+        "alpine:3.10.0"         | "docker.io"   | "library/alpine"  | "3.10.0"         | "alpine:v3.10"
         "busybox:1.32.0"        | "docker.io"   | "library/busybox" | "1.32.0"         | "unknown"
-        "alpine:3.10.1"         | "docker.io"   | "library/alpine"  | "3.10.0"         | "alpine:v3.10"
+        "centos:centos8.2.2004" | "docker.io"   | "library/centos"  | "centos8.2.2004" | "centos:8"
+        // We explicitly do not support Fedora at this time.
+        "fedora:33"             | "docker.io"   | "library/fedora"  | "33"             | "unknown"
         "nginx:1.10"            | "docker.io"   | "library/nginx"   | "1.10"           | "debian:8"
         "nginx:1.19"            | "docker.io"   | "library/nginx"   | "1.19"           | "debian:10"
-        "centos:centos8.2.2004" | "docker.io"   | "library/centos"  | "centos8.2.2004" | "centos:8"
-        // This is due to weird Scanner functionality. Making this a test, in case we decide to come back to Scanner
-        // and change this. Best to know what our expectations are.
-        "fedora:33"             | "docker.io"   | "library/fedora"  | "33"             | "unknown"
+        // TODO: Add check for RHEL
+        "ubuntu:14.04"          | "docker.io"   | "library/ubuntu"  | "14.04"          | "ubuntu:14.04"
     }
 
     @Unroll

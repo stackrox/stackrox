@@ -8,10 +8,13 @@ ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
-# Set 'development_build' as default ROX_IMAGE_FLAVOR, so that developers can use the Makefile locally.
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox_io_release, rhacs_release.
-ROX_IMAGE_FLAVOR ?= development_build
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
+# The value is assigned as following:
+# 1. Use environment variable if provided.
+# 2. If makefile variable GOTAGS is contains "release", use "stackrox.io".
+# 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
+ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
 
 # Compute the tag of the build image based on the contents of the tracked files in
 # build. This ensures that we build it if and only if necessary, pulling from DockerHub
@@ -186,7 +189,8 @@ ui-lint:
 .PHONY: ci-config-validate
 ci-config-validate:
 	@echo "+ $@"
-	circleci config validate
+	@circleci diagnostic > /dev/null 2>&1 || (echo "Must first set CIRCLECI_CLI_TOKEN or run circleci setup"; exit 1)
+	circleci config validate --org-slug gh/stackrox
 
 .PHONY: staticcheck
 staticcheck: $(STATICCHECK_BIN)
@@ -278,13 +282,9 @@ include make/protogen.mk
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
 	@easyjson -pkg pkg/docker/types/types.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/types_easyjson.go
 	@easyjson -pkg pkg/docker/types/container.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/container_easyjson.go
 	@easyjson -pkg pkg/docker/types/image.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
 	@easyjson -pkg pkg/compliance/compress/compress.go
-    @echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/compress_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
@@ -292,9 +292,9 @@ clean-easyjson-srcs:
 	@find . -name '*_easyjson.go' -exec rm {} \;
 
 .PHONY: go-generated-srcs
-go-generated-srcs: deps go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
-	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
+	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x ./...
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
@@ -412,12 +412,12 @@ sensor-kubernetes-build:
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
 ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
-	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --name builder $(BUILD_IMAGE) make main-build-nodeps
+	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --name builder $(BUILD_IMAGE) make main-build-nodeps
 	docker cp $(GOPATH) builder:/
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
 else
-	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 endif
 
 .PHONY: main-build-nodeps
@@ -528,7 +528,7 @@ main-image: all-builds
 	make docker-build-main-image
 
 $(CURDIR)/image/rhel/bundle.tar.gz:
-	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz
@@ -643,6 +643,10 @@ else
 	@echo $(TAG)
 endif
 endif
+
+.PHONY: image-flavor
+image-flavor:
+	@echo $(ROX_IMAGE_FLAVOR)
 
 .PHONY: ossls-audit
 ossls-audit: deps

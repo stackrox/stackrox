@@ -16,38 +16,33 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarItem,
+    Divider,
+    PageSection,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import MitreAttackVectors from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
-import useToasts from 'hooks/useToasts';
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
-import { Cluster } from 'types/cluster.proto';
-import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import PolicyOverview from './PolicyOverview';
+import PolicyDetailContent from './PolicyDetailContent';
 
 function formatUpdateDisabledStateAction(disabled: boolean) {
     return disabled ? 'Enable policy' : 'Disable policy';
 }
 
 type PolicyDetailProps = {
-    clusters: Cluster[];
     handleUpdateDisabledState: (id: string, disabled: boolean) => Promise<void>;
     hasWriteAccessForPolicy: boolean;
-    notifiers: NotifierIntegration[];
     policy: Policy;
 };
 
 function PolicyDetail({
-    clusters,
     handleUpdateDisabledState,
     hasWriteAccessForPolicy,
-    notifiers,
     policy,
 }: PolicyDetailProps): ReactElement {
     const history = useHistory();
@@ -88,8 +83,9 @@ function PolicyDetail({
             .then(() => {
                 addToast('Successfully exported policy', 'success');
             })
-            .catch(({ response }) => {
-                addToast('Could not export policy', 'danger', response.data.message);
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                addToast('Could not export the policy', 'danger', message);
             })
             .finally(() => {
                 setIsRequesting(false);
@@ -149,124 +145,121 @@ function PolicyDetail({
 
     return (
         <>
-            <Breadcrumb className="pf-u-mb-md">
-                <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
-                <BreadcrumbItem isActive>{name}</BreadcrumbItem>
-            </Breadcrumb>
-            <Toolbar inset={{ default: 'insetNone' }}>
-                <ToolbarContent>
-                    <ToolbarItem>
-                        <Title headingLevel="h1">{name}</Title>
-                    </ToolbarItem>
-                    <ToolbarItem>
-                        {disabled ? (
-                            <Label color="grey">Disabled</Label>
-                        ) : (
-                            <Label color="green">Enabled</Label>
-                        )}
-                    </ToolbarItem>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <Dropdown
-                            onSelect={onSelectActions}
-                            position="right"
-                            toggle={
-                                <DropdownToggle
-                                    isDisabled={isRequesting}
-                                    isPrimary
-                                    onToggle={onToggleActions}
-                                    toggleIndicator={CaretDownIcon}
-                                >
-                                    Actions
-                                </DropdownToggle>
-                            }
-                            isOpen={isActionsOpen}
-                            dropdownItems={
-                                hasWriteAccessForPolicy
-                                    ? [
-                                          <DropdownItem
-                                              key="Edit policy"
-                                              component="button"
-                                              onClick={onEditPolicy}
-                                          >
-                                              Edit policy
-                                          </DropdownItem>,
-                                          <DropdownItem
-                                              key="Clone policy"
-                                              component="button"
-                                              onClick={onClonePolicy}
-                                          >
-                                              Clone policy
-                                          </DropdownItem>,
-                                          <DropdownItem
-                                              key="Export policy to JSON"
-                                              component="button"
-                                              onClick={onExportPolicy}
-                                          >
-                                              Export policy to JSON
-                                          </DropdownItem>,
-                                          <DropdownItem
-                                              key="Enable/Disable policy"
-                                              component="button"
-                                              onClick={onUpdateDisabledState}
-                                          >
-                                              {formatUpdateDisabledStateAction(disabled)}
-                                          </DropdownItem>,
-                                          <DropdownSeparator key="Separator" />,
-                                          <DropdownItem
-                                              key="Delete policy"
-                                              component="button"
-                                              isDisabled={isDefault}
-                                              onClick={onDeletePolicy}
-                                          >
-                                              Delete policy
-                                          </DropdownItem>,
-                                      ]
-                                    : [
-                                          <DropdownItem
-                                              key="Export policy to JSON"
-                                              component="button"
-                                              onClick={onExportPolicy}
-                                          >
-                                              Export policy to JSON
-                                          </DropdownItem>,
-                                      ]
-                            }
-                        />
-                    </ToolbarItem>
-                </ToolbarContent>
-            </Toolbar>
-            {requestError}
-            <Title headingLevel="h2" className="pf-u-mb-md">
-                Policy overview
-            </Title>
-            <PolicyOverview clusters={clusters} policy={policy} notifiers={notifiers} />
-            <Title headingLevel="h2" className="pf-u-mt-md">
-                MITRE ATT&amp;CK
-            </Title>
-            <MitreAttackVectors policyId={id} />
-            <Title headingLevel="h2" className="pf-u-mb-md">
-                Policy criteria
-            </Title>
-            TODO
-            <AlertGroup isToast isLiveRegion>
-                {toasts.map(({ key, variant, title, children }) => (
-                    <Alert
-                        variant={AlertVariant[variant]}
-                        title={title}
-                        timeout={4000}
-                        actionClose={
-                            <AlertActionCloseButton
-                                title={title}
-                                variantLabel={`${variant as string} alert`}
-                                onClose={() => removeToast(key)}
+            <PageSection variant="light" isFilled id="policy-page" className="pf-u-pb-0">
+                <Breadcrumb className="pf-u-mb-md">
+                    <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{name}</BreadcrumbItem>
+                </Breadcrumb>
+                <Toolbar inset={{ default: 'insetNone' }}>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <Title headingLevel="h1">{name}</Title>
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            {disabled ? (
+                                <Label color="grey">Disabled</Label>
+                            ) : (
+                                <Label color="green">Enabled</Label>
+                            )}
+                        </ToolbarItem>
+                        <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <Dropdown
+                                onSelect={onSelectActions}
+                                position="right"
+                                toggle={
+                                    <DropdownToggle
+                                        isDisabled={isRequesting}
+                                        isPrimary
+                                        onToggle={onToggleActions}
+                                        toggleIndicator={CaretDownIcon}
+                                    >
+                                        Actions
+                                    </DropdownToggle>
+                                }
+                                isOpen={isActionsOpen}
+                                dropdownItems={
+                                    hasWriteAccessForPolicy
+                                        ? [
+                                              <DropdownItem
+                                                  key="Edit policy"
+                                                  component="button"
+                                                  onClick={onEditPolicy}
+                                              >
+                                                  Edit policy
+                                              </DropdownItem>,
+                                              <DropdownItem
+                                                  key="Clone policy"
+                                                  component="button"
+                                                  onClick={onClonePolicy}
+                                              >
+                                                  Clone policy
+                                              </DropdownItem>,
+                                              <DropdownItem
+                                                  key="Export policy to JSON"
+                                                  component="button"
+                                                  onClick={onExportPolicy}
+                                              >
+                                                  Export policy to JSON
+                                              </DropdownItem>,
+                                              <DropdownItem
+                                                  key="Enable/Disable policy"
+                                                  component="button"
+                                                  onClick={onUpdateDisabledState}
+                                              >
+                                                  {formatUpdateDisabledStateAction(disabled)}
+                                              </DropdownItem>,
+                                              <DropdownSeparator key="Separator" />,
+                                              <DropdownItem
+                                                  key="Delete policy"
+                                                  component="button"
+                                                  isDisabled={isDefault}
+                                                  onClick={onDeletePolicy}
+                                              >
+                                                  Delete policy
+                                              </DropdownItem>,
+                                          ]
+                                        : [
+                                              <DropdownItem
+                                                  key="Export policy to JSON"
+                                                  component="button"
+                                                  onClick={onExportPolicy}
+                                              >
+                                                  Export policy to JSON
+                                              </DropdownItem>,
+                                          ]
+                                }
                             />
-                        }
-                        key={key}
-                    >
-                        {children}
-                    </Alert>
-                ))}
-            </AlertGroup>
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            </PageSection>
+            <PageSection variant="light" isFilled className="pf-u-pt-0">
+                {requestError}
+                <Title headingLevel="h2" className="pf-u-mb-md">
+                    Policy details
+                </Title>
+                <Divider component="div" className="pf-u-pb-md" />
+                <PolicyDetailContent policy={policy} />
+                <AlertGroup isToast isLiveRegion>
+                    {toasts.map(({ key, variant, title, children }: Toast) => (
+                        <Alert
+                            variant={AlertVariant[variant]}
+                            title={title}
+                            timeout={4000}
+                            actionClose={
+                                <AlertActionCloseButton
+                                    title={title}
+                                    variantLabel={`${variant} alert`}
+                                    onClose={() => removeToast(key)}
+                                />
+                            }
+                            key={key}
+                        >
+                            {children}
+                        </Alert>
+                    ))}
+                </AlertGroup>
+            </PageSection>
         </>
     );
 }

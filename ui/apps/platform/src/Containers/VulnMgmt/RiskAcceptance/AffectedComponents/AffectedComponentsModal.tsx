@@ -51,10 +51,11 @@ function AffectedComponentsModal({
                 />
             </InputGroup>
             <Card isFlat className="pf-u-mt-lg">
-                <TableComposable aria-label="Components Table" variant="compact" borders>
+                <TableComposable aria-label="Affected Components Table" variant="compact" borders>
                     <Thead>
                         <Tr>
                             <Th>Component</Th>
+                            <Th>Version</Th>
                             <Th>Fixed in</Th>
                         </Tr>
                     </Thead>
@@ -72,6 +73,7 @@ function AffectedComponentsModal({
                                             {component.name}
                                         </a>
                                     </Td>
+                                    <Td dataLabel="Version">{component.version}</Td>
                                     <Td dataLabel="Fixed in">{component.fixedIn || '-'}</Td>
                                 </Tr>
                             );

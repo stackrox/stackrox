@@ -1,9 +1,10 @@
 import queryString from 'qs';
 
-import { Alert, ListAlert } from 'Containers/Violations/PatternFly/types/violationTypes';
+import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 
 import axios from './instance';
 import searchOptionsToQuery from './searchOptionsToQuery';
+import { RestSortOption } from './sortOption';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -13,11 +14,6 @@ export type RestSearchOption = {
     label?: string;
     type?: string; // for example, 'categoryOption'
     value: string | string[];
-};
-
-export type RestSortOption = {
-    field: string;
-    reversed: boolean;
 };
 
 // TODO import Severity from PoliciesService when it is TypeScript.
@@ -118,7 +114,7 @@ export function fetchAlerts(
     );
     return axios
         .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`)
-        .then((response) => (response.data ? response.data.alerts : []));
+        .then((response) => response?.data?.alerts ?? []);
 }
 
 /*
@@ -131,7 +127,7 @@ export function fetchAlertCount(options: RestSearchOption[]): Promise<number> {
     );
     return axios
         .get<{ count: number }>(`${baseCountUrl}?${params}`)
-        .then((response) => response.data.count);
+        .then((response) => response?.data?.count ?? 0);
 }
 
 /*

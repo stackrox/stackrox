@@ -1,9 +1,10 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
-import { Bullseye, Spinner } from '@patternfly/react-core';
+import { Bullseye, PageSection, PageSectionVariants, Spinner } from '@patternfly/react-core';
 
 import usePagination from 'hooks/patternfly/usePagination';
+import ACSEmptyState from 'Components/ACSEmptyState';
 import DeferredCVEsTable from './DeferredCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 
@@ -20,8 +21,8 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
             limit: perPage,
             offset: (page - 1) * perPage,
             sortOption: {
-                field: 'cve',
-                reversed: false,
+                field: 'Severity',
+                reversed: true,
             },
         },
     });
@@ -29,13 +30,21 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
     if (isLoading) {
         return (
             <Bullseye>
-                <Spinner size="sm" />
+                <Spinner isSVG size="sm" />
             </Bullseye>
         );
     }
 
-    const itemCount = data?.vulnerabilityCount || 0;
-    const rows = data?.vulnerabilities || [];
+    const itemCount = data?.image?.vulnCount || 0;
+    const rows = data?.image?.vulns || [];
+
+    if (!isLoading && rows && rows.length === 0) {
+        return (
+            <PageSection variant={PageSectionVariants.light} isFilled>
+                <ACSEmptyState title="No deferral requests were approved." />
+            </PageSection>
+        );
+    }
 
     return (
         <DeferredCVEsTable

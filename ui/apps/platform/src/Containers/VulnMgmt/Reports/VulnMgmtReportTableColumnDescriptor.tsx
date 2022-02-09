@@ -11,7 +11,7 @@ const VulnMgmtReportTableColumnDescriptor = [
     {
         Header: 'Report',
         accessor: 'report.name',
-        sortField: 'Report',
+        sortField: 'Report Name',
         Cell: ({ original }) => {
             const url = `${vulnManagementReportsPath}/${original.id as string}`;
             return (
@@ -40,13 +40,11 @@ const VulnMgmtReportTableColumnDescriptor = [
     {
         Header: 'CVE severities',
         accessor: 'vulnReportFilters.severities',
-        sortField: 'CVE severities',
         Cell: ({ value }): ReactElement => <SeverityLabelsList severities={value} />,
     },
     {
         Header: 'Last run',
         accessor: 'runStatus',
-        sortField: 'Last run',
         Cell: ({ value }): ReactElement => {
             const lastRunAttempt = value?.lastTimeRun;
             return lastRunAttempt ? (

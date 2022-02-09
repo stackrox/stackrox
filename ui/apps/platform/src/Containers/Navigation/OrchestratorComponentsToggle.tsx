@@ -3,9 +3,10 @@ import { connect } from 'react-redux';
 import { Switch } from '@patternfly/react-core';
 
 import { actions as graphActions } from 'reducers/network/graph';
+import { RestSearchOption } from 'services/searchOptionsToQuery';
 import useCases from 'constants/useCaseTypes';
 
-export const orchestratorComponentOption = [
+export const orchestratorComponentOption: RestSearchOption[] = [
     {
         value: 'Orchestrator Component:',
         type: 'categoryOption',

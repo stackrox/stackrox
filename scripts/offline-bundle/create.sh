@@ -32,7 +32,7 @@ save_with_rhel() {
   local last_dir=$4
 
   save "$registry" "$name" "$tag" "${last_dir}"
-  export_image "$name" "${registry}/${name}-rhel:${tag}" "${last_dir}-rhel"
+  export_image "$name" "${registry}/${name}:${tag}" "${last_dir}-rhel"
 }
 
 bundle() {
@@ -57,18 +57,15 @@ main() {
     local main_tag="$(make --quiet tag)"
     save_with_rhel "stackrox.io" "main" "${main_tag}" "image-bundle"
 
-    # Scanner uses the version contained in the SCANNER_VERSION file.
-    local scanner_tag="$(cat SCANNER_VERSION)"
-    save_with_rhel "stackrox.io" "scanner" "${scanner_tag}" "image-bundle"
-    save_with_rhel "stackrox.io" "scanner-db" "${scanner_tag}" "image-bundle"
+    # Scanner uses the same version as Main.
+    save_with_rhel "stackrox.io" "scanner" "${main_tag}" "image-bundle"
+    save_with_rhel "stackrox.io" "scanner-db" "${main_tag}" "image-bundle"
 
     # The docs image (only advertised offline) uses the release tag (same as Main).
-    local docs_tag=${main_tag}
-    save "stackrox.io" "docs" "${docs_tag}" "image-bundle"
+    save "stackrox.io" "docs" "${main_tag}" "image-bundle"
 
-    # Collector uses the version contained in the COLLECTOR_VERSION file.
-    local collector_tag="$(cat COLLECTOR_VERSION)"
-    save_with_rhel "collector.stackrox.io" "collector" "${collector_tag}-latest" "image-collector-bundle"
+    # Collector uses the same version as Main.
+    save_with_rhel "collector.stackrox.io" "collector" "${main_tag}" "image-collector-bundle"
 
     store_roxctl "image-bundle"
     store_roxctl "image-bundle-rhel"

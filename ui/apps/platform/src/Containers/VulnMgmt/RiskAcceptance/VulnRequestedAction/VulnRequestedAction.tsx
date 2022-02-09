@@ -7,7 +7,7 @@ import { getDistanceStrict } from 'utils/dateUtils';
 export type VulnRequestedActionProps = {
     targetState: VulnerabilityState;
     requestStatus: RequestStatus;
-    deferralReq: DeferralRequest;
+    deferralReq: DeferralRequest | null;
     updatedDeferralReq?: DeferralRequest;
     currentDate: Date;
 };
@@ -15,8 +15,8 @@ export type VulnRequestedActionProps = {
 function VulnRequestedAction({
     targetState,
     requestStatus,
-    deferralReq,
-    updatedDeferralReq,
+    deferralReq = { expiresWhenFixed: undefined, expiresOn: undefined },
+    updatedDeferralReq = { expiresWhenFixed: undefined, expiresOn: undefined },
     currentDate,
 }: VulnRequestedActionProps): ReactElement {
     let type = '';
@@ -34,11 +34,13 @@ function VulnRequestedAction({
         type = 'Deferral';
     }
 
-    // if "updatedDeferralReq" is not passed then default to "deferralReq"
-    const { expiresWhenFixed, expiresOn } =
+    const chosenDeferralReq =
         requestStatus === 'APPROVED_PENDING_UPDATE' && updatedDeferralReq
             ? updatedDeferralReq
             : deferralReq;
+    const expiresWhenFixed = chosenDeferralReq?.expiresWhenFixed || false;
+    const expiresOn = chosenDeferralReq?.expiresOn || null;
+
     if (expiresWhenFixed) {
         action = '(until fixed)';
     } else if (expiresOn) {

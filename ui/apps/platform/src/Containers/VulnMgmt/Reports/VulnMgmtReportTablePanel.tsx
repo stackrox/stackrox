@@ -1,28 +1,46 @@
 import React, { useState, ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import {
-    Flex,
-    FlexItem,
+    Alert,
+    AlertGroup,
+    AlertVariant,
+    Button,
+    DropdownItem,
     Divider,
     PageSection,
+    PageSectionVariants,
     Pagination,
-    DropdownItem,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
+import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import SearchFilterResults from 'Components/PatternFly/SearchFilterResults';
 import TableCell from 'Components/PatternFly/TableCell';
+import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
-import DeleteConfirmation from './Modals/DeleteConfirmation';
+import { SearchFilter } from 'types/search';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import ReportsSearchFilter from './Components/ReportsSearchFilter';
 
 export type ActionItem = {
     title: string | ReactElement;
     onClick: (item) => void;
 };
 
-type ModalType = 'delete' | null;
+type AlertInfo = {
+    title: string;
+    variant: AlertVariant;
+    key: number;
+    timeout?: number | boolean;
+};
 
 type ReportingTablePanelProps = {
     reports: ReportConfiguration[];
@@ -31,11 +49,15 @@ type ReportingTablePanelProps = {
     setCurrentPage: (page) => void;
     perPage: number;
     setPerPage: (perPage) => void;
+    searchFilter: SearchFilter;
+    setSearchFilter: (SearchFilter) => void;
     activeSortIndex: number;
     setActiveSortIndex: (idx) => void;
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
     columns: TableColumn[];
+    onRunReports: (reportIds: string[]) => Promise<any>; // return value not used
+    onDeleteReports: (reportIds: string[]) => Promise<void>; // return value not used
 };
 
 function ReportingTablePanel({
@@ -45,13 +67,25 @@ function ReportingTablePanel({
     setCurrentPage,
     perPage,
     setPerPage,
+    searchFilter,
+    setSearchFilter,
     activeSortIndex,
     setActiveSortIndex,
     activeSortDirection,
     setActiveSortDirection,
     columns,
+    onRunReports,
+    onDeleteReports,
 }: ReportingTablePanelProps): ReactElement {
-    const [modalType, setModalType] = useState<ModalType>(null);
+    const [alerts, setAlerts] = useState<AlertInfo[]>([]);
+    const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
+    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
+    const canWriteReports =
+        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
 
     const {
         selected,
@@ -65,18 +99,8 @@ function ReportingTablePanel({
     } = useTableSelection(reports);
 
     function onDeleteSelected() {
-        setModalType('delete');
-    }
-
-    // Handle closing confirmation modals for bulk actions;
-    function cancelModal() {
-        setModalType(null);
-    }
-
-    // Handle closing confirmation modal and clearing selection;
-    function closeModal() {
-        setModalType(null);
-        onClearAll();
+        const idsToDelete = getSelectedIds();
+        setDeletingReportIds(idsToDelete);
     }
 
     // Handle page changes.
@@ -95,34 +119,140 @@ function ReportingTablePanel({
         setActiveSortDirection(direction);
     }
 
-    const selectedIds = getSelectedIds();
+    function onClickDelete(ids) {
+        setDeletingReportIds(ids);
+    }
+
+    function onClickRun(ids) {
+        setAlerts([]);
+
+        onRunReports(ids)
+            .then(() => {
+                const message = 'The report has been queued to run.';
+                const alertInfo = {
+                    title: message,
+                    variant: AlertVariant.success,
+                    key: new Date().getTime(),
+                    timeout: 6000,
+                };
+                setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                const alertInfo = {
+                    title:
+                        `Could not run report: ${message}` ||
+                        'An unknown error occurred while triggering a report run',
+                    variant: AlertVariant.danger,
+                    key: new Date().getTime(),
+                };
+                setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
+            });
+    }
+
+    function onConfirmDeletingReportIds() {
+        setAlerts([]);
+
+        onDeleteReports(deletingReportIds)
+            .then(() => {
+                setDeletingReportIds([]);
+                onClearAll();
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                const alertInfo = {
+                    title:
+                        `Could not delete report: ${message}` ||
+                        'An unknown error occurred while deleting',
+                    variant: AlertVariant.danger,
+                    key: new Date().getTime(),
+                };
+                setAlerts((prevAlertInfo) => [...prevAlertInfo, alertInfo]);
+
+                setDeletingReportIds([]);
+            });
+    }
+
+    function onCancelDeleteReportIds() {
+        setDeletingReportIds([]);
+    }
+
+    const deleteConfirmationText = `Are you sure you want to delete ${
+        deletingReportIds.length
+    } ${pluralize('report', deletingReportIds.length)}?`;
 
     return (
         <>
-            <Flex
-                className="pf-u-p-md"
-                alignSelf={{ default: 'alignSelfCenter' }}
-                fullWidth={{ default: 'fullWidth' }}
-            >
-                <FlexItem data-testid="reports-bulk-actions-dropdown">
-                    <BulkActionsDropdown isDisabled={!hasSelections}>
-                        <DropdownItem key="delete" component="button" onClick={onDeleteSelected}>
-                            Delete {numSelected} {pluralize('report', numSelected)}
-                        </DropdownItem>
-                    </BulkActionsDropdown>
-                </FlexItem>
-                <FlexItem align={{ default: 'alignRight' }}>
-                    <Pagination
-                        itemCount={reportCount}
-                        page={currentPage}
-                        onSetPage={changePage}
-                        perPage={perPage}
-                        onPerPageSelect={changePerPage}
-                    />
-                </FlexItem>
-            </Flex>
+            {alerts.length > 0 && (
+                <PageSection padding={{ default: 'padding' }} variant={PageSectionVariants.light}>
+                    <AlertGroup
+                        isLiveRegion
+                        aria-live="polite"
+                        aria-relevant="additions text"
+                        aria-atomic="false"
+                    >
+                        {alerts.map(({ title, variant, key, timeout }) => (
+                            <Alert
+                                isInline
+                                variant={variant}
+                                title={title}
+                                key={key}
+                                timeout={timeout}
+                                onTimeout={() => {
+                                    setAlerts((prevAlerts) => {
+                                        return prevAlerts.filter((alert) => alert.key !== key);
+                                    });
+                                }}
+                            />
+                        ))}
+                    </AlertGroup>
+                </PageSection>
+            )}
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <ReportsSearchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem variant="separator" />
+                    <ToolbarItem>
+                        <BulkActionsDropdown isDisabled={!hasSelections}>
+                            <DropdownItem
+                                key="delete"
+                                component="button"
+                                onClick={onDeleteSelected}
+                            >
+                                Delete {numSelected} {pluralize('report', numSelected)}
+                            </DropdownItem>
+                        </BulkActionsDropdown>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            itemCount={reportCount}
+                            page={currentPage}
+                            onSetPage={changePage}
+                            perPage={perPage}
+                            onPerPageSelect={changePerPage}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+            {Object.keys(searchFilter).length !== 0 && (
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <SearchFilterResults
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
             <Divider component="div" />
-            <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <TableComposable variant="compact">
                     <Thead>
                         <Tr>
@@ -157,11 +287,44 @@ function ReportingTablePanel({
                     <Tbody>
                         {reports.map((report, rowIndex) => {
                             const { id } = report;
+
                             const actionItems: ActionItem[] = [];
+                            if (canWriteReports) {
+                                actionItems.push({
+                                    title: (
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            // eslint-disable-next-line jsx-a11y/anchor-is-valid
+                                            component={(props) => (
+                                                <Link
+                                                    {...props}
+                                                    to={`${vulnManagementReportsPath}/${id}?action=edit`}
+                                                />
+                                            )}
+                                        >
+                                            Edit report
+                                        </Button>
+                                    ),
+                                    onClick: () => {},
+                                });
+
+                                // Run option comes second
+                                actionItems.push({
+                                    title: <div>Run report now</div>,
+                                    onClick: () => onClickRun([report.id]),
+                                });
+
+                                actionItems.push({
+                                    title: (
+                                        <div className="pf-u-danger-color-100">Delete report</div>
+                                    ),
+                                    onClick: () => onClickDelete([report.id]),
+                                });
+                            }
 
                             return (
-                                // eslint-disable-next-line react/no-array-index-key
-                                <Tr key={rowIndex}>
+                                <Tr key={id}>
                                     <Td
                                         key={id}
                                         select={{
@@ -190,12 +353,15 @@ function ReportingTablePanel({
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            <DeleteConfirmation
-                isOpen={modalType === 'delete'}
-                selectedReportIds={selectedIds}
-                closeModal={closeModal}
-                cancelModal={cancelModal}
-            />
+            <ConfirmationModal
+                ariaLabel="Confirm deleting reports"
+                confirmText="Delete"
+                isOpen={deletingReportIds.length > 0}
+                onConfirm={onConfirmDeletingReportIds}
+                onCancel={onCancelDeleteReportIds}
+            >
+                {deleteConfirmationText}
+            </ConfirmationModal>
         </>
     );
 }

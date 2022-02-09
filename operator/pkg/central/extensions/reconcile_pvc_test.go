@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -257,7 +257,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 				testCase.Central.DeletionTimestamp = &time
 			}
 
-			var allExisting []client.Object
+			var allExisting []ctrlClient.Object
 			for _, existingPVC := range testCase.ExistingPVCs {
 				allExisting = append(allExisting, existingPVC)
 			}
@@ -293,7 +293,7 @@ func executeAndVerify(t *testing.T, testCase pvcReconciliationTestCase, r reconc
 	}
 
 	pvcList := &corev1.PersistentVolumeClaimList{}
-	err = r.ctrlClient.List(context.TODO(), pvcList)
+	err = r.client.List(context.TODO(), pvcList)
 	require.NoError(t, err)
 
 	// check pvcs which should exist in cluster
@@ -343,11 +343,11 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 
 }
 
-func newReconcilePVCExtensionRun(c *platform.Central, client client.Client) reconcilePVCExtensionRun {
+func newReconcilePVCExtensionRun(c *platform.Central, client ctrlClient.Client) reconcilePVCExtensionRun {
 	return reconcilePVCExtensionRun{
 		ctx:        context.Background(),
 		namespace:  "stackrox",
-		ctrlClient: client,
+		client:     client,
 		centralObj: c,
 		log:        logr.Discard(),
 	}

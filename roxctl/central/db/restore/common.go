@@ -1,7 +1,6 @@
 package restore
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -12,10 +11,10 @@ const (
 	idleTimeout = 5 * time.Minute
 )
 
-func restore(filename string, timeout time.Duration, impl func(file *os.File, deadline time.Time) error) error {
-	deadline := time.Now().Add(timeout)
+func (cmd *centralDbRestoreCommand) restore(impl func(file *os.File, deadline time.Time) error) error {
+	deadline := time.Now().Add(cmd.timeout)
 
-	file, err := os.Open(filename)
+	file, err := os.Open(cmd.file)
 	if err != nil {
 		return err
 	}
@@ -25,6 +24,6 @@ func restore(filename string, timeout time.Duration, impl func(file *os.File, de
 		return err
 	}
 
-	fmt.Println("Successfully restored DB")
+	cmd.env.Logger().PrintfLn("Successfully restored DB")
 	return nil
 }

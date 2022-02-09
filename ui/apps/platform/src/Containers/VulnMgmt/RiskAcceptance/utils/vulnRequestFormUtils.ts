@@ -7,8 +7,8 @@ export function getExpiresWhenFixedValue(expiresOn: string): boolean {
 
 export type ExpiresOn = 'Until Fixable' | '2 weeks' | '30 days' | '90 days' | 'Indefinitely';
 
-export function getExpiresOnValue(expiresOn: ExpiresOn): string | undefined {
-    let value: string | undefined;
+export function getExpiresOnValue(expiresOn: ExpiresOn): string | number | null {
+    let value: string | number | null = null;
     if (expiresOn === '2 weeks') {
         value = addDaysToDate(new Date(), 14);
     } else if (expiresOn === '30 days') {
@@ -16,8 +16,7 @@ export function getExpiresOnValue(expiresOn: ExpiresOn): string | undefined {
     } else if (expiresOn === '90 days') {
         value = addDaysToDate(new Date(), 90);
     } else if (expiresOn === 'Indefinitely') {
-        // @TODO: This should be changed to 0 once Mandar's changes are in
-        value = addDaysToDate(new Date(), 18250);
+        value = null;
     }
     return value;
 }

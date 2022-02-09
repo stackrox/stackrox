@@ -85,17 +85,16 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.P
 	if err := s.validateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
 		return nil, err
 	}
-
-	if err := s.manager.Upsert(ctx, request.GetReportConfig()); err != nil {
-		return nil, err
-	}
-
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, request.GetReportConfig())
 	if err != nil {
 		return nil, err
 	}
 
 	createdReportConfig, _, err := s.reportConfigStore.GetReportConfiguration(ctx, id)
+	if err := s.manager.Upsert(ctx, createdReportConfig); err != nil {
+		return nil, err
+	}
+
 	return &v1.PostReportConfigurationResponse{
 		ReportConfig: createdReportConfig,
 	}, err
@@ -175,11 +174,16 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	if config.GetEmailConfig() == nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify an email notifier configuration")
 	}
-	if config.GetEmailConfig().GetMailingLists() != nil {
-		for _, addr := range config.GetEmailConfig().GetMailingLists() {
-			if _, err := mail.ParseAddress(addr); err != nil {
-				return errors.Wrapf(errorhelpers.ErrInvalidArgs, "Invalid mailing list address: %s", addr)
-			}
+	if config.GetEmailConfig().GetNotifierId() == "" {
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify a valid email notifier")
+	}
+	if len(config.GetEmailConfig().GetMailingLists()) == 0 {
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify one more recipients to send the report to")
+	}
+
+	for _, addr := range config.GetEmailConfig().GetMailingLists() {
+		if _, err := mail.ParseAddress(addr); err != nil {
+			return errors.Wrapf(errorhelpers.ErrInvalidArgs, "Invalid mailing list address: %s", addr)
 		}
 	}
 
@@ -189,8 +193,12 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	}
 
 	_, found, err = s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
-	if !found || err != nil {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Notifier %s not found. Error: %s", config.GetEmailConfig().GetNotifierId(), err)
+	if err != nil {
+		return errors.Wrapf(errorhelpers.ErrNotFound, "Failed to fetch notifier %s with error %s", config.GetEmailConfig().GetNotifierId(), err)
 	}
+	if !found {
+		return errors.Wrapf(errorhelpers.ErrNotFound, "Notifier %s not found", config.GetEmailConfig().GetNotifierId())
+	}
+
 	return nil
 }

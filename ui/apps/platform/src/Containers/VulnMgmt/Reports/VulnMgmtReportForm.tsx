@@ -1,6 +1,6 @@
 /* eslint-disable no-void */
 import React, { useState, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import {
     ActionList,
     ActionListItem,
@@ -22,8 +22,8 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
+import * as yup from 'yup';
 
-import { vulnManagementReportsPath } from 'routePaths';
 import SelectSingle from 'Components/SelectSingle';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
@@ -40,12 +40,64 @@ import { getMappedFixability, getFixabilityConstantFromMap } from './VulnMgmtRep
 export type VulnMgmtReportFormProps = {
     initialValues: ReportConfiguration;
     isEditable?: boolean;
+    refreshQuery?: () => void;
 };
+
+export const validationSchema = yup.object().shape({
+    name: yup.string().trim().required('A report name is required.'),
+    vulnReportFilters: yup.object().shape({
+        fixability: yup.string().oneOf(['BOTH', 'FIXABLE', 'NOT_FIXABLE']).required(),
+        sinceLastReport: yup.boolean().required(),
+        severities: yup
+            .array()
+            .of(
+                yup
+                    .string()
+                    .oneOf([
+                        'LOW_VULNERABILITY_SEVERITY',
+                        'MODERATE_VULNERABILITY_SEVERITY',
+                        'IMPORTANT_VULNERABILITY_SEVERITY',
+                        'CRITICAL_VULNERABILITY_SEVERITY',
+                    ])
+                    .min(1)
+            )
+            .required('You must select at least one severity.'),
+    }),
+    scopeId: yup.string().trim().required('A resource scope is required.'),
+    emailConfig: yup.object().shape({
+        notifierId: yup.string().trim().required('A notifier is required.'),
+        mailingLists: yup
+            .array()
+            .of(yup.string())
+            .test('valid-emails-test', '', (emails, { createError }) => {
+                let isValid = true;
+
+                emails?.forEach((email) => {
+                    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        isValid = false;
+                    }
+                });
+
+                return (
+                    isValid ||
+                    createError({
+                        message: 'List must be valid emails separated by a comma',
+                        path: 'emailConfig.mailingLists',
+                    })
+                );
+            }),
+    }),
+    schedule: yup.object().shape({
+        intervalType: yup.string().oneOf(['WEEKLY', 'MONTHLY']).required(),
+    }),
+});
 
 function VulnMgmtReportForm({
     initialValues,
     isEditable = true,
+    refreshQuery = () => {},
 }: VulnMgmtReportFormProps): ReactElement {
+    const history = useHistory();
     const [message, setMessage] = useState<FormResponseMessage>(null);
     const formik = useFormik<ReportConfiguration>({
         initialValues,
@@ -53,6 +105,7 @@ function VulnMgmtReportForm({
             const response = onSave(formValues);
             return response;
         },
+        validationSchema,
     });
 
     const {
@@ -78,20 +131,28 @@ function VulnMgmtReportForm({
         isOpen: isSeveritySelectOpen,
         onToggle: onToggleSeveritySelect,
         onSelect: onSelectSeverity,
-    } = useMultiSelect(handleSeveritySelect, values.vulnReportFilters.severities);
+    } = useMultiSelect(handleSeveritySelect, values.vulnReportFilters.severities, false);
 
     async function onSave(data) {
         let responseData;
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             responseData = await saveReport(data);
-            setMessage({
-                message: 'Integration was saved successfully',
-                isError: false,
-            });
+
+            refreshQuery();
+            history.goBack();
         } catch (error) {
             setMessage({ message: getAxiosErrorMessage(error), isError: true });
+
+            const alertEl = document.getElementById('form-message-alert');
+            if (alertEl) {
+                alertEl.scrollIntoView({ behavior: 'smooth' });
+            }
         }
+    }
+
+    function cancelEdit() {
+        history.goBack();
     }
 
     function onChange(value, event) {
@@ -240,7 +301,7 @@ function VulnMgmtReportForm({
                                             isDisabled={false}
                                         >
                                             <SelectOption value="true">
-                                                since last successfuly report
+                                                since last successful report
                                             </SelectOption>
                                             <SelectOption value="false">
                                                 all vulnerabilities
@@ -306,6 +367,8 @@ function VulnMgmtReportForm({
                                     mailingLists={values.emailConfig.mailingLists}
                                     setFieldValue={setFieldValue}
                                     handleBlur={handleBlur}
+                                    touched={touched}
+                                    errors={errors}
                                 />
                             </div>
                         </GridItem>
@@ -327,12 +390,7 @@ function VulnMgmtReportForm({
                         </Button>
                     </ActionListItem>
                     <ActionListItem>
-                        <Button
-                            variant={ButtonVariant.link}
-                            component={(props) => (
-                                <Link {...props} to={vulnManagementReportsPath} />
-                            )}
-                        >
+                        <Button variant={ButtonVariant.link} onClick={cancelEdit}>
                             Cancel
                         </Button>
                     </ActionListItem>

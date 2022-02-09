@@ -18,61 +18,85 @@ import {
     GridItem,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
-import intersection from 'lodash/intersection';
 
-import { Policy, EnforcementAction, LifecycleStage } from 'types/policy.proto';
+import { Policy, LifecycleStage } from 'types/policy.proto';
+
+import {
+    appendEnforcementActionsForAddedLifecycleStage,
+    filterEnforcementActionsForRemovedLifecycleStage,
+    hasEnforcementActionForLifecycleStage,
+} from '../../policies.utils';
 import DownloadCLIDropdown from './DownloadCLIDropdown';
 
-const lifecycleToEnforcementsMap: Record<LifecycleStage, EnforcementAction[]> = {
-    BUILD: ['FAIL_BUILD_ENFORCEMENT'],
-    DEPLOY: ['SCALE_TO_ZERO_ENFORCEMENT', 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'],
-    RUNTIME: ['KILL_POD_ENFORCEMENT', 'FAIL_KUBE_REQUEST_ENFORCEMENT'],
-};
-
 function PolicyBehaviorForm() {
-    const { values, setFieldValue } = useFormikContext<Policy>();
+    const { values, setFieldValue, setValues } = useFormikContext<Policy>();
     const hasEnforcementActions =
         values.enforcementActions?.length > 0 &&
         !values.enforcementActions?.includes('UNSET_ENFORCEMENT');
     const [showEnforcement, setShowEnforcement] = React.useState(hasEnforcementActions);
 
-    function onLifecycleStageChangeHandler(lifecycleStage: LifecycleStage) {
-        return (isChecked) => {
-            if (isChecked) {
-                setFieldValue('lifecycleStages', [...values.lifecycleStages, lifecycleStage]);
-            } else {
-                setFieldValue(
-                    'lifecycleStages',
-                    values.lifecycleStages.filter((stage) => stage !== lifecycleStage)
-                );
-                onEnforcementActionChangeHandler(lifecycleStage)(false);
+    function onChangeLifecycleStage(lifecycleStage: LifecycleStage, isChecked: boolean) {
+        /*
+         * Set all changed values at once, because separate setFieldValue calls
+         * for lifecycleStages and eventSource cause inconsistent incorrect validation.
+         */
+        const changedValues = { ...values };
+        if (isChecked) {
+            changedValues.lifecycleStages = [...values.lifecycleStages, lifecycleStage];
+        } else {
+            changedValues.lifecycleStages = values.lifecycleStages.filter(
+                (stage) => stage !== lifecycleStage
+            );
+            if (lifecycleStage === 'RUNTIME') {
+                changedValues.eventSource = 'NOT_APPLICABLE';
             }
-        };
+            if (lifecycleStage === 'BUILD') {
+                changedValues.excludedImageNames = [];
+            }
+            changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
+                lifecycleStage,
+                values.enforcementActions
+            );
+        }
+        setValues(changedValues);
     }
 
-    function onEnforcementActionChangeHandler(lifecycleStage: LifecycleStage) {
-        return (isChecked) => {
-            if (isChecked) {
-                setFieldValue('enforcementActions', [
-                    ...values.enforcementActions,
-                    ...lifecycleToEnforcementsMap[lifecycleStage],
-                ]);
-            } else {
-                setFieldValue(
-                    'enforcementActions',
-                    values.enforcementActions.filter(
-                        (action) => !lifecycleToEnforcementsMap[lifecycleStage].includes(action)
-                    )
-                );
-            }
-        };
-    }
-
-    function hasEnforcementForLifecycle(lifecycleStage: LifecycleStage) {
-        return (
-            intersection(values.enforcementActions, lifecycleToEnforcementsMap[lifecycleStage])
-                .length > 0
+    function onChangeEnforcementActions(lifecycleStage: LifecycleStage, isChecked: boolean) {
+        const { enforcementActions } = values;
+        setFieldValue(
+            'enforcementActions',
+            isChecked
+                ? appendEnforcementActionsForAddedLifecycleStage(lifecycleStage, enforcementActions)
+                : filterEnforcementActionsForRemovedLifecycleStage(
+                      lifecycleStage,
+                      enforcementActions
+                  ),
+            false // do not validate, because code changes the value
         );
+    }
+
+    function onChangeAuditLogEventSource() {
+        setFieldValue('eventSource', 'AUDIT_LOG_EVENT');
+
+        // Do not validate the following, because changed values are on other steps.
+        setFieldValue('excludedImageNames', [], false);
+        values.scope.forEach(({ label, ...rest }, idx) => {
+            if (label) {
+                setFieldValue(`scope[${idx}]`, { ...rest }, false);
+            }
+        });
+        values.excludedDeploymentScopes.forEach(({ scope }, idx) => {
+            const { label, ...rest } = scope || {};
+            setFieldValue(
+                `excludedDeploymentScopes[${idx}]`,
+                {
+                    scope: {
+                        ...rest,
+                    },
+                },
+                false
+            );
+        });
     }
 
     const responseMethodHelperText = showEnforcement
@@ -117,19 +141,25 @@ function PolicyBehaviorForm() {
                             label="Build"
                             isChecked={hasBuild}
                             id="policy-lifecycle-stage-build"
-                            onChange={onLifecycleStageChangeHandler('BUILD')}
+                            onChange={(isChecked) => {
+                                onChangeLifecycleStage('BUILD', isChecked);
+                            }}
                         />
                         <Checkbox
                             label="Deploy"
                             isChecked={hasDeploy}
                             id="policy-lifecycle-stage-deploy"
-                            onChange={onLifecycleStageChangeHandler('DEPLOY')}
+                            onChange={(isChecked) => {
+                                onChangeLifecycleStage('DEPLOY', isChecked);
+                            }}
                         />
                         <Checkbox
                             label="Runtime"
                             isChecked={hasRuntime}
                             id="policy-lifecycle-stage-runtime"
-                            onChange={onLifecycleStageChangeHandler('RUNTIME')}
+                            onChange={(isChecked) => {
+                                onChangeLifecycleStage('RUNTIME', isChecked);
+                            }}
                         />
                     </Flex>
                 </FormGroup>
@@ -145,15 +175,15 @@ function PolicyBehaviorForm() {
                             id="policy-event-source-deployment"
                             name="eventSource"
                             onChange={() => setFieldValue('eventSource', 'DEPLOYMENT_EVENT')}
-                            isDisabled={!values.lifecycleStages.includes('RUNTIME')}
+                            isDisabled={!hasRuntime}
                         />
                         <Radio
                             label="Audit logs"
                             isChecked={values.eventSource === 'AUDIT_LOG_EVENT'}
                             id="policy-event-source-audit-logs"
                             name="eventSource"
-                            onChange={() => setFieldValue('eventSource', 'AUDIT_LOG_EVENT')}
-                            isDisabled={!values.lifecycleStages.includes('RUNTIME')}
+                            onChange={onChangeAuditLogEventSource}
+                            isDisabled={!hasRuntime}
                         />
                     </Flex>
                 </FormGroup>
@@ -179,7 +209,7 @@ function PolicyBehaviorForm() {
                             name="inform"
                             onChange={() => {
                                 setShowEnforcement(false);
-                                setFieldValue('enforcementActions', []);
+                                setFieldValue('enforcementActions', [], false); // do not validate, because code changes the value
                             }}
                         />
                         <Radio
@@ -208,9 +238,15 @@ function PolicyBehaviorForm() {
                                     <CardTitle>Build</CardTitle>
                                     <CardActions>
                                         <Switch
-                                            isChecked={hasEnforcementForLifecycle('BUILD')}
+                                            isChecked={hasEnforcementActionForLifecycleStage(
+                                                'BUILD',
+                                                values.enforcementActions
+                                            )}
                                             isDisabled={!hasBuild}
-                                            onChange={onEnforcementActionChangeHandler('BUILD')}
+                                            onChange={(isChecked) => {
+                                                onChangeEnforcementActions('BUILD', isChecked);
+                                            }}
+                                            label="Enforce on Build"
                                         />
                                     </CardActions>
                                 </CardHeader>
@@ -232,9 +268,15 @@ function PolicyBehaviorForm() {
                                     <CardTitle>Deploy</CardTitle>
                                     <CardActions>
                                         <Switch
-                                            isChecked={hasEnforcementForLifecycle('DEPLOY')}
+                                            isChecked={hasEnforcementActionForLifecycleStage(
+                                                'DEPLOY',
+                                                values.enforcementActions
+                                            )}
                                             isDisabled={!hasDeploy}
-                                            onChange={onEnforcementActionChangeHandler('DEPLOY')}
+                                            onChange={(isChecked) => {
+                                                onChangeEnforcementActions('DEPLOY', isChecked);
+                                            }}
+                                            label="Enforce on Deploy"
                                         />
                                     </CardActions>
                                 </CardHeader>
@@ -253,9 +295,15 @@ function PolicyBehaviorForm() {
                                     <CardTitle>Runtime</CardTitle>
                                     <CardActions>
                                         <Switch
-                                            isChecked={hasEnforcementForLifecycle('RUNTIME')}
+                                            isChecked={hasEnforcementActionForLifecycleStage(
+                                                'RUNTIME',
+                                                values.enforcementActions
+                                            )}
                                             isDisabled={!hasRuntime}
-                                            onChange={onEnforcementActionChangeHandler('RUNTIME')}
+                                            onChange={(isChecked) => {
+                                                onChangeEnforcementActions('RUNTIME', isChecked);
+                                            }}
+                                            label="Enforce on Runtime"
                                         />
                                     </CardActions>
                                 </CardHeader>

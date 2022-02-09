@@ -79,7 +79,7 @@ export type AuthProviderInfo = {
  */
 export function fetchAuthProviders(): Promise<{ response: AuthProvider[] }> {
     return axios.get(`${authProvidersUrl}`).then((response) => ({
-        response: response.data.authProviders,
+        response: response?.data?.authProviders ?? [],
     }));
 }
 
@@ -95,16 +95,20 @@ export type AuthProviderLogin = {
  */
 export function fetchLoginAuthProviders(): Promise<{ response: AuthProviderLogin[] }> {
     return axios.get(`${authLoginProvidersUrl}`).then((response) => ({
-        response: response.data.authProviders,
+        response: response?.data?.authProviders ?? [],
     }));
 }
 
 export function fetchAvailableProviderTypes(): Promise<{ response: AuthProviderInfo[] }> {
     return axios.get(`${availableProviderTypesUrl}`).then((response) => ({
         response:
-            response?.data?.authProviderTypes.map((curr) => {
-                return { value: curr, label: authProviderLabels[curr] };
-            }) || [],
+            response?.data?.authProviderTypes?.map(({ type, suggestedAttributes }) => {
+                return {
+                    value: type,
+                    ruleAttributes: suggestedAttributes,
+                    label: authProviderLabels[type],
+                };
+            }) ?? [],
     }));
 }
 

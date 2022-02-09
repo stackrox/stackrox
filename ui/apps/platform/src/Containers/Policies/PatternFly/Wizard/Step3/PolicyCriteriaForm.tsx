@@ -1,8 +1,9 @@
 import React from 'react';
-import { Title, Flex, FlexItem, Divider, Button } from '@patternfly/react-core';
+import { Alert, Button, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
+
 import {
     policyConfigurationDescriptor,
     networkDetectionDescriptor,
@@ -11,7 +12,7 @@ import {
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
-import PolicySection from './PolicySection';
+import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
 import './PolicyCriteriaForm.css';
 
@@ -20,6 +21,7 @@ const MAX_POLICY_SECTIONS = 16;
 function PolicyCriteriaForm() {
     const [descriptor, setDescriptor] = React.useState<Descriptor[]>([]);
     const { values, setFieldValue } = useFormikContext<Policy>();
+    const { criteriaLocked } = values;
 
     function addNewPolicySection() {
         if (values.policySections.length < MAX_POLICY_SECTIONS) {
@@ -41,18 +43,38 @@ function PolicyCriteriaForm() {
         }
     }, [values.eventSource]);
 
+    const headingElements = (
+        <>
+            <Title headingLevel="h2">Policy criteria</Title>
+            <div className="pf-u-mt-sm">
+                Construct policy rules by chaining criteria together with boolean logic.
+            </div>
+        </>
+    );
+
+    if (criteriaLocked) {
+        return (
+            <>
+                {headingElements}
+                <Alert
+                    variant="info"
+                    isInline
+                    title="Editing policy criteria is disabled for system default policies"
+                    className="pf-u-mt-sm pf-u-mb-md"
+                >
+                    If you need to edit policy criteria, clone this policy or create a new policy.
+                </Alert>
+                <BooleanPolicyLogicSection readOnly />
+            </>
+        );
+    }
+
     return (
         <DndProvider backend={HTML5Backend}>
             <Flex>
                 <FlexItem flex={{ default: 'flex_1' }} className="pf-u-w-66">
                     <Flex direction={{ default: 'row' }}>
-                        <FlexItem flex={{ default: 'flex_1' }}>
-                            <Title headingLevel="h2">Policy criteria</Title>
-                            <div className="pf-u-mt-sm">
-                                Construct policy rules by chaining criteria together with boolean
-                                logic.
-                            </div>
-                        </FlexItem>
+                        <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
                         <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
                             <Button variant="secondary" onClick={addNewPolicySection}>
                                 Add a new condition
@@ -65,25 +87,7 @@ function PolicyCriteriaForm() {
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
                     >
-                        {values.policySections.map((_, sectionIndex) => (
-                            // eslint-disable-next-line react/no-array-index-key
-                            <React.Fragment key={sectionIndex}>
-                                <PolicySection
-                                    sectionIndex={sectionIndex}
-                                    descriptors={descriptor}
-                                />
-                                {sectionIndex !== values.policySections.length && (
-                                    <Flex
-                                        direction={{ default: 'column' }}
-                                        alignSelf={{ default: 'alignSelfCenter' }}
-                                    >
-                                        <Divider component="div" />
-                                        <FlexItem>or</FlexItem>
-                                        <Divider component="div" />
-                                    </Flex>
-                                )}
-                            </React.Fragment>
-                        ))}
+                        <BooleanPolicyLogicSection />
                     </Flex>
                 </FlexItem>
                 <Divider component="div" isVertical />

@@ -115,6 +115,7 @@ var (
 	ExternalIP                   = newFieldLabel("External IP")
 	ExternalHostname             = newFieldLabel("External Hostname")
 	ImagePullSecret              = newFieldLabel("Image Pull Secret")
+	LivenessProbeDefined         = newFieldLabel("Liveness Probe Defined")
 	MaxExposureLevel             = newFieldLabel("Max Exposure Level")
 	MemoryLimit                  = newFieldLabel("Memory Limit (MB)")
 	MemoryRequest                = newFieldLabel("Memory Request (MB)")
@@ -130,6 +131,8 @@ var (
 	Privileged                    = newFieldLabel("Privileged")
 	ProcessTag                    = newFieldLabel("Process Tag")
 	ReadOnlyRootFilesystem        = newFieldLabel("Read Only Root Filesystem")
+	Replicas                      = newFieldLabel("Replicas")
+	ReadinessProbeDefined         = newFieldLabel("Readiness Probe Defined")
 	SecretID                      = newFieldLabel("Secret ID")
 	SecretName                    = newFieldLabel("Secret")
 	SecretPath                    = newFieldLabel("Secret Path")
@@ -248,6 +251,7 @@ var (
 	RequestExpiryTime           = newFieldLabel("Request Expiry Time")
 	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
+	UserName                    = newFieldLabel("User Name")
 )
 
 func newFieldLabel(s string) FieldLabel {

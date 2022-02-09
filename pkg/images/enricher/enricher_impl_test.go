@@ -1,6 +1,7 @@
 package enricher
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -21,6 +22,16 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
+
+func emptyImageGetter(ctx context.Context, id string) (*storage.Image, bool, error) {
+	return nil, false, nil
+}
+
+func imageGetterFromImage(image *storage.Image) imageGetter {
+	return func(ctx context.Context, id string) (*storage.Image, bool, error) {
+		return image, true, nil
+	}
+}
 
 type fakeRegistryScanner struct {
 	requestedMetadata bool
@@ -116,10 +127,10 @@ func TestEnricherFlow(t *testing.T) {
 		name                 string
 		ctx                  EnrichmentContext
 		inMetadataCache      bool
-		inScanCache          bool
 		shortCircuitRegistry bool
 		shortCircuitScanner  bool
 		image                *storage.Image
+		imageGetter          imageGetter
 
 		fsr    *fakeRegistryScanner
 		result EnrichmentResult
@@ -130,7 +141,6 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: UseCachesIfPossible,
 			},
 			inMetadataCache: false,
-			inScanCache:     false,
 			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 
 			fsr: &fakeRegistryScanner{
@@ -148,10 +158,10 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: UseCachesIfPossible,
 			},
 			inMetadataCache:      true,
-			inScanCache:          true,
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
 			image:                &storage.Image{Id: "id"},
+			imageGetter:          imageGetterFromImage(&storage.Image{Id: "id", Scan: &storage.ImageScan{}}),
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: false,
@@ -168,7 +178,6 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: ForceRefetch,
 			},
 			inMetadataCache: true,
-			inScanCache:     true,
 			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 
 			fsr: &fakeRegistryScanner{
@@ -186,7 +195,6 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: ForceRefetchScansOnly,
 			},
 			inMetadataCache:      true,
-			inScanCache:          true,
 			shortCircuitRegistry: true,
 			image:                &storage.Image{Id: "id"},
 
@@ -205,7 +213,6 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: NoExternalMetadata,
 			},
 			inMetadataCache:      false,
-			inScanCache:          false,
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
 			image:                &storage.Image{Id: "id"},
@@ -225,7 +232,6 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: UseCachesIfPossible,
 			},
 			inMetadataCache:      false,
-			inScanCache:          false,
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
 			image: &storage.Image{
@@ -248,14 +254,12 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: IgnoreExistingImages,
 			},
 			inMetadataCache: false,
-			inScanCache:     false,
 			image: &storage.Image{
 				Id: "id",
 				Name: &storage.ImageName{
 					Registry: "reg",
 				},
-				Metadata: &storage.ImageMetadata{},
-				Scan:     &storage.ImageScan{},
+				Scan: &storage.ImageScan{},
 			},
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: true,
@@ -272,7 +276,6 @@ func TestEnricherFlow(t *testing.T) {
 				FetchOpt: IgnoreExistingImages,
 			},
 			inMetadataCache:      true,
-			inScanCache:          true,
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
 			image: &storage.Image{
@@ -280,6 +283,11 @@ func TestEnricherFlow(t *testing.T) {
 				Metadata: &storage.ImageMetadata{},
 				Scan:     &storage.ImageScan{},
 			},
+			imageGetter: imageGetterFromImage(&storage.Image{
+				Id:       "id",
+				Metadata: &storage.ImageMetadata{},
+				Scan:     &storage.ImageScan{},
+			}),
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: false,
 				requestedScan:     false,
@@ -325,15 +333,14 @@ func TestEnricherFlow(t *testing.T) {
 				integrationHealthReporter: mockReporter,
 				metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 				metadataCache:             expiringcache.NewExpiringCache(1 * time.Minute),
-				scanCache:                 expiringcache.NewExpiringCache(1 * time.Minute),
 				metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
+				imageGetter:               emptyImageGetter,
 			}
-
 			if c.inMetadataCache {
 				enricherImpl.metadataCache.Add(c.image.GetId(), c.image.GetMetadata())
 			}
-			if c.inScanCache {
-				enricherImpl.scanCache.Add(c.image.GetId(), c.image.GetScan())
+			if c.imageGetter != nil {
+				enricherImpl.imageGetter = c.imageGetter
 			}
 			result, err := enricherImpl.EnrichImage(c.ctx, c.image)
 			require.NoError(t, err)
@@ -375,8 +382,8 @@ func TestCVESuppression(t *testing.T) {
 		integrationHealthReporter: mockReporter,
 		metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:             expiringcache.NewExpiringCache(1 * time.Minute),
-		scanCache:                 expiringcache.NewExpiringCache(1 * time.Minute),
 		metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
+		imageGetter:               emptyImageGetter,
 	}
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
@@ -409,7 +416,7 @@ func TestZeroIntegrations(t *testing.T) {
 
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
-		expiringcache.NewExpiringCache(1*time.Minute),
+		emptyImageGetter,
 		mockReporter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
@@ -439,7 +446,7 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
-		expiringcache.NewExpiringCache(1*time.Minute),
+		emptyImageGetter,
 		mockReporter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
@@ -470,7 +477,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
-		expiringcache.NewExpiringCache(1*time.Minute),
+		emptyImageGetter,
 		mockReporter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "testimage"}}
@@ -504,7 +511,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
-		expiringcache.NewExpiringCache(1*time.Minute),
+		emptyImageGetter,
 		mockReporter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
@@ -539,7 +546,7 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
-		expiringcache.NewExpiringCache(1*time.Minute),
+		emptyImageGetter,
 		mockReporter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
@@ -572,7 +579,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
-		expiringcache.NewExpiringCache(1*time.Minute),
+		emptyImageGetter,
 		mockReporter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}

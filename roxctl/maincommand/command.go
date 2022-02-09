@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
@@ -30,7 +31,10 @@ func versionCommand() *cobra.Command {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
-				return enc.Encode(version.GetAllVersions())
+				if buildinfo.ReleaseBuild {
+					return enc.Encode(version.GetAllVersionsUnified())
+				}
+				return enc.Encode(version.GetAllVersionsDevelopment())
 			}
 			fmt.Println(version.GetMainVersion())
 			return nil
@@ -67,15 +71,15 @@ func Command() *cobra.Command {
 	})
 
 	c.AddCommand(
-		central.Command(),
-		cluster.Command(),
-		collector.Command(),
+		central.Command(cliEnvironment),
+		cluster.Command(cliEnvironment),
+		collector.Command(cliEnvironment),
 		deployment.Command(cliEnvironment),
 		logconvert.Command(),
 		image.Command(cliEnvironment),
 		scanner.Command(),
 		sensor.Command(),
-		helm.Command(),
+		helm.Command(cliEnvironment),
 		versionCommand(),
 		completion.Command(),
 	)

@@ -1,20 +1,17 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
-    Button,
-    ButtonVariant,
     Divider,
     DropdownItem,
-    InputGroup,
+    Flex,
+    FlexItem,
     Pagination,
-    TextInput,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { SearchIcon } from '@patternfly/react-icons';
 
 import useTableSelection from 'hooks/useTableSelection';
 
@@ -23,22 +20,23 @@ import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
+import usePermissions from 'hooks/usePermissions';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import useDeferVulnerability from './useDeferVulnerability';
 import useMarkFalsePositive from './useMarkFalsePositive';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
+import PendingApprovalPopover from './PendingApprovalPopover';
+import CVESummaryLink from '../CVESummaryLink';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
     ids: string[];
 } | null;
 
-export type ObservedCVERow = Vulnerability;
-
 export type ObservedCVEsTableProps = {
-    rows: ObservedCVERow[];
+    rows: Vulnerability[];
     isLoading: boolean;
     registry: string;
     remote: string;
@@ -67,7 +65,7 @@ function ObservedCVEsTable({
         onSelectAll,
         getSelectedIds,
         onClearAll,
-    } = useTableSelection<ObservedCVERow>(rows);
+    } = useTableSelection<Vulnerability>(rows);
     const [cvesToBeAssessed, setCVEsToBeAssessed] = useState<CVEsToBeAssessed>(null);
     const requestDeferral = useDeferVulnerability({
         cveIDs: cvesToBeAssessed?.ids || [],
@@ -81,16 +79,7 @@ function ObservedCVEsTable({
         remote,
         tag,
     });
-
-    function setSelectedCVEsToBeDeferred() {
-        const selectedIds = getSelectedIds();
-        setCVEsToBeAssessed({ type: 'DEFERRAL', ids: selectedIds });
-    }
-
-    function setSelectedCVEsToBeMarkedFalsePositive() {
-        const selectedIds = getSelectedIds();
-        setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: selectedIds });
-    }
+    const { hasReadWriteAccess } = usePermissions();
 
     function cancelAssessment() {
         setCVEsToBeAssessed(null);
@@ -102,43 +91,49 @@ function ObservedCVEsTable({
         updateTable();
     }
 
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
+    const selectedIds = getSelectedIds();
+    const selectedVulnsToDeferOrMarkFalsePositive = canCreateRequests
+        ? rows
+              .filter((row) => {
+                  return selectedIds.includes(row.id);
+              })
+              .map((row) => row.id)
+        : [];
+
     return (
         <>
             <Toolbar id="toolbar">
                 <ToolbarContent>
                     <ToolbarItem>
-                        {/* @TODO: This is just a place holder. Put the correct search filter here */}
-                        <InputGroup>
-                            <TextInput
-                                name="textInput1"
-                                id="textInput1"
-                                type="search"
-                                aria-label="search input example"
-                            />
-                            <Button
-                                variant={ButtonVariant.control}
-                                aria-label="search button for search input"
-                            >
-                                <SearchIcon />
-                            </Button>
-                        </InputGroup>
-                    </ToolbarItem>
-                    <ToolbarItem variant="separator" />
-                    <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
                                 key="upgrade"
                                 component="button"
-                                onClick={setSelectedCVEsToBeDeferred}
+                                onClick={() =>
+                                    setCVEsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        ids: selectedVulnsToDeferOrMarkFalsePositive,
+                                    })
+                                }
+                                isDisabled={selectedVulnsToDeferOrMarkFalsePositive.length === 0}
                             >
-                                Defer CVE ({numSelected})
+                                Defer CVE ({selectedVulnsToDeferOrMarkFalsePositive.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="delete"
                                 component="button"
-                                onClick={setSelectedCVEsToBeMarkedFalsePositive}
+                                onClick={() =>
+                                    setCVEsToBeAssessed({
+                                        type: 'FALSE_POSITIVE',
+                                        ids: selectedVulnsToDeferOrMarkFalsePositive,
+                                    })
+                                }
+                                isDisabled={selectedVulnsToDeferOrMarkFalsePositive.length === 0}
                             >
-                                Mark false positive ({numSelected})
+                                Mark false positive (
+                                {selectedVulnsToDeferOrMarkFalsePositive.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -169,18 +164,18 @@ function ObservedCVEsTable({
                         <Th>CVSS score</Th>
                         <Th>Affected components</Th>
                         <Th>Discovered</Th>
-                        <Th>Request State</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
-                        const actions = [
+                        const actions: IActions = [
                             {
                                 title: 'Defer CVE',
                                 onClick: (event) => {
                                     event.preventDefault();
                                     setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.cve] });
                                 },
+                                isDisabled: !canCreateRequests,
                             },
                             {
                                 title: 'Mark as False Positive',
@@ -188,6 +183,7 @@ function ObservedCVEsTable({
                                     event.preventDefault();
                                     setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: [row.cve] });
                                 },
+                                isDisabled: !canCreateRequests,
                             },
                         ];
                         return (
@@ -199,16 +195,27 @@ function ObservedCVEsTable({
                                         isSelected: selected[rowIndex],
                                     }}
                                 />
-                                <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="CVE">
+                                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                        <FlexItem>
+                                            <CVESummaryLink cve={row.cve} />
+                                        </FlexItem>
+                                        {row.vulnerabilityRequest?.id &&
+                                            !row.vulnerabilityRequest.expired && (
+                                                <FlexItem>
+                                                    <PendingApprovalPopover
+                                                        vulnRequestId={row.vulnerabilityRequest.id}
+                                                    />
+                                                </FlexItem>
+                                            )}
+                                    </Flex>
+                                </Td>
                                 <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
                                 <Td dataLabel="CVSS score">
-                                    <CVSSScoreLabel
-                                        cvss={row.cvss}
-                                        scoreVersion={row.scoreVersion}
-                                    />
+                                    <CVSSScoreLabel cvss={row.cvss} />
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
@@ -216,7 +223,6 @@ function ObservedCVEsTable({
                                 <Td dataLabel="Discovered">
                                     <DateTimeFormat time={row.discoveredAtImage} />
                                 </Td>
-                                <Td dataLabel="Request State">-</Td>
                                 <Td
                                     className="pf-u-text-align-right"
                                     actions={{

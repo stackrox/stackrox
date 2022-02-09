@@ -24,11 +24,12 @@ function DayPickerDropdown({
     isRequired = false,
     intervalType,
 }: DayPickerDropdownProps): ReactElement {
+    const selectSafeValue = value.map((item) => item.toString());
     const {
         isOpen: isDaySelectOpen,
         onToggle: onToggleDaySelect,
         onSelect: onSelectDay,
-    } = useMultiSelect(handleDaySelect, value);
+    } = useMultiSelect(handleDaySelect, selectSafeValue, false);
 
     function handleDaySelect(selection) {
         handleSelect(fieldId, selection);
@@ -63,7 +64,7 @@ function DayPickerDropdown({
                   <SelectOption key="first" value="1">
                       The first of the month
                   </SelectOption>,
-                  <SelectOption key="middle" value="16">
+                  <SelectOption key="middle" value="15">
                       The middle of the month
                   </SelectOption>,
               ];
@@ -75,7 +76,7 @@ function DayPickerDropdown({
                 aria-label="Select one or more days"
                 onToggle={onToggleDaySelect}
                 onSelect={onSelectDay}
-                selections={value}
+                selections={selectSafeValue}
                 isOpen={isDaySelectOpen}
                 isDisabled={!isEditable}
                 placeholderText={value.length ? 'Selected days' : 'Select days'}

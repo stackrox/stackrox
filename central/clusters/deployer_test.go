@@ -9,35 +9,21 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	mainRegistryKey             charts.MetaValuesKey = "MainRegistry"
-	imageRemoteKey              charts.MetaValuesKey = "ImageRemote"
-	imageTagKey                 charts.MetaValuesKey = "ImageTag"
-	collectorRegistryKey        charts.MetaValuesKey = "CollectorRegistry"
-	collectorFullImageRemoteKey charts.MetaValuesKey = "CollectorFullImageRemote"
-	collectorSlimImageRemoteKey charts.MetaValuesKey = "CollectorSlimImageRemote"
-	collectorFullImageTagKey    charts.MetaValuesKey = "CollectorFullImageTag"
-	collectorSlimImageTagKey    charts.MetaValuesKey = "CollectorSlimImageTag"
-	versionsKey                 charts.MetaValuesKey = "Versions"
-	chartRepoKey                charts.MetaValuesKey = "ChartRepo"
-)
-
-func getCollectorFull(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorFullImageRemoteKey], fields[collectorFullImageTagKey])
+func getCollectorFull(fields *charts.MetaValues) string {
+	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorFullImageRemote, fields.CollectorFullImageTag)
 }
 
-func getCollectorSlim(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorSlimImageRemoteKey], fields[collectorSlimImageTagKey])
+func getCollectorSlim(fields *charts.MetaValues) string {
+	return fmt.Sprintf("%s/%s:%s", fields.CollectorRegistry, fields.CollectorSlimImageRemote, fields.CollectorSlimImageTag)
 }
 
-func getMain(fields charts.MetaValues) string {
-	return fmt.Sprintf("%s/%s:%s", fields[mainRegistryKey], fields[imageRemoteKey], fields[imageTagKey])
+func getMain(fields *charts.MetaValues) string {
+	return fmt.Sprintf("%s/%s:%s", fields.MainRegistry, fields.ImageRemote, fields.ImageTag)
 }
 
 type deployerTestSuite struct {
@@ -90,13 +76,19 @@ func (s *deployerTestSuite) Test_deriveImageWithNewName() {
 			expectedRegistry:   "my.registry.io",
 			expectedRepository: "stackrox/imageA",
 		},
+		"my.registry.io/stackrox/imageB": {
+			baseImage:          ImageWithSingleNamespace,
+			targetImageName:    "company/imageB",
+			expectedRegistry:   "my.registry.io",
+			expectedRepository: "stackrox/imageB",
+		},
 	}
 
 	for name, testCase := range cases {
 		s.Run(name, func() {
-			actualRegistry, actualRepository := deriveImageWithNewName(testCase.baseImage, testCase.targetImageName)
-			s.Equal(testCase.expectedRegistry, actualRegistry)
-			s.Equal(testCase.expectedRepository, actualRepository)
+			img := deriveImageWithNewName(testCase.baseImage, testCase.targetImageName)
+			s.Equal(testCase.expectedRegistry, img.Registry)
+			s.Equal(testCase.expectedRepository, img.Remote)
 		})
 	}
 }
@@ -138,11 +130,23 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			expectedCollectorFullRef: defaultCollectorFullImage,
 			expectedCollectorSlimRef: defaultCollectorSlimImage,
 		},
-		"custom main image / no collector": {
-			cluster:                  makeTestCluster("quay.io/rhacs/main", ""),
+		"custom registry with default main image name / no collector": {
+			cluster:                  makeTestCluster("quay.io/rhacs/"+flavor.MainImageName, ""),
 			expectedMain:             fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.MainImageName, flavor.MainImageTag),
 			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
+		"custom main image (with namespace) / no collector": {
+			cluster:                  makeTestCluster("quay.io/rhacs/main", ""),
+			expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+		},
+		"custom main image (without namespace) / no collector": {
+			cluster:                  makeTestCluster("example.io/main", ""),
+			expectedMain:             fmt.Sprintf("example.io/main:%s", flavor.MainImageTag),
+			expectedCollectorFullRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+			expectedCollectorSlimRef: fmt.Sprintf("example.io/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
 		"custom main and collector images": {
 			cluster:                  makeTestCluster("quay.io/rhacs/main", "quay.io/rhacs/collector"),
@@ -215,6 +219,7 @@ func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 	flavorCases := map[string]defaults.ImageFlavor{
 		"development": defaults.DevelopmentBuildImageFlavor(),
 		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
+		"rhacs":       defaults.RHACSReleaseImageFlavor(),
 	}
 
 	for name, flavor := range flavorCases {
@@ -233,19 +238,17 @@ func TestRequiredFieldsArePresent(t *testing.T) {
 	fields, err := FieldsFromClusterAndRenderOpts(makeTestCluster("docker.io/stackrox/main", ""), &testFlavor, RenderOptions{})
 	assert.NoError(t, err)
 
-	assert.NotEmpty(t, fields[mainRegistryKey])
-	assert.NotEmpty(t, fields[imageRemoteKey])
-	assert.NotEmpty(t, fields[collectorRegistryKey])
-	assert.NotEmpty(t, fields[collectorFullImageRemoteKey])
-	assert.NotEmpty(t, fields[collectorSlimImageTagKey])
-	assert.NotEmpty(t, fields[collectorFullImageTagKey])
+	assert.NotEmpty(t, fields.MainRegistry)
+	assert.NotEmpty(t, fields.ImageRemote)
+	assert.NotEmpty(t, fields.CollectorRegistry)
+	assert.NotEmpty(t, fields.CollectorFullImageRemote)
+	assert.NotEmpty(t, fields.CollectorSlimImageTag)
+	assert.NotEmpty(t, fields.CollectorFullImageTag)
 
-	versions := fields[versionsKey].(version.Versions)
-	assert.NotEmpty(t, versions.ChartVersion)
-	assert.NotEmpty(t, versions.MainVersion)
-	assert.NotEmpty(t, versions.CollectorVersion)
-	assert.NotEmpty(t, versions.ScannerVersion)
+	assert.NotEmpty(t, fields.Versions.ChartVersion)
+	assert.NotEmpty(t, fields.Versions.MainVersion)
+	assert.NotEmpty(t, fields.Versions.CollectorVersion)
+	assert.NotEmpty(t, fields.Versions.ScannerVersion)
 
-	chartRepo := fields[chartRepoKey].(defaults.ChartRepo)
-	assert.NotEmpty(t, chartRepo.URL)
+	assert.NotEmpty(t, fields.ChartRepo.URL)
 }

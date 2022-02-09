@@ -89,15 +89,9 @@ function useRiskAcceptance({ requestIDs }: UseRiskAcceptance) {
 
     function updateVulnRequests(formValues) {
         const { comment } = formValues;
-        let expiry = {};
         const expiresWhenFixed = getExpiresWhenFixedValue(formValues.expiresOn);
         const expiresOn = getExpiresOnValue(formValues.expiresOn);
-        if (expiresWhenFixed) {
-            expiry = { ...expiry, expiresWhenFixed };
-        }
-        if (expiresOn) {
-            expiry = { ...expiry, expiresOn };
-        }
+        const expiry = { expiresOn, expiresWhenFixed };
 
         const promises = requestIDs.map((requestID) => {
             const variables: UpdateVulnerabilityRequest = {

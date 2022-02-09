@@ -19,43 +19,55 @@ func GetMainVersion() string {
 	return internal.MainVersion
 }
 
-// GetCollectorVersion returns the current Collector tag.
-func GetCollectorVersion() string {
+// getCollectorVersion returns the current Collector tag.
+func getCollectorVersion() string {
 	if env.CollectorVersion.Setting() != "" {
 		return env.CollectorVersion.Setting()
 	}
 	return internal.CollectorVersion
 }
 
-// GetScannerVersion returns the current Scanner tag.
-func GetScannerVersion() string {
-	return internal.ScannerVersion
-}
-
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
-	BuildDate        time.Time `json:"BuildDate"`
-	CollectorVersion string    `json:"CollectorVersion"`
-	GitCommit        string    `json:"GitCommit"`
-	GoVersion        string    `json:"GoVersion"`
-	MainVersion      string    `json:"MainVersion"`
-	Platform         string    `json:"Platform"`
-	ScannerVersion   string    `json:"ScannerVersion"`
-	ChartVersion     string    `json:"ChartVersion"`
+	BuildDate time.Time `json:"BuildDate"`
+	// CollectorVersion is exported for compatibility with users that depend on `roxctl version --json` output.
+	// Please do not depend on it. Rely on internal.CollectorVersion if you need the value from the COLLECTOR_VERSION file,
+	// or rely on defaults.ImageFlavor if you need a default collector image tag.
+	CollectorVersion string `json:"CollectorVersion"`
+	GitCommit        string `json:"GitCommit"`
+	GoVersion        string `json:"GoVersion"`
+	MainVersion      string `json:"MainVersion"`
+	Platform         string `json:"Platform"`
+	// ScannerVersion is exported for compatibility with users that depend on `roxctl version --json` output.
+	// Please do not depend on it. Rely on internal.ScannerVersion if you need the value from the SCANNER_VERSION file,
+	// or rely on defaults.ImageFlavor if you need a default collector image tag.
+	ScannerVersion string `json:"ScannerVersion"`
+	ChartVersion   string `json:"ChartVersion"`
 }
 
-// GetAllVersions returns all of the various pieces of version information.
-func GetAllVersions() Versions {
+// GetAllVersionsDevelopment returns all of the various pieces of version information for development builds of the product.
+func GetAllVersionsDevelopment() Versions {
 	return Versions{
 		BuildDate:        buildinfo.BuildTimestamp(),
-		CollectorVersion: GetCollectorVersion(),
+		CollectorVersion: getCollectorVersion(),
 		GitCommit:        internal.GitShortSha,
 		GoVersion:        runtime.Version(),
 		MainVersion:      GetMainVersion(),
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   GetScannerVersion(),
+		ScannerVersion:   internal.ScannerVersion,
 		ChartVersion:     GetChartVersion(),
 	}
+}
+
+// GetAllVersionsUnified returns all of the various pieces of version information.
+// Unified versions means that collector and scanner versions as shown in image tags are the same as main image version/tag.
+// Unified versions are effective for the release images.
+// Unified versions were introduced in the release 3.68.
+func GetAllVersionsUnified() Versions {
+	v := GetAllVersionsDevelopment()
+	v.CollectorVersion = GetMainVersion()
+	v.ScannerVersion = GetMainVersion()
+	return v
 }
 
 // parsedMainVersion contains a parsed StackRox Main Version (see https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/673808422/Product+Versioning+yes+again).

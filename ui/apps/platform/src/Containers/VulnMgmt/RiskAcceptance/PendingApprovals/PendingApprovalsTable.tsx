@@ -1,9 +1,11 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
+    Bullseye,
     Divider,
     DropdownItem,
     Pagination,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -13,6 +15,9 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
+import usePermissions from 'hooks/usePermissions';
+import { SearchFilter } from 'types/search';
+import useAuthStatus from 'hooks/useAuthStatus';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import VulnRequestedAction from '../VulnRequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
@@ -26,19 +31,26 @@ import DenyDeferralModal from './DenyDeferralModal';
 import DenyFalsePositiveModal from './DenyFalsePositiveModal';
 import CancelVulnRequestModal from './CancelVulnRequestModal';
 import DeferralExpirationDate from '../DeferralExpirationDate';
-import ImpactedEntities from '../ImpactedEntities';
+import ImpactedEntities from '../ImpactedEntities/ImpactedEntities';
+import PendingApprovalsSearchFilter from './PendingApprovalsSearchFilter';
+import SearchFilterResults from '../SearchFilterResults';
 
 export type PendingApprovalsTableProps = {
     rows: VulnerabilityRequest[];
     updateTable: () => void;
     isLoading: boolean;
     itemCount: number;
+    searchFilter: SearchFilter;
+    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
 } & UsePaginationResult;
 
 function PendingApprovalsTable({
     rows,
     updateTable,
+    isLoading,
     itemCount,
+    searchFilter,
+    setSearchFilter,
     page,
     perPage,
     onSetPage,
@@ -58,6 +70,8 @@ function PendingApprovalsTable({
     const { approveVulnRequests, denyVulnRequests, deleteVulnRequests } = useRiskAcceptance({
         requestIDs,
     });
+    const { hasReadWriteAccess } = usePermissions();
+    const { currentUser } = useAuthStatus();
 
     function cancelAssessment() {
         setRequestsToBeAssessed(null);
@@ -69,18 +83,50 @@ function PendingApprovalsTable({
         updateTable();
     }
 
+    const canApproveRequests = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const canCreateRequests = hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const selectedIds = getSelectedIds();
-    const selectedDeferralRequests = rows.filter(
-        (row) => selectedIds.includes(row.id) && row.targetState === 'DEFERRED'
-    );
-    const selectedFalsePositiveRequests = rows.filter(
-        (row) => selectedIds.includes(row.id) && row.targetState === 'FALSE_POSITIVE'
-    );
+    const selectedDeferralsToApproveDeny = rows.filter((row) => {
+        return canApproveRequests && row.targetState === 'DEFERRED' && selectedIds.includes(row.id);
+    });
+    const selectedFalsePositivesToApproveDeny = rows.filter((row) => {
+        return (
+            canApproveRequests &&
+            row.targetState === 'FALSE_POSITIVE' &&
+            selectedIds.includes(row.id)
+        );
+    });
+    const selectedDeferralsToCancel = rows.filter((row) => {
+        return (
+            (canApproveRequests ||
+                (canCreateRequests && row.requestor.id === currentUser.userId)) &&
+            row.targetState === 'DEFERRED' &&
+            // @TODO: Canceling an approved pending update request causes an error.
+            // We can remove this once backend has a fix
+            row.status !== 'APPROVED_PENDING_UPDATE' &&
+            selectedIds.includes(row.id)
+        );
+    });
+    const selectedFalsePositivesToCancel = rows.filter((row) => {
+        return (
+            (canApproveRequests ||
+                (canCreateRequests && row.requestor.id === currentUser.userId)) &&
+            row.targetState === 'FALSE_POSITIVE' &&
+            selectedIds.includes(row.id)
+        );
+    });
 
     return (
         <>
             <Toolbar>
                 <ToolbarContent>
+                    <ToolbarItem>
+                        <PendingApprovalsSearchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
                     <ToolbarItem variant="separator" />
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
@@ -91,40 +137,12 @@ function PendingApprovalsTable({
                                     setRequestsToBeAssessed({
                                         type: 'DEFERRAL',
                                         action: 'APPROVE',
-                                        requests: selectedDeferralRequests,
+                                        requests: selectedDeferralsToApproveDeny,
                                     })
                                 }
-                                isDisabled={selectedDeferralRequests.length === 0}
+                                isDisabled={selectedDeferralsToApproveDeny.length === 0}
                             >
-                                Approve deferrals ({selectedDeferralRequests.length})
-                            </DropdownItem>
-                            <DropdownItem
-                                key="deny deferrals"
-                                component="button"
-                                onClick={() =>
-                                    setRequestsToBeAssessed({
-                                        type: 'DEFERRAL',
-                                        action: 'DENY',
-                                        requests: selectedDeferralRequests,
-                                    })
-                                }
-                                isDisabled={selectedDeferralRequests.length === 0}
-                            >
-                                Deny deferrals ({selectedDeferralRequests.length})
-                            </DropdownItem>
-                            <DropdownItem
-                                key="cancel deferrals"
-                                component="button"
-                                onClick={() =>
-                                    setRequestsToBeAssessed({
-                                        type: 'DEFERRAL',
-                                        action: 'CANCEL',
-                                        requests: selectedDeferralRequests,
-                                    })
-                                }
-                                isDisabled={selectedDeferralRequests.length === 0}
-                            >
-                                Cancel deferrals ({selectedDeferralRequests.length})
+                                Approve deferrals ({selectedDeferralsToApproveDeny.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="approve false positives"
@@ -133,12 +151,27 @@ function PendingApprovalsTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'APPROVE',
-                                        requests: selectedFalsePositiveRequests,
+                                        requests: selectedFalsePositivesToApproveDeny,
                                     })
                                 }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                                isDisabled={selectedFalsePositivesToApproveDeny.length === 0}
                             >
-                                Approve false positives ({selectedFalsePositiveRequests.length})
+                                Approve false positives (
+                                {selectedFalsePositivesToApproveDeny.length})
+                            </DropdownItem>
+                            <DropdownItem
+                                key="deny deferrals"
+                                component="button"
+                                onClick={() =>
+                                    setRequestsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        action: 'DENY',
+                                        requests: selectedDeferralsToApproveDeny,
+                                    })
+                                }
+                                isDisabled={selectedDeferralsToApproveDeny.length === 0}
+                            >
+                                Deny deferrals ({selectedDeferralsToApproveDeny.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="deny false positives"
@@ -147,12 +180,26 @@ function PendingApprovalsTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'DENY',
-                                        requests: selectedFalsePositiveRequests,
+                                        requests: selectedFalsePositivesToApproveDeny,
                                     })
                                 }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                                isDisabled={selectedFalsePositivesToApproveDeny.length === 0}
                             >
-                                Deny false positives ({selectedFalsePositiveRequests.length})
+                                Deny false positives ({selectedFalsePositivesToApproveDeny.length})
+                            </DropdownItem>
+                            <DropdownItem
+                                key="cancel deferrals"
+                                component="button"
+                                onClick={() =>
+                                    setRequestsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        action: 'CANCEL',
+                                        requests: selectedDeferralsToCancel,
+                                    })
+                                }
+                                isDisabled={selectedDeferralsToCancel.length === 0}
+                            >
+                                Cancel deferrals ({selectedDeferralsToCancel.length})
                             </DropdownItem>
                             <DropdownItem
                                 key="cancel false positives"
@@ -161,12 +208,12 @@ function PendingApprovalsTable({
                                     setRequestsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
                                         action: 'CANCEL',
-                                        requests: selectedFalsePositiveRequests,
+                                        requests: selectedFalsePositivesToCancel,
                                     })
                                 }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                                isDisabled={selectedFalsePositivesToCancel.length === 0}
                             >
-                                Cancel false positives ({selectedFalsePositiveRequests.length})
+                                Cancel false positives ({selectedFalsePositivesToCancel.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -181,93 +228,121 @@ function PendingApprovalsTable({
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
+            {Object.keys(searchFilter).length !== 0 && (
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <SearchFilterResults
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
             <Divider component="div" />
-            <TableComposable aria-label="Pending Approvals Table" variant="compact" borders>
-                <Thead>
-                    <Tr>
-                        <Th
-                            select={{
-                                onSelect: onSelectAll,
-                                isSelected: allRowsSelected,
-                            }}
-                        />
-                        <Th>Requested Entity</Th>
-                        <Th>Requested Action</Th>
-                        <Th>Expires</Th>
-                        <Th>Scope</Th>
-                        <Th>Impacted Entities</Th>
-                        <Th>Apply to</Th>
-                        <Th>Comments</Th>
-                        <Th>Requestor</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {rows.map((row, rowIndex) => {
-                        return (
-                            <Tr key={row.id}>
-                                <Td
-                                    select={{
-                                        rowIndex,
-                                        onSelect,
-                                        isSelected: selected[rowIndex],
-                                    }}
-                                />
-                                <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
-                                <Td dataLabel="Requested Action">
-                                    <VulnRequestedAction
-                                        targetState={row.targetState}
-                                        requestStatus={row.status}
-                                        deferralReq={row.deferralReq}
-                                        updatedDeferralReq={row.updatedDeferralReq}
-                                        currentDate={new Date()}
+            {isLoading ? (
+                <Bullseye>
+                    <Spinner isSVG size="xl" />
+                </Bullseye>
+            ) : (
+                <TableComposable aria-label="Pending Approvals Table" variant="compact" borders>
+                    <Thead>
+                        <Tr>
+                            <Th
+                                select={{
+                                    onSelect: onSelectAll,
+                                    isSelected: allRowsSelected,
+                                }}
+                            />
+                            <Th>Requested entity</Th>
+                            <Th>Requested action</Th>
+                            <Th>Expires</Th>
+                            <Th modifier="fitContent">Scope</Th>
+                            <Th>Impacted entities</Th>
+                            <Th>Comments</Th>
+                            <Th>Requestor</Th>
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        {rows.map((row, rowIndex) => {
+                            // @TODO: Canceling an approved pending update request causes an error.
+                            // We can remove this once backend has a fix
+                            const canCancelRequest =
+                                row.status !== 'APPROVED_PENDING_UPDATE' &&
+                                (canApproveRequests ||
+                                    (canCreateRequests && row.requestor.id === currentUser.userId));
+
+                            return (
+                                <Tr key={row.id}>
+                                    <Td
+                                        select={{
+                                            rowIndex,
+                                            onSelect,
+                                            isSelected: selected[rowIndex],
+                                        }}
                                     />
-                                </Td>
-                                <Td dataLabel="Expires">
-                                    <DeferralExpirationDate
-                                        targetState={row.targetState}
-                                        requestStatus={row.status}
-                                        deferralReq={row.deferralReq}
-                                        updatedDeferralReq={row.updatedDeferralReq}
-                                    />
-                                </Td>
-                                <Td dataLabel="Scope">
-                                    {row.scope.imageScope ? 'image' : 'global'}
-                                </Td>
-                                <Td dataLabel="Impacted entities">
-                                    <ImpactedEntities
-                                        deploymentCount={row.deploymentCount}
-                                        imageCount={row.imageCount}
-                                    />
-                                </Td>
-                                <Td dataLabel="Apply to">
-                                    <VulnerabilityRequestScope scope={row.scope} />
-                                </Td>
-                                <Td dataLabel="Comments">
-                                    <RequestCommentsButton
-                                        comments={row.comments}
-                                        cve={row.cves.ids[0]}
-                                    />
-                                </Td>
-                                <Td dataLabel="Requestor">{row.requestor.name}</Td>
-                                <Td className="pf-u-text-align-right">
-                                    {row.targetState === 'DEFERRED' && (
-                                        <DeferralRequestActionsColumn
-                                            row={row}
-                                            setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                    <Td dataLabel="Requested entity">{row.cves.ids[0]}</Td>
+                                    <Td dataLabel="Requested action">
+                                        <VulnRequestedAction
+                                            targetState={row.targetState}
+                                            requestStatus={row.status}
+                                            deferralReq={row.deferralReq}
+                                            updatedDeferralReq={row.updatedDeferralReq}
+                                            currentDate={new Date()}
                                         />
-                                    )}
-                                    {row.targetState === 'FALSE_POSITIVE' && (
-                                        <FalsePositiveRequestActionsColumn
-                                            row={row}
-                                            setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                    </Td>
+                                    <Td dataLabel="Expires">
+                                        <DeferralExpirationDate
+                                            targetState={row.targetState}
+                                            requestStatus={row.status}
+                                            deferralReq={row.deferralReq}
+                                            updatedDeferralReq={row.updatedDeferralReq}
                                         />
-                                    )}
-                                </Td>
-                            </Tr>
-                        );
-                    })}
-                </Tbody>
-            </TableComposable>
+                                    </Td>
+                                    <Td dataLabel="Scope">
+                                        <VulnerabilityRequestScope scope={row.scope} />
+                                    </Td>
+                                    <Td dataLabel="Impacted entities">
+                                        <ImpactedEntities
+                                            deployments={row.deployments}
+                                            deploymentCount={row.deploymentCount}
+                                            images={row.images}
+                                            imageCount={row.imageCount}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Comments">
+                                        <RequestCommentsButton
+                                            comments={row.comments}
+                                            cve={row.cves.ids[0]}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Requestor">{row.requestor.name}</Td>
+                                    <Td className="pf-u-text-align-right">
+                                        {row.targetState === 'DEFERRED' && (
+                                            <DeferralRequestActionsColumn
+                                                row={row}
+                                                setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                                canApproveRequest={canApproveRequests}
+                                                canCancelRequest={canCancelRequest}
+                                            />
+                                        )}
+                                        {row.targetState === 'FALSE_POSITIVE' && (
+                                            <FalsePositiveRequestActionsColumn
+                                                row={row}
+                                                setRequestsToBeAssessed={setRequestsToBeAssessed}
+                                                canApproveRequest={canApproveRequests}
+                                                canCancelRequest={canCancelRequest}
+                                            />
+                                        )}
+                                    </Td>
+                                </Tr>
+                            );
+                        })}
+                    </Tbody>
+                </TableComposable>
+            )}
+
             {/* @TODO: The modals are very similiar and probably could be abstracted out more */}
             <ApproveDeferralModal
                 isOpen={

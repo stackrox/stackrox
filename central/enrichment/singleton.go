@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
-	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager"
+	"github.com/stackrox/rox/central/vulnerabilityrequest/suppressor"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -25,9 +25,6 @@ var (
 	cf      fetcher.OrchestratorIstioCVEManager
 	manager Manager
 
-	imageScanCacheOnce sync.Once
-	imageScanCache     expiringcache.Cache
-
 	metadataCacheOnce sync.Once
 	metadataCache     expiringcache.Cache
 
@@ -35,8 +32,8 @@ var (
 )
 
 func initialize() {
-	ie = imageEnricher.New(cveDataStore.Singleton(), vulnReqMgr.Singleton(), imageintegration.Set(),
-		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton(), reporter.Singleton())
+	ie = imageEnricher.New(cveDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
+		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton())
 	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
@@ -53,14 +50,6 @@ func Singleton() Enricher {
 func ImageEnricherSingleton() imageEnricher.ImageEnricher {
 	once.Do(initialize)
 	return ie
-}
-
-// ImageScanCacheSingleton returns the cache for image scans
-func ImageScanCacheSingleton() expiringcache.Cache {
-	imageScanCacheOnce.Do(func() {
-		imageScanCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration)
-	})
-	return imageScanCache
 }
 
 // ImageMetadataCacheSingleton returns the cache for image metadata
