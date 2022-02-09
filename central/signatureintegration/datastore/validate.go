@@ -23,6 +23,7 @@ func GenerateSignatureIntegrationID() string {
 	return signatureIntegrationIDPrefix + uuid.NewV4().String()
 }
 
+// ValidateSignatureIntegration checks that signature integration is valid.
 func ValidateSignatureIntegration(integration *storage.SignatureIntegration) error {
 	var multiErr error
 

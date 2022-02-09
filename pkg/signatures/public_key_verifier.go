@@ -31,6 +31,7 @@ var (
 	errHashCreation          = errors.New("creating hash")
 	errCorruptedSignature    = errors.New("corrupted signature")
 )
+// PublicKeyType is PEM block type which all public keys should have.
 const PublicKeyType = "PUBLIC KEY"
 
 type publicKeyVerifier struct {
