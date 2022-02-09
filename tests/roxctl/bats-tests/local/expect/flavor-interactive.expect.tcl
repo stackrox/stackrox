@@ -9,7 +9,7 @@
 # This test can be run locally with:
 # expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- <path-to-roxctl> <flavor-name> "$(mktemp -d -u)" <expected-prefix-of-image-registry-in-prompt>
 
-# exp_internal 1 # uncomment for debug mode
+exp_internal 1 # uncomment for debug mode
 # wait maximally 3 second for a question to appear
 set timeout 3
 set binary [lindex $argv 0]
