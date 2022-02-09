@@ -38,6 +38,9 @@ const (
 	// verify internal cluster services.
 	// This could be i.e. the openshiftAPIUrl or other internal services.
 	internalServicesCAPath = "/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	// injectedCAPath points to the bundle of user-provided and system CA certificates
+	// merged by the Cluster Network Operator.
+	injectedCAPath = "/etc/pki/injected-ca-trust/tls-ca-bundle.pem"
 )
 
 var (
@@ -193,7 +196,7 @@ func getOpenShiftSettings() (openShiftSettings, error) {
 		return openShiftSettings{}, errors.Wrap(err, "reading service account token")
 	}
 
-	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath)
+	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
 	if err != nil {
 		return openShiftSettings{}, err
 	}
