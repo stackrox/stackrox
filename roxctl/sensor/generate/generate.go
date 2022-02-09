@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
@@ -56,6 +55,7 @@ type sensorGenerateCommand struct {
 	// injected or constructed values
 	cluster storage.Cluster
 	env environment.Environment
+	getBundleFn util.GetBundleFn
 }
 
 func defaultCluster() storage.Cluster {
@@ -69,8 +69,30 @@ func defaultCluster() storage.Cluster {
 	}
 }
 
-func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) {
+func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	s.timeout = flags.Timeout(cmd)
+	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
+	// Can be removed in a future release.
+	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
+		fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerCreateSet)
+		return errors.New("Specified deprecated flag --create-admission-controller and new flag --admission-controller-listen-on-creates at the same time")
+	}
+	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
+		fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerCreateSet)
+	}
+
+	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
+	// Can be removed in a future release.
+	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
+		fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerEnableSet)
+		return errors.New("Specified deprecated flag --admission-controller-enabled and new flag --admission-controller-enforce-on-creates at the same time")
+	}
+	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
+		fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerEnableSet)
+	}
+
+	s.getBundleFn = util.GetBundle
+	return nil
 }
 
 func (s *sensorGenerateCommand) isLegacyValidationError(err error) bool {
@@ -81,7 +103,7 @@ func (s *sensorGenerateCommand) isLegacyValidationError(err error) bool {
 }
 
 func (s *sensorGenerateCommand) fullClusterCreation() error {
-	conn, err := common.GetGRPCConnection()
+	conn, err := s.env.GRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -112,8 +134,8 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 			flavor = defaults.DevelopmentBuildImageFlavor()
 		}
 
-		fmt.Fprintf(os.Stderr, `WARNING: Running older version of central.
- Can't rely on central configuration to determine default values. Using %s as main registry.`, flavor.MainRegistry)
+		s.env.Logger().WarnfLn("WARNING: Running older version of central. Can't rely on central configuration to determine default values. Using %s as main registry.",
+			flavor.MainRegistry)
 
 		s.cluster.MainImage = flavor.MainImageNoTag()
 		id, err = s.createCluster(ctx, service)
@@ -149,13 +171,13 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		SlimCollector:    pointer.BoolPtr(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
 	}
-	if err := util.GetBundle(params, s.outputDir, s.timeout); err != nil {
+	if err := s.getBundleFn(params, s.outputDir, s.timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
 	if s.slimCollectorP != nil {
 		if s.cluster.SlimCollector && !env.KernelSupportAvailable {
-			fmt.Fprintf(os.Stderr, "%s\n\n", util.WarningSlimCollectorModeWithoutKernelSupport)
+			s.env.Logger().WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
 		}
 	} else if s.cluster.GetSlimCollector() {
 		fmt.Fprintln(os.Stderr, infoDefaultingToSlimCollector)
@@ -192,26 +214,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "generate",
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
-			// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
-			// Can be removed in a future release.
-			if c.PersistentFlags().Lookup("create-admission-controller").Changed && c.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-				fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerCreateSet)
-				return errors.New("Specified deprecated flag --create-admission-controller and new flag --admission-controller-listen-on-creates at the same time")
-			}
-			if c.PersistentFlags().Lookup("create-admission-controller").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerCreateSet)
-			}
-
-			// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
-			// Can be removed in a future release.
-			if c.PersistentFlags().Lookup("admission-controller-enabled").Changed && c.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-				fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerEnableSet)
-				return errors.New("Specified deprecated flag --admission-controller-enabled and new flag --admission-controller-enforce-on-creates at the same time")
-			}
-			if c.PersistentFlags().Lookup("admission-controller-enabled").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerEnableSet)
-			}
-			return nil
+			return generateCmd.Construct(c)
 		},
 	}
 

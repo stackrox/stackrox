@@ -19,6 +19,8 @@ When central is deployed in offline mode, a matching kernel support package need
 	roxctl collector support-packages upload.`
 )
 
+type GetBundleFn func(params apiparams.ClusterZip, outputDir string, timeout time.Duration) error
+
 // GetBundle downloads the sensor bundle for the cluster with the given ID to the specified output directory.
 func GetBundle(params apiparams.ClusterZip, outputDir string, timeout time.Duration) error {
 	path := "/api/extensions/clusters/zip"

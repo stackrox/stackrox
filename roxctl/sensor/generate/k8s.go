@@ -21,7 +21,6 @@ func k8s(generateCmd *sensorGenerateCommand) *cobra.Command {
 	c := &cobra.Command{
 		Use: "k8s",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			k8sCommand.Construct(c)
 			k8sCommand.ConstructK8s()
 
 			if err := clusterValidation.ValidatePartial(&k8sCommand.cluster); err.ToError() != nil {

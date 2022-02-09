@@ -68,7 +68,6 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 	c := &cobra.Command{
 		Use: "openshift",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			openshiftCommand.Construct(c)
 			if err := openshiftCommand.ConstructOpenShift(); err != nil {
 				return err
 			}
