@@ -71,29 +71,37 @@ function PolicyCriteriaForm() {
 
     return (
         <DndProvider backend={HTML5Backend}>
-            <Flex>
-                <FlexItem flex={{ default: 'flex_1' }} className="pf-u-w-66">
-                    <Flex direction={{ default: 'row' }}>
+            <Flex flexWrap={{ default: 'nowrap' }} fullWidth={{ default: 'fullWidth' }}>
+                <Flex
+                    flex={{ default: 'flex_1' }}
+                    direction={{ default: 'column' }}
+                    className="pf-u-h-100"
+                    fullWidth={{ default: 'fullWidth' }}
+                    flexWrap={{ default: 'nowrap' }}
+                    id="policy-sections-container"
+                >
+                    <Flex direction={{ default: 'row' }} className="pf-u-px-md pf-u-pt-md">
                         <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
-                        <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
+                        <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                             <Button variant="secondary" onClick={addNewPolicySection}>
                                 Add a new condition
                             </Button>
                         </FlexItem>
                     </Flex>
-                    <Divider component="div" className="pf-u-mt-md pf-u-mb-lg" />
+                    <Divider component="div" />
                     <Flex
                         direction={{ default: 'row' }}
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
+                        className="pf-u-p-md pf-u-pt-0"
                     >
                         <BooleanPolicyLogicSection />
                     </Flex>
-                </FlexItem>
+                </Flex>
                 <Divider component="div" isVertical />
-                <FlexItem>
+                <Flex className="pf-u-h-100 pf-u-pt-md" id="policy-criteria-keys-container">
                     <PolicyCriteriaKeys keys={descriptor} />
-                </FlexItem>
+                </Flex>
             </Flex>
         </DndProvider>
     );
