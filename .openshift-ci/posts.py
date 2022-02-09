@@ -19,6 +19,7 @@ class PostClusterTest:
 
     def __init__(self):
         self.exitstatus = 0
+        self.failed_commands: List[List[str]] = []
         self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
         self.openshift_namespaces = [
             "openshift-dns",
@@ -34,7 +35,10 @@ class PostClusterTest:
         self.collect_infrastructure_logs()
         self.collect_collector_metrics()
         self.get_central_debug_dump()
+        self.get_central_diagnostics()
         if self.exitstatus != 0:
+            for args in self.failed_commands:
+                print(f"Failure in: {str(args)}")
             raise RuntimeError(f"Post failed: exit {self.exitstatus}")
 
     def wait_for_central_api(self):
@@ -68,6 +72,12 @@ class PostClusterTest:
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
 
+    def get_central_diagnostics(self):
+        self._run_with_best_effort(
+            ["scripts/ci/lib.sh", "get_central_diagnostics", "diagnostic-bundle"],
+            timeout=PostClusterTest.COLLECT_TIMEOUT,
+        )
+
     def _run_with_best_effort(self, args: List[str], timeout: int):
         try:
             subprocess.run(
@@ -77,4 +87,5 @@ class PostClusterTest:
             )
         except Exception as err:
             print(f"Exception raised {err}")
+            self.failed_commands.append(args)
             self.exitstatus = 1

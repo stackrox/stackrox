@@ -668,8 +668,8 @@ commands:
       - run:
           name: Pull the diagnostic bundle from Central
           command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir diagnostic-bundle --insecure-skip-tls-verify
-            ls -l diagnostic-bundle
+            source scripts/ci/lib.sh
+            get_central_diagnostics diagnostic-bundle
       - ci-artifacts/store:
           path: diagnostic-bundle
           destination: diagnostic
