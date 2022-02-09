@@ -9,10 +9,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/db"
-	"github.com/stackrox/rox/pkg/db/mapcache"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/db"
+	"github.com/stackrox/rox/pkg/db/mapcache"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 )
@@ -99,7 +99,7 @@ func (b *storeImpl) Get(id string) (*storage.SignatureIntegration, bool, error) 
 	return msg.(*storage.SignatureIntegration), true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice 
 func (b *storeImpl) GetMany(ids []string) ([]*storage.SignatureIntegration, []int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "SignatureIntegration")
 
@@ -128,7 +128,7 @@ func (b *storeImpl) UpsertMany(objs []*storage.SignatureIntegration) error {
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
 		msgs = append(msgs, o)
-	}
+    }
 
 	return b.crud.UpsertMany(msgs)
 }
