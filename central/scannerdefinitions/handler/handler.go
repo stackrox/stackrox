@@ -149,8 +149,9 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		f, modTime = offlineF, offlineModTime
 	}
 
-	// It is possible no Scanner definitions are uploaded (offline) and Central cannot reach
-	// the vulnerability source (online). Check for nil file if this is the case.
+	// It is possible no offline Scanner definitions are uploaded and Central cannot reach
+	// the vulnerability source or the client requested vulnerabilities which do not exist.
+	// Check for nil to protect against this.
 	if f == nil {
 		writeErrorNotFound(w)
 		return
