@@ -27,10 +27,10 @@ type enricher struct {
 }
 
 type containerWrap struct {
-	lock         sync.RWMutex
-	// processes is an append-only doubly linked list.
-	processes    list.List
-	expiration   time.Time
+	lock sync.RWMutex
+	// processes is an append-only doubly linked list of process indicators.
+	processes  list.List
+	expiration time.Time
 }
 
 // addProcess atomically adds a process indicator to the containerWrap.
@@ -131,7 +131,10 @@ func (e *enricher) scanAndEnrich(metadata clusterentities.ContainerMetadata) {
 		wrap := wrapObj.(*containerWrap)
 		n := wrap.numProcesses()
 		// This loop is safe because wrap.processes is append-only.
-		for i, elem := 0, wrap.processes.Front(); i < n; i, elem = i + 1, elem.Next() {
+		// We only read the first n processes we know about at the time of this call.
+		// It is possible another goroutine adds processes to the containerWrap
+		// during this loop, but we ignore those.
+		for i, elem := 0, wrap.processes.Front(); i < n; i, elem = i+1, elem.Next() {
 			indicator := elem.Value.(*storage.ProcessIndicator)
 			e.enrich(indicator, metadata)
 		}
