@@ -124,6 +124,7 @@ create_cluster() {
             "$SCRIPTS_ROOT/.circleci/check-workflow-live.sh" || return 1
         fi
         echo "Trying zone $zone"
+        ci_export ZONE "$zone"
         gcloud config set compute/zone "${zone}"
         # shellcheck disable=SC2153
         timeout 420 gcloud beta container clusters create \
@@ -164,7 +165,6 @@ create_cluster() {
 
             if [[ "${success}" == 1 ]]; then
                 echo "Successfully launched cluster ${CLUSTER_NAME}"
-                ci_export "ZONE" "$zone"
                 break
             fi
             echo >&2 "Timed out after 10 more minutes. Trying another zone..."
