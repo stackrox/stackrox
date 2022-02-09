@@ -54,7 +54,14 @@ function PolicyCriteriaForm() {
 
     if (criteriaLocked) {
         return (
-            <>
+            <Flex
+                fullWidth={{ default: 'fullWidth' }}
+                direction={{ default: 'column' }}
+                spaceItems={{ default: 'spaceItemsNone' }}
+                flexWrap={{ default: 'nowrap' }}
+                className="pf-u-h-100 pf-u-p-lg"
+                id="policy-sections-container"
+            >
                 {headingElements}
                 <Alert
                     variant="info"
@@ -65,22 +72,23 @@ function PolicyCriteriaForm() {
                     If you need to edit policy criteria, clone this policy or create a new policy.
                 </Alert>
                 <BooleanPolicyLogicSection readOnly />
-            </>
+            </Flex>
         );
     }
 
     return (
         <DndProvider backend={HTML5Backend}>
-            <Flex flexWrap={{ default: 'nowrap' }} fullWidth={{ default: 'fullWidth' }}>
+            <Flex fullWidth={{ default: 'fullWidth' }} className="pf-u-h-100">
                 <Flex
                     flex={{ default: 'flex_1' }}
                     direction={{ default: 'column' }}
                     className="pf-u-h-100"
+                    spaceItems={{ default: 'spaceItemsNone' }}
                     fullWidth={{ default: 'fullWidth' }}
                     flexWrap={{ default: 'nowrap' }}
                     id="policy-sections-container"
                 >
-                    <Flex direction={{ default: 'row' }} className="pf-u-px-md pf-u-pt-md">
+                    <Flex direction={{ default: 'row' }} className="pf-u-p-lg">
                         <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
                         <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                             <Button variant="secondary" onClick={addNewPolicySection}>
@@ -93,13 +101,13 @@ function PolicyCriteriaForm() {
                         direction={{ default: 'row' }}
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
-                        className="pf-u-p-md pf-u-pt-0"
+                        className="pf-u-p-lg"
                     >
                         <BooleanPolicyLogicSection />
                     </Flex>
                 </Flex>
                 <Divider component="div" isVertical />
-                <Flex className="pf-u-h-100 pf-u-pt-md" id="policy-criteria-keys-container">
+                <Flex className="pf-u-h-100 pf-u-pt-lg" id="policy-criteria-keys-container">
                     <PolicyCriteriaKeys keys={descriptor} />
                 </Flex>
             </Flex>

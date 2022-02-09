@@ -4,5 +4,6 @@
 
 div.pf-c-wizard__main-body {
     display: flex;
+    flex-direction: column;
     height: 100%;
 }

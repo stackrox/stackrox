@@ -122,6 +122,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                 isFilled
                 hasOverflowScroll
                 padding={{ default: 'noPadding' }}
+                className="pf-u-h-100"
             >
                 <FormikProvider value={formik}>
                     <Wizard
