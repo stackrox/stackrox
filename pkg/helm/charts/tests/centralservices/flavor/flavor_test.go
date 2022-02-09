@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 )
 
@@ -41,9 +40,7 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
-	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
 	helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
-		Flavor: &testFlavor,
 		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
 			values.ImageTag = "custom-main"
 			values.ScannerImageTag = "custom-scanner"
