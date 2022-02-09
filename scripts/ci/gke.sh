@@ -164,6 +164,7 @@ create_cluster() {
 
             if [[ "${success}" == 1 ]]; then
                 echo "Successfully launched cluster ${CLUSTER_NAME}"
+                ci_export "ZONE" "$zone"
                 break
             fi
             echo >&2 "Timed out after 10 more minutes. Trying another zone..."
@@ -226,6 +227,9 @@ get_supported_cluster_version() {
 
 refresh_gke_token() {
     info "Starting a GKE token refresh loop"
+
+    require_environment "ZONE"
+    require_environment "CLUSTER_NAME"
 
     local real_kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
 
