@@ -656,8 +656,8 @@ commands:
       - run:
           name: Pull the dump from Central
           command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir debug-dump
-            ls -l debug-dump
+            source scripts/ci/lib.sh
+            get_central_debug_dump debug-dump
       - ci-artifacts/store:
           path: debug-dump
           destination: debug

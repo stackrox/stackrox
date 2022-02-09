@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Common steps for afterm cluster based tests are complete
+Common steps for after tests are complete
 """
 
 import subprocess
@@ -33,6 +33,7 @@ class PostClusterTest:
         self.collect_cluster_api_data()
         self.collect_infrastructure_logs()
         self.collect_collector_metrics()
+        self.get_central_debug_dump()
         if self.exitstatus != 0:
             raise RuntimeError(f"Post failed: exit {self.exitstatus}")
 
@@ -58,6 +59,12 @@ class PostClusterTest:
     def collect_collector_metrics(self):
         self._run_with_best_effort(
             ["scripts/ci/collect-collector-metrics.sh", "stackrox"],
+            timeout=PostClusterTest.COLLECT_TIMEOUT,
+        )
+
+    def get_central_debug_dump(self):
+        self._run_with_best_effort(
+            ["scripts/ci/lib.sh", "get_central_debug_dump", "debug-dump"],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
 
