@@ -212,12 +212,22 @@ func (r *serviceCertificatesRepoSecretsImpl) setupSecret(ctx context.Context,
 		if dataForCertErr != nil {
 			return nil, dataForCertErr
 		}
+		sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
+		blockOwnerDeletion := false
+		isController := false
 		newSecret, createErr := r.secretsClient.Create(ctx, &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
 				Namespace: sensorDeployment.GetNamespace(),
 				OwnerReferences: []metav1.OwnerReference{
-					*metav1.NewControllerRef(sensorDeployment, sensorDeployment.GroupVersionKind()),
+					{
+						APIVersion:         sensorDeploymentGVK.GroupVersion().String(),
+						Kind:               sensorDeploymentGVK.Kind,
+						Name:               sensorDeployment.GetName(),
+						UID:                sensorDeployment.GetUID(),
+						BlockOwnerDeletion: &blockOwnerDeletion,
+						Controller:         &isController,
+					},
 				},
 			},
 			Data: secretData,
