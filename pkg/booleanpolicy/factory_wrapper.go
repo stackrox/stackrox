@@ -3,7 +3,6 @@ package booleanpolicy
 import (
 	"errors"
 	"math/rand"
-	"reflect"
 	"time"
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
@@ -37,7 +36,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	if rand.Intn(100) < 1 {
 		log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
 	}
-	if regoMatched != legacyMatched || !reflect.DeepEqual(regoResult, legacyResult) {
+	if regoMatched != legacyMatched {
 		objValue, _ := obj.GetFullValue()
 		log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
 		log.Errorf("Got different values for OPA and legacy. OPA matched: %v; legacy matched: %v;"+
