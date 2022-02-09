@@ -149,13 +149,24 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		f, modTime = offlineF, offlineModTime
 	}
 
+	// It is possible no Scanner definitions are uploaded (offline) and Central cannot reach
+	// the vulnerability source (online). Check for nil file if this is the case.
+	if f == nil {
+		writeErrorNotFound(w)
+		return
+	}
+
 	serveContent(w, r, f.Name(), modTime, f)
+}
+
+func writeErrorNotFound(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNotFound)
+	_, _ = w.Write([]byte("No scanner definitions found"))
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {
 	if errors.Is(err, fs.ErrNotExist) {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte("No scanner definitions found"))
+		writeErrorNotFound(w)
 		return
 	}
 
