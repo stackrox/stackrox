@@ -22,7 +22,7 @@ function PolicyScopeSection({
     const excludedImageNames = getExcludedImageNames(exclusions);
     return (
         <>
-            {scope.length !== 0 && (
+            {scope?.length !== 0 && (
                 <>
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
                         Scope inclusions
@@ -44,7 +44,7 @@ function PolicyScopeSection({
                     </Grid>
                 </>
             )}
-            {excludedDeployments.length !== 0 && (
+            {excludedDeployments?.length !== 0 && (
                 <>
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
                         Scope exclusions
@@ -66,7 +66,7 @@ function PolicyScopeSection({
                     </Grid>
                 </>
             )}
-            {excludedImageNames.length !== 0 && (
+            {excludedImageNames?.length !== 0 && (
                 <>
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
                         Image exclusions

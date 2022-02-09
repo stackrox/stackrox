@@ -58,20 +58,8 @@
   {{ end }}
 {{ end }}
 
-{{/*
-    Set prefix for global resources.
-   */}}
-{{ if kindIs "invalid" $._rox.globalPrefix }}
-  {{ if eq $.Release.Namespace "stackrox" }}
-    {{ $_ := set $._rox "globalPrefix" "stackrox" }}
-  {{ else }}
-    {{ $_ := set $._rox "globalPrefix" (printf "stackrox-%s" (trimPrefix "stackrox-" $.Release.Namespace)) }}
-  {{ end }}
-{{ end }}
-
-{{ if ne $._rox.globalPrefix "stackrox" }}
-  {{ include "srox.note" (list $ (printf "Global Kubernetes resources are prefixed with '%s'." $._rox.globalPrefix)) }}
-{{ end }}
+{{/* Initialize global prefix */}}
+{{- include "srox.initGlobalPrefix" (list $) -}}
 
 {{/*
     API Server setup. The problem with `.Capabilities.APIVersions` is that Helm does not

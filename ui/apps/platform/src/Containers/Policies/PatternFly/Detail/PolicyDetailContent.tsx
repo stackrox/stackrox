@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Formik } from 'formik';
 import { Title, Divider } from '@patternfly/react-core';
 
+import { fetchClustersAsArray } from 'services/ClustersService';
+import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import { Cluster } from 'types/cluster.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
@@ -11,21 +13,40 @@ import PolicyScopeSection from './PolicyScopeSection';
 import PolicyBehaviorSection from './PolicyBehaviorSection';
 
 type PolicyDetailContentProps = {
-    clusters: Cluster[];
     policy: Policy;
-    notifiers: NotifierIntegration[];
     isReview?: boolean;
 };
 
 function PolicyDetailContent({
-    clusters,
     policy,
-    notifiers,
     isReview = false,
 }: PolicyDetailContentProps): React.ReactElement {
+    const [clusters, setClusters] = useState<Cluster[]>([]);
+    const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
+
+    useEffect(() => {
+        fetchClustersAsArray()
+            .then((data) => {
+                setClusters(data as Cluster[]);
+            })
+            .catch(() => {
+                // TODO
+            });
+    }, []);
+
+    useEffect(() => {
+        fetchNotifierIntegrations()
+            .then((data) => {
+                setNotifiers(data as NotifierIntegration[]);
+            })
+            .catch(() => {
+                // TODO
+            });
+    }, []);
+
     const { enforcementActions, eventSource, exclusions, scope, lifecycleStages } = policy;
     return (
-        <>
+        <div data-testid="policy-details">
             <PolicyOverview policy={policy} notifiers={notifiers} isReview={isReview} />
             <Title headingLevel="h2" className="pf-u-mb-md pf-u-pt-lg">
                 Policy behavior
@@ -47,7 +68,7 @@ function PolicyDetailContent({
                     </>
                 )}
             </Formik>
-            {(scope.length > 0 || exclusions.length > 0) && (
+            {(scope?.length > 0 || exclusions?.length > 0) && (
                 <>
                     <Title headingLevel="h2" className="pf-u-mb-md pf-u-pt-lg">
                         Policy scope
@@ -56,7 +77,7 @@ function PolicyDetailContent({
                     <PolicyScopeSection scope={scope} exclusions={exclusions} clusters={clusters} />
                 </>
             )}
-        </>
+        </div>
     );
 }
 

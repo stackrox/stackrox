@@ -61,14 +61,14 @@ function PolicyOverview({
                     <DescriptionListItem term="Rationale" desc={rationale} />
                     <DescriptionListItem term="Guidance" desc={remediation} />
                 </DescriptionList>
-                {notifierIds.length !== 0 && (
+                {notifierIds?.length !== 0 && (
                     <>
                         <Divider component="div" className="pf-u-mt-md" />
                         <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
                             Notifiers
                         </Title>
                         <Grid hasGutter sm={12} md={6}>
-                            {notifierIds.map((notifierId) => (
+                            {notifierIds?.map((notifierId) => (
                                 <GridItem key={notifierId}>
                                     <Card isFlat>
                                         <CardBody>

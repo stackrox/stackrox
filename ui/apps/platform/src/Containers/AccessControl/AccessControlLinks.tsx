@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@patternfly/react-core';
+import { ButtonVariant } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import { AccessControlEntityType } from 'constants/entityTypes';
 import { Role } from 'services/RolesService';
 
@@ -20,13 +20,9 @@ export function AccessControlEntityLink({
     entityName,
 }: AccessControlEntityLinkProps): ReactElement {
     return (
-        <Button
-            variant="link"
-            isInline
-            component={(props) => <Link {...props} to={getEntityPath(entityType, entityId)} />}
-        >
+        <ButtonLink variant={ButtonVariant.link} isInline to={getEntityPath(entityType, entityId)}>
             {entityName}
-        </Button>
+        </ButtonLink>
     );
 }
 
@@ -51,8 +47,8 @@ export function RolesLink({ roles, entityType, entityId }: RolesLinkProps): Reac
     const url = getEntityPath('ROLE', '', { s: { [entityType]: entityId } });
     const text = `${count} ${pluralize('role', count)}`;
     return (
-        <Button variant="link" isInline component={(props) => <Link {...props} to={url} />}>
+        <ButtonLink variant={ButtonVariant.link} isInline to={url}>
             {text}
-        </Button>
+        </ButtonLink>
     );
 }

@@ -1,17 +1,10 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
 import { FormikErrors, FormikTouched } from 'formik';
 
-import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
-    SelectOption,
-    TextInput,
-} from '@patternfly/react-core';
+import { ButtonVariant, Flex, FlexItem, SelectOption, TextInput } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { fetchIntegration } from 'services/IntegrationsService';
 import { integrationsPath } from 'routePaths';
@@ -93,15 +86,13 @@ function NotifierSelection({
                     </FormLabelGroup>
                 </FlexItem>
                 <FlexItem>
-                    <Button
+                    <ButtonLink
                         className="pf-u-mb-md"
                         variant={ButtonVariant.secondary}
-                        component={(props) => (
-                            <Link {...props} to={`${integrationsPath}/notifiers/email/create`} />
-                        )}
+                        to={`${integrationsPath}/notifiers/email/create`}
                     >
                         Create email notifier
-                    </Button>
+                    </ButtonLink>
                 </FlexItem>
             </Flex>
             <FormLabelGroup

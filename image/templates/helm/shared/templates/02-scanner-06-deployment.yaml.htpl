@@ -5,30 +5,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scanner
+  name: {{ ._rox.scanner.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: scanner
-    {{- include "srox.labels" (list . "deployment" "scanner") | nindent 4 }}
+    app: {{ ._rox.scanner.name }}
+    {{- include "srox.labels" (list . "deployment" ._rox.scanner.name) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "deployment" "scanner") | nindent 4 }}
+    {{- include "srox.annotations" (list . "deployment" ._rox.scanner.name) | nindent 4 }}
 spec:
   replicas: {{ ._rox.scanner.replicas }}
   minReadySeconds: 15
   selector:
     matchLabels:
-      app: scanner
+      app: {{ ._rox.scanner.name }}
   strategy:
     type: Recreate
   template:
     metadata:
       namespace: {{ .Release.Namespace }}
       labels:
-        app: scanner
-        {{- include "srox.podLabels" (list . "deployment" "scanner") | nindent 8 }}
+        app: {{ ._rox.scanner.name }}
+        {{- include "srox.podLabels" (list . "deployment" ._rox.scanner.name) | nindent 8 }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
-        {{- include "srox.podAnnotations" (list . "deployment" "scanner") | nindent 8 }}
+        {{- include "srox.podAnnotations" (list . "deployment" ._rox.scanner.name) | nindent 8 }}
     spec:
       {{- if ._rox.scanner._nodeSelector }}
       nodeSelector:
@@ -45,7 +45,7 @@ spec:
             podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  app: scanner
+                  app: {{ ._rox.scanner.name }}
               topologyKey: kubernetes.io/hostname
         {{- if ._rox.env.openshift }}
         nodeAffinity:
@@ -92,7 +92,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        {{- include "srox.envVars" (list . "deployment" "scanner" "scanner") | nindent 8 }}
+        {{- include "srox.envVars" (list . "deployment" ._rox.scanner.name ._rox.scanner.name) | nindent 8 }}
         resources:
           {{- ._rox.scanner._resources | nindent 10 }}
         command:
@@ -136,7 +136,8 @@ spec:
           readOnly: true
         - name: scanner-db-password
           mountPath: /run/secrets/stackrox.io/secrets
-      serviceAccountName: scanner
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+      serviceAccountName: {{ ._rox.scanner.name }}
       volumes:
       - name: additional-ca-volume
         secret:
@@ -149,10 +150,10 @@ spec:
         name: scanner-etc-pki-volume
       - name: scanner-config-volume
         configMap:
-          name: scanner-config
+          name: {{ ._rox.scanner.name }}-config
       - name: scanner-tls-volume
         secret:
-          secretName: scanner-tls
+          secretName: {{ ._rox.scanner.name }}-tls
       - name: vuln-temp-db
         emptyDir: {}
       - name: proxy-config-volume
@@ -161,37 +162,37 @@ spec:
           optional: true
       - name: scanner-db-password
         secret:
-          secretName: scanner-db-password
-
+          secretName: {{ ._rox.scanner.name }}-db-password
+      {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
 ---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scanner-db
+  name: {{ ._rox.scanner.name }}-db
   namespace: {{ .Release.Namespace }}
   labels:
-    app: scanner-db
-    {{- include "srox.labels" (list . "deployment" "scanner-db") | nindent 4 }}
+    app: {{ ._rox.scanner.name }}-db
+    {{- include "srox.labels" (list . "deployment" (print ._rox.scanner.name "-db")) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "deployment" "scanner-db") | nindent 4 }}
+    {{- include "srox.annotations" (list . "deployment" (print ._rox.scanner.name "-db")) | nindent 4 }}
 spec:
   replicas: 1
   minReadySeconds: 15
   selector:
     matchLabels:
-      app: scanner-db
+      app: {{ ._rox.scanner.name }}-db
   strategy:
     type: Recreate
   template:
     metadata:
       namespace: {{ .Release.Namespace }}
       labels:
-        app: scanner-db
-        {{- include "srox.podLabels" (list . "deployment" "scanner-db") | nindent 8 }}
+        app: {{ ._rox.scanner.name }}-db
+        {{- include "srox.podLabels" (list . "deployment" (print ._rox.scanner.name "-db")) | nindent 8 }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
-        {{- include "srox.podAnnotations" (list . "deployment" "scanner-db") | nindent 8 }}
+        {{- include "srox.podAnnotations" (list . "deployment" (print ._rox.scanner.name "-db")) | nindent 8 }}
     spec:
       {{- if ._rox.scanner._dbNodeSelector }}
       nodeSelector:
@@ -276,7 +277,7 @@ spec:
         resources:
           {{- ._rox.scanner._dbResources | nindent 10 }}
         env:
-          {{- include "srox.envVars" (list . "deployment" "scanner-db" "db") | nindent 10 }}
+          {{- include "srox.envVars" (list . "deployment" (print ._rox.scanner.name "-db") "db") | nindent 10 }}
         securityContext:
           runAsUser: 70
           runAsGroup: 70
@@ -287,19 +288,19 @@ spec:
             mountPath: /run/secrets/stackrox.io/certs
           - name: scanner-db-password
             mountPath: /run/secrets/stackrox.io/secrets
-      serviceAccountName: scanner
+      serviceAccountName: {{ ._rox.scanner.name }}
       securityContext:
         fsGroup: 70
       volumes:
       - name: scanner-config-volume
         configMap:
-          name: scanner-config
+          name: {{ ._rox.scanner.name }}-config
       - name: scanner-tls-volume
         secret:
-          secretName: scanner-tls
+          secretName: {{ ._rox.scanner.name }}-tls
       - name: scanner-db-tls-volume
         secret:
-          secretName: scanner-db-tls
+          secretName: {{ ._rox.scanner.name }}-db-tls
           defaultMode: 0640
           items:
           - key: cert.pem
@@ -312,6 +313,6 @@ spec:
         emptyDir: {}
       - name: scanner-db-password
         secret:
-          secretName: scanner-db-password
+          secretName: {{ ._rox.scanner.name }}-db-password
 
 {{ end -}}

@@ -159,6 +159,15 @@ replace (
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
+
+	// Our fork has a change exposing a method to do generic POST requests
+	// against the OAuth server in order to realize the refresh token flow.
+	// The problem is that:
+	//   (a) the oauth2 library doesn’t support token refresh out of the box;
+	//   (b) authenticating with an OAuth server is super complicated because
+	//       there is a mix of header auth and body auth in existence, which
+	//       the library solves with autosensing + caching, and what we don't
+	//       want to reimplement in our code.
 	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20210904010302-0b4d90ae6a84
 
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1

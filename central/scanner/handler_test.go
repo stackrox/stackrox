@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	testutilsMTLS "github.com/stackrox/rox/central/testutils/mtls"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	buildTestutils "github.com/stackrox/rox/pkg/buildinfo/testutils"
+	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
