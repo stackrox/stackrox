@@ -2,3 +2,12 @@
     white-space: nowrap;
     overflow-x: scroll;
 }
+
+#policy-sections-container {
+    overflow: auto;
+}
+
+#policy-criteria-keys-container {
+    overflow: auto;
+    width: 15rem;
+}
