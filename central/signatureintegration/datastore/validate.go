@@ -32,7 +32,8 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if integration.GetName() == "" {
-		multiErr = multierror.Append(multiErr, errors.New("name field must be set"))
+		err := errors.New("name field must be set")
+		multiErr = multierror.Append(multiErr, err)
 	}
 	if len(integration.GetSignatureVerificationConfigs()) == 0 {
 		err := errors.New("integration must have at least one signature verification config")
