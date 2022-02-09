@@ -16,7 +16,7 @@ message SignatureIntegration {
 
 message SignatureVerificationConfig {
     oneof config {
-        CosignPublicKeyVerification cosign_verification = 2;
+        CosignPublicKeyVerification cosign_verification = 1;
     }
 }
 
