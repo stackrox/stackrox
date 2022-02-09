@@ -147,7 +147,6 @@ function ReviewPolicyForm({
                 <>
                     <Divider component="div" isVertical />
                     <Flex
-                        // flex={{ default: 'flex_1' }}
                         direction={{ default: 'column' }}
                         alignSelf={{ default: 'alignSelfStretch' }}
                         className="preview-violations pf-u-p-lg"
