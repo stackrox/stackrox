@@ -10,8 +10,8 @@
 # expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- <path-to-roxctl> <flavor-name> "$(mktemp -d -u)" <expected-prefix-of-image-registry-in-prompt>
 
 # exp_internal 1 # uncomment for debug mode
-# wait maximally 3 second for a question to appear
-set timeout 3
+# wait maximally 10 seconds for a question to appear - applies for each question
+set timeout 10
 set binary [lindex $argv 0]
 set flavor [lindex $argv 1]
 set out_dir [lindex $argv 2]
@@ -123,7 +123,8 @@ expect "Enter external volume name*:" { send "\n" }
 expect "Enter external volume size in Gi*:" { send "\n" }
 expect "Enter storage class name (optional if you have a default StorageClass configured):" { send "\n" }
 
-expect "Generating deployment bundle..."
-expect "Wrote central bundle to \"$out_dir\""
-expect eof
+# Setting a generous timeout, as generating files may take >3 seconds
+expect -timeout 20 "Generating deployment bundle..."
+expect -timeout 20 "Wrote central bundle to \"$out_dir\""
+expect -timeout 20 eof
 exit "$exitWith"
