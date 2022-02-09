@@ -38,7 +38,7 @@ class PostClusterTest:
         self.get_central_diagnostics()
         if self.exitstatus != 0:
             for args in self.failed_commands:
-                print(f"Failure in: {str(args)}")
+                print(f"Post failure in: {args}")
             raise RuntimeError(f"Post failed: exit {self.exitstatus}")
 
     def wait_for_central_api(self):
@@ -86,6 +86,6 @@ class PostClusterTest:
                 timeout=timeout,
             )
         except Exception as err:
-            print(f"Exception raised {err}")
+            print(f"Exception raised in {args}, {err}")
             self.failed_commands.append(args)
             self.exitstatus = 1
