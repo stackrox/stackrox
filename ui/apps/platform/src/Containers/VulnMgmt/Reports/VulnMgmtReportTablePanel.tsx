@@ -1,10 +1,9 @@
 import React, { useState, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
 import {
     Alert,
     AlertGroup,
     AlertVariant,
-    Button,
+    ButtonVariant,
     DropdownItem,
     Divider,
     PageSection,
@@ -21,6 +20,7 @@ import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import SearchFilterResults from 'Components/PatternFly/SearchFilterResults';
 import TableCell from 'Components/PatternFly/TableCell';
@@ -292,19 +292,13 @@ function ReportingTablePanel({
                             if (canWriteReports) {
                                 actionItems.push({
                                     title: (
-                                        <Button
-                                            variant="link"
+                                        <ButtonLink
+                                            variant={ButtonVariant.link}
                                             isInline
-                                            // eslint-disable-next-line jsx-a11y/anchor-is-valid
-                                            component={(props) => (
-                                                <Link
-                                                    {...props}
-                                                    to={`${vulnManagementReportsPath}/${id}?action=edit`}
-                                                />
-                                            )}
+                                            to={`${vulnManagementReportsPath}/${id}?action=edit`}
                                         >
                                             Edit report
-                                        </Button>
+                                        </ButtonLink>
                                     ),
                                     onClick: () => {},
                                 });
