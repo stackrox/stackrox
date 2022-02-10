@@ -24,6 +24,8 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithExtraWatch(
 			&source.Kind{Type: &platform.SecuredCluster{}},
 			handleSiblingCentrals(mgr),
+			// Only appearance and disappearance of a SecuredCluster resource can influence whether
+			// an init bundle should be created by the Central controller.
 			utils.CreateAndDeleteOnlyPredicate{}),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient())),
