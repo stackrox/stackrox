@@ -83,7 +83,8 @@ func (r *certRefresherImpl) ensureCertificatesAreFresh(ctx context.Context) (tim
 		return 0, fetchErr
 	}
 
-	timeToNextRefresh = r.getTimeToRefresh(certificates)
+	// recoverFromErr to true in order to refresh the certificates immediately if we cannot parse them.
+	timeToNextRefresh, _ = r.getTimeToRefresh(certificates, true)
 	if timeToNextRefresh > 0 {
 		return timeToNextRefresh, nil
 	}
@@ -103,15 +104,20 @@ func (r *certRefresherImpl) ensureCertificatesAreFresh(ctx context.Context) (tim
 
 	log.Infof("successfully refreshed %v", certsDescription)
 
-	return r.getTimeToRefresh(certificates), nil
+	// recoverFromErr to so the ticker knows this is an error, and it retries with backoff.
+	return r.getTimeToRefresh(certificates, false)
 }
 
-func (r *certRefresherImpl) getTimeToRefresh(certificates *storage.TypedServiceCertificateSet) time.Duration {
+func (r *certRefresherImpl) getTimeToRefresh(certificates *storage.TypedServiceCertificateSet, recoverFromErr bool) (time.Duration, error) {
 	renewalTime, err := r.getCertsRenewalTime(certificates)
 	if err != nil {
 		log.Errorf("error getting local scanner certificate expiration, will refresh certificates immediately: %s", err)
-		return 0
+		if recoverFromErr {
+			return 0, nil
+		}
+		return 0, err
+
 	}
 
-	return time.Until(renewalTime)
+	return time.Until(renewalTime), nil
 }
