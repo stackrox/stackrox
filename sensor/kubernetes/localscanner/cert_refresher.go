@@ -83,11 +83,7 @@ func (r *certRefresherImpl) ensureCertificatesAreFresh(ctx context.Context) (tim
 		return 0, fetchErr
 	}
 
-	var timeToRefreshErr error
-	timeToNextRefresh, timeToRefreshErr = r.getTimeToRefresh(certificates)
-	if timeToRefreshErr != nil {
-		return 0, timeToRefreshErr
-	}
+	timeToNextRefresh = r.getTimeToRefresh(certificates)
 	if timeToNextRefresh > 0 {
 		return timeToNextRefresh, nil
 	}
@@ -107,18 +103,15 @@ func (r *certRefresherImpl) ensureCertificatesAreFresh(ctx context.Context) (tim
 
 	log.Infof("successfully refreshed %v", certsDescription)
 
-	return r.getTimeToRefresh(certificates)
+	return r.getTimeToRefresh(certificates), nil
 }
 
-func (r *certRefresherImpl) getTimeToRefresh(certificates *storage.TypedServiceCertificateSet) (time.Duration, error) {
+func (r *certRefresherImpl) getTimeToRefresh(certificates *storage.TypedServiceCertificateSet) time.Duration {
 	renewalTime, err := r.getCertsRenewalTime(certificates)
-	if err == ErrEmptyCertificate {
-		log.Errorf("some local scanner certificate is empty, will refresh certificates immediately")
-		return 0, nil
-	}
 	if err != nil {
-		return 0, err
+		log.Errorf("error getting local scanner certificate expiration, will refresh certificates immediately: %s", err)
+		return 0
 	}
 
-	return time.Until(renewalTime), nil
+	return time.Until(renewalTime)
 }
