@@ -54,10 +54,10 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 		CollectorFullImageTag:    "3.0.11-latest",
 		CollectorSlimImageTag:    "3.0.11-slim",
 
-		ScannerSlimImageRemote: "scanner-slim",
-		ScannerImageTag:"3.0.41",
+		ScannerSlimImageRemote:   "scanner-slim",
+		ScannerImageTag:          "3.0.41",
 		ScannerDBSlimImageRemote: "scanner-slim-db",
-		ScannerDBImageTag: "3.0.41",
+		ScannerDBImageTag:        "3.0.41",
 
 		CollectionMethod: "EBPF",
 
