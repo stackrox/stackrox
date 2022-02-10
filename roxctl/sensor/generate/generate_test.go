@@ -27,10 +27,16 @@ import (
 type mockClustersServiceServer struct {
 	v1.ClustersServiceServer
 
-	actAsLegacyCentral bool
-	kernelSupport      bool
-	clusterSent        []storage.Cluster
+	// injected behavior
+	kernelSupport         bool
+	postClusterInjectedFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
+
+	// spy properties
+	clusterSent      []storage.Cluster
+	getClusterCalled bool
 }
+
+type postClusterF func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
 
 func (m *mockClustersServiceServer) GetKernelSupportAvailable(ctx context.Context, in *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
 	return &v1.KernelSupportAvailableResponse{
@@ -40,13 +46,18 @@ func (m *mockClustersServiceServer) GetKernelSupportAvailable(ctx context.Contex
 
 func (m *mockClustersServiceServer) PostCluster(ctx context.Context, cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	m.clusterSent = append(m.clusterSent, *cluster)
-	if m.actAsLegacyCentral && cluster.MainImage == "" {
-		return nil, status.Error(codes.Internal, "Cluster Validation error: invalid main image '': invalid reference format")
-	}
+	return m.postClusterInjectedFn(cluster)
+}
 
-	cluster.Id = "test-id"
-	return &v1.ClusterResponse{
-		Cluster: cluster,
+func (m *mockClustersServiceServer) GetClusters(ctx context.Context, in *v1.GetClustersRequest) (*v1.ClustersList, error) {
+	m.getClusterCalled = true
+	return &v1.ClustersList{
+		Clusters: []*storage.Cluster{
+			{
+				Name: "test-cluster",
+				Id:   "cluster-id",
+			},
+		},
 	}, nil
 }
 
@@ -67,13 +78,13 @@ type closeFunction = func()
 
 // createGRPCMockClustersService will create an in-memory gRPC server serving mockClustersServiceServer
 // NOTE: Ensure that you ALWAYS call the closeFunction to clean up the test setup
-func (s *sensorGenerateTestSuite) createGRPCMockClustersService(kernelSupport bool, legacyCentral bool) (*grpc.ClientConn, closeFunction, *mockClustersServiceServer) {
+func (s *sensorGenerateTestSuite) createGRPCMockClustersService(kernelSupport bool, postClusterF postClusterF) (*grpc.ClientConn, closeFunction, *mockClustersServiceServer) {
 	// create an in-memory listener that does not require exposing any ports on the host
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
 	server := grpc.NewServer()
-	mock := mockClustersServiceServer{kernelSupport: kernelSupport, actAsLegacyCentral: legacyCentral}
+	mock := mockClustersServiceServer{kernelSupport: kernelSupport, postClusterInjectedFn: postClusterF}
 	v1.RegisterClustersServiceServer(server, &mock)
 
 	// start the server
@@ -98,9 +109,9 @@ func (s *sensorGenerateTestSuite) newTestMockEnvironmentWithConn(conn *grpc.Clie
 	return mocks.NewEnvWithConn(conn, s.T())
 }
 
-func (s *sensorGenerateTestSuite) createMockedCommand(kernelSupport bool, legacyCentral bool) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
+func (s *sensorGenerateTestSuite) createMockedCommand(kernelSupport bool, postClusterF postClusterF) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
 	var out, errOut *bytes.Buffer
-	conn, closeF, mock := s.createGRPCMockClustersService(kernelSupport, legacyCentral)
+	conn, closeF, mock := s.createGRPCMockClustersService(kernelSupport, postClusterF)
 	cmd := s.cmd
 	cmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 	return out, errOut, closeF, cmd, mock
@@ -108,8 +119,6 @@ func (s *sensorGenerateTestSuite) createMockedCommand(kernelSupport bool, legacy
 
 // Create cluster:
 //   2) Return validation errors
-//   3) Return "AlreadyExists" error: if existing cluster, try to fetch cluster
-//   4) Correctly create cluster
 // Get bundle:
 //	 1) Show warnings / info messages
 //   2) Return error
@@ -125,6 +134,24 @@ var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration
 	return nil
 }
 
+var storeClusterFake = func(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+	cluster.Id = "test-id"
+	return &v1.ClusterResponse{
+		Cluster: cluster,
+	}, nil
+}
+
+var legacyPostClusterFake = func(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+	if cluster.MainImage == "" {
+		return nil, status.Error(codes.Internal, "Cluster Validation error: invalid main image '': invalid reference format")
+	}
+	return storeClusterFake(cluster)
+}
+
+var clusterExistsFn = func(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+	return nil, status.Error(codes.AlreadyExists, "Cluster Exists")
+}
+
 // getMainImageFromBuildFlag is necessary because we run tests both in release and non-release mode.
 // roxctl will select different images based on the build type if communicating with a legacy central
 func getMainImageFromBuildFlag() string {
@@ -137,9 +164,81 @@ func getMainImageFromBuildFlag() string {
 	return flavor.MainImageNoTag()
 }
 
+func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
+	testCases := map[string]struct {
+		// cluster setup
+		continueIfExistsFlag       bool
+		clusterName                string
+		postClusterF               postClusterF
+
+		// expectations
+		expectedErrorMessage       string
+		expectedCallToGetClusters  bool
+		expectedCallBundleDownload bool
+	}{
+		"Throw error is cluster exists": {
+			continueIfExistsFlag:       false,
+			postClusterF:               clusterExistsFn,
+			clusterName:                "test-cluster",
+			expectedErrorMessage:       "error creating cluster",
+			expectedCallToGetClusters:  false,
+			expectedCallBundleDownload: false,
+		},
+		"Should fetch bundle and download zip file if --continue-if-exists=true": {
+			continueIfExistsFlag:       true,
+			postClusterF:               clusterExistsFn,
+			clusterName:                "test-cluster",
+			expectedErrorMessage:       "",
+			expectedCallToGetClusters:  true,
+			expectedCallBundleDownload: true,
+		},
+		"Should get clusters and fail with error finding preexisting cluster": {
+			continueIfExistsFlag:       true,
+			postClusterF:               clusterExistsFn,
+			clusterName:                "non-existing",
+			expectedErrorMessage:       "error finding preexisting cluster with name non-existing",
+			expectedCallToGetClusters:  true,
+			expectedCallBundleDownload: false,
+		},
+		"If cluster doesn't exist, GetClusters API shouldn't be called": {
+			continueIfExistsFlag:       true,
+			postClusterF:               storeClusterFake,
+			clusterName:                "test-cluster",
+			expectedErrorMessage:       "",
+			expectedCallToGetClusters:  false,
+			expectedCallBundleDownload: true,
+		},
+	}
+
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+			_, _, closeF, generateCmd, mock := s.createMockedCommand(true, testCase.postClusterF)
+			defer closeF()
+			generateCmd.timeout = time.Duration(5) * time.Second
+			generateCmd.continueIfExists = testCase.continueIfExistsFlag
+			generateCmd.cluster.Name = testCase.clusterName
+			getBundleCalled := false
+			generateCmd.getBundleFn = func(_ apiparams.ClusterZip, _ string, _ time.Duration) error {
+				getBundleCalled = true
+				return nil
+			}
+
+			err := generateCmd.fullClusterCreation()
+			if testCase.expectedErrorMessage != "" {
+				s.Require().Error(err, testCase.expectedErrorMessage)
+			} else {
+				s.Require().NoError(err)
+			}
+
+			s.Assert().Equal(testCase.expectedCallToGetClusters, mock.getClusterCalled)
+			s.Assert().Equal(testCase.expectedCallBundleDownload, getBundleCalled)
+		})
+	}
+}
+
 func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
 	testCases := map[string]struct {
-		legacyCentral bool
+		postClusterF postClusterF
 
 		// expected
 		expectedClustersSent       int
@@ -147,13 +246,13 @@ func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
 		expectedWarning            *expectedWarning
 	}{
 		"legacy central: PostCluster called twice": {
-			legacyCentral:              true,
+			postClusterF:               legacyPostClusterFake,
 			expectedClustersSent:       2,
 			expectedClustersMainImages: []string{"", getMainImageFromBuildFlag()},
 			expectedWarning:            &expectedWarning{"Running older version of central"},
 		},
 		"new central: PostCluster called once without MainImage": {
-			legacyCentral:              false,
+			postClusterF:               storeClusterFake,
 			expectedClustersSent:       1,
 			expectedClustersMainImages: []string{""},
 		},
@@ -161,7 +260,7 @@ func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(true, testCase.legacyCentral)
+			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(true, testCase.postClusterF)
 			defer closeF()
 			generateCmd.timeout = time.Duration(5) * time.Second
 			generateCmd.getBundleFn = emptyGetBundle
@@ -222,7 +321,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(testCase.serverHasKernelSupport, false)
+			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(testCase.serverHasKernelSupport, storeClusterFake)
 			defer closeF()
 			if testCase.slimCollectorFlag != nil {
 				generateCmd.slimCollectorP = &testCase.slimCollectorFlag.value

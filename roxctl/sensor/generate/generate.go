@@ -41,6 +41,8 @@ Please use --admission-controller-enforce-on-creates instead to suppress this wa
 
 	errorDeprecatedAdmControllerEnableSet = `It is illegal to specify both the --admission-controller-enabled and --admission-controller-enforce-on-creates flags.
 Please use --admission-controller-enforce-on-creates exclusively in all invocations.`
+
+	warningRunningAgainstLegacyCentral = "Running older version of central. Can't rely on central configuration to determine default values. Using %s as main registry."
 )
 
 type sensorGenerateCommand struct {
@@ -134,8 +136,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 			flavor = defaults.DevelopmentBuildImageFlavor()
 		}
 
-		s.env.Logger().WarnfLn("WARNING: Running older version of central. Can't rely on central configuration to determine default values. Using %s as main registry.",
-			flavor.MainRegistry)
+		s.env.Logger().WarnfLn(warningRunningAgainstLegacyCentral, flavor.MainRegistry)
 
 		s.cluster.MainImage = flavor.MainImageNoTag()
 		id, err = s.createCluster(ctx, service)
