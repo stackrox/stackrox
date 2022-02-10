@@ -247,7 +247,9 @@
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
+[< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
 {{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
+[<- end >]
 
 {{ include "srox.initGlobalPrefix" (list $) }}
 
@@ -262,15 +264,19 @@
 {{/*
    Scanner setup.
   */}}
-{{- if or (not ._rox.env.openshift 4) .KubectlOutput }}
-  {{ $_ := set $._rox "scanner" (dict "disable" true) }}
-{{ else }}
+{{ if and (eq ._rox.env.openshift 4) (kindIs "invalid" $._rox.scanner.disable) }}
   {{ $_ := set $._rox.scanner "disable" false }}
+{{ end }}
+
+{{ if ne ._rox.env.openshift 4 }}
+  {{ $_ := set $._rox "scanner" (dict "disable" true) }}
+{{ end }}
+
+{{ if and (eq ._rox.env.openshift 4) (eq $._rox.scanner.disable false) }}
   {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
   {{ $_ = set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
 {{ end }}
-
 [<- end >]
 
 {{/*
