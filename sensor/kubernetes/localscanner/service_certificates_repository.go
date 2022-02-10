@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	v1 "k8s.io/api/core/v1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -79,7 +78,7 @@ func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 // - If the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate.
 //   for that secret will contain a zero value.
 // - Fails with ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
-// - Fails ErrUnexpectedSecretsOwner in case sensor deployment is not the sole owner of all secrets.
+// - Fails ErrUnexpectedSecretsOwner in case the owner specified in the constructor is not the sole owner of all secrets.
 func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
@@ -193,9 +192,9 @@ type patchSecretDataByteMap struct {
 	Value map[string][]byte `json:"value"`
 }
 
-// createSecrets ensures the k8s secrets for initialCertificates are created.
-// In case a secret doesn't exist it creates that secret, setting sensorDeployment as owner,
-// with initialCertificates stored in the secret data.
+// createSecrets creates the k8s secrets for initialCertificates.
+// Each secret is created with the owner specified in the constructor as owner, and with initialCertificates stored
+// in the secret data.
 // This only creates secrets for the service types that appear in initialCertificates.
 func (r *serviceCertificatesRepoSecretsImpl) createSecrets(ctx context.Context,
 	initialCertificates *storage.TypedServiceCertificateSet) error {
@@ -223,28 +222,14 @@ func (r *serviceCertificatesRepoSecretsImpl) createSecrets(ctx context.Context,
 
 func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, caPem []byte,
 	certificate *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) (*v1.Secret, error) {
-
-	secret, err := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
-	if k8sErrors.IsNotFound(err) {
-		newSecret, createErr := r.secretsClient.Create(ctx, &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            secretSpec.secretName,
-				Namespace:       r.namespace,
-				OwnerReferences: []metav1.OwnerReference{r.ownerReference},
-			},
-			Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
-		}, metav1.CreateOptions{})
-		if createErr != nil {
-			return nil, createErr
-		}
-		return newSecret, nil
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return secret, nil
+	return r.secretsClient.Create(ctx, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            secretSpec.secretName,
+			Namespace:       r.namespace,
+			OwnerReferences: []metav1.OwnerReference{r.ownerReference},
+		},
+		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
+	}, metav1.CreateOptions{})
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) secretDataForCertificate(secretSpec serviceCertSecretSpec, caPem []byte,
