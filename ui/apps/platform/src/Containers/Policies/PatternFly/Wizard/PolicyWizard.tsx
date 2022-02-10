@@ -104,6 +104,8 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepId]); // but not validateForm
 
+    const canJumpToAny = pageAction === 'clone' || pageAction === 'edit';
+
     return (
         <>
             <PageSection variant="light" isFilled id="policy-page" className="pf-u-pb-0">
@@ -117,13 +119,20 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                 </div>
                 <Divider component="div" />
             </PageSection>
-            <PageSection variant="light" isFilled hasOverflowScroll className="pf-u-py-0">
+            <PageSection
+                variant="light"
+                isFilled
+                hasOverflowScroll
+                padding={{ default: 'noPadding' }}
+                className="pf-u-h-100"
+            >
                 <FormikProvider value={formik}>
                     <Wizard
                         navAriaLabel={`${pageAction} policy steps`}
                         mainAriaLabel={`${pageAction} policy content`}
                         onClose={closeWizard}
                         onSave={submitForm}
+                        hasNoBodyPadding
                         steps={[
                             {
                                 id: 1,
@@ -134,28 +143,28 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                         mitreVectorsLocked={values.mitreVectorsLocked}
                                     />
                                 ),
-                                canJumpTo: stepIdReached >= 1,
+                                canJumpTo: canJumpToAny || stepIdReached >= 1,
                                 enableNext: isValidOnClient,
                             },
                             {
                                 id: 2,
                                 name: 'Policy behavior',
                                 component: <PolicyBehaviorForm />,
-                                canJumpTo: stepIdReached >= 2,
+                                canJumpTo: canJumpToAny || stepIdReached >= 2,
                                 enableNext: isValidOnClient,
                             },
                             {
                                 id: 3,
                                 name: 'Policy criteria',
                                 component: <PolicyCriteriaForm />,
-                                canJumpTo: stepIdReached >= 3,
+                                canJumpTo: canJumpToAny || stepIdReached >= 3,
                                 enableNext: isValidOnClient,
                             },
                             {
                                 id: 4,
                                 name: 'Policy scope',
                                 component: <PolicyScopeForm />,
-                                canJumpTo: stepIdReached >= 4,
+                                canJumpTo: canJumpToAny || stepIdReached >= 4,
                                 enableNext: isValidOnClient,
                             },
                             {
@@ -171,7 +180,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                     />
                                 ),
                                 nextButtonText: 'Save',
-                                canJumpTo: stepIdReached >= 5,
+                                canJumpTo: canJumpToAny || stepIdReached >= 5,
                                 enableNext: dirty && isValidOnServer && !isSubmitting,
                             },
                         ]}

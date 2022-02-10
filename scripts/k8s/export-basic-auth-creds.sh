@@ -12,8 +12,8 @@ usage() {
 DEPLOY_DIR=$1
 [ -n "${DEPLOY_DIR}" ] || usage
 
-if [ -f ${DEPLOY_DIR}/central-deploy/password ]; then
-    password="$(< ${DEPLOY_DIR}/central-deploy/password)"
+if [ -f "${DEPLOY_DIR}/central-deploy/password" ]; then
+    password="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
     export ROX_USERNAME=admin
     export ROX_PASSWORD="$password"
 else

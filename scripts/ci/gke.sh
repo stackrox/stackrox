@@ -124,6 +124,7 @@ create_cluster() {
             "$SCRIPTS_ROOT/.circleci/check-workflow-live.sh" || return 1
         fi
         echo "Trying zone $zone"
+        ci_export ZONE "$zone"
         gcloud config set compute/zone "${zone}"
         # shellcheck disable=SC2153
         timeout 420 gcloud beta container clusters create \
@@ -222,6 +223,29 @@ get_supported_cluster_version() {
         fi
         CLUSTER_VERSION=$(sed -e 's/^"//' -e 's/"$//' <<<"${match}")
     fi
+}
+
+refresh_gke_token() {
+    info "Starting a GKE token refresh loop"
+
+    require_environment "ZONE"
+    require_environment "CLUSTER_NAME"
+
+    local real_kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
+
+    # refresh token every 15m
+    while true; do
+        # sleep & wait so that it will exit on TERM
+        sleep 900 &
+        wait $!
+        info "Refreshing the GKE auth token"
+        gcloud config config-helper --force-auth-refresh >/dev/null
+        echo >/tmp/kubeconfig-new
+        chmod 0600 /tmp/kubeconfig-new
+        KUBECONFIG=/tmp/kubeconfig-new gcloud container clusters get-credentials --project stackrox-ci --zone "$ZONE" "$CLUSTER_NAME"
+        KUBECONFIG=/tmp/kubeconfig-new kubectl get ns >/dev/null
+        mv /tmp/kubeconfig-new "$real_kubeconfig"
+    done
 }
 
 teardown_gke_cluster() {

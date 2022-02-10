@@ -88,9 +88,9 @@ function PoliciesTablePage({
 
     const query = searchFilter ? getRequestQueryStringForSearchFilter(searchFilter) : '';
 
-    function deletePoliciesHandler(ids: string[]) {
+    function deletePoliciesHandler(ids: string[]): Promise<void> {
         const policyText = pluralize('policy', ids.length);
-        deletePolicies(ids)
+        return deletePolicies(ids)
             .then(() => {
                 fetchPolicies(query);
                 addToast(`Successfully deleted ${policyText}`, 'success');
