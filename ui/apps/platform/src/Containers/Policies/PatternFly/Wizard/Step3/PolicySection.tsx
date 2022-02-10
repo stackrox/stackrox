@@ -34,7 +34,6 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
 
     function onEditSectionName(_, e) {
-        console.log(e.target.name, e.target.value); // eslint-disable-line no-console
         handleChange(e);
     }
 
