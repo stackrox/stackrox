@@ -36,7 +36,9 @@ class DiagnosticBundleTest extends BaseSpecification {
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
         debugLogsReaderRoleName = UUID.randomUUID()
         RoleService.createRoleWithPermissionSet(
-                Role.newBuilder().setName(debugLogsReaderRoleName).build(),
+                Role.newBuilder().setName(debugLogsReaderRoleName)
+                .setAccessScopeId(UNRESTRICTED_SCOPE_ID)
+                .build(),
                 [
                         "DebugLogs": RoleOuterClass.Access.READ_ACCESS,
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
@@ -51,6 +53,7 @@ class DiagnosticBundleTest extends BaseSpecification {
                 ]
         noAccessRole = RoleOuterClass.Role.newBuilder()
                         .setName("No Access Test Role - ${RUN_ID}")
+                        .setAccessScopeId(UNRESTRICTED_SCOPE_ID)
                         .build()
         noAccessRole = RoleService.createRoleWithPermissionSet(noAccessRole, resourceToAccess)
         noAccessToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), noAccessRole.name)

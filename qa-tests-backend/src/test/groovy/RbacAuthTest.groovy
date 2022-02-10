@@ -120,6 +120,7 @@ spec:
         "Create a test role"
         def testRole = RoleOuterClass.Role.newBuilder()
                 .setName("Automation Role")
+                .setAccessScopeId(UNRESTRICTED_SCOPE_ID)
                 .build()
         RoleService.createRoleWithPermissionSet(testRole, resourceAccess)
         assert RoleService.getRole(testRole.name)
@@ -189,6 +190,7 @@ spec:
         def roles = ["Indicator", "ProcessWhitelist"].collect {
             def role = RoleOuterClass.Role.newBuilder()
                     .setName("View ${it}")
+                    .setAccessScopeId(UNRESTRICTED_SCOPE_ID)
                     .build()
             Map<String, RoleOuterClass.Access> resourceToAccess = [
                     (it): RoleOuterClass.Access.READ_ACCESS
