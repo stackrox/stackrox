@@ -82,3 +82,35 @@ install_built_roxctl_in_gopath() {
 
     cp "$roxctl" "$GOPATH/bin/roxctl"
 }
+
+get_central_debug_dump() {
+    info "Getting a central debug dump"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: get_central_debug_dump <output_dir>"
+    fi
+
+    local output_dir="$1"
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_PASSWORD"
+
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir "${output_dir}"
+    ls -l "${output_dir}"
+}
+
+get_central_diagnostics() {
+    info "Getting central diagnostics"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: get_central_diagnostics <output_dir>"
+    fi
+
+    local output_dir="$1"
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_PASSWORD"
+
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir "${output_dir}" --insecure-skip-tls-verify
+    ls -l "${output_dir}"
+}
