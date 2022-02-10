@@ -32,8 +32,9 @@ var (
 
 // serviceCertificatesRepoSecretsImpl is a ServiceCertificatesRepo that uses k8s secrets for persistence.
 type serviceCertificatesRepoSecretsImpl struct {
-	secrets       map[storage.ServiceType]ServiceCertSecretSpec
-	secretsClient corev1.SecretInterface
+	secrets          map[storage.ServiceType]ServiceCertSecretSpec
+	sensorDeployment *appsApiv1.Deployment
+	secretsClient    corev1.SecretInterface
 }
 
 // ServiceCertSecretSpec species the name of the secret where certificates for a service are stored, and
@@ -58,7 +59,8 @@ func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec 
 			storage.ServiceType_SCANNER_SERVICE:    scannerSpec,
 			storage.ServiceType_SCANNER_DB_SERVICE: scannerDBSpec,
 		},
-		secretsClient: secretsClient,
+		sensorDeployment: sensorDeployment,
+		secretsClient:    secretsClient,
 	}
 	if err := repo.setupSecrets(ctx, sensorDeployment, initialCertsSupplier); err != nil {
 		return nil, errors.Wrap(err, "setting up secrets")
@@ -72,6 +74,7 @@ func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec 
 // - If the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate.
 //   for that secret will contain a zero value.
 // - Fails with ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
+// - Fails ErrSensorDoesNotOwnCertSecrets in case sensor deployment is not the sole owner of all secrets.
 func (r *serviceCertificatesRepoSecretsImpl) GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
@@ -103,10 +106,26 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	if getErr != nil {
 		return nil, nil, getErr
 	}
+
+	ownerReferences := secret.GetOwnerReferences()
+	if len(ownerReferences) != 1 {
+		return nil, nil, ErrSensorDoesNotOwnCertSecrets
+	}
+
+	ownerRef := ownerReferences[0]
+	sensorDeploymentGVK := r.sensorDeployment.GroupVersionKind()
+	if !(ownerRef.APIVersion == sensorDeploymentGVK.GroupVersion().String() &&
+		ownerRef.Kind == sensorDeploymentGVK.Kind &&
+		ownerRef.Name == r.sensorDeployment.GetName() &&
+		ownerRef.UID == r.sensorDeployment.GetUID()) {
+		return nil, nil, ErrSensorDoesNotOwnCertSecrets
+	}
+
 	secretData := secret.Data
 	if secretData == nil {
 		return nil, nil, ErrMissingSecretData
 	}
+
 	return &storage.TypedServiceCertificate{
 		ServiceType: serviceType,
 		Cert: &storage.ServiceCertificate{
