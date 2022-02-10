@@ -17,12 +17,25 @@ tests:
     .secrets["scanner-slim-db-tls"] | assertThat(. == null)
 
 - name: "scanner can override image config"
-  values:
-    image:
-      scanner:
-        fullRef: "custom.io/scanner:1.2.3"
-      scannerDb:
-        fullRef: "custom.io/scanner-db:1.2.3"
   expect: |
-    container(.deployments["scanner-slim"]; "scanner") | assertThat(.image == "custom.io/scanner:1.2.3")
-    container(.deployments["scanner-slim-db"]; "db") | assertThat(.image == "custom.io/scanner-db:1.2.3")
+    container(.deployments["scanner-slim"]; "scanner") | assertThat(.image == "custom.io/custom-scanner:1.2.3")
+    container(.deployments["scanner-slim-db"]; "db") | assertThat(.image == "custom.io/custom-scanner-db:1.2.3")
+  tests:
+  - name: "with fullref"
+    values:
+      image:
+        scanner:
+          fullRef: "custom.io/custom-scanner:1.2.3"
+        scannerDb:
+          fullRef: "custom.io/custom-scanner-db:1.2.3"
+  - name: "with separate parts"
+    values:
+      image:
+        scanner:
+          tag: 1.2.3
+          registry: custom.io
+          name: custom-scanner
+        scannerDb:
+          tag: 1.2.3
+          registry: custom.io
+          name: custom-scanner-db
