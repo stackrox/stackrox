@@ -41,4 +41,7 @@ var (
 
 	// LocalImageScanning enables OpenShift local-image scanning.
 	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", false)
+
+	// ImageSignatureVerification enables image signature verification.
+	ImageSignatureVerification = registerFeature("Enable Image Signature Verification workflow", "ROX_VERIFY_IMAGE_SIGNATURE", false)
 )
