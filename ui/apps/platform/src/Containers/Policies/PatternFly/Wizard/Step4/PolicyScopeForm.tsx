@@ -58,7 +58,7 @@ function PolicyScopeForm() {
     }
 
     function deleteExclusionDeploymentScope(index) {
-        const newScope = scope.filter((_, i) => i !== index);
+        const newScope = excludedDeploymentScopes.filter((_, i) => i !== index);
         setFieldValue('excludedDeploymentScopes', newScope);
     }
 
@@ -135,7 +135,6 @@ function PolicyScopeForm() {
                                 <PolicyScopeCard
                                     type="inclusion"
                                     name={`scope[${index}]`}
-                                    index={index}
                                     clusters={clusters}
                                     onDelete={() => deleteInclusionScope(index)}
                                     hasAuditLogEventSource={hasAuditLogEventSource}
@@ -175,7 +174,6 @@ function PolicyScopeForm() {
                                 <PolicyScopeCard
                                     type="exclusion"
                                     name={`excludedDeploymentScopes[${index}]`}
-                                    index={index}
                                     clusters={clusters}
                                     deployments={deployments}
                                     onDelete={() => deleteExclusionDeploymentScope(index)}

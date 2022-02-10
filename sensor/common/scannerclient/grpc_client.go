@@ -64,13 +64,16 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 		return nil, errors.Wrap(err, "determining image registry")
 	}
 
+	name := image.GetName().GetFullName()
+	namespace := image.GetNamespace()
+
 	metadata, err := reg.Metadata(types.ToImage(image))
 	if err != nil {
-		log.Debugf("Failed to metadata for image %s in namespace %s: %v", image.GetName().GetFullName(), image.GetNamespace(), err)
+		log.Debugf("Failed to get metadata for image %s in namespace %s: %v", name, namespace, err)
 		return nil, errors.Wrap(err, "getting image metadata")
 	}
 
-	log.Debugf("Retrieved metadata for image %s in namespace %s: %v", image.GetName().GetFullName(), image.GetNamespace(), metadata)
+	log.Debugf("Retrieved metadata for image %s in namespace %s: %v", name, namespace, metadata)
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
@@ -83,8 +86,11 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 		},
 	})
 	if err != nil {
+		log.Debugf("Unable to get image components from scanner for image %s in namespace %s: %v", name, namespace, err)
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
+
+	log.Debugf("Got image components from scanner for image %s in namespace %s", name, namespace)
 
 	return &imageData{
 		Metadata:                   metadata,
