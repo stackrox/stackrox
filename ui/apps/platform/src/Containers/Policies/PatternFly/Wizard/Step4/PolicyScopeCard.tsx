@@ -26,7 +26,6 @@ type PolicyScopeCardProps = {
     name: string;
     clusters: Cluster[];
     deployments?: ListDeployment[];
-    index: number;
     onDelete: () => void;
     hasAuditLogEventSource: boolean;
 };
@@ -36,7 +35,6 @@ function PolicyScopeCard({
     name,
     clusters,
     deployments = [],
-    index,
     onDelete,
     hasAuditLogEventSource = false,
 }: PolicyScopeCardProps): React.ReactElement {
@@ -92,9 +90,7 @@ function PolicyScopeCard({
     return (
         <Card>
             <CardHeader className="pf-u-p-0">
-                <CardTitle className="pf-u-pl-lg">
-                    {type} scope {index + 1}
-                </CardTitle>
+                <CardTitle className="pf-u-pl-lg">{type} scope</CardTitle>
                 <CardActions hasNoOffset>
                     <Divider isVertical component="div" />
                     <Button
