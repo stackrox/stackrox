@@ -13,6 +13,10 @@ import (
 
 var (
 	certsDescription = "local scanner credentials"
+	// ErrDifferentCAForDifferentServiceTypes TODO replace by ROX-9128
+	ErrDifferentCAForDifferentServiceTypes = errors.New("found different CA PEM in secret Data for different service types")
+	// ErrMissingSecretData TODO replace by ROX-9128
+	ErrMissingSecretData = errors.New("missing secret data")
 )
 
 // newCertificatesRefresher returns a new retry ticker that uses `requestCertificates` to fetch certificates,
@@ -54,20 +58,16 @@ func refreshCertificates(ctx context.Context,
 	return timeToNextRefresh, err
 }
 
-func ensureCertificatesAreFresh(ctx context.Context,
-	requestCertificates requestCertificatesFunc,
-	getCertsRenewalTime getCertsRenewalTimeFunc,
-	repository ServiceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
+func ensureCertificatesAreFresh(ctx context.Context, requestCertificates requestCertificatesFunc,
+	getCertsRenewalTime getCertsRenewalTimeFunc, repository ServiceCertificatesRepo) (time.Duration, error) {
 
-	certificates, fetchErr := repository.GetServiceCertificates(ctx)
-	if fetchErr != nil {
-		return 0, fetchErr
+	timeToRefresh, getCertsErr := getTimeToRefreshFromRepo(ctx, getCertsRenewalTime, repository)
+	if getCertsErr != nil {
+		return 0, getCertsErr
 	}
 
-	// recoverFromErr to true in order to refresh the certificates immediately if we cannot parse them.
-	timeToNextRefresh, _ = getTimeToRefresh(getCertsRenewalTime, certificates, true)
-	if timeToNextRefresh > 0 {
-		return timeToNextRefresh, nil
+	if timeToRefresh > 0 {
+		return timeToRefresh, nil
 	}
 
 	response, requestErr := requestCertificates(ctx)
@@ -77,14 +77,14 @@ func ensureCertificatesAreFresh(ctx context.Context,
 	if response.GetError() != nil {
 		return 0, errors.Errorf("central refused to issue certificates: %s", response.GetError().GetMessage())
 	}
-	certificates = response.GetCertificates()
+	certificates := response.GetCertificates()
 
 	if putErr := repository.PutServiceCertificates(ctx, certificates); putErr != nil {
 		return 0, putErr
 	}
 
 	// recoverFromErr to so the ticker knows this is an error, and it retries with backoff.
-	timeToNextRefresh, err = getTimeToRefresh(getCertsRenewalTime, certificates, false)
+	timeToNextRefresh, err := getTimeToRefreshFromCertificates(getCertsRenewalTime, certificates, false)
 	if err == nil {
 		log.Infof("successfully refreshed %v", certsDescription)
 	}
@@ -92,13 +92,29 @@ func ensureCertificatesAreFresh(ctx context.Context,
 	return timeToNextRefresh, err
 }
 
-func getTimeToRefresh(getCertsRenewalTime getCertsRenewalTimeFunc,
+func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsRenewalTimeFunc,
+	repository ServiceCertificatesRepo) (time.Duration, error) {
+
+	certificates, getCertsErr := repository.GetServiceCertificates(ctx)
+	if getCertsErr == ErrDifferentCAForDifferentServiceTypes || getCertsErr == ErrMissingSecretData {
+		log.Errorf("local scanner certificates are corrupted, will refresh certificates immediately: %s", getCertsErr)
+		return 0, nil
+	}
+	if getCertsErr != nil {
+		return 0, getCertsErr
+	}
+
+	// recoverFromErr to true in order to refresh the certificates immediately if we cannot parse them.
+	return getTimeToRefreshFromCertificates(getCertsRenewalTime, certificates, true)
+}
+
+func getTimeToRefreshFromCertificates(getCertsRenewalTime getCertsRenewalTimeFunc,
 	certificates *storage.TypedServiceCertificateSet, recoverFromErr bool) (time.Duration, error) {
 
 	renewalTime, err := getCertsRenewalTime(certificates)
 	if err != nil {
-		log.Errorf("error getting local scanner certificate expiration, will refresh certificates immediately: %s", err)
 		if recoverFromErr {
+			log.Errorf("error getting local scanner certificate expiration, will refresh certificates immediately: %s", err)
 			return 0, nil
 		}
 		return 0, err
