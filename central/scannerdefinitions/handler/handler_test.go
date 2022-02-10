@@ -36,6 +36,14 @@ func mustGetRequest(t *testing.T) *http.Request {
 	return req
 }
 
+func mustGetBadRequest(t *testing.T) *http.Request {
+	centralURL := "https://central.stackrox.svc/scannerdefinitions?uuid=fail"
+	req, err := http.NewRequest(http.MethodGet, centralURL, nil)
+	require.NoError(t, err)
+
+	return req
+}
+
 func TestServeHTTP_Offline_Get(t *testing.T) {
 	envIsolator := envisolator.NewEnvIsolator(t)
 	envIsolator.Setenv(env.OfflineModeEnv.EnvVar(), "true")
@@ -70,9 +78,15 @@ func TestServeHTTP_Online_Get(t *testing.T) {
 		offlineVulnDefsDir: tmpDir,
 	})
 
-	// Should get online update.
-	req := mustGetRequest(t)
 	var w mockResponseWriter
+
+	// Should not get anything.
+	req := mustGetBadRequest(t)
+	h.ServeHTTP(&w, req)
+	assert.Equal(t, http.StatusNotFound, w.statusCode)
+
+	// Should get online update.
+	req = mustGetRequest(t)
 	h.ServeHTTP(&w, req)
 	assert.Equal(t, http.StatusOK, w.statusCode)
 
