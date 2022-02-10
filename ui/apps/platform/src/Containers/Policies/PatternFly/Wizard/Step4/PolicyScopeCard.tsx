@@ -92,9 +92,7 @@ function PolicyScopeCard({
     return (
         <Card>
             <CardHeader className="pf-u-p-0">
-                <CardTitle className="pf-u-pl-lg">
-                    {type} scope {index + 1}
-                </CardTitle>
+                <CardTitle className="pf-u-pl-lg">{type} scope</CardTitle>
                 <CardActions hasNoOffset>
                     <Divider isVertical component="div" />
                     <Button
