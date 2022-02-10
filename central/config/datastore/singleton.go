@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -26,6 +25,8 @@ const (
 	DefaultAttemptedDeployAlertRetention = 7
 	// DefaultAttemptedRuntimeAlertRetention is the number of days to retain all attempted run-time alerts
 	DefaultAttemptedRuntimeAlertRetention = 7
+	// DefaultExpiredVulnReqRetention is the number of days to retain expired vulnerability requests.
+	DefaultExpiredVulnReqRetention = 90
 )
 
 var (
@@ -44,9 +45,8 @@ var (
 				AttemptedRuntimeRetentionDurationDays: DefaultAttemptedRuntimeAlertRetention,
 			},
 		},
+		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
 	}
-
-	log = logging.LoggerForModule()
 )
 
 func initialize() {

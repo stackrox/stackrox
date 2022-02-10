@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/scanners/types"
-	reflect "reflect"
 )
 
-// MockFactory is a mock of Factory interface
+// MockFactory is a mock of Factory interface.
 type MockFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockFactoryMockRecorder
 }
 
-// MockFactoryMockRecorder is the mock recorder for MockFactory
+// MockFactoryMockRecorder is the mock recorder for MockFactory.
 type MockFactoryMockRecorder struct {
 	mock *MockFactory
 }
 
-// NewMockFactory creates a new mock instance
+// NewMockFactory creates a new mock instance.
 func NewMockFactory(ctrl *gomock.Controller) *MockFactory {
 	mock := &MockFactory{ctrl: ctrl}
 	mock.recorder = &MockFactoryMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 	return m.recorder
 }
 
-// CreateScanner mocks base method
+// CreateScanner mocks base method.
 func (m *MockFactory) CreateScanner(source *storage.ImageIntegration) (types.ImageScanner, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateScanner", source)
@@ -43,7 +44,7 @@ func (m *MockFactory) CreateScanner(source *storage.ImageIntegration) (types.Ima
 	return ret0, ret1
 }
 
-// CreateScanner indicates an expected call of CreateScanner
+// CreateScanner indicates an expected call of CreateScanner.
 func (mr *MockFactoryMockRecorder) CreateScanner(source interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateScanner", reflect.TypeOf((*MockFactory)(nil).CreateScanner), source)

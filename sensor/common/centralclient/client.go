@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -40,8 +38,9 @@ const (
 
 // Client is a client which provides functions to call rest routes in central
 type Client struct {
-	endpoint   *url.URL
-	httpClient *http.Client
+	endpoint       *url.URL
+	httpClient     *http.Client
+	nonceGenerator cryptoutils.NonceGenerator
 }
 
 // NewClient creates a new client
@@ -71,7 +70,7 @@ func NewClient(endpoint string) (*Client, error) {
 
 	// Load the client certificate. Note that while all endpoints accessed by the client do not require
 	// authentication, it is possible that a user has required client certificate authentication for the
-	// endpoint sensor is connecting to. Since a client certificate can be used without harm even if the
+	// endpoint Sensor is connecting to. Since a client certificate can be used without harm even if the
 	// remote is not trusted, make it available here to be on the safe side.
 	clientCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
@@ -89,37 +88,38 @@ func NewClient(endpoint string) (*Client, error) {
 	}
 
 	return &Client{
-		httpClient: httpClient,
-		endpoint:   endpointURL,
+		httpClient:     httpClient,
+		endpoint:       endpointURL,
+		nonceGenerator: cryptoutils.NewNonceGenerator(centralsensor.ChallengeTokenLength, nil),
 	}, nil
 }
 
-// GetMetadata returns centrals metadata
+// GetMetadata returns Central's metadata
 func (c *Client) GetMetadata(ctx context.Context) (*v1.Metadata, error) {
-	resp, err := c.doHTTPRequest(ctx, http.MethodGet, metadataRoute, nil, nil)
+	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, metadataRoute, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "receiving central metadata")
+		return nil, errors.Wrap(err, "receiving Central metadata")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
 	var metadata v1.Metadata
 	err = jsonpb.Unmarshal(resp.Body, &metadata)
 	if err != nil {
-		return nil, errors.Wrapf(err, "parsing central %s response with status code %d", metadataRoute, resp.StatusCode)
+		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", metadataRoute, resp.StatusCode)
 	}
 
 	return &metadata, nil
 }
 
-// GetTLSTrustedCerts returns all certificates which are trusted by central and its leaf certificates.
-// Sensor validates the identity of central by verifying the given signature against centrals public key presented by its leaf cert.
+// GetTLSTrustedCerts returns all certificates which are trusted by Central and its leaf certificates.
+// Sensor validates the identity of Central by verifying the given signature against Central's public key presented by its leaf cert.
 func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, error) {
 	token, err := c.generateChallengeToken()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating challenge token")
 	}
 
-	resp, err := c.doTLSChallengeRequest(ctx, &v1.TLSChallengeRequest{ChallengeToken: token})
+	resp, hostCertChain, err := c.doTLSChallengeRequest(ctx, &v1.TLSChallengeRequest{ChallengeToken: token})
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +127,10 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, e
 	trustInfo, err := c.parseTLSChallengeResponse(resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying tls challenge")
+	}
+
+	if trustInfo.SensorChallenge != token {
+		return nil, errors.Errorf("validating Central response failed: Sensor token %q did not match received token %q", token, trustInfo.SensorChallenge)
 	}
 
 	var certs []*x509.Certificate
@@ -138,7 +142,35 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, e
 		certs = append(certs, cert)
 	}
 
+	leafCert := hostCertChain[0]
+	if !issuedByStackRoxCA(leafCert) {
+		certPool, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get trusted certificate pool")
+		}
+		for _, cert := range certs {
+			certPool.AddCert(cert)
+		}
+
+		err = hostCertChain[0].VerifyHostname(c.endpoint.Hostname())
+		if err != nil {
+			return nil, errors.Wrapf(err, "host leaf certificate can't be verified against hostname %s", c.endpoint.Hostname())
+		}
+
+		err = x509utils.VerifyCertificateChain(hostCertChain, x509.VerifyOptions{
+			Roots: certPool,
+		})
+
+		if err != nil {
+			return certs, newAdditionalCANeededErr(leafCert.DNSNames, c.endpoint.Hostname(), err.Error())
+		}
+	}
+
 	return certs, nil
+}
+
+func issuedByStackRoxCA(proxyCert *x509.Certificate) bool {
+	return proxyCert.Issuer.CommonName == mtls.ServiceCACommonName
 }
 
 func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (*v1.TrustInfo, error) {
@@ -149,7 +181,7 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 	}
 
 	if len(trustInfo.GetCertChain()) == 0 {
-		return nil, errors.New("reading centrals leaf certificate from response")
+		return nil, errors.New("reading Central's leaf certificate from response")
 	}
 
 	rootCAs, err := verifier.TrustedCertPool()
@@ -157,92 +189,78 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 		return nil, errors.Wrap(err, "reading CA cert")
 	}
 
-	x509CertChain, err := c.verifyCertificateChain(trustInfo.GetCertChain(), rootCAs)
+	x509CertChain, err := x509utils.ParseCertificateChain(trustInfo.GetCertChain())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "parsing Central cert chain")
 	}
+
 	if len(x509CertChain) == 0 {
-		return nil, errors.New("parsing central chain was empty, expected certificate chain")
+		return nil, errors.New("parsing Central chain was empty, expected certificate chain")
 	}
 
-	centralLeafCert := x509CertChain[0]
-	err = cTLS.VerifySignature(centralLeafCert.PublicKey, challenge.TrustInfoSerialized, cTLS.DigitallySigned{
-		Signature: challenge.Signature,
-		Algorithm: cTLS.SignatureAndHashAlgorithm{
-			Hash:      cTLS.SHA256,
-			Signature: cTLS.SignatureAlgorithmFromPubKey(centralLeafCert.PublicKey),
-		},
-	})
+	err = verifyCentralCertificateChain(x509CertChain, rootCAs)
 	if err != nil {
-		return nil, errors.Wrap(err, "verifying central trust info signature")
+		return nil, errors.Wrap(err, "validating certificate chain")
 	}
 
+	err = verifySignatureAgainstCertificate(x509CertChain[0], challenge.TrustInfoSerialized, challenge.Signature)
+	if err != nil {
+		return nil, errors.Wrap(err, "validating payload signature")
+	}
 	return &trustInfo, nil
 }
 
-func (c *Client) verifyCertificateChain(certChain [][]byte, rootCAs *x509.CertPool) ([]*x509.Certificate, error) {
-	x509CertChain, err := x509utils.ParseCertificateChain(certChain)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing central cert chain")
-	}
-
-	err = x509utils.VerifyCertificateChain(x509CertChain, x509.VerifyOptions{
-		Roots:   rootCAs,
-		DNSName: mtls.CentralSubject.Hostname(),
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "verifying central cert chain")
-	}
-
-	return x509CertChain, nil
-}
-
-// doTLSChallengeRequest send the HTTP request to central and receives the trust info.
-func (c *Client) doTLSChallengeRequest(ctx context.Context, req *v1.TLSChallengeRequest) (*v1.TLSChallengeResponse, error) {
+// doTLSChallengeRequest send the HTTP request to Central and receives the trust info.
+func (c *Client) doTLSChallengeRequest(ctx context.Context, req *v1.TLSChallengeRequest) (*v1.TLSChallengeResponse, []*x509.Certificate, error) {
 	params := url.Values{challengeTokenParamName: []string{req.GetChallengeToken()}}
 
-	resp, err := c.doHTTPRequest(ctx, http.MethodGet, tlsChallengeRoute, params, nil)
+	resp, peerCertificates, err := c.doHTTPRequest(ctx, http.MethodGet, tlsChallengeRoute, params, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "receiving centrals trust info")
+		return nil, peerCertificates, errors.Wrap(err, "receiving Central's trust info")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
 	tlsChallengeResp := &v1.TLSChallengeResponse{}
 	err = jsonpb.Unmarshal(resp.Body, tlsChallengeResp)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing central response")
+		return nil, peerCertificates, errors.Wrap(err, "parsing Central response")
 	}
-	return tlsChallengeResp, nil
+	return tlsChallengeResp, peerCertificates, nil
 }
 
-func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params url.Values, body io.Reader) (*http.Response, error) {
+func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params url.Values, body io.Reader) (*http.Response, []*x509.Certificate, error) {
 	u := *c.endpoint
 	u.Path = route
 	u.RawQuery = params.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating tls-challenge request")
+		return nil, nil, errors.Wrap(err, "creating tls-challenge request")
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrapf(err, "calling %s", u.String())
+		return nil, nil, errors.Wrapf(err, "calling %s", u.String())
 	}
+
+	peerCertificates := resp.TLS.PeerCertificates
+	if len(peerCertificates) == 0 {
+		return nil, nil, errors.New("no peer certificates found in HTTP request")
+	}
+
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 
 		if err != nil {
-			return nil, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)
+			return nil, peerCertificates, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)
 		}
-		return nil, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, tlsChallengeRoute, resp.Status, body)
+		return nil, peerCertificates, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, tlsChallengeRoute, resp.Status, body)
 	}
-	return resp, nil
+	return resp, peerCertificates, nil
 }
 
 func (c *Client) generateChallengeToken() (string, error) {
-	nonceGenerator := cryptoutils.NewNonceGenerator(centralsensor.ChallengeTokenLength, nil)
-	challenge, err := nonceGenerator.Nonce()
+	challenge, err := c.nonceGenerator.Nonce()
 	if err != nil {
 		return "", err
 	}

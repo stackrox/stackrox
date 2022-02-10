@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -18,7 +17,7 @@ type reloadProxyConfigHandler struct {
 
 func (r *reloadProxyConfigHandler) OnChange(dir string) (interface{}, error) {
 	var out proxyConfig
-	configBytes, err := ioutil.ReadFile(filepath.Join(dir, r.cfgFile))
+	configBytes, err := os.ReadFile(filepath.Join(dir, r.cfgFile))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

@@ -4,12 +4,16 @@ import (
 	"context"
 	"time"
 
+	"github.com/cenkalti/backoff/v3"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/sensor/common/detector/metrics"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -20,10 +24,6 @@ type scanResult struct {
 	action     central.ResourceAction
 	deployment *storage.Deployment
 	images     []*storage.Image
-}
-
-type imageCacheKey struct {
-	id, name string
 }
 
 type imageChanResult struct {
@@ -49,19 +49,45 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage) {
-	defer c.signal.Signal()
-
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
-	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 		Image: ci,
 	})
-	if err != nil {
-		c.image = types.ToImage(ci)
+}
+
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
+	defer c.signal.Signal()
+
+	eb := backoff.NewExponentialBackOff()
+	eb.InitialInterval = 5 * time.Second
+	eb.Multiplier = 2
+	eb.MaxInterval = 4 * time.Minute
+	eb.MaxElapsedTime = 0 // Never stop the backoff, leave that decision to the parent context.
+
+	eb.Reset()
+
+outer:
+	for {
+		// We want to get the time spent in backoff without including the time it took to scan the image.
+		timeSpentInBackoffSoFar := eb.GetElapsedTime()
+		scannedImage, err := scanImage(ctx, svc, ci)
+		if err != nil {
+			for _, detail := range status.Convert(err).Details() {
+				// If the client is effectively rate limited, backoff and try again.
+				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
+					time.Sleep(eb.NextBackOff())
+					continue outer
+				}
+			}
+			c.image = types.ToImage(ci)
+			return
+		}
+		metrics.ObserveTimeSpentInExponentialBackoff(timeSpentInBackoffSoFar)
+		c.image = scannedImage.GetImage()
 		return
 	}
-	c.image = scannedImage.GetImage()
 }
 
 func newEnricher(cache expiringcache.Cache) *enricher {
@@ -73,19 +99,7 @@ func newEnricher(cache expiringcache.Cache) *enricher {
 	}
 }
 
-type cacheKeyProvider interface {
-	GetId() string
-	GetName() *storage.ImageName
-}
-
-func getImageCacheKey(provider cacheKeyProvider) imageCacheKey {
-	return imageCacheKey{
-		id:   provider.GetId(),
-		name: provider.GetName().GetFullName(),
-	}
-}
-
-func (e *enricher) getImageFromCache(key imageCacheKey) (*storage.Image, bool) {
+func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
 	value, _ := e.imageCache.Get(key).(*cacheValue)
 	if value == nil {
 		return nil, false
@@ -94,7 +108,7 @@ func (e *enricher) getImageFromCache(key imageCacheKey) (*storage.Image, bool) {
 }
 
 func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageChanResult {
-	key := getImageCacheKey(ci)
+	key := imagecacheutils.GetImageCacheKey(ci)
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if ci.GetNotPullable() {
@@ -118,7 +132,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if newValue == value {
-		value.scanAndSet(e.imageSvc, ci)
+		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, ci)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),
@@ -142,13 +156,13 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	for i := 0; i < len(deployment.GetContainers()); i++ {
 		imgResult := <-imageChan
 
-		// This will ensure that when we change the name of the image
+		// This will ensure that when we change the Name of the image
 		// that it will not cause a potential race condition
 		// cloning the full object is too expensive and also unnecessary
 		image := *imgResult.image
-		// Overwrite the image name as a workaround to the fact that we fetch the image by ID
+		// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
 		// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
-		// exact same id
+		// exact same ID
 		image.Name = deployment.Containers[imgResult.containerIdx].GetImage().GetName()
 		images[imgResult.containerIdx] = &image
 	}

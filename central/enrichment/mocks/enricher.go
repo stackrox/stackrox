@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	enricher "github.com/stackrox/rox/pkg/images/enricher"
-	reflect "reflect"
 )
 
-// MockEnricher is a mock of Enricher interface
+// MockEnricher is a mock of Enricher interface.
 type MockEnricher struct {
 	ctrl     *gomock.Controller
 	recorder *MockEnricherMockRecorder
 }
 
-// MockEnricherMockRecorder is the mock recorder for MockEnricher
+// MockEnricherMockRecorder is the mock recorder for MockEnricher.
 type MockEnricherMockRecorder struct {
 	mock *MockEnricher
 }
 
-// NewMockEnricher creates a new mock instance
+// NewMockEnricher creates a new mock instance.
 func NewMockEnricher(ctrl *gomock.Controller) *MockEnricher {
 	mock := &MockEnricher{ctrl: ctrl}
 	mock.recorder = &MockEnricherMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEnricher) EXPECT() *MockEnricherMockRecorder {
 	return m.recorder
 }
 
-// EnrichDeployment mocks base method
+// EnrichDeployment mocks base method.
 func (m *MockEnricher) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, []int, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnrichDeployment", ctx, deployment)
@@ -45,7 +46,7 @@ func (m *MockEnricher) EnrichDeployment(ctx enricher.EnrichmentContext, deployme
 	return ret0, ret1, ret2, ret3
 }
 
-// EnrichDeployment indicates an expected call of EnrichDeployment
+// EnrichDeployment indicates an expected call of EnrichDeployment.
 func (mr *MockEnricherMockRecorder) EnrichDeployment(ctx, deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichDeployment", reflect.TypeOf((*MockEnricher)(nil).EnrichDeployment), ctx, deployment)

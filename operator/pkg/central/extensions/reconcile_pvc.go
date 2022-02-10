@@ -15,9 +15,8 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	coreV1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -31,15 +30,15 @@ var (
 )
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
-func ReconcilePVCExtension(k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return wrapExtension(reconcilePVC, k8sClient)
+func ReconcilePVCExtension(client ctrlClient.Client) extensions.ReconcileExtension {
+	return wrapExtension(reconcilePVC, client)
 }
 
-func reconcilePVC(ctx context.Context, central *platform.Central, k8sClient kubernetes.Interface, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+func reconcilePVC(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:        ctx,
 		namespace:  central.GetNamespace(),
-		pvcClient:  k8sClient.CoreV1().PersistentVolumeClaims(central.GetNamespace()),
+		client:     client,
 		centralObj: central,
 		log:        log,
 	}
@@ -50,7 +49,7 @@ func reconcilePVC(ctx context.Context, central *platform.Central, k8sClient kube
 type reconcilePVCExtensionRun struct {
 	ctx        context.Context
 	namespace  string
-	pvcClient  coreV1.PersistentVolumeClaimInterface
+	client     ctrlClient.Client
 	centralObj *platform.Central
 	log        logr.Logger
 }
@@ -73,8 +72,9 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	}
 	claimName := pointer.StringPtrDerefOr(pvcConfig.ClaimName, defaultPVCName)
 
-	pvc, err := r.pvcClient.Get(r.ctx, claimName, metav1.GetOptions{})
-	if err != nil {
+	key := ctrlClient.ObjectKey{Namespace: r.namespace, Name: claimName}
+	pvc := &corev1.PersistentVolumeClaim{}
+	if err := r.client.Get(r.ctx, key, pvc); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "fetching referenced %s pvc", claimName)
 		}
@@ -119,7 +119,7 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 		utils.RemoveOwnerRef(ownedPVC, r.centralObj)
 		r.log.Info(fmt.Sprintf("removed owner reference from %q", ownedPVC.GetName()))
 
-		if _, err := r.pvcClient.Update(r.ctx, ownedPVC, metav1.UpdateOptions{}); err != nil {
+		if err := r.client.Update(r.ctx, ownedPVC); err != nil {
 			return errors.Wrapf(err, "removing OwnerReference from %s pvc", ownedPVC.GetName())
 		}
 	}
@@ -133,7 +133,8 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 	}
 	newPVC := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: claimName,
+			Name:      claimName,
+			Namespace: r.namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.centralObj, r.centralObj.GroupVersionKind()),
 			},
@@ -150,7 +151,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 		},
 	}
 
-	if _, err := r.pvcClient.Create(r.ctx, newPVC, metav1.CreateOptions{}); err != nil {
+	if err := r.client.Create(r.ctx, newPVC); err != nil {
 		return errors.Wrapf(err, "creating new %s pvc", claimName)
 	}
 	return nil
@@ -176,7 +177,7 @@ func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.Persisten
 	}
 
 	if shouldUpdate {
-		if _, err := r.pvcClient.Update(r.ctx, existingPVC, metav1.UpdateOptions{}); err != nil {
+		if err := r.client.Update(r.ctx, existingPVC); err != nil {
 			return errors.Wrapf(err, "updating %s pvc", existingPVC.GetName())
 		}
 	}
@@ -196,13 +197,14 @@ func parseResourceQuantityOr(qStrPtr *string, d resource.Quantity) (resource.Qua
 }
 
 func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClaim, error) {
-	pvcList, err := r.pvcClient.List(r.ctx, metav1.ListOptions{})
-	if err != nil {
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	if err := r.client.List(r.ctx, pvcList, ctrlClient.InNamespace(r.namespace)); err != nil {
 		return nil, errors.Wrapf(err, "receiving list PVC list for %s %s", r.centralObj.GroupVersionKind(), r.centralObj.GetName())
 	}
 
 	var ownedPVCs []*corev1.PersistentVolumeClaim
-	for _, item := range pvcList.Items {
+	for i := range pvcList.Items {
+		item := pvcList.Items[i]
 		if metav1.IsControlledBy(&item, r.centralObj) {
 			tmp := item
 			ownedPVCs = append(ownedPVCs, &tmp)

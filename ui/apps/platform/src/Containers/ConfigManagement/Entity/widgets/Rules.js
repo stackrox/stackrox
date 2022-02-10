@@ -12,6 +12,7 @@ const Rules = ({ rules, ...rest }) => {
         header = `${rules.length > 0 ? rules.length : ''} Rules`;
         const verbs = rules.map((rule, i) => {
             return (
+                // eslint-disable-next-line react/no-array-index-key
                 <li className="flex items-center" key={i}>
                     <div className="min-w-48 text-sm bg-base-200 border border-base-400 my-3 p-3 rounded w-full leading-normal">
                         {rule.verbs.includes('*') ? '* (All verbs)' : rule.verbs.join(', ')}
@@ -24,6 +25,7 @@ const Rules = ({ rules, ...rest }) => {
             const { nonResourceUrls, resources } = rule;
             const urls = [...resources, ...nonResourceUrls];
             return (
+                // eslint-disable-next-line react/no-array-index-key
                 <li className="flex items-center" key={i}>
                     <div className="text-sm bg-base-200 border border-base-400 my-3 p-3 rounded leading-normal">
                         {urls.includes('*') ? '* (All resources)' : urls.join(', ')}
@@ -57,7 +59,7 @@ const Rules = ({ rules, ...rest }) => {
 };
 
 Rules.propTypes = {
-    rules: PropTypes.arrayOf({}),
+    rules: PropTypes.arrayOf(PropTypes.shape({})),
 };
 
 Rules.defaultProps = {

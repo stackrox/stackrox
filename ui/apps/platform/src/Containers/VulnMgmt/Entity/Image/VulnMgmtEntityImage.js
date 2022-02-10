@@ -7,7 +7,10 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
-import { VULN_CVE_ONLY_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    VULN_CVE_ONLY_FRAGMENT,
+    VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -84,6 +87,10 @@ const VulnMgmtImage = ({
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
+        const fragmentToUse =
+            fragmentName === 'componentFields'
+                ? VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT
+                : fragment;
         return gql`
         query getImage${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: image(id: $id) {
@@ -94,7 +101,7 @@ const VulnMgmtImage = ({
                 unusedVarSink(query: $scopeQuery)
             }
         }
-        ${fragment}
+        ${fragmentToUse}
     `;
     }
 

@@ -1,7 +1,6 @@
 package fileutils
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +14,7 @@ func assertPathReturns(t *testing.T, path string, retVal bool) {
 }
 
 func TestDirEmpty(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, os.RemoveAll(tempDir))

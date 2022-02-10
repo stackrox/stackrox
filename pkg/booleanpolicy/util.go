@@ -77,11 +77,7 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		return false
 	}
 
-	//atLeastOneRunTimeField := false
 	for _, section := range policy.GetPolicySections() {
-		//if !SectionContainsOneOf(section, runtimeFields) {
-		//	continue
-		//}
 		var numRuntimeCategories int
 		if SectionContainsFieldOfType(section, KubeEvent) {
 			numRuntimeCategories++
@@ -95,7 +91,6 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		if numRuntimeCategories > 1 {
 			return false
 		}
-		//atLeastOneRunTimeField = true
 	}
 	return true
 }

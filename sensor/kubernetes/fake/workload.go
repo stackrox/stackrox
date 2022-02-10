@@ -23,6 +23,7 @@ type ContainerWorkload struct {
 type ProcessWorkload struct {
 	ProcessInterval time.Duration `yaml:"processInterval"`
 	AlertRate       float32       `yaml:"alertRate"`
+	ActiveProcesses bool          `yaml:"activeProcesses"`
 }
 
 // NetworkWorkload defines the rate and size of network flows

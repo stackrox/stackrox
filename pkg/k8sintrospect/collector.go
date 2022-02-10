@@ -235,7 +235,8 @@ func (c *collector) collectObjectsData(ns string, cfg ObjectConfig, resourceClie
 		return nil
 	}
 
-	for _, obj := range objList.Items {
+	for i := range objList.Items {
+		obj := objList.Items[i]
 		if cfg.FilterFunc != nil {
 			if !cfg.FilterFunc(&obj) {
 				continue
@@ -343,7 +344,8 @@ func (c *collector) collectPodsData(ns string) error {
 		return nil
 	}
 
-	for _, pod := range podList.Items {
+	for i := range podList.Items {
+		pod := podList.Items[i]
 		pod.TypeMeta = metav1.TypeMeta{
 			Kind:       "Pod",
 			APIVersion: "v1",

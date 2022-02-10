@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -23,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -253,7 +253,6 @@ func (s *Sensor) getCentralTLSCerts() []*x509.Certificate {
 	certs, err := s.centralRestClient.GetTLSTrustedCerts(context.Background())
 	if err != nil {
 		log.Warnf("Error fetching centrals TLS certs: %s", err)
-		return []*x509.Certificate{}
 	}
 	return certs
 }
@@ -282,17 +281,16 @@ func (s *Sensor) Stop() {
 // or until the retry budget is exhausted (in which case the sensor is marked as stopped and the program
 // will exit).
 func (s *Sensor) waitUntilCentralIsReady() {
-	const maxRetries = 15
-	err := retry.WithRetry(func() error {
+	exponential := backoff.NewExponentialBackOff()
+	exponential.MaxElapsedTime = 5 * time.Minute
+	exponential.MaxInterval = 32 * time.Second
+	err := backoff.RetryNotify(func() error {
 		return s.pollMetadata()
-	},
-		retry.Tries(maxRetries),
-		retry.OnFailedAttempts(func(err error) {
-			log.Infof("Check Central status failed: %s. Retrying...", err)
-			time.Sleep(2 * time.Second)
-		}))
+	}, exponential, func(err error, d time.Duration) {
+		log.Infof("Check Central status failed: %s. Retrying after %s...", err, d.Round(time.Millisecond))
+	})
 	if err != nil {
-		s.stoppedSig.SignalWithErrorWrapf(err, "checking central status failed after %d retries", maxRetries)
+		s.stoppedSig.SignalWithErrorWrapf(err, "checking central status failed after %s", exponential.GetElapsedTime())
 	}
 }
 

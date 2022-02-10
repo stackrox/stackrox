@@ -1,7 +1,7 @@
 include $(CURDIR)/../make/env.mk
 
 ROX_PROJECT=tests
-TESTFLAGS=-race -p 1
+TESTFLAGS=-race -p 1 -timeout 30m
 
 TOPLEVEL=$(CURDIR)/..
 

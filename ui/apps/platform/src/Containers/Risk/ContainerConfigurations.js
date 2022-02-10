@@ -74,13 +74,13 @@ const ContainerVolumes = ({ volumes }) => {
     }
     return volumes.map((volume, idx) => (
         <li
-            key={idx}
+            key={volume.name}
             className={`py-2 ${idx === volumes.length - 1 ? '' : 'border-base-300 border-b'}`}
         >
             {Object.keys(volume).map(
-                (key, i) =>
+                (key) =>
                     volume[key] && (
-                        <div key={`${volume.name}-${i}`} className="py-1 font-600">
+                        <div key={key} className="py-1 font-600">
                             <span className=" pr-1">{capitalize(lowerCase(key))}:</span>
                             <span className="text-accent-800 italic">{volume[key].toString()}</span>
                         </div>
@@ -94,13 +94,13 @@ const ContainerSecrets = ({ secrets }) => {
     if (!secrets?.length) {
         return <span className="py-1 font-600 italic">None</span>;
     }
-    return secrets.map(({ name, path }, idx) => (
-        <div key={idx} className="py-2">
-            <div key={`${name}-${idx}`} className="py-1 font-600">
+    return secrets.map(({ name, path }) => (
+        <div key={name} className="py-2">
+            <div className="py-1 font-600">
                 <span className="pr-1">Name:</span>
                 <span className="text-accent-800 italic">{name}</span>
             </div>
-            <div key={`${path}-${idx}`} className="py-1 font-600">
+            <div className="py-1 font-600">
                 <span className="pr-1">Container Path:</span>
                 <span className="text-accent-800 italic">{path}</span>
             </div>
@@ -112,11 +112,11 @@ const ContainerConfigurations = ({ deployment }) => {
     const title = 'Container configuration';
     let containers = [];
     if (deployment.containers) {
-        containers = deployment.containers.map((container, index) => {
+        containers = deployment.containers.map((container) => {
             const data = getContainerConfigurations(container);
-            const { resources, volumes, secrets } = container;
+            const { id, resources, volumes, secrets } = container;
             return (
-                <div key={index} data-testid="deployment-container-configuration">
+                <div key={id} data-testid="deployment-container-configuration">
                     <ContainerImage image={container.image} />
                     {data && <KeyValuePairs data={data} keyValueMap={containerConfigMap} />}
                     {!!resources && !!volumes && !!secrets && (

@@ -38,6 +38,7 @@ spec:
         - name: RELATED_IMAGE_COLLECTOR_SLIM
         - name: RELATED_IMAGE_COLLECTOR_FULL
         - name: RELATED_IMAGE_ROXCTL
+        - name: RELATED_IMAGE_DOCS
         image: controller:latest
         name: manager
         securityContext:
@@ -56,7 +57,7 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 100m
+            cpu: 200m
             memory: 1Gi
           requests:
             cpu: 100m

@@ -28,7 +28,7 @@ func New(val *bool, bp **bool) Value {
 func (v Value) Set(s string) error {
 	// Check first if the user intends to set 'auto'.
 	if strings.ToLower(s) == "auto" {
-		v.bp = nil
+		*v.bp = nil
 		return nil
 	}
 

@@ -12,10 +12,11 @@ import LoadingSection from 'Components/LoadingSection';
 
 class ProtectedRoute extends Component {
     static propTypes = {
+        path: PropTypes.string.isRequired,
         component: PropTypes.elementType.isRequired,
         authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map((key) => AUTH_STATUS[key]))
             .isRequired,
-        location: ReactRouterPropTypes.location.isRequired,
+        location: ReactRouterPropTypes.location, // provided by Switch but omit isRequired because TypeScript does not know
         devOnly: PropTypes.bool,
         requiredPermission: PropTypes.string,
         userRolePermissions: PropTypes.shape({
@@ -25,6 +26,7 @@ class ProtectedRoute extends Component {
     };
 
     static defaultProps = {
+        location: { pathname: '' }, // see comment above
         devOnly: false,
         requiredPermission: null,
         userRolePermissions: null,

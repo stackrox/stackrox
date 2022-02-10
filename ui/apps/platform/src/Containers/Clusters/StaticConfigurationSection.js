@@ -38,7 +38,12 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
     };
 }
 
-const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange }) => {
+const StaticConfigurationSection = ({
+    centralEnv,
+    selectedCluster,
+    isManagerTypeNonConfigurable,
+    handleChange,
+}) => {
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
         runtimeOptions,
@@ -108,6 +113,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                         wrapperClass={selectWrapperClassName}
                         triggerClass="border-l border-base-300"
                         value={selectedCluster.type}
+                        disabled={isManagerTypeNonConfigurable}
                     />
                     <HelmValueWarning
                         currentValue={selectedCluster.type}
@@ -126,6 +132,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                             onChange={handleChange}
                             value={selectedCluster.mainImage}
                             className={inputTextClassName}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                         <HelmValueWarning
                             currentValue={selectedCluster.mainImage}
@@ -138,6 +145,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                         Central API Endpoint (include port){' '}
                         <FormFieldRequired
                             empty={selectedCluster.centralApiEndpoint.length === 0}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </label>
                     <div data-testid="input-wrapper">
@@ -147,6 +155,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                             onChange={handleChange}
                             value={selectedCluster.centralApiEndpoint}
                             className={inputTextClassName}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                         <HelmValueWarning
                             currentValue={selectedCluster.centralApiEndpoint}
@@ -168,6 +177,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                         wrapperClass={selectWrapperClassName}
                         triggerClass="border-l border-base-300"
                         value={selectedCluster.collectionMethod}
+                        disabled={isManagerTypeNonConfigurable}
                     />
                     <HelmValueWarning
                         currentValue={selectedCluster.collectionMethod}
@@ -185,6 +195,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                             onChange={handleChange}
                             value={selectedCluster.collectorImage}
                             className={inputTextClassName}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                         <HelmValueWarning
                             currentValue={selectedCluster.collectorImage}
@@ -201,7 +212,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                         <ToggleSwitch
                             id="admissionControllerEvents"
                             name="admissionControllerEvents"
-                            disabled={isTypeOpenShift3}
+                            disabled={isTypeOpenShift3 || isManagerTypeNonConfigurable}
                             toggleHandler={handleChange}
                             enabled={
                                 isTypeOpenShift3 ? false : selectedCluster.admissionControllerEvents
@@ -233,6 +244,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                             name="admissionController"
                             toggleHandler={handleChange}
                             enabled={selectedCluster.admissionController}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -250,6 +262,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                             name="admissionControllerUpdates"
                             toggleHandler={handleChange}
                             enabled={selectedCluster.admissionControllerUpdates}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -275,6 +288,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                             flipped
                             // TODO: check until API guarantees a tolerationsConfig object is returned
                             // with false, if not yet set
+                            disabled={isManagerTypeNonConfigurable}
                             enabled={
                                 !(
                                     selectedCluster.tolerationsConfig === null ||
@@ -305,6 +319,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                                     id="slimCollector"
                                     name="slimCollector"
                                     toggleHandler={handleChange}
+                                    disabled={isManagerTypeNonConfigurable}
                                     enabled={selectedCluster.slimCollector}
                                 />
                             </div>

@@ -55,9 +55,6 @@ combined_coverage.dat
 # Mac OS hidden file
 .DS_Store
 
-# Vim swap files
-*.swp
-
 # Openshift automation workspace artifacts
 /openshift/
 

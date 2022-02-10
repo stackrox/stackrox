@@ -33,7 +33,6 @@ const controlColumns = [
         Header: 'State',
         headerClassName: `w-1/4 ${defaultHeaderClassName}`,
         className: `w-1/4 ${defaultColumnClassName}`,
-        // eslint-disable-next-line react/prop-types
         Cell: ({ original }) => (
             <span className="bg-alert-200 border border-alert-400 px-2 rounded text-alert-800">
                 {original.value.overallState === 'COMPLIANCE_STATE_FAILURE' && 'Fail'}

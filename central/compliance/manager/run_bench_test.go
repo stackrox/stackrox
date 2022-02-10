@@ -2,7 +2,7 @@ package manager
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -49,7 +49,7 @@ func readCheckResults() map[string]*compliance.ComplianceStandardResult {
 	}
 	defer utils.IgnoreError(jsonFile.Close)
 
-	bytes, err := ioutil.ReadAll(jsonFile)
+	bytes, err := io.ReadAll(jsonFile)
 	if err != nil {
 		panic(err)
 	}

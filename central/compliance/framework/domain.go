@@ -12,7 +12,7 @@ type ComplianceDomain interface {
 	Nodes() []ComplianceTarget
 	Deployments() []ComplianceTarget
 	Pods() []*storage.Pod
-	MachineConfigs() []ComplianceTarget
+	MachineConfigs() map[string][]ComplianceTarget
 }
 
 type complianceDomain struct {
@@ -21,10 +21,10 @@ type complianceDomain struct {
 	nodes          []nodeTarget
 	deployments    []deploymentTarget
 	pods           []*storage.Pod
-	machineConfigs []machineConfigTarget
+	machineConfigs map[string][]machineConfigTarget
 }
 
-func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, machineConfigs []string) *complianceDomain {
+func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, machineConfigs map[string][]string) *complianceDomain {
 	clusterTarget := targetForCluster(cluster)
 	nodeTargets := make([]nodeTarget, len(nodes))
 	for i, node := range nodes {
@@ -34,9 +34,11 @@ func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deploy
 	for i, deployment := range deployments {
 		deploymentTargets[i] = targetForDeployment(deployment)
 	}
-	var machineConfigTargets []machineConfigTarget
-	for _, m := range machineConfigs {
-		machineConfigTargets = append(machineConfigTargets, targetForMachineConfig(m))
+	machineConfigTargets := make(map[string][]machineConfigTarget)
+	for standard, scans := range machineConfigs {
+		for _, scan := range scans {
+			machineConfigTargets[standard] = append(machineConfigTargets[standard], targetForMachineConfig(scan))
+		}
 	}
 
 	return &complianceDomain{
@@ -73,12 +75,14 @@ func (d *complianceDomain) Deployments() []ComplianceTarget {
 	return result
 }
 
-func (d *complianceDomain) MachineConfigs() []ComplianceTarget {
-	result := make([]ComplianceTarget, len(d.machineConfigs))
-	for i, mc := range d.machineConfigs {
-		result[i] = mc
+func (d *complianceDomain) MachineConfigs() map[string][]ComplianceTarget {
+	results := make(map[string][]ComplianceTarget)
+	for k, v := range d.machineConfigs {
+		for _, target := range v {
+			results[k] = append(results[k], target)
+		}
 	}
-	return result
+	return results
 }
 
 func (d *complianceDomain) Pods() []*storage.Pod {
@@ -90,6 +94,6 @@ func (d *complianceDomain) Pods() []*storage.Pod {
 }
 
 // NewComplianceDomain creates a new compliance domain from the given cluster, list of nodes and list of deployments.
-func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, machineConfigs []string) ComplianceDomain {
+func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, machineConfigs map[string][]string) ComplianceDomain {
 	return newComplianceDomain(cluster, nodes, deployments, pods, machineConfigs)
 }

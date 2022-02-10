@@ -9,7 +9,7 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 31
+// Next available tag: 32
 enum SearchCategory {
     SEARCH_UNSET              = 0;
     ALERTS                    = 1;
@@ -35,6 +35,7 @@ enum SearchCategory {
     SERVICE_ACCOUNTS          = 14;
     ROLES                     = 15;
     ROLEBINDINGS              = 16;
+    REPORT_CONFIGURATIONS     = 33;
     PROCESS_BASELINES         = 17;
     SUBJECTS                  = 18;
     RISKS                     = 19;
@@ -42,6 +43,7 @@ enum SearchCategory {
     COMPONENT_VULN_EDGE       = 22;
     CLUSTER_VULN_EDGE         = 24;
     NETWORK_ENTITY            = 26;
+    VULN_REQUEST              = 32;
 }
 
 enum SearchDataType {

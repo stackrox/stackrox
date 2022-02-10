@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -12,7 +13,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type RhelIntegration = {
@@ -40,20 +40,33 @@ export const validationSchema = yup.object().shape({
             .min(1, 'Must have at least one type selected')
             .required('A category is required'),
         docker: yup.object().shape({
-            endpoint: yup.string().trim().required('An endpoint is required'),
-            username: yup.string(),
+            endpoint: yup
+                .string()
+                .trim()
+                .required('An endpoint is required, like, registry.access.redhat.com'),
+            username: yup.string().trim(),
             password: yup
                 .string()
                 .test(
                     'password-test',
                     'A password is required',
                     (value, context: yup.TestContext) => {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        const isNewIntegration = !context?.from[2]?.value?.config?.id;
                         const requirePasswordField =
                             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                             // @ts-ignore
                             context?.from[2]?.value?.updatePassword || false;
 
-                        if (!requirePasswordField) {
+                        // weirdest backend validation ever:
+                        //   we have to account for existing integrations:
+                        //     - no username or password
+                        //     - username but no password
+                        //     - no username but password
+                        //     - username and password
+                        //    basically, only require password on Edit when user checks updatePassword
+                        if (isNewIntegration || !requirePasswordField) {
                             return true;
                         }
 
@@ -124,10 +137,15 @@ function RhelIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.docker.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         label="Integration name"
@@ -141,7 +159,6 @@ function RhelIntegrationForm({
                             type="text"
                             id="config.name"
                             value={values.config.name}
-                            placeholder="(ex. Red Hat Registry)"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -153,12 +170,12 @@ function RhelIntegrationForm({
                         fieldId="config.docker.endpoint"
                         touched={touched}
                         errors={errors}
+                        helperText="(example, registry.access.redhat.com)"
                     >
                         <TextInput
                             type="text"
                             id="config.docker.endpoint"
                             value={values.config.docker.endpoint}
-                            placeholder="(ex. registry.access.redhat.com)"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -179,31 +196,31 @@ function RhelIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
-                            helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox
                                 id="updatePassword"
                                 label="Update stored credentials"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        isRequired={values.updatePassword}
+                        isRequired={values.updatePassword && !!values.config.id}
                         label="Password"
                         fieldId="config.docker.password"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired={values.updatePassword}
+                            isRequired={values.updatePassword && !!values.config.id}
                             type="password"
                             id="config.docker.password"
                             value={values.config.docker.password}

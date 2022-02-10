@@ -18,10 +18,12 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
+import io.fabric8.kubernetes.api.model.Deployment as K8sDeployment
 import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.EnvVarBuilder
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder
+import io.fabric8.kubernetes.api.model.ExecAction
 import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
@@ -34,6 +36,7 @@ import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
+import io.fabric8.kubernetes.api.model.Probe
 import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ResourceRequirements
@@ -177,8 +180,10 @@ class Kubernetes implements OrchestratorMain {
     }
 
     boolean updateDeploymentNoWait(Deployment deployment) {
-        if (deployments.inNamespace(deployment.namespace).withName(deployment.name).get()) {
-            println "Deployment ${deployment.name} found in namespace ${deployment.namespace}. Updating..."
+        K8sDeployment k8sdeployment = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
+        if (k8sdeployment) {
+            println "Deployment ${deployment.name} with version ${k8sdeployment.metadata.resourceVersion} " +
+                    "found in namespace ${deployment.namespace}. Updating..."
         } else {
             println "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
         }
@@ -1851,7 +1856,7 @@ class Kubernetes implements OrchestratorMain {
 
         try {
             client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            println "Told the orchestrator to create " + deployment.name
+            println "Told the orchestrator to createOrReplace " + deployment.name
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
             }
@@ -2106,8 +2111,22 @@ class Kubernetes implements OrchestratorMain {
                 securityContext: new SecurityContext(privileged: deployment.isPrivileged,
                                                      readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
-                                                                                    drop: deployment.dropCapabilities))
+                                                                                    drop: deployment.dropCapabilities)),
         )
+        if (deployment.livenessProbeDefined) {
+            Probe livenessProbe = new Probe(
+                exec: new ExecAction(command: ["touch", "/tmp/healthy"]),
+                periodSeconds: 5,
+            )
+            container.setLivenessProbe(livenessProbe)
+        }
+        if (deployment.readinessProbeDefined) {
+            Probe readinessProbe = new Probe(
+                exec: new ExecAction(command: ["touch", "/tmp/ready"]),
+                periodSeconds: 5,
+            )
+            container.setReadinessProbe(readinessProbe)
+        }
 
         PodSpec podSpec = new PodSpec(
                 containers: [container],
@@ -2116,6 +2135,9 @@ class Kubernetes implements OrchestratorMain {
                 hostNetwork: deployment.hostNetwork,
                 serviceAccountName: deployment.serviceAccountName
         )
+        if (!deployment.automountServiceAccountToken) {
+            podSpec.automountServiceAccountToken = deployment.automountServiceAccountToken
+        }
         return podSpec
     }
 

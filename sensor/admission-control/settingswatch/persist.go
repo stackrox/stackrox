@@ -1,7 +1,6 @@
 package settingswatch
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -73,7 +72,7 @@ func (p *persister) run() {
 }
 
 func (p *persister) loadExisting() (*sensor.AdmissionControlSettings, error) {
-	bytes, err := ioutil.ReadFile(settingsPath)
+	bytes, err := os.ReadFile(settingsPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -113,7 +112,7 @@ func (p *persister) persistCurrent() error {
 	}
 
 	defer func() { _ = os.Remove(settingsTempPath) }()
-	if err := ioutil.WriteFile(settingsTempPath, bytes, 0640); err != nil {
+	if err := os.WriteFile(settingsTempPath, bytes, 0640); err != nil {
 		return errors.Wrapf(err, "writing to temporary file %s", settingsTempPath)
 	}
 

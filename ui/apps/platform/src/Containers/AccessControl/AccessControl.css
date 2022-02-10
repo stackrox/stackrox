@@ -17,7 +17,7 @@
 /*
  * Bottom border mitigates left padding and separates generic page head from specific page body.
  */
- #access-control .pf-c-nav.pf-m-tertiary {
+#access-control .pf-c-nav.pf-m-tertiary {
     border-bottom-color: var(--pf-global--BorderColor--100);
     border-bottom-style: solid;
     border-bottom-width: 1px;
@@ -42,14 +42,6 @@
 }
 
 /*
- * Disabled primary Dropdown needs same colors as Button.
- */
-#access-control .pf-c-dropdown__toggle.pf-m-primary[disabled] {
-    background-color: var(--pf-global--disabled-color--200);
-    color: var(--pf-global--disabled-color--100);
-}
-
-/*
  * Limit width (via className) of individual input elements.
  */
 #access-control .pf-c-form-control.pf-m-limit-width {
@@ -61,4 +53,9 @@
  */
 #access-control .pf-c-toolbar {
     --pf-c-toolbar--RowGap: 0;
+}
+
+#access-control input[type='radio']:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
 }

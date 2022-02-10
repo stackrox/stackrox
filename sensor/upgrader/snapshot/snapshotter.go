@@ -3,7 +3,7 @@ package snapshot
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -81,7 +81,7 @@ func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]k8sutil.Object, erro
 		return nil, errors.Wrap(err, "creating gzip readere for state snapshot data")
 	}
 
-	allObjBytes, err := ioutil.ReadAll(gzReader)
+	allObjBytes, err := io.ReadAll(gzReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading compressed state snapshot data")
 	}
@@ -121,7 +121,8 @@ func (s *snapshotter) createStateSnapshot() ([]k8sutil.Object, *v1.Secret, error
 
 	byteSlices := make([][]byte, 0, len(objs))
 	jsonSerializer := json.NewSerializer(json.DefaultMetaFactory, nil, nil, false)
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		var buf bytes.Buffer
 		if err := jsonSerializer.Encode(obj, &buf); err != nil {
 			return nil, nil, errors.Wrapf(err, "marshaling object of kind %v to JSON", obj.GetObjectKind().GroupVersionKind())

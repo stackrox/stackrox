@@ -16,8 +16,8 @@ export const selectors = {
     authProviderName: 'dl div:contains("Auth provider") dd',
 
     // Nav
-    userPermissionsForRoles: 'nav li:contains("User permissions for roles") a',
-    userRoleNames: 'nav li:contains("User roles") li a',
+    userPermissionsForRoles: 'nav[aria-label="Roles"] li:contains("User permissions for roles") a',
+    userRoleNames: 'nav[aria-label="Roles"] li:contains("User roles") li a',
 
     // Table
     permissionsTable: scopeSelectors('table', {

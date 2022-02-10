@@ -197,7 +197,7 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	filteredSearcher := alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher, mappings.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	withDefaultViolationState := withDefaultActiveViolations(defaultSortedSearcher)

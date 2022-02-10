@@ -3,7 +3,6 @@ package jwt
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -28,7 +27,7 @@ const (
 )
 
 func getBytesFromPem(path string) ([]byte, error) {
-	bytesPemEncoded, err := ioutil.ReadFile(path)
+	bytesPemEncoded, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +41,7 @@ func getBytesFromPem(path string) ([]byte, error) {
 // GetPrivateKeyBytes returns the contents of the file containing the private key.
 func GetPrivateKeyBytes() ([]byte, error) {
 	if _, err := os.Stat(privateKeyPath); err == nil {
-		return ioutil.ReadFile(privateKeyPath)
+		return os.ReadFile(privateKeyPath)
 	} else if _, err := os.Stat(privateKeyPathPEM); err == nil {
 		// Second attempt: Try reading PEM version and convert.
 		return getBytesFromPem(privateKeyPathPEM)

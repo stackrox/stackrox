@@ -6,6 +6,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"helm.sh/helm/v3/pkg/chart"
@@ -38,7 +39,7 @@ var (
 
 type element struct {
 	name string
-	get  func(vals interface{}) ([]byte, error)
+	get  func(vals *charts.MetaValues) ([]byte, error)
 }
 
 // Name returns the name of the element
@@ -55,6 +56,14 @@ type ChartTemplate struct {
 // GetElements returns all elements in the chart
 func (t *ChartTemplate) GetElements() []element {
 	return t.elements
+}
+
+// InitTemplate instantiates Go text template with a given name and a common set of extra functions.
+// This template should be used for processing .htpl and .sh files, i.e. for things around Helm charts that Helm
+// templating alone can't provide us.
+func InitTemplate(name string) *template.Template {
+	// TODO(RS-400): switch to .Delims("[<", ">]") in all templates and do it here.
+	return template.New(name).Funcs(sprig.TxtFuncMap()).Funcs(extraFuncMap)
 }
 
 // Load loads a chart template from a set of files. If a file named `.helmtplignore` is
@@ -74,11 +83,11 @@ func Load(files []*loader.BufferedFile) (*ChartTemplate, error) {
 		data := file.Data
 
 		if stringutils.ConsumeSuffix(&elem.name, TemplateFileSuffix) {
-			tpl, err := template.New(elem.name).Delims("[<", ">]").Funcs(sprig.TxtFuncMap()).Funcs(extraFuncMap).Parse(string(data))
+			tpl, err := InitTemplate(elem.name).Delims("[<", ">]").Parse(string(data))
 			if err != nil {
 				return nil, errors.Wrapf(err, "parsing template file %s", file.Name)
 			}
-			elem.get = func(vals interface{}) ([]byte, error) {
+			elem.get = func(vals *charts.MetaValues) ([]byte, error) {
 				var keepEmpty bool
 				keepEmptyFuncMap := template.FuncMap{
 					"helmTplKeepEmptyFile": func() string {
@@ -98,7 +107,7 @@ func Load(files []*loader.BufferedFile) (*ChartTemplate, error) {
 			}
 		} else {
 			stringutils.ConsumeSuffix(&elem.name, NoTemplateFileSuffix)
-			elem.get = func(interface{}) ([]byte, error) {
+			elem.get = func(*charts.MetaValues) ([]byte, error) {
 				return data, nil
 			}
 		}
@@ -115,7 +124,7 @@ func Load(files []*loader.BufferedFile) (*ChartTemplate, error) {
 // a set of raw files, which can be loaded as a Helm template. Note that the resulting set of
 // files might even contain a `.helmignore` file, in order to apply it before loading the
 // instantiated chart, use `helmutil.LoadChart` instead of `loader.LoadFiles`.
-func (t *ChartTemplate) InstantiateRaw(metaVals interface{}) ([]*loader.BufferedFile, error) {
+func (t *ChartTemplate) InstantiateRaw(metaVals *charts.MetaValues) ([]*loader.BufferedFile, error) {
 	files := make([]*loader.BufferedFile, 0, len(t.elements))
 	for _, elem := range t.elements {
 		data, err := elem.get(metaVals)
@@ -140,7 +149,7 @@ func (t *ChartTemplate) InstantiateRaw(metaVals interface{}) ([]*loader.Buffered
 // InstantiateAndLoad instantiates a chart template using the given meta-values, and loads
 // the resulting Helm chart. It is a convenience method, combining `InstantiateRaw` and
 // `helmutil.LoadChart`.
-func (t *ChartTemplate) InstantiateAndLoad(metaVals interface{}) (*chart.Chart, error) {
+func (t *ChartTemplate) InstantiateAndLoad(metaVals *charts.MetaValues) (*chart.Chart, error) {
 	instantiatedFiles, err := t.InstantiateRaw(metaVals)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating chart template files")

@@ -92,7 +92,6 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
 
 const mapDispatchToProps = {
     // TODO: type redux props
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     addToast: actions.addNotification,
     removeToast: actions.removeOldestNotification,
 };

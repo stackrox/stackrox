@@ -1,0 +1,149 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    operatorframework.io/installed-alongside-dcc1ec8a2329b355: openshift-compliance/compliance-operator.v0.1.35
+  creationTimestamp: "2021-08-10T18:26:57Z"
+  generation: 1
+  labels:
+    operators.coreos.com/compliance-operator.openshift-compliance: ""
+  name: tailoredprofiles.compliance.openshift.io
+  resourceVersion: "126510"
+  uid: 769c2661-aaf1-4678-aaa3-63d63552c78a
+spec:
+  conversion:
+    strategy: None
+  group: compliance.openshift.io
+  names:
+    kind: TailoredProfile
+    listKind: TailoredProfileList
+    plural: tailoredprofiles
+    shortNames:
+    - tp
+    - tprof
+    singular: tailoredprofile
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: State of the tailored profile
+      jsonPath: .status.state
+      name: State
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: TailoredProfile is the Schema for the tailoredprofiles API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: TailoredProfileSpec defines the desired state of TailoredProfile
+            properties:
+              description:
+                description: Overwrites the description of the extended profile
+                type: string
+              disableRules:
+                description: Disables the referenced rules
+                items:
+                  description: RuleReferenceSpec specifies a rule to be selected/deselected,
+                    as well as the reason why
+                  properties:
+                    name:
+                      description: Name of the rule that's being referenced
+                      type: string
+                    rationale:
+                      description: Rationale of why this rule is being selected/deselected
+                      type: string
+                  required:
+                  - name
+                  - rationale
+                  type: object
+                nullable: true
+                type: array
+              enableRules:
+                description: Enables the referenced rules
+                items:
+                  description: RuleReferenceSpec specifies a rule to be selected/deselected,
+                    as well as the reason why
+                  properties:
+                    name:
+                      description: Name of the rule that's being referenced
+                      type: string
+                    rationale:
+                      description: Rationale of why this rule is being selected/deselected
+                      type: string
+                  required:
+                  - name
+                  - rationale
+                  type: object
+                nullable: true
+                type: array
+              extends:
+                description: Points to the name of the profile to extend
+                type: string
+              setValues:
+                description: Sets the referenced variables to selected values
+                items:
+                  description: ValueReferenceSpec specifies a value to be set for
+                    a variable with a reason why
+                  properties:
+                    name:
+                      description: Name of the variable that's being referenced
+                      type: string
+                    rationale:
+                      description: Rationale of why this value is being tailored
+                      type: string
+                    value:
+                      description: Rationale of why this value is being tailored
+                      type: string
+                  required:
+                  - name
+                  - rationale
+                  - value
+                  type: object
+                nullable: true
+                type: array
+              title:
+                description: Overwrites the title of the extended profile
+                type: string
+            required:
+            - extends
+            type: object
+          status:
+            description: TailoredProfileStatus defines the observed state of TailoredProfile
+            properties:
+              errorMessagae:
+                type: string
+              id:
+                description: The XCCDF ID of the tailored profile
+                type: string
+              outputRef:
+                description: Points to the generated resource
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              state:
+                description: The current state of the tailored profile
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

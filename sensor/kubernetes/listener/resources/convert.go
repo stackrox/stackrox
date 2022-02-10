@@ -63,7 +63,7 @@ type deploymentWrap struct {
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
 func doesFieldExist(value reflect.Value) bool {
-	return !reflect.DeepEqual(value, reflect.Value{})
+	return value.IsValid()
 }
 
 func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
@@ -249,7 +249,7 @@ func (w *deploymentWrap) GetDeployment() *storage.Deployment {
 func filterOnOwners(hierarchy references.ParentHierarchy, topLevelUID string, pods []*v1.Pod) []*v1.Pod {
 	filteredPods := pods[:0]
 	for _, p := range pods {
-		if hierarchy.IsValidChild(topLevelUID, string(p.UID)) {
+		if hierarchy.IsValidChild(topLevelUID, p) {
 			filteredPods = append(filteredPods, p)
 		}
 	}
@@ -432,13 +432,13 @@ func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
 
 	w.resetPortExposureNoLock()
 
-	svcs := store.getMatchingServices(w.Namespace, w.PodLabels)
+	svcs := store.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels)
 	for _, svc := range svcs {
 		w.updatePortExposureUncheckedNoLock(svc)
 	}
 }
 
-func (w *deploymentWrap) updatePortExposureFromServices(svcs ...*serviceWrap) {
+func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoutes) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
@@ -449,7 +449,7 @@ func (w *deploymentWrap) updatePortExposureFromServices(svcs ...*serviceWrap) {
 	}
 }
 
-func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) {
+func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
 	if svc.selector.Matches(labels.Set(w.PodLabels)) {
 		return
 	}
@@ -460,8 +460,8 @@ func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) {
 	w.updatePortExposureUncheckedNoLock(svc)
 }
 
-func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc *serviceWrap) {
-	for ref, exposureInfo := range svc.exposure() {
+func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc serviceWithRoutes) {
+	for ref, exposureInfos := range svc.exposure() {
 		portCfg := w.portConfigs[ref]
 		if portCfg == nil {
 			if ref.Port.Type == intstr.String {
@@ -476,10 +476,12 @@ func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc *serviceWrap) {
 			w.portConfigs[ref] = portCfg
 		}
 
-		portCfg.ExposureInfos = append(portCfg.ExposureInfos, exposureInfo)
+		portCfg.ExposureInfos = append(portCfg.ExposureInfos, exposureInfos...)
 
-		if containers.CompareExposureLevel(portCfg.Exposure, exposureInfo.GetLevel()) < 0 {
-			portCfg.Exposure = exposureInfo.GetLevel()
+		for _, exposureInfo := range exposureInfos {
+			if containers.CompareExposureLevel(portCfg.Exposure, exposureInfo.GetLevel()) < 0 {
+				portCfg.Exposure = exposureInfo.GetLevel()
+			}
 		}
 	}
 	for _, portCfg := range w.portConfigs {

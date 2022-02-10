@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
+	acIndexer "github.com/stackrox/rox/central/activecomponent/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -25,12 +26,13 @@ type Searcher interface {
 // New returns a new instance of Searcher for the given storage and indexer.
 func New(storage store.Store,
 	graphProvider graph.Provider,
+	acIndexer acIndexer.Indexer,
 	cveIndexer cveIndexer.Indexer,
 	componentIndexer componentIndexer.Indexer,
 	deploymentIndexer deploymentIndexer.Indexer) Searcher {
 	return &searcherImpl{
 		storage:       storage,
 		graphProvider: graphProvider,
-		searcher:      formatSearcher(cveIndexer, componentIndexer, deploymentIndexer),
+		searcher:      formatSearcher(acIndexer, cveIndexer, componentIndexer, deploymentIndexer),
 	}
 }

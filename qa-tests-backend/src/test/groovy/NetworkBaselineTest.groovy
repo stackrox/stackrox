@@ -17,7 +17,7 @@ class NetworkBaselineTest extends BaseSpecification {
     static final private String ANOMALOUS_CLIENT_DEP_NAME = "net-bl-client-anomalous"
     static final private String DEFERRED_BASELINED_CLIENT_DEP_NAME = "net-bl-client-deferred-baselined"
 
-    static final private String NGINX_IMAGE = "quay.io/cgorman1/qa:nginx-1.19-alpine"
+    static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1.19-alpine"
 
     // The baseline generation duration must be changed from the default for this test to succeed.
     static final private int EXPECTED_BASELINE_DURATION_SECONDS = 120

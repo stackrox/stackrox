@@ -34,6 +34,7 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_ComplianceOperatorResult": 0,
         "*central.SensorEvent_ComplianceOperatorRule": 0,
         "*central.SensorEvent_ComplianceOperatorScanSettingBinding": 0,
+        "*central.SensorEvent_ComplianceOperatorScan": 0,
     ]
 
     // DEFAULT_MAX_ALLOWED_DELETIONS is the default max number of deletions allowed for a resource.
@@ -103,7 +104,7 @@ class ReconciliationTest extends BaseSpecification {
         Deployment dep = new Deployment()
                 .setNamespace(ns)
                 .setName ("testing123")
-                .setImage ("quay.io/cgorman1/qa:busybox")
+                .setImage ("quay.io/rhacs-eng/qa:busybox")
                 .addPort (22)
                 .addLabel ("app", "testing123")
                 .setCommand(["sleep", "600"])

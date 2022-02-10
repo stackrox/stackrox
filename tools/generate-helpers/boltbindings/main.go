@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"sort"
 
 	. "github.com/dave/jennifer/jen"
@@ -130,6 +132,18 @@ func generate(props *operations.GeneratorProperties, methods []string, interface
 		return err
 	}
 
+	if props.GenerateMockStore {
+		if props.MockgenWrapperExecutablePath == "" {
+			return errors.New("mockgen-wrapper path not specified")
+		}
+		cmd := exec.Command(props.MockgenWrapperExecutablePath)
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, "GOFILE=store.go")
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("couldn't exec mockgen-wrapper: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -170,14 +184,17 @@ func main() {
 	c.Flags().StringVar(&props.BucketName, "bucket", "", "the name of the bucket")
 	utils.Must(c.MarkFlagRequired("bucket"))
 
-	//props.GetExists determines whether get methods will return an "exists" boolean
+	// props.GetExists determines whether get methods will return an "exists" boolean
 	c.Flags().BoolVar(&props.GetExists, "get-return-exists", false, "return 'exists' boolean from get calls")
 
 	c.Flags().BoolVar(&props.Cache, "cache", false, "generate an LRU expiring cache")
 
-	//props.DeleteExists determines whether delete methods will return an "exists" boolean
-	//commented out as this hasn't been implemented yet
-	//c.Flags().BoolVar(&props.DeleteExists, "delete-return-exists", false, "return 'exists' boolean from delete calls")
+	c.Flags().BoolVar(&props.GenerateMockStore, "generate-mock-store", false, "whether to generate a mock for the store")
+	c.Flags().StringVar(&props.MockgenWrapperExecutablePath, "mockgen-executable-path", "", "path to mockgen-wrapper executable")
+
+	// props.DeleteExists determines whether delete methods will return an "exists" boolean
+	// commented out as this hasn't been implemented yet
+	// c.Flags().BoolVar(&props.DeleteExists, "delete-return-exists", false, "return 'exists' boolean from delete calls")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.Plural == "" {

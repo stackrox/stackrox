@@ -13,10 +13,13 @@ import (
 	ociSpec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
@@ -24,7 +27,8 @@ const (
 	// GenericDockerRegistryType exposes the default registry type
 	GenericDockerRegistryType = "docker"
 
-	registryTimeout = 5 * time.Second
+	registryTimeout  = 5 * time.Second
+	repoListInterval = 10 * time.Minute
 )
 
 var (
@@ -48,6 +52,10 @@ type Registry struct {
 
 	url      string
 	registry string // This is the registry portion of the image
+
+	repositoryList       set.StringSet
+	repositoryListTicker *time.Ticker
+	repositoryListLock   sync.RWMutex
 }
 
 // Config is the basic config for the docker registry
@@ -93,12 +101,21 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 
 	client.Client.Timeout = registryTimeout
 
+	repoSet, err := retrieveRepositoryList(client)
+	if err != nil {
+		// This is not a critical error so it is purposefully not returned
+		log.Debugf("could not update repo list for integration %s: %v", integration.GetName(), err)
+	}
+
 	return &Registry{
 		url:                   url,
 		registry:              registryServer,
 		Client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
+
+		repositoryList:       repoSet,
+		repositoryListTicker: time.NewTicker(repoListInterval),
 	}, nil
 }
 
@@ -117,9 +134,46 @@ func NewDockerRegistry(integration *storage.ImageIntegration) (*Registry, error)
 	return NewDockerRegistryWithConfig(cfg, integration)
 }
 
+func retrieveRepositoryList(client *registry.Registry) (set.StringSet, error) {
+	repos, err := client.Repositories()
+	if err != nil {
+		return nil, err
+	}
+	if len(repos) == 0 {
+		return nil, errors.New("empty response from repositories call")
+	}
+	return set.NewStringSet(repos...), nil
+}
+
 // Match decides if the image is contained within this registry
 func (r *Registry) Match(image *storage.ImageName) bool {
-	return urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
+	match := urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
+	var list set.StringSet
+	concurrency.WithRLock(&r.repositoryListLock, func() {
+		list = r.repositoryList
+	})
+	if list == nil {
+		return match
+	}
+
+	// Lazily update if the ticker has elapsed
+	select {
+	case <-r.repositoryListTicker.C:
+		newRepoSet, err := retrieveRepositoryList(r.Client)
+		if err != nil {
+			log.Debugf("could not update repo list for integration %s: %v", r.protoImageIntegration.GetName(), err)
+		} else {
+			concurrency.WithLock(&r.repositoryListLock, func() {
+				r.repositoryList = newRepoSet
+			})
+		}
+	default:
+	}
+
+	r.repositoryListLock.RLock()
+	defer r.repositoryListLock.RUnlock()
+
+	return r.repositoryList.Contains(image.GetRemote())
 }
 
 // Global returns whether or not this registry is available from all clusters
@@ -162,7 +216,7 @@ func (r *Registry) Test() error {
 	if err != nil {
 		logging.Errorf("error testing docker integration: %v", err)
 		if e, _ := err.(*registry.ClientError); e != nil {
-			return errors.Errorf("error testing integration (code: %d).Please check Central logs for full error", e.Code())
+			return errors.Errorf("error testing integration (code: %d). Please check Central logs for full error", e.Code())
 		}
 		return err
 	}

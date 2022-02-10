@@ -6,6 +6,7 @@ import queryService from 'utils/queryService';
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
+import { VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
@@ -70,6 +71,10 @@ const VulmMgmtDeployment = ({
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
+        const fragmentToUse =
+            fragmentName === 'componentFields'
+                ? VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT
+                : fragment;
         return gql`
         query getDeployment${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: deployment(id: $id) {
@@ -80,7 +85,7 @@ const VulmMgmtDeployment = ({
                 unusedVarSink(query: $scopeQuery)
             }
         }
-        ${fragment}
+        ${fragmentToUse}
     `;
     }
 

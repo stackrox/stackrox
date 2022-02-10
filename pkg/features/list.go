@@ -18,9 +18,6 @@ var (
 	// IntegrationsAsConfig enables loading integrations from config
 	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)
 
-	// ScopedAccessControl enables scoped access control in core product
-	ScopedAccessControl = registerFeature("Enable scoped access control in core product", "ROX_SCOPED_ACCESS_CONTROL_V2", true)
-
 	// UpgradeRollback enables rollback to last central version after upgrade.
 	UpgradeRollback = registerFeature("Enable rollback to last central version after upgrade", "ROX_ENABLE_ROLLBACK", true)
 
@@ -30,8 +27,20 @@ var (
 	// ActiveVulnManagement enables detection of active vulnerabilities
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", true)
 
-	// AlternateProbeDownload enables alternate probe download solution for collector
-	AlternateProbeDownload = registerFeature("Enable alternate probe download solution for collector", "ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", false)
-
 	PostgresPOC = registerFeature("Enable Postgres POC", "ROX_POSTGRES_POC", true)
+
+	// VulnRiskManagement enables the vulnerability risk management workflow that allows accepting risk for vulnerabilities.
+	VulnRiskManagement = registerFeature("Enable Vulnerability Risk Management workflow", "ROX_VULN_RISK_MANAGEMENT", true)
+
+	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
+	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
+
+	// PoliciesPatternFly enables the PatternFly version of Policies. (used in the front-end app only)
+	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", false)
+
+	// VulnReporting enables scheduled vulnerability reporting workflow, that allows the creation and management of vulnerability reporting configurations.
+	VulnReporting = registerFeature("Enable creation of scheduled vulnerability reports to be sent via email notifier", "ROX_VULN_REPORTING", true)
+
+	// LocalImageScanning enables OpenShift local-image scanning.
+	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", false)
 )

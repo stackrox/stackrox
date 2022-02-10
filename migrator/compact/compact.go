@@ -3,7 +3,6 @@ package compact
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -36,7 +35,7 @@ func determineLargeEnoughDir(currSize uint64) (string, error) {
 		return "", errors.Wrap(err, "error getting available bytes for /tmp")
 	}
 	if tmpAvailBytes > desiredSpace {
-		name, err := ioutil.TempDir("", "")
+		name, err := os.MkdirTemp("", "")
 		if err != nil {
 			return "", errors.Wrap(err, "could not create temp directory")
 		}

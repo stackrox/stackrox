@@ -13,10 +13,10 @@ using Helm, you must:
 
 ## Add the Canonical Chart Location as a Helm Repository
 
-The canonical repository for StackRox Helm charts is [< .ChartRepo.URL >].
+The canonical repository for StackRox Helm charts is [< required "" .ChartRepo.URL >].
 To use StackRox Helm charts on your machine, run
 ```sh
-helm repo add stackrox [< .ChartRepo.URL >]
+helm repo add stackrox [< required "" .ChartRepo.URL >]
 ```
 This command only needs to be run once on your machine. Whenever you are deploying
 or upgrading a chart from a remote repository, it is advisable to run
@@ -39,7 +39,7 @@ In order to be able to access StackRox Docker images, you also need image pull
 credentials. There are several ways to inject the required credentials (if any)
 into the installation process:
 - **Explicitly specify username and password:** Use this if you are using the images
-  from the default registry (`[< .MainRegistry >]`), or a registry that supports username/password
+  from the default registry (`[< required "" .MainRegistry >]`), or a registry that supports username/password
   authentication. Pass the following arguments to the `helm install` command:
   ```sh
   --set imagePullSecrets.username=<registry username> --set imagePullSecrets.password=<registry password>

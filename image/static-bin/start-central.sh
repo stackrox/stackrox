@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 . "$(dirname "$0")/db-functions"
 . "$(dirname "$0")/debug"

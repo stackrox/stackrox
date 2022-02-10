@@ -28,7 +28,7 @@ func New(db *bolt.DB) Store {
 
 	integrations, err := si.GetImageIntegrations()
 	utils.CrashOnError(err)
-	if env.OfflineModeEnv.Setting() != "true" && len(integrations) == 0 {
+	if !env.OfflineModeEnv.BooleanSetting() && len(integrations) == 0 {
 		// Add default integrations
 		for _, ii := range DefaultImageIntegrations {
 			utils.Must(si.UpdateImageIntegration(ii))

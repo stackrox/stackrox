@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +30,7 @@ type istioCVEManager struct {
 }
 
 func (m *istioCVEManager) initialize() {
-	//Load the istio CVEs in mem
+	// Load the istio CVEs in mem
 	newIstioCVEs, err := getLocalCVEs(persistentIstioCVEsFilePath)
 	if err != nil {
 		log.Errorf("failed to get local istio cves: %v", err)
@@ -196,7 +195,7 @@ func (m *istioCVEManager) reconcileOfflineModeCVEs(zipPath string, forceUpdate b
 		return nil
 	}
 
-	data, err := ioutil.ReadFile(bundledCVEFile)
+	data, err := os.ReadFile(bundledCVEFile)
 	if err != nil {
 		return err
 	}

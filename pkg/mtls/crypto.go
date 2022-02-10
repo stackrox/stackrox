@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/cloudflare/cfssl/config"
@@ -54,6 +54,12 @@ const (
 	beforeGracePeriod = 1 * time.Hour
 
 	certLifetime = 365 * 24 * time.Hour
+
+	ephemeralProfileWithExpirationInHours             = "ephemeralWithExpirationInHours"
+	ephemeralProfileWithExpirationInHoursCertLifetime = 3 * time.Hour
+
+	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
+	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
 )
 
 var (
@@ -99,6 +105,10 @@ var (
 	readCAKeyOnce     sync.Once
 	caKeyFileContents []byte
 	caKeyErr          error
+
+	caForSigningOnce sync.Once
+	caForSigning     CA
+	caForSigningErr  error
 )
 
 // IssuedCert is a representation of an issued certificate
@@ -128,7 +138,7 @@ func CACertPEM() ([]byte, error) {
 
 func readCAKey() ([]byte, error) {
 	readCAKeyOnce.Do(func() {
-		caKeyBytes, err := ioutil.ReadFile(caKeyFilePathSetting.Setting())
+		caKeyBytes, err := os.ReadFile(caKeyFilePathSetting.Setting())
 		if err != nil {
 			caKeyErr = errors.Wrap(err, "reading CA key")
 			return
@@ -140,7 +150,7 @@ func readCAKey() ([]byte, error) {
 
 func readCA() (*x509.Certificate, []byte, []byte, error) {
 	readCACertOnce.Do(func() {
-		caBytes, err := ioutil.ReadFile(caFilePathSetting.Setting())
+		caBytes, err := os.ReadFile(caFilePathSetting.Setting())
 		if err != nil {
 			caCertErr = errors.Wrap(err, "reading CA file")
 			return
@@ -174,23 +184,52 @@ func CACert() (*x509.Certificate, []byte, error) {
 	return caCert, caCertDER, caCertErr
 }
 
-func signer() (cfsigner.Signer, error) {
-	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), signingPolicy())
+// CAForSigning reads the cert and key from the local file system and returns
+// a corresponding CA instance that can be used for signing.
+func CAForSigning() (CA, error) {
+	caForSigningOnce.Do(func() {
+		_, certPEM, _, err := readCA()
+		if err != nil {
+			caForSigningErr = errors.Wrap(err, "could not read CA cert file")
+			return
+		}
+		keyPEM, err := readCAKey()
+		if err != nil {
+			caForSigningErr = errors.Wrap(err, "could not read CA key file")
+			return
+		}
+
+		caForSigning, caForSigningErr = LoadCAForSigning(certPEM, keyPEM)
+	})
+
+	return caForSigning, caForSigningErr
 }
 
-func signingPolicy() *config.Signing {
+func signer() (cfsigner.Signer, error) {
+	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
+}
+
+func createSigningPolicy() *config.Signing {
 	return &config.Signing{
-		Default: &config.SigningProfile{
-			Usage:    []string{"signing", "key encipherment", "server auth", "client auth"},
-			Expiry:   certLifetime + beforeGracePeriod,
-			Backdate: beforeGracePeriod,
-			CSRWhitelist: &config.CSRWhitelist{
-				PublicKey:          true,
-				PublicKeyAlgorithm: true,
-				SignatureAlgorithm: true,
-			},
-			ClientProvidesSerialNumbers: true,
+		Default: createSigningProfile(certLifetime, beforeGracePeriod),
+		Profiles: map[string]*config.SigningProfile{
+			ephemeralProfileWithExpirationInHours: createSigningProfile(ephemeralProfileWithExpirationInHoursCertLifetime, 0),
+			ephemeralProfileWithExpirationInDays:  createSigningProfile(ephemeralProfileWithExpirationInDaysCertLifetime, 0),
 		},
+	}
+}
+
+func createSigningProfile(lifetime time.Duration, gracePeriod time.Duration) *config.SigningProfile {
+	return &config.SigningProfile{
+		Usage:    []string{"signing", "key encipherment", "server auth", "client auth"},
+		Expiry:   lifetime + gracePeriod,
+		Backdate: gracePeriod,
+		CSRWhitelist: &config.CSRWhitelist{
+			PublicKey:          true,
+			PublicKeyAlgorithm: true,
+			SignatureAlgorithm: true,
+		},
+		ClientProvidesSerialNumbers: true,
 	}
 }
 
@@ -242,7 +281,8 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 			Names:        []cfcsr.Name{subj.Name()},
 			SerialNumber: serial.String(),
 		},
-		Serial: serial,
+		Serial:  serial,
+		Profile: issueOpts.signerProfile,
 	}
 	certBytes, err := signer.Sign(req)
 	if err != nil {

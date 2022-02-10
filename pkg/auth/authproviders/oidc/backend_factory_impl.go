@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -28,7 +27,8 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                              = logging.LoggerForModule()
+	_   authproviders.BackendFactory = (*factory)(nil)
 )
 
 type factory struct {
@@ -58,17 +58,9 @@ func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (st
 		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 
-	var values url.Values
-	switch r.Method {
-	case http.MethodGet:
-		values = r.URL.Query()
-	case http.MethodPost:
-		if err := r.ParseForm(); err != nil {
-			return "", "", httputil.Errorf(http.StatusBadRequest, "could not parse form data: %v", err)
-		}
-		values = r.Form
-	default:
-		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "method %s is not supported for this URL", r.Method)
+	values, err := authproviders.ExtractURLValuesFromRequest(r)
+	if err != nil {
+		return "", "", err
 	}
 
 	return f.ResolveProviderAndClientState(values.Get("state"))
@@ -101,4 +93,11 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 		mergedCfg[clientSecretConfigKey] = oldCfg[clientSecretConfigKey]
 	}
 	return mergedCfg
+}
+
+func (f *factory) GetSuggestedAttributes() []string {
+	return []string{authproviders.UseridAttribute,
+		authproviders.NameAttribute,
+		authproviders.GroupsAttribute,
+		authproviders.EmailAttribute}
 }

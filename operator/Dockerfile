@@ -62,8 +62,12 @@ RUN GOOS=$(go env GOOS) scripts/go-build.sh operator
 RUN cp -a bin/$(go env GOOS)/operator stackrox-operator
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.4
+FROM registry.access.redhat.com/ubi8-minimal:8.5
+
 ARG roxpath
+
+ARG ROX_IMAGE_FLAVOR
+ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 RUN microdnf update && microdnf clean all && rm -rf /var/cache/yum/*
 

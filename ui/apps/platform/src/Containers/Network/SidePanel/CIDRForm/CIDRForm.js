@@ -149,6 +149,7 @@ const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
                                                 {values?.entities?.map(({ entity }, idx) => (
                                                     <CIDRFormRow
                                                         idx={idx}
+                                                        // eslint-disable-next-line react/no-array-index-key
                                                         key={idx}
                                                         onRemoveRow={removeRowHandler(
                                                             remove,

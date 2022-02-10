@@ -3,10 +3,9 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
@@ -35,15 +34,16 @@ const (
 
 var (
 	persistentCVEsPath                  = migrations.DBMountPath()
-	persistentK8sCVEsFilePath           = path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir, "cve-list.json")
-	persistentK8sCVEsChecksumFilePath   = path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir, "checksum")
-	preloadedK8sCVEsFilePath            = path.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Kubernetes].CVEFilename)
-	preloadedK8sCVEsChecksumFilePath    = path.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Kubernetes].ChecksumFilename)
-	persistentIstioCVEsFilePath         = path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir, "cve-list.json")
-	persistentIstioCVEsChecksumFilePath = path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir, "checksum")
-	preloadedIstioCVEsFilePath          = path.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Istio].CVEFilename)
-	preloadedIstioCVEsChecksumFilePath  = path.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Istio].ChecksumFilename)
-	log                                 = logging.LoggerForModule()
+	persistentK8sCVEsFilePath           = filepath.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir, "cve-list.json")
+	persistentK8sCVEsChecksumFilePath   = filepath.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir, "checksum")
+	preloadedK8sCVEsFilePath            = filepath.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Kubernetes].CVEFilename)
+	preloadedK8sCVEsChecksumFilePath    = filepath.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Kubernetes].ChecksumFilename)
+	persistentIstioCVEsFilePath         = filepath.Join(persistentCVEsPath, commonCveDir, istioCVEsDir, "cve-list.json")
+	persistentIstioCVEsChecksumFilePath = filepath.Join(persistentCVEsPath, commonCveDir, istioCVEsDir, "checksum")
+	preloadedIstioCVEsFilePath          = filepath.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Istio].CVEFilename)
+	preloadedIstioCVEsChecksumFilePath  = filepath.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Istio].ChecksumFilename)
+
+	log = logging.LoggerForModule()
 )
 
 func maybeAddLicenseIDAsQueryParam(baseURL string) (string, error) {
@@ -65,7 +65,7 @@ func getCurrentLicenseID() string {
 }
 
 func getLocalCVEChecksum(cveChecksumFile string) (string, error) {
-	b, err := ioutil.ReadFile(cveChecksumFile)
+	b, err := os.ReadFile(cveChecksumFile)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed read k8s CVEs checksum file: %q", cveChecksumFile)
 	}
@@ -73,7 +73,7 @@ func getLocalCVEChecksum(cveChecksumFile string) (string, error) {
 }
 
 func getLocalCVEs(cveFile string) ([]*schema.NVDCVEFeedJSON10DefCVEItem, error) {
-	b, err := ioutil.ReadFile(cveFile)
+	b, err := os.ReadFile(cveFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed read CVEs file: %q", cveFile)
 	}
@@ -92,12 +92,12 @@ func getLocalCVEs(cveFile string) ([]*schema.NVDCVEFeedJSON10DefCVEItem, error) 
 }
 
 func overwriteCVEs(cveFile, cveChecksumFile, checksum, CVEs string) error {
-	err := ioutil.WriteFile(cveFile, []byte(CVEs), 0644)
+	err := os.WriteFile(cveFile, []byte(CVEs), 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to overwrite CVEs file: %q", cveFile)
 	}
 
-	err = ioutil.WriteFile(cveChecksumFile, []byte(checksum), 0644)
+	err = os.WriteFile(cveChecksumFile, []byte(checksum), 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to overwrite CVEs cveChecksumFile file: %q", cveChecksumFile)
 	}
@@ -140,8 +140,8 @@ type cvePaths struct {
 func getPaths(ct converter.CVEType) (*cvePaths, error) {
 	if ct == converter.K8s {
 		return &cvePaths{
-			preloadedCveDirPath:       path.Join(preloadedCVEsBasePath, commonCveDir, k8sCVEsDir),
-			persistentCveDirPath:      path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir),
+			preloadedCveDirPath:       filepath.Join(preloadedCVEsBasePath, commonCveDir, k8sCVEsDir),
+			persistentCveDirPath:      filepath.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir),
 			preloadedCveFile:          preloadedK8sCVEsFilePath,
 			preloadedCveChecksumFile:  preloadedK8sCVEsChecksumFilePath,
 			persistentCveFile:         persistentK8sCVEsFilePath,
@@ -149,8 +149,8 @@ func getPaths(ct converter.CVEType) (*cvePaths, error) {
 		}, nil
 	} else if ct == converter.Istio {
 		return &cvePaths{
-			preloadedCveDirPath:       path.Join(preloadedCVEsBasePath, commonCveDir, istioCVEsDir),
-			persistentCveDirPath:      path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir),
+			preloadedCveDirPath:       filepath.Join(preloadedCVEsBasePath, commonCveDir, istioCVEsDir),
+			persistentCveDirPath:      filepath.Join(persistentCVEsPath, commonCveDir, istioCVEsDir),
 			preloadedCveFile:          preloadedIstioCVEsFilePath,
 			preloadedCveChecksumFile:  preloadedIstioCVEsChecksumFilePath,
 			persistentCveFile:         persistentIstioCVEsFilePath,

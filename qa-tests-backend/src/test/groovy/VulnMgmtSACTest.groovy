@@ -22,7 +22,7 @@ class VulnMgmtSACTest extends BaseSpecification {
     static final private String NONE = "None"
     static final private String ALLACCESSTOKEN = "allAccessToken"
     static final private String NOACCESSTOKEN = "noAccess"
-    static final private String CENTOS_IMAGE = "quay.io/cgorman1/qa:centos7-base"
+    static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
 
     static final private String NODE_ROLE = "node-role"
     static final private String IMAGE_ROLE = "image-role"
@@ -62,10 +62,10 @@ class VulnMgmtSACTest extends BaseSpecification {
     def createReadRole(String name, List<String> resources) {
         def testRole = RoleOuterClass.Role.newBuilder()
                 .setName(name)
-        for (String resource: resources) {
-            testRole.putResourceToAccess(resource, RoleOuterClass.Access.READ_ACCESS)
+        Map<String, RoleOuterClass.Access> resourceToAccess = resources.collectEntries {
+            [it, RoleOuterClass.Access.READ_ACCESS]
         }
-        RoleService.createRole(testRole.build())
+        RoleService.createRoleWithPermissionSet(testRole.build(), resourceToAccess)
         assert RoleService.getRole(testRole.name)
         println "Created Role:\n${testRole}"
     }
@@ -172,7 +172,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         assert baseComponentCallResult.hasNoErrors()
 
         and:
-        gqlService = new GraphQLService(getToken(tokenName))
+        gqlService = new GraphQLService(getToken(tokenName, NODE_IMAGE_ROLE))
         def vulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: ""])
         assert vulnCallResult.hasNoErrors()
         def componentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: ""])

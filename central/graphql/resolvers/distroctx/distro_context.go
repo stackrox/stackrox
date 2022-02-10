@@ -24,7 +24,7 @@ func IsImageScoped(ctx context.Context) bool {
 	return FromContext(ctx) != ""
 }
 
-// FromContext returns the distro from the input context as well as a boolean indicating if there was a distro attached.
+// FromContext returns the distro from the input context
 func FromContext(hasDistroContext context.Context) string {
 	if hasDistroContext == nil {
 		return ""

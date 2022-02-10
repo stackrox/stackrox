@@ -21,8 +21,8 @@ CollapsibleCountsButton.propTypes = {
     isOpen: PropTypes.bool,
     onClick: PropTypes.func.isRequired,
     children: PropTypes.oneOf([
-        PropTypes.arrayOf(PropTypes.oneOfType(IconWithCount)),
-        PropTypes.oneOfType(IconWithCount),
+        PropTypes.arrayOf(PropTypes.instanceOf(IconWithCount)),
+        PropTypes.instanceOf(IconWithCount),
     ]),
 };
 

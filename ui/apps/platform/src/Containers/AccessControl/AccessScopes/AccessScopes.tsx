@@ -121,7 +121,7 @@ function AccessScopes(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityId, { action: 'update' }));
+        history.push(getEntityPath(entityType, entityId, { action: 'edit' }));
     }
 
     function handleCancel() {
@@ -175,7 +175,7 @@ function AccessScopes(): ReactElement {
             {alertRoles}
             {counterFetching !== 0 ? (
                 <Bullseye>
-                    <Spinner />
+                    <Spinner isSVG />
                 </Bullseye>
             ) : isList ? (
                 <AccessScopesList

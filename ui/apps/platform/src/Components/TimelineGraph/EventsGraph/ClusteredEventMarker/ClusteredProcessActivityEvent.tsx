@@ -1,10 +1,11 @@
 import React, { forwardRef } from 'react';
 
-import { ClusteredEvent } from '../eventTypes';
 import { getNumEventsBackgroundWidth, getNumEventsText } from './clusteredEventMarkerUtils';
 
-type ClusteredProcessActivityEventProps = ClusteredEvent & {
+type ClusteredProcessActivityEventProps = {
     inBaseline?: boolean;
+    size: number;
+    numEvents: number;
 };
 
 const ClusteredProcessActivityEvent = forwardRef<SVGSVGElement, ClusteredProcessActivityEventProps>(

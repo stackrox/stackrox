@@ -54,10 +54,12 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         <DescriptionListTerm>User name</DescriptionListTerm>
                         <DescriptionListDescription>{name}</DescriptionListDescription>
                     </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>User email</DescriptionListTerm>
-                        <DescriptionListDescription>{email}</DescriptionListDescription>
-                    </DescriptionListGroup>
+                    {email && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>User email</DescriptionListTerm>
+                            <DescriptionListDescription>{email}</DescriptionListDescription>
+                        </DescriptionListGroup>
+                    )}
                     <DescriptionListGroup>
                         <DescriptionListTerm className="whitespace-nowrap">
                             Auth provider
@@ -70,7 +72,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                 <Flex>
                     <FlexItem>
                         <div className="pf-u-background-color-200">
-                            <Nav theme="light">
+                            <Nav aria-label="Roles" theme="light">
                                 <NavList>
                                     <NavItem>
                                         <NavLink

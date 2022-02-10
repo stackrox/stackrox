@@ -5,6 +5,7 @@ import * as yup from 'yup';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
+import FormMessage from 'Components/PatternFly/FormMessage';
 import usePageState from '../../hooks/usePageState';
 import { clearStoredCredentials } from '../../utils/integrationUtils';
 
@@ -15,7 +16,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type PagerDutyIntegration = {
@@ -106,7 +106,7 @@ function PagerDutyIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
@@ -126,7 +126,7 @@ function PagerDutyIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup label="" fieldId="updateStoredCredential" errors={errors}>
                             <Checkbox
                                 label="Update PagerDuty Integration Key"

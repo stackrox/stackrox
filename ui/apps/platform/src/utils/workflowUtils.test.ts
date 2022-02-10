@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 import entityTypes from 'constants/entityTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';

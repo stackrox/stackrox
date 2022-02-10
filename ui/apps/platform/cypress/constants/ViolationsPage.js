@@ -33,6 +33,7 @@ export const selectors = {
             values: '[data-testid="violation-tags"] .pf-c-chip-group div.pf-c-chip',
             removeValueButton: (tag) =>
                 `[data-testid="violation-tags"] div.pf-c-chip:contains(${tag}) button`,
+            clearAllTagsButton: '[data-testid="violation-tags"] .pf-c-select__toggle-clear',
         },
         comments: violationCommentsSelectors,
     },

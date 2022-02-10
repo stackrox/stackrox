@@ -3,7 +3,6 @@
  */
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
-import useCaseTypes from 'constants/useCaseTypes';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -25,6 +24,8 @@ export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:i
 export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
 export const policiesBasePath = `${mainPath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
+export const policiesBasePathPatternFly = `${mainPath}/policies-pf`;
+export const policiesPathPatternFly = `${policiesBasePathPatternFly}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;
 export const riskPath = `${riskBasePath}/:deploymentId?`;
 export const imagesPath = `${mainPath}/images/:imageId?`;
@@ -39,10 +40,31 @@ export const systemConfigPath = `${mainPath}/systemconfig`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
 export const configManagementPath = `${mainPath}/configmanagement`;
-export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
+export const systemHealthPathPF = `${mainPath}/system-health-pf`;
 export const productDocsPath = '/docs/product';
+
+// Vuln Management Paths
+
+export const vulnManagementPath = `${mainPath}/vulnerability-management`;
+export const vulnManagementPoliciesPath = `${vulnManagementPath}/policies`;
+export const vulnManagementCVEsPath = `${vulnManagementPath}/cves`;
+export const vulnManagementClustersPath = `${vulnManagementPath}/clusters`;
+export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
+export const vulnManagementDeploymentsPath = `${vulnManagementPath}/deployments`;
+export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
+export const vulnManagementComponentsPath = `${vulnManagementPath}/components`;
+export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
+
+// The following paths are not part of the infinite nesting Workflow in Vuln Management
+export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
+export const vulnManagementReportsPathWithParam = `${vulnManagementPath}/reports/:reportId`;
+
+export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
+export const vulnManagementPendingApprovalsPath = `${vulnManagementRiskAcceptancePath}/pending-approvals`;
+export const vulnManagementApprovedDeferralsPath = `${vulnManagementRiskAcceptancePath}/approved-deferrals`;
+export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcceptancePath}/approved-false-positives`;
 
 /**
  * New Framwork-related route paths
@@ -81,8 +103,11 @@ export const urlEntityTypes = {
     [rbacConfigTypes.ROLE]: 'role',
 };
 
-export const useCasePaths = {
-    [useCaseTypes.VULN_MANAGEMENT]: 'vulnerability-management',
+const vulnManagementPathToLabelMap = {
+    [vulnManagementPath]: 'Dashboard',
+    // TODO: add mapping for Deferrals
+    [vulnManagementReportsPath]: 'Reporting',
+    [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 
 export const basePathToLabelMap = {
@@ -90,13 +115,14 @@ export const basePathToLabelMap = {
     [networkBasePath]: 'Network Graph',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
-    [vulnManagementPath]: 'Vulnerability Management',
+    ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
     [riskBasePath]: 'Risk',
     [apidocsPath]: 'API Reference',
     [productDocsPath]: 'Help Center',
     [clustersBasePath]: 'Clusters',
     [policiesBasePath]: 'System Policies',
+    [policiesBasePathPatternFly]: 'Policies',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
     [accessControlBasePathV2]: 'Access Control',

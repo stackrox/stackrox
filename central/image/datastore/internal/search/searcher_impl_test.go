@@ -55,7 +55,7 @@ func (suite *ImageSearcherTestSuite) SetupSuite() {
 	suite.Require().NoError(err, "failed to create dackbox")
 	suite.dacky = dacky
 
-	suite.searcher = New(imageStore.New(suite.dacky, concurrency.NewKeyFence(), true), suite.dacky, nil, nil, nil, nil, suite.imageIndexer, suite.deploymentIndexer)
+	suite.searcher = New(imageStore.New(suite.dacky, concurrency.NewKeyFence(), true), suite.dacky, nil, nil, nil, nil, suite.imageIndexer, suite.deploymentIndexer, nil)
 
 	d1ns1 := getDeployment("d1n1", "n1", "c1", 1)
 	d2ns1 := getDeployment("d2n1", "n1", "c1", 2)

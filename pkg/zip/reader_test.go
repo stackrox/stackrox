@@ -2,7 +2,6 @@ package zip
 
 import (
 	"archive/zip"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -34,7 +33,7 @@ func createZipFile(t *testing.T, tempFile *os.File) {
 }
 
 func TestReaderContainsFile(t *testing.T) {
-	tempFile, err := ioutil.TempFile("", testZipReaderFile)
+	tempFile, err := os.CreateTemp("", testZipReaderFile)
 	require.NoError(t, err)
 	defer func() {
 		_ = tempFile.Close()
@@ -87,7 +86,7 @@ func TestReaderContainsFile(t *testing.T) {
 }
 
 func TestReaderReadFrom(t *testing.T) {
-	tempFile, err := ioutil.TempFile("", testZipReaderFile)
+	tempFile, err := os.CreateTemp("", testZipReaderFile)
 	require.NoError(t, err)
 	defer func() {
 		_ = tempFile.Close()

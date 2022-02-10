@@ -11,9 +11,11 @@ import (
 var (
 	portExposureToDescMap = map[string]string{
 		"EXTERNAL": "exposed with load balancer",
+		"ROUTE":    "exposed with a route",
 		"NODE":     "exposed on node port",
 		"HOST":     "exposed on host port",
-		"INTERNAL": "using internal cluster IP"}
+		"INTERNAL": "using internal cluster IP",
+	}
 )
 
 const (

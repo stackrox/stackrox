@@ -23,7 +23,7 @@ var (
 // to interrupts and could probably bundle in the default timeout behavior as well.
 func Context() context.Context {
 	once.Do(func() {
-		ch := make(chan os.Signal)
+		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, syscall.SIGINT)
 		ctx, cancelFunc := context.WithCancel(context.Background())
 		go func() {

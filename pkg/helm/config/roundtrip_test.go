@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,27 +14,16 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 var (
-	metaValues = map[string]interface{}{
-		"Versions": version.Versions{
-			ChartVersion:   "50.0.60-gac5d043be8",
-			MainVersion:    "3.0.50.x-60-gac5d043be8",
-			ScannerVersion: "2.5.0",
-		},
-		"MainRegistry":      defaults.MainImageRegistry(),
-		"CollectorRegistry": defaults.CollectorImageRegistry(),
-		"RenderMode":        "",
-	}
-
 	installOpts = helmUtil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      "stackrox-secured-cluster-services",
@@ -77,7 +65,7 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving chart template")
 	}
-	ch, err := tpl.InstantiateAndLoad(metaValues)
+	ch, err := tpl.InstantiateAndLoad(charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(h.T())))
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating chart")
 	}
@@ -134,7 +122,7 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 
 func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 	// Read and parse Helm values.
-	valBytes, err := ioutil.ReadFile(helmValuesFile)
+	valBytes, err := os.ReadFile(helmValuesFile)
 	h.Require().NoError(err, "failed to read Helm values from file %q", helmValuesFile)
 	helmCfg, err := chartutil.ReadValues(valBytes)
 	h.Require().NoError(err, "failed to parse Helm configuration in file %q", helmValuesFile)
@@ -161,7 +149,7 @@ func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 	cluster.Name = clusterName
 
 	// Derive a new Helm config from the `Cluster` proto.
-	derivedHelmCfg, err := FromCluster(cluster)
+	derivedHelmCfg, err := FromCluster(cluster, flavorUtils.MakeImageFlavorForTest(h.T()))
 	h.Require().NoError(err, "deriving Helm config for cluster")
 
 	diff := maputil.DiffGenericMap(helmCfg, derivedHelmCfg)
@@ -191,6 +179,7 @@ func initClusterFromCompleteClusterConfig(cfg *storage.CompleteClusterConfig) *s
 		TolerationsConfig:          cfg.GetStaticConfig().GetTolerationsConfig(),
 		SlimCollector:              cfg.GetStaticConfig().GetSlimCollector(),
 		HelmConfig:                 cfg,
+		ManagedBy:                  storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 	}
 	return &cluster
 }

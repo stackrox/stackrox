@@ -19,18 +19,20 @@ package main
 import (
 	"flag"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
-	"github.com/stackrox/rox/operator/pkg/client"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -44,6 +46,11 @@ var (
 	setupLog       = ctrl.Log.WithName("setup")
 	scheme         = runtime.NewScheme()
 	enableWebhooks = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+
+	// Default place where controller-runtime looks for TLS artifacts.
+	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
+	defaultCertDir  = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
+	defaultTLSPaths = []string{filepath.Join(defaultCertDir, "tls.crt"), filepath.Join(defaultCertDir, "tls.key")}
 )
 
 func init() {
@@ -92,6 +99,7 @@ func run() error {
 	if !enableWebhooks.BooleanSetting() {
 		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
 	} else {
+		maybeUseLegacyTLSFileLocation(mgr)
 		if err = (&platform.Central{}).SetupWebhookWithManager(mgr); err != nil {
 			return errors.Wrap(err, "unable to create Central webhook")
 		}
@@ -99,13 +107,11 @@ func run() error {
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
-	// TODO(ROX-7251): make sure that the client we create here is kosher
-	k8sClient := client.NewForConfigOrDie(mgr.GetConfig())
-	if err = centralReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
+	if err = centralReconciler.RegisterNewReconciler(mgr); err != nil {
 		return errors.Wrap(err, "unable to set up Central reconciler")
 	}
 
-	if err = securedClusterReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
+	if err = securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
 		return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
 	}
 
@@ -121,4 +127,22 @@ func run() error {
 		return errors.Wrap(err, "problem running manager")
 	}
 	return nil
+}
+
+func maybeUseLegacyTLSFileLocation(mgr manager.Manager) {
+	// OLM before version 0.17.0 (such as the one shipped with OpenShift 4.6) does not
+	// provide the TLS certificate/key in the location referenced by default by the controller runtime
+	// (i.e. /tmp/k8s-webhook-server/serving-certs/...).
+	// See ROX-8304 for details.
+	// If the files are missing at the default location, then we explicitly set the settings as follows
+	// to force usage of the legacy location, which is provided both by old and new OLM, but not
+	// by the "make deploy" scaffolding.
+	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
+		return
+	}
+	setupLog.Info("Webhook key and/or certificate missing at default paths, attempting use of legacy path.", "defaultTLSPaths", defaultTLSPaths)
+	server := mgr.GetWebhookServer()
+	server.CertDir = "/apiserver.local.config/certificates"
+	server.CertName = "apiserver.crt"
+	server.KeyName = "apiserver.key"
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
@@ -333,40 +334,56 @@ type Predicate interface {
 }
 
 type compiledExclusion struct {
-	exclusion *storage.Exclusion
-	cs        *scopecomp.CompiledScope
+	exclusion             *storage.Exclusion
+	deploymentNameMatcher regexutils.WholeStringMatcher
+	cs                    *scopecomp.CompiledScope
+}
+
+type alwaysFalseMatcher struct{}
+
+func (a *alwaysFalseMatcher) MatchWholeString(_ string) bool {
+	return false
 }
 
 func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, error) {
-	if exclusion.GetDeployment() == nil || exclusion.GetDeployment().GetScope() == nil {
-		return &compiledExclusion{
-			exclusion: exclusion,
-		}, nil
+	cx := &compiledExclusion{
+		exclusion: exclusion,
+	}
+	if name := exclusion.GetDeployment().GetName(); name != "" {
+		deploymentNameMatcher, err := regexutils.CompileWholeStringMatcher(name, regexutils.Flags{CaseInsensitive: true})
+		if err != nil {
+			// This maintains backward compatibility because, in the past, the exclusion was interpreted as an equality match.
+			// We don't want to return an error because, if someone has a policy with an invalid regex here for whatever reason,
+			// we don't want their central to crash on an upgrade.
+			// NOTE: If it's not a valid regex, it's not going to be a valid deployment, so we don't need to actually
+			// check this exclusion. So we use an alwaysFalseMatcher.
+			log.Errorf("Invalid regex for deployment name exclusion %q: %v", name, err)
+			cx.deploymentNameMatcher = &alwaysFalseMatcher{}
+		} else {
+			cx.deploymentNameMatcher = deploymentNameMatcher
+		}
+	}
+	if scope := exclusion.GetDeployment().GetScope(); scope != nil {
+		cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope())
+		if err != nil {
+			return nil, err
+		}
+		cx.cs = cs
 	}
 
-	cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope())
-	if err != nil {
-		return nil, err
-	}
-	return &compiledExclusion{
-		exclusion: exclusion,
-		cs:        cs,
-	}, nil
+	return cx, nil
 }
 
 func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) bool {
 	if exclusionIsExpired(cw.exclusion) {
 		return false
 	}
-	deploymentExclusion := cw.exclusion.GetDeployment()
 
-	if !cw.cs.MatchesDeployment(deployment) {
+	if cw.deploymentNameMatcher != nil && !cw.deploymentNameMatcher.MatchWholeString(deployment.GetName()) {
 		return false
 	}
-	if deploymentExclusion.GetName() != "" && deploymentExclusion.GetName() != deployment.GetName() {
-		return false
-	}
-	return true
+
+	return cw.cs.MatchesDeployment(deployment)
 }
 
 func (cw *compiledExclusion) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {

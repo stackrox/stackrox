@@ -10,6 +10,7 @@ import (
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	violationsDatastore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/apitoken/backend"
+	"github.com/stackrox/rox/central/audit"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
@@ -35,6 +36,7 @@ import (
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/notifier/processor"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	baselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -46,10 +48,15 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
+	"github.com/stackrox/rox/central/vulnerabilityrequest/manager/querymgr"
+	"github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 )
 
@@ -94,6 +101,10 @@ type Resolver struct {
 	cveMatcher                  *cveMatcher.CVEMatcher
 	manager                     complianceOperatorManager.Manager
 	mitreStore                  mitreDataStore.MitreAttackReadOnlyDataStore
+	vulnReqMgr                  requestmgr.Manager
+	vulnReqQueryMgr             querymgr.VulnReqQueryManager
+	vulnReqStore                vulnReqDataStore.DataStore
+	AuditLogger                 auditPkg.Auditor
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -138,40 +149,49 @@ func New() *Resolver {
 		cveMatcher:                  cveMatcher.Singleton(),
 		manager:                     complianceOperatorManager.Singleton(),
 		mitreStore:                  mitreDataStore.Singleton(),
+		vulnReqMgr:                  requestmgr.Singleton(),
+		vulnReqQueryMgr:             querymgr.Singleton(),
+		vulnReqStore:                vulnReqDataStore.Singleton(),
+		AuditLogger:                 audit.New(processor.Singleton()),
 	}
 	return resolver
 }
 
 //lint:file-ignore U1000 It's okay for some of the variables below to be unused.
 var (
-	readAlerts                 = readAuth(resources.Alert)
-	readTokens                 = readAuth(resources.APIToken)
-	readClusters               = readAuth(resources.Cluster)
-	readCompliance             = readAuth(resources.Compliance)
-	readComplianceRuns         = readAuth(resources.ComplianceRuns)
-	readComplianceRunSchedule  = readAuth(resources.ComplianceRunSchedule)
-	readCVEs                   = readAuth(resources.CVE)
-	readDeployments            = readAuth(resources.Deployment)
-	readGroups                 = readAuth(resources.Group)
-	readImages                 = readAuth(resources.Image)
-	readIndicators             = readAuth(resources.Indicator)
-	readNamespaces             = readAuth(resources.Namespace)
-	readNodes                  = readAuth(resources.Node)
-	readNotifiers              = readAuth(resources.Notifier)
-	readPolicies               = readAuth(resources.Policy)
-	readK8sRoles               = readAuth(resources.K8sRole)
-	readK8sRoleBindings        = readAuth(resources.K8sRoleBinding)
-	readK8sSubjects            = readAuth(resources.K8sSubject)
-	readRisks                  = readAuth(resources.Risk)
-	readRoles                  = readAuth(resources.Role)
-	readSecrets                = readAuth(resources.Secret)
-	readServiceAccounts        = readAuth(resources.ServiceAccount)
-	readBaselines              = readAuth(resources.ProcessWhitelist)
-	writeAlerts                = writeAuth(resources.Alert)
-	writeCompliance            = writeAuth(resources.Compliance)
-	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)
-	writeComplianceRunSchedule = writeAuth(resources.ComplianceRunSchedule)
-	writeIndicators            = writeAuth(resources.Indicator)
+	readAlerts                           = readAuth(resources.Alert)
+	readTokens                           = readAuth(resources.APIToken)
+	readClusters                         = readAuth(resources.Cluster)
+	readCompliance                       = readAuth(resources.Compliance)
+	readComplianceRuns                   = readAuth(resources.ComplianceRuns)
+	readComplianceRunSchedule            = readAuth(resources.ComplianceRunSchedule)
+	readCVEs                             = readAuth(resources.CVE)
+	readDeployments                      = readAuth(resources.Deployment)
+	readGroups                           = readAuth(resources.Group)
+	readImages                           = readAuth(resources.Image)
+	readIndicators                       = readAuth(resources.Indicator)
+	readNamespaces                       = readAuth(resources.Namespace)
+	readNodes                            = readAuth(resources.Node)
+	readNotifiers                        = readAuth(resources.Notifier)
+	readPolicies                         = readAuth(resources.Policy)
+	readK8sRoles                         = readAuth(resources.K8sRole)
+	readK8sRoleBindings                  = readAuth(resources.K8sRoleBinding)
+	readK8sSubjects                      = readAuth(resources.K8sSubject)
+	readRisks                            = readAuth(resources.Risk)
+	readRoles                            = readAuth(resources.Role)
+	readSecrets                          = readAuth(resources.Secret)
+	readServiceAccounts                  = readAuth(resources.ServiceAccount)
+	readBaselines                        = readAuth(resources.ProcessWhitelist)
+	readVulnerabilityRequestsOrApprovals = anyReadAuth(resources.VulnerabilityManagementRequests, resources.VulnerabilityManagementApprovals)
+
+	writeAlerts                           = writeAuth(resources.Alert)
+	writeCompliance                       = writeAuth(resources.Compliance)
+	writeComplianceRuns                   = writeAuth(resources.ComplianceRuns)
+	writeComplianceRunSchedule            = writeAuth(resources.ComplianceRunSchedule)
+	writeIndicators                       = writeAuth(resources.Indicator)
+	writeVulnerabilityRequests            = writeAuth(resources.VulnerabilityManagementRequests)
+	writeVulnerabilityApprovals           = writeAuth(resources.VulnerabilityManagementApprovals)
+	writeVulnerabilityRequestsOrApprovals = anyWriteAuth(resources.VulnerabilityManagementRequests, resources.VulnerabilityManagementApprovals)
 )
 
 type authorizerOverride struct{}
@@ -196,8 +216,24 @@ func readAuth(resource permissions.ResourceMetadata) func(ctx context.Context) e
 	return applyAuthorizer(user.With(permissions.View(resource)))
 }
 
+func anyReadAuth(resources ...permissions.ResourceMetadata) func(ctx context.Context) error {
+	authorizers := make([]authz.Authorizer, 0, len(resources))
+	for _, res := range resources {
+		authorizers = append(authorizers, user.With(permissions.View(res)))
+	}
+	return applyAuthorizer(or.Or(authorizers...))
+}
+
 func writeAuth(resource permissions.ResourceMetadata) func(ctx context.Context) error {
 	return applyAuthorizer(user.With(permissions.Modify(resource)))
+}
+
+func anyWriteAuth(resources ...permissions.ResourceMetadata) func(ctx context.Context) error {
+	authorizers := make([]authz.Authorizer, 0, len(resources))
+	for _, res := range resources {
+		authorizers = append(authorizers, user.With(permissions.Modify(res)))
+	}
+	return applyAuthorizer(or.Or(authorizers...))
 }
 
 func stringSlice(inputSlice interface{}) []string {

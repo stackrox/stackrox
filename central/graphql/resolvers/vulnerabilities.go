@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -47,6 +48,8 @@ func init() {
 			"suppressActivation: Time",
 			"suppressExpiry: Time",
 			"activeState(query: String): ActiveState",
+			"vulnerabilityState: String!",
+			"effectiveVulnerabilityRequest: VulnerabilityRequest",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
@@ -100,7 +103,10 @@ type VulnerabilityResolver interface {
 	SuppressActivation(ctx context.Context) (*graphql.Time, error)
 	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
 
-	ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error)
+	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
+
+	VulnerabilityState(ctx context.Context) string
+	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
 }
 
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).
@@ -192,14 +198,23 @@ func (resolver *Resolver) OpenShiftVulnerabilities(ctx context.Context, args Pag
 }
 
 func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
-	var suppressedSet bool
+	var isSearchBySuppressed, isSearchByVulnState bool
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok && mfQ.MatchFieldQuery.GetField() == search.CVESuppressed.String() && mfQ.MatchFieldQuery.GetValue() == "true" {
-			suppressedSet = true
+			isSearchBySuppressed = true
+			return
+		}
+		if features.VulnRiskManagement.Enabled() {
+			if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
+				isSearchByVulnState = true
+				return
+			}
 		}
 	})
-	if suppressedSet {
+	// If search query is explicitly requesting vulns by its observed state using the legacy way or the new way,
+	// do not override with only unsnoozed cves query.
+	if isSearchBySuppressed || isSearchByVulnState {
 		return q
 	}
 

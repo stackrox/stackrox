@@ -9,7 +9,7 @@ import (
 
 var (
 	// ChartTemplates contains the list of currently supported chart names for helm related commands.
-	ChartTemplates = map[string]string{
+	ChartTemplates = map[string]image.ChartPrefix{
 		ChartCentralServices:        image.CentralServicesChartPrefix,
 		ChartSecuredClusterServices: image.SecuredClusterServicesChartPrefix,
 	}

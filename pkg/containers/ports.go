@@ -7,8 +7,15 @@ import (
 )
 
 var (
-	exposureOrder = []storage.PortConfig_ExposureLevel{storage.PortConfig_UNSET, storage.PortConfig_INTERNAL, storage.PortConfig_HOST, storage.PortConfig_NODE, storage.PortConfig_EXTERNAL}
-	exposureRank  = utils.Invert(exposureOrder).(map[storage.PortConfig_ExposureLevel]int)
+	exposureOrder = []storage.PortConfig_ExposureLevel{
+		storage.PortConfig_UNSET,
+		storage.PortConfig_INTERNAL,
+		storage.PortConfig_HOST,
+		storage.PortConfig_NODE,
+		storage.PortConfig_ROUTE,
+		storage.PortConfig_EXTERNAL,
+	}
+	exposureRank = utils.Invert(exposureOrder).(map[storage.PortConfig_ExposureLevel]int)
 )
 
 // CompareExposureLevel compares two exposure levels.

@@ -2,7 +2,7 @@ package bundle
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -46,7 +46,7 @@ func (f *fetcher) FetchBundle() (Contents, error) {
 		return nil, errors.Wrap(err, "making HTTP request to central for cluster bundle download")
 	}
 
-	bundleContents, err := ioutil.ReadAll(resp.Body)
+	bundleContents, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading cluster bundle HTTP response body")
 	}

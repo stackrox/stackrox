@@ -3,7 +3,6 @@ package gatherer
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -95,7 +94,7 @@ func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 	var localChecksum []byte
 	_, err = os.Open(defaultexternalsrcs.LocalChecksumFile)
 	if os.IsExist(err) {
-		localChecksum, err = ioutil.ReadFile(defaultexternalsrcs.LocalChecksumFile)
+		localChecksum, err = os.ReadFile(defaultexternalsrcs.LocalChecksumFile)
 		if err != nil {
 			return errors.Wrapf(err, "reading local external networks checksum from %q", defaultexternalsrcs.LocalChecksumFile)
 		}

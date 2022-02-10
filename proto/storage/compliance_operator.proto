@@ -68,3 +68,12 @@ message ComplianceOperatorScanSettingBinding {
     }
     repeated Profile    profiles    = 6;
 }
+
+message ComplianceOperatorScan {
+    string              id          = 1;
+    string              name        = 2;
+    string              cluster_id  = 3;
+    string              profile_id  = 4;
+    map<string, string> labels      = 5;
+    map<string, string> annotations = 6;
+}

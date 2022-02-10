@@ -100,6 +100,10 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:

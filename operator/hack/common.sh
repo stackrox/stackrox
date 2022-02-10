@@ -26,6 +26,11 @@ function create_pull_secret() {
   local -r registry_hostname="${IMAGE_TAG_BASE%%/*}"
   "${ROOT_DIR}/deploy/common/pull-secret.sh" "${pull_secret}" "${registry_hostname}" \
     | kubectl -n "${operator_ns}" apply -f -
+
+  log "Adding pull secret to service account..."
+  # This can be removed once we no longer need to support OpenShift 4.6.
+  # OLM in OpenShift 4.7 properly propagates the image pull secret from `CatalogSource` to the index pod.
+  kubectl -n "${operator_ns}" patch serviceaccount default -p '{"imagePullSecrets": [{"name": "'${pull_secret}'"}]}'
 }
 
 function apply_operator_manifests() {
@@ -92,7 +97,7 @@ function nurse_deployment_until_available() {
   local -r version_tag="$2"
 
   log "Patching image pull secret into ${version_tag} CSV..."
-  retry 20 5 kubectl -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
+  retry 30 10 kubectl -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
     "rhacs-operator.v${version_tag}" --type json \
     -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "'"${pull_secret}"'"}] } ]'
 

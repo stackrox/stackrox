@@ -24,10 +24,22 @@ var (
 		Resource: "profiles",
 	}
 
+	TailoredProfileGVR = schema.GroupVersionResource{
+		Group:    complianceGroup,
+		Version:  complianceVersion,
+		Resource: "tailoredprofiles",
+	}
+
 	ScanSettingBindingGVR = schema.GroupVersionResource{
 		Group:    complianceGroup,
 		Version:  complianceVersion,
 		Resource: "scansettingbindings",
+	}
+
+	ScanGVR = schema.GroupVersionResource{
+		Group:    complianceGroup,
+		Version:  complianceVersion,
+		Resource: "compliancescans",
 	}
 
 	RuleGVR = schema.GroupVersionResource{

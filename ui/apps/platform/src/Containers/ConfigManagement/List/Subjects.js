@@ -67,7 +67,6 @@ const buildTableColumns = (match, location) => {
             Header: `Roles`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { id, k8sRoles } = original;
                 const { length } = k8sRoles;

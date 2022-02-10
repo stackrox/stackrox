@@ -9,8 +9,10 @@ import (
 	"github.com/joelanford/helm-operator/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -32,9 +34,16 @@ var (
 )
 
 // SetupReconcilerWithManager creates and registers a new helm reconciler to the given controller manager.
-func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix string, translator values.Translator, extraOpts ...reconciler.Option) error {
-	metaVals := charts.RHACSMetaValues()
-	metaVals["Operator"] = true
+func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix image.ChartPrefix, translator values.Translator, extraOpts ...reconciler.Option) error {
+	metaVals := charts.GetMetaValuesForFlavor(defaults.GetImageFlavorFromEnv())
+	if !buildinfo.ReleaseBuild {
+		metaVals.MainRegistry = mainRegistryOverride.Setting()
+		metaVals.CollectorRegistry = collectorRegistryOverride.Setting()
+	}
+	metaVals.Operator = true
+
+	metaVals.ImagePullSecrets.AllowNone = true
+
 	chart, err := image.GetDefaultImage().LoadChart(chartPrefix, metaVals)
 	if err != nil {
 		return err
@@ -60,7 +69,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		reconciler.WithChart(*chart),
 		reconciler.WithGroupVersionKind(gvk),
 		reconciler.WithValueTranslator(translator),
-		//TODO(ROX-7362): re-evaluate enabling depended watches
+		// TODO(ROX-7362): re-evaluate enabling depended watches
 		reconciler.SkipDependentWatches(true),
 		reconciler.WithMaxReleaseHistory(maxReleaseHistorySize),
 		reconciler.WithMarkFailedAfter(markReleaseFailedAfter),

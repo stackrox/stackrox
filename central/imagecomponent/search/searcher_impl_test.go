@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,6 +23,8 @@ import (
 	componentStore "github.com/stackrox/rox/central/imagecomponent/store/dackbox"
 	imageComponentEdgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
 	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
+	imageCVEEdgeDackBox "github.com/stackrox/rox/central/imagecveedge/dackbox"
+	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	nodeIndex "github.com/stackrox/rox/central/node/index"
@@ -74,7 +75,7 @@ func (suite *ImageComponentSearchTestSuite) SetupSuite() {
 		suite.FailNow("failed to create dackbox", err.Error())
 	}
 
-	suite.blevePath, err = ioutil.TempDir("", "")
+	suite.blevePath, err = os.MkdirTemp("", "")
 	if err != nil {
 		suite.FailNow("failed to create dir for bleve", err.Error())
 	}
@@ -92,6 +93,7 @@ func (suite *ImageComponentSearchTestSuite) SetupSuite() {
 	reg.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
 	reg.RegisterWrapper(nodeDackBox.Bucket, nodeIndex.Wrapper{})
 	reg.RegisterWrapper(imageComponentEdgeDackBox.Bucket, imageComponentEdgeIndex.Wrapper{})
+	reg.RegisterWrapper(imageCVEEdgeDackBox.Bucket, imageCVEEdgeIndex.Wrapper{})
 	reg.RegisterWrapper(nodeComponentEdgeDackBox.Bucket, nodeComponentEdgeIndex.Wrapper{})
 
 	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
@@ -102,8 +104,9 @@ func (suite *ImageComponentSearchTestSuite) SetupSuite() {
 	index := componentIndex.New(bleveIndex)
 	store, _ := componentStore.New(dacky, concurrency.NewKeyFence())
 	suite.searcher = New(store, dacky, cveIndex.New(bleveIndex), componentCVEEdgeIndex.New(bleveIndex), index,
-		imageComponentEdgeIndex.New(bleveIndex), imageIndex.New(bleveIndex), nodeComponentEdgeIndex.New(bleveIndex),
-		nodeIndex.New(bleveIndex), deploymentIndex.New(bleveIndex, bleveIndex), clusterIndexer.New(bleveIndex))
+		imageComponentEdgeIndex.New(bleveIndex), imageCVEEdgeIndex.New(bleveIndex), imageIndex.New(bleveIndex),
+		nodeComponentEdgeIndex.New(bleveIndex), nodeIndex.New(bleveIndex), deploymentIndex.New(bleveIndex, bleveIndex),
+		clusterIndexer.New(bleveIndex))
 }
 
 func (suite *ImageComponentSearchTestSuite) TearDownSuite() {

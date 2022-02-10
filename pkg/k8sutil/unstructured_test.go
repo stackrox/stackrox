@@ -124,7 +124,8 @@ metadata:
 	require.NoError(t, err)
 
 	names := make([]string, 0, len(objs))
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		names = append(names, obj.GetName())
 	}
 

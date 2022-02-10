@@ -6,7 +6,7 @@ import (
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterSAC "github.com/stackrox/rox/central/cluster/sac"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	"github.com/stackrox/rox/central/cve/cveedge"
+	"github.com/stackrox/rox/central/cve/edgefields"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -17,6 +17,8 @@ import (
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
 	imageComponentEdgeSAC "github.com/stackrox/rox/central/imagecomponentedge/sac"
+	imageCVEEdgeMappings "github.com/stackrox/rox/central/imagecveedge/mappings"
+	imageCVEEdgeSAC "github.com/stackrox/rox/central/imagecveedge/sac"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	nodeSAC "github.com/stackrox/rox/central/node/sac"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
@@ -162,15 +164,18 @@ func formatSearcher(graphProvider graph.Provider,
 	componentCVEEdgeIndexer blevesearch.UnsafeSearcher,
 	componentIndexer blevesearch.UnsafeSearcher,
 	imageComponentEdgeIndexer blevesearch.UnsafeSearcher,
+	imageCVEEdgeIndexer blevesearch.UnsafeSearcher,
 	imageIndexer blevesearch.UnsafeSearcher,
 	nodeComponentEdgeIndexer blevesearch.UnsafeSearcher,
 	nodeIndexer blevesearch.UnsafeSearcher,
 	deploymentIndexer blevesearch.UnsafeSearcher,
-	clusterIndexer blevesearch.UnsafeSearcher) search.Searcher {
+	clusterIndexer blevesearch.UnsafeSearcher,
+) search.Searcher {
 	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
 	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
 	imageComponentEdgeSearcher := filtered.UnsafeSearcher(imageComponentEdgeIndexer, imageComponentEdgeSAC.GetSACFilter())
+	imageCVEEdgeSearcher := filtered.UnsafeSearcher(imageCVEEdgeIndexer, imageCVEEdgeSAC.GetSACFilter())
 	imageSearcher := filtered.UnsafeSearcher(imageIndexer, imageSAC.GetSACFilter())
 	nodeComponentEdgeSearcher := filtered.UnsafeSearcher(nodeComponentEdgeIndexer, nodeComponentEdgeSAC.GetSACFilter())
 	nodeSearcher := filtered.UnsafeSearcher(nodeIndexer, nodeSAC.GetSACFilter())
@@ -182,13 +187,15 @@ func formatSearcher(graphProvider graph.Provider,
 		componentCVEEdgeSearcher,
 		componentSearcher,
 		imageComponentEdgeSearcher,
+		imageCVEEdgeSearcher,
 		imageSearcher,
 		nodeComponentEdgeSearcher,
 		nodeSearcher,
 		deploymentSearcher,
 		clusterSearcher)
-	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), componentSAC.GetSACFilter())
-	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
+	filteredSearcher := filtered.Searcher(edgefields.HandleCVEEdgeSearchQuery(compoundSearcher), componentSAC.GetSACFilter())
+	// To transform Image to Image Registry, Image Remote, and Image Tag.
+	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher, imageMappings.OptionsMap)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortSearcher)
 	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
@@ -200,6 +207,7 @@ func getCompoundComponentSearcher(
 	componentCVEEdgeSearcher search.Searcher,
 	componentSearcher search.Searcher,
 	imageComponentEdgeSearcher search.Searcher,
+	imageCVEEdgeSearcher search.Searcher,
 	imageSearcher search.Searcher,
 	nodeComponentEdgeSearcher search.Searcher,
 	nodeSearcher search.Searcher,
@@ -213,10 +221,16 @@ func getCompoundComponentSearcher(
 			Options:        cveMappings.OptionsMap,
 		},
 		{
+			Searcher:       scoped.WithScoping(imageCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_VULN_EDGE)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_VULN_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
+			Options:        imageCVEEdgeMappings.OptionsMap,
+			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_VULNERABILITIES][v1.SearchCategory_IMAGE_VULN_EDGE],
+		},
+		{
 			Searcher:       scoped.WithScoping(componentCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_COMPONENT_VULN_EDGE)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_COMPONENT_VULN_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
 			Options:        componentCVEEdgeMappings.OptionsMap,
-			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_VULNERABILITIES][v1.SearchCategory_COMPONENT_VULN_EDGE],
+			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_IMAGE_VULN_EDGE][v1.SearchCategory_COMPONENT_VULN_EDGE],
 		},
 		{
 			IsDefault:  true,

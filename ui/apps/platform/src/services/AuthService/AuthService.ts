@@ -10,9 +10,11 @@ import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
+import { authProviderLabels } from '../../constants/accessControl';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
+const availableProviderTypesUrl = '/v1/availableAuthProviders';
 const tokenRefreshUrl = '/sso/session/tokenrefresh';
 const logoutUrl = '/sso/session/logout';
 
@@ -37,7 +39,7 @@ export class AuthHttpError extends Error {
     isInvalidAuth = (): boolean => this.code === 401;
 }
 
-export type AuthProviderType = 'auth0' | 'oidc' | 'saml' | 'userpki' | 'iap';
+export type AuthProviderType = 'auth0' | 'oidc' | 'saml' | 'userpki' | 'iap' | 'openshift';
 
 export type AuthProviderConfig = Record<
     string,
@@ -67,12 +69,17 @@ export type AuthProvider = {
     defaultRole?: string;
 };
 
+export type AuthProviderInfo = {
+    label: string;
+    value: AuthProviderType;
+};
+
 /**
  * Fetch authentication providers.
  */
 export function fetchAuthProviders(): Promise<{ response: AuthProvider[] }> {
     return axios.get(`${authProvidersUrl}`).then((response) => ({
-        response: response.data.authProviders,
+        response: response?.data?.authProviders ?? [],
     }));
 }
 
@@ -88,7 +95,20 @@ export type AuthProviderLogin = {
  */
 export function fetchLoginAuthProviders(): Promise<{ response: AuthProviderLogin[] }> {
     return axios.get(`${authLoginProvidersUrl}`).then((response) => ({
-        response: response.data.authProviders,
+        response: response?.data?.authProviders ?? [],
+    }));
+}
+
+export function fetchAvailableProviderTypes(): Promise<{ response: AuthProviderInfo[] }> {
+    return axios.get(`${availableProviderTypesUrl}`).then((response) => ({
+        response:
+            response?.data?.authProviderTypes?.map(({ type, suggestedAttributes }) => {
+                return {
+                    value: type,
+                    ruleAttributes: suggestedAttributes,
+                    label: authProviderLabels[type],
+                };
+            }) ?? [],
     }));
 }
 

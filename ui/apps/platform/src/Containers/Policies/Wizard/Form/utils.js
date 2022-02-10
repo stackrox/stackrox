@@ -1,4 +1,4 @@
-import { keyBy } from 'lodash';
+import keyBy from 'lodash/keyBy';
 
 import { removeEmptyPolicyFields } from 'utils/policyUtils';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
@@ -77,6 +77,7 @@ const nonStandardNumberFields = [
     'Container CPU Limit',
     'Container Memory Request',
     'Container Memory Limit',
+    'Replicas',
     'Severity',
 ];
 

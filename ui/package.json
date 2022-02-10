@@ -28,7 +28,6 @@
         "prestart": "chalk italic yellowBright 'Why CI=true? See https://github.com/facebook/create-react-app/issues/8685'",
         "start": "CI=true lerna run start --parallel --stream",
         "start:coverage": "CI=true lerna run start:coverage --scope @stackrox/platform-app --stream",
-        "storybook": "yarn build:packages && lerna exec --scope @stackrox/ui-components -- yarn storybook",
         "lint": "yarn build:packages && lerna run lint --parallel --stream",
         "test": "yarn build:packages && CI=true TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test --parallel --no-bail --stream",
         "test-e2e": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e --parallel --no-bail --stream",
@@ -45,7 +44,7 @@
         "forward": "../scripts/port-forward-ui.sh"
     },
     "resolutions": {
-        "@typescript-eslint/parser": "^4.31.2"
+        "@typescript-eslint/parser": "^4.32.0"
     },
     "devDependencies": {
         "chalk-cli": "^4.1.0",

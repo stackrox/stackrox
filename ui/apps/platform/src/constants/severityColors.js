@@ -14,6 +14,14 @@ export const severityColorMapPF = {
     Critical: 'purple',
 };
 
+// color mapping of vulnerability severities for patternfly labels
+export const vulnerabilitySeverityColorMapPF = {
+    Low: 'gray',
+    Moderate: 'orange',
+    Important: 'red',
+    Critical: 'purple',
+};
+
 export const severityTextColorMap = {
     CRITICAL_SEVERITY: 'var(--alert-700)',
     HIGH_SEVERITY: 'var(--caution-700)',

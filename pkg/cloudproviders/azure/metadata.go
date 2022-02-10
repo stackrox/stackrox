@@ -3,7 +3,7 @@ package azure
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -53,7 +53,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 		return nil, nil
 	}
 
-	contents, err := ioutil.ReadAll(resp.Body)
+	contents, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading response body")
 	}

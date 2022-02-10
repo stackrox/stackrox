@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/image/sensor"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -28,15 +29,13 @@ func getSensorChartFile(filename string, data []byte) (*zip.File, bool) {
 }
 
 // RenderSensorTLSSecretsOnly renders just the TLS secrets from the sensor helm chart, concatenated into one YAML file.
-func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Certs) ([]byte, error) {
+func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) ([]byte, error) {
 	helmImage := image.GetDefaultImage()
-	metaVals := make(map[string]interface{}, len(values)+1)
-	for k, v := range values {
-		metaVals[k] = v
-	}
-	metaVals["CertsOnly"] = true
+	// Caution: changing `CertsOnly` on `values` shall not affect callers of this function.
+	// Currently, we rely on Go to copy the struct as it is passed by value, not by pointer.
+	values.CertsOnly = true
 
-	ch := helmImage.GetSensorChart(metaVals, certs)
+	ch := helmImage.GetSensorChart(&values, certs)
 
 	m, err := helmUtil.Render(ch, nil, helmUtil.Options{})
 	if err != nil {
@@ -63,7 +62,7 @@ func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Cer
 }
 
 // RenderSensor renders the sensorchart and returns rendered files
-func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmUtil.Options) ([]*zip.File, error) {
+func RenderSensor(values *charts.MetaValues, certs *sensor.Certs, opts helmUtil.Options) ([]*zip.File, error) {
 	helmImage := image.GetDefaultImage()
 	ch := helmImage.GetSensorChart(values, certs)
 

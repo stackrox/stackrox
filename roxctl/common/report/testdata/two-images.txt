@@ -1,6 +1,6 @@
 
 
-✗ Image nginx failed policy 'CI Test Policy Two' 
+✗ Image nginx failed policy 'CI Test Policy Two'
 - Description:
     ↳ CI policy two that is used for tests
 - Rationale:

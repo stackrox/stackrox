@@ -29,7 +29,7 @@ func CheckConnReplace(newID, oldID *storage.SensorDeploymentIdentification) erro
 	// Try to identify the cluster by the UID of the `kube-system` or `default` namespace. These namespaces should generally not be deletable,
 	// and hence may be used to distinguish cluster (even if it does not provide us with a means of identification suitable for human consumption).
 	if distinctAndNonempty(newID.GetSystemNamespaceId(), oldID.GetSystemNamespaceId()) || distinctAndNonempty(newID.GetDefaultNamespaceId(), oldID.GetDefaultNamespaceId()) {
-		return errors.New("new connection for cluster is coming from a different Kubernetes cluster; please take down the old deployment first")
+		return errors.Errorf("a sensor is already active from node with name: %s; please take down the old deployment first", oldID.GetK8SNodeName())
 	}
 
 	// Lastly, look at the UID of the `stackrox` namespace (or whatever namespace we deployed to) or the `stackrox` service account, respectively.

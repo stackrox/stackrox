@@ -56,6 +56,7 @@ function hotload_binary {
 
   binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux/${local_name}")
   kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
+  kubectl -n stackrox set env "deploy/$deployment" "ROX_HOTRELOAD=true"
 }
 
 function verify_orch {
@@ -77,6 +78,14 @@ function verify_orch {
     exit 1
 }
 
+function local_dev {
+      is_local_dev="false"
+      if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
+        is_local_dev="true"
+      fi
+      echo "${is_local_dev}"
+}
+
 function launch_central {
     local k8s_dir="$1"
     local common_dir="${k8s_dir}/../common"
@@ -89,9 +98,14 @@ function launch_central {
     local EXTRA_DOCKER_ARGS=()
     local STORAGE_ARGS=()
 
-	local use_docker=1
+    local use_docker=1
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
     	use_docker=0
+    fi
+
+    local DOCKER_PLATFORM_ARGS=()
+    if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+      DOCKER_PLATFORM_ARGS=("--platform linux/x86_64")
     fi
 
     add_args() {
@@ -113,12 +127,6 @@ function launch_central {
     	fi
     	EXTRA_ARGS+=("$(realpath "$1")")
     }
-
-    is_local_dev="false"
-    if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
-      is_local_dev="true"
-      echo "Running in local dev mode. Will patch resources down"
-    fi
 
     if [ -n "${OUTPUT_FORMAT}" ]; then
         add_args "--output-format=${OUTPUT_FORMAT}"
@@ -184,7 +192,7 @@ function launch_central {
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
-        docker run --rm "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
+        docker run --rm ${DOCKER_PLATFORM_ARGS[@]} "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
         	central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" "${STORAGE_ARGS[@]}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
@@ -201,7 +209,12 @@ function launch_central {
 
     # Do not default to running monitoring locally for resource reasons, which can be overridden
     # with MONITORING_SUPPORT=true, otherwise default it to true on all other systems
+    is_local_dev=$(local_dev)
+    needs_monitoring="false"
     if [[ "$MONITORING_SUPPORT" == "true" || ( "${is_local_dev}" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
+      needs_monitoring="true"
+    fi
+    if [[ "${needs_monitoring}" == "true" ]]; then
         echo "Deploying Monitoring..."
         helm_args=(
           -f "${COMMON_DIR}/monitoring-values.yaml"
@@ -322,12 +335,17 @@ function launch_central {
         # wait for LB
         echo "Waiting for LB to provision"
         LB_IP=""
-        until [ -n "${LB_IP}" ]; do
+        until [[ -n "${LB_IP}" ]]; do
             echo -n "."
             sleep 1
-            LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
+            if [[ "$LB_IP" == "null" ]]; then
+              unset LB_IP
+            fi
         done
         export API_ENDPOINT="${LB_IP}:443"
+        echo
+        echo "API_ENDPOINT set to [$API_ENDPOINT]"
     elif [[ "${LOAD_BALANCER}" == "route" ]]; then
         # wait for route
         echo "Waiting for route to provision"
@@ -342,13 +360,14 @@ function launch_central {
         $central_scripts_dir/port-forward.sh 8000
     fi
 
-    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+    if [[ "${needs_monitoring}" == "true" ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
 
     if [[ -n "$CI" ]]; then
-        echo "Sleep for 1 minute to allow for GKE stabilization"
-        sleep 60
+        # Needed for GKE and OpenShift clusters
+        echo "Sleep for 2 minutes to allow for stabilization"
+        sleep 120
     fi
 
     wait_for_central "${API_ENDPOINT}"
@@ -486,8 +505,7 @@ function launch_sensor {
            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
        fi
     fi
-
-    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+    if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
 

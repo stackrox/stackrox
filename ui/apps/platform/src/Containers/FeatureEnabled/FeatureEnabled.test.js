@@ -35,7 +35,7 @@ test('can render the children when the feature is enabled', () => {
             {({ featureEnabled }) => featureEnabled && <div>Feature Enabled</div>}
         </FeatureEnabled>
     );
-    expect(screen.queryByText('Feature Enabled')).toBeDefined();
+    expect(screen.getByText('Feature Enabled')).toBeDefined();
 });
 
 test("can't render the children when the feature is disabled", () => {

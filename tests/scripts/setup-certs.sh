@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+
+source "$TEST_ROOT/scripts/lib.sh"
+
 setup_certs() {
     target_dir="$1"
     cn="$2"
@@ -16,7 +20,7 @@ setup_certs() {
     [[ -d "$target_dir" ]] || mkdir "$target_dir"
     chmod 0700 "$target_dir"
 
-    cd "$target_dir"
+    pushd "$target_dir"
 
     # Extensions for intermediate CA
     intermediate_ca_exts='
@@ -51,6 +55,43 @@ keyUsage = critical, digitalSignature, cRLSign, keyCertSign
     cp leaf.key tls.key
 
     openssl pkcs12 -export -inkey tls.key -in tls.crt -out keystore.p12 -passout pass:
+
+    popd
+}
+
+setup_default_TLS_certs() {
+    info "Setting up default certs for tests"
+
+    local cert_dir
+    cert_dir="$(mktemp -d)"
+    setup_certs "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
+
+    export ROX_DEFAULT_TLS_CERT_FILE="${cert_dir}/tls.crt"
+    export ROX_DEFAULT_TLS_KEY_FILE="${cert_dir}/tls.key"
+    export DEFAULT_CA_FILE="${cert_dir}/ca.crt"
+    ROX_TEST_CA_PEM="$(cat "${cert_dir}/ca.crt")"
+    export ROX_TEST_CA_PEM="$ROX_TEST_CA_PEM"
+    export ROX_TEST_CENTRAL_CN="custom-tls-cert.central.stackrox.local"
+    export TRUSTSTORE_PATH="${cert_dir}/keystore.p12"
+
+    echo "Contents of ${cert_dir}:"
+    ls -al "${cert_dir}"
+}
+
+setup_client_TLS_certs() {
+    info "Setting up client certs for tests"
+
+    local cert_dir
+    cert_dir="$(mktemp -d)"
+    setup_certs "$cert_dir" "Client Certificate User" "Client CA"
+
+    export KEYSTORE_PATH="$cert_dir/keystore.p12"
+    export CLIENT_CA_PATH="$cert_dir/ca.crt"
+    export CLIENT_CERT_PATH="$cert_dir/tls.crt"
+    export CLIENT_KEY_PATH="$cert_dir/tls.key"
+
+    echo "Contents of ${cert_dir}:"
+    ls -al "${cert_dir}"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

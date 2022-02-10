@@ -8,25 +8,36 @@ issues:
 
   exclude-rules:
     - linters:
-        - golint
+        - revive
       text: "should have a package comment, unless it's in another file for this package"
     - linters:
-        - golint
+        - revive
       text: "should not use dot imports"
     - linters:
-        - golint
+        - revive
       text: "returns unexported type .* which can be annoying to use"
     - linters:
-        - golint
+        - revive
       text: "error strings should not be capitalized or end with punctuation or a newline"
+    - linters:
+        - revive
+      text: "should omit type int from declaration"
+    - linters:
+        - revive
+      text: "don't use leading k in Go names"
+
 
 linters-settings:
-  golint:
+  gosec:
+    includes:
+    - G601
+  revive:
     min-confidence: 0
   govet:
     enable-all: true
     disable:
       - shadow
+      - fieldalignment
     settings:
       printf: # analyzer name, run `go tool vet help` to see all analyzers
         funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
@@ -44,20 +55,8 @@ linters-settings:
           - github.com/stackrox/rox/migrator/log.WritetoStderr
           - github.com/stackrox/rox/migrator/log.WritetoStderrf     -
   gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
+    enabled-checks:
       - commentFormatting
-      - octalLiteral
-      - unnamedResult
-      - unnecessaryDefer
-      - importShadow
-      - emptyStringTest
   nolintlint:
     allow-leading-space: false # require machine-readable nolint directives (i.e. with no leading space)
     allow-unused: false # report any unused nolint directives
@@ -82,17 +81,17 @@ linters:
     # - gocognit
     # - goconst
     - exportloopref
-    # - gocritic TODO: add in follow-up
+    - gocritic
     # - gocyclo
     # - godot
     # - godox
     # - goerr113
     - gofmt
     - goimports
-    - golint
+    - revive # replaces golint
     # - gomnd
     # - goprintffuncname
-    # - gosec
+    - gosec
     - gosimple
     - govet
     - ineffassign

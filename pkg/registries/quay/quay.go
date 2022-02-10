@@ -1,7 +1,7 @@
 package quay
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -98,7 +98,7 @@ func (q *Quay) Test() error {
 
 	defer utils.IgnoreError(resp.Body.Close)
 	if !httputil.Is2xxOr3xxStatusCode(resp.StatusCode) {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Errorf("error reaching quay.io with HTTP code %d", resp.StatusCode)
 		}

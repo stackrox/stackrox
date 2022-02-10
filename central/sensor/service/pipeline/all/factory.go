@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorprofiles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorresults"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorrules"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscans"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscansettingbinding"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations"
@@ -67,6 +68,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 			complianceoperatorprofiles.GetPipeline(),
 			complianceoperatorscansettingbinding.GetPipeline(),
 			complianceoperatorrules.GetPipeline(),
+			complianceoperatorscans.GetPipeline(),
 		)
 	}
 

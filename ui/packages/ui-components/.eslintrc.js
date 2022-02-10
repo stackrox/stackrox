@@ -18,8 +18,6 @@ const commonJavaScriptRules = {
             devDependencies: [
                 path.join(__dirname, '**/*.test.ts'),
                 path.join(__dirname, '**/*.test.tsx'),
-                path.join(__dirname, '**/*.stories.tsx'),
-                path.join(__dirname, '.storybook/**/*'),
                 path.join(__dirname, '.prettierrc.js'),
                 path.join(__dirname, '.postcssrc.js'),
                 path.join(__dirname, 'tailwind.config.js'),
@@ -133,25 +131,6 @@ module.exports = {
                 ...commonTypeScriptReactRules,
 
                 'jest/no-focused-tests': 'error',
-            },
-        },
-        {
-            files: ['*.stories.tsx'],
-            env: {
-                browser: true,
-            },
-            extends: [...commonTypeScriptReactExtensions],
-            rules: {
-                ...commonJavaScriptRules,
-                ...commonTypeScriptReactRules,
-
-                // Do not require type checking for story components.
-                'react/prop-types': [
-                    'error',
-                    {
-                        skipUndeclared: true,
-                    },
-                ],
             },
         },
     ],

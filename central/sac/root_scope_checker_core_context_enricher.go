@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	sacClient "github.com/stackrox/rox/pkg/sac/client"
@@ -52,35 +51,34 @@ func newEnricher() *Enricher {
 }
 
 // getRootScopeCheckerCore adds a scope checker to the context for later use in
-// scope checking. There are five possibilities currently:
-//   1. Scoped access control is disabled => nothing to add.
-//   2. User identity maps to a special case: (a) deny all or (b) allow all =>
+// scope checking. There are four possibilities currently:
+//   1. User identity maps to a special case: (a) deny all or (b) allow all =>
 //      add the corresponding trivial scope checker.
-//   3. Built-in scoped authorizer must be used => use the scope checker
+//   2. Built-in scoped authorizer must be used => use the scope checker
 //      constructed from resolved roles associated with the identity.
-//   4. Auth plugin is detected => use the scope checker created around the
+//   3. Auth plugin is detected => use the scope checker created around the
 //      auth plugin client in use at the time of request.
-//   5. Unrecoverable error => nil context.
+//   4. Unrecoverable error => nil context.
 func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Context, observe.ScopeCheckerCoreType, error) {
 	client := se.clientManager.GetClient()
-	if client == nil && !features.ScopedAccessControl.Enabled() {
-		// 1. Scoped access control is disabled.
-		return ctx, observe.ScopeCheckerNone, nil
-	}
 	ctx = sac.SetContextSACEnabled(ctx)
 
 	// Check the id of the context and decide scope checker to use.
-	id := authn.IdentityFromContext(ctx)
+	id := authn.IdentityFromContextOrNil(ctx)
 	if id == nil {
-		// 2a. User identity not found => deny all.
+		// 1a. User identity not found => deny all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil
 	}
 	if id.Service() != nil || userpass.IsLocalAdmin(id) {
-		// 2b. Admin => allow all.
+		// 1b. Admin => allow all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), observe.ScopeCheckerAllowAdminAndService, nil
 	}
-	if client == nil && features.ScopedAccessControl.Enabled() {
-		// 3. Built-in scoped authorizer must be used.
+	if len(id.Roles()) == 0 {
+		// 1c. User has no valid role => deny all.
+		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil
+	}
+	if client == nil {
+		// 2. Built-in scoped authorizer must be used.
 		ctx = sac.SetContextBuiltinScopedAuthzEnabled(ctx)
 		scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, id.Roles())
 		if err != nil {
@@ -95,7 +93,7 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 		return nil, observe.ScopeCheckerNone, err
 	}
 
-	// 4. If we have a scope checker cached for the user, use that,
+	// 3. If we have a scope checker cached for the user, use that,
 	// otherwise generate a new one and add it to the cache.
 	cacheForClient := se.cacheForClient(client)
 	rsc, _ := cacheForClient.Get(idCacheKey).(sac.ScopeCheckerCore)

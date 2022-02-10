@@ -3,43 +3,41 @@ import cloneDeep from 'lodash/cloneDeep';
 import { selectors, clustersUrl } from '../constants/ClustersPage';
 import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { visitClusters, visitClustersFromLeftNav } from '../helpers/clusters';
 
 describe('Clusters page', () => {
     withAuth();
 
     describe('smoke tests', () => {
-        beforeEach(() => {
-            cy.visit('/');
-            cy.get(selectors.configure).click();
-            cy.get(selectors.navLink).click({ force: true });
-        });
-
         it('should be linked in the Platform Configuration menu', () => {
+            visitClustersFromLeftNav();
             cy.get(selectors.header).contains('Clusters');
         });
 
         it('should have a toggle control for the auto-upgrade setting', () => {
+            visitClusters();
+
             cy.get(selectors.autoUpgradeInput);
         });
 
         it('should display all the columns expected in clusters list page', () => {
-            cy.visit(clustersUrl);
+            visitClusters();
 
-            const expectedHeadings = [
+            [
                 'Name',
                 'Cloud Provider',
                 'Cluster Status',
                 'Sensor Upgrade',
                 'Credential Expiration',
-            ];
-
-            cy.get(selectors.clusters.tableHeadingCell).should(($ths) => {
-                let n = 0;
-                expectedHeadings.forEach((expectedHeading) => {
-                    expect($ths.eq(n).text()).to.equal(expectedHeading);
-                    n += 1;
-                });
-                expect($ths.length).to.equal(n);
+            ].forEach((heading, index) => {
+                /*
+                 * Important: nth is pseudo selector for zero-based index of matching cells.
+                 * Do not use the one-based nth-child selector,
+                 * because tableHeadingCell does not match cells which have first-child and hidden class.
+                 */
+                cy.get(
+                    `${selectors.clusters.tableHeadingCell}:nth(${index}):contains("${heading}")`
+                );
             });
         });
     });
@@ -187,7 +185,8 @@ describe.skip('Cluster Certificate Expiration', () => {
     });
 });
 
-describe('Cluster Creation Flow', () => {
+// TODO: re-enable and update these tests when we migrate Clusters section to PatternFly
+describe.skip('Cluster Creation Flow', () => {
     withAuth();
 
     beforeEach(() => {
@@ -221,7 +220,7 @@ describe('Cluster Creation Flow', () => {
         cy.wait('@clusters');
     });
 
-    xit('Should show a confirmation dialog when trying to delete clusters', () => {
+    it('Should show a confirmation dialog when trying to delete clusters', () => {
         cy.get(selectors.dialog).should('not.exist');
         cy.get(selectors.checkboxes).check();
         cy.get(selectors.buttons.delete).click({ force: true });
@@ -229,7 +228,7 @@ describe('Cluster Creation Flow', () => {
         cy.get(selectors.buttons.cancelDelete).click({ force: true });
     });
 
-    xit('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
+    it('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
         cy.get(selectors.buttons.new).click();
 
         const clusterName = 'Kubernetes Cluster TestInstance';
@@ -278,10 +277,10 @@ describe('Cluster Creation Flow', () => {
     });
 });
 
-describe('Cluster with Helm management', () => {
+describe('Cluster management', () => {
     withAuth();
 
-    it('should indicate which clusters are managed by Helm', () => {
+    it('should indicate which clusters are managed by Helm and the Operator', () => {
         cy.intercept('GET', clustersApi.list, {
             fixture: 'clusters/health.json',
         }).as('getClusters');
@@ -291,12 +290,88 @@ describe('Cluster with Helm management', () => {
             },
         }).as('getIsKernelSupportAvailable');
 
+        const currentDatetime = new Date('2020-08-31T13:01:00Z');
+        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+
         cy.visit(clustersUrl);
         cy.wait('@getClusters');
 
         const helmIndicator = '[data-testid="cluster-name"] img[alt="Managed by Helm"]';
+        const k8sOperatorIndicator =
+            '[data-testid="cluster-name"] img[alt="Managed by a Kubernetes Operator"]';
+        const anyIndicator = '[data-testid="cluster-name"] img';
         cy.get(`${selectors.clusters.tableRowGroup}:eq(0) ${helmIndicator}`).should('exist');
-        cy.get(`${selectors.clusters.tableRowGroup}:eq(1) ${helmIndicator}`).should('not.exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(1) ${anyIndicator}`).should('not.exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(2) ${k8sOperatorIndicator}`).should('exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(3) ${helmIndicator}`).should('exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(4) ${anyIndicator}`).should('not.exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(5) ${anyIndicator}`).should('not.exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(6) ${anyIndicator}`).should('not.exist');
+    });
+});
+
+describe('Cluster configuration', () => {
+    withAuth();
+
+    let clusters;
+
+    before(() => {
+        cy.fixture('clusters/health.json').then((response) => {
+            clusters = response.clusters;
+        });
+    });
+
+    beforeEach(() => {
+        cy.intercept('GET', clustersApi.list, {
+            body: { clusters },
+        }).as('GetClusters');
+        cy.visit(clustersUrl);
+        cy.wait(['@GetClusters']);
+    });
+
+    const getCluster = (clusterName) => {
+        const n = clusters.findIndex((cluster) => cluster.name === clusterName);
+        const cluster = clusters[n];
+        cy.intercept('GET', clustersApi.single, {
+            body: { cluster },
+        }).as('GetCluster');
+        cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
+        cy.wait('@GetCluster');
+    };
+
+    const assertConfigurationReadOnly = () => {
+        const form = cy.get('[data-testid="cluster-form"]').children();
+        [
+            'name',
+            'mainImage',
+            'centralApiEndpoint',
+            'collectorImage',
+            'admissionControllerEvents',
+            'admissionController',
+            'admissionControllerUpdates',
+            'tolerationsConfig.disabled',
+            'slimCollector',
+            'dynamicConfig.registryOverride',
+            'dynamicConfig.admissionControllerConfig.enabled',
+            'dynamicConfig.admissionControllerConfig.enforceOnUpdates',
+            'dynamicConfig.admissionControllerConfig.timeoutSeconds',
+            'dynamicConfig.admissionControllerConfig.scanInline',
+            'dynamicConfig.admissionControllerConfig.disableBypass',
+            'dynamicConfig.disableAuditLogs',
+        ].forEach((id) => form.get(`input[id="${id}"]`).should('be.disabled'));
+        ['Select a cluster type', 'Select a runtime option'].forEach((label) =>
+            form.get(`select[aria-label="${label}"]`).should('be.disabled')
+        );
+    };
+
+    it('should be read-only for Helm-based installations', () => {
+        getCluster('alpha-amsterdam-1');
+        assertConfigurationReadOnly();
+    });
+
+    it('should be read-only for unknown manager installations that have a defined Helm config', () => {
+        getCluster('kappa-kilogramme-10');
+        assertConfigurationReadOnly();
     });
 });
 

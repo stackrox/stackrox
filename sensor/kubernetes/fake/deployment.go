@@ -439,10 +439,12 @@ func getShortContainerID(id string) string {
 }
 
 func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod) {
-	if podWorkload.ProcessWorkload.ProcessInterval == 0 {
+	processWorkload := podWorkload.ProcessWorkload
+
+	if processWorkload.ProcessInterval == 0 {
 		return
 	}
-	ticker := time.NewTicker(podWorkload.ProcessWorkload.ProcessInterval)
+	ticker := time.NewTicker(processWorkload.ProcessInterval)
 	defer ticker.Stop()
 
 	// Precompute these as multiple calls to getShortContainerID is expensive
@@ -457,12 +459,19 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 				continue
 			}
 
-			// If less than the rate, then it's a bad process
 			containerID := containerIDs[rand.Intn(len(containerIDs))]
-			if rand.Float32() < podWorkload.ProcessWorkload.AlertRate {
-				w.processes.Process(getBadProcess(containerID))
+
+			if processWorkload.ActiveProcesses {
+				for _, process := range getActiveProcesses(containerID) {
+					w.processes.Process(process)
+				}
 			} else {
-				w.processes.Process(getGoodProcess(containerID))
+				// If less than the rate, then it's a bad process
+				if rand.Float32() < processWorkload.AlertRate {
+					w.processes.Process(getBadProcess(containerID))
+				} else {
+					w.processes.Process(getGoodProcess(containerID))
+				}
 			}
 		case <-podSig.Done():
 			return

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -14,12 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 type instantiator struct {
-	ctx *upgradectx.UpgradeContext
+	ctx upgradeContext
 }
 
 func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sutil.Object, error) {
@@ -78,19 +76,6 @@ func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]k8sutil.Object, error
 	return result, nil
 }
 
-func (i *instantiator) readObjectFromYAMLReader(r *yaml.YAMLReader) (k8sutil.Object, error) {
-	doc, err := r.Read()
-	if err != nil {
-		return nil, err
-	}
-
-	obj, err := i.ctx.ParseAndValidateObject(doc)
-	if err != nil {
-		return nil, errors.Wrapf(err, "decoding document %s", string(doc))
-	}
-	return obj, nil
-}
-
 func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error)) ([]k8sutil.Object, error) {
 	reader, err := openFn()
 	if err != nil {
@@ -98,7 +83,7 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	}
 	defer utils.IgnoreError(reader.Close)
 
-	contents, err := ioutil.ReadAll(reader)
+	contents, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -106,9 +91,21 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	var objects []k8sutil.Object
 
 	yamlReader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBuffer(contents)))
-	for {
+	yamlDoc, err := yamlReader.Read()
+	for ; err == nil; yamlDoc, err = yamlReader.Read() {
+		// First, test if the document is empty. We cannot simply trim spaces and check for an empty slice,
+		// as it could contain comments.
+		var rawObj interface{}
+		if err := yaml.Unmarshal(yamlDoc, &rawObj); err != nil {
+			return nil, errors.Wrap(err, "invalid YAML in multi-document file")
+		}
+		if rawObj == nil {
+			continue
+		}
+
+		// Then, decode it as a Kubernetes object.
 		var obj k8sutil.Object
-		obj, err = i.readObjectFromYAMLReader(yamlReader)
+		obj, err = i.ctx.ParseAndValidateObject(yamlDoc)
 		if err != nil {
 			break
 		}
@@ -124,7 +121,8 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 
 func validateMetadata(objs []k8sutil.Object) error {
 	errs := errorhelpers.NewErrorList("object metadata validation failed")
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		if labelVal := obj.GetLabels()[common.UpgradeResourceLabelKey]; labelVal != common.UpgradeResourceLabelValue {
 			errs.AddStringf("upgrade label %s of object %s has invalid value %q, expected: %q", common.UpgradeResourceLabelKey, k8sobjects.RefOf(obj), labelVal, common.UpgradeResourceLabelValue)
 		}

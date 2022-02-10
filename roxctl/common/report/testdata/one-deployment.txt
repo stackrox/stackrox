@@ -1,6 +1,6 @@
 
 
-✗ Deployment deployment1 failed policy 'CI Test Policy One' 
+✗ Deployment deployment1 failed policy 'CI Test Policy One'
 - Description:
     ↳ CI policy one that is used for tests
 - Rationale:

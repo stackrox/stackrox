@@ -136,21 +136,18 @@ describe('Image Integrations Test', () => {
 
         // Step 1, check empty fields
         getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Registry id').type(' ');
-        getInputByLabel('Endpoint').type(' ');
+        getInputByLabel('Registry ID').type(' ');
         getInputByLabel('Region').type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
-        getHelperElementByLabel('Registry id').contains('A registry id is required');
-        getHelperElementByLabel('Endpoint').contains('An endpoint is required');
+        getHelperElementByLabel('Registry ID').contains('A registry ID is required');
         getHelperElementByLabel('Region').contains('An AWS region is required');
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // Step 2, check valid from and save
+        // Step 2, check valid form and save
         getInputByLabel('Integration name').clear().type(generateNameWithDate('ECR Test'));
-        getInputByLabel('Registry id').clear().type('12345');
-        getInputByLabel('Endpoint').clear().type('test.endpoint');
+        getInputByLabel('Registry ID').clear().type('12345');
         getInputByLabel('Region').clear().type('us-west-1');
 
         cy.get(selectors.buttons.test).should('be.enabled');
@@ -499,12 +496,10 @@ describe('Image Integrations Test', () => {
 
         // Step 1, check empty fields
         getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Endpoint').type(' ');
-        getInputByLabel('Password').type(' ').blur();
+        getInputByLabel('Endpoint').type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('Password').contains('A password is required');
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 

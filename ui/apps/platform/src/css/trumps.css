@@ -70,6 +70,7 @@ body {
 }
 
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
+.pf-c-tree-view__node-title .pf-c-button__icon.pf-m-end svg,
 .pf-c-button__icon.pf-m-start svg,
 .pf-c-empty-state__content svg,
 .pf-c-table__toggle-icon svg,
@@ -81,6 +82,15 @@ body {
 /* overriding vertical align property for table sort icon */
 .pf-c-table__sort-indicator {
     align-self: center;
+}
+
+/* Override filter which simulates dark background color */
+.theme-dark .pf-c-table input[type='checkbox'] {
+    filter: inherit; /* replace invert(0.3) */
+}
+
+button.pf-c-tree-view__node {
+    font-weight: inherit; /* override 600 from ui-components */
 }
 
 /* Global Search modal */

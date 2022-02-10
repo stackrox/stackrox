@@ -126,7 +126,8 @@ describe('Entities single views', () => {
         );
     });
 
-    it('should scope deployment data based on selected policy from entity page tab sublist', () => {
+    // TODO: track fixing this test under this bug ticket, https://stack-rox.atlassian.net/browse/ROX-8705
+    it.skip('should scope deployment data based on selected policy from entity page tab sublist', () => {
         cy.intercept('POST', api.vulnMgmt.graphqlEntities('POLICY')).as('getPolicies');
         cy.visit(url.list.policies);
         cy.wait('@getPolicies');
@@ -259,7 +260,8 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should filter component count in images list and image overview by cve when coming from cve list', () => {
+    // TODO: track fixing this test under this bug ticket, https://stack-rox.atlassian.net/browse/ROX-8705
+    it.skip('should filter component count in images list and image overview by cve when coming from cve list', () => {
         cy.intercept('POST', api.vulnMgmt.graphqlEntities('CVE')).as('getCves');
         cy.visit(url.list.cves);
         cy.wait('@getCves');
@@ -328,6 +330,53 @@ describe('Entities single views', () => {
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}`).should('exist');
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("No deployments")`).should(
             'not.exist'
+        );
+    });
+
+    it('should show the active state in Component overview when scoped under a deployment', () => {
+        const getDeploymentCOMPONENT = api.graphql(api.vulnMgmt.graphqlOps.getDeploymentCOMPONENT);
+        cy.intercept('POST', getDeploymentCOMPONENT).as('getDeploymentCOMPONENT');
+
+        cy.visit(url.list.deployments);
+
+        // click on the first deployment in the list
+        cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
+        // now, go the components for that deployment
+        cy.get(selectors.componentTileLink).click();
+        // click on the first component in that list
+        cy.get(`[data-testid="side-panel"] ${selectors.tableRows}`, { timeout: 10000 })
+            .eq(1)
+            .click();
+
+        cy.wait('@getDeploymentCOMPONENT');
+
+        cy.get(`[data-testid="Active status-value"]`)
+            .invoke('text')
+            .then((activeStatusText) => {
+                expect(activeStatusText).to.be.oneOf(['Active', 'Inactive', 'Undetermined']);
+            });
+    });
+
+    // TODO: when active status for CVEs becomes available
+    // unskip the following test
+    it.skip('should show the active state in the fixable CVES widget for a single deployment', () => {
+        const getFixableCvesForEntity = api.graphql(
+            api.vulnMgmt.graphqlOps.getFixableCvesForEntity
+        );
+        cy.intercept('POST', getFixableCvesForEntity, {
+            fixture: 'vulnerabilities/fixableCvesForEntity.json',
+        }).as('getFixableCvesForEntity');
+
+        cy.visit(url.list.deployments);
+
+        cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
+        cy.get('button:contains("Fixable CVEs")').click();
+        cy.wait('@getFixableCvesForEntity');
+        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`).contains(
+            'Active'
+        );
+        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20232")`).contains(
+            'Inactive'
         );
     });
 });

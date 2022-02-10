@@ -1,29 +1,39 @@
 # This file contains the default image (registry + name + tag) settings) for all StackRox Secured Cluster
 # Services.
 
+# Initialize default meta values
 image:
-  registry: [< required "Main registry must be explicitly specified" .MainRegistry >]
+  registry: [< required "" .MainRegistry >]
   main:
-    name: [< default "main" .ImageRemote >]
+    name: [< required "" .ImageRemote >]
     pullPolicy: IfNotPresent
   collector:
-    name: [< default "collector" .CollectorImageRemote >]
+    name: [< required "" .CollectorFullImageRemote >]
+    slimName: [< required "" .CollectorSlimImageRemote >]
 ---
+# Add registry defaults
 image:
   main:
     registry: {{ ._rox.image.registry }}
   collector:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
 ---
+# Default to collector slim mode. If configured registry equals the default we can assume the cluster has internet connectivity.
+collector:
+  slimMode: {{ eq ._rox.image.collector.registry "[< required "" .CollectorRegistry >]" }}
+---
+# Configure repository (registry + name)
 image:
   main:
     repository: {{ list ._rox.image.main.registry ._rox.image.main.name | compact | join "/" }}
   collector:
+    {{- if ._rox.collector.slimMode }}
+    repository: {{ list ._rox.image.collector.registry ._rox.image.collector.slimName | compact | join "/" }}
+    {{- else }}
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
+    {{- end }}
 ---
-collector:
-  slimMode: {{ eq ._rox.image.collector.registry "[< .CollectorRegistry >]" }}
----
+# Configure collector slim image full ref
 image:
   collector:
     {{- if and ._rox.collector.slimMode ._rox.image.collector.slim.fullRef }}
@@ -32,6 +42,7 @@ image:
     fullRef: {{ ._rox.image.collector.full.fullRef }}
     {{- end }}
 ---
+# Apply fullRef and configurations to images
 image:
   main:
     {{- if or ._rox.image.main.tag ._rox.image.main.fullRef }}
@@ -50,16 +61,18 @@ image:
     _abbrevImageRef: {{ ._rox.image.collector.repository }}
     {{- end }}
 ---
+# Configure tags and pull policies
 image:
   collector:
     {{- if ._rox.collector.slimMode }}
-    tag: "[< .Versions.CollectorVersion >]-slim"
+    tag: "[< required "" .CollectorSlimImageTag >]"
     pullPolicy: IfNotPresent
     {{- else }}
-    tag: "[< .Versions.CollectorVersion >]-latest"
+    tag: "[< required "" .CollectorFullImageTag >]"
     pullPolicy: Always
     {{- end }}
 ---
+# Add fullRef references to images
 image:
   main:
     fullRef: {{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}

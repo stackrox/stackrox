@@ -40,6 +40,7 @@ export const imageSortFields = {
  *   Component, CVE Count, Top CVSS, Deployments, Images, Priority
  */
 export const componentSortFields = {
+    ACTIVE: 'Active',
     COMPONENT: 'Component',
     CVE_COUNT: 'CVE Count',
     TOP_CVSS: 'Component Top CVSS',
@@ -60,6 +61,7 @@ export const componentSortFields = {
  *   CVE, CVSS Score, Fixable, Env. Impact, Impact Score, Deployments, Images, Components, Scanned, Published
  */
 export const cveSortFields = {
+    ACTIVE: 'Active',
     CVE: 'CVE',
     CVE_TYPE: 'CVE Type',
     CVSS_SCORE: 'CVSS',

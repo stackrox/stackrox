@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -90,7 +91,7 @@ func (p *providerImpl) StorageView() *storage.AuthProvider {
 	if p.backendFactory != nil {
 		result.Config = p.backendFactory.RedactConfig(result.Config)
 	} else {
-		result.Config = map[string]string{}
+		result.Config = nil
 	}
 	return &result
 }
@@ -112,6 +113,13 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 
 	if backend != nil && err == nil {
 		return backend, nil
+	}
+
+	// Backend factories are not guaranteed to survive product upgrades or restarts.
+	if p.backendFactory == nil {
+		return nil, errorhelpers.NewErrInvariantViolation(
+			"the backend for this authentication provider cannot be instantiated;" +
+				" this is probably because of a recent upgrade or a configuration change")
 	}
 
 	var doneErrSig concurrency.ReadOnlyErrorSignal

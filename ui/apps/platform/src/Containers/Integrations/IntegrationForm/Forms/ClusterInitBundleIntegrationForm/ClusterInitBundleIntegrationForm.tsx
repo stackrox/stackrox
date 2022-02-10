@@ -27,8 +27,17 @@ export type ClusterInitBundleIntegrationFormProps = {
     isEditable?: boolean;
 };
 
+const validBundleNameRegex = /^[A-Za-z0-9._-]+$/;
+
 export const validationSchema = yup.object().shape({
-    name: yup.string().trim().required('A cluster init bundle name is required'),
+    name: yup
+        .string()
+        .trim()
+        .required('A cluster init bundle name is required')
+        .matches(
+            validBundleNameRegex,
+            'Name must contain only alphanumeric, ., _, or - (no spaces).'
+        ),
 });
 
 export const defaultValues: ClusterInitBundleIntegrationFormValues = {
@@ -58,7 +67,7 @@ function ClusterInitBundleIntegrationForm({
         validationSchema,
     });
     const { isEditing, isViewingDetails } = usePageState();
-    const isGenerated = Boolean(message?.responseData);
+    const isGenerated = Boolean((message as ClusterInitBundleFormResponseMessage)?.responseData);
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
@@ -77,13 +86,9 @@ function ClusterInitBundleIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && (
-                    <div className="pf-u-pb-md">
-                        <ClusterInitBundleFormMessageAlert
-                            message={message as ClusterInitBundleFormResponseMessage}
-                        />
-                    </div>
-                )}
+                <div id="form-message-alert" className="pf-u-pb-md">
+                    {message && <ClusterInitBundleFormMessageAlert message={message} />}
+                </div>
                 {isViewingDetails && initialValues ? (
                     <ClusterInitBundleDetails meta={initialValues} />
                 ) : (
@@ -126,7 +131,7 @@ function ClusterInitBundleIntegrationForm({
                 ) : (
                     <IntegrationFormActions>
                         <FormCancelButton onCancel={onCancel} isDisabled={isSubmitting}>
-                            Close
+                            Back
                         </FormCancelButton>
                     </IntegrationFormActions>
                 ))}

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"text/template"
 
@@ -106,7 +105,7 @@ func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	{{- if .UniqKeyFunc}}
 	return &storeImpl{
-		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, allocCluster, uniqKeyFunc, {{.TrackIndex}}),
+		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}}),
 	}
 	{{- else}}
 	return &storeImpl{
@@ -290,7 +289,7 @@ func main() {
 		if err := t.Execute(buf, templateMap); err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile("store.go", buf.Bytes(), 0644); err != nil {
+		if err := os.WriteFile("store.go", buf.Bytes(), 0644); err != nil {
 			return err
 		}
 		return nil

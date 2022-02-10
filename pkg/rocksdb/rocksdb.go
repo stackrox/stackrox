@@ -3,7 +3,6 @@ package rocksdb
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -73,7 +72,7 @@ func (r *RocksDB) Close() {
 
 // NewTemp creates a new DB, but places it in the host temporary directory.
 func NewTemp(name string) (*RocksDB, error) {
-	tmpDir, err := ioutil.TempDir("", fmt.Sprintf("rocksdb-%s", strings.Replace(name, "/", "_", -1)))
+	tmpDir, err := os.MkdirTemp("", fmt.Sprintf("rocksdb-%s", strings.Replace(name, "/", "_", -1)))
 	if err != nil {
 		return nil, err
 	}

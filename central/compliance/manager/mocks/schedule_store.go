@@ -5,35 +5,50 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockScheduleStore is a mock of ScheduleStore interface
+// MockScheduleStore is a mock of ScheduleStore interface.
 type MockScheduleStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockScheduleStoreMockRecorder
 }
 
-// MockScheduleStoreMockRecorder is the mock recorder for MockScheduleStore
+// MockScheduleStoreMockRecorder is the mock recorder for MockScheduleStore.
 type MockScheduleStoreMockRecorder struct {
 	mock *MockScheduleStore
 }
 
-// NewMockScheduleStore creates a new mock instance
+// NewMockScheduleStore creates a new mock instance.
 func NewMockScheduleStore(ctrl *gomock.Controller) *MockScheduleStore {
 	mock := &MockScheduleStore{ctrl: ctrl}
 	mock.recorder = &MockScheduleStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockScheduleStore) EXPECT() *MockScheduleStoreMockRecorder {
 	return m.recorder
 }
 
-// ListSchedules mocks base method
+// DeleteSchedule mocks base method.
+func (m *MockScheduleStore) DeleteSchedule(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSchedule", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSchedule indicates an expected call of DeleteSchedule.
+func (mr *MockScheduleStoreMockRecorder) DeleteSchedule(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSchedule", reflect.TypeOf((*MockScheduleStore)(nil).DeleteSchedule), id)
+}
+
+// ListSchedules mocks base method.
 func (m *MockScheduleStore) ListSchedules() ([]*storage.ComplianceRunSchedule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListSchedules")
@@ -42,13 +57,13 @@ func (m *MockScheduleStore) ListSchedules() ([]*storage.ComplianceRunSchedule, e
 	return ret0, ret1
 }
 
-// ListSchedules indicates an expected call of ListSchedules
+// ListSchedules indicates an expected call of ListSchedules.
 func (mr *MockScheduleStoreMockRecorder) ListSchedules() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSchedules", reflect.TypeOf((*MockScheduleStore)(nil).ListSchedules))
 }
 
-// UpsertSchedule mocks base method
+// UpsertSchedule mocks base method.
 func (m *MockScheduleStore) UpsertSchedule(schedule *storage.ComplianceRunSchedule) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertSchedule", schedule)
@@ -56,22 +71,8 @@ func (m *MockScheduleStore) UpsertSchedule(schedule *storage.ComplianceRunSchedu
 	return ret0
 }
 
-// UpsertSchedule indicates an expected call of UpsertSchedule
+// UpsertSchedule indicates an expected call of UpsertSchedule.
 func (mr *MockScheduleStoreMockRecorder) UpsertSchedule(schedule interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertSchedule", reflect.TypeOf((*MockScheduleStore)(nil).UpsertSchedule), schedule)
-}
-
-// DeleteSchedule mocks base method
-func (m *MockScheduleStore) DeleteSchedule(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteSchedule", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteSchedule indicates an expected call of DeleteSchedule
-func (mr *MockScheduleStoreMockRecorder) DeleteSchedule(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSchedule", reflect.TypeOf((*MockScheduleStore)(nil).DeleteSchedule), id)
 }

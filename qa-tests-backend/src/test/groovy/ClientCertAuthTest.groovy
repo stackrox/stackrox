@@ -38,7 +38,7 @@ class ClientCertAuthTest extends BaseSpecification {
             providerIDs[i] = AuthProviderService.createAuthProvider(
                     "Test Client CA Auth ${i}", "userpki", ["keys": cert])
             println "Client cert auth provider ID is ${providerIDs[i]}"
-            GroupService.addDefaultMapping(providerIDs[i], "None")
+            GroupService.addDefaultMapping(providerIDs[i], "Continuous Integration")
             certTokens[i] = AuthProviderService.getAuthProviderLoginToken(providerIDs[i])
             println "Certificate token is ${certTokens[i]}"
         }

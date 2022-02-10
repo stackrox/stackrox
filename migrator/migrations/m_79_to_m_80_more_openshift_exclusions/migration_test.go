@@ -21,5 +21,5 @@ type policyUpdatesTestSuite struct {
 
 // Test that all unmodified policies are migrated
 func (suite *policyUpdatesTestSuite) TestMigration() {
-	suite.RunTests(updatePolicies)
+	suite.RunTests(updatePolicies, true)
 }

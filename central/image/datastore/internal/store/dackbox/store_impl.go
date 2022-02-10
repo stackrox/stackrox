@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
@@ -143,13 +144,13 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 func (b *storeImpl) GetImageMetadata(id string) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
-	branch, err := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
 	}
-	defer branch.Discard()
+	defer txn.Discard()
 
-	image, err = b.readImageMetadata(branch, id)
+	image, err = b.readImageMetadata(txn, id)
 	if err != nil {
 		return nil, false, err
 	}
@@ -311,7 +312,8 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 	// Note: In such cases, the loops in following block will not be entered anyways since len(parts.children) and len(parts.imageCVEEdges) is 0.
 	// This is more for good readability amidst the complex code.
 	if scanUpdated {
-		for _, componentData := range parts.children {
+		for i := range parts.children {
+			componentData := parts.children[i]
 			componentKey, err := b.writeComponentParts(dackTxn, &componentData, iTime)
 			if err != nil {
 				return err
@@ -333,7 +335,16 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 
 	// Update the image links in the graph iff the image upsert has updated scan.
 	if scanUpdated {
-		dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), componentKeys)
+		if features.VulnRiskManagement.Enabled() {
+			childKeys := make([][]byte, 0, len(parts.imageCVEEdges))
+			for cve := range parts.imageCVEEdges {
+				childKeys = append(childKeys, cveDackBox.BucketHandler.GetKey(cve))
+			}
+			childKeys = append(childKeys, componentKeys...)
+			dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), childKeys)
+		} else {
+			dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), componentKeys)
+		}
 	}
 	return dackTxn.Commit()
 }
@@ -359,7 +370,8 @@ func (b *storeImpl) writeImageCVEEdges(txn *dackbox.Transaction, edges map[strin
 
 func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
 	var cveKeys [][]byte
-	for _, cveData := range parts.children {
+	for i := range parts.children {
+		cveData := parts.children[i]
 		cveKey, err := b.writeCVEParts(txn, &cveData, iTime)
 		if err != nil {
 			return nil, err

@@ -2,7 +2,6 @@ package generic
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -49,7 +48,7 @@ type CRUDTestSuite struct {
 }
 
 func (s *CRUDTestSuite) SetupTest() {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	s.NoError(err)
 
 	s.dir = dir
@@ -285,7 +284,7 @@ type CRUDTestSuiteWithoutIndexTracking struct {
 }
 
 func (s *CRUDTestSuiteWithoutIndexTracking) SetupTest() {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	s.NoError(err)
 
 	s.dir = dir

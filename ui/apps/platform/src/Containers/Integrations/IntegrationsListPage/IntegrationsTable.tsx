@@ -13,6 +13,7 @@ import {
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
+import pluralize from 'pluralize';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
 import useTableSelection from 'hooks/useTableSelection';
@@ -23,7 +24,6 @@ import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
 
 type TableCellProps = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     row: Integration;
     column: {
         Header: string;
@@ -68,8 +68,15 @@ function IntegrationsTable({
     const { source, type } = useParams();
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const columns = [...tableColumnDescriptor[source][type]];
-    const { selected, allRowsSelected, hasSelections, onSelect, onSelectAll, getSelectedIds } =
-        useTableSelection<Integration>(integrations);
+    const {
+        selected,
+        allRowsSelected,
+        numSelected,
+        hasSelections,
+        onSelect,
+        onSelectAll,
+        getSelectedIds,
+    } = useTableSelection<Integration>(integrations);
 
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
@@ -110,7 +117,8 @@ function IntegrationsTable({
                         {hasSelections && hasMultipleDelete && permissions[source].write && (
                             <FlexItem spacer={{ default: 'spacerMd' }}>
                                 <Button variant="danger" onClick={onDeleteIntegrationHandler}>
-                                    Delete integrations
+                                    Delete {numSelected} selected{' '}
+                                    {pluralize('integration', numSelected)}
                                 </Button>
                             </FlexItem>
                         )}

@@ -20,9 +20,12 @@ var (
 			Then(transformation.AtIndex(0)).
 			ThenMapEachToOne(transformation.AddPrefix(imageDackBox.Bucket)).
 			ThenMapEachToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
+			Then(transformation.Dedupe()).
 			ThenMapEachToMany(transformation.BackwardFromContext(nsDackBox.Bucket)).
+			Then(transformation.Dedupe()).
 			ThenMapEachToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)),
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// Edge (parse first key in pair) Image (backwards) Deployments (backwards) Namespaces
 		v1.SearchCategory_NAMESPACES: transformation.Split([]byte(":")).
@@ -30,14 +33,19 @@ var (
 			Then(transformation.AtIndex(0)).
 			ThenMapEachToOne(transformation.AddPrefix(imageDackBox.Bucket)).
 			ThenMapEachToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
+			Then(transformation.Dedupe()).
 			ThenMapEachToMany(transformation.BackwardFromContext(nsDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(nsDackBox.Bucket)).
 			Then(transformation.Dedupe()),
 
 		// Edge (parse first key in pair) Image (backwards) Deployments
-		v1.SearchCategory_DEPLOYMENTS: transformation.AddPrefix(imageDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)),
+		v1.SearchCategory_DEPLOYMENTS: transformation.Split([]byte(":")).
+			ThenMapEachToOne(transformation.Decode()).
+			Then(transformation.AtIndex(0)).
+			ThenMapEachToOne(transformation.AddPrefix(imageDackBox.Bucket)).
+			ThenMapEachToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// ActiveComponent does not have deployment context, so return nothing.
 		v1.SearchCategory_ACTIVE_COMPONENT: ReturnNothing,
@@ -80,7 +88,8 @@ var (
 				Then(transformation.AtIndex(1)),
 			transformation.AddPrefix(componentDackBox.Bucket).
 				ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 		),
 
 		// Edge (parse second key in pair) Component (forward) CVE

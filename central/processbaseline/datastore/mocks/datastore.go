@@ -6,67 +6,53 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// SearchRawProcessBaselines mocks base method
-func (m *MockDataStore) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
+// AddProcessBaseline mocks base method.
+func (m *MockDataStore) AddProcessBaseline(ctx context.Context, baseline *storage.ProcessBaseline) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawProcessBaselines", ctx, q)
-	ret0, _ := ret[0].([]*storage.ProcessBaseline)
+	ret := m.ctrl.Call(m, "AddProcessBaseline", ctx, baseline)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchRawProcessBaselines indicates an expected call of SearchRawProcessBaselines
-func (mr *MockDataStoreMockRecorder) SearchRawProcessBaselines(ctx, q interface{}) *gomock.Call {
+// AddProcessBaseline indicates an expected call of AddProcessBaseline.
+func (mr *MockDataStoreMockRecorder) AddProcessBaseline(ctx, baseline interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawProcessBaselines", reflect.TypeOf((*MockDataStore)(nil).SearchRawProcessBaselines), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).AddProcessBaseline), ctx, baseline)
 }
 
-// Search mocks base method
-func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", ctx, q)
-	ret0, _ := ret[0].([]search.Result)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Search indicates an expected call of Search
-func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
-}
-
-// GetProcessBaseline mocks base method
+// GetProcessBaseline mocks base method.
 func (m *MockDataStore) GetProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProcessBaseline", ctx, key)
@@ -76,28 +62,13 @@ func (m *MockDataStore) GetProcessBaseline(ctx context.Context, key *storage.Pro
 	return ret0, ret1, ret2
 }
 
-// GetProcessBaseline indicates an expected call of GetProcessBaseline
+// GetProcessBaseline indicates an expected call of GetProcessBaseline.
 func (mr *MockDataStoreMockRecorder) GetProcessBaseline(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).GetProcessBaseline), ctx, key)
 }
 
-// AddProcessBaseline mocks base method
-func (m *MockDataStore) AddProcessBaseline(ctx context.Context, baseline *storage.ProcessBaseline) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessBaseline", ctx, baseline)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AddProcessBaseline indicates an expected call of AddProcessBaseline
-func (mr *MockDataStoreMockRecorder) AddProcessBaseline(ctx, baseline interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).AddProcessBaseline), ctx, baseline)
-}
-
-// RemoveProcessBaseline mocks base method
+// RemoveProcessBaseline mocks base method.
 func (m *MockDataStore) RemoveProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveProcessBaseline", ctx, key)
@@ -105,13 +76,13 @@ func (m *MockDataStore) RemoveProcessBaseline(ctx context.Context, key *storage.
 	return ret0
 }
 
-// RemoveProcessBaseline indicates an expected call of RemoveProcessBaseline
+// RemoveProcessBaseline indicates an expected call of RemoveProcessBaseline.
 func (mr *MockDataStoreMockRecorder) RemoveProcessBaseline(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessBaseline), ctx, key)
 }
 
-// RemoveProcessBaselinesByDeployment mocks base method
+// RemoveProcessBaselinesByDeployment mocks base method.
 func (m *MockDataStore) RemoveProcessBaselinesByDeployment(ctx context.Context, deploymentID string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveProcessBaselinesByDeployment", ctx, deploymentID)
@@ -119,13 +90,13 @@ func (m *MockDataStore) RemoveProcessBaselinesByDeployment(ctx context.Context, 
 	return ret0
 }
 
-// RemoveProcessBaselinesByDeployment indicates an expected call of RemoveProcessBaselinesByDeployment
+// RemoveProcessBaselinesByDeployment indicates an expected call of RemoveProcessBaselinesByDeployment.
 func (mr *MockDataStoreMockRecorder) RemoveProcessBaselinesByDeployment(ctx, deploymentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessBaselinesByDeployment", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessBaselinesByDeployment), ctx, deploymentID)
 }
 
-// RemoveProcessBaselinesByIDs mocks base method
+// RemoveProcessBaselinesByIDs mocks base method.
 func (m *MockDataStore) RemoveProcessBaselinesByIDs(ctx context.Context, ids []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveProcessBaselinesByIDs", ctx, ids)
@@ -133,13 +104,43 @@ func (m *MockDataStore) RemoveProcessBaselinesByIDs(ctx context.Context, ids []s
 	return ret0
 }
 
-// RemoveProcessBaselinesByIDs indicates an expected call of RemoveProcessBaselinesByIDs
+// RemoveProcessBaselinesByIDs indicates an expected call of RemoveProcessBaselinesByIDs.
 func (mr *MockDataStoreMockRecorder) RemoveProcessBaselinesByIDs(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessBaselinesByIDs", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessBaselinesByIDs), ctx, ids)
 }
 
-// UpdateProcessBaselineElements mocks base method
+// Search mocks base method.
+func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
+}
+
+// SearchRawProcessBaselines mocks base method.
+func (m *MockDataStore) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawProcessBaselines", ctx, q)
+	ret0, _ := ret[0].([]*storage.ProcessBaseline)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawProcessBaselines indicates an expected call of SearchRawProcessBaselines.
+func (mr *MockDataStoreMockRecorder) SearchRawProcessBaselines(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawProcessBaselines", reflect.TypeOf((*MockDataStore)(nil).SearchRawProcessBaselines), ctx, q)
+}
+
+// UpdateProcessBaselineElements mocks base method.
 func (m *MockDataStore) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateProcessBaselineElements", ctx, key, addElements, removeElements, auto)
@@ -148,13 +149,13 @@ func (m *MockDataStore) UpdateProcessBaselineElements(ctx context.Context, key *
 	return ret0, ret1
 }
 
-// UpdateProcessBaselineElements indicates an expected call of UpdateProcessBaselineElements
+// UpdateProcessBaselineElements indicates an expected call of UpdateProcessBaselineElements.
 func (mr *MockDataStoreMockRecorder) UpdateProcessBaselineElements(ctx, key, addElements, removeElements, auto interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessBaselineElements", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessBaselineElements), ctx, key, addElements, removeElements, auto)
 }
 
-// UpsertProcessBaseline mocks base method
+// UpsertProcessBaseline mocks base method.
 func (m *MockDataStore) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertProcessBaseline", ctx, key, addElements, auto)
@@ -163,13 +164,13 @@ func (m *MockDataStore) UpsertProcessBaseline(ctx context.Context, key *storage.
 	return ret0, ret1
 }
 
-// UpsertProcessBaseline indicates an expected call of UpsertProcessBaseline
+// UpsertProcessBaseline indicates an expected call of UpsertProcessBaseline.
 func (mr *MockDataStoreMockRecorder) UpsertProcessBaseline(ctx, key, addElements, auto interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).UpsertProcessBaseline), ctx, key, addElements, auto)
 }
 
-// UserLockProcessBaseline mocks base method
+// UserLockProcessBaseline mocks base method.
 func (m *MockDataStore) UserLockProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, locked bool) (*storage.ProcessBaseline, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UserLockProcessBaseline", ctx, key, locked)
@@ -178,13 +179,13 @@ func (m *MockDataStore) UserLockProcessBaseline(ctx context.Context, key *storag
 	return ret0, ret1
 }
 
-// UserLockProcessBaseline indicates an expected call of UserLockProcessBaseline
+// UserLockProcessBaseline indicates an expected call of UserLockProcessBaseline.
 func (mr *MockDataStoreMockRecorder) UserLockProcessBaseline(ctx, key, locked interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserLockProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).UserLockProcessBaseline), ctx, key, locked)
 }
 
-// WalkAll mocks base method
+// WalkAll mocks base method.
 func (m *MockDataStore) WalkAll(ctx context.Context, fn func(*storage.ProcessBaseline) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WalkAll", ctx, fn)
@@ -192,7 +193,7 @@ func (m *MockDataStore) WalkAll(ctx context.Context, fn func(*storage.ProcessBas
 	return ret0
 }
 
-// WalkAll indicates an expected call of WalkAll
+// WalkAll indicates an expected call of WalkAll.
 func (mr *MockDataStoreMockRecorder) WalkAll(ctx, fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockDataStore)(nil).WalkAll), ctx, fn)

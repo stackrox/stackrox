@@ -20,7 +20,7 @@ type ComplianceRun interface {
 	// Run starts the compliance run, executing all checks. This method blocks until all checks have completed. It
 	// returns an error if the entire run has been aborted (either via `Terminate`, or via an error in the parent
 	// context).
-	Run(ctx context.Context, domain ComplianceDomain, data ComplianceDataRepository) error
+	Run(ctx context.Context, standardName string, domain ComplianceDomain, data ComplianceDataRepository) error
 
 	// Wait blocks until the compliance run has completed, and returns the final status.
 	Wait() error
@@ -74,12 +74,12 @@ func signalOnContextErr(ctx context.Context, sig *concurrency.ErrorSignal) {
 	}
 }
 
-func (r *complianceRun) Run(ctx context.Context, domain ComplianceDomain, data ComplianceDataRepository) error {
+func (r *complianceRun) Run(ctx context.Context, standardName string, domain ComplianceDomain, data ComplianceDataRepository) error {
 	go signalOnContextErr(ctx, &r.stopSig)
 
 	var wg sync.WaitGroup
 	for _, check := range r.checks {
-		checkCtx := newToplevelContext(domain, data, check.results, &r.stopSig)
+		checkCtx := newToplevelContext(standardName, domain, data, check.results, &r.stopSig)
 		wg.Add(1)
 		go r.runCheck(checkCtx, check.check.Run, &wg)
 	}

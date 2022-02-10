@@ -1,4 +1,3 @@
-/* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
 import {
     Badge,

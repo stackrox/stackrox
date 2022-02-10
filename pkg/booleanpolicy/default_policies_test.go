@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -78,6 +79,11 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	}
 
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.VulnRiskManagement.EnvVar(), "true")
+}
+
+func (suite *DefaultPoliciesTestSuite) TearDownSuite() {
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupTest() {
@@ -353,7 +359,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.addDepAndImages(oldImageDep, oldCreatedImage)
 
 	apkImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "apk", Version: "1.2"},
+		{Name: "apk-tools", Version: "1.2"},
 		{Name: "asfa", Version: "1.5"},
 	})
 	apkDep := deploymentWithImageAnyID(apkImage)
@@ -460,6 +466,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	})
 	strutsDepSuppressed := deploymentWithImageAnyID(strutsImageSuppressed)
 	suite.addDepAndImages(strutsDepSuppressed, strutsImageSuppressed)
+
+	// When image is pull out, the deferred field is set based upon the legacy suppressed field. Therefore, both are set.
+	// However, here we are specifically testing whether detection is taking the new vulnerability state field into
+	// account by not setting the suppressed field.
+	structImageWithDeferredVulns := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "deferred-struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2017-5638", Link: "https://struts", State: storage.VulnerabilityState_DEFERRED, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
+			{Cve: "CVE-2017-FP", Link: "https://struts", State: storage.VulnerabilityState_FALSE_POSITIVE, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
+			{Cve: "CVE-2017-FAKE", Link: "https://struts", Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
+		}},
+	})
+	structDepWithDeferredVulns := deploymentWithImageAnyID(structImageWithDeferredVulns)
+	suite.addDepAndImages(structDepWithDeferredVulns, structImageWithDeferredVulns)
 
 	depWithNonSeriousVulnsImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
 		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
@@ -801,7 +820,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				apkDep.GetId(): {
 					{
-						Message: "Container 'ASFASF' includes component 'apk' (version 1.2)",
+						Message: "Container 'ASFASF' includes component 'apk-tools' (version 1.2)",
 					},
 				},
 			},
@@ -980,19 +999,20 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Images with no scans",
 			shouldNotMatch: map[string]struct{}{
 				// These deployments have scans on their images.
-				fixtureDep.GetId():              {},
-				oldScannedDep.GetId():           {},
-				heartbleedDep.GetId():           {},
-				apkDep.GetId():                  {},
-				curlDep.GetId():                 {},
-				componentDeps["apt"].GetId():    {},
-				componentDeps["dnf"].GetId():    {},
-				componentDeps["wget"].GetId():   {},
-				shellshockDep.GetId():           {},
-				suppressedShellShockDep.GetId(): {},
-				strutsDep.GetId():               {},
-				strutsDepSuppressed.GetId():     {},
-				depWithNonSeriousVulns.GetId():  {},
+				fixtureDep.GetId():                 {},
+				oldScannedDep.GetId():              {},
+				heartbleedDep.GetId():              {},
+				apkDep.GetId():                     {},
+				curlDep.GetId():                    {},
+				componentDeps["apt"].GetId():       {},
+				componentDeps["dnf"].GetId():       {},
+				componentDeps["wget"].GetId():      {},
+				shellshockDep.GetId():              {},
+				suppressedShellShockDep.GetId():    {},
+				strutsDep.GetId():                  {},
+				strutsDepSuppressed.GetId():        {},
+				structDepWithDeferredVulns.GetId(): {},
+				depWithNonSeriousVulns.GetId():     {},
 				// The rest of the deployments have no images!
 				"FAKEID":                                          {},
 				containerPort22Dep.GetId():                        {},
@@ -1066,6 +1086,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF'",
 					},
 				},
+				// CVE-2017-5638 is deferred in `deferred-struct`, hence no violation.
 			},
 		},
 		{
@@ -1119,6 +1140,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
+				structDepWithDeferredVulns.GetId(): {
+					{
+						Message: "Fixable CVE-2017-FAKE (CVSS 8) (severity Important) found in component 'deferred-struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+					},
+				},
 			},
 		},
 		{
@@ -1127,6 +1153,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				strutsDep.GetId(): {
 					{
 						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+					},
+				},
+				structDepWithDeferredVulns.GetId(): {
+					{
+						Message: "Fixable CVE-2017-FAKE (CVSS 8) (severity Important) found in component 'deferred-struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
 			},
@@ -1324,9 +1355,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Fixable CVE-2014-6200 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
 					},
 				},
-				strutsDepSuppressed.GetId(): {
+				structDepWithDeferredVulns.GetId(): {
 					{
-						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+						Message: "Fixable CVE-2017-FAKE (CVSS 8) (severity Important) found in component 'deferred-struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
 			},
@@ -1366,6 +1397,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				processMatcher, err := BuildDeploymentWithProcessMatcher(p)
 				require.NoError(t, err)
 				for deploymentID, processes := range c.expectedProcessViolations {
+					if !features.VulnRiskManagement.Enabled() {
+						if deploymentID == structDepWithDeferredVulns.GetId() {
+							continue
+						}
+					}
 					expectedProcesses := set.NewStringSet(sliceutils.Map(processes, func(p *storage.ProcessIndicator) string {
 						return p.GetId()
 					}).([]string)...)
@@ -1418,6 +1454,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			}
 
 			for id := range suite.deployments {
+				if !features.VulnRiskManagement.Enabled() {
+					if id == structDepWithDeferredVulns.GetId() {
+						continue
+					}
+				}
 				violations, expected := c.expectedViolations[id]
 				if expected {
 					assert.Contains(t, actualViolations, id)
@@ -1452,7 +1493,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(apkDep): {
 					{
-						Message: "Image includes component 'apk' (version 1.2)",
+						Message: "Image includes component 'apk-tools' (version 1.2)",
 					},
 				},
 			},
@@ -1576,6 +1617,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suppressedShellshockImage.GetId():                {},
 				strutsImage.GetId():                              {},
 				strutsImageSuppressed.GetId():                    {},
+				structImageWithDeferredVulns.GetId():             {},
 				depWithNonSeriousVulnsImage.GetId():              {},
 				fixtureDep.GetContainers()[0].GetImage().GetId(): {},
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {},
@@ -1948,6 +1990,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 			"NODE":     "exposed on node port",
 			"INTERNAL": "using internal cluster IP",
 			"HOST":     "exposed on host port",
+			"ROUTE":    "exposed with a route",
 		}
 		require.Len(t, violations, 1)
 		assert.Equal(t, fmt.Sprintf("Deployment port(s) %s", depRefToExpectedMsg[depRef]), violations[0].GetMessage())
@@ -1971,7 +2014,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 		{
 			[]string{"external", "NODE"},
 			true,
-			[]string{"INTERNAL", "HOST"},
+			[]string{"INTERNAL", "HOST", "ROUTE"},
 		},
 	} {
 		c := testCase
@@ -2136,6 +2179,158 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 				}
 			}
 			assert.ElementsMatch(t, containerNameMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", containerNameMatched.AsSlice(), c.value, c.expectedMatches)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
+	deployments := make(map[string]*storage.Deployment)
+	for _, d := range []struct {
+		DeploymentName                string
+		ServiceAccountName            string
+		AutomountServiceAccountTokens bool
+	}{
+		{
+			DeploymentName:                "DefaultSAAutomountedTokens",
+			ServiceAccountName:            "default",
+			AutomountServiceAccountTokens: true,
+		},
+		{
+			DeploymentName:     "DefaultSANotAutomountedTokens",
+			ServiceAccountName: "default",
+		},
+		{
+			DeploymentName:                "CustomSAAutomountedTokens",
+			ServiceAccountName:            "custom",
+			AutomountServiceAccountTokens: true,
+		},
+		{
+			DeploymentName:     "CustomSANotAutomountedTokens",
+			ServiceAccountName: "custom",
+		},
+	} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.Name = d.DeploymentName
+		dep.ServiceAccount = d.ServiceAccountName
+		dep.AutomountServiceAccountToken = d.AutomountServiceAccountTokens
+		deployments[dep.Name] = dep
+	}
+
+	automountServiceAccountTokenPolicyGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.AutomountServiceAccountToken,
+		Values:    []*storage.PolicyValue{{Value: "true"}},
+	}
+	defaultServiceAccountPolicyGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.ServiceAccount,
+		Values:    []*storage.PolicyValue{{Value: "default"}},
+	}
+
+	allAutomountServiceAccountTokenPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, automountServiceAccountTokenPolicyGroup)
+	defaultAutomountServiceAccountTokenPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, automountServiceAccountTokenPolicyGroup, defaultServiceAccountPolicyGroup)
+
+	automountAlert := &storage.Alert_Violation{Message: "Deployment mounts the service account tokens."}
+	defaultServiceAccountAlert := &storage.Alert_Violation{Message: "Service Account is set to 'default'"}
+
+	for _, c := range []struct {
+		CaseName       string
+		Policy         *storage.Policy
+		DeploymentName string
+		ExpectedAlerts []*storage.Alert_Violation
+	}{
+		{
+			CaseName:       "Automounted default service account tokens should alert on bare automount policy",
+			Policy:         allAutomountServiceAccountTokenPolicy,
+			DeploymentName: "DefaultSAAutomountedTokens",
+			ExpectedAlerts: []*storage.Alert_Violation{automountAlert},
+		},
+		{
+			CaseName:       "Automounted default service account tokens should alert on default only automount policy",
+			Policy:         defaultAutomountServiceAccountTokenPolicy,
+			DeploymentName: "DefaultSAAutomountedTokens",
+			ExpectedAlerts: []*storage.Alert_Violation{automountAlert, defaultServiceAccountAlert},
+		},
+		{
+			CaseName:       "Automounted custom service account tokens should alert on bare automount policy",
+			Policy:         allAutomountServiceAccountTokenPolicy,
+			DeploymentName: "CustomSAAutomountedTokens",
+			ExpectedAlerts: []*storage.Alert_Violation{automountAlert},
+		},
+		{
+			CaseName:       "Not automounted default service account should not alert on bare automount policy",
+			Policy:         allAutomountServiceAccountTokenPolicy,
+			DeploymentName: "DefaultSANotAutomountedTokens",
+		},
+		{
+			CaseName:       "Not automounted custom service account should not alert on bare automount policy",
+			Policy:         allAutomountServiceAccountTokenPolicy,
+			DeploymentName: "CustomSANotAutomountedTokens",
+		},
+	} {
+		suite.T().Run(c.CaseName, func(t *testing.T) {
+			dep := deployments[c.DeploymentName]
+			matcher, err := BuildDeploymentMatcher(c.Policy)
+			suite.NoError(err, "deployment matcher creation must succeed")
+			violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+			suite.NoError(err, "deployment matcher run must succeed")
+			suite.Empty(violations.ProcessViolation)
+			suite.Equal(c.ExpectedAlerts, violations.AlertViolations)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestRuntimeClass() {
+	var deps []*storage.Deployment
+	for _, runtimeClass := range []string{
+		"",
+		"blah",
+	} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.RuntimeClass = runtimeClass
+		deps = append(deps, dep)
+	}
+
+	for _, testCase := range []struct {
+		value           string
+		negate          bool
+		expectedMatches []string
+	}{
+		{
+			value:           ".*",
+			negate:          false,
+			expectedMatches: []string{"", "blah"},
+		},
+		{
+			value:           ".+",
+			negate:          false,
+			expectedMatches: []string{"blah"},
+		},
+		{
+			value:           ".+",
+			negate:          true,
+			expectedMatches: []string{""},
+		},
+		{
+			value:           "blah",
+			negate:          true,
+			expectedMatches: []string{""},
+		},
+	} {
+		c := testCase
+
+		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
+			depMatcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.RuntimeClass, c.value, c.negate))
+			require.NoError(t, err)
+			matchedRuntimeClasses := set.NewStringSet()
+			for _, dep := range deps {
+				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					matchedRuntimeClasses.Add(dep.GetRuntimeClass())
+					require.Len(t, violations.AlertViolations, 1)
+					assert.Equal(t, fmt.Sprintf("Runtime Class is set to '%s'", dep.GetRuntimeClass()), violations.AlertViolations[0].GetMessage())
+				}
+			}
+			assert.ElementsMatch(t, matchedRuntimeClasses.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", matchedRuntimeClasses.AsSlice(), c.value, c.expectedMatches)
 		})
 	}
 }
@@ -2610,6 +2805,246 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
 	suite.NoError(err)
 	suite.Empty(violations)
+}
+
+func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
+	for _, testCase := range []struct {
+		caseName    string
+		replicas    int64
+		policyValue string
+		negate      bool
+		alerts      []*storage.Alert_Violation
+	}{
+		{
+			caseName:    "Should raise when replicas==5.",
+			replicas:    5,
+			policyValue: "5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+		},
+		{
+			caseName:    "Should not raise unless replicas==3.",
+			replicas:    5,
+			policyValue: "3",
+			negate:      false,
+			alerts:      nil,
+		},
+		{
+			caseName:    "Should raise unless replicas==3.",
+			replicas:    5,
+			policyValue: "3",
+			negate:      true,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+		},
+		{
+			caseName:    "Should raise when replicas>=5.",
+			replicas:    5,
+			policyValue: ">=5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+		},
+		{
+			caseName:    "Should raise when replicas<=5.",
+			replicas:    5,
+			policyValue: "<=5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+		},
+		{
+			caseName:    "Should raise when replicas<5.",
+			replicas:    1,
+			policyValue: "<5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '1'"}},
+		},
+		{
+			caseName:    "Should raise when replicas>5.",
+			replicas:    10,
+			policyValue: ">5",
+			negate:      false,
+			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '10'"}},
+		},
+	} {
+		suite.Run(testCase.caseName, func() {
+			deployment := fixtures.GetDeployment().Clone()
+			deployment.Replicas = testCase.replicas
+			policy := policyWithSingleKeyValue(fieldnames.Replicas, testCase.policyValue, testCase.negate)
+
+			matcher, err := BuildDeploymentMatcher(policy)
+			suite.NoError(err, "deployment matcher creation must succeed")
+			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			suite.NoError(err, "deployment matcher run must succeed")
+
+			suite.Empty(violations.ProcessViolation)
+			suite.Equal(violations.AlertViolations, testCase.alerts)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
+	for _, testCase := range []struct {
+		caseName    string
+		containers  []*storage.Container
+		policyValue string
+		alerts      []*storage.Alert_Violation
+	}{
+		{
+			caseName: "Should raise alert since liveness probe is defined.",
+			containers: []*storage.Container{
+				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: true}},
+			},
+			policyValue: "true",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Liveness probe is defined for container 'container'"},
+			},
+		},
+		{
+			caseName: "Should not raise alert since liveness probe is defined.",
+			containers: []*storage.Container{
+				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: true}},
+			},
+			policyValue: "false",
+			alerts:      nil,
+		},
+		{
+			caseName: "Should not raise alert since liveness probe is not defined.",
+			containers: []*storage.Container{
+				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+			},
+			policyValue: "true",
+			alerts:      nil,
+		},
+		{
+			caseName: "Should raise alert since liveness probe is not defined.",
+			containers: []*storage.Container{
+				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Liveness probe is not defined for container 'container'"},
+			},
+		},
+		{
+			caseName: "Should raise alert for both containers.",
+			containers: []*storage.Container{
+				{Name: "container-1", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+				{Name: "container-2", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Liveness probe is not defined for container 'container-1'"},
+				{Message: "Liveness probe is not defined for container 'container-2'"},
+			},
+		},
+		{
+			caseName: "Should raise alert only for container-2.",
+			containers: []*storage.Container{
+				{Name: "container-1", LivenessProbe: &storage.LivenessProbe{Defined: true}},
+				{Name: "container-2", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Liveness probe is not defined for container 'container-2'"},
+			},
+		},
+	} {
+		suite.Run(testCase.caseName, func() {
+			deployment := fixtures.GetDeployment().Clone()
+			deployment.Containers = testCase.containers
+			policy := policyWithSingleKeyValue(fieldnames.LivenessProbeDefined, testCase.policyValue, false)
+
+			matcher, err := BuildDeploymentMatcher(policy)
+			suite.NoError(err, "deployment matcher creation must succeed")
+			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			suite.NoError(err, "deployment matcher run must succeed")
+
+			suite.Empty(violations.ProcessViolation)
+			suite.Equal(violations.AlertViolations, testCase.alerts)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
+	for _, testCase := range []struct {
+		caseName    string
+		containers  []*storage.Container
+		policyValue string
+		alerts      []*storage.Alert_Violation
+	}{
+		{
+			caseName: "Should raise alert since readiness probe is defined.",
+			containers: []*storage.Container{
+				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
+			},
+			policyValue: "true",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Readiness probe is defined for container 'container'"},
+			},
+		},
+		{
+			caseName: "Should not raise alert since readiness probe is defined.",
+			containers: []*storage.Container{
+				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
+			},
+			policyValue: "false",
+			alerts:      nil,
+		},
+		{
+			caseName: "Should not raise alert since readiness probe is not defined.",
+			containers: []*storage.Container{
+				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+			},
+			policyValue: "true",
+			alerts:      nil,
+		},
+		{
+			caseName: "Should raise alert since readiness probe is not defined.",
+			containers: []*storage.Container{
+				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Readiness probe is not defined for container 'container'"},
+			},
+		},
+		{
+			caseName: "Should raise alert for both containers.",
+			containers: []*storage.Container{
+				{Name: "container-1", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+				{Name: "container-2", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Readiness probe is not defined for container 'container-1'"},
+				{Message: "Readiness probe is not defined for container 'container-2'"},
+			},
+		},
+		{
+			caseName: "Should raise alert only for container-2.",
+			containers: []*storage.Container{
+				{Name: "container-1", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
+				{Name: "container-2", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+			},
+			policyValue: "false",
+			alerts: []*storage.Alert_Violation{
+				{Message: "Readiness probe is not defined for container 'container-2'"},
+			},
+		},
+	} {
+		suite.Run(testCase.caseName, func() {
+			deployment := fixtures.GetDeployment().Clone()
+			deployment.Containers = testCase.containers
+			policy := policyWithSingleKeyValue(fieldnames.ReadinessProbeDefined, testCase.policyValue, false)
+
+			matcher, err := BuildDeploymentMatcher(policy)
+			suite.NoError(err, "deployment matcher creation must succeed")
+			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			suite.NoError(err, "deployment matcher run must succeed")
+
+			suite.Empty(violations.ProcessViolation)
+			suite.Equal(violations.AlertViolations, testCase.alerts)
+		})
+	}
 }
 
 func newIndicator(deployment *storage.Deployment, name, args, execFilePath string) *storage.ProcessIndicator {

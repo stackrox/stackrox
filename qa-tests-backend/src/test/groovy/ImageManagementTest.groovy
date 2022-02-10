@@ -47,14 +47,14 @@ class ImageManagementTest extends BaseSpecification {
         "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | ""
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | "(repeat)"
-        "90-Day Image Age"                | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
+        "90-Day Image Age"                | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
         // verify Azure registry
         // "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
-        "Ubuntu Package Manager in Image" | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
-        "Curl in Image"                   | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
+        "Ubuntu Package Manager in Image" | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
+        "Curl in Image"                   | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
         "Fixable CVSS >= 7"               | "us.gcr.io"   | "stackrox-ci/nginx"      | "1.11"       | ""
-        "Wget in Image"                   | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
-        "Apache Struts: CVE-2017-5638"    | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
+        "Wget in Image"                   | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
+        "Apache Struts: CVE-2017-5638"    | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
     }
 
     @Category(BAT)
@@ -84,15 +84,15 @@ class ImageManagementTest extends BaseSpecification {
         "Data inputs are: "
 
         imageName               | imageRegistry | imageRemote       | imageTag         | expected
-        "ubuntu:14.04"          | "docker.io"   | "library/ubuntu"  | "14.04"          | "ubuntu:14.04"
+        "alpine:3.10.0"         | "docker.io"   | "library/alpine"  | "3.10.0"         | "alpine:v3.10"
         "busybox:1.32.0"        | "docker.io"   | "library/busybox" | "1.32.0"         | "unknown"
-        "alpine:3.10.1"         | "docker.io"   | "library/alpine"  | "3.10.0"         | "alpine:v3.10"
+        "centos:centos8.2.2004" | "docker.io"   | "library/centos"  | "centos8.2.2004" | "centos:8"
+        // We explicitly do not support Fedora at this time.
+        "fedora:33"             | "docker.io"   | "library/fedora"  | "33"             | "unknown"
         "nginx:1.10"            | "docker.io"   | "library/nginx"   | "1.10"           | "debian:8"
         "nginx:1.19"            | "docker.io"   | "library/nginx"   | "1.19"           | "debian:10"
-        "centos:centos8.2.2004" | "docker.io"   | "library/centos"  | "centos8.2.2004" | "centos:8"
-        // This is due to weird Scanner functionality. Making this a test, in case we decide to come back to Scanner
-        // and change this. Best to know what our expectations are.
-        "fedora:33"             | "docker.io"   | "library/fedora"  | "33"             | "unknown"
+        // TODO: Add check for RHEL
+        "ubuntu:14.04"          | "docker.io"   | "library/ubuntu"  | "14.04"          | "ubuntu:14.04"
     }
 
     @Unroll

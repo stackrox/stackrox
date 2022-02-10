@@ -12,7 +12,9 @@ import "internalapi/central/telemetry.proto";
 import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
+import "internalapi/central/local_scanner.proto";
 import "storage/cluster.proto";
+import "storage/image.proto";
 
 package central;
 
@@ -29,10 +31,13 @@ message MsgFromSensor {
         RawClusterHealthInfo         cluster_health_info             = 9;
         SensorHello                  hello                           = 10;
         AuditLogStatusInfo           audit_log_status_info           = 11;
+        IssueLocalScannerCertsRequest issue_local_scanner_certs_request = 12;
     }
 }
 
 message ReassessPolicies {}
+
+message ReprocessDeployments {}
 
 message MsgToSensor {
     oneof msg {
@@ -50,6 +55,11 @@ message MsgToSensor {
         CentralHello                   hello                              = 12;
         NetworkBaselineSync            network_baseline_sync              = 13;
         AuditLogSync                   audit_log_sync                     = 14;
+        ReprocessDeployment            reprocess_deployment               = 15;
+        InvalidateImageCache           invalidate_image_cache             = 16;
+        IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
+        storage.Image                  updated_image                      = 18;
+        ReprocessDeployments           reprocess_deployments              = 19;
     }
 }
 
@@ -59,6 +69,22 @@ message AuditLogSync {
 
 message AuditLogStatusInfo {
     map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
+}
+
+message ReprocessDeployment {
+    // Sensor stores deployments, hence no need to send the full deployment. Note that the sensor image cache is not
+    // invalidated by this message. `InvalidateImageCache` message must be sent before this message to pull new image scan.
+
+    repeated string  deployment_ids = 1;
+}
+
+message InvalidateImageCache {
+    message ImageKey {
+        string image_id        = 1;
+        string image_full_name = 2;
+    }
+
+    repeated ImageKey image_keys = 1;
 }
 
 service SensorService {

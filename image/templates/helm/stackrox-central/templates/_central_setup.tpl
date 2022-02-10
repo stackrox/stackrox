@@ -1,4 +1,4 @@
-{/*
+{{/*
   srox.centralSetup $
 
   Configures and initializes central specific values like certificates, admin password or persistence.

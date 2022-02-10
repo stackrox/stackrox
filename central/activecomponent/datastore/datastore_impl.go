@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
+	"github.com/stackrox/rox/central/activecomponent/index"
 	sacFilters "github.com/stackrox/rox/central/activecomponent/sac"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,6 +25,7 @@ var (
 type datastoreImpl struct {
 	storage       store.Store
 	graphProvider graph.Provider
+	indexer       index.Indexer
 	searcher      search.Searcher
 }
 

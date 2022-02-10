@@ -113,6 +113,7 @@ export default function* searches() {
             deploymentsActions.setDeploymentsSearchOptions,
             'categories=DEPLOYMENTS'
         ),
+        // TODO: remove once policies is fully migrated over to PF
         takeEveryNewlyMatchedLocation(
             policiesPath,
             getSearchOptions,

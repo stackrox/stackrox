@@ -27,4 +27,5 @@ const (
 	ComplianceOperatorProfile
 	ComplianceOperatorScanSettingBinding
 	ComplianceOperatorRule
+	ComplianceOperatorScan
 )

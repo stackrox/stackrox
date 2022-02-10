@@ -41,7 +41,7 @@ const (
 	operatorsForbidden
 )
 
-//RuntimeFieldType is the type of a runtime policy criteria field
+// RuntimeFieldType is the type of a runtime policy criteria field
 type RuntimeFieldType string
 
 const (
@@ -180,6 +180,17 @@ func initializeFieldMetadata() FieldMetadata {
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
+
+	f.registerFieldMetadata(fieldnames.AutomountServiceAccountToken,
+		querybuilders.ForFieldLabel(search.AutomountServiceAccountToken),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+		negationForbidden,
+		operatorsForbidden)
 
 	f.registerFieldMetadata(fieldnames.CVE,
 		querybuilders.ForCVE(),
@@ -517,6 +528,16 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
+	f.registerFieldMetadata(fieldnames.RuntimeClass,
+		querybuilders.ForFieldLabelRegex(augmentedobjs.RuntimeClassCustomTag),
+		nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return stringValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+	)
+
 	f.registerFieldMetadata(fieldnames.RequiredAnnotation,
 		querybuilders.ForFieldLabelMap(search.Annotation, query.MapShouldNotContain),
 		nil,
@@ -735,6 +756,38 @@ func initializeFieldMetadata() FieldMetadata {
 		},
 		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
+		negationForbidden, operatorsForbidden,
+	)
+
+	f.registerFieldMetadata(fieldnames.Replicas,
+		querybuilders.ForFieldLabel(search.Replicas),
+		violationmessages.ResourceContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return comparatorDecimalValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+	)
+
+	f.registerFieldMetadata(fieldnames.LivenessProbeDefined,
+		querybuilders.ForFieldLabel(search.LivenessProbeDefined),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+		negationForbidden, operatorsForbidden,
+	)
+
+	f.registerFieldMetadata(fieldnames.ReadinessProbeDefined,
+		querybuilders.ForFieldLabel(search.ReadinessProbeDefined),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
 		negationForbidden, operatorsForbidden,
 	)
 

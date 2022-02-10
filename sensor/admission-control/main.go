@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -42,6 +43,8 @@ func main() {
 }
 
 func mainCmd() error {
+	devmode.StartOnDevBuilds("bin/admission-control")
+
 	sigC := make(chan os.Signal, 1)
 	signal.Notify(sigC, unix.SIGTERM, unix.SIGINT)
 

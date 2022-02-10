@@ -48,7 +48,7 @@ func NewDeploymentWrap(d *storage.Deployment, registryOverride string) *Deployme
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
 func doesFieldExist(value reflect.Value) bool {
-	return !reflect.DeepEqual(value, reflect.Value{})
+	return value.IsValid()
 }
 
 // IsTrackedOwnerReference validates the object is one that we are tracking as a Deployment
@@ -256,8 +256,10 @@ func (w *DeploymentWrap) PopulateDeploymentFromPodSpec(podSpec v1.PodSpec) {
 	w.HostNetwork = podSpec.HostNetwork
 	w.HostPid = podSpec.HostPID
 	w.HostIpc = podSpec.HostIPC
+	w.RuntimeClass = stringutils.PointerOrDefault(podSpec.RuntimeClassName, "")
 	w.populateTolerations(podSpec)
 	w.populateServiceAccount(podSpec)
+	w.populateAutomountServiceAccountToken(podSpec)
 	w.populateImagePullSecrets(podSpec)
 
 	w.populateContainers(podSpec)
@@ -290,6 +292,7 @@ func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
 	w.populateVolumesAndSecrets(podSpec)
 	w.populatePorts(podSpec)
 	w.populateResources(podSpec)
+	w.populateProbes(podSpec)
 }
 
 func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
@@ -297,6 +300,14 @@ func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
 		w.ServiceAccount = "default"
 	} else {
 		w.ServiceAccount = podSpec.ServiceAccountName
+	}
+}
+
+func (w *DeploymentWrap) populateAutomountServiceAccountToken(podSpec v1.PodSpec) {
+	if podSpec.AutomountServiceAccountToken == nil {
+		w.AutomountServiceAccountToken = true
+	} else {
+		w.AutomountServiceAccountToken = *podSpec.AutomountServiceAccountToken
 	}
 }
 
@@ -566,6 +577,22 @@ func (w *DeploymentWrap) populatePorts(podSpec v1.PodSpec) {
 			}
 			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, portConfig)
 			w.Ports = append(w.Ports, portConfig)
+		}
+	}
+}
+
+func (w *DeploymentWrap) populateProbes(podSpec v1.PodSpec) {
+	for i, c := range podSpec.Containers {
+		if c.LivenessProbe == nil || *c.LivenessProbe == (v1.Probe{}) {
+			w.Deployment.Containers[i].LivenessProbe = &storage.LivenessProbe{Defined: false}
+		} else {
+			w.Deployment.Containers[i].LivenessProbe = &storage.LivenessProbe{Defined: true}
+		}
+
+		if c.ReadinessProbe == nil || *c.ReadinessProbe == (v1.Probe{}) {
+			w.Deployment.Containers[i].ReadinessProbe = &storage.ReadinessProbe{Defined: false}
+		} else {
+			w.Deployment.Containers[i].ReadinessProbe = &storage.ReadinessProbe{Defined: true}
 		}
 	}
 }

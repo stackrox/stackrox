@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 if [ $# -lt 1 ]; then
 	echo >&2 "Usage: $0 <dirs...>"

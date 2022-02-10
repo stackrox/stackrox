@@ -2,7 +2,6 @@ package dbs
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -71,7 +70,7 @@ func findScratchPath() (string, error) {
 	requiredBytes := float64(dbSize) * (1.0 + marginOfSafety)
 
 	// Check tmp for space to produce a backup.
-	tmpDir, err := ioutil.TempDir("", tmpPath)
+	tmpDir, err := os.MkdirTemp("", tmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +83,7 @@ func findScratchPath() (string, error) {
 	}
 
 	// If there isn't enough space there, try using PVC to create it.
-	pvcDir, err := ioutil.TempDir(globaldb.PVCPath, tmpPath)
+	pvcDir, err := os.MkdirTemp(globaldb.PVCPath, tmpPath)
 	if err != nil {
 		return "", err
 	}

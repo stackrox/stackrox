@@ -70,7 +70,7 @@ const CustomDialogue = (props) => {
 
 CustomDialogue.propTypes = {
     title: PropTypes.string.isRequired,
-    children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]),
+    children: PropTypes.node,
     className: PropTypes.string,
     text: PropTypes.string,
     onCancel: PropTypes.func,

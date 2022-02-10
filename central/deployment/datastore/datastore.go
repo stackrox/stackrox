@@ -20,6 +20,7 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -66,7 +67,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
-	indexer := index.New(bleveIndex, processIndex)
+	deploymentIndexer := index.New(bleveIndex, processIndex)
 
 	storage = cache.NewCachedStore(storage)
 	searcher := search.New(storage,
@@ -76,7 +77,8 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 		componentIndexer.New(bleveIndex),
 		imageComponentEdgeIndexer.New(bleveIndex),
 		imageIndexer.New(bleveIndex),
-		indexer)
+		deploymentIndexer,
+		imageCVEEdgeIndexer.New(bleveIndex))
 
 	ds := newDatastoreImpl(storage, processTagsStore, searcher, images, baselines, networkFlows, risks,
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)

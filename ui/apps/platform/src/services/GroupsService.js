@@ -29,8 +29,6 @@ export function updateOrAddGroup({ oldGroups, newGroups }) {
  * @returns {Promise<Object, Error>}
  */
 export function deleteRuleGroup(data) {
-    // eslint-disable-next-line
     const { key, authProviderId, value } = data.props;
-    // eslint-disable-next-line
     return axios.delete(`${url}?authProviderId=${authProviderId}&key=${key}&value=${value}`, {});
 }

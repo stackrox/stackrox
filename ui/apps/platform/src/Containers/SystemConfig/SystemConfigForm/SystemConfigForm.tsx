@@ -22,6 +22,8 @@ import ColorPicker from 'Components/ColorPicker';
 import { ConfigTelemetryDetailContent } from '../ConfigTelemetryDetailWidget';
 import { PrivateConfig, PublicConfig, TelemetryConfig } from '../SystemConfigTypes';
 import FormSelect from './FormSelect';
+import useFeatureFlagEnabled from '../../../hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from '../../../utils/featureFlags';
 
 export type SystemConfigFormProps = {
     values: {
@@ -46,6 +48,8 @@ const SystemConfigForm = ({
     function onCustomChange(value, id) {
         return setFieldValue(id, value, false);
     }
+
+    const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
     return (
         <Form id="system-config-edit-form" onSubmit={onSubmitForm}>
@@ -175,6 +179,27 @@ const SystemConfigForm = ({
                                             />
                                         </FormGroup>
                                     </GridItem>
+                                    {isVulnReportingEnabled && (
+                                        <GridItem>
+                                            <FormGroup
+                                                label="Expired Vulnerability Requests"
+                                                isRequired
+                                                fieldId="privateConfig.expiredVulnReqRetentionDurationDays"
+                                            >
+                                                <TextInput
+                                                    isRequired
+                                                    type="number"
+                                                    id="privateConfig.expiredVulnReqRetentionDurationDays"
+                                                    name="privateConfig.expiredVulnReqRetentionDurationDays"
+                                                    value={
+                                                        values?.privateConfig
+                                                            ?.expiredVulnReqRetentionDurationDays
+                                                    }
+                                                    onChange={onChange}
+                                                />
+                                            </FormGroup>
+                                        </GridItem>
+                                    )}
                                 </Grid>
                             </FormSection>
                         </CardBody>
@@ -351,7 +376,7 @@ const SystemConfigForm = ({
                     </Card>
                 </GridItem>
                 <GridItem md={6}>
-                    <Card>
+                    <Card data-testid="login-notice-config">
                         <CardHeader>
                             <CardHeaderMain>
                                 <CardTitle>Login Configuration</CardTitle>

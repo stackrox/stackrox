@@ -82,6 +82,7 @@ function ConfigurationFormFields({
     const showIdpIssuerError = Boolean(configErrors?.idp_issuer && configTouched?.idp_issuer);
     const showIdpSsoUrlError = Boolean(configErrors?.idp_sso_url && configTouched?.idp_sso_url);
     const showIdpCertPemError = Boolean(configErrors?.idp_cert_pem && configTouched?.idp_cert_pem);
+    const showUserPkiKeysError = Boolean(configErrors?.keys && configTouched?.keys);
     const showAudienceError = Boolean(configErrors?.audience && configTouched?.audience);
 
     function updateClientSecretFlagOnChange(name: string, value: string) {
@@ -530,18 +531,18 @@ function ConfigurationFormFields({
             {type === 'userpki' && (
                 <GridItem span={12} lg={6}>
                     <FormGroup
-                        label="IdP Certificate(s) (PEM)"
-                        fieldId="config.idp_cert_pem"
+                        label="CA certificate(s) (PEM)"
+                        fieldId="config.keys"
                         isRequired
-                        helperTextInvalid={configErrors?.idp_cert_pem || ''}
-                        validated={showIdpCertPemError ? ValidatedOptions.error : 'default'}
+                        helperTextInvalid={configErrors?.keys || ''}
+                        validated={showUserPkiKeysError ? ValidatedOptions.error : 'default'}
                     >
                         <TextArea
                             className="certificate-input"
                             autoResize
                             resizeOrientation="vertical"
-                            id="config.idp_cert_pem"
-                            value={(config.idp_cert_pem as string) || ''}
+                            id="config.keys"
+                            value={(config.keys as string) || ''}
                             onChange={onChange}
                             isDisabled={isViewing || disabled}
                             isRequired
@@ -549,7 +550,7 @@ function ConfigurationFormFields({
                                 '-----BEGIN CERTIFICATE-----\nAuthority certificate data\n-----END CERTIFICATE-----'
                             }
                             onBlur={onBlur}
-                            validated={showIdpCertPemError ? ValidatedOptions.error : 'default'}
+                            validated={showUserPkiKeysError ? ValidatedOptions.error : 'default'}
                         />
                     </FormGroup>
                 </GridItem>

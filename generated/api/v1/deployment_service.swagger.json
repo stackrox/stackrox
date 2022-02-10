@@ -361,7 +361,7 @@
         "nodePort": {
           "type": "integer",
           "format": "int32",
-          "title": "only set if level is HOST, NODE, or EXTERNAL"
+          "title": "only set if level is HOST, NODE, EXTERNAL or ROUTE"
         },
         "externalIps": {
           "type": "array",
@@ -374,7 +374,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "only set if level is EXTERNAL or ROUTE"
         }
       }
     },
@@ -385,7 +386,8 @@
         "EXTERNAL",
         "NODE",
         "INTERNAL",
-        "HOST"
+        "HOST",
+        "ROUTE"
       ],
       "default": "UNSET"
     },
@@ -520,6 +522,12 @@
         },
         "name": {
           "type": "string"
+        },
+        "livenessProbe": {
+          "$ref": "#/definitions/storageLivenessProbe"
+        },
+        "readinessProbe": {
+          "$ref": "#/definitions/storageReadinessProbe"
         }
       }
     },
@@ -687,6 +695,9 @@
         "hostIpc": {
           "type": "boolean"
         },
+        "runtimeClass": {
+          "type": "string"
+        },
         "tolerations": {
           "type": "array",
           "items": {
@@ -714,7 +725,7 @@
           }
         }
       },
-      "title": "Next available tag: 34"
+      "title": "Next available tag: 35"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -826,6 +837,14 @@
       },
       "title": "Next available tag: 9"
     },
+    "storageLivenessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
     "storagePermissionLevel": {
       "type": "string",
       "enum": [
@@ -867,6 +886,14 @@
         }
       },
       "title": "Next Available Tag: 6"
+    },
+    "storageReadinessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
     },
     "storageResources": {
       "type": "object",

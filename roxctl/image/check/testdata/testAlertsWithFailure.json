@@ -1,0 +1,105 @@
+{
+  "results": [
+    {
+      "metadata": {
+        "id": "unknown",
+        "additionalInfo": null
+      },
+      "summary": {
+        "CRITICAL": 1,
+        "HIGH": 2,
+        "LOW": 1,
+        "MEDIUM": 3,
+        "TOTAL": 7
+      },
+      "violatedPolicies": [
+        {
+          "name": "policy 1",
+          "severity": "CRITICAL",
+          "description": "policy 1 for testing",
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3"
+          ],
+          "remediation": "policy 1 for testing",
+          "failingCheck": true
+        },
+        {
+          "name": "policy 4",
+          "severity": "HIGH",
+          "description": "policy 4 for testing",
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 4 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 8",
+          "severity": "HIGH",
+          "description": "",
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3"
+          ],
+          "remediation": "policy 8 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 2",
+          "severity": "MEDIUM",
+          "description": "policy 2 for testing",
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 2 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 5",
+          "severity": "MEDIUM",
+          "description": "policy 5 for testing",
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3",
+            "test violation 1"
+          ],
+          "remediation": "policy 5 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 6",
+          "severity": "MEDIUM",
+          "description": "policy 6 for testing",
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3"
+          ],
+          "remediation": "policy 6 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 7",
+          "severity": "LOW",
+          "description": "policy 7 for testing",
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 7 for testing",
+          "failingCheck": false
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "CRITICAL": 1,
+    "HIGH": 2,
+    "LOW": 1,
+    "MEDIUM": 3,
+    "TOTAL": 7
+  }
+}

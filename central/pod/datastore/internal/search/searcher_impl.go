@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 var (
@@ -58,8 +57,7 @@ func (ds *searcherImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*stor
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(podIndexer blevesearch.UnsafeSearcher) search.Searcher {
 	filteredSearcher := podsSearchHelper.FilteredSearcher(podIndexer) // Make the UnsafeSearcher safe.
-	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher)
-	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
+	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher
 }

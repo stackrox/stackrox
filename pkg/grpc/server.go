@@ -116,6 +116,7 @@ type Config struct {
 	// These interceptors are executed post authn and authz.
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
+	HTTPInterceptors   []httputil.HTTPInterceptor
 
 	Endpoints []*EndpointConfig
 
@@ -255,12 +256,20 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	// - RequestInfo handler (consumed by other handlers)
 	// - IdentityExtractor
 	// - AuthConfigChecker
-	httpInterceptors := httputil.ChainInterceptors(
+	preAuthHTTPInterceptors := httputil.ChainInterceptors(
 		a.requestInfoHandler.HTTPIntercept,
 		contextutil.HTTPInterceptor(contextUpdaters...),
 	)
 
-	postAuthHTTPInterceptor := contextutil.HTTPInterceptor(a.config.PostAuthContextEnrichers...)
+	// Interceptors for HTTP/1.1 requests that must be called after
+	// authorization (in order of processing):
+	// - Post auth context enrichers, including SAC (with authz tracing if on)
+	// - Any other specified interceptors (with authz tracing sink if on)
+	postAuthHTTPInterceptors := httputil.ChainInterceptors(
+		append([]httputil.HTTPInterceptor{
+			contextutil.HTTPInterceptor(a.config.PostAuthContextEnrichers...)},
+			a.config.HTTPInterceptors...)...,
+	)
 
 	mux := http.NewServeMux()
 	allRoutes := a.config.CustomRoutes
@@ -272,7 +281,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		allRoutes = append(allRoutes, srvWithRoutes.CustomRoutes()...)
 	}
 	for _, route := range allRoutes {
-		handler := httpInterceptors(route.Handler(postAuthHTTPInterceptor))
+		handler := preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptors))
 		if a.config.HTTPMetrics != nil {
 			handler = a.config.HTTPMetrics.WrapHandler(handler, route.Route)
 		}
@@ -280,7 +289,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 
 	if a.config.AuthProviders != nil {
-		mux.Handle(a.config.AuthProviders.URLPathPrefix(), httpInterceptors(a.config.AuthProviders))
+		mux.Handle(a.config.AuthProviders.URLPathPrefix(), preAuthHTTPInterceptors(a.config.AuthProviders))
 	}
 
 	gwMux := runtime.NewServeMux(

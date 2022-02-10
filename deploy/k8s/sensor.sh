@@ -20,6 +20,5 @@ fi
 if [[ -z "$ROX_ADMIN_PASSWORD" && -f "${K8S_DIR}/central-deploy/password" ]]; then
 	export ROX_ADMIN_PASSWORD="$(cat ${K8S_DIR}/central-deploy/password)"
 fi
-echo "ROX_ADMIN_PASSWORD set to ${ROX_ADMIN_PASSWORD}"
 
 launch_sensor "$K8S_DIR"

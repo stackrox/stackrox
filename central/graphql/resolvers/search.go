@@ -158,15 +158,6 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 	return searchfuncs
 }
 
-func checkSearchAuth(ctx context.Context) error {
-	for _, resourceMetadata := range searchService.GetSearchCategoryToResourceMetadata() {
-		if err := readAuth(resourceMetadata)(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 type searchRequest struct {
 	Query      string
 	Categories *[]string
@@ -174,17 +165,11 @@ type searchRequest struct {
 
 // SearchAutocomplete returns autocomplete responses for the given partial query.
 func (resolver *Resolver) SearchAutocomplete(ctx context.Context, args searchRequest) ([]string, error) {
-	if err := checkSearchAuth(ctx); err != nil {
-		return nil, err
-	}
 	return searchService.RunAutoComplete(ctx, args.Query, toSearchCategories(args.Categories), resolver.getAutoCompleteSearchers())
 }
 
 // SearchOptions gets all search options available for the listed categories
-func (resolver *Resolver) SearchOptions(ctx context.Context, args struct{ Categories *[]string }) ([]string, error) {
-	if err := checkSearchAuth(ctx); err != nil {
-		return nil, err
-	}
+func (resolver *Resolver) SearchOptions(_ context.Context, args struct{ Categories *[]string }) ([]string, error) {
 	return searchService.Options(toSearchCategories(args.Categories)), nil
 }
 
@@ -192,9 +177,6 @@ func (resolver *Resolver) SearchOptions(ctx context.Context, args struct{ Catego
 // Note: there is not currently a way to request the underlying object from SearchResult; it might be nice to have
 // this in the future.
 func (resolver *Resolver) GlobalSearch(ctx context.Context, args searchRequest) ([]*searchResultResolver, error) {
-	if err := checkSearchAuth(ctx); err != nil {
-		return nil, err
-	}
 	results, _, err := searchService.GlobalSearch(ctx, args.Query, toSearchCategories(args.Categories), resolver.getSearchFuncs())
 	return resolver.wrapSearchResults(results, err)
 }

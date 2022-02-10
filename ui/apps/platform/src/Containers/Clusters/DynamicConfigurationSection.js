@@ -15,10 +15,17 @@ import {
 import { clusterTypes } from './cluster.helpers';
 import HelmValueWarning from './Components/HelmValueWarning';
 
-const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, clusterType }) => {
+const DynamicConfigurationSection = ({
+    handleChange,
+    dynamicConfig,
+    helmConfig,
+    clusterType,
+    isManagerTypeNonConfigurable,
+}) => {
     const { registryOverride, admissionControllerConfig } = dynamicConfig;
 
     const isLoggingSupported = clusterType === clusterTypes.OPENSHIFT_4;
+
     // @TODO, replace open prop with dynamic logic, based on clusterType
     return (
         <CollapsibleSection
@@ -42,6 +49,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             value={registryOverride}
                             className={inputTextClassName}
                             placeholder="image-mirror.example.com"
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -62,6 +70,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.enabled"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.enabled}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     {helmConfig &&
@@ -88,6 +97,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.enforceOnUpdates}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -112,6 +122,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.timeoutSeconds"
                             onChange={handleChange}
                             value={admissionControllerConfig.timeoutSeconds}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -134,6 +145,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.scanInline"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.scanInline}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -154,6 +166,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.disableBypass"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.disableBypass}
+                            disabled={isManagerTypeNonConfigurable}
                         />
                     </div>
                     <HelmValueWarning
@@ -171,7 +184,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                         <ToggleSwitch
                             id="dynamicConfig.disableAuditLogs"
                             name="dynamicConfig.disableAuditLogs"
-                            disabled={!isLoggingSupported}
+                            disabled={!isLoggingSupported || isManagerTypeNonConfigurable}
                             toggleHandler={handleChange}
                             enabled={dynamicConfig.disableAuditLogs}
                             flipped

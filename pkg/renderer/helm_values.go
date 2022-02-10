@@ -3,8 +3,8 @@ package renderer
 import (
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
+	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -241,12 +241,10 @@ scanner:
 
 var (
 	publicValuesTemplate = template.Must(
-		template.New("values-public.yaml").Funcs(sprig.TxtFuncMap()).Parse(
-			publicValuesTemplateStr))
+		helmTemplate.InitTemplate("values-public.yaml").Parse(publicValuesTemplateStr))
 
 	privateValuesTemplate = template.Must(
-		template.New("values-private.yaml").Funcs(sprig.TxtFuncMap()).Parse(
-			privateValuesYamlTemplateStr))
+		helmTemplate.InitTemplate("values-private.yaml").Parse(privateValuesYamlTemplateStr))
 )
 
 // renderNewHelmValues creates values files for the new Central Services helm charts,

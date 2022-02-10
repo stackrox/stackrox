@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/policy/index"
+	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -102,7 +103,7 @@ func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResul
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, policyMapping.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }

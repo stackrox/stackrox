@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -128,8 +129,8 @@ func (s *alertDataStoreTestSuite) TestAddAlert() {
 	s.storage.EXPECT().Upsert(fakeAlert).Return(nil)
 	s.indexer.EXPECT().AddListAlert(fillSortHelperFields(convert.AlertToListAlert(alerttest.NewFakeAlert()))).Return(errFake)
 
+	// We don't expect AckKeysIndexed, since the error returned from the above call will prevent this.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
-	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
 
 	s.Equal(errFake, err)
 }
@@ -138,8 +139,8 @@ func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Upsert(fakeAlert).Return(errFake)
 
+	// No AckKeysIndexed call due to error on upsert.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
-	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
 
 	s.Equal(errFake, err)
 }
@@ -150,11 +151,10 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.storage.EXPECT().Upsert(gomock.Any()).Return(nil)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Return(nil)
-	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
+	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Times(1).Return(nil)
 
 	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
-	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
 
 	s.Equal(storage.ViolationState_RESOLVED, fakeAlert.GetState())
 }
@@ -269,8 +269,7 @@ func (s *alertDataStoreTestSuite) TestGetAlertCommentsAllowed() {
 func (s *alertDataStoreWithSACTestSuite) TestGetAlertCommentsEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	fakeComment := alerttest.NewFakeAlertComment()
-	s.commentsStorage.EXPECT().GetCommentsForAlert(alerttest.FakeAlertID).Return([]*storage.Comment{fakeComment}, nil)
+	// No lookup should happen on the comments storage, due to insufficient access.
 
 	comments, err := s.dataStore.GetAlertComments(s.hasNoneCtx, alerttest.FakeAlertID)
 	s.NoError(err)
@@ -289,7 +288,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddCommentAllowed() {
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertCommentEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.commentsStorage.EXPECT().AddAlertComment(alerttest.NewFakeAlertComment())
+	// No call should happen on the comments store, due to insufficient access.
 
 	_, err := s.dataStore.AddAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
@@ -299,7 +298,6 @@ func (s *alertDataStoreWithSACTestSuite) TestUpdateCommentAllowed() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(alerttest.NewFakeAlertComment(), nil)
-	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
 
 	err := s.dataStore.UpdateAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
@@ -312,6 +310,8 @@ func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID 
 	identity.EXPECT().FullName().AnyTimes().Return(userID)
 	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
 	identity.EXPECT().User().AnyTimes().Return(nil)
+	dummyRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+	identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{dummyRole})
 	identity.EXPECT().Permissions().AnyTimes().Return(utils.FromResourcesWithAccess(resourceWithAccess...))
 
 	return authn.ContextWithIdentity(ctx, identity, s.T())
@@ -347,7 +347,7 @@ func (s *alertDataStoreTestSuite) TestAlertAccessControl() {
 func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertCommentEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
+	// No access to comments storage due to insufficient permissions.
 
 	err := s.dataStore.UpdateAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
@@ -357,7 +357,6 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(alerttest.NewFakeAlertComment(), nil)
-	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
 
 	err := s.dataStore.RemoveAlertComment(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
@@ -367,7 +366,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
 func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertCommentEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
+	// No access to comments storage due to insufficient permissions.
 
 	err := s.dataStore.RemoveAlertComment(s.hasReadCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)

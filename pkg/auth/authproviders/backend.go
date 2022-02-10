@@ -23,7 +23,7 @@ type Backend interface {
 	Config() map[string]string
 
 	// LoginURL returns a login URL with the given client state.
-	LoginURL(clientState string, ri *requestinfo.RequestInfo) string
+	LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error)
 	// RefreshURL returns a refresh URL, if supported by the auth provider.
 	RefreshURL() string
 
@@ -34,8 +34,8 @@ type Backend interface {
 	OnDisable(provider Provider)
 
 	// ProcessHTTPRequest dispatches HTTP/1.1 requests intended for this provider. If the request is a callback from
-	// a login page, and the login was successful, the respective ExternalUserClaim is returned. If a non-login HTTP
-	// call should be handled, a nil claim and error should be returned.
+	// a login page, and the login was successful, the respective AuthResponse is returned. If a non-login HTTP
+	// call should be handled, a nil AuthResponse and error should be returned.
 	ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*AuthResponse, error)
 	// ExchangeToken is called to exchange an external token, referring to the auth provider, against a Rox-issued
 	// token.

@@ -12,13 +12,23 @@ const autoCompleteURL = `${baseUrl}/autocomplete`;
  */
 export function fetchOptions(query = '') {
     return axios.get(`${baseUrl}/metadata/options?${query}`).then((response) => {
-        const options = response.data.options.map((option) => ({
-            value: `${option}:`,
-            label: `${option}:`,
-            type: 'categoryOption',
-        }));
+        const options =
+            response?.data?.options?.map((option) => ({
+                value: `${option}:`,
+                label: `${option}:`,
+                type: 'categoryOption',
+            })) ?? {};
         return { options };
     });
+}
+
+/*
+ * Get search options for category.
+ */
+export function getSearchOptionsForCategory(searchCategory) {
+    return axios
+        .get(`${baseUrl}/metadata/options?categories=${searchCategory}`)
+        .then((response) => response?.data?.options ?? []);
 }
 
 /**
@@ -37,5 +47,7 @@ export function fetchGlobalSearchResults(filters) {
 // Fetches the autocomplete response.
 export function fetchAutoCompleteResults({ query, categories }) {
     const params = queryString.stringify({ query, categories }, { arrayFormat: 'repeat' });
-    return axios.get(`${autoCompleteURL}?${params}`).then((response) => response.data.values || []);
+    return axios
+        .get(`${autoCompleteURL}?${params}`)
+        .then((response) => response?.data?.values || []);
 }

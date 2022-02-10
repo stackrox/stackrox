@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,14 +29,19 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	globalScopedResource := permissions.ResourceMetadata{
 		Resource: "dummy-3", Scope: permissions.GlobalScope,
 	}
+
+	testRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+
 	id := mocks.NewMockIdentity(gomock.NewController(t))
 	ctx := authn.ContextWithIdentity(context.Background(), id, t)
+	id.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	id.EXPECT().Permissions().Return(map[string]storage.Access{
 		string(clusterScopedResource.Resource): storage.Access_READ_WRITE_ACCESS,
 	}).AnyTimes()
 
 	idWithNoPermissions := mocks.NewMockIdentity(gomock.NewController(t))
 	ctxWithNoPermissions := authn.ContextWithIdentity(context.Background(), idWithNoPermissions, t)
+	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
 
 	contextWithPermissionCheck, _ := permissioncheck.ContextWithPermissionCheck()
@@ -65,7 +71,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			err:  permissioncheck.ErrPermissionCheckOnly,
 		},
 		{
-			name: "built in scope auth check permissions not sufficient permissions",
+			name: "built-in scoped authz check permissions not sufficient permissions",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}, {
@@ -75,14 +81,14 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			err: errorhelpers.ErrNotAuthorized,
 		},
 		{
-			name: "built in scope auth check permissions",
+			name: "built-in scoped authz check permissions",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
 		},
 		{
-			name: "built in scope auth check permissions but nil permissions in ID",
+			name: "built-in scoped authz check permissions but nil permissions in ID",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},

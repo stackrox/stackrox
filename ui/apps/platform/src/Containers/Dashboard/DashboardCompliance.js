@@ -28,17 +28,24 @@ const DashboardCompliance = ({ match, location }) => {
         const { complianceStandards } = data;
         const modifiedData = data.controls.results.map((result) => {
             const standard = complianceStandards.find(
-                (cs) => cs.id === result.aggregationKeys[0].id
+                (cs) => cs.id === result?.aggregationKeys[0]?.id
             );
             const { numPassing, numFailing } = result;
             const percentagePassing =
                 Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
             const link = URLService.getURL(match, location)
                 .base(entityTypes.CONTROL, null, useCases.COMPLIANCE)
-                .query({ [searchParams.page]: { standard: standardLabels[standard.id] } })
+                .query({
+                    [searchParams.page]: {
+                        standard:
+                            standardLabels[standard?.id] ||
+                            result?.aggregationKeys[0]?.id ||
+                            'Unrecognized standard',
+                    },
+                })
                 .url();
             const modifiedResult = {
-                name: standard.name,
+                name: standard?.name || result?.aggregationKeys[0]?.id || 'Unrecognized standard',
                 passing: percentagePassing,
                 failing: 100 - percentagePassing,
                 link,

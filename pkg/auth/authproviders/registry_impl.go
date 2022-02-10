@@ -271,6 +271,10 @@ func (r *registryImpl) IssueToken(ctx context.Context, provider Provider, authRe
 	return token.Token, refreshCookie, nil
 }
 
+func (r *registryImpl) GetBackendFactories() map[string]BackendFactory {
+	return r.backendFactories
+}
+
 func (r *registryImpl) addProvider(provider Provider) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

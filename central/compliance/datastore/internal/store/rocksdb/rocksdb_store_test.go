@@ -138,12 +138,12 @@ func (s *RocksDBStoreTestSuite) TestStoreDomain() {
 	result, domain := store.GetMockResult()
 
 	s.Require().NoError(s.store.StoreRunResults(result))
-	dbResult, err := s.store.GetSpecificRunResults(result.GetRunMetadata().GetClusterId(), result.GetRunMetadata().GetStandardId(), result.GetRunMetadata().GetRunId(), dsTypes.WithMessageStrings)
+	_, err := s.store.GetSpecificRunResults(result.GetRunMetadata().GetClusterId(), result.GetRunMetadata().GetStandardId(), result.GetRunMetadata().GetRunId(), dsTypes.WithMessageStrings)
 	// Run results without a domain are invalid
 	s.Require().Error(err)
 
 	s.Require().NoError(s.store.StoreComplianceDomain(domain))
-	dbResult, err = s.store.GetSpecificRunResults(result.GetRunMetadata().GetClusterId(), result.GetRunMetadata().GetStandardId(), result.GetRunMetadata().GetRunId(), dsTypes.WithMessageStrings)
+	dbResult, err := s.store.GetSpecificRunResults(result.GetRunMetadata().GetClusterId(), result.GetRunMetadata().GetStandardId(), result.GetRunMetadata().GetRunId(), dsTypes.WithMessageStrings)
 	s.Require().NoError(err)
 	s.Equal(domain, dbResult.LastSuccessfulResults.Domain)
 }

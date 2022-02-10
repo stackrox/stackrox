@@ -148,12 +148,8 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
-	url, err := p.loginURL(clientState)
-	if err != nil {
-		log.Errorf("could not obtain the login URL: %v", err)
-	}
-	return url
+func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) (string, error) {
+	return p.loginURL(clientState)
 }
 
 func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
@@ -213,7 +209,7 @@ func saml2AssertionInfoToExternalClaim(assertionInfo *saml2.AssertionInfo) *toke
 				getAttribute(assertionInfo, surnameAttributes...))),
 	}
 	claim.Attributes = make(map[string][]string)
-	claim.Attributes["userid"] = []string{claim.UserID}
+	claim.Attributes[authproviders.UseridAttribute] = []string{claim.UserID}
 
 	// We store claims as both friendly name and name for easy of use.
 	for _, value := range assertionInfo.Values {

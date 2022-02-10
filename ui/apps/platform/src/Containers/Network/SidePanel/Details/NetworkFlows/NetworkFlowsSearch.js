@@ -40,7 +40,7 @@ NetworkFlowsSearch.propTypes = {
     networkFlows: PropTypes.arrayOf(
         PropTypes.shape({
             traffic: PropTypes.string.isRequired,
-            deploymentName: PropTypes.string.isRequired,
+            deploymentId: PropTypes.string.isRequired,
             namespace: PropTypes.string.isRequired,
             portsAndProtocols: PropTypes.arrayOf(
                 PropTypes.shape({

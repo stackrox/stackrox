@@ -1,7 +1,7 @@
 package gatherer
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -12,7 +12,7 @@ import (
 )
 
 func writeChecksumLocally(checksum []byte) error {
-	if err := ioutil.WriteFile(defaultexternalsrcs.LocalChecksumFile, checksum, 0644); err != nil {
+	if err := os.WriteFile(defaultexternalsrcs.LocalChecksumFile, checksum, 0644); err != nil {
 		return errors.Wrapf(err, "writing provider networks checksum %s", defaultexternalsrcs.LocalChecksumFile)
 	}
 	return nil

@@ -1,10 +1,13 @@
 /* eslint-disable import/prefer-default-export */
 export function checkForPermissionErrorMessage(error: Error, defaultMessage?: string): string {
-    if (error && typeof error.message === 'string') {
-        if (error.message.includes('403') || error.message.toLowerCase().includes('permission')) {
+    if (typeof error?.message === 'string') {
+        if (error.message.includes('403') || error.message.includes('not authorized')) {
             return 'A database error has occurred. Please check that you have the correct permissions to view this information.';
+        }
+        if (defaultMessage) {
+            return defaultMessage;
         }
         return error.message;
     }
-    return defaultMessage || 'An unknown error has occurred.';
+    return 'An unknown error has occurred.';
 }

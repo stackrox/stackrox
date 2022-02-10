@@ -67,13 +67,15 @@
                 "SERVICE_ACCOUNTS",
                 "ROLES",
                 "ROLEBINDINGS",
+                "REPORT_CONFIGURATIONS",
                 "PROCESS_BASELINES",
                 "SUBJECTS",
                 "RISKS",
                 "VULNERABILITIES",
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
-                "NETWORK_ENTITY"
+                "NETWORK_ENTITY",
+                "VULN_REQUEST"
               ]
             },
             "collectionFormat": "multi"
@@ -140,13 +142,15 @@
                 "SERVICE_ACCOUNTS",
                 "ROLES",
                 "ROLEBINDINGS",
+                "REPORT_CONFIGURATIONS",
                 "PROCESS_BASELINES",
                 "SUBJECTS",
                 "RISKS",
                 "VULNERABILITIES",
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
-                "NETWORK_ENTITY"
+                "NETWORK_ENTITY",
+                "VULN_REQUEST"
               ]
             },
             "collectionFormat": "multi"
@@ -207,13 +211,15 @@
                 "SERVICE_ACCOUNTS",
                 "ROLES",
                 "ROLEBINDINGS",
+                "REPORT_CONFIGURATIONS",
                 "PROCESS_BASELINES",
                 "SUBJECTS",
                 "RISKS",
                 "VULNERABILITIES",
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
-                "NETWORK_ENTITY"
+                "NETWORK_ENTITY",
+                "VULN_REQUEST"
               ]
             },
             "collectionFormat": "multi"
@@ -323,16 +329,18 @@
         "SERVICE_ACCOUNTS",
         "ROLES",
         "ROLEBINDINGS",
+        "REPORT_CONFIGURATIONS",
         "PROCESS_BASELINES",
         "SUBJECTS",
         "RISKS",
         "VULNERABILITIES",
         "COMPONENT_VULN_EDGE",
         "CLUSTER_VULN_EDGE",
-        "NETWORK_ENTITY"
+        "NETWORK_ENTITY",
+        "VULN_REQUEST"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 31"
+      "title": "Next available tag: 32"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

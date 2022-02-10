@@ -517,7 +517,7 @@
         "nodePort": {
           "type": "integer",
           "format": "int32",
-          "title": "only set if level is HOST, NODE, or EXTERNAL"
+          "title": "only set if level is HOST, NODE, EXTERNAL or ROUTE"
         },
         "externalIps": {
           "type": "array",
@@ -530,7 +530,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "only set if level is EXTERNAL or ROUTE"
         }
       }
     },
@@ -541,7 +542,8 @@
         "EXTERNAL",
         "NODE",
         "INTERNAL",
-        "HOST"
+        "HOST",
+        "ROUTE"
       ],
       "default": "UNSET"
     },
@@ -944,7 +946,8 @@
           "type": "boolean"
         },
         "helmConfig": {
-          "$ref": "#/definitions/storageCompleteClusterConfig"
+          "$ref": "#/definitions/storageCompleteClusterConfig",
+          "description": "The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed."
         },
         "mostRecentSensorId": {
           "$ref": "#/definitions/storageSensorDeploymentIdentification",
@@ -959,6 +962,9 @@
         },
         "initBundleId": {
           "type": "string"
+        },
+        "managedBy": {
+          "$ref": "#/definitions/storageManagerType"
         }
       }
     },
@@ -1361,6 +1367,12 @@
         },
         "name": {
           "type": "string"
+        },
+        "livenessProbe": {
+          "$ref": "#/definitions/storageLivenessProbe"
+        },
+        "readinessProbe": {
+          "$ref": "#/definitions/storageReadinessProbe"
         }
       }
     },
@@ -1533,6 +1545,9 @@
         "hostIpc": {
           "type": "boolean"
         },
+        "runtimeClass": {
+          "type": "string"
+        },
         "tolerations": {
           "type": "array",
           "items": {
@@ -1560,7 +1575,7 @@
           }
         }
       },
-      "title": "Next available tag: 34"
+      "title": "Next available tag: 35"
     },
     "storageDynamicClusterConfig": {
       "type": "object",
@@ -1690,9 +1705,12 @@
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
+        },
+        "state": {
+          "$ref": "#/definitions/storageVulnerabilityState"
         }
       },
-      "title": "TODO: Remove when migration is in place\nNext Tag: 20"
+      "title": "Next Tag: 21"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -1778,6 +1796,24 @@
         }
       },
       "title": "Next available tag: 4"
+    },
+    "storageLivenessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageManagerType": {
+      "type": "string",
+      "enum": [
+        "MANAGER_TYPE_UNKNOWN",
+        "MANAGER_TYPE_MANUAL",
+        "MANAGER_TYPE_HELM_CHART",
+        "MANAGER_TYPE_KUBERNETES_OPERATOR"
+      ],
+      "default": "MANAGER_TYPE_UNKNOWN"
     },
     "storageNode": {
       "type": "object",
@@ -2002,6 +2038,14 @@
         }
       }
     },
+    "storageReadinessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
     "storageResources": {
       "type": "object",
       "properties": {
@@ -2068,6 +2112,9 @@
           "type": "string"
         },
         "appServiceaccountId": {
+          "type": "string"
+        },
+        "k8sNodeName": {
           "type": "string"
         }
       },
@@ -2214,6 +2261,16 @@
         "CRITICAL_VULNERABILITY_SEVERITY"
       ],
       "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "storageVulnerabilityState": {
+      "type": "string",
+      "enum": [
+        "OBSERVED",
+        "DEFERRED",
+        "FALSE_POSITIVE"
+      ],
+      "default": "OBSERVED",
+      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed."
     },
     "v1ComplianceControl": {
       "type": "object",

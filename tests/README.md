@@ -12,7 +12,7 @@ Note: These tests always run on CI unless explicitly labeled otherwise.
 1. Deploy the StackRox platform
     ex: `../deploy/k8s/deploy-local.sh`
 
-**Note: There may not be any running deployments call `nginx`, as it will collide with the tests.**
+**Note: There may not be any running deployments called `nginx`, as it will collide with the tests.**
 
 **Note: Some tests are just easier to run on CI (example: anything needing certs).**
 

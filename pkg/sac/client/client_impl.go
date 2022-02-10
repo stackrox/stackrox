@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -53,7 +53,7 @@ func (c *clientImpl) ForUser(ctx context.Context, principal payload.Principal, s
 	defer utils.IgnoreError(resp.Body.Close)
 	if resp.StatusCode != http.StatusOK {
 		statusString := fmt.Sprintf("Auth plugin returned non-200 status code %s", resp.Status)
-		respBytes, bodyErr := ioutil.ReadAll(resp.Body)
+		respBytes, bodyErr := io.ReadAll(resp.Body)
 		bodyOrErr := ""
 		if bodyErr != nil {
 			bodyOrErr = fmt.Sprintf(".  Error retrieving response body was %s", bodyErr)
@@ -64,9 +64,9 @@ func (c *clientImpl) ForUser(ctx context.Context, principal payload.Principal, s
 		// Log the full error, but only return the status code, which is not sensitive.
 		return nil, nil, errors.New(statusString)
 	}
-	respBytes, err := ioutil.ReadAll(resp.Body)
+	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		// ioutil.ReadAll error never contains part of the read data, so it is OK to forward to the user.
+		// io.ReadAll error never contains part of the read data, so it is OK to forward to the user.
 		return nil, nil, errors.Wrap(err, "error reading response from authorization plugin")
 	}
 	var response payload.AuthorizationResponse

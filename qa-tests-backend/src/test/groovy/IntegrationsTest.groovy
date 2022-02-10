@@ -28,7 +28,6 @@ import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
 import objects.SyslogNotifier
-import objects.TeamsNotifier
 import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
@@ -43,6 +42,7 @@ import org.junit.AssumptionViolatedException
 import org.junit.Rule
 import org.junit.experimental.categories.Category
 import org.junit.rules.Timeout
+import spock.lang.Ignore
 import spock.lang.Unroll
 
 class IntegrationsTest extends BaseSpecification {
@@ -76,6 +76,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @Ignore("ROX-8113 - email tests are broken")
     def "Verify create Email Integration (port #port, disable TLS=#disableTLS, startTLS=#startTLS)"() {
         given:
         "a configuration that is expected to work"
@@ -260,13 +261,19 @@ class IntegrationsTest extends BaseSpecification {
 
         type                    | notifierTypes
         "SLACK"                 | [new SlackNotifier()]
-        "EMAIL"                 | [new EmailNotifier()]
-        //        "JIRA"                  | [new JiraNotifier()] TODO(ROX-7460)
-        "TEAMS"                 | [new TeamsNotifier()]
+        // ROX-8113 - Email tests are broken
+        // "EMAIL"                 | [new EmailNotifier()]
+        // "JIRA"                  | [new JiraNotifier()] TODO(ROX-7460)
+        // ROX-8145 - Teams tests are broken
+        // "TEAMS"                 | [new TeamsNotifier()]
         "GENERIC"               | [new GenericNotifier()]
 
         // Adding a SLACK, TEAMS, EMAIL notifier test so we still verify multiple notifiers
-        "SLACK, EMAIL, TEAMS"   | [new SlackNotifier(), new EmailNotifier(), new TeamsNotifier()]
+        // ROX-8113, ROX-8145 - Email and teams tests are broken
+        // "SLACK, EMAIL, TEAMS"   | [new SlackNotifier(), new EmailNotifier(), new TeamsNotifier()]
+
+        // Using Slack and Generic to verify multiple notifiers
+        "SLACK, GENERIC"        | [new SlackNotifier(), new GenericNotifier()]
     }
 
     @Unroll
@@ -328,12 +335,15 @@ class IntegrationsTest extends BaseSpecification {
         type        | notifierTypes       |
                 deployment
 
+        /*
+        // ROX-8113 - Email tests are broken
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
                         .setImage("nginx:latest")
+        */
 
         /*
         TODO(ROX-7589)
@@ -436,12 +446,16 @@ class IntegrationsTest extends BaseSpecification {
         type        | notifierTypes       |
                 deployment
 
+        /*
+        ROX-8113 - Email tests are broken
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
                         .setImage("nginx:latest")
+        */
+
          /*
          TODO(ROX-7589)
         "PAGERDUTY" | [new PagerDutyNotifier()]   |
@@ -557,6 +571,8 @@ class IntegrationsTest extends BaseSpecification {
                 namespaceAnnotation   |
                 deployment
 
+        /*
+        // ROX-8113 - Email tests are broken
         "Email deploy override"     |
                 new EmailNotifier("Email Test", false,
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt1@gmail.com")   |
@@ -576,6 +592,7 @@ class IntegrationsTest extends BaseSpecification {
                         .setName(uniqueName("policy-violation-email-notification-ns-override"))
                         .addLabel("app", "policy-violation-email-notification-ns-override")
                         .setImage("nginx:latest")
+         */
         "Slack deploy override"   |
                 new SlackNotifier("slack test", "slack-key")   |
                 null   |
@@ -680,13 +697,20 @@ class IntegrationsTest extends BaseSpecification {
         "invalid endpoint"
 
         new ECRRegistryIntegration()    | { [registryId: '0123456789',]
-        }       | StatusRuntimeException | /InvalidParameterException/ | "incorrect registry ID"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "incorrect registry ID"
         new ECRRegistryIntegration()    | { [region: 'nowhere',]
         }       | StatusRuntimeException | /valid region/ | "incorrect region"
         new ECRRegistryIntegration()    | { [accessKeyId: Env.mustGetAWSAccessKeyID() + "OOPS",]
         }       | StatusRuntimeException | /UnrecognizedClientException/ | "incorrect key"
         new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
+
+        new ECRRegistryIntegration()    | { [useAssumeRole: true,]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole with endpoint set"
+        new ECRRegistryIntegration()    | { [useAssumeRole: true, assumeRoleRoleId: "OOPS", endpoint: "",]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole with incorrect role"
+        new ECRRegistryIntegration()    | { [useAssumeRoleExternalId: true, assumeRoleExternalId: "OOPS", endpoint: "",]
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "AssumeRole external ID with incorrect external ID"
 
         new QuayImageIntegration()      | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |

@@ -131,6 +131,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 
 func (suite *ServiceTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *ServiceTestSuite) TestAuth() {
@@ -900,12 +901,12 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		testCase := c
+		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), testCase.checker)
+			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), c.checker)
 			err := checkAllNamespacesWriteAllowed(ctx, clusterID, namespaces...)
-			if testCase.expectAllowed {
+			if c.expectAllowed {
 				assert.NoError(t, err)
 			} else {
 				assert.ErrorIs(t, err, sac.ErrResourceAccessDenied)
@@ -953,18 +954,18 @@ func TestGetNamespacesFromModification(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		testCase := c
+		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			mod := &storage.NetworkPolicyModification{
-				ApplyYaml: testCase.applyYAML,
-				ToDelete:  testCase.toDelete,
+				ApplyYaml: c.applyYAML,
+				ToDelete:  c.toDelete,
 			}
 
 			nsSet, err := getNamespacesFromModification(mod)
 			require.NoError(t, err)
-			assert.ElementsMatch(t, nsSet.AsSlice(), testCase.expectedNamespaces)
+			assert.ElementsMatch(t, nsSet.AsSlice(), c.expectedNamespaces)
 		})
 	}
 }

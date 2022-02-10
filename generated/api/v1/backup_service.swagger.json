@@ -298,12 +298,39 @@
     }
   },
   "definitions": {
+    "ScheduleDaysOfMonth": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
+    },
+    "ScheduleDaysOfWeek": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
+    },
     "ScheduleIntervalType": {
       "type": "string",
       "enum": [
         "UNSET",
         "DAILY",
-        "WEEKLY"
+        "WEEKLY",
+        "MONTHLY"
       ],
       "default": "UNSET"
     },
@@ -444,6 +471,12 @@
         },
         "weekly": {
           "$ref": "#/definitions/ScheduleWeeklyInterval"
+        },
+        "daysOfWeek": {
+          "$ref": "#/definitions/ScheduleDaysOfWeek"
+        },
+        "daysOfMonth": {
+          "$ref": "#/definitions/ScheduleDaysOfMonth"
         }
       }
     },

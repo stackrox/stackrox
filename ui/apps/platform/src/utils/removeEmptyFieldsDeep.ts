@@ -1,4 +1,10 @@
-import { cloneDeep, isNil, isPlainObject, isObject, isEmpty, pickBy, mapValues } from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
+import isEmpty from 'lodash/isEmpty';
+import isNil from 'lodash/isNil';
+import isObject from 'lodash/isObject';
+import isPlainObject from 'lodash/isPlainObject';
+import mapValues from 'lodash/mapValues';
+import pickBy from 'lodash/pickBy';
 
 /**
  * Checks whether the value is empty (null, undefined, empty string, empty array, empty plain object).

@@ -57,7 +57,8 @@ func trySortAnd(rs *searchRequestSpec, p *v1.QueryPagination) (*searchRequestSpe
 // then we need to do the sorting as a separate query.
 func trySortComplex(rs *searchRequestSpec, p *v1.QueryPagination, specs []SearcherSpec) (*searchRequestSpec, bool) {
 	// Add a layer with an and, and sort.
-	for _, spec := range specs {
+	for i := range specs {
+		spec := specs[i]
 		if paginationMatchesOptions(p, spec.Options) {
 			q := search.EmptyQuery()
 			q.Pagination = p

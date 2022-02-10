@@ -23,14 +23,14 @@ runOnlyOnReleaseBuilds: &runOnlyOnReleaseBuilds
 
 runOnAllTagsWithQuayIOPullCtx: &runOnAllTagsWithQuayIOPullCtx
   <<: *runOnAllTags
-  context: quay-cgorman1-readonly
+  context: quay-rhacs-eng-readonly
 
 runOnAllTagsWithPushCtx: &runOnAllTagsWithPushCtx
   <<: *runOnAllTags
   context:
   - docker-io-push
-  - quay-cgorman1-readwrite
-  - quay-cgorman1-readonly
+  - quay-rhacs-eng-readwrite
+  - quay-rhacs-eng-readonly
 
 setupGoogleAppCreds: &setupGoogleAppCreds
   run:
@@ -46,7 +46,7 @@ setupGoogleAppCreds: &setupGoogleAppCreds
 loginToGCR: &loginToGCR
   run:
     name: Docker login to gcr.io
-    command: docker login -u _json_key -p "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" https://gcr.io
+    command: docker login -u _json_key --password-stdin \<<<"$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" https://gcr.io
     when: always
 
 restoreGoBuildCache: &restoreGoBuildCache
@@ -66,7 +66,7 @@ saveGoBuildCache: &saveGoBuildCache
     paths:
       - /home/circleci/.cache/go-build
 
-goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v2-{{ checksum "go.sum" }}'
+goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v3-{{ checksum "go.sum" }}'
 restoreGoModCache: &restoreGoModCache
   restore_cache:
     name: Restore Go module cache
@@ -137,7 +137,8 @@ setupRoxctl: &setupRoxctl
   run:
     name: Setup Roxctl from bin
     command: |
-      cp bin/linux/roxctl $GOPATH/bin/roxctl
+      source scripts/ci/lib.sh
+      install_built_roxctl_in_gopath
 
 setupLicense: &setupLicense
   run:
@@ -155,30 +156,27 @@ setupDefaultTLSCerts: &setupDefaultTLSCerts
   run:
     name: Setup default TLS certificates
     command: |
-      cert_dir="$(mktemp -d)"
-      ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
-      cci-export ROX_DEFAULT_TLS_CERT_FILE "${cert_dir}/tls.crt"
-      cci-export ROX_DEFAULT_TLS_KEY_FILE "${cert_dir}/tls.key"
-      cci-export DEFAULT_CA_FILE "${cert_dir}/ca.crt"
-      cci-export ROX_TEST_CA_PEM "$(cat "${cert_dir}/ca.crt")"
-      cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
+      source ./tests/scripts/setup-certs.sh
+      setup_default_TLS_certs
 
-      cci-export TRUSTSTORE_PATH "${cert_dir}/keystore.p12"
-
-      echo "Contents of ${cert_dir}:"
-      ls -al "${cert_dir}"
+      cci-export ROX_DEFAULT_TLS_CERT_FILE "$ROX_DEFAULT_TLS_CERT_FILE"
+      cci-export ROX_DEFAULT_TLS_KEY_FILE "$ROX_DEFAULT_TLS_KEY_FILE"
+      cci-export DEFAULT_CA_FILE "$DEFAULT_CA_FILE"
+      cci-export ROX_TEST_CA_PEM "$ROX_TEST_CA_PEM"
+      cci-export ROX_TEST_CENTRAL_CN "$ROX_TEST_CENTRAL_CN"
+      cci-export TRUSTSTORE_PATH "$TRUSTSTORE_PATH"
 
 setupClientTLSCerts: &setupClientTLSCerts
   run:
     name: Setup client auth TLS certificates
     command: |
-      cert_dir="$(mktemp -d)"
-      ./tests/scripts/setup-certs.sh "$cert_dir" "Client Certificate User" "Client CA"
+      source ./tests/scripts/setup-certs.sh
+      setup_client_TLS_certs
 
-      cci-export KEYSTORE_PATH "${cert_dir}/keystore.p12"
-      cci-export CLIENT_CA_PATH "${cert_dir}/ca.crt"
-      cci-export CLIENT_CERT_PATH "${cert_dir}/tls.crt"
-      cci-export CLIENT_KEY_PATH "${cert_dir}/tls.key"
+      cci-export KEYSTORE_PATH "$KEYSTORE_PATH"
+      cci-export CLIENT_CA_PATH "$CLIENT_CA_PATH"
+      cci-export CLIENT_CERT_PATH "$CLIENT_CERT_PATH"
+      cci-export CLIENT_KEY_PATH "$CLIENT_KEY_PATH"
 
 bounceCentral: &bounceCentral
   run:
@@ -190,7 +188,7 @@ waitForAPI: &waitForAPI
   run:
     name: Wait for the API server to be up
     command: |
-      source scripts/lib.sh
+      source tests/e2e/lib.sh
       wait_for_api
       cci-export API_HOSTNAME "$API_HOSTNAME"
       cci-export API_PORT "$API_PORT"
@@ -200,7 +198,7 @@ alwaysWaitForAPI: &alwaysWaitForAPI
   run:
     name: Wait for the API server to be up
     command: |
-      source scripts/lib.sh
+      source tests/e2e/lib.sh
       wait_for_api
       cci-export API_HOSTNAME "$API_HOSTNAME"
       cci-export API_PORT "$API_PORT"
@@ -296,7 +294,7 @@ downloadDiagnosticBundle: &downloadDiagnosticBundle
     when: always
 
 storeDiagnosticBundle: &storeDiagnosticBundle
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/diagnostic-bundle
     destination: diagnostic-bundle
 
@@ -320,12 +318,12 @@ collectMonitoringImages: &collectMonitoringImages
     when: always
 
 storeMonitoringImages: &storeMonitoringImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images
 
 storeMonitoringMetrics: &storeMonitoringMetrics
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/rawmetrics.zip
     destination: monitoring-metrics.zip
 
@@ -337,7 +335,7 @@ benchmarkDashboard: &benchmarkDashboard
       ./scripts/ci/bench-and-graph.sh .*Dashboard ./scale/tests/
 
 storeDashBenchImages: &storeDashBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-dashboard-bench
 
@@ -352,7 +350,7 @@ benchmarkCompliance: &benchmarkCompliance
       ./scripts/ci/bench-and-graph.sh .*Compliance ./scale/tests/
 
 storeComplianceBenchImages: &storeComplianceBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-compliance-bench
 
@@ -364,17 +362,17 @@ benchmarkDryRunPolicies: &benchmarkDryRunPolicies
       ./scripts/ci/bench-and-graph.sh .*DryRunPolicies ./scale/tests
 
 storeDryRunBenchImages: &storeDryRunBenchImages
-  store_artifacts:
+  ci-artifacts/store:
     path: monitoring/grafana/captures
     destination: monitoring-images-dryrun-bench
 
 storeQALogs: &storeQALogs
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/qa-tests-backend-logs
     destination: qa-tests-backend-logs
 
 storeProfilingResults: &storeProfilingResults
-  store_artifacts:
+  ci-artifacts/store:
     path: /tmp/pprof.zip
     destination: pprof.zip
 
@@ -383,7 +381,7 @@ storeUITestReports: &storeUITestReports
     path: ui/test-results/reports
 
 storeUITestArtifacts: &storeUITestArtifacts
-  store_artifacts:
+  ci-artifacts/store:
     path: ui/test-results/artifacts
     destination: ui-test-artifacts
 
@@ -399,7 +397,7 @@ checkQASpockResults: &checkQASpockResults
         < ./qa-tests-backend/build/spock-reports/aggregated_report.json || true
 
 storeQASpockReports: &storeQASpockReports
-  store_artifacts:
+  ci-artifacts/store:
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
@@ -411,7 +409,7 @@ backupCentral: &backupCentral
       roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output central-backup
 
 storeCentralBackupArtifact: &storeCentralBackupArtifact
-  store_artifacts:
+  ci-artifacts/store:
     path: central-backup
     destination: central-backup
 
@@ -426,7 +424,7 @@ getPrometheusMetricParser: &getPrometheusMetricParser
     name: Get prometheus-metric-parser
     command: |
       export GOPRIVATE=github.com/stackrox
-      go get github.com/stackrox/prometheus-metric-parser
+      go install github.com/stackrox/prometheus-metric-parser@latest
       prometheus-metric-parser help
 
 fetchBundleForRemoteClusterInTheDB: &fetchBundleForRemoteClusterInTheDB
@@ -445,6 +443,7 @@ checkToRunSeparateRaceConditionTestPipe: &checkToRunSeparateRaceConditionTestPip
   check-to-run:
     run-on-master: true
     run-on-tags: true
+    label: ci-race-tests
 
 version: 2.1
 
@@ -484,9 +483,18 @@ parameters:
   rox_license_key:
     type: string
     default: ""
+  ci_machine_image:
+    type: string
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
+    default: "ubuntu-2004:202111-02"
+  release_rc_tag_bash_regex:
+    type: string
+    # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
+    default: '^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
 
 orbs:
   win: circleci/windows@2.2.0
+  ci-artifacts: stackrox/ci-artifacts-orb@0.1.1
 
 executors:
   custom:
@@ -496,10 +504,10 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/cgorman1/apollo-ci:0.3.18
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.28
         auth:
-          username: $QUAY_CGORMAN1_RO_USER
-          password: $QUAY_CGORMAN1_RO_PASSWORD
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
     working_directory: /go/src/github.com/stackrox/rox
 
 commands:
@@ -555,51 +563,6 @@ commands:
               echo "Skipping tests because of the presence of the << parameters.label >> label..."
               circleci step halt
             fi
-
-  validate-upgrade:
-    description: "Validates the upgrade was successful against upgrade tests"
-    parameters:
-      upgrade-cluster-id:
-        type: string
-      desc:
-        type: string
-      policies-dir:
-        type: string
-        default: "../pkg/defaults/policies/files"
-    steps:
-      - run:
-          name: "<< parameters.desc >>"
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID << parameters.upgrade-cluster-id >>
-            cci-export POLICIES_JSON_RELATIVE_PATH << parameters.policies-dir >>
-            make -C qa-tests-backend upgrade-test
-
-  validate-upgrade-and-check-logs-with-bouncing:
-    description: "Validates the upgrade was successful against upgrade tests, bounces Central, then repeats"
-    parameters:
-      upgrade-cluster-id:
-        type: string
-      desc:
-        type: string
-      policies-dir:
-        type: string
-        default: "../pkg/defaults/policies/files"
-    steps:
-      - validate-upgrade:
-          upgrade-cluster-id: "<< parameters.upgrade-cluster-id >>"
-          desc: "<< parameters.desc >> (pre bounce)"
-          policies-dir: "<< parameters.policies-dir >>"
-      - check-stackrox-logs:
-          collect: true
-      - *bounceCentral
-      - *waitForAPI
-      - validate-upgrade:
-          upgrade-cluster-id: "<< parameters.upgrade-cluster-id >>"
-          desc: "<< parameters.desc >> (post bounce)"
-          policies-dir: "<< parameters.policies-dir >>"
-      - check-stackrox-logs:
-          collect: true
 
   check-label-exists-or-skip:
     description: "Checks GitHub for the given label, and skips the test if we're on a PR and the label is NOT present."
@@ -701,7 +664,7 @@ commands:
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir debug-dump
             ls -l debug-dump
-      - store_artifacts:
+      - ci-artifacts/store:
           path: debug-dump
           destination: debug
 
@@ -711,9 +674,9 @@ commands:
       - run:
           name: Pull the diagnostic bundle from Central
           command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir diagnostic-bundle
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir diagnostic-bundle --insecure-skip-tls-verify
             ls -l diagnostic-bundle
-      - store_artifacts:
+      - ci-artifacts/store:
           path: diagnostic-bundle
           destination: diagnostic
 
@@ -730,7 +693,7 @@ commands:
             ./scripts/grab-data-from-central.sh << parameters.destination >>
             ls -l << parameters.destination >>
           when: always
-      - store_artifacts:
+      - ci-artifacts/store:
           path: << parameters.destination >>
           destination: << parameters.destination >>
 
@@ -739,11 +702,9 @@ commands:
       destination:
         type: string
         default: k8s-service-logs
-
     description: Stores StackRox and cluster logs as artifacts
-
     steps:
-    - store_artifacts:
+    - ci-artifacts/store:
         path: /tmp/k8s-service-logs
         destination: << parameters.destination >>
 
@@ -753,7 +714,6 @@ commands:
         # In most jobs the logs are already grabbed by collect-k8s-logs
         type: boolean
         default: false
-
     description: Checks StackRox logs to ensure all services operated normally
     steps:
       - when:
@@ -763,7 +723,6 @@ commands:
                 name: Collect the StackRox logs
                 command: |
                   ./scripts/ci/collect-service-logs.sh stackrox
-
       - run:
           name: Verify that StackRox services did not restart during the runs
           command: |
@@ -779,7 +738,6 @@ commands:
                 fi
             fi
           when: always
-
       - run:
           name: Verify that StackRox service logs contain no suspicious entries
           command: |
@@ -842,6 +800,106 @@ commands:
             echo "Isolating pods"
             kubectl -n stackrox apply -R -f tests/proxy/netpol/
 
+  checkout-with-submodules:
+    steps:
+    - checkout
+
+    - add_ssh_keys:
+        fingerprints:
+        - "f1:20:e3:c4:eb:26:37:6f:ca:36:e0:39:cd:6b:95:ae"
+
+    - run:
+        name: Add SSH key of github.com
+        command: |
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+    - run:
+        name: Checkout submodules
+        command: |
+          git submodule update --init
+
+  check-docs-step:
+    parameters:
+      only-on-release:
+        type: boolean
+    steps:
+    - run:
+        name: Verify that docs are up to date
+        command: |
+          [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]] || {
+            echo "Skipping step as this is not a release or RC build ..."
+            exit 0
+          }
+          version="${BASH_REMATCH[1]}"
+          <<# parameters.only-on-release >>
+          [[ -z "${BASH_REMATCH[3]}" ]] || {
+            echo "Skipping as this is an RC build"
+            exit 0
+          }
+          <</ parameters.only-on-release >>
+
+          expected_content_branch="rhacs-docs-${version}"
+          actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
+          [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
+            echo >&2 "Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
+            exit 1
+          }
+
+          echo "Verifying that there is no newer commit on the branch ..."
+          git submodule update --remote docs/content
+          git diff --exit-code HEAD || {
+            echo >&2 "The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
+            echo >&2 "  git submodule update --remote docs/content"
+            echo >&2 "and commit the result."
+            exit 1
+          }
+
+  check-scanner-and-collector-release-step:
+    parameters:
+      fail-on-rc:
+        type: boolean
+    steps:
+    - run:
+        name: Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release
+        command: |
+          function is_release() {
+            [[ "$1" =~ << pipeline.parameters.release_rc_tag_bash_regex >> && -z "${BASH_REMATCH[3]}" ]]
+          }
+          function is_rc() {
+            [[ "$1" =~ << pipeline.parameters.release_rc_tag_bash_regex >> && -n "${BASH_REMATCH[3]}" ]]
+          }
+          # Self-test to make sure functions actually work.
+          is_release "3.67.2" && is_rc "3.67.2-rc.1" && ! is_release "3.67.2-rc.1" && ! is_rc "3.67.2"
+          ! is_release "3.68.x-23-g8a2e05d0ec-dirty" && ! is_rc "3.68.x-23-g8a2e05d0ec-dirty"
+
+          set -x
+          main_release_like=0
+          main_rc=0
+          main_tag="$(make --quiet tag)"
+          if is_release "$main_tag"; then
+            main_release_like=1
+          fi
+          if is_rc "$main_tag"; then
+            main_release_like=1
+            main_rc=1
+          fi
+
+          release_mismatch=0
+          if ! is_release "$(make --quiet collector-tag)" && [[ "$main_release_like" == "1" ]]; then
+            echo >&2 "Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
+            release_mismatch=1
+          fi
+          if ! is_release "$(make --quiet scanner-tag)" && [[ "$main_release_like" == "1" ]]; then
+            echo >&2 "Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
+            release_mismatch=1
+          fi
+
+          if [[ "$release_mismatch" == "1" && ( "$main_rc" == "0" || "<< parameters.fail-on-rc >>" == "true" ) ]]; then
+            # Note that the script avoids doing early exits in order for the most of its logic to be executed drung
+            # regular pipeline runs so that it does not get rusty by the time of the release.
+            exit 1
+          fi
+
   setup-go-build-env:
     steps:
       - run:
@@ -865,64 +923,24 @@ commands:
       - run:
           name: Setup deployment env
           command: |
-            <<# parameters.docker-login >>
-            docker login -u  "${QUAY_CGORMAN1_RO_USER}" --password-stdin \<<<"${QUAY_CGORMAN1_RO_PASSWORD}" quay.io
-            <</ parameters.docker-login >>
-            <<# parameters.use-websocket >>
-            cci-export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
-            <</ parameters.use-websocket >>
-            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
-            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
-
-            REPO=cgorman1
-            cci-export MONITORING_IMAGE "quay.io/$REPO/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
-            cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
-            cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
-            cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            source scripts/ci/lib.sh
+            setup_deployment_env "<< parameters.docker-login >>" "<< parameters.use-websocket >>"
 
   setup-gcp:
     steps:
       - run:
           name: Setup GCP env
           command: |
-            if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "stackrox-ci" ]]; then
-              echo "Current project is already set to stackrox-ci. Assuming configuration already applied."
-              exit 0
-            fi
-            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
-            gcloud auth list
-            gcloud config set project stackrox-ci
-            gcloud config set compute/region us-central1
-            gcloud config unset compute/zone
-            gcloud config set core/disable_prompts True
-
-  create-gke:
-    parameters:
-      wait:
-        type: boolean
-        default: true
-
-    steps:
-      - run:
-          name: Create GKE cluster
-          command: |
-            source .circleci/create-cluster.sh && create-cluster
-            <<# parameters.wait >>
-            wait-for-cluster
-            <</ parameters.wait >>
+            source scripts/ci/gcp.sh
+            setup_gcp
 
   teardown-gke:
     steps:
       - run:
           name: Tear down GKE cluster
           command: |
-            ./scripts/ci/cleanup-deployment.sh || true
-
-            CLUSTER_NAME="${CLUSTER_NAME:-prevent-ci-${CIRCLE_JOB}}"
-            gcloud container clusters delete "$CLUSTER_NAME" --async
+            source scripts/ci/gke.sh
+            teardown_gke_cluster
 
           when: always
 
@@ -1075,7 +1093,7 @@ commands:
       - run:
           name: Destroy OpenShift 4 cluster
           environment:
-            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
           command: |
             if [ ! -d "$PWD/<< parameters.cluster-name >>" ]; then
               echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
@@ -1086,6 +1104,65 @@ commands:
               -e GOOGLE_CREDENTIALS="${GOOGLE_OPENSHIFT_4_CREDENTIALS}" \
               gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION destroy
           when: << parameters.when >>
+
+  destroy-rosa-cluster:
+    description: "Destroy ROSA cluster"
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - setup_remote_docker
+      - *loginToGCR
+      - run:
+          name: Destroy ROSA cluster
+          when: always
+          command: |
+            docker create -v /data --name artifacts alpine:3.9 /bin/true
+            docker cp "$PWD/artifacts/." artifacts:/data
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e OPENSHIFT_CLUSTER_MANAGER_API_TOKEN="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+              -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.17 \
+              destroy
+
+  destroy-aro-cluster:
+    description: "Destroy ARO cluster"
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - setup_remote_docker
+      - *loginToGCR
+      - run:
+          name: Destroy ARO cluster
+          when: always
+          command: |
+            docker create -v /data --name artifacts alpine:3.9 /bin/true
+            docker cp "$PWD/artifacts/." artifacts:/data
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
+              destroy
+
+  # ROSA and ARO teardown steps are not being run at the end of 'run-qa-tests'
+  # as expected, and troubleshooting is time prohibitive. So rather than passing
+  # teardown steps to 'run-qa-tests' I am passing a 'no-operation' and adding
+  # the steps just after the call to 'run-qa-tests'. This means the cluster
+  # destroy command is run under the api-e2e test context and not the 'run-qa-test'
+  # context.
+  nop-steps-stanza:
+    description: "nop-steps-stanza"
+    steps:
+      - run:
+          name: nop
+          command: echo &>/dev/null
 
   provision-gke-cluster:
     parameters:
@@ -1099,34 +1176,11 @@ commands:
         default: e2-standard-4
 
     steps:
-      - setup-gcp
-
       - run:
-          name: Assign environment variables
+          name: Provision a GKE cluster
           command: |
-            CLUSTER_NAME="rox-ci-<< parameters.cluster-id >>-${CIRCLE_BUILD_NUM}"
-            cci-export CLUSTER_NAME "$CLUSTER_NAME"
-            echo "Assigned cluster name is $CLUSTER_NAME"
-
-            NUM_NODES="<< parameters.num-nodes >>"
-            cci-export NUM_NODES "$NUM_NODES"
-            echo "Number of nodes for cluster is $NUM_NODES"
-
-            MACHINE_TYPE="<< parameters.machine-type >>"
-            cci-export MACHINE_TYPE "$MACHINE_TYPE"
-            echo "Machine type is set as to $MACHINE_TYPE"
-
-            GKE_RELEASE_CHANNEL="stable"
-            if .circleci/pr_has_label.sh ci-gke-release-channel-rapid; then
-              GKE_RELEASE_CHANNEL="rapid"
-            elif .circleci/pr_has_label.sh ci-gke-release-channel-regular; then
-              GKE_RELEASE_CHANNEL="regular"
-            fi
-            cci-export GKE_RELEASE_CHANNEL "$GKE_RELEASE_CHANNEL"
-            echo "Using gke release channel: $GKE_RELEASE_CHANNEL"
-
-      - create-gke:
-          wait: false
+            source scripts/ci/gke.sh
+            provision_gke_cluster "<< parameters.cluster-id >>" "<< parameters.num-nodes >>" "<< parameters.machine-type >>"
 
       - run:
           name: Save cluster config
@@ -1149,33 +1203,6 @@ commands:
           root: /go/src/github.com/stackrox/rox
           paths:
             - .ci-clusters/<< parameters.cluster-id >>
-
-  deploy-sensor-via-upgrader-for-upgrade-tests:
-    parameters:
-      desc:
-        type: string
-      upgrade-process-id:
-        type: string
-
-    steps:
-      - run:
-          name: Deploy sensor via upgrader (<< parameters.desc >>)
-          command: |
-            kubectl proxy --port 28001 &
-            proxy_pid=$!
-            sleep 5
-
-            ROX_UPGRADE_PROCESS_ID=<< parameters.upgrade-process-id >> \
-                ROX_CENTRAL_ENDPOINT="${API_ENDPOINT}" \
-                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
-                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
-                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
-                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
-              ./bin/linux/upgrader -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
-
-            kill "$proxy_pid"
-
-      - *waitForSensorK8s
 
   attach-gke-cluster:
     parameters:
@@ -1216,14 +1243,15 @@ commands:
       - run:
           name: Waiting for << parameters.cluster-id >> cluster to stabilize
           command: |
-            source .circleci/create-cluster.sh && wait-for-cluster
+            source scripts/ci/gke.sh
+            wait_for_cluster
 
   remove-existing-stackrox-resources:
     steps:
       - run:
           name: Remove all the existing StackRox resources (they can exist when Circle restarts a container)
           command: |
-            source scripts/lib.sh
+            source tests/e2e/lib.sh
             remove_existing_stackrox_resources
 
   deploy-webhook-server:
@@ -1411,6 +1439,8 @@ commands:
             fi
 
       - collect-k8s-logs
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-1
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -1442,6 +1472,8 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: << parameters.orchestrator-flavor >>
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-2
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data:
@@ -1450,18 +1482,51 @@ commands:
       - *storeCentralBackupArtifact
       - *restoreDB
       - check-stackrox-logs
-      - store-k8s-logs
       - *storeQALogs
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
 
       - teardown-anchore:
           cluster-id: << parameters.cluster-id >>
       - teardown-clair:
           cluster-id: << parameters.cluster-id >>
 
+      - steps: << parameters.destroy-cluster >>
+
+  # Use this in place of 'run-qa-tests' to troubleshoot cluster bringup and
+  # teardown without waiting for real tests to run. Parameter signature should
+  # always match that of 'run-qa-tests'.
+  run-qa-tests-fake:
+    parameters:
+      cluster-id:
+        type: string
+      determine-whether-to-run:
+        type: steps
+      sensor-deploy-flavor:
+        type: string
+        default: kubectl
+      orchestrator-flavor:
+        type: string
+        default: k8s
+      use-websocket:
+        type: boolean
+        default: false
+      is-gke-cluster:
+        type: boolean
+        default: true
+      connect-to-cluster:
+        type: steps
+        default: []
+      destroy-cluster:
+        type: steps
+        default:
+          - teardown-gke
+    steps:
+      - checkout
+      - check-backend-changes
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - run:
+          name: QA Automation Platform
+          command: echo "there are no tests defined since this is a fake"
       - steps: << parameters.destroy-cluster >>
 
   provision-openshift-cluster:
@@ -1533,7 +1598,7 @@ commands:
             fi
             set -e
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift
           destination: openshift
 
@@ -1544,7 +1609,7 @@ commands:
             export KUBECONFIG="$PWD/openshift/artifacts/config"
             kubectl get nodes -o wide
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift
           destination: openshift
 
@@ -1661,10 +1726,10 @@ commands:
             cci-export CLAIRIFY_IMAGE_TAG 0.5.2
             cci-export OPENSHIFT_HOST "$(cat openshift/artifacts/master)"
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
+            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
 
-            REPO=cgorman1
+            REPO=rhacs-eng
             cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
             cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
             cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
@@ -1715,6 +1780,8 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: openshift
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-1
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -1745,12 +1812,13 @@ commands:
 
       - collect-k8s-logs:
           orchestrator-flavor: openshift
+      - store-k8s-logs:
+          destination: k8s-service-logs-part-2
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data:
           destination: central-data-part2
       - check-stackrox-logs
-      - store-k8s-logs
       - *storeQALogs
 
       - destroy-openshift-cluster:
@@ -1765,29 +1833,17 @@ commands:
       orchestrator-flavor:
         type: string
         default: k8s
-      require-cluster-admin:
-        type: boolean
-        default: false
       validate-autoupgrade-label:
         type: boolean
         default: false
       post-central-deploy-steps:
         type: steps
         default: []
-      helm-from-repo:
-        type: boolean
-        default: false
       validate-sensor-bundle:
         type: boolean
         default: true
 
     steps:
-      - run:
-          name: Monitor cluster & deployment
-          command: |
-            scripts/ci/deployment-minder.sh
-          background: true
-
       - run:
           name: Deploy central to remote cluster
           command: |
@@ -1801,22 +1857,13 @@ commands:
                 cci-export IS_RACE_BUILD "true"
             fi
 
-            # Use stackrox.io if helm-from-repo is true
-            if [[ << parameters.helm-from-repo >> == "true" ]]; then
-              cci-export MAIN_IMAGE_REPO "stackrox.io/main"
-              cci-export REGISTRY_USERNAME "$STACKROX_IO_USERNAME"
-              cci-export REGISTRY_PASSWORD "$STACKROX_IO_PASSWORD"
-              docker login -u "$STACKROX_IO_USERNAME" --password-stdin \<<<"$STACKROX_IO_PASSWORD" stackrox.io
-              docker login -u "$STACKROX_IO_USERNAME" --password-stdin \<<<"$STACKROX_IO_PASSWORD" collector.stackrox.io
-            fi
-
             if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
               if .circleci/pr_has_label.sh ci-helm-deploy; then
                 export OUTPUT_FORMAT=helm
               fi
             fi
 
-            cci-export MONITORING_IMAGE quay.io/cgorman1/monitoring:$(cat MONITORING_VERSION)
+            cci-export MONITORING_IMAGE quay.io/rhacs-eng/monitoring:$(cat MONITORING_VERSION)
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
             "${deploy_dir}/central.sh"
 
@@ -1976,7 +2023,7 @@ commands:
 
       - save_cache:
           name: Save NPM dependencies cache
-          key: v7-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
+          key: v8-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
           paths:
             - ui/monorepo.lock.sha256
             - ui/deps
@@ -1995,8 +2042,8 @@ commands:
       - restore_cache:
           name: Restore NPM dependencies cache
           keys:
-            - v7-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
-            - v7-rox-npm-deps-
+            - v8-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
+            - v8-rox-npm-deps-
 
   fetch-ui-deps:
     description: "Fetch UI dependencies"
@@ -2017,7 +2064,7 @@ commands:
     steps:
       - store_test_results:
           path: << parameters.path >>
-      - store_artifacts:
+      - ci-artifacts/store:
           path: << parameters.path >>
 
   pre-go-unit-tests:
@@ -2025,10 +2072,9 @@ commands:
     steps:
       - checkout
       - check-to-run:
-          run-on-master: false  # don't run by default, only with changed go files
+          run-on-master: true
           run-on-tags: true
-          # tests in pkg/helm/charts/tests evaluate files in image/templates/helm
-          changed-path: '^go\.(mod|sum)|\.(go|proto)$|/testdata/|^image/templates/helm/)'
+          changed-path-ignore: "^ui/"
       - *restoreGoModCache
       - setup-go-build-env
       - *restoreGoBuildCache
@@ -2051,17 +2097,19 @@ commands:
       - store-test-results-and-artifacts:
           path: << parameters.path >>
 
-
   create-openshift-4-cluster:
     description: "Create an OpenShift 4 cluster"
     parameters:
       cluster-name:
         type: string
+      openshift-version:
+        type: string
+        default: ocp/stable-4.7
     steps:
       - run:
           name: Create OpenShift 4 cluster
           environment:
-          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
+          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
           - GCP_PROJECT: stackrox-ci
           command: |
             mkdir $PWD/<< parameters.cluster-name >>
@@ -2070,10 +2118,25 @@ commands:
               -e GOOGLE_CREDENTIALS="${GOOGLE_OPENSHIFT_4_CREDENTIALS}" \
               -e PULL_SECRET="${REDHAT_PULL_SECRET}" \
               -e REGION="us-central1" \
+              -e OPENSHIFT_VERSION=<< parameters.openshift-version >> \
               gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION \
               create << parameters.cluster-name >>-"${CIRCLE_WORKFLOW_ID:0:7}" "${GCP_PROJECT}" openshift.ci.rox.systems
             docker cp openshift-4-automation:/data $PWD/<< parameters.cluster-name >>
-          no_output_timeout: 45m
+          no_output_timeout: 60m
+
+  openshift-ci-mimic-env:
+    description: "Simulate an OpenShift CI Environment"
+    steps:
+      - run:
+          name: Simulate an OpenShift CI Environment
+          command: |
+            # Create a fake OpenShift Env
+            cci-export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
+            cci-export BUILD_ID "$CIRCLE_BUILD_NUM"
+            cci-export JOB_NAME "$CIRCLE_JOB"
+            cci-export OPENSHIFT_CI true
+            # Clear Circle CI Env
+            while read var; do cci-export $var ""; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
 
 jobs:
   ###
@@ -2090,7 +2153,7 @@ jobs:
             # Cannot use .circleci/is-nightly-tag.sh because this job doesn't have access to git
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
               webhook_url="$NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK"
-            elif [[ "$CIRCLE_TAG" =~ ^[[:digit:]]+(\.[[:digit:]]+)*(-rc.[[:digit:]]+)?$ ]]; then
+            elif [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]]; then
               webhook_url="$RELEASE_WORKFLOW_NOTIFY_WEBHOOK"
             else
               exit 0
@@ -2104,23 +2167,29 @@ jobs:
 
   go-unit-tests:
     executor: custom
+    resource_class: large
+    environment:
+      ROX_IMAGE_FLAVOR: development_build
     steps:
       - pre-go-unit-tests
       - run:
           name: Run Go unit tests
-          command: GOTAGS= make go-unit-tests
+          command: make go-unit-tests GOTAGS=''
       - post-go-unit-tests:
-          path: go-unit-junit-reports 
+          path: go-unit-junit-reports
 
   go-unit-tests-release:
     executor: custom
+    resource_class: large
+    environment:
+      ROX_IMAGE_FLAVOR: stackrox.io
     steps:
       - pre-go-unit-tests
       - run:
           name: Run Go unit tests with release tag
-          command: GOTAGS=release make go-unit-tests
+          command: make go-unit-tests GOTAGS=release
       - post-go-unit-tests:
-          path: go-unit-release-junit-reports 
+          path: go-unit-release-junit-reports
 
   shell-unit-tests:
     executor: custom
@@ -2162,7 +2231,7 @@ jobs:
 
   style-checks:
     executor: custom
-    resource_class: large
+    resource_class: xlarge
     steps:
       - checkout
 
@@ -2175,16 +2244,35 @@ jobs:
           name: Run style checks
           command: make style
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: qa-tests-backend/build/reports/codenarc
           destination: reports/codenarc
 
-  check-generated-files-up-to-date:
+  # This job checks that the docs/content submodule is pointing to the correct branch in the openshift-docs repo,
+  # and that it is up-to-date. It only runs on RC builds, and is primarily intended as a reminder for the release
+  # manager to inquire about docs and, if available, update the submodule pointer.
+  check-docs-job:
     executor: custom
     resource_class: small
     steps:
-      - checkout
+    - checkout-with-submodules
+    - check-docs-step:
+        only-on-release: false
 
+  # This serves as a reminder for the release manager to make sure Scanner and Collector versions are set to release.
+  check-scanner-and-collector-release-job:
+    executor: custom
+    resource_class: small
+    steps:
+    - checkout
+    - check-scanner-and-collector-release-step:
+        fail-on-rc: true
+
+  check-generated-files-up-to-date:
+    executor: custom
+    resource_class: medium
+    steps:
+      - checkout
       - *restoreGoModCache
       - setup-go-build-env
       - run:
@@ -2193,7 +2281,8 @@ jobs:
           command: |
             git ls-files --others --exclude-standard >/tmp/untracked
             make proto-generated-srcs
-            make go-generated-srcs
+            # Print the timestamp along with each new line of output, so we can track how long each command takes
+            make go-generated-srcs 2>&1 | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
             git diff --exit-code HEAD
             { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
             if [[ -s /tmp/untracked-new ]]; then
@@ -2206,7 +2295,6 @@ jobs:
           name: Ensure that all TODO references to fixed tickets are gone
           command: |
             .circleci/check-pr-fixes.sh
-
       - run:
           name: Ensure that there are no TODO references that the developer has marked as blocking a merge
           command: |
@@ -2250,7 +2338,7 @@ jobs:
               exit 1
             fi
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/policies-diff
           destination: policies-diff
 
@@ -2258,9 +2346,11 @@ jobs:
     executor: custom
     resource_class: small
     steps:
-      - checkout
-      - *restoreGoModCache
-      - setup-go-build-env
+      - run:
+          name: Skipping until ROX-8486 is resolved
+          command: |
+            echo "Skipping until ROX-8486 is resolved"
+            circleci step halt
 
       - run:
           name: Determine whether to skip MITRE ATT&CK bundle check
@@ -2269,7 +2359,11 @@ jobs:
               echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
               circleci step halt
             fi
-            
+
+      - checkout
+      - *restoreGoModCache
+      - setup-go-build-env
+
       - run:
           name: Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)
           command: |
@@ -2282,7 +2376,7 @@ jobs:
               cat /tmp/mitre-diff
               exit 1
             fi
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/mitre-diff
           destination: mitre-diff
 
@@ -2361,8 +2455,8 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - checkout
@@ -2392,12 +2486,12 @@ jobs:
             check_and_set "registry_username" "<< pipeline.parameters.registry_username >>"
             check_and_set "registry_password" "<< pipeline.parameters.registry_password >>"
             check_and_set "rox_license_key" "<< pipeline.parameters.rox_license_key >>"
-            
+
             if (( some_missing )); then
                 echo "Some required parameters are missing. Exiting."
                 exit 1
             fi
-          
+
       - provision-gke-cluster:
           cluster-id: "designated-image-tests"
 
@@ -2416,7 +2510,6 @@ jobs:
 
       - deploy-stackrox:
           validate-sensor-bundle: false
-          require-cluster-admin: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
 
@@ -2429,8 +2522,8 @@ jobs:
       - run:
           name: QA Automation Platform
           command: |
-            export REGISTRY_USERNAME="${QUAY_CGORMAN1_RO_USER}"
-            export REGISTRY_PASSWORD="${QUAY_CGORMAN1_RO_PASSWORD}"
+            export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
+            export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
             export CLUSTER=K8S
             export API_HOSTNAME=localhost
             export API_PORT=${LOCAL_PORT}
@@ -2447,7 +2540,7 @@ jobs:
       - *storeQALogs
 
       # - teardown-gke
-  
+
   ###
   # Build jobs
   ###
@@ -2472,7 +2565,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - attach_workspace:
@@ -2521,10 +2614,10 @@ jobs:
 
   pre-build-cli:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - attach_workspace:
@@ -2572,12 +2665,13 @@ jobs:
       - cleanup-clusters-on-fail
 
   pre-build-go-binaries:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
-      - GOPATH: /home/circleci/go
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      GOPATH: /home/circleci/go
+      KOPS_AUTOMATION_VERSION: 0.0.9
+      EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
       - checkout
@@ -2588,7 +2682,6 @@ jobs:
           command: |
             sudo mv /bin/bash /bin/real-bash
             sudo cp .circleci/bash-wrapper /bin/bash
-            sudo cp .circleci/bash.env /etc/bash.env
       - run:
           name: Install Go
           command: |
@@ -2603,7 +2696,6 @@ jobs:
       - *restoreGoBuildBinaryCache
       - setup-dep-env:
           docker-login: true
-
       - run:
           name: Build the main Go binaries
           command: |
@@ -2638,13 +2730,19 @@ jobs:
 
   build:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
-      - checkout
-      - setup_remote_docker
+      - checkout-with-submodules
+      - check-docs-step:
+          only-on-release: true
+      - check-scanner-and-collector-release-step:
+          fail-on-rc: false
+
+      - setup_remote_docker:
+          version: 20.10.7
       - setup-dep-env:
           docker-login: true
 
@@ -2670,7 +2768,7 @@ jobs:
       - run:
           name: Check debugger presence in the main image
           command: make check-debugger
-      
+
       - run:
           name: Build roxctl image
           command: make docker-build-roxctl-image
@@ -2689,8 +2787,8 @@ jobs:
               ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/roxctl:latest
             fi
 
-            QUAY_REPO="cgorman1"
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            QUAY_REPO="rhacs-eng"
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:$(make --quiet tag)" | cat
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" | cat
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
@@ -2700,6 +2798,28 @@ jobs:
               docker tag "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" "quay.io/$QUAY_REPO/roxctl:latest"
               ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:latest"
             fi
+
+      - run:
+          name: Push collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng
+          command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+
+            REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+            for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
+
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
+              # TODO(RS-381): remove this line once Helm charts are updated to respect image flavors
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector:${MAIN_TAG}-slim"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
+            done
+
       - run:
           name: Publish new versions of NPM packages if any
           command: |
@@ -2712,11 +2832,11 @@ jobs:
 
       - *saveGoModCache
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: bin/linux/roxctl
           destination: roxctl/roxctl-linux
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: bin/darwin/roxctl
           destination: roxctl/roxctl-darwin
 
@@ -2724,6 +2844,7 @@ jobs:
           name: Comment on PR
           command: |
             wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
+            echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
             sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
 
             export TAG=$(make --quiet tag)
@@ -2735,7 +2856,7 @@ jobs:
     executor: custom
     resource_class: large
     steps:
-      - checkout
+      - checkout-with-submodules
       - *checkToRunSeparateRaceConditionTestPipe
 
       - run:
@@ -2769,16 +2890,31 @@ jobs:
             make RACE=true CIRCLE_TAG="$(make --quiet tag)" main-image
 
       - run:
-          name: Push new image
+          name: Push new main-image with '-rcd' suffix
           command: |
             TAG="$(make --quiet tag)"
 
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:${TAG}" | cat
 
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
-            QUAY_REPO="cgorman1"
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            QUAY_REPO="rhacs-eng"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
+
+      - run:
+          # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly set CIRCLE_TAG value.
+          # This results in the release image flavor set. Release image flavor expects unified image tags for collector,
+          # scanner and scanner-db images. Here we ensure that such images with unified tags exist.
+          name: Retag scanner, scanner-db and collector images with '-rcd' suffix
+          command: |
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "quay.io/rhacs-eng/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "quay.io/rhacs-eng/collector:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
@@ -2799,7 +2935,7 @@ jobs:
           name: Login to Docker Hub and Quay.io
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -2838,7 +2974,7 @@ jobs:
       - run:
           name: Build and push images for quay.io
           command: |
-            IMAGE_REPO=quay.io/cgorman1 make -C operator/ everything
+            IMAGE_REPO=quay.io/rhacs-eng make -C operator/ everything
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
@@ -2848,6 +2984,7 @@ jobs:
 
   provision-gke-api-nongroovy-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -2859,6 +2996,7 @@ jobs:
 
   provision-gke-ui-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-label-to-skip-tests:
@@ -2869,6 +3007,7 @@ jobs:
 
   provision-gke-api-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
       - GCP_IMAGE_TYPE: "COS"
       - POD_SECURITY_POLICIES: "true"
@@ -2883,6 +3022,7 @@ jobs:
 
   provision-gke-kernel-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -2897,6 +3037,7 @@ jobs:
 
   provision-gke-api-upgrade-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -2911,10 +3052,10 @@ jobs:
 
   build-scale-monitoring-and-mock-server:
     executor: custom
-    resource_class: large
+    resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - setup_remote_docker
@@ -2940,20 +3081,21 @@ jobs:
           name: Push new Docker image
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
             TAG=$(make --quiet tag)
 
-            QUAY_REPO="cgorman1"
+            QUAY_REPO="rhacs-eng"
             for img in scale grpc-server; do
-              docker push "docker.io/stackrox/${img}:${TAG}" | cat
-              docker push "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
+              ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/${img}:${TAG}" | cat
+              ./scripts/ci/push-as-manifest-list.sh "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
             done
 
       - cleanup-clusters-on-fail
 
   provision-gke-api-scale-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-backend-changes
@@ -2965,7 +3107,8 @@ jobs:
           machine-type: e2-standard-8
 
   provision-openshift-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-tests
@@ -2976,7 +3119,8 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   provision-openshift-crio-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     steps:
       - check-label-exists-or-skip:
           label: ci-openshift-crio-tests
@@ -2989,8 +3133,9 @@ jobs:
 
   provision-eks-api-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -3022,7 +3167,7 @@ jobs:
             sudo chown "$USER" $PWD/eks/data/eks-kube.yaml
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: eks
           destination: eks
 
@@ -3043,7 +3188,8 @@ jobs:
           when: on_fail
 
   provision-kops-api-e2e-tests:
-    machine: true
+    machine:
+      image: << pipeline.parameters.ci_machine_image >>
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
     steps:
@@ -3059,7 +3205,7 @@ jobs:
             wget https://storage.googleapis.com/kubernetes-release/release/v1.13.3/bin/linux/amd64/kubectl
             sudo install kubectl /usr/bin
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: kops
           destination: kops
 
@@ -3086,7 +3232,7 @@ jobs:
             sudo chown "$USER" $PWD/kops/kube.yaml
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: kops
           destination: kops
 
@@ -3108,6 +3254,7 @@ jobs:
 
   provision-aks-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -3142,7 +3289,7 @@ jobs:
             sudo chown "$USER" $PWD/aks/data/kubeconfig
             kubectl get nodes
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: aks
           destination: aks
 
@@ -3158,6 +3305,7 @@ jobs:
 
   provision-openshift-4-api-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
       - checkout
       - check-to-run:
@@ -3189,7 +3337,7 @@ jobs:
             export KUBECONFIG=$PWD/openshift-4/data/auth/kubeconfig
             ./scripts/ci/complianceoperator/create.sh
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: openshift-4
           destination: openshift-4
 
@@ -3205,6 +3353,7 @@ jobs:
 
   provision-openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     steps:
     - checkout
     - check-to-run:
@@ -3231,7 +3380,7 @@ jobs:
           sudo chown "$USER" $PWD/operator-oc4/data/auth/kubeconfig
           oc get nodes
 
-    - store_artifacts:
+    - ci-artifacts/store:
         path: operator-oc4
         destination: operator-oc4
 
@@ -3246,8 +3395,54 @@ jobs:
         when: on_fail
         cluster-name: operator-oc4
 
+  provision-openshift-4-6-operator-e2e-tests:
+    executor: custom
+    resource_class: small
+    steps:
+    - checkout
+    - check-to-run:
+        label: ci-openshift-4-operator-tests
+        run-on-master: true
+        run-on-tags: true
+        changed-path: '^operator/'
+    - check-backend-changes
+
+    - setup_remote_docker
+
+    - attach_workspace:
+        at: /go/src/github.com/stackrox/rox
+
+    - *loginToGCR
+    - create-openshift-4-cluster:
+        cluster-name: operator-oc4-6
+        openshift-version: ocp/stable-4.6
+
+    - run:
+        name: Validate Kubeconfig
+        command: |
+          ls -lh $PWD/operator-oc4-6/data
+          export KUBECONFIG=$PWD/operator-oc4-6/data/auth/kubeconfig
+          sudo chown "$USER" $PWD/operator-oc4-6/data/auth/kubeconfig
+          oc get nodes
+
+    - ci-artifacts/store:
+        path: operator-oc4-6
+        destination: operator-oc4-6
+
+    - build-liveness-check
+
+    - persist_to_workspace:
+        root: .
+        paths:
+        - operator-oc4-6
+
+    - destroy-openshift-4-cluster:
+        when: on_fail
+        cluster-name: operator-oc4-6
+
   provision-race-condition-tests:
     executor: custom
+    resource_class: small
     environment:
       GCP_IMAGE_TYPE: "COS"
       POD_SECURITY_POLICIES: "true"
@@ -3265,10 +3460,30 @@ jobs:
   #   e.g. 'gke-ui-e2e-tests' or 'openshift-crio-api-e2e-tests'
   ###
 
-  gke-api-nongroovy-tests:
-    executor: 
+  local-roxctl-e2e-tests:
+    executor:
       name: custom
-      resource_class: medium+
+      resource_class: medium
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - *restoreGoModCache
+      - *setupRoxctl
+      - run:
+          name: Run roxctl Bats tests
+          command: |
+            source tests/e2e/run.sh
+            # Bats tests from the 'local' folder can be run locally without any prerequisites
+            MAIN_TAG=$(make --quiet tag) \
+              run_roxctl_bats_tests "roxctl-test-output" "local"
+      - store-test-results-and-artifacts:
+          path: roxctl-test-output
+
+  gke-api-nongroovy-tests:
+    executor:
+      name: custom
+      resource_class: medium
     environment:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
@@ -3277,11 +3492,11 @@ jobs:
       - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_ACTIVE_VULN_MANAGEMENT: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - checkout
@@ -3309,7 +3524,7 @@ jobs:
       - remove-existing-stackrox-resources
 
       - run:
-          name: Export Trusted CA file
+          name: Export Trusted CA file for ca_setup_test.go
           command: cci-export TRUSTED_CA_FILE "$PWD/tests/bad-ca/untrusted-root-badssl-com.pem"
 
       - *setupGoogleAppCreds
@@ -3323,219 +3538,58 @@ jobs:
              ./tests/complianceoperator/create.sh
 
       - deploy-stackrox:
-          require-cluster-admin: true
           validate-autoupgrade-label: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
             - setup-egress-proxies
 
       - run:
-          name: Set up client CA auth provider
+          name: Preparation for endpoints_test.go
           command: |
-            roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-              central userpki create test-userpki -r None -c "$CLIENT_CA_PATH"
+            source tests/e2e/run.sh
+            prepare_for_endpoints_test
+            cci-export "SERVICE_CA_FILE" "$SERVICE_CA_FILE"
+            cci-export "SERVICE_CERT_FILE" "$SERVICE_CERT_FILE"
+            cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
 
       - run:
-          name: Test roxctl command for cert gen
+          name: Run roxctl Bats tests
           command: |
-            mkdir gencerts
-            roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-              sensor generate-certs remote --output-dir gencerts
-            [[ -f gencerts/cluster-remote-tls.yaml ]]
-            # Use the certs in future steps that will use client auth.
-            # This will ensure that the certs are valid.
-            sensor_tls_cert="$(kubectl create --dry-run=client -o json -f gencerts/cluster-remote-tls.yaml | jq 'select(.metadata.name=="sensor-tls")')"
-            for file in ca.pem sensor-cert.pem sensor-key.pem; do
-              echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.stringData[$filename]' -r > "gencerts/${file}"
-            done
+            source tests/e2e/run.sh
+            # Bats tests from the 'cluster' folder require running central
+            MAIN_TAG=$(make --quiet tag) \
+              run_roxctl_bats_tests "roxctl-test-output" "cluster"
+
+      - store-test-results-and-artifacts:
+          path: roxctl-test-output
 
       - run:
-          name: Patch LB and netpol for endpoints test
+          name: Run roxctl tests
           command: |
-            kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat .circleci/endpoints-test-lb-patch.yaml)"
-            kubectl -n stackrox apply -f .circleci/endpoints-test-netpol.yaml
-            for i in `seq 1 20`; do
-              if curl -sk --fail "https://${API_HOSTNAME}:8446/v1/metadata" &>/dev/null; then
-                exit 0
-              fi
-              sleep 1
-            done
-            echo >&2 "Port 8446 did not become reachable in time"
-            exit 1
+            source tests/e2e/run.sh
+            MAIN_TAG=$(make --quiet tag) \
+            run_roxctl_tests
 
       - run:
-          name: Set up environment for endpoints test
+          name: Run API tests
           command: |
-            # Use the files from the ones generated by the generate-certs command above.
-            cci-export "SERVICE_CA_FILE" "${PWD}/gencerts/ca.pem"
-            cci-export "SERVICE_CERT_FILE" "${PWD}/gencerts/sensor-cert.pem"
-            cci-export "SERVICE_KEY_FILE" "${PWD}/gencerts/sensor-key.pem"
-
-            central_pod="$(kubectl -n stackrox get po -lapp=central -oname | head -n 1)"
-            for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
-              nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" </dev/null &>/dev/null &
-            done
-            sleep 1
-
-      - run:
-          name: Test roxctl semantics of --token-file parameter
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/token-file.sh
-
-      - run:
-          name: Test slim collector mode with roxctl
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/slim-collector.sh
-
-      - run:
-          name: Test authz trace with roxctl
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/authz-trace.sh
-
-      - run:
-          name: Test istio-support flag in roxctl
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/istio-support.sh
-
-      - run:
-          name: Test YAML bundle generation in roxctl
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/bundle-generation.sh
-
-      - run:
-          name: Test Helm chart generation in roxctl
-          command: |
-             MAIN_TAG=$(make --quiet tag) ./tests/roxctl/helm-chart-generation.sh
-
-      - run:
-          name: API tests
-          command: |
-            CA="${SERVICE_CA_FILE}" ./tests/yamls/roxctl_verification.sh
             make -C tests
 
       - store-test-results-and-artifacts:
           path: tests/all-tests-results
 
       - run:
-          name: Deploy NGINX proxies
+          name: Setup for proxy tests
           command: |
-            export PROXY_CERTS_DIR="$(mktemp -d)"
-            scripts/ci/proxy/deploy.sh
+            source tests/e2e/run.sh
+            setup_proxy_tests
             cci-export PROXY_CERTS_DIR "$PROXY_CERTS_DIR"
 
       - run:
-          name: Port-forward to NGINX proxies
+          name: Run proxy tests
           command: |
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-plain-http 10080:80 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-multiplexed 10443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-multiplexed-tls-be 11443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http1 12443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http1-plain 13443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2 14443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2-plain 15443:443 </dev/null &>/dev/null &
-            sleep 1
-
-      - run:
-          name: Add an /etc/hosts entry
-          command: |
-            sudo bash -c 'echo "127.0.0.1 central-proxy.stackrox.local" >>/etc/hosts'
-
-      - run:
-          name: Test HTTP access to plain HTTP proxy
-          command: |
-            # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-            license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://central-proxy.stackrox.local:10080/v1/metadata' | jq -r '.licenseStatus')"
-            echo "Got license status ${license_status} from server"
-            [[ "$license_status" == "VALID" ]]
-
-      - run:
-          name: Test HTTPS access to multiplexed TLS proxy
-          command: |
-            # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-            license_status="$(
-              curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
-                --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
-                -f \
-                'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.licenseStatus')"
-            echo "Got license status ${license_status} from server"
-            [[ "$license_status" == "VALID" ]]
-
-      - run:
-          name: Test roxctl access to proxies
-          command: |
-            proxies=(
-              "Plaintext proxy:10080:plaintext"
-              "Multiplexed TLS proxy with plain backends:10443"
-              "Multiplexed TLS proxy with TLS backends:11443"
-              "Multiplexed TLS proxy with plain backends (direct gRPC):10443:direct"
-              "Multiplexed TLS proxy with TLS backends (direct gRPC):11443:direct"
-              "HTTP/1 proxy with TLS backends:12443"
-              "HTTP/1 proxy with plain backends:13443"
-              "HTTP/2 proxy with TLS backends:14443"
-              "HTTP/2 proxy with plain backends:15443"
-            )
-
-            failures=()
-            for p in "${proxies[@]}"; do
-              name="$(echo "$p" | cut -d: -f1)"
-              port="$(echo "$p" | cut -d: -f2)"
-              opt="$(echo "$p" | cut -d: -f3)"
-              mkdir -p "/tmp/proxy-test-${port}-${opt}" && cd "/tmp/proxy-test-${port}-${opt}"
-
-              extra_args=()
-              scheme="https"
-              plaintext="false"
-              plaintext_neg="true"
-              direct=0
-              case "$opt" in
-                plaintext)
-                  extra_args=(--insecure)
-                  plaintext="true"
-                  plaintext_neg="false"
-                  scheme="http"
-                  ;;
-                direct)
-                  extra_args=(--direct-grpc)
-                  direct=1
-                  ;;
-              esac
-
-              echo "Testing roxctl access through ${name}..."
-              endpoint="central-proxy.stackrox.local:${port}"
-              for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
-                roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
-                  failures+=("$p")
-
-                if (( direct )); then
-                  roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
-                    failures+=("${p},force-http1")
-                else
-                  roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
-                    failures+=("${p},force-http1")
-                fi
-
-                if [[ "$endpoint_tgt" = *://* ]]; then
-                  # Auto-sense plaintext or TLS when specifying a scheme
-                  roxctl "${extra_args[@]}" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
-                    failures+=("${p},tls-autosense")
-
-                  # Incompatible plaintext configuration should fail
-                  roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
-                    failures+=("${p},incompatible-tls")
-                fi
-
-              done
-              roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "central-proxy.stackrox.local:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
-                failures+=("${p},sensor-generate")
-              echo "Done."
-              rm -rf "/tmp/proxy-test-${port}"
-            done
-
-            echo "Total: ${#failures[@]} failures."
-            if (( ${#failures[@]} > 0 )); then
-              printf " - %s\n" "${failures[@]}"
-              exit 1
-            fi
+            source tests/e2e/run.sh
+            run_proxy_tests
 
       - collect-k8s-logs
       - get-and-store-debug-dump
@@ -3556,8 +3610,8 @@ jobs:
       - run:
           name: Deploy and restore DB to version 56.1
           command: |
-            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+            source tests/e2e/lib.sh
+            restore_56_1_backup
 
       - *waitForAPI
 
@@ -3575,7 +3629,7 @@ jobs:
             ./scripts/ci/collect-service-logs.sh stackrox /tmp/final-stackrox-logs
           when: always
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/final-stackrox-logs
           destination: final-stackrox-logs
 
@@ -3586,7 +3640,9 @@ jobs:
       - teardown-gke
 
   gke-ui-e2e-tests:
-    executor: custom
+    executor:
+      name: custom
+      resource_class: medium+
     environment:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
@@ -3595,7 +3651,10 @@ jobs:
       - ROX_EVENT_TIMELINE_UI: true
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+      - ROX_SYSTEM_HEALTH_PF: true
+      - ROX_POLICIES_PATTERNFLY: true
 
     steps:
       - checkout
@@ -3619,7 +3678,6 @@ jobs:
       - *setupDefaultTLSCerts
 
       - deploy-stackrox:
-          require-cluster-admin: true
           validate-autoupgrade-label: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
@@ -3664,8 +3722,8 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - run-qa-tests:
@@ -3693,8 +3751,8 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - run-qa-tests:
@@ -3708,7 +3766,6 @@ jobs:
   gke-api-upgrade-tests:
     executor: custom
     environment:
-      ROX_SCOPED_ACCESS_CONTROL_V2: "true"
       LOAD_BALANCER: "lb"
     steps:
       - checkout
@@ -3718,12 +3775,8 @@ jobs:
           run-on-master: true
           run-on-tags: true
           changed-path: '^migrator/.*$'
-      - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-      - setup-dep-env:
-          docker-login: true
-      - *setupRoxctl
 
       - setup-gcp
       - attach-gke-cluster:
@@ -3732,16 +3785,16 @@ jobs:
       - run:
           name: Upgrade tests
           command: |
-            ROX_LICENSE_KEY="${LONGTERM_LICENSE}" \
             ./tests/upgrade/run.sh
 
-      - store_artifacts:
+      - ci-artifacts/store:
           path: /tmp/upgrade-test-logs
           destination: upgrade-test-logs
 
       - run:
           name: Get central access credentials
           command: |
+            cd /tmp/rox-upgrade-test
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
@@ -3753,6 +3806,7 @@ jobs:
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
+      - store-k8s-logs
       - *storeQALogs
       - teardown-gke
 
@@ -3808,10 +3862,6 @@ jobs:
             zip -r /tmp/pprof.zip /tmp/pprof
 
       - *storeProfilingResults
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
       - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
@@ -3843,7 +3893,7 @@ jobs:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
-      - COLLECTION_METHOD: ebpf
+      - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
@@ -3853,9 +3903,9 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - check-label-exists-or-skip:
@@ -3869,7 +3919,7 @@ jobs:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
-      - COLLECTION_METHOD: ebpf
+      - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
@@ -3879,8 +3929,8 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - check-label-exists-or-skip:
@@ -3894,7 +3944,7 @@ jobs:
   eks-api-e2e-tests:
     executor: custom
     environment:
-      - EKS_AUTOMATION_VERSION: 0.1.7
+      - EKS_AUTOMATION_VERSION: 0.2.17
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
@@ -3905,8 +3955,8 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - checkout
@@ -3937,8 +3987,8 @@ jobs:
           command: |
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
+            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -3997,8 +4047,8 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
 
     steps:
       - checkout
@@ -4034,8 +4084,8 @@ jobs:
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
             cci-export KOPS_HOST "$(cat kops/master)"
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
+            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -4106,7 +4156,9 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
 
     steps:
       - run-qa-tests:
@@ -4145,10 +4197,10 @@ jobs:
       - ROX_NETWORK_GRAPH_PORTS: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
-      - ROX_NETWORK_DETECTION: true
-      - ROX_NETWORK_DETECTION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
 
     steps:
       - run-qa-tests:
@@ -4176,10 +4228,12 @@ jobs:
 
   openshift-4-operator-e2e-tests:
     executor: custom
+    resource_class: small
     environment:
-    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/cgorman1"
-    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/cgorman1"
-    - IMAGE_TAG_BASE: "quay.io/cgorman1/stackrox-operator"
+    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
+    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
+    - IMAGE_REPO: "quay.io/rhacs-eng"
+    - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
 
     steps:
     - checkout
@@ -4212,10 +4266,12 @@ jobs:
     - run:
         name: Start previous version of operator manager on cluster
         command: make -C operator deploy-previous-via-olm
+        no_output_timeout: 30m
 
     - run:
         name: Run Operator upgrade tests
         command: make -C operator test-upgrade
+        no_output_timeout: 30m
 
     - store-test-results-and-artifacts:
         path: operator/build/kuttl-test-artifacts
@@ -4223,6 +4279,7 @@ jobs:
     - run:
         name: Run Operator e2e tests
         command: make -C operator test-e2e-deployed
+        no_output_timeout: 30m
 
     - store-test-results-and-artifacts:
         path: operator/build/kuttl-test-artifacts
@@ -4239,6 +4296,77 @@ jobs:
     - destroy-openshift-4-cluster:
         when: always
         cluster-name: operator-oc4
+
+  openshift-4-6-operator-e2e-tests:
+    executor: custom
+    resource_class: small
+    environment:
+    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
+    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
+    - IMAGE_REPO: "quay.io/rhacs-eng"
+    - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
+
+    steps:
+    - checkout
+    - check-to-run:
+        label: ci-openshift-4-operator-tests  # drive all openshift-4*-operator-e2e-tests from a single label
+        run-on-master: true
+        run-on-tags: true
+        changed-path: '^operator/'
+    - check-backend-changes
+
+    - setup_remote_docker
+
+    - attach_workspace:
+        at: /go/src/github.com/stackrox/rox
+
+    - run:
+        name: Restore KUBECONFIG
+        command: |
+          ls -lh $PWD/operator-oc4-6/data
+          cci-export KUBECONFIG "$PWD/operator-oc4-6/data/auth/kubeconfig"
+          oc get nodes
+
+    - *loginToGCR
+    - *setupRoxctl
+    - setup-gcp
+    - setup-dep-env
+    - remove-existing-stackrox-resources
+    - *setupGoogleAppCreds
+
+    - run:
+        name: Start previous version of operator manager on cluster
+        command: make -C operator deploy-previous-via-olm
+        no_output_timeout: 30m
+
+    - run:
+        name: Run Operator upgrade tests
+        command: make -C operator test-upgrade
+        no_output_timeout: 30m
+
+    - store-test-results-and-artifacts:
+        path: operator/build/kuttl-test-artifacts
+
+    - run:
+        name: Run Operator e2e tests
+        command: make -C operator test-e2e-deployed
+        no_output_timeout: 30m
+
+    - store-test-results-and-artifacts:
+        path: operator/build/kuttl-test-artifacts
+
+    - run:
+        name: Run Operator Bundle Scorecard tests
+        command: make -C operator bundle-test-image
+
+    - collect-k8s-logs:
+        orchestrator-flavor: openshift
+    - store-k8s-logs:
+        destination: operator-e2e-test-k8s-service-logs
+
+    - destroy-openshift-4-cluster:
+        when: always
+        cluster-name: operator-oc4-6
 
   roxctl-windows-test:
     executor:
@@ -4279,9 +4407,9 @@ jobs:
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
             cd go/src/github.com/stackrox/rox
-            version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed -E 's/.*main:([^" ]+).*/\1/g')"
+            version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed -E 's/.*main.*:([^" ]+).*/\1/g')"
             version_from_roxctl="$(./bin/windows/roxctl.exe version)"
-            echo "Versions: from YAML ${version_from_yaml}; from roxctl ${version_from_roxctl}"
+            printf "Versions:\n  from YAML: %s\nfrom roxctl: %s\n" "${version_from_yaml}" "${version_from_roxctl}"
             test "${version_from_yaml}" = "${version_from_roxctl}"
 
   race-condition-tests:
@@ -4299,11 +4427,11 @@ jobs:
       ROX_NETWORK_DETECTION_BASELINE_SIMULATION: "true"
       ROX_NETWORK_DETECTION_BLOCKED_FLOWS: "true"
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      ROX_SCOPED_ACCESS_CONTROL_V2: "true"
       ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
-      ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: "true"
-      ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: "true"
       IS_RACE_BUILD: "true"
+      ROX_VULN_RISK_MANAGEMENT: "true"
+      ROX_VULN_REPORTING: "true"
+
 
     steps:
       - run-qa-tests:
@@ -4373,13 +4501,10 @@ jobs:
             MAIN_TAG=$(make --quiet tag)
 
             # The docs image uses the same tag as main for releases,
-            # but is built in github.com/stackrox/docs with different tags.
+            # but is built as part of the main build with a different tag.
             # This step places it in Docker Hub with the release tag
             # for convenience before running the stackrox.io push.
-            docker pull docker.io/stackrox/docs:$DOCS_TAG | cat
-            docker tag  docker.io/stackrox/docs:$DOCS_TAG docker.io/stackrox/docs:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/docs:$MAIN_TAG | cat
-
+            ./scripts/ci/pull-retag-push.sh  "docker.io/stackrox/docs:$DOCS_TAG" "docker.io/stackrox/docs:$MAIN_TAG"
 
       - run:
           name: Push image into stackrox.io
@@ -4391,55 +4516,50 @@ jobs:
             MAIN_TAG=$(make --quiet tag)
             COLLECTOR_TAG=$(make --quiet collector-tag)
 
-            docker pull docker.io/stackrox/main:$MAIN_TAG | cat
-            docker tag docker.io/stackrox/main:$MAIN_TAG stackrox.io/main:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh stackrox.io/main:$MAIN_TAG | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/main:$MAIN_TAG" "stackrox.io/main:$MAIN_TAG"
 
             # RHEL images
             # For simplicity for customers, tag main as main-rhel as well
-            docker tag stackrox.io/main:$MAIN_TAG stackrox.io/main-rhel:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh stackrox.io/main-rhel:$MAIN_TAG | cat
+            ./scripts/ci/pull-retag-push.sh "stackrox.io/main:$MAIN_TAG" "stackrox.io/main-rhel:$MAIN_TAG"
 
             # The docs image uses the same tag as main for releases.
-            docker pull docker.io/stackrox/docs:$MAIN_TAG | cat
-            docker tag  docker.io/stackrox/docs:$MAIN_TAG stackrox.io/docs:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh stackrox.io/docs:$MAIN_TAG | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/docs:$MAIN_TAG"   "stackrox.io/docs:$MAIN_TAG"
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/roxctl:$MAIN_TAG" "stackrox.io/roxctl:$MAIN_TAG"
 
-            docker pull docker.io/stackrox/roxctl:$MAIN_TAG | cat
-            docker tag  docker.io/stackrox/roxctl:$MAIN_TAG stackrox.io/roxctl:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh stackrox.io/roxctl:$MAIN_TAG | cat
-
-            docker pull    docker.io/stackrox/collector:$COLLECTOR_TAG | cat
-            docker pull    "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" | cat
-            docker pull    "docker.io/stackrox/collector:${COLLECTOR_TAG}-base" | cat
-            docker tag     docker.io/stackrox/collector:$COLLECTOR_TAG collector.stackrox.io/collector:$COLLECTOR_TAG
-            docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest"
-            docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-base" "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"
-
-            ./scripts/ci/push-as-manifest-list.sh collector.stackrox.io/collector:$COLLECTOR_TAG | cat
-            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" | cat
-            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim" | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}"        "collector.stackrox.io/collector:${COLLECTOR_TAG}"
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest"
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"
 
             # Retag with -rhel suffix for historical reasons
-            docker tag "collector.stackrox.io/collector:$COLLECTOR_TAG"          "collector.stackrox.io/collector-rhel:$COLLECTOR_TAG"
-            docker tag "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest"
-            docker tag "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim"
-
-            ./scripts/ci/push-as-manifest-list.sh collector.stackrox.io/collector-rhel:$COLLECTOR_TAG | cat
-            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
-            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim" | cat
+            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}"        "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}"
+            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest"
+            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim"
 
       - run:
-          name: Push image into quay.io repository backing registry.redhat.io
+          name: Push collector & scanner images tagged with main-version to stackrox.io
           command: |
-            docker login -u "$RH_REGISTRY_QUAY_USERNAME" --password-stdin \<<<"$RH_REGISTRY_QUAY_PASSWORD" quay.io
+            docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" stackrox.io
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
             MAIN_TAG="$(make --quiet tag)"
-            SCANNER_TAG="$(make --quiet scanner-tag)"
-            COLLECTOR_TAG="$(make --quiet collector-tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
 
-            ./scripts/redhat-registry-publish/retag.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
-            DRY_RUN=false ./scripts/redhat-registry-publish/push.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "stackrox.io/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "stackrox.io/scanner-db:${MAIN_TAG}"
+
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "collector.stackrox.io/collector:${MAIN_TAG}"
+            # TODO(RS-381): remove this line once Helm charts are updated to respect image flavors
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector:${MAIN_TAG}-slim"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector-slim:${MAIN_TAG}"
+
+            # Externally exposed registries require '-rhel' suffix for backwards compatibility with some customers.
+            # TODO(RS-381): drop retagging with -rhel
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${MAIN_TAG}"         "stackrox.io/scanner-rhel:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"      "stackrox.io/scanner-db-rhel:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}"       "collector.stackrox.io/collector-rhel:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}-slim"  "collector.stackrox.io/collector-rhel:${MAIN_TAG}-slim"
 
       - run:
           name: Push roxctl to stackrox-hub
@@ -4474,10 +4594,10 @@ jobs:
             central_services_chart_dir="$(mktemp -d)"
             secured_cluster_services_chart_dir="$(mktemp -d)"
             roxctl="./bin/$(uname | tr A-Z a-z)/roxctl"
-            "$roxctl" helm output central-services --output-dir "${central_services_chart_dir}/stackrox"
-            "$roxctl" helm output central-services --rhacs --output-dir "${central_services_chart_dir}/rhacs"
-            "$roxctl" helm output secured-cluster-services --output-dir "${secured_cluster_services_chart_dir}/stackrox"
-            "$roxctl" helm output secured-cluster-services --rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
+            "$roxctl" helm output central-services --image-defaults=stackrox.io --output-dir "${central_services_chart_dir}/stackrox"
+            "$roxctl" helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
+            "$roxctl" helm output secured-cluster-services --image-defaults=stackrox.io --output-dir "${secured_cluster_services_chart_dir}/stackrox"
+            "$roxctl" helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
             .circleci/publish-helm-charts "$(make --quiet tag)" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
 
   scan-images-in-quay:
@@ -4486,11 +4606,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-
-      - run:
-          name: Pull images from quay.io user account and push to an org account
-          command: |
-            ./release/scripts/push_to_org.sh
 
       - run:
           name: Check for fixable vulns
@@ -4566,11 +4681,176 @@ jobs:
                 fi
             done
 
+  provision-openshift-rosa-api-e2e-tests:
+    executor: custom
+    resource_class: small
+    steps:
+      - checkout
+      - check-to-run:
+          label: ci-openshift-rosa-tests
+          run-on-master: false
+          run-on-tags: true
+      - *loginToGCR
+      - setup_remote_docker
+      - run:
+          name: Launch ROSA cluster
+          timeout: 7200
+          command: |
+            docker create -v /data --name artifacts alpine:3.14 /bin/true
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e OPENSHIFT_CLUSTER_MANAGER_API_TOKEN="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+              -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.17 \
+              create
+            mkdir -p /home/circleci/artifacts
+            docker cp artifacts:/data/. /home/circleci/artifacts
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - artifacts
+
+  provision-openshift-aro-api-e2e-tests:
+    executor: custom
+    resource_class: small
+    steps:
+      - checkout
+      - check-to-run:
+          label: ci-openshift-aro-tests
+          run-on-master: false
+          run-on-tags: true
+      - *loginToGCR
+      - setup_remote_docker
+      - run:
+          name: Launch ARO cluster
+          timeout: 7200
+          command: |
+            docker create -v /data --name artifacts alpine:3.14 /bin/true
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
+              create
+            mkdir -p /home/circleci/artifacts
+            docker cp artifacts:/data/. /home/circleci/artifacts
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - artifacts
+
+  openshift-rosa-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_SYSLOG_INTEGRATION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
+
+    steps:
+      - run-qa-tests:
+          cluster-id: openshift-rosa-api-e2e-tests
+          sensor-deploy-flavor: helm
+          orchestrator-flavor: openshift
+          determine-whether-to-run:
+            - check-to-run:
+                label: ci-openshift-rosa-tests
+                run-on-master: false
+                run-on-tags: true
+          use-websocket: true
+          is-gke-cluster: false
+          connect-to-cluster:
+            - run:
+                name: Restore KUBECONFIG and login to ROSA
+                command: |
+                  cci-export STORAGE pvc
+                  cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
+                  source "$PWD/artifacts/dotenv"
+                  oc_login_command=$(grep "oc login https.*username.*password" "$PWD/artifacts/log/rosa-create-admin.log")
+                  eval "$oc_login_command --insecure-skip-tls-verify=true"
+                  oc get nodes
+          destroy-cluster:
+            - nop-steps-stanza
+      - destroy-rosa-cluster
+
+  openshift-aro-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_SYSLOG_INTEGRATION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_VULN_REPORTING: true
+
+    steps:
+      - run-qa-tests:
+          cluster-id: openshift-aro-api-e2e-tests
+          sensor-deploy-flavor: helm
+          orchestrator-flavor: openshift
+          determine-whether-to-run:
+            - check-to-run:
+                label: ci-openshift-aro-tests
+                run-on-master: false
+                run-on-tags: true
+          use-websocket: true
+          is-gke-cluster: false
+          connect-to-cluster:
+            - run:
+                name: Restore KUBECONFIG and login to ARO
+                command: |
+                  cci-export STORAGE pvc
+                  cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
+                  source "$PWD/artifacts/dotenv"
+                  source "/go/src/github.com/stackrox/rox/artifacts/dotenv"
+                  oc login "$API_ENDPOINT" --username "$CONSOLE_USER" --password "$CONSOLE_PASSWORD" --insecure-skip-tls-verify=true
+                  oc get nodes
+          destroy-cluster:
+            - nop-steps-stanza
+      - destroy-aro-cluster
+
+  openshift-ci-upgrade-test:
+    executor: custom
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - openshift-ci-mimic-env
+      - run:
+          name: Run the OpenShift CI upgrade test hook
+          command: |
+            .openshift-ci/upgrade_test_under_gke.py
+
 workflows:
   version: 2
 
   build_all:
-    when: 
+    when:
       not: << pipeline.parameters.trigger_on_demand >>
     jobs:
       - slack-notify:
@@ -4632,6 +4912,10 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-nongroovy-tests
+      - local-roxctl-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - pre-build-cli
       - provision-gke-ui-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-ui-e2e-tests:
@@ -4703,14 +4987,15 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-kops-api-e2e-tests
-      - provision-aks-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - aks-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-aks-api-e2e-tests
+      # ROX-8306 - Disabled due to Azure account issue
+      # - provision-aks-api-e2e-tests:
+      #     <<: *runOnAllTagsWithQuayIOPullCtx
+      # - aks-api-e2e-tests:
+      #     <<: *runOnAllTagsWithQuayIOPullCtx
+      #     requires:
+      #       - build
+      #       - build-scale-monitoring-and-mock-server
+      #       - provision-aks-api-e2e-tests
       - provision-openshift-4-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - openshift-4-api-e2e-tests:
@@ -4721,12 +5006,20 @@ workflows:
             - provision-openshift-4-api-e2e-tests
       - provision-openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
+      - provision-openshift-4-6-operator-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - build
             - build-operator
             - provision-openshift-4-operator-e2e-tests
+      - openshift-4-6-operator-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-operator
+            - provision-openshift-4-6-operator-e2e-tests
       - provision-race-condition-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - race-condition-tests:
@@ -4749,20 +5042,82 @@ workflows:
             - ui-unit-tests
             - push-release
 
+      - provision-openshift-rosa-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - aws-setup
+
+      - openshift-rosa-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-rosa-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - aws-setup
+
+      - check-docs-job:
+          <<: *runOnlyOnReleaseCandidateBuilds
+          context:
+          - custom-executor-pull
+      - check-scanner-and-collector-release-job:
+          <<: *runOnlyOnReleaseCandidateBuilds
+          context:
+          - custom-executor-pull
+
+      - provision-openshift-aro-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - azure-ci
+            - aro-cluster-manager
+
+      - openshift-aro-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-aro-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - azure-ci
+            - aro-cluster-manager
+
       - push-release:
           <<: *runOnlyOnReleaseBuilds
           context:
             - custom-executor-pull
             - docker-io-and-stackrox-io-push
-            - quay-rh-registry-push
           requires:
             - build
             - go-unit-tests
             - ui-unit-tests
 
       - scan-images-in-quay:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context: custom-executor-pull
+          context:
+          - quay-rhacs-eng-readonly
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+          requires:
+            - build
+
+      - openshift-ci-upgrade-test:
+          context:
+          - quay-rhacs-eng-readonly
+          filters:
+            branches:
+              only: /.*RS-454.*/
           requires:
             - build
 
@@ -4787,7 +5142,7 @@ workflows:
           filters:
             branches:
               only: master
-          context: quay-cgorman1-readonly
+          context: quay-rhacs-eng-readonly
 
   ###
   # These workflows can be triggered on demand.
@@ -4834,4 +5189,4 @@ workflows:
       equal: [ "designated_image_test", << pipeline.parameters.workflow_name >> ]
     jobs:
       - designated-image-tests:
-          context: custom-executor-pull
+          context: quay-rhacs-eng-readonly

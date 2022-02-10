@@ -6,50 +6,36 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// GetUser mocks base method
-func (m *MockDataStore) GetUser(ctx context.Context, name string) (*storage.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUser", ctx, name)
-	ret0, _ := ret[0].(*storage.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUser indicates an expected call of GetUser
-func (mr *MockDataStoreMockRecorder) GetUser(ctx, name interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockDataStore)(nil).GetUser), ctx, name)
-}
-
-// GetAllUsers mocks base method
+// GetAllUsers mocks base method.
 func (m *MockDataStore) GetAllUsers(ctx context.Context) ([]*storage.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllUsers", ctx)
@@ -58,13 +44,28 @@ func (m *MockDataStore) GetAllUsers(ctx context.Context) ([]*storage.User, error
 	return ret0, ret1
 }
 
-// GetAllUsers indicates an expected call of GetAllUsers
+// GetAllUsers indicates an expected call of GetAllUsers.
 func (mr *MockDataStoreMockRecorder) GetAllUsers(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUsers", reflect.TypeOf((*MockDataStore)(nil).GetAllUsers), ctx)
 }
 
-// Upsert mocks base method
+// GetUser mocks base method.
+func (m *MockDataStore) GetUser(ctx context.Context, name string) (*storage.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUser", ctx, name)
+	ret0, _ := ret[0].(*storage.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUser indicates an expected call of GetUser.
+func (mr *MockDataStoreMockRecorder) GetUser(ctx, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockDataStore)(nil).GetUser), ctx, name)
+}
+
+// Upsert mocks base method.
 func (m *MockDataStore) Upsert(ctx context.Context, user *storage.User) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, user)
@@ -72,7 +73,7 @@ func (m *MockDataStore) Upsert(ctx context.Context, user *storage.User) error {
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert
+// Upsert indicates an expected call of Upsert.
 func (mr *MockDataStoreMockRecorder) Upsert(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), ctx, user)

@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -84,7 +84,7 @@ func getIdentityDocFromPKCS7(ctx context.Context) (*ec2metadata.EC2InstanceIdent
 		return nil, nil
 	}
 
-	b64Bytes, err := ioutil.ReadAll(resp.Body)
+	b64Bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

@@ -7,8 +7,8 @@ const selectors = {
         configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
         subnavMenu: '[data-testid="configure-subnav"]',
         systemConfig: `${navigationSelectors.navLinks}:contains("System Configuration")`,
-        topNav: '[data-testid="top-nav-btns"] button',
-        logout: '[data-testid="Logout"]',
+        topNav: '[aria-label="User menu"]',
+        logout: '.pf-c-page__header-tools-item button:contains("Log out")',
     },
     pageHeader: {
         editButton: '[data-testid="edit-btn"]',
@@ -49,7 +49,7 @@ const selectors = {
         widget: '[data-testid="login-notice-config"]',
         state: '[data-testid="login-notice-state"]',
         config: {
-            toggle: '[data-testid="login-notice-config"] .form-switch',
+            toggle: '[data-testid="login-notice-config"] .pf-c-switch input',
             textInput: '[data-testid="login-notice-config"] textarea',
         },
         banner: '[data-testid="login-notice"]',

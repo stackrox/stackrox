@@ -187,7 +187,6 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	images := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, true, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), gomock.Any()).Return(nil)
 
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
 
@@ -395,7 +394,7 @@ func TestImagePruning(t *testing.T) {
 			alerts, config, images, deployments, pods, indexQ := generateImageDataStructures(ctx, t)
 			nodes := generateNodeDataStructures(t)
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, config, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -552,7 +551,7 @@ func TestAlertPruning(t *testing.T) {
 			alerts, config, images, deployments := generateAlertDataStructures(ctx, t)
 			nodes := generateNodeDataStructures(t)
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, config, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {

@@ -39,9 +39,6 @@ func (m *Manager) IdentityForCreds(ctx context.Context, username, password strin
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to load roles for user %q", username)
 	}
-	if len(resolvedRoles) == 0 {
-		return nil, errors.Wrapf(err, "user %q has no assigned roles", username)
-	}
 	return identity{
 		username:      username,
 		resolvedRoles: resolvedRoles,

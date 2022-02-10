@@ -13,7 +13,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next available tag: 34
+// Next available tag: 35
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\" sql:\"pk,index=hash\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
@@ -23,7 +23,7 @@ message Deployment {
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\""];
     bool orchestrator_component                = 33 [(gogoproto.moretags) = "search:\"Orchestrator Component\""];
-    int64 replicas                             = 6;
+    int64 replicas                             = 6 [(gogoproto.moretags) = "policy:\"Replicas\""];
     // TODO(ROX-6895): "Label" search term is ambiguous.
     map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label,store\""];
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"Pod Label,store\""];
@@ -39,10 +39,11 @@ message Deployment {
     repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = "search:\"Image Pull Secret\""];
     string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
     PermissionLevel service_account_permission_level = 28 [(gogoproto.moretags) = "search:\"Service Account Permission Level,store\""];
-    bool automount_service_account_token       = 25;
+    bool automount_service_account_token       = 25 [(gogoproto.moretags) = "policy:\"Automount Service Account Token\""];
     bool host_network                          = 21 [(gogoproto.moretags) = "policy:\"Host Network\""];
     bool host_pid                              = 31 [(gogoproto.moretags) = "policy:\"Host PID\""];
     bool host_ipc                              = 32 [(gogoproto.moretags) = "policy:\"Host IPC\""];
+    string runtime_class                       = 34 [(gogoproto.moretags) = "policy:\"Runtime Class\""];
     repeated Toleration tolerations            = 22 [(gogoproto.moretags) = "search:\"-\""];
     repeated PortConfig ports                  = 24 [(gogoproto.moretags) = "policy:\"Ports\""];
 
@@ -62,18 +63,21 @@ message ContainerImage {
 }
 
 message Container {
-    string id                           = 1;
-    ContainerConfig config              = 2;
+    string id                        = 1;
+    ContainerConfig config           = 2;
 
-    ContainerImage image                = 3;
-    SecurityContext security_context    = 4;
-    repeated Volume volumes             = 5;
-    repeated PortConfig ports           = 6 [(gogoproto.moretags) = "policy:\",ignore\" search:\"-\""]; // Policies use the port config on the top-level deployment.
-    repeated EmbeddedSecret secrets     = 7;
-    Resources resources                 = 8;
+    ContainerImage image             = 3;
+    SecurityContext security_context = 4;
+    repeated Volume volumes          = 5;
+    repeated PortConfig ports        = 6 [(gogoproto.moretags) = "policy:\",ignore\" search:\"-\""]; // Policies use the port config on the top-level deployment.
+    repeated EmbeddedSecret secrets  = 7;
+    Resources resources              = 8;
 
     reserved 9; // previously instances
-    string name                          = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
+    string name                      = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
+
+    LivenessProbe liveness_probe     = 11;
+    ReadinessProbe readiness_probe   = 12;
 }
 
 message Resources {
@@ -95,6 +99,14 @@ message Volume {
     bool read_only                     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
     string type                        = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
     MountPropagation mount_propagation = 6 [(gogoproto.moretags) = "policy:\"Mount Propagation\""];
+}
+
+message LivenessProbe {
+    bool defined = 1 [(gogoproto.moretags) = "policy:\"Liveness Probe Defined\""];
+}
+
+message ReadinessProbe {
+    bool defined = 1 [(gogoproto.moretags) = "policy:\"Readiness Probe Defined\""];
 }
 
 // Pod represents information for a currently running pod or deleted pod in an active deployment.
@@ -169,6 +181,7 @@ message PortConfig {
         NODE     = 2;
         INTERNAL = 3;
         HOST     = 4;
+        ROUTE    = 5;
     }
 
     message ExposureInfo {
@@ -180,11 +193,12 @@ message PortConfig {
         string service_cluster_ip = 4;
         int32 service_port        = 5 [(gogoproto.moretags) = "search:\"Exposing Service Port,store\""];
 
-        // only set if level is HOST, NODE, or EXTERNAL
+        // only set if level is HOST, NODE, EXTERNAL or ROUTE
         int32 node_port = 6 [(gogoproto.moretags) = "search:\"Exposed Node Port,store\""];
 
         // only set if level is EXTERNAL
         repeated string external_ips       = 7 [(gogoproto.moretags) = "search:\"External IP,store\""];
+        // only set if level is EXTERNAL or ROUTE
         repeated string external_hostnames = 8 [(gogoproto.moretags) = "search:\"External Hostname,store\""];
     }
 

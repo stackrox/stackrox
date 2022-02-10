@@ -1,243 +1,570 @@
 package check
 
 import (
+	"bytes"
+	"context"
+	"net"
+	"os"
+	"path"
+	"runtime"
 	"testing"
+	"time"
 
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/rox/roxctl/summaries/policy"
+	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
 
-func Test_reportCheckResults(t *testing.T) {
-	env := environment.NewCLIEnvironment(environment.DiscardIO())
-	noFatalAlerts := []*storage.Alert{
-		{
-			Id: "1234",
-			Policy: &storage.Policy{
-				Name: "some-policy",
-			},
+var (
+	// Policies for testing
+	// LOW severity
+	lowSevPolicy = &storage.Policy{
+		Id:          "policy7",
+		Name:        "policy 7",
+		Description: "policy 7 for testing",
+		Remediation: "policy 7 for testing",
+		Severity:    storage.Severity_LOW_SEVERITY,
+	}
+	// MEDIUM severity
+	mediumSevPolicy = &storage.Policy{
+		Id:          "policy2",
+		Name:        "policy 2",
+		Description: "policy 2 for testing",
+		Remediation: "policy 2 for testing",
+		Severity:    storage.Severity_MEDIUM_SEVERITY,
+	}
+	mediumSevPolicy2 = &storage.Policy{
+		Id:          "policy5",
+		Name:        "policy 5",
+		Description: "policy 5 for testing",
+		Remediation: "policy 5 for testing",
+		Severity:    storage.Severity_MEDIUM_SEVERITY,
+	}
+	mediumSevPolicy3 = &storage.Policy{
+		Id:          "policy6",
+		Name:        "policy 6",
+		Description: "policy 6 for testing",
+		Remediation: "policy 6 for testing",
+		Severity:    storage.Severity_MEDIUM_SEVERITY,
+	}
+	// HIGH severity
+	highSevPolicyWithDeployCreateFail = &storage.Policy{
+		Id:          "policy4",
+		Name:        "policy 4",
+		Description: "policy 4 for testing",
+		Remediation: "policy 4 for testing",
+		Severity:    storage.Severity_HIGH_SEVERITY,
+		EnforcementActions: []storage.EnforcementAction{
+			storage.EnforcementAction_FAIL_DEPLOYMENT_CREATE_ENFORCEMENT,
 		},
 	}
-	fatalAlerts := []*storage.Alert{
-		{
-			Id: "1234",
-			Policy: &storage.Policy{
-				Name: "some-policy",
-				EnforcementActions: []storage.EnforcementAction{
-					storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
-				},
-			},
+	highSevPolicyWithNoDescription = &storage.Policy{
+		Id:          "policy8",
+		Name:        "policy 8",
+		Remediation: "policy 8 for testing",
+		Rationale:   "policy 8 for testing",
+		Severity:    storage.Severity_HIGH_SEVERITY,
+	}
+	// CRITICAL severity
+	criticalSevPolicyWithBuildFail = &storage.Policy{
+		Id:          "policy1",
+		Name:        "policy 1",
+		Description: "policy 1 for testing",
+		Remediation: "policy 1 for testing",
+		Severity:    storage.Severity_CRITICAL_SEVERITY,
+		EnforcementActions: []storage.EnforcementAction{
+			storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
 		},
 	}
-	tests := []struct {
-		name    string
-		alerts  []*storage.Alert
-		wantErr bool
-		icCmd   imageCheckCommand
-	}{
-		{"legacy-nonJSON-noFatalAlerts", noFatalAlerts, false, imageCheckCommand{json: false, failViolationsWithJSON: false, env: env}},
-		{"legacy-nonJSON-fatalAlerts", fatalAlerts, true, imageCheckCommand{json: false, failViolationsWithJSON: false, env: env}},
-		{"legacy-JSON-noFatalAlerts", noFatalAlerts, false, imageCheckCommand{json: true, failViolationsWithJSON: false, env: env}},
-		{"legacy-JSON-fatalAlerts", fatalAlerts, false, imageCheckCommand{json: true, failViolationsWithJSON: false, env: env}},
-		{"fixed-nonJSON-noFatalAlerts", noFatalAlerts, false, imageCheckCommand{json: false, failViolationsWithJSON: true, env: env}},
-		{"fixed-nonJSON-fatalAlerts", fatalAlerts, true, imageCheckCommand{json: false, failViolationsWithJSON: true, env: env}},
-		{"fixed-JSON-noFatalAlerts", noFatalAlerts, false, imageCheckCommand{json: true, failViolationsWithJSON: true, env: env}},
-		{"fixed-JSON-fatalAlerts", fatalAlerts, true, imageCheckCommand{json: true, failViolationsWithJSON: true, env: env}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
 
-			if err := tt.icCmd.reportCheckResults(tt.alerts); (err != nil) != tt.wantErr {
-				t.Errorf("reportCheckResults() error = %v, wantErr %v", err, tt.wantErr)
+	// Violation messages for test alerts
+	multipleViolationMessages = []*storage.Alert_Violation{
+		{
+			Message: "test violation 1",
+		},
+		{
+			Message: "test violation 2",
+		},
+		{
+			Message: "test violation 3",
+		},
+	}
+	singleViolationMessage = []*storage.Alert_Violation{
+		{
+			Message: "test violation 1",
+		},
+	}
+
+	// Alerts for testing
+	testAlertsWithoutFailure = []*storage.Alert{
+		{
+			Policy:     lowSevPolicy,
+			Violations: singleViolationMessage,
+		},
+		{
+			Policy:     mediumSevPolicy,
+			Violations: multipleViolationMessages,
+		},
+		// Alerts with the same policy should result in single policy and merged violation messages
+		{
+			Policy:     mediumSevPolicy2,
+			Violations: multipleViolationMessages,
+		},
+		{
+			Policy:     mediumSevPolicy2,
+			Violations: singleViolationMessage,
+		},
+		{
+			Policy:     mediumSevPolicy3,
+			Violations: singleViolationMessage,
+		},
+		// Policy with non build fail Enforcement Action should not result in an error
+		{
+			Policy:     highSevPolicyWithDeployCreateFail,
+			Violations: singleViolationMessage,
+		},
+		{
+			Policy:     highSevPolicyWithNoDescription,
+			Violations: multipleViolationMessages,
+		},
+	}
+	testAlertsWithFailure = []*storage.Alert{
+		{
+			Policy:     lowSevPolicy,
+			Violations: singleViolationMessage,
+		},
+		{
+			Policy:     mediumSevPolicy,
+			Violations: singleViolationMessage,
+		},
+		// Alerts with the same policy should result in single policy and merged violation messages
+		{
+			Policy:     mediumSevPolicy2,
+			Violations: multipleViolationMessages,
+		},
+		{
+			Policy:     mediumSevPolicy2,
+			Violations: singleViolationMessage,
+		},
+		{
+			Policy:     mediumSevPolicy3,
+			Violations: multipleViolationMessages,
+		},
+		// Policy with non build fail Enforcement Action should not result in an error
+		{
+			Policy:     highSevPolicyWithDeployCreateFail,
+			Violations: singleViolationMessage,
+		},
+		// Policy with build fail Enforcement Action should result in an error
+		{
+			Policy:     criticalSevPolicyWithBuildFail,
+			Violations: multipleViolationMessages,
+		},
+		{
+			Policy:     highSevPolicyWithNoDescription,
+			Violations: multipleViolationMessages,
+		},
+	}
+)
+
+// mock implementation for v1.DetectionServiceServer
+type mockDetectionServiceServer struct {
+	alerts []*storage.Alert
+	// This will allow us to use the struct when registering it via v1.RegisterDetectionServiceServer without the need
+	// to implement all functions of the interface, only the one we require for testing.
+	v1.DetectionServiceServer
+}
+
+func (m *mockDetectionServiceServer) DetectBuildTime(context.Context, *v1.BuildDetectionRequest) (*v1.BuildDetectionResponse, error) {
+	return &v1.BuildDetectionResponse{
+		Alerts: m.alerts,
+	}, nil
+}
+
+func TestImageCheckCommand(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(imageCheckTestSuite))
+}
+
+type imageCheckTestSuite struct {
+	suite.Suite
+	imageCheckCommand imageCheckCommand
+}
+
+func (suite *imageCheckTestSuite) createGRPCServerWithDetectionService(alerts []*storage.Alert) (*grpc.ClientConn, func()) {
+	buffer := 1024 * 1024
+	listener := bufconn.Listen(buffer)
+
+	s := grpc.NewServer()
+	v1.RegisterDetectionServiceServer(s, &mockDetectionServiceServer{alerts: alerts})
+	go func() {
+		utils.IgnoreError(func() error { return s.Serve(listener) })
+	}()
+
+	conn, _ := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+		return listener.Dial()
+	}), grpc.WithInsecure())
+
+	closeF := func() {
+		utils.IgnoreError(listener.Close)
+		s.Stop()
+	}
+	return conn, closeF
+}
+
+func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
+	return mocks.NewEnvWithConn(conn, suite.T())
+}
+
+func (suite *imageCheckTestSuite) SetupTest() {
+	suite.imageCheckCommand = imageCheckCommand{
+		image:      "nginx:test",
+		retryDelay: 3,
+		retryCount: 3,
+		timeout:    1 * time.Minute,
+	}
+}
+
+type outputFormatTest struct {
+	shouldFail                 bool
+	alerts                     []*storage.Alert
+	expectedOutput             string
+	expectedErrOutput          string
+	expectedErrOutputColorized string
+	error                      error
+}
+
+func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
+	cases := map[string]outputFormatTest{
+		"should not fail with non build failing enforcement actions": {
+			alerts:                     testAlertsWithoutFailure,
+			expectedOutput:             "testAlertsWithoutFailure.txt",
+			expectedErrOutput:          "WARN:\tA total of 6 policies have been violated\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 6 policies have been violated\n\x1b[0m",
+		},
+		"should fail with build failing enforcement actions": {
+			alerts:         testAlertsWithFailure,
+			expectedOutput: "testAlertsWithFailure.txt",
+			expectedErrOutput: "WARN:\tA total of 7 policies have been violated\n" +
+				"ERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"ERROR:\tPolicy \"policy 1\" - Possible remediation: \"policy 1 for testing\"\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tA total of 7 policies have been violated\n" +
+				"\x1b[0m\x1b[31;1mERROR:\tfailed policies found: 1 policies violated that are failing the check\n" +
+				"\x1b[0m\x1b[31;1mERROR:\tPolicy \"policy 1\" - Possible remediation: \"policy 1 for testing\"\n\x1b[0m",
+			shouldFail: true,
+			error:      policy.ErrBreakingPolicies,
+		},
+	}
+	// setup table printer with default options
+	tablePrinter, err := printer.NewTabularPrinterFactory(defaultImageCheckHeaders,
+		defaultImageCheckJSONPathExpression).CreatePrinter("table")
+	suite.Require().NoError(err)
+	suite.runOutputTests(cases, tablePrinter, false)
+}
+
+func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
+	cases := map[string]outputFormatTest{
+		"should not fail with non build failing enforcement actions": {
+			alerts:         testAlertsWithoutFailure,
+			expectedOutput: "testAlertsWithoutFailure.json",
+		},
+		"should fail with build failing enforcement actions": {
+			shouldFail:     true,
+			alerts:         testAlertsWithFailure,
+			error:          policy.ErrBreakingPolicies,
+			expectedOutput: "testAlertsWithFailure.json",
+		},
+	}
+
+	// setup JSON printer with default options
+	jsonPrinter, err := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
+	suite.Require().NoError(err)
+	suite.runOutputTests(cases, jsonPrinter, true)
+}
+
+func (suite *imageCheckTestSuite) TestCheckImage_CSVOutput() {
+	cases := map[string]outputFormatTest{
+		"should not fail with non build failing enforcement actions": {
+			alerts:         testAlertsWithoutFailure,
+			expectedOutput: "testAlertsWithoutFailure.csv",
+		},
+		"should fail with build failing enforcement actions": {
+			alerts:         testAlertsWithFailure,
+			shouldFail:     true,
+			error:          policy.ErrBreakingPolicies,
+			expectedOutput: "testAlertsWithFailure.csv",
+		},
+	}
+
+	// setup CSV printer with default options
+	csvPrinter, err := printer.NewTabularPrinterFactory(defaultImageCheckHeaders,
+		defaultImageCheckJSONPathExpression).CreatePrinter("csv")
+	suite.Require().NoError(err)
+	suite.runOutputTests(cases, csvPrinter, true)
+}
+
+func (suite *imageCheckTestSuite) TestCheckImage_JUnitOutput() {
+	cases := map[string]outputFormatTest{
+		"should not fail with non build failing enforcement actions": {
+			alerts:         testAlertsWithoutFailure,
+			expectedOutput: "testAlertsWithoutFailure.xml",
+		},
+		"should fail with build failing enforcement actions": {
+			alerts:         testAlertsWithFailure,
+			shouldFail:     true,
+			error:          policy.ErrBreakingPolicies,
+			expectedOutput: "testAlertsWithFailure.xml",
+		},
+	}
+
+	// setup CSV printer with default options
+	junitPrinter, err := printer.NewJUnitPrinterFactory("image-check", defaultJunitJSONPathExpressions).CreatePrinter("junit")
+	suite.Require().NoError(err)
+	suite.runOutputTests(cases, junitPrinter, true)
+}
+
+func (suite *imageCheckTestSuite) TestConstruct() {
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
+	suite.Require().NoError(err)
+	jsonPrinter, err := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
+	suite.Require().NoError(err)
+	invalidObjectPrinterFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
+	suite.Require().NoError(err)
+	invalidObjectPrinterFactory.OutputFormat = "table"
+
+	cmd := &cobra.Command{Use: "test"}
+	cmd.Flags().Duration("timeout", 1*time.Minute, "")
+
+	cases := map[string]struct {
+		shouldFail         bool
+		json               bool
+		printerFactory     *printer.ObjectPrinterFactory
+		printer            printer.ObjectPrinter
+		standardizedFormat bool
+	}{
+		"should return no error if JSON is set and printer should be nil": {
+			json: true,
+		},
+		"should not return an error with a valid ObjectPrinter factory given": {
+			printerFactory:     objectPrinterFactory,
+			printer:            jsonPrinter,
+			standardizedFormat: true,
+		},
+		"should return an error when invalid values are given for the ObjectPrinter factory": {
+			printerFactory: invalidObjectPrinterFactory,
+			shouldFail:     true,
+		},
+	}
+
+	for name, c := range cases {
+		suite.Run(name, func() {
+			imgCheckCmd := suite.imageCheckCommand
+			imgCheckCmd.json = c.json
+			err := imgCheckCmd.Construct(nil, cmd, c.printerFactory)
+			if c.shouldFail {
+				suite.Require().Error(err)
+			} else {
+				suite.Require().NoError(err)
 			}
+			suite.Assert().Equal(c.printer, imgCheckCmd.objectPrinter)
+			suite.Assert().Equal(c.standardizedFormat, imgCheckCmd.standardizedOutputFormat)
+			suite.Assert().Equal(1*time.Minute, imgCheckCmd.timeout)
 		})
 	}
 }
 
-func TestImageCheckCommand_Validate(t *testing.T) {
+func (suite *imageCheckTestSuite) TestValidate() {
+	jsonPrinter, _ := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
 	cases := map[string]struct {
-		i              imageCheckCommand
-		expectedErrOut string
+		printer         printer.ObjectPrinter
+		failViolations  bool
+		json            bool
+		expectedWarning string
 	}{
 		"failViolations false and json as well, no output expected": {
-			i:              imageCheckCommand{failViolationsWithJSON: false, json: false},
-			expectedErrOut: "",
+			expectedWarning: "",
 		},
 		"failViolations true and json not, warning output expected": {
-			i:              imageCheckCommand{failViolationsWithJSON: true, json: false},
-			expectedErrOut: "Note: --json-fail-on-policy-violations has no effect when --json is not specified.\n",
+			failViolations:  true,
+			expectedWarning: "WARN:\t--json-fail-on-policy-violations has no effect when --json is not specified.\n",
 		},
 		"failViolations true and json as well, no output expected": {
-			i:              imageCheckCommand{failViolationsWithJSON: true, json: true},
-			expectedErrOut: "",
+			failViolations:  true,
+			json:            true,
+			expectedWarning: "",
+		},
+		"failViolations and json are false, jsonPrinter is created": {
+			printer:         jsonPrinter,
+			expectedWarning: "",
 		},
 	}
-
 	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			io, _, _, errOut := environment.TestIO()
-			c.i.env = environment.NewCLIEnvironment(io)
-			assert.NoError(t, c.i.Validate())
-			assert.Equal(t, errOut.String(), c.expectedErrOut)
+		suite.Run(name, func() {
+			imgCheckCmd := suite.imageCheckCommand
+			imgCheckCmd.json = c.json
+			imgCheckCmd.failViolationsWithJSON = c.failViolations
+			imgCheckCmd.objectPrinter = c.printer
+			testIO, _, _, errOut := environment.TestIO()
+			imgCheckCmd.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+			suite.Assert().NoError(imgCheckCmd.Validate())
+			suite.Assert().Equal(c.expectedWarning, errOut.String())
 		})
 	}
 }
 
-func TestImageCheckCommand_reportCheckResults_OutputFormat(t *testing.T) {
+func (suite *imageCheckTestSuite) TestLegacyPrint_Error() {
+	imgCheckCmd := suite.imageCheckCommand
+	env := environment.NewCLIEnvironment(environment.DiscardIO(), printer.DefaultColorPrinter())
+	imgCheckCmd.env = env
+	jsonPrinter, _ := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
 
 	cases := map[string]struct {
-		i              imageCheckCommand
 		alerts         []*storage.Alert
-		shouldFail     bool
-		expectedOutput string
+		wantErr        bool
+		failViolations bool
+		json           bool
+		printer        printer.ObjectPrinter
 	}{
-		"alert with pretty output format not failing the build": {
-			alerts: []*storage.Alert{
-				{
-					Id: "alert1",
-					Policy: &storage.Policy{
-						Id:          "policy1",
-						Name:        "policy1",
-						Description: "policy description 1",
-						Rationale:   "policy rationale 1",
-						Remediation: "policy remediation 1",
-					},
-					Violations: []*storage.Alert_Violation{
-						{
-							Message: "alert violation 1",
-						},
-					},
-				},
-			},
-			shouldFail: false,
-			i: imageCheckCommand{
-				image:              "nginx",
-				printAllViolations: true,
-			},
-			expectedOutput: "\n\n✗ Image nginx failed policy 'policy1' \n- Description:\n    ↳ policy description 1\n- Rationale:\n    ↳ policy rationale 1\n- Remediation:\n    ↳ policy remediation 1\n- Violations:\n    - alert violation 1\n\n",
+		"non JSON output format no fatal alerts": {
+			alerts:  testAlertsWithoutFailure,
+			printer: jsonPrinter,
 		},
-		"alert with json output format not failing the build": {
-			alerts: []*storage.Alert{
-				{
-					Id: "alert1",
-					Policy: &storage.Policy{
-						Id:          "policy1",
-						Name:        "policy1",
-						Description: "policy description 1",
-						Rationale:   "policy rationale 1",
-						Remediation: "policy remediation 1",
-					},
-					Violations: []*storage.Alert_Violation{
-						{
-							Message: "alert violation 1",
-						},
-					},
-				},
-			},
-			shouldFail: false,
-			i: imageCheckCommand{
-				image:              "nginx",
-				json:               true,
-				printAllViolations: true,
-			},
-			expectedOutput: "{\n  \"alerts\": [\n    {\n      \"id\": \"alert1\",\n      \"policy\": {\n        \"id\": \"policy1\",\n        \"name\": \"policy1\",\n        \"description\": \"policy description 1\",\n        \"rationale\": \"policy rationale 1\",\n        \"remediation\": \"policy remediation 1\"\n      },\n      \"violations\": [\n        {\n          \"message\": \"alert violation 1\"\n        }\n      ]\n    }\n  ]\n}\n",
+		"non JSON output format fatal alerts": {
+			alerts:  testAlertsWithFailure,
+			printer: jsonPrinter,
+			wantErr: true,
 		},
-		"alert with pretty output format failing the build": {
-			alerts: []*storage.Alert{
-				{
-					Id: "alert1",
-					Policy: &storage.Policy{
-						Id:                 "policy1",
-						Name:               "policy1",
-						Description:        "policy description 1",
-						Rationale:          "policy rationale 1",
-						Remediation:        "policy remediation 1",
-						EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
-					},
-					Violations: []*storage.Alert_Violation{
-						{
-							Message: "alert violation 1",
-						},
-					},
-				},
-			},
-			shouldFail: true,
-			i: imageCheckCommand{
-				image:              "nginx",
-				printAllViolations: true,
-			},
-			expectedOutput: "\n\n✗ Image nginx failed policy 'policy1' (policy enforcement caused failure)\n- Description:\n    ↳ policy description 1\n- Rationale:\n    ↳ policy rationale 1\n- Remediation:\n    ↳ policy remediation 1\n- Violations:\n    - alert violation 1\n\n",
+		"legacy JSON output format no fatal alerts": {
+			alerts: testAlertsWithoutFailure,
+			json:   true,
 		},
-		"alert with json output format failing the build": {
-			alerts: []*storage.Alert{
-				{
-					Id: "alert1",
-					Policy: &storage.Policy{
-						Id:                 "policy1",
-						Name:               "policy1",
-						Description:        "policy description 1",
-						Rationale:          "policy rationale 1",
-						Remediation:        "policy remediation 1",
-						EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
-					},
-					Violations: []*storage.Alert_Violation{
-						{
-							Message: "alert violation 1",
-						},
-					},
-				},
-			},
-			shouldFail: true,
-			i: imageCheckCommand{
-				image:                  "nginx",
-				printAllViolations:     true,
-				json:                   true,
-				failViolationsWithJSON: true,
-			},
-			expectedOutput: "{\n  \"alerts\": [\n    {\n      \"id\": \"alert1\",\n      \"policy\": {\n        \"id\": \"policy1\",\n        \"name\": \"policy1\",\n        \"description\": \"policy description 1\",\n        \"rationale\": \"policy rationale 1\",\n        \"remediation\": \"policy remediation 1\",\n        \"enforcementActions\": [\n          \"FAIL_BUILD_ENFORCEMENT\"\n        ]\n      },\n      \"violations\": [\n        {\n          \"message\": \"alert violation 1\"\n        }\n      ]\n    }\n  ]\n}\n",
+		"legacy JSON output format fatal alerts": {
+			alerts: testAlertsWithFailure,
+			json:   true,
 		},
-		"alert with json output format failing the build without fail violations flag": {
-			alerts: []*storage.Alert{
-				{
-					Id: "alert1",
-					Policy: &storage.Policy{
-						Id:                 "policy1",
-						Name:               "policy1",
-						Description:        "policy description 1",
-						Rationale:          "policy rationale 1",
-						Remediation:        "policy remediation 1",
-						EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
-					},
-					Violations: []*storage.Alert_Violation{
-						{
-							Message: "alert violation 1",
-						},
-					},
-				},
-			},
-			shouldFail: false,
-			i: imageCheckCommand{
-				image:              "nginx",
-				printAllViolations: true,
-				json:               true,
-			},
-			expectedOutput: "{\n  \"alerts\": [\n    {\n      \"id\": \"alert1\",\n      \"policy\": {\n        \"id\": \"policy1\",\n        \"name\": \"policy1\",\n        \"description\": \"policy description 1\",\n        \"rationale\": \"policy rationale 1\",\n        \"remediation\": \"policy remediation 1\",\n        \"enforcementActions\": [\n          \"FAIL_BUILD_ENFORCEMENT\"\n        ]\n      },\n      \"violations\": [\n        {\n          \"message\": \"alert violation 1\"\n        }\n      ]\n    }\n  ]\n}\n",
+		"legacy JSON output format with legacy fail violation flag no fatal alerts": {
+			alerts:         testAlertsWithoutFailure,
+			json:           true,
+			failViolations: true,
+		},
+		"legacy JSON output format with legacy fail violation flag fatal alerts": {
+			alerts:         testAlertsWithFailure,
+			json:           true,
+			failViolations: true,
+			wantErr:        true,
 		},
 	}
 
 	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			io, _, out, _ := environment.TestIO()
-			c.i.env = environment.NewCLIEnvironment(io)
-			err := c.i.reportCheckResults(c.alerts)
-			if c.shouldFail {
-				require.Error(t, err)
-				require.Equal(t, "Violated a policy with CI enforcement set", err.Error())
-			} else {
-				require.NoError(t, err)
+		suite.Run(name, func() {
+			imgCheckCmd.json = c.json
+			imgCheckCmd.failViolationsWithJSON = c.failViolations
+			imgCheckCmd.objectPrinter = c.printer
+			if err := imgCheckCmd.printResults(c.alerts); (err != nil) != c.wantErr {
+				suite.T().Errorf("printResults() error = %v, wantErr %v", err, c.wantErr)
 			}
-			assert.Equal(t, c.expectedOutput, out.String())
 		})
 	}
+}
+
+func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
+	imgCheckCmd := suite.imageCheckCommand
+
+	cases := map[string]struct {
+		alerts             []*storage.Alert
+		expectedOutput     string
+		json               bool
+		printAllViolations bool
+	}{
+		"alert with json output format not failing the build": {
+			alerts:             testAlertsWithoutFailure,
+			json:               true,
+			printAllViolations: true,
+			expectedOutput:     "legacy_testAlertsWithoutFailure.json",
+		},
+		"alert with json output format failing the build": {
+			alerts:             testAlertsWithFailure,
+			printAllViolations: true,
+			json:               true,
+			expectedOutput:     "legacy_testAlertsWithFailure.json",
+		},
+	}
+
+	for name, c := range cases {
+		suite.Run(name, func() {
+			testIO, _, out, _ := environment.TestIO()
+			imgCheckCmd.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+			imgCheckCmd.json = c.json
+			imgCheckCmd.printAllViolations = c.printAllViolations
+			// Errors will be tested within TestLegacyPrint_Error
+			_ = imgCheckCmd.printResults(c.alerts)
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
+			suite.Require().NoError(err)
+			suite.Assert().Equal(string(expectedOutput), out.String())
+		})
+	}
+}
+
+// helper to run output format tests
+func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
+	standardizedFormat bool) {
+	const colorTestPrefix = "color_"
+	for name, c := range cases {
+		suite.Run(name, func() {
+			out, errOut, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
+			defer closeF()
+			suite.assertError(imgCheckCmd, c)
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
+			suite.Require().NoError(err)
+			suite.Assert().Equal(string(expectedOutput), out.String())
+			suite.Assert().Equal(c.expectedErrOutput, errOut.String())
+		})
+		suite.Run(colorTestPrefix+name, func() {
+			if runtime.GOOS == "windows" {
+				suite.T().Skip("Windows has different color sequences than Linux/Mac.")
+			}
+			color.NoColor = false
+			defer func() { color.NoColor = true }()
+
+			out, errOut, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
+			defer closeF()
+			suite.assertError(imgCheckCmd, c)
+			expectedOutput, err := os.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
+			suite.Require().NoError(err)
+			suite.Assert().Equal(string(expectedOutput), out.String())
+			suite.Assert().Equal(c.expectedErrOutputColorized, errOut.String())
+		})
+	}
+}
+
+func (suite *imageCheckTestSuite) assertError(imgCheckCmd imageCheckCommand, c outputFormatTest) {
+	err := imgCheckCmd.CheckImage()
+	if c.shouldFail {
+		suite.Require().Error(err)
+		suite.Assert().ErrorIs(err, c.error)
+	} else {
+		suite.Require().NoError(err)
+	}
+}
+
+func (suite *imageCheckTestSuite) createNewImgCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, *bytes.Buffer, func(), imageCheckCommand) {
+	var out *bytes.Buffer
+	var errOut *bytes.Buffer
+	conn, closeF := suite.createGRPCServerWithDetectionService(c.alerts)
+
+	imgCheckCmd := suite.imageCheckCommand
+	imgCheckCmd.objectPrinter = printer
+	imgCheckCmd.standardizedOutputFormat = standardizedFormat
+
+	imgCheckCmd.env, out, errOut = suite.newTestMockEnvironment(conn)
+	return out, errOut, closeF, imgCheckCmd
 }

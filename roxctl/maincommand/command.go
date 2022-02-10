@@ -6,11 +6,14 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/completion"
 	"github.com/stackrox/rox/roxctl/deployment"
@@ -28,7 +31,10 @@ func versionCommand() *cobra.Command {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
-				return enc.Encode(version.GetAllVersions())
+				if buildinfo.ReleaseBuild {
+					return enc.Encode(version.GetAllVersionsUnified())
+				}
+				return enc.Encode(version.GetAllVersionsDevelopment())
 			}
 			fmt.Println(version.GetMainVersion())
 			return nil
@@ -44,18 +50,36 @@ func Command() *cobra.Command {
 		SilenceUsage: true,
 		Use:          os.Args[0],
 	}
-	cliEnvironment := environment.NewCLIEnvironment(environment.DefaultIO())
+
+	flags.AddNoColor(c)
+	flags.AddPassword(c)
+	flags.AddConnectionFlags(c)
+	flags.AddAPITokenFile(c)
+
+	// We have chicken and egg problem here. We need to parse flags to know if --no-color was set
+	// but at the same time we need to set printer to handle possible flags parsing errors.
+	// Instead of using native cobra flags mechanism we can just check if os.Args contains --no-color.
+	var colorPrinter printer.ColorfulPrinter
+	if flags.HasNoColor(os.Args) {
+		colorPrinter = printer.NoColorPrinter()
+	} else {
+		colorPrinter = printer.DefaultColorPrinter()
+	}
+	cliEnvironment := environment.NewCLIEnvironment(environment.DefaultIO(), colorPrinter)
+	c.SetErr(errorWriter{
+		logger: cliEnvironment.Logger(),
+	})
 
 	c.AddCommand(
-		central.Command(),
-		cluster.Command(),
-		collector.Command(),
-		deployment.Command(),
+		central.Command(cliEnvironment),
+		cluster.Command(cliEnvironment),
+		collector.Command(cliEnvironment),
+		deployment.Command(cliEnvironment),
 		logconvert.Command(),
 		image.Command(cliEnvironment),
 		scanner.Command(),
 		sensor.Command(),
-		helm.Command(),
+		helm.Command(cliEnvironment),
 		versionCommand(),
 		completion.Command(),
 	)

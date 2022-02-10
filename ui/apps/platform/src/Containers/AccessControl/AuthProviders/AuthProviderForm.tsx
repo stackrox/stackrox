@@ -23,7 +23,6 @@ import {
 } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
-import { availableAuthProviders } from 'constants/accessControl';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import { AuthProvider } from 'services/AuthService';
@@ -51,12 +50,20 @@ const authProviderState = createStructuredSelector({
     roles: selectors.getRoles,
     groups: selectors.getRuleGroups,
     saveAuthProviderStatus: selectors.getSaveAuthProviderStatus,
+    availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
-function getNewAuthProviderTitle(type) {
-    const selectedType = availableAuthProviders.find(({ value }) => value === type);
+function getNewAuthProviderTitle(type, availableProviderTypes) {
+    const selectedType = availableProviderTypes.find(({ value }) => value === type);
 
     return `Add new ${selectedType?.label as string} auth provider`;
+}
+
+function getRuleAttributes(type, availableProviderTypes) {
+    return (
+        (availableProviderTypes.find(({ value }) => value === type)?.ruleAttributes as string[]) ||
+        []
+    );
 }
 
 function testModeSupported(provider) {
@@ -71,7 +78,8 @@ function AuthProviderForm({
     onClickEdit,
 }: AuthProviderFormProps): ReactElement {
     const history = useHistory();
-    const { groups, roles, saveAuthProviderStatus } = useSelector(authProviderState);
+    const { groups, roles, saveAuthProviderStatus, availableProviderTypes } =
+        useSelector(authProviderState);
     const dispatch = useDispatch();
 
     const initialValues = !selectedAuthProvider.name
@@ -99,79 +107,90 @@ function AuthProviderForm({
                 }),
             })
         ),
+        /* eslint-disable @typescript-eslint/no-unsafe-return */
         config: yup
             .object()
             .when('type', {
                 is: 'auth0',
-                then: yup.object({
-                    issuer: yup.string().required('An issuer is required.'),
-                    client_id: yup.string().required('A client ID is required.'),
-                }),
+                then: (configSchema) =>
+                    configSchema.shape({
+                        issuer: yup.string().required('An issuer is required.'),
+                        client_id: yup.string().required('A client ID is required.'),
+                    }),
             })
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             .when('type', {
                 is: 'oidc',
-                then: yup.object({
-                    client_id: yup.string().required('A client ID is required.'),
-                    issuer: yup.string().required('An issuer is required.'),
-                    mode: yup.string().required(), // selected from a list where one is always selected
-                    client_secret: yup
-                        .string()
-                        .when(['mode', 'do_not_use_client_secret', 'clientOnly'], {
-                            is: (mode, do_not_use_client_secret, clientOnly) =>
-                                (mode === 'auto' || mode === 'post' || mode === 'query') &&
-                                !do_not_use_client_secret &&
-                                !clientOnly?.clientSecretStored,
-                            then: yup.string().required('A client secret is required.'),
-                        }),
-                }),
+                then: (configSchema) =>
+                    configSchema.shape({
+                        client_id: yup.string().required('A client ID is required.'),
+                        issuer: yup.string().required('An issuer is required.'),
+                        mode: yup.string().required(), // selected from a list where one is always selected
+                        client_secret: yup
+                            .string()
+                            .when(['mode', 'do_not_use_client_secret', 'clientOnly'], {
+                                is: (mode, do_not_use_client_secret, clientOnly) =>
+                                    (mode === 'auto' || mode === 'post' || mode === 'query') &&
+                                    !do_not_use_client_secret &&
+                                    !clientOnly?.clientSecretStored,
+                                then: (clientSecretSchema) =>
+                                    clientSecretSchema.required('A client secret is required.'),
+                            }),
+                    }),
             })
             .when('type', {
                 is: 'saml',
-                then: yup.object({
-                    configurationType: yup.string().required(), // selected from a list where one is always selected
-                    sp_issuer: yup.string().required('A service provider issuer is required.'),
-                    idp_metadata_url: yup.string().when('configurationType', {
-                        is: (value) => value === 'dynamic',
-                        then: yup
-                            .string()
-                            .required('An IdP metadata URL is required.')
-                            .url(
-                                'Must be a valid URL, for example, https://idp.example.com/metadata'
-                            ),
+                then: (configSchema) =>
+                    configSchema.shape({
+                        configurationType: yup.string().required(), // selected from a list where one is always selected
+                        sp_issuer: yup.string().required('A service provider issuer is required.'),
+                        idp_metadata_url: yup.string().when('configurationType', {
+                            is: (value) => value === 'dynamic',
+                            then: (schema) =>
+                                schema
+                                    .required('An IdP metadata URL is required.')
+                                    .url(
+                                        'Must be a valid URL, for example, https://idp.example.com/metadata'
+                                    ),
+                        }),
+                        idp_issuer: yup.string().when('configurationType', {
+                            is: (value) => value === 'static',
+                            then: (schema) => schema.required('An IdP issuer is required.'),
+                        }),
+                        idp_sso_url: yup.string().when('configurationType', {
+                            is: (value) => value === 'static',
+                            then: (schema) =>
+                                schema
+                                    .required('An IdP SSO URL is required.')
+                                    .url(
+                                        'Must be a valid URL, for example, https://idp.example.com/login'
+                                    ),
+                        }),
+                        idp_cert_pem: yup.string().when('configurationType', {
+                            is: (value) => value === 'static',
+                            then: (schema) =>
+                                schema.required('One or more IdP certificate (PEM) is required.'),
+                        }),
                     }),
-                    idp_issuer: yup.string().when('configurationType', {
-                        is: (value) => value === 'static',
-                        then: yup.string().required('An IdP issuer is required.'),
-                    }),
-                    idp_sso_url: yup.string().when('configurationType', {
-                        is: (value) => value === 'static',
-                        then: yup
-                            .string()
-                            .required('An IdP SSO URL is required.')
-                            .url('Must be a valid URL, for example, https://idp.example.com/login'),
-                    }),
-                    idp_cert_pem: yup.string().when('configurationType', {
-                        is: (value) => value === 'static',
-                        then: yup
-                            .string()
-                            .required('One or more IdP certificate (PEM) is required.'),
-                    }),
-                }),
             })
             .when('type', {
                 is: 'userpki',
-                then: yup.object({
-                    idp_cert_pem: yup
-                        .string()
-                        .required('One or more IdP certificate (PEM) is required.'),
-                }),
+                then: (configSchema) =>
+                    configSchema.shape({
+                        keys: yup
+                            .string()
+                            .required('One or more CA certificates (PEM) is required.'),
+                    }),
             })
             .when('type', {
                 is: 'iap',
-                then: yup.object({
-                    audience: yup.string().required('An audience is required.'),
-                }),
+                then: (configSchema) =>
+                    configSchema.shape({
+                        audience: yup.string().required('An audience is required.'),
+                    }),
             }),
+        /* eslint-enable @typescript-eslint/no-unsafe-return */
     });
 
     const formik = useFormik({
@@ -224,8 +243,10 @@ function AuthProviderForm({
     const isViewing = !hasAction;
     const formTitle =
         action === 'create'
-            ? getNewAuthProviderTitle(selectedAuthProvider.type)
+            ? getNewAuthProviderTitle(selectedAuthProvider.type, availableProviderTypes)
             : selectedAuthProvider.name;
+
+    const ruleAttributes = getRuleAttributes(selectedAuthProvider.type, availableProviderTypes);
 
     return (
         <Form>
@@ -277,7 +298,7 @@ function AuthProviderForm({
                                                 <Button
                                                     variant="secondary"
                                                     onClick={handleTest}
-                                                    isDisabled={action === 'update'}
+                                                    isDisabled={action === 'edit'}
                                                     isSmall
                                                 >
                                                     Test login
@@ -288,7 +309,7 @@ function AuthProviderForm({
                                         <Button
                                             variant="primary"
                                             onClick={onClickEdit}
-                                            isDisabled={action === 'update'}
+                                            isDisabled={action === 'edit'}
                                             isSmall
                                         >
                                             {selectedAuthProvider.active
@@ -371,7 +392,7 @@ function AuthProviderForm({
                                     handleSelect={setFieldValue}
                                     isDisabled
                                 >
-                                    {availableAuthProviders.map(({ value, label }) => (
+                                    {availableProviderTypes.map(({ value, label }) => (
                                         <SelectOption key={value} value={value}>
                                             {label}
                                         </SelectOption>
@@ -438,6 +459,7 @@ function AuthProviderForm({
                             setFieldValue={setFieldValue}
                             disabled={isViewing}
                             errors={errors?.groups as RuleGroupErrors[]}
+                            ruleAttributes={ruleAttributes}
                         />
                     </FormSection>
                 </FormSection>

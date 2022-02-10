@@ -22,6 +22,7 @@ tests:
     .secrets["additional-ca"].stringData | assertThat(. == {
       "00-bar-baz-.pem.crt": "baz\n",
       "01-foo.crt": "bar\n"})
+    .secrets["additional-ca"].metadata.namespace | assertThat(. == "stackrox")
 - name: "Additional CA secret is created from a single string"
   values:
     additionalCAs: |

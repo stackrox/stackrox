@@ -3,7 +3,6 @@
     "extends": "./tsconfig.json",
     "include": [
         ".",
-        ".storybook/**/*",
         "**/.eslintrc.js",
         ".prettierrc.js",
         ".postcss.config.js",

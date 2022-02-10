@@ -1,53 +1,25 @@
-import { selectors, url } from '../../constants/PoliciesPage';
-import * as api from '../../constants/apiEndpoints';
+import { selectors, text } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
+import {
+    addPolicySection,
+    editPolicy,
+    goToFirstPolicy,
+    goToNamedPolicy,
+    goToNewPolicyCriteria,
+    goToNewPolicySummary,
+    goToNextWizardStage,
+    goToPrevWizardStage,
+    savePolicy,
+    visitPolicies,
+} from '../../helpers/policies';
 
 describe('Boolean Policy Logic Section', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.intercept('GET', api.search.options, {
-            fixture: 'search/metadataOptions.json',
-        }).as('metadataOptions');
-        cy.visit(url);
-        cy.wait('@metadataOptions');
-    });
-
-    const addPolicy = () => {
-        cy.get(selectors.newPolicyButton).click();
-    };
-
-    const editPolicy = () => {
-        cy.get(selectors.editPolicyButton).click();
-    };
-
-    const goToNextWizardStage = () => {
-        cy.get(selectors.nextButton).click();
-    };
-
-    const goToPrevWizardStage = () => {
-        cy.get(selectors.prevButton).click();
-    };
-
-    const savePolicy = () => {
-        // Next will dryrun and show the policy effects preview.
-        cy.intercept('POST', api.policies.dryrun).as('dryrunPolicy');
-        goToNextWizardStage();
-        cy.wait('@dryrunPolicy');
-        // Next will now take you to the enforcement page.
-        goToNextWizardStage();
-        // Save will PUT the policy (assuming it is not new), then GET it.
-        cy.intercept('PUT', api.policies.policy).as('savePolicy');
-        cy.intercept('GET', api.policies.policy).as('getPolicy');
-        cy.get(selectors.savePolicyButton).click();
-        cy.wait('@savePolicy');
-        cy.wait('@getPolicy');
-    };
-
     const dataTransfer = new DndSimulatorDataTransfer();
 
-    const dragFieldIntoSection = (fieldSelector) => {
+    function dragFieldIntoSection(fieldSelector) {
         cy.get(fieldSelector)
             .trigger('mousedown', {
                 which: 1,
@@ -69,13 +41,9 @@ describe('Boolean Policy Logic Section', () => {
             .trigger('mouseup', {
                 which: 1,
             });
-    };
+    }
 
-    const addPolicySection = () => {
-        cy.get(selectors.booleanPolicySection.addPolicySectionBtn).click();
-    };
-
-    const addPolicyFieldCard = (index) => {
+    function addPolicyFieldCard(index) {
         cy.get(selectors.booleanPolicySection.policyKey)
             .eq(index)
             .trigger('mousedown', { which: 1 })
@@ -86,21 +54,19 @@ describe('Boolean Policy Logic Section', () => {
             .trigger('drop', { dataTransfer })
             .trigger('dragend', { dataTransfer })
             .trigger('mouseup', { which: 1 });
-    };
+    }
 
-    const clickPolicyKeyGroup = (categoryName) => {
+    function clickPolicyKeyGroup(categoryName) {
         cy.get(
             `${selectors.booleanPolicySection.policyKeyGroup}:contains(${categoryName}) ${selectors.booleanPolicySection.collapsibleBtn}`
         ).click();
-    };
+    }
 
     describe('Single Policy Field Card 1', () => {
-        beforeEach(() => {
-            addPolicy();
-            goToNextWizardStage();
-            addPolicySection();
-        });
         it('should add multiple Field Values for the same Field with an AND/OR operator between them when (+) is clicked', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             // to mock BPL policy here, but for now
             addPolicyFieldCard(0);
             cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
@@ -110,11 +76,14 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should allow floats for CPU configuration field', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             // unfurl Container Configuration policy key group
-            clickPolicyKeyGroup('Container Configuration');
+            clickPolicyKeyGroup('Container configuration');
             // first, select a CPU field
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Container CPU Request")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Container CPU request")`
             );
 
             cy.get(selectors.booleanPolicySection.form.selectArrow).first().click();
@@ -125,8 +94,11 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should allow floats for CVSS configuration field', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             // unfurl Image Contents policy field key group
-            clickPolicyKeyGroup('Image Contents');
+            clickPolicyKeyGroup('Image contents');
             // second, select CVSS field
             dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("CVSS")`);
 
@@ -138,15 +110,21 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should not allow multiple Policy Field Values for boolean Policy Fields', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             // unfurl Container Configuration policy key group
-            clickPolicyKeyGroup('Container Configuration');
+            clickPolicyKeyGroup('Container configuration');
             // to mock BPL policy here, but for now
-            dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("Root")`);
+            dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("root")`);
 
             cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).should('not.exist');
         });
 
         it('should delete only the selected Policy Value from a Policy Field', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             // to mock BPL policy here, but for now
             addPolicyFieldCard(0);
             cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
@@ -161,17 +139,16 @@ describe('Boolean Policy Logic Section', () => {
     // TODO: for release 65, re-enable these tests after UI to handle read-only flags is merged. ROX-7768: Enable once clone operation is fixed.
     describe.skip('Single Policy Field Card 2', () => {
         it('should allow updating days since image scanned in a policy', () => {
-            cy.get(selectors.policies.scanImage).click({
-                force: true,
-            });
+            visitPolicies();
+            goToNamedPolicy(text.scanImage);
             editPolicy();
             goToNextWizardStage();
 
             // unfurl Image Contents Policy Key Group
-            clickPolicyKeyGroup('Image Contents');
+            clickPolicyKeyGroup('Image contents');
             // first, drag in an image scan age field
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Scan Age")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Image scan age")`
             );
 
             // second, add a value to it
@@ -196,15 +173,14 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should allow updating image fields in a policy', () => {
-            cy.get(selectors.policies.scanImage).click({
-                force: true,
-            });
+            visitPolicies();
+            goToNamedPolicy(text.scanImage);
             editPolicy();
             goToNextWizardStage();
 
             // first, drag in an image field
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Registry")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Image registry")`
             );
 
             // second, add a value to it
@@ -233,12 +209,10 @@ describe('Boolean Policy Logic Section', () => {
     });
 
     describe('Single Policy Section', () => {
-        beforeEach(() => {
-            addPolicy();
-            goToNextWizardStage();
-            addPolicySection();
-        });
         it('should populate a default Value input in a new Policy Section when dragging a Field Key', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             cy.get(selectors.booleanPolicySection.policyFieldCard).should('not.exist');
             addPolicyFieldCard(0);
             cy.get(selectors.booleanPolicySection.policyFieldCard).should('exist');
@@ -249,6 +223,9 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should AND the dragged Field when dragging a Field Key to a Policy Section that already has a Field ', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             addPolicyFieldCard(0);
             addPolicyFieldCard(1);
             cy.get(selectors.booleanPolicySection.policyFieldValue).should((values) => {
@@ -263,6 +240,9 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should delete the Field from the Policy Section', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             addPolicyFieldCard(0);
             cy.get(selectors.booleanPolicySection.policyFieldCard).should('exist');
             cy.get(selectors.booleanPolicySection.removePolicyFieldBtn).click();
@@ -270,6 +250,9 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should not allow dragging a duplicate Field Key in the same Policy Section', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             addPolicyFieldCard(0);
             addPolicyFieldCard(0);
             cy.get(selectors.booleanPolicySection.policyFieldValue).should((values) => {
@@ -279,12 +262,10 @@ describe('Boolean Policy Logic Section', () => {
     });
 
     describe('Boolean operator', () => {
-        beforeEach(() => {
-            addPolicy();
-            goToNextWizardStage();
-            addPolicySection();
-        });
         it('should toggle to AND when OR is clicked if the Policy Field can be ANDed', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             addPolicyFieldCard(0);
             cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
             const policyFieldCardAndOrOperator = `${selectors.booleanPolicySection.policyFieldCard} ${selectors.booleanPolicySection.andOrOperator}`;
@@ -296,10 +277,13 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should be disabled if the Policy Field cannot be ANDed', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             // unfurl Image Contents policy key group
-            clickPolicyKeyGroup('Image Contents');
+            clickPolicyKeyGroup('Image contents');
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Age")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Image age")`
             );
             cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
             const policyFieldCardAndOrOperator = `${selectors.booleanPolicySection.policyFieldCard} ${selectors.booleanPolicySection.andOrOperator}`;
@@ -310,12 +294,10 @@ describe('Boolean Policy Logic Section', () => {
     });
 
     describe('Policy Field Card NOT toggle', () => {
-        beforeEach(() => {
-            addPolicy();
-            goToNextWizardStage();
-            addPolicySection();
-        });
         it('should negate the Policy Field Card when the toggle is clicked & should show negated text', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             addPolicyFieldCard(0);
             cy.get(selectors.booleanPolicySection.policyFieldCard).should(
                 'contain',
@@ -329,10 +311,13 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should not exist if the Policy Field cannot be negated', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             // unfurl Image Contents policy key group
-            clickPolicyKeyGroup('Image Contents');
+            clickPolicyKeyGroup('Image contents');
             dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Age")`
+                `${selectors.booleanPolicySection.policyKey}:contains("Image age")`
             );
             cy.get(selectors.booleanPolicySection.policyFieldCard).should(
                 'contain',
@@ -343,19 +328,17 @@ describe('Boolean Policy Logic Section', () => {
     });
 
     describe('Policy Field Keys', () => {
-        beforeEach(() => {
-            addPolicy();
-            goToNextWizardStage();
-        });
-
         it('should be grouped into categories', () => {
+            goToNewPolicyCriteria();
+
             cy.get(selectors.booleanPolicySection.policyKeyGroupBtn).should((values) => {
                 expect(values).to.have.length(9);
             });
         });
 
         it('should filter keys based on Event Source value', () => {
-            goToPrevWizardStage();
+            goToNewPolicySummary();
+
             cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
             cy.get(selectors.eventSourceField.selectArrow).click();
             cy.get(`${selectors.eventSourceField.options}:contains("Audit Log")`).click();
@@ -366,32 +349,31 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should collapse categories when clicking the carrot', () => {
+            goToNewPolicyCriteria();
+
             cy.get(`${selectors.booleanPolicySection.policyKey}:first`)
                 .scrollIntoView()
                 .should('be.visible');
             cy.get(`${selectors.booleanPolicySection.policyKeyGroupBtn}:first`).click();
             cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:first`).should(
-                'have.class',
-                'overflow-hidden'
+                'not.exist'
             );
         });
+
         it('should have categories collapsed by default if not first group', () => {
+            goToNewPolicyCriteria();
+
             cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:first`)
                 .scrollIntoView()
                 .should('be.visible');
-            cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:last`)
-                .scrollIntoView()
-                .should('have.class', 'overflow-hidden');
         });
     });
 
     describe('Multiple Policy Sections', () => {
-        beforeEach(() => {
-            addPolicy();
-            goToNextWizardStage();
-            addPolicySection();
-        });
         it('should add a Policy Section with a pre-populated Policy Section header', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             cy.get(selectors.booleanPolicySection.policySection).then(() => {
                 cy.get(selectors.booleanPolicySection.sectionHeader.text)
                     .invoke('text')
@@ -402,11 +384,17 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should delete a Policy Section', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             cy.get(selectors.booleanPolicySection.removePolicySectionBtn).click();
             cy.get(selectors.booleanPolicySection.policySection).should('not.exist');
         });
 
         it('should edit the Policy Section header name', () => {
+            goToNewPolicyCriteria();
+            addPolicySection();
+
             cy.get(selectors.booleanPolicySection.sectionHeader.editBtn).click();
             const newHeaderText = 'new policy section';
             cy.get(selectors.booleanPolicySection.sectionHeader.input).type(
@@ -423,7 +411,9 @@ describe('Boolean Policy Logic Section', () => {
 
     describe('Data consistency', () => {
         it('should read in data properly when provided', () => {
-            cy.get(selectors.policies.scanImage).click();
+            visitPolicies();
+            goToNamedPolicy(text.scanImage);
+
             cy.get(selectors.booleanPolicySection.policySection).scrollIntoView().should('exist');
             cy.get(selectors.booleanPolicySection.sectionHeader.text).should('exist');
             cy.get(selectors.booleanPolicySection.policyFieldCard).should(
@@ -436,8 +426,10 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should keep same form values from edit details stage to edit criteria stage and back', () => {
-            cy.get(selectors.tableFirstRow).click({ force: true });
+            visitPolicies();
+            goToFirstPolicy();
             editPolicy();
+
             cy.get(selectors.form.nameInput).type('1234');
             goToNextWizardStage();
             goToPrevWizardStage();

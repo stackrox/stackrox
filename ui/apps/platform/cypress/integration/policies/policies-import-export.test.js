@@ -1,29 +1,22 @@
 import { selectors, url } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import { goToFirstPolicy, visitPolicies } from '../../helpers/policies';
 
 describe('policy import and export', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.intercept('GET', api.search.options, {
-            fixture: 'search/metadataOptions.json',
-        }).as('metadataOptions');
-        cy.visit(url);
-        cy.wait('@metadataOptions');
-    });
-
     describe('policy export', () => {
         it('should start an API call to get the policy in the detail panel', () => {
-            cy.intercept('POST', api.policies.export).as('policyExport');
+            visitPolicies();
+            goToFirstPolicy();
 
-            cy.get(selectors.tableFirstRow).click();
-
-            cy.url().then((href) => {
-                const segments = href.split('/');
+            cy.location('pathname').then((pathname) => {
+                const segments = pathname.split('/');
                 const policyId = segments[segments.length - 1];
-                cy.get(selectors.singlePolicyExportButton).click();
 
+                cy.intercept('POST', api.policies.export).as('policyExport');
+                cy.get(selectors.singlePolicyExportButton).click();
                 cy.wait('@policyExport')
                     .its('request.body')
                     .should('deep.equal', {
@@ -33,41 +26,41 @@ describe('policy import and export', () => {
         });
 
         it('should display an error when the export fails', () => {
+            visitPolicies();
+            goToFirstPolicy();
+
             cy.intercept('POST', api.policies.export, {
                 statusCode: 400,
                 body: {
                     message: 'Some policies could not be retrieved.',
                 },
             }).as('policyExport');
-
-            cy.get(selectors.tableFirstRow).click();
             cy.get(selectors.singlePolicyExportButton).click();
-
             cy.wait('@policyExport');
 
-            cy.get(selectors.toast).contains('Could not export the policy');
+            cy.get(selectors.toast).should('contain', 'Could not export the policy');
         });
     });
 
     describe('policy import', () => {
         it('should open the import dialog when button is clicked', () => {
-            cy.get(selectors.importPolicyButton).click();
+            visitPolicies();
 
+            cy.get(selectors.importPolicyButton).click();
             cy.get(`${selectors.policyImportModal.content}:contains("JSON")`);
             cy.get(selectors.policyImportModal.uploadIcon);
             cy.get(selectors.policyImportModal.fileInput);
-            cy.get(selectors.policyImportModal.confirm)
-                .should('be.disabled')
-                .invoke('text')
-                .then((btnText) => {
-                    expect(btnText).to.contain('Import');
-                });
+            cy.get(`${selectors.policyImportModal.confirm}:contains("Begin Import")`).should(
+                'be.disabled'
+            );
 
             cy.get(selectors.policyImportModal.cancel).click();
             cy.get(selectors.policyImportModal.content).should('not.exist');
         });
 
         it('should successfully import a policy', () => {
+            visitPolicies();
+
             cy.get(selectors.importPolicyButton).click();
 
             const fileName = 'policies/good_policy_to_import.json';
@@ -87,7 +80,9 @@ describe('policy import and export', () => {
                         expect(policyText).to.equal(expectedPolicyName);
                     });
 
+                cy.intercept('POST', api.policies.import).as('policyImport');
                 cy.get(selectors.policyImportModal.confirm).click();
+                cy.wait('@policyImport');
 
                 cy.get(selectors.policyImportModal.successMessage);
 
@@ -96,6 +91,8 @@ describe('policy import and export', () => {
         });
 
         it('should show error and handle resolution form when new policy has a duplicate name', () => {
+            visitPolicies();
+
             const mockDupeNameResponse = {
                 responses: [
                     {
@@ -145,7 +142,7 @@ describe('policy import and export', () => {
 
             // first, ensure there is an overwrite option
             cy.get(selectors.policyImportModal.overwriteRadioLabel).click();
-            cy.get(selectors.policyImportModal.confirm).should('not.be.disabled');
+            cy.get(selectors.policyImportModal.confirm).should('be.enabled');
 
             // next, ensure there is a rename option, and that it requires more info than just clicking
             cy.get(selectors.policyImportModal.renameRadioLabel).click();
@@ -153,10 +150,12 @@ describe('policy import and export', () => {
 
             // finally, give a new name, and ensure we can again submit the policy
             cy.get(selectors.policyImportModal.newNameInputLabel).click().type('A whole new world');
-            cy.get(selectors.policyImportModal.confirm).should('not.be.disabled');
+            cy.get(selectors.policyImportModal.confirm).should('be.enabled');
         });
 
         it('should show error and handle resolution form when new policy has a duplicate ID', () => {
+            visitPolicies();
+
             const mockDupeNameResponse = {
                 responses: [
                     {
@@ -215,6 +214,8 @@ describe('policy import and export', () => {
         });
 
         it('should show error and handle resolution form when new policy has both duplicate name and duplicate ID', () => {
+            visitPolicies();
+
             const mockDupeNameResponse = {
                 responses: [
                     {
@@ -271,7 +272,7 @@ describe('policy import and export', () => {
 
             // first, ensure there is an overwrite option
             cy.get(selectors.policyImportModal.overwriteRadioLabel).click();
-            cy.get(selectors.policyImportModal.confirm).should('not.be.disabled');
+            cy.get(selectors.policyImportModal.confirm).should('be.enabled');
 
             // next, ensure there is a rename option, and that it requires more info than just clicking
             cy.get(selectors.policyImportModal.renameRadioLabel).click();
@@ -281,7 +282,7 @@ describe('policy import and export', () => {
             cy.get(selectors.policyImportModal.newNameInputLabel)
                 .click()
                 .type('A policy by any other name would smell just as sweet');
-            cy.get(selectors.policyImportModal.confirm).should('not.be.disabled');
+            cy.get(selectors.policyImportModal.confirm).should('be.enabled');
         });
     });
 });

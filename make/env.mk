@@ -8,15 +8,23 @@ colon := :
 # work with the first element only.
 
 ifeq ($(findstring :, $(GOPATH)), $(colon))
-GOPATH := $(patsubst :%,,$(GOPATH))
+GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
-export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOPRIVATE GOBIN
+export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOPRIVATE GOBIN GOPROXY
 CGO_ENABLED := 1
-GOARCH := amd64
+
+# Update the arch to arm64 but only for Macs running on Apple Silicon (M1)
+ifeq ($(shell uname -ms),Darwin arm64)
+	GOARCH := arm64
+else
+	GOARCH := amd64
+endif
+
 DEFAULT_GOOS := linux
 GO111MODULE := on
 GOPRIVATE := github.com/stackrox
+GOPROXY := https://proxy.golang.org|https://goproxy.io|direct
 
 ifeq ($(GOBIN),)
 GOBIN := $(GOPATH)/bin

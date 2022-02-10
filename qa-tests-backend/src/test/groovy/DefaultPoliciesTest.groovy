@@ -76,7 +76,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
-            .setImage("quay.io/cgorman1/qa:struts-app")
+            .setImage("quay.io/rhacs-eng/qa:struts-app")
             .addLabel("app", "test")
             .addPort(80)
 
@@ -90,7 +90,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         STRUTS_DEPLOYMENT,
         new Deployment()
             .setName(SSL_TERMINATOR)
-            .setImage("quay.io/cgorman1/qa:ssl-terminator")
+            .setImage("quay.io/rhacs-eng/qa:ssl-terminator")
             .addLabel("app", "test")
             .setCommand(["sleep", "600"]),
         new Deployment()
@@ -376,7 +376,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least 100 CVEs.
-                "Image \"quay.io/cgorman1/qa:struts-app\"" +
+                "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
                      " contains \\d{2,3}\\d+ CVEs with severities ranging between " +
                      "Low and Critical" | []
 
@@ -384,12 +384,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "No capabilities were dropped" | null | []
 
         "Components Useful for Attackers" | 1.5f     |
-                "Image \"quay.io/cgorman1/qa:struts-app\" " +
+                "Image \"quay.io/rhacs-eng/qa:struts-app\" " +
                 "contains components useful for attackers:" +
                     " apt, bash, curl, wget" | null | []
 
         "Number of Components in Image"   | 1.5f     | null |
-                "Image \"quay.io/cgorman1/qa:struts-app\"" +
+                "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
                 " contains 16[67] components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []

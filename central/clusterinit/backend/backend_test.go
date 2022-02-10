@@ -7,7 +7,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -17,6 +16,7 @@ import (
 	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -39,12 +39,12 @@ func readCertAndKey(serviceName string) (*mtls.IssuedCert, error) {
 	certFile := path.Join(testData, fmt.Sprintf("%s-cert.pem", serviceName))
 	keyFile := path.Join(testData, fmt.Sprintf("%s-key.pem", serviceName))
 
-	certPEM, err := ioutil.ReadFile(certFile)
+	certPEM, err := os.ReadFile(certFile)
 	if err != nil {
 		return nil, err
 	}
 
-	keyPEM, err := ioutil.ReadFile(keyFile)
+	keyPEM, err := os.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func readCertAndKey(serviceName string) (*mtls.IssuedCert, error) {
 }
 
 func (s *clusterInitBackendTestSuite) initMockData() error {
-	caCertPEM, err := ioutil.ReadFile("testdata/ca-cert.pem")
+	caCertPEM, err := os.ReadFile("testdata/ca-cert.pem")
 	if err != nil {
 		return err
 	}
@@ -286,6 +286,14 @@ func (s *clusterInitBackendTestSuite) TestIssuingWithDuplicateName() {
 	s.Require().Error(err, "issuing two init bundles with the same name")
 }
 
+func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEmptyChain() {
+	ctx := s.ctx
+
+	err := s.backend.ValidateClientCertificate(ctx, nil)
+	s.Require().Error(err)
+	s.Equal("empty cert chain passed", err.Error())
+}
+
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 	ctx := s.ctx
 	id := uuid.NewV4()
@@ -296,6 +304,20 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 	err := s.backend.ValidateClientCertificate(ctx, certs)
 	s.Require().Error(err)
 	s.Equal("failed checking init bundle status: retrieving init bundle: init bundle not found", err.Error())
+}
+
+func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEphemeralInitBundle() {
+	ctx := s.ctx
+	id := uuid.NewV4()
+	certs := []requestinfo.CertInfo{
+		{Subject: pkix.Name{
+			CommonName:   centralsensor.EphemeralInitCertClusterID,
+			Organization: []string{id.String()},
+		}},
+	}
+
+	err := s.backend.ValidateClientCertificate(ctx, certs)
+	s.Require().NoError(err)
 }
 
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificate() {

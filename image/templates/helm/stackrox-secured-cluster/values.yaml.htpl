@@ -1,4 +1,4 @@
-[<- if .RenderAsLegacyChart ->]
+[<- if .KubectlOutput ->]
 cluster:
   name: [< default "" .ClusterName >]
   type: [< default "KUBERNETES_CLUSTER" .ClusterType >]
@@ -9,11 +9,11 @@ endpoint:
 
 image:
   repository:
-    main: [< default "main" .ImageRemote >]
-    collector: [< default "collector" .CollectorImageRemote >]
+    main: [< required "" .ImageRemote >]
+    collector: [< required "" .CollectorFullImageRemote >]
   registry:
-    main: [< default "stackrox.io" .ImageRegistry >]
-    collector: [< default "collector.stackrox.io" .CollectorRegistry >]
+    main: [< required "" .MainRegistry >]
+    collector: [< required "" .CollectorRegistry >]
 
 config:
   collectionMethod: [< default "KERNEL_MODULE" .CollectionMethod >]

@@ -5,18 +5,20 @@ set -euo pipefail
 
 # Tests upgrade. Formerly CircleCI gke-api-upgrade-tests.
 
-REPO_UNDER_TEST="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-source "$REPO_UNDER_TEST/scripts/lib.sh"
-source "$REPO_UNDER_TEST/scripts/ci/sensor-wait.sh"
-source "$REPO_UNDER_TEST/tests/scripts/setup-certs.sh"
+source "$TEST_ROOT/scripts/lib.sh"
+source "$TEST_ROOT/scripts/ci/lib.sh"
+source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
+source "$TEST_ROOT/tests/scripts/setup-certs.sh"
+source "$TEST_ROOT/tests/e2e/lib.sh"
 
 test_upgrade() {
     info "Starting test"
 
     REPO_FOR_TIME_TRAVEL="/tmp/rox-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="cgorman1"
+    QUAY_REPO="rhacs-eng"
     if is_CI; then
         REGISTRY="quay.io/$QUAY_REPO"
     else
@@ -27,22 +29,27 @@ test_upgrade() {
     export LOAD_BALANCER="lb"
     export MONITORING_SUPPORT="false"
     export CLUSTER_TYPE_FOR_TEST=K8S
+    require_environment "LONGTERM_LICENSE"
+    export ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
+
     if is_CI; then
         export ROXCTL_IMAGE_REPO="quay.io/$QUAY_REPO/roxctl"
     fi
 
     preamble
+    setup_deployment_env false false
+    install_built_roxctl_in_gopath
     remove_existing_stackrox_resources
 
     info "Deploying central"
-    "$REPO_UNDER_TEST/$DEPLOY_DIR/central.sh"
+    "$TEST_ROOT/$DEPLOY_DIR/central.sh"
     get_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs
 
     info "Deploying sensor"
-    "$REPO_UNDER_TEST/$DEPLOY_DIR/sensor.sh"
-    validate_sensor_bundle_via_upgrader "$REPO_UNDER_TEST/$DEPLOY_DIR"
+    "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"
+    validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
     sensor_wait
 
     test_sensor_bundle
@@ -62,19 +69,17 @@ preamble() {
         die "Only linux or darwin are supported for this test"
     fi
 
-    require_executable "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/roxctl"
-    require_executable "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/upgrader"
-    require_environment "ROX_LICENSE_KEY"
+    require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl"
+    require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader"
 
-    if is_CI; then
-        REPO_FOR_TIME_TRAVEL="$REPO_UNDER_TEST"
-    else
-        info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
-        if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
-            (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
-        else
-            (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone git@github.com:stackrox/rox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
+    info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
+    if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
+        if is_CI; then
+          die "Repo for time travel already exists! This is unexpected in CI."
         fi
+        (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
+    else
+        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone git@github.com:stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
     fi
 
     if is_CI; then
@@ -85,25 +90,6 @@ preamble() {
     else
         require_executable yq
     fi
-}
-
-get_central_basic_auth_creds() {
-    info "Getting central basic auth creds"
-
-    source "$REPO_UNDER_TEST/scripts/k8s/export-basic-auth-creds.sh" "$DEPLOY_DIR"
-}
-
-setup_client_TLS_certs() {
-    info "Setting up client certs for tests"
-
-    local cert_dir
-    cert_dir="$(mktemp -d)"
-    "$REPO_UNDER_TEST/tests/scripts/setup-certs.sh" "$cert_dir" "Client Certificate User" "Client CA"
-
-    export KEYSTORE_PATH="$cert_dir/keystore.p12"
-    export CLIENT_CA_PATH="$cert_dir/ca.crt"
-    export CLIENT_CERT_PATH="$cert_dir/tls.crt"
-    export CLIENT_KEY_PATH="$cert_dir/tls.key"
 }
 
 validate_sensor_bundle_via_upgrader() {
@@ -119,8 +105,8 @@ validate_sensor_bundle_via_upgrader() {
     local proxy_pid=$!
     sleep 5
 
-    KUBECONFIG="$REPO_UNDER_TEST/scripts/ci/kube-api-proxy/config.yml" \
-        "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/upgrader" \
+    KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
+        "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader" \
         -kube-config kubectl \
         -local-bundle "$deploy_dir/sensor-deploy" \
         -workflow validate-bundle
@@ -132,7 +118,7 @@ test_sensor_bundle() {
     info "Testing the sensor bundle"
 
     rm -rf sensor-remote
-    "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     ./sensor-remote/sensor.sh
@@ -153,7 +139,7 @@ test_upgrader() {
     info "Creating a 'sensor-remote-new' cluster"
 
     rm -rf sensor-remote-new
-    "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate k8s \
+    "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate k8s \
         --main-image-repository "${MAIN_IMAGE_REPO:-$REGISTRY/main}" \
         --collector-image-repository "${COLLECTOR_IMAGE_REPO:-$REGISTRY/collector}" \
         --name remote-new \
@@ -182,7 +168,7 @@ test_upgrader() {
     deploy_sensor_via_upgrader "after manually patching webhook" 060a9fa6-0ed6-49ac-b70c-9ca692614707
 
     info "Verify the webhook was patched back by the upgrader"
-    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 30 ]]; then
+    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 27 ]]; then
         echo "Webhook not patched"
         kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
         exit 1
@@ -276,11 +262,11 @@ deploy_sensor_via_upgrader() {
 
     ROX_UPGRADE_PROCESS_ID="$upgrade_process_id" \
         ROX_CENTRAL_ENDPOINT="$API_ENDPOINT" \
-        ROX_MTLS_CA_FILE="$REPO_UNDER_TEST/sensor-remote-new/ca.pem" \
-        ROX_MTLS_CERT_FILE="$REPO_UNDER_TEST/sensor-remote-new/sensor-cert.pem" \
-        ROX_MTLS_KEY_FILE="$REPO_UNDER_TEST/sensor-remote-new/sensor-key.pem" \
-        KUBECONFIG="$REPO_UNDER_TEST/scripts/ci/kube-api-proxy/config.yml" \
-        "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/upgrader" -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
+        ROX_MTLS_CA_FILE="$TEST_ROOT/sensor-remote-new/ca.pem" \
+        ROX_MTLS_CERT_FILE="$TEST_ROOT/sensor-remote-new/sensor-cert.pem" \
+        ROX_MTLS_KEY_FILE="$TEST_ROOT/sensor-remote-new/sensor-key.pem" \
+        KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
+        "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader" -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
 
     kill "$proxy_pid"
 
@@ -302,11 +288,11 @@ rollback_sensor_via_upgrader() {
 
     ROX_UPGRADE_PROCESS_ID="$upgrade_process_id" \
         ROX_CENTRAL_ENDPOINT="$API_ENDPOINT" \
-        ROX_MTLS_CA_FILE="$REPO_UNDER_TEST/sensor-remote-new/ca.pem" \
-        ROX_MTLS_CERT_FILE="$REPO_UNDER_TEST/sensor-remote-new/sensor-cert.pem" \
-        ROX_MTLS_KEY_FILE="$REPO_UNDER_TEST/sensor-remote-new/sensor-key.pem" \
-        KUBECONFIG="$REPO_UNDER_TEST/scripts/ci/kube-api-proxy/config.yml" \
-        "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/upgrader" -workflow roll-back -kube-config kubectl
+        ROX_MTLS_CA_FILE="$TEST_ROOT/sensor-remote-new/ca.pem" \
+        ROX_MTLS_CERT_FILE="$TEST_ROOT/sensor-remote-new/sensor-cert.pem" \
+        ROX_MTLS_KEY_FILE="$TEST_ROOT/sensor-remote-new/sensor-key.pem" \
+        KUBECONFIG="$TEST_ROOT/scripts/ci/kube-api-proxy/config.yml" \
+        "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader" -workflow roll-back -kube-config kubectl
 
     kill "$proxy_pid"
 }
@@ -314,14 +300,11 @@ rollback_sensor_via_upgrader() {
 test_upgrade_paths() {
     info "Testing various upgrade paths"
 
-    SHA_UNDER_TEST=$(git rev-parse HEAD)
-    EARLIER_SHA="b7c73d4d9d627b470d047ea4f026818ed92550d3"
-    EARLIER_TAG="3.0.58.x-41-gb7c73d4d9d"
+    EARLIER_SHA="9f82d2713cfec4b5c876d8dc0149f6d9cd70d349"
+    EARLIER_TAG="3.63.x-163-g2c4fe1563c"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
-    if ! is_CI; then
-        cd "$REPO_FOR_TIME_TRAVEL"
-    fi
+    cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
     deploy_earlier_central
@@ -329,39 +312,27 @@ test_upgrade_paths() {
     restore_backup_test
     wait_for_api
 
-    if is_CI; then
-        git reset --hard "$SHA_UNDER_TEST"
-    else
-        cd "$REPO_UNDER_TEST"
-    fi
+    cd "$TEST_ROOT"
 
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     wait_for_api
 
-    validate_upgrade "central upgrade to 3.0.58.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "central upgrade to 3.63.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     force_rollback
     wait_for_api
 
-    if is_CI; then
-        git checkout "$EARLIER_SHA"
-    else
-        cd "$REPO_FOR_TIME_TRAVEL"
-    fi
+    cd "$REPO_FOR_TIME_TRAVEL"
 
-    validate_upgrade "forced rollback to 3.0.58.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7" "../image/policies/files"
+    validate_upgrade "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
-    if is_CI; then
-        git reset --hard "$SHA_UNDER_TEST"
-    else
-        cd "$REPO_UNDER_TEST"
-    fi
+    cd "$TEST_ROOT"
 
     set_images_to_current
     wait_for_api
 
     info "Waiting for scanner to be ready"
-    kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
+    wait_for_scanner_to_be_ready
 
     validate_upgrade "upgrade after rollback" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
@@ -382,7 +353,7 @@ test_upgrade_paths() {
 
     info "Fetching a sensor bundle for cluster 'remote'"
     rm -rf sensor-remote
-    "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
@@ -405,7 +376,12 @@ test_upgrade_paths() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
+    mkdir -p "bin/$TEST_HOST_OS"
+    gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_OS/roxctl"
+    chmod +x "bin/$TEST_HOST_OS/roxctl"
+    PATH="bin/$TEST_HOST_OS:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_OS:$PATH" roxctl version
+    PATH="bin/$TEST_HOST_OS:$PATH" MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
 
     get_central_basic_auth_creds
 }
@@ -413,19 +389,17 @@ deploy_earlier_central() {
 restore_backup_test() {
     info "Restoring a 56.1 backup into a 58.x central"
 
-    gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
-    "$REPO_UNDER_TEST/bin/$TEST_HOST_OS/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-        central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+    restore_56_1_backup
 }
 
 validate_upgrade() {
-    if [[ "$#" -lt 2 ]]; then
-        die "missing args. usage: validate_upgrade <stage> <upgrade_cluster_id> [<policies_dir>]"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: validate_upgrade <stage> <upgrade_cluster_id>"
     fi
 
     local stage="$1"
     local upgrade_cluster_id="$2"
-    local policies_dir="${3:-"../pkg/defaults/policies/files"}"
+    local policies_dir="../pkg/defaults/policies/files"
 
     info "Validating the upgrade with upgrade tests: $stage"
 
@@ -465,20 +439,6 @@ set_images_to_current() {
     kubectl -n stackrox set image deploy/scanner-db "*=$REGISTRY/scanner-db:$(cat SCANNER_VERSION)"
 }
 
-collect_and_check_stackrox_logs() {
-    if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: collect_and_check_stackrox_logs <test_stage>"
-    fi
-
-    local dir="/tmp/upgrade-test-logs/$1"
-
-    info "Will collect stackrox logs to $dir and check them"
-
-    ./scripts/ci/collect-service-logs.sh stackrox "$dir"
-
-    check_stackrox_logs "$dir"
-}
-
 validate_db_backup_and_restore() {
     info "Backing up and restoring the DB"
 
@@ -509,6 +469,29 @@ wait_for_central_reconciliation() {
         sleep 10
     done
     [[ "$success" == 1 ]]
+}
+
+wait_for_scanner_to_be_ready() {
+    echo "Waiting for scanner to be ready"
+    start_time="$(date '+%s')"
+    while true; do
+      scanner_json="$(kubectl -n stackrox get deploy/scanner -o json)"
+      replicas="$(jq '.status.replicas' <<<"${scanner_json}")"
+      readyReplicas="$(jq '.status.readyReplicas' <<<"${scanner_json}")"
+      echo "scanner replicas: $replicas"
+      echo "scanner readyReplicas: $readyReplicas"
+      if [[  "$replicas" == "$readyReplicas" ]]; then
+        break
+      fi
+      if (( $(date '+%s') - start_time > 300 )); then
+        kubectl -n stackrox get pod -o wide
+        kubectl -n stackrox get deploy -o wide
+        echo >&2 "Timed out after 5m"
+        exit 1
+      fi
+      sleep 5
+    done
+    echo "Scanner is ready"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

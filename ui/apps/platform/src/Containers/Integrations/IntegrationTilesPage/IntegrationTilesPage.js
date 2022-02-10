@@ -1,24 +1,16 @@
-/* eslint-disable react/jsx-no-bind */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { PageSection, Title } from '@patternfly/react-core';
-import { useParams, useHistory } from 'react-router-dom';
 
 import { integrationsPath } from 'routePaths';
-import { actions as authActions } from 'reducers/auth';
-import { actions as apiTokenActions } from 'reducers/apitokens';
-import { actions as clusterInitBundleActions } from 'reducers/clusterInitBundles';
-import { actions as integrationActions } from 'reducers/integrations';
 import { selectors } from 'reducers';
 import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import integrationsList from '../utils/integrationsList';
 
 import IntegrationTile from './IntegrationTile';
 import IntegrationsSection from './IntegrationsSection';
-import IntegrationsNotFoundPage from '../IntegrationsNotFoundPage';
-import GenericIntegrationModal from '../GenericIntegrationModal';
 
 const IntegrationTilesPage = ({
     apiTokens,
@@ -28,47 +20,8 @@ const IntegrationTilesPage = ({
     backups,
     imageIntegrations,
     notifiers,
-    fetchAuthPlugins,
-    fetchAPITokens,
-    fetchClusterInitBundles,
-    fetchAuthProviders,
-    fetchImageIntegrations,
-    fetchNotifiers,
-    fetchBackups,
     featureFlags,
 }) => {
-    const { source: selectedSource, type: selectedType } = useParams();
-    const history = useHistory();
-
-    function getSelectedEntities(source, type) {
-        switch (source) {
-            case 'authPlugins':
-                fetchAuthPlugins();
-                break;
-            case 'authProviders':
-                if (type === 'apitoken') {
-                    fetchAPITokens();
-                    break;
-                }
-                if (type === 'clusterInitBundle') {
-                    fetchClusterInitBundles();
-                }
-                fetchAuthProviders();
-                break;
-            case 'imageIntegrations':
-                fetchImageIntegrations();
-                break;
-            case 'notifiers':
-                fetchNotifiers();
-                break;
-            case 'backups':
-                fetchBackups();
-                break;
-            default:
-                throw new Error(`Unknown source ${source}`);
-        }
-    }
-
     function findIntegrations(source, type) {
         const typeLowerMatches = (integration) =>
             integration.type.toLowerCase() === type.toLowerCase();
@@ -99,15 +52,6 @@ const IntegrationTilesPage = ({
                 throw new Error(`Unknown source ${source}`);
             }
         }
-    }
-
-    function getIntegration(source, type) {
-        return integrationsList[source]?.find((integration) => integration.type === type);
-    }
-
-    function fetchEntitiesAndCloseModal() {
-        getSelectedEntities(selectedSource, selectedType);
-        history.push(integrationsPath);
     }
 
     function getIsIntegrationFeatureFlagEnabled(integration) {
@@ -162,24 +106,6 @@ const IntegrationTilesPage = ({
     const authProviderTiles = renderIntegrationTiles('authProviders');
     const backupTiles = renderIntegrationTiles('backups');
 
-    let modal;
-
-    if (selectedSource && selectedType) {
-        const selectedTile = getIntegration(selectedSource, selectedType);
-        if (!selectedTile) {
-            return <IntegrationsNotFoundPage />;
-        }
-        modal = (
-            <GenericIntegrationModal
-                apiTokens={apiTokens}
-                clusterInitBundles={clusterInitBundles}
-                fetchEntitiesAndCloseModal={fetchEntitiesAndCloseModal}
-                findIntegrations={findIntegrations}
-                selectedTile={selectedTile}
-            />
-        );
-    }
-
     return (
         <>
             <PageSection variant="light">
@@ -210,7 +136,6 @@ const IntegrationTilesPage = ({
                     </IntegrationsSection>
                 )}
             </PageSection>
-            {modal}
         </>
     );
 };
@@ -244,13 +169,6 @@ IntegrationTilesPage.propTypes = {
     ).isRequired,
     notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
     imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
-    fetchAuthPlugins: PropTypes.func.isRequired,
-    fetchAuthProviders: PropTypes.func.isRequired,
-    fetchAPITokens: PropTypes.func.isRequired,
-    fetchBackups: PropTypes.func.isRequired,
-    fetchClusterInitBundles: PropTypes.func.isRequired,
-    fetchNotifiers: PropTypes.func.isRequired,
-    fetchImageIntegrations: PropTypes.func.isRequired,
     featureFlags: PropTypes.arrayOf(
         PropTypes.shape({
             envVar: PropTypes.string.isRequired,
@@ -270,17 +188,4 @@ const mapStateToProps = createStructuredSelector({
     featureFlags: selectors.getFeatureFlags,
 });
 
-const mapDispatchToProps = (dispatch) => ({
-    fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
-    fetchAPITokens: () => dispatch(apiTokenActions.fetchAPITokens.request()),
-    fetchClusterInitBundles: () =>
-        dispatch(clusterInitBundleActions.fetchClusterInitBundles.request()),
-    fetchBackups: () => dispatch(integrationActions.fetchBackups.request()),
-    fetchNotifiers: () => dispatch(integrationActions.fetchNotifiers.request()),
-    fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
-    fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),
-    fetchScanners: () => dispatch(integrationActions.fetchScanners.request()),
-    fetchAuthPlugins: () => dispatch(integrationActions.fetchAuthPlugins.request()),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(IntegrationTilesPage);
+export default connect(mapStateToProps)(IntegrationTilesPage);

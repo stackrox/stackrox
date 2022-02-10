@@ -200,6 +200,26 @@ class Env {
         return mustGet("AWS_SECRET_ACCESS_KEY")
     }
 
+    static String mustGetAWSAssumeRoleAccessKeyID() {
+        return mustGet("AWS_ASSUME_ROLE_ACCESS_KEY_ID")
+    }
+
+    static String mustGetAWSAssumeRoleSecretKeyID() {
+        return mustGet("AWS_ASSUME_ROLE_SECRET_ACCESS_KEY")
+    }
+
+    static String mustGetAWSAssumeRoleRoleID() {
+        return mustGet("AWS_ASSUME_ROLE_ROLE_ID")
+    }
+
+    static String mustGetAWSAssumeRoleExternalID() {
+        return mustGet("AWS_ASSUME_ROLE_EXTERNAL_ID")
+    }
+
+    static String mustGetAWSAssumeRoleTestConditionID() {
+        return mustGet("AWS_ASSUME_ROLE_TEST_CONDITION_ID")
+    }
+
     static String mustGetAWSS3BucketName() {
         return mustGet("AWS_S3_BACKUP_TEST_BUCKET_NAME") // stackrox-qa-backup-test
     }
@@ -243,5 +263,12 @@ class Env {
     static String mustGetSlackFixableVulnsChannel() {
         return mustGet("SLACK_FIXABLE_VULNS_CHANNEL")
     }
-}
 
+    static String mustGetSlackMainWebhook() {
+        return mustGet("SLACK_MAIN_WEBHOOK")
+    }
+
+    static String mustGetSlackAltWebhook() {
+        return mustGet("SLACK_ALT_WEBHOOK")
+    }
+}

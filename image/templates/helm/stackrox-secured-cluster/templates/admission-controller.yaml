@@ -157,7 +157,7 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
-{{- if and (has "admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration" ._rox._apiServer.apiResources) (ne ._rox.env.openshift 3) }}
+{{- if ne ._rox.env.openshift 3 }}
 apiVersion: admissionregistration.k8s.io/v1
 {{- else }}
 apiVersion: admissionregistration.k8s.io/v1beta1
@@ -178,9 +178,8 @@ webhooks:
   - name: policyeval.stackrox.io
     {{- if ne ._rox.env.openshift 3 }}
     sideEffects: NoneOnDryRun
-    {{- if has "admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration" ._rox._apiServer.apiResources }}
     admissionReviewVersions: [ "v1", "v1beta1" ]
-    {{- end }}
+    timeoutSeconds: 27
     {{- end }}
     rules:
       - apiGroups:
@@ -227,9 +226,8 @@ webhooks:
   - name: k8sevents.stackrox.io
     {{- if ne ._rox.env.openshift 3 }}
     sideEffects: NoneOnDryRun
-    {{- if has "admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration" ._rox._apiServer.apiResources }}
     admissionReviewVersions: [ "v1", "v1beta1" ]
-    {{- end }}
+    timeoutSeconds: 27
     {{- end }}
     rules:
       - apiGroups:

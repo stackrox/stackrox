@@ -71,7 +71,7 @@ echo "Release family names: ${current_release_family}.x, ${short_release_family}
 
 echo "Searching GitHub milestones ..."
 IFS=$'\n' read -d '' -r -a milestones < <(
-  gh_curl '/repos/stackrox/rox/milestones?state=all&direction=desc' |
+  gh_curl '/repos/stackrox/stackrox/milestones?state=all&direction=desc' |
     jq --arg family "${current_release_family}" --arg shortFamily "${short_release_family}" \
       '.[] | select(.title | (startswith($family) or startswith($shortFamily))) | .title' -r |
     sort --version-sort
@@ -81,8 +81,15 @@ if [[ "${#milestones[@]}" -eq 0 ]]; then
   die "No milestones found for release family ${current_release_family}"
 fi
 
-echo "Found milestones:"
-printf ' - %s\n' "${milestones[@]}"
+arg_milestone="${1}"
+
+if [[ -n "$arg_milestone" ]]; then
+  printf '%s\n' "${milestones[@]}" | grep -F -x -q "$arg_milestone" || die "No such milestone '${arg_milestone}'! Known milestones: [${milestones[*]}]"
+  milestones=("$arg_milestone")
+else
+  echo "Found milestones:"
+  printf ' - %s\n' "${milestones[@]}"
+fi
 
 unclear_commits=()
 cherrypick_commits=()
@@ -96,12 +103,13 @@ echo 'Fetching all recent commits from GitHub ...'
 git fetch
 echo
 
+
 # For each milestone, find all PRs attached to it. Then, for each PR that is closed, find the "merge" event and
 # retrieve the associated commit hash. Then analyze whether this commit has already been cherry-picked or otherwise
 # made it onto the branch.
 for milestone in "${milestones[@]}"; do
   echo "Analyzing PRs/commits for milestone ${milestone} ..."
-  milestone_prs="$(gh_curl '/search/issues?q=repo:stackrox/rox+is:pr+milestone:"'"$milestone"'"')"
+  milestone_prs="$(gh_curl '/search/issues?q=repo:stackrox/stackrox+is:pr+milestone:"'"$milestone"'"')"
 
   # Determine unclosed PRs for informational output.
   IFS=$'\n' read -d '' -r -a newly_unclosed_prs < <(
@@ -115,7 +123,7 @@ for milestone in "${milestones[@]}"; do
   for closed_pr in "${closed_prs[@]}"; do
     # GitHub will paginate events if there are more than 100. TODO: loop through pages to reliably detect all events.
     commit_id="$(
-      gh_curl "/repos/stackrox/rox/issues/${closed_pr}/events?per_page=100" |
+      gh_curl "/repos/stackrox/stackrox/issues/${closed_pr}/events?per_page=100" |
         jq '[.[] | select(.event == "merged") | .commit_id][0] // ""' -r)"
     if [[ -z "$commit_id" ]]; then
       unmerged_closed_prs+=("$closed_pr")
@@ -202,6 +210,6 @@ fi
 if [[ "${#unmerged_closed_prs[@]}" -gt 0 ]]; then
   echo "It looks like there were a couple of PRs attached to the milestone that were closed but not merged."
   echo "Please confirm, and remove the milestone label to make this message disappear."
-  printf ' - https://github.com/stackrox/rox/pull/%s' "${unmerged_closed_prs[@]}"
+  printf ' - https://github.com/stackrox/stackrox/pull/%s' "${unmerged_closed_prs[@]}"
   echo
 fi

@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 [ -d /usr/local/share/ca-certificates ] || exit 0
 [ "$(find /usr/local/share/ca-certificates -maxdepth 1 -name '*.crt' | wc -l)" -gt 0 ] || exit 0

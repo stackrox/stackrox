@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +31,7 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 
 	for _, renderMode := range []mode{centralTLSOnly, scannerTLSOnly} {
 		t.Run(fmt.Sprintf("mode=%s", renderMode), func(t *testing.T) {
-			contents, err := renderAndExtractSingleFileContents(config, renderMode)
+			contents, err := renderAndExtractSingleFileContents(config, renderMode, testutils.MakeImageFlavorForTest(t))
 			assert.NoError(t, err)
 
 			objs, err := k8sutil.UnstructuredFromYAMLMulti(string(contents))
@@ -43,6 +43,7 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 }
 
 func TestRenderScannerOnly(t *testing.T) {
+	flavor := testutils.MakeImageFlavorForTest(t)
 	config := Config{
 		SecretsByteMap: map[string][]byte{
 			"ca.pem":              []byte("CA"),
@@ -57,15 +58,15 @@ func TestRenderScannerOnly(t *testing.T) {
 		},
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
-				MainImage:      defaults.MainImage(),
-				ScannerImage:   defaults.ScannerImage(),
-				ScannerDBImage: defaults.ScannerDBImage(),
+				MainImage:      flavor.MainImage(),
+				ScannerImage:   flavor.ScannerImage(),
+				ScannerDBImage: flavor.ScannerDBImage(),
 			},
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 		},
 	}
 
-	files, err := render(config, scannerOnly, nil)
+	files, err := render(config, scannerOnly, flavor)
 	assert.NoError(t, err)
 
 	for _, f := range files {

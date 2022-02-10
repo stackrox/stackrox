@@ -1,7 +1,6 @@
 package migrations
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -41,7 +40,7 @@ func Read(dbPath string) (*MigrationVersion, error) {
 		return &MigrationVersion{dbPath: dbPath, SeqNum: 0, MainVersion: "0"}, nil
 	}
 
-	bytes, err := ioutil.ReadFile(filepath.Join(dbPath, MigrationVersionFile))
+	bytes, err := os.ReadFile(filepath.Join(dbPath, MigrationVersionFile))
 	if err != nil {
 		return nil, err
 	}

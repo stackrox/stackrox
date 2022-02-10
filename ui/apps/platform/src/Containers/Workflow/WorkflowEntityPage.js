@@ -68,7 +68,6 @@ const WorkflowEntityPage = ({
         enhancedQueryOptions.variables.query &&
         enhancedQueryOptions.variables.query.includes('K8S_CVE')
     ) {
-        // eslint-disable-next-line no-param-reassign
         enhancedQueryOptions.variables.query = enhancedQueryOptions.variables.query.replace(
             /\+?CVE Type:K8S_CVE\+?/,
             ''

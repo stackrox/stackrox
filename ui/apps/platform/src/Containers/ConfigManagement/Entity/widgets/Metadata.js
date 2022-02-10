@@ -113,12 +113,19 @@ const Metadata = ({ keyValuePairs, labels, annotations, exclusions, secrets, ...
 };
 
 Metadata.propTypes = {
-    keyValuePairs: PropTypes.arrayOf(
-        PropTypes.shape({
-            key: PropTypes.string.isRequired,
-            value: PropTypes.oneOf([PropTypes.string.isRequired, PropTypes.element.isRequired]),
-        })
-    ).isRequired,
+    keyValuePairs: PropTypes.oneOfType([
+        PropTypes.arrayOf(
+            PropTypes.shape({
+                key: PropTypes.string.isRequired,
+                value: PropTypes.oneOf([PropTypes.string.isRequired, PropTypes.element.isRequired]),
+            })
+        ),
+        PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+            })
+        ),
+    ]).isRequired,
     labels: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     annotations: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     exclusions: PropTypes.arrayOf(PropTypes.shape({})).isRequired,

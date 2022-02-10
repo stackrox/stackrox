@@ -3,7 +3,7 @@ package gziputil
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 )
 
 // Compress compresses the given bytes of raw data using gzip.
@@ -31,7 +31,7 @@ func Decompress(compressedData []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

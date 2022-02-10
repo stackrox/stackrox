@@ -1,13 +1,20 @@
 import { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
+import { VulnerabilitySeverity } from 'types/cve.proto';
+import {
+    EnforcementAction,
+    LifecycleStage,
+    PolicyEventSource,
+    PolicySeverity,
+} from 'types/policy.proto';
 
-export const severityLabels = Object.freeze({
+export const severityLabels: Record<PolicySeverity, string> = Object.freeze({
     CRITICAL_SEVERITY: 'Critical',
     HIGH_SEVERITY: 'High',
     MEDIUM_SEVERITY: 'Medium',
     LOW_SEVERITY: 'Low',
 });
 
-export const cvssSeverityLabels = Object.freeze({
+export const vulnerabilitySeverityLabels: Record<VulnerabilitySeverity, string> = Object.freeze({
     CRITICAL_VULNERABILITY_SEVERITY: 'Critical',
     IMPORTANT_VULNERABILITY_SEVERITY: 'Important',
     MODERATE_VULNERABILITY_SEVERITY: 'Moderate',
@@ -36,19 +43,27 @@ export const healthStatusLabels = Object.freeze({
     HEALTHY: 'Healthy',
 });
 
-export const lifecycleStageLabels = Object.freeze({
+export const lifecycleStageLabels: Record<LifecycleStage, string> = Object.freeze({
     BUILD: 'Build',
     DEPLOY: 'Deploy',
     RUNTIME: 'Runtime',
 });
 
-export const enforcementActionLabels = Object.freeze({
+export const enforcementActionLabels: Record<EnforcementAction, string> = Object.freeze({
     UNSET_ENFORCEMENT: 'None',
     FAIL_BUILD_ENFORCEMENT: 'Fail builds during continuous integration',
     SCALE_TO_ZERO_ENFORCEMENT: 'Scale to Zero Replicas',
     KILL_POD_ENFORCEMENT: 'Kill Pod',
     FAIL_KUBE_REQUEST_ENFORCEMENT: 'Fail Kubernetes API Request',
+    FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: 'Block Deployment Create',
+    FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: 'Block Deployment Update',
     UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: 'Add an Unsatisfiable Node Constraint',
+});
+
+export const eventSourceLabels: Record<PolicyEventSource, string> = Object.freeze({
+    NOT_APPLICABLE: 'N/A',
+    DEPLOYMENT_EVENT: 'Deployment',
+    AUDIT_LOG_EVENT: 'Audit log',
 });
 
 export const accessControl = Object.freeze({
@@ -95,6 +110,7 @@ export const stackroxSupport = Object.freeze({
 });
 
 export const portExposureLabels = Object.freeze({
+    ROUTE: 'Route',
     EXTERNAL: 'LoadBalancer',
     NODE: 'NodePort',
     HOST: 'HostPort',
@@ -132,15 +148,15 @@ export const envVarSrcLabels = Object.freeze({
 });
 
 export const policyCriteriaCategories = Object.freeze({
-    IMAGE_REGISTRY: 'Image Registry',
-    IMAGE_CONTENTS: 'Image Contents',
-    CONTAINER_CONFIGURATION: 'Container Configuration',
-    DEPLOYMENT_METADATA: 'Deployment Metadata',
+    IMAGE_REGISTRY: 'Image registry',
+    IMAGE_CONTENTS: 'Image contents',
+    CONTAINER_CONFIGURATION: 'Container configuration',
+    DEPLOYMENT_METADATA: 'Deployment metadata',
     STORAGE: 'Storage',
     NETWORKING: 'Networking',
-    PROCESS_ACTIVITY: 'Process Activity',
-    KUBERNETES_ACCESS: 'Kubernetes Access',
-    KUBERNETES_EVENTS: 'Kubernetes Events',
+    PROCESS_ACTIVITY: 'Process activity',
+    KUBERNETES_ACCESS: 'Kubernetes access',
+    KUBERNETES_EVENTS: 'Kubernetes events',
 });
 
 // For any update to severityRatings, please also update cve.proto,

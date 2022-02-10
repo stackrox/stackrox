@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
@@ -45,8 +44,8 @@ type updaterImpl struct {
 }
 
 type imageExecutable struct {
-	execToComponent map[string]string
-	scanTime        time.Time
+	execToComponents map[string][]string
+	scanTime         time.Time
 	// Todo(cdu) add scannerVersion string
 }
 
@@ -72,29 +71,28 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 	}
 
 	// Create or update executable cache
-	execToComponent := u.getExecToComponentMap(scan)
-	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponent: execToComponent, scanTime: scanTime})
+	execToComponents := u.getExecToComponentsMap(scan)
+	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponents: execToComponents, scanTime: scanTime})
 
-	log.Debugf("Executable cache updated for image %s with %d paths", image.GetId(), len(execToComponent))
+	log.Debugf("Executable cache updated for image %s with %d paths", image.GetId(), len(execToComponents))
 	return nil
 }
 
-func (u *updaterImpl) getExecToComponentMap(imageScan *storage.ImageScan) map[string]string {
-	execToComponent := make(map[string]string)
+func (u *updaterImpl) getExecToComponentsMap(imageScan *storage.ImageScan) map[string][]string {
+	execToComponents := make(map[string][]string)
 
 	for _, component := range imageScan.GetComponents() {
 		// We do not support non-OS level active components at this time.
 		if component.GetSource() != storage.SourceType_OS {
 			continue
 		}
-		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
 		for _, exec := range component.GetExecutables() {
-			execToComponent[exec.GetPath()] = componentID
+			execToComponents[exec.GetPath()] = append(execToComponents[exec.GetPath()], exec.GetDependencies()...)
 		}
 		// Remove the executables to save some memory. The same image won't be processed again.
 		component.Executables = nil
 	}
-	return execToComponent
+	return execToComponents
 }
 
 // Update detects active components with most recent process run.
@@ -139,7 +137,7 @@ func (u *updaterImpl) updateActiveComponents(deploymentToUpdates map[string][]*a
 
 // updateForDeployment detects and updates active components for a deployment
 func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID string, updates []*aggregator.ProcessUpdate) error {
-	idToContainers := make(map[string]set.StringSet)
+	idToContainers := make(map[string]map[string]*storage.ActiveComponent_ActiveContext)
 	containersToRemove := set.NewStringSet()
 	for _, update := range updates {
 		if update.ToBeRemoved() {
@@ -156,29 +154,35 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 			utils.Should(errors.New("cannot find image scan"))
 			continue
 		}
-		execToComponent := result.(*imageExecutable).execToComponent
+		execToComponents := result.(*imageExecutable).execToComponents
 		execPaths, err := u.getActiveExecPath(deploymentID, update)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get active executables for deployment %s container %s", deploymentID, update.ContainerName)
 		}
 
+		activeContext := &storage.ActiveComponent_ActiveContext{ContainerName: update.ContainerName, ImageId: update.ImageID}
 		for _, execPath := range execPaths.AsSlice() {
-			componentID, ok := execToComponent[execPath]
+			componentIDs, ok := execToComponents[execPath]
 			if !ok {
 				continue
 			}
-			id := converter.ComposeID(deploymentID, componentID)
-			if _, ok := idToContainers[id]; !ok {
-				idToContainers[id] = set.NewStringSet()
+			for _, componentID := range componentIDs {
+				id := converter.ComposeID(deploymentID, componentID)
+				var containerNameSet map[string]*storage.ActiveComponent_ActiveContext
+				if containerNameSet, ok = idToContainers[id]; !ok {
+					containerNameSet = make(map[string]*storage.ActiveComponent_ActiveContext)
+					idToContainers[id] = containerNameSet
+				}
+				if _, ok = containerNameSet[update.ContainerName]; !ok {
+					containerNameSet[update.ContainerName] = activeContext
+				}
 			}
-			containerNameSet := idToContainers[id]
-			containerNameSet.Add(update.ContainerName)
 		}
 	}
 	return u.createActiveComponentsAndUpdateDb(ctx, deploymentID, idToContainers, containersToRemove)
 }
 
-func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, deploymentID string, acToContexts map[string]set.StringSet, contextsToRemove set.StringSet) error {
+func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, deploymentID string, acToContexts map[string]map[string]*storage.ActiveComponent_ActiveContext, contextsToRemove set.StringSet) error {
 	var err error
 	var existingAcs []*storage.ActiveComponent
 	if contextsToRemove.Cardinality() == 0 {
@@ -208,7 +212,7 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 		}
 		delete(acToContexts, ac.GetId())
 	}
-	for id, contexts := range acToContexts {
+	for id, activeContexts := range acToContexts {
 		_, componentID, err := converter.DecomposeID(id)
 		if err != nil {
 			utils.Should(err)
@@ -222,9 +226,7 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 				ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
 			},
 		}
-		for context := range contexts {
-			newAc.ActiveComponent.ActiveContexts[context] = &storage.ActiveComponent_ActiveContext{ContainerName: context}
-		}
+		newAc.ActiveComponent.ActiveContexts = activeContexts
 		activeComponents = append(activeComponents, newAc)
 	}
 	log.Debugf("Upserting %d active components and deleting %d for deployment %s", len(activeComponents), len(acToRemove), deploymentID)
@@ -241,19 +243,24 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 }
 
 // Merge existing active component with new contexts, addend could be nil
-func merge(base *storage.ActiveComponent, subtrahend, addend set.StringSet) (*converter.CompleteActiveComponent, bool) {
+func merge(base *storage.ActiveComponent, subtrahend set.StringSet, addend map[string]*storage.ActiveComponent_ActiveContext) (*converter.CompleteActiveComponent, bool) {
 	// Only remove the containers that won't be added back.
-	toRemove := subtrahend.Difference(addend)
+	toRemove := set.NewStringSet()
+	for sub := range subtrahend {
+		if _, ok := addend[sub]; !ok {
+			toRemove.Add(sub)
+		}
+	}
 	var changed bool
-	for context := range base.ActiveContexts {
-		if toRemove.Contains(context) {
-			delete(base.ActiveContexts, context)
+	for activeContext := range base.ActiveContexts {
+		if toRemove.Contains(activeContext) {
+			delete(base.ActiveContexts, activeContext)
 			changed = true
 		}
 	}
-	for context := range addend {
-		if _, ok := base.ActiveContexts[context]; !ok {
-			base.ActiveContexts[context] = &storage.ActiveComponent_ActiveContext{ContainerName: context}
+	for containerName, activeContext := range addend {
+		if baseContext, ok := base.ActiveContexts[containerName]; !ok || baseContext.ImageId != activeContext.ImageId {
+			base.ActiveContexts[containerName] = activeContext
 			changed = true
 		}
 	}

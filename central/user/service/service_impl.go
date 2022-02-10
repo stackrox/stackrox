@@ -25,11 +25,6 @@ var (
 			"/v1.UserService/GetUser",
 			"/v1.UserService/GetUsersAttributes",
 		},
-		user.With(permissions.Modify(resources.User)): {
-			"/v1.UserService/CreateUser",
-			"/v1.UserService/UpdateUser",
-			"/v1.UserService/DeleteUser",
-		},
 	})
 )
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -26,11 +27,17 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 		} else {
 			log.Warnf("Cannot extract identity: %v", err)
 		}
+		// Ignore id value if error is not nil.
+		return context.WithValue(ctx, identityErrorContextKey{}, errorhelpers.NewErrNoCredentials(err.Error())), nil
 	}
-	if id == nil {
-		return ctx, nil
+	if id != nil {
+		// Only service identities can have no roles assigned.
+		if len(id.Roles()) == 0 && id.Service() == nil {
+			return context.WithValue(ctx, identityErrorContextKey{}, errorhelpers.GenericNoValidRole()), nil
+		}
+		return context.WithValue(ctx, identityContextKey{}, id), nil
 	}
-	return context.WithValue(ctx, identityContextKey{}, id), nil
+	return ctx, nil
 }
 
 // ContextUpdater returns a context updater for the given identity extractors

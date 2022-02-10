@@ -2,7 +2,7 @@ package tenable
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -111,7 +111,7 @@ func (d *tenable) sendRequest(method, urlPrefix string) ([]byte, int, error) {
 		return nil, -1, err
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, resp.StatusCode, err
 	}

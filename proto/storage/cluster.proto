@@ -109,6 +109,7 @@ message SensorDeploymentIdentification {
     string app_namespace         = 3;
     string app_namespace_id      = 4;
     string app_serviceaccount_id = 5;
+    string k8s_node_name         = 6;
 }
 
 message Cluster {
@@ -136,6 +137,7 @@ message Cluster {
     int64                     priority                         = 20;
     ClusterHealthStatus       health_status                    = 22;
     bool                      slim_collector                   = 23;
+    // The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
     CompleteClusterConfig     helm_config                      = 24;
 
     // most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any).
@@ -144,7 +146,15 @@ message Cluster {
     // For internal use only.
     map<string, AuditLogFileState> audit_log_state             = 28;
 
-    string                    init_bundle_id                  = 29;
+    string                    init_bundle_id                   = 29;
+    ManagerType               managed_by                       = 30;
+}
+
+enum ManagerType {
+    MANAGER_TYPE_UNKNOWN             = 0;
+    MANAGER_TYPE_MANUAL              = 1;
+    MANAGER_TYPE_HELM_CHART          = 2;
+    MANAGER_TYPE_KUBERNETES_OPERATOR = 3;
 }
 
 message ClusterCertExpiryStatus {

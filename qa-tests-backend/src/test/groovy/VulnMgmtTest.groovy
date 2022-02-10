@@ -9,16 +9,16 @@ import spock.lang.Unroll
 @Category(BAT)
 class VulnMgmtTest extends BaseSpecification {
     static final private String RHEL_IMAGE_DIGEST =
-            "sha256:78b39d05bb630c483b6be49add8c0db321271b6f7cd82d365e5ca325c98742df"
+            "sha256:481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
     static final private String RHEL_IMAGE =
-            "quay.io/cgorman1/qa:ansibleplaybookbundle-"+
+            "quay.io/rhacs-eng/qa:ansibleplaybookbundle-"+
             "-gluster-s3object-apb-"+
             "-481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
 
     static final private String UBUNTU_IMAGE_DIGEST =
-            "sha256:83e7c5b222a463b07fd09fe1b0c5a8561901ed5c08bb65ce81128b8f7e258491"
+            "sha256:74ee7a5d7a7172090162b1b5f8022b3b403b9f4ac677d325209c56483452f417"
     static final private String UBUNTU_IMAGE =
-            "quay.io/cgorman1/qa:barchart-"+
+            "quay.io/rhacs-eng/qa:barchart-"+
             "-dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a"
 
     private static final EMBEDDED_IMAGE_QUERY = """

@@ -5,51 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	clusters "github.com/stackrox/rox/central/clusters"
 	uuid "github.com/stackrox/rox/pkg/uuid"
-	reflect "reflect"
 )
 
-// MockProvider is a mock of Provider interface
+// MockProvider is a mock of Provider interface.
 type MockProvider struct {
 	ctrl     *gomock.Controller
 	recorder *MockProviderMockRecorder
 }
 
-// MockProviderMockRecorder is the mock recorder for MockProvider
+// MockProviderMockRecorder is the mock recorder for MockProvider.
 type MockProviderMockRecorder struct {
 	mock *MockProvider
 }
 
-// NewMockProvider creates a new mock instance
+// NewMockProvider creates a new mock instance.
 func NewMockProvider(ctrl *gomock.Controller) *MockProvider {
 	mock := &MockProvider{ctrl: ctrl}
 	mock.recorder = &MockProviderMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 	return m.recorder
 }
 
-// GetCA mocks base method
-func (m *MockProvider) GetCA() (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCA")
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCA indicates an expected call of GetCA
-func (mr *MockProviderMockRecorder) GetCA() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCA", reflect.TypeOf((*MockProvider)(nil).GetCA))
-}
-
-// GetBundle mocks base method
+// GetBundle mocks base method.
 func (m *MockProvider) GetBundle() (clusters.CertBundle, uuid.UUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBundle")
@@ -59,8 +45,23 @@ func (m *MockProvider) GetBundle() (clusters.CertBundle, uuid.UUID, error) {
 	return ret0, ret1, ret2
 }
 
-// GetBundle indicates an expected call of GetBundle
+// GetBundle indicates an expected call of GetBundle.
 func (mr *MockProviderMockRecorder) GetBundle() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBundle", reflect.TypeOf((*MockProvider)(nil).GetBundle))
+}
+
+// GetCA mocks base method.
+func (m *MockProvider) GetCA() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCA")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCA indicates an expected call of GetCA.
+func (mr *MockProviderMockRecorder) GetCA() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCA", reflect.TypeOf((*MockProvider)(nil).GetCA))
 }

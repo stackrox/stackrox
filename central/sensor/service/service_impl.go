@@ -62,9 +62,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer) error {
 	// Get the source cluster's ID.
-	identity := authn.IdentityFromContext(server.Context())
-	if identity == nil {
-		return errorhelpers.NewErrNotAuthorized("only sensor may access this API")
+	identity, err := authn.IdentityFromContext(server.Context())
+	if err != nil {
+		return err
 	}
 
 	svc := identity.Service()
@@ -131,12 +131,12 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 	helmConfigInit := sensorHello.GetHelmManagedConfigInit()
 
 	clusterIDFromCert := serviceID.GetId()
-	if helmConfigInit == nil && clusterIDFromCert == centralsensor.InitCertClusterID {
+	if helmConfigInit == nil && centralsensor.IsInitCertClusterID(clusterIDFromCert) {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
 	}
 
 	clusterID := helmConfigInit.GetClusterId()
-	if clusterID != "" || clusterIDFromCert != centralsensor.InitCertClusterID {
+	if clusterID != "" || !centralsensor.IsInitCertClusterID(clusterIDFromCert) {
 		var err error
 		clusterID, err = centralsensor.GetClusterID(clusterID, clusterIDFromCert)
 		if err != nil {

@@ -6,9 +6,6 @@
 /coverage
 /test-results
 
-# enable for StoryBook config files
-!.storybook
-
 # enable for configuration files
 !.eslintrc.js
 !.prettierrc.js

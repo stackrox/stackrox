@@ -1,0 +1,16 @@
+POLICY,SEVERITY,BREAKS DEPLOY,DEPLOYMENT,DESCRIPTION,VIOLATION,REMEDIATION
+policy 1,[31;1mCRITICAL[0m,-,wordpress,policy 1 for testing,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3",policy 1 for testing
+policy 8,[95mHIGH[0m,-,wordpress,-,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3",policy 8 for testing
+policy 2,[33mMEDIUM[0m,-,wordpress,policy 2 for testing,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3",policy 2 for testing
+policy 5,[33mMEDIUM[0m,-,wordpress,policy 5 for testing,"- testing alert violation message
+- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3",policy 5 for testing
+policy 6,[33mMEDIUM[0m,-,wordpress,policy 6 for testing,- testing alert violation message,policy 6 for testing
+policy 7,[34;2mLOW[0m,-,wordpress,policy 7 for testing,- testing alert violation message,policy 7 for testing

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"google.golang.org/grpc/codes"
@@ -60,7 +61,7 @@ func (s *serviceImpl) centralHandler(w http.ResponseWriter, r *http.Request) {
 	rendered, err := renderer.RenderCentralTLSSecretOnly(renderer.Config{
 		K8sConfig:      &renderer.K8sConfig{},
 		SecretsByteMap: secrets,
-	})
+	}, defaults.GetImageFlavorFromEnv())
 	if err != nil {
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to render central TLS file: %v", err)
 		return
@@ -88,7 +89,7 @@ func (s *serviceImpl) scannerHandler(w http.ResponseWriter, r *http.Request) {
 	rendered, err := renderer.RenderScannerTLSSecretOnly(renderer.Config{
 		K8sConfig:      &renderer.K8sConfig{},
 		SecretsByteMap: secrets,
-	})
+	}, defaults.GetImageFlavorFromEnv())
 	if err != nil {
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to render scanner TLS file: %v", err)
 		return

@@ -1,0 +1,14 @@
+POLICY,SEVERITY,BREAKS BUILD,DESCRIPTION,VIOLATION,REMEDIATION
+policy 4,[95mHIGH[0m,-,policy 4 for testing,- test violation 1,policy 4 for testing
+policy 8,[95mHIGH[0m,-,-,"- test violation 1
+- test violation 2
+- test violation 3",policy 8 for testing
+policy 2,[33mMEDIUM[0m,-,policy 2 for testing,"- test violation 1
+- test violation 2
+- test violation 3",policy 2 for testing
+policy 5,[33mMEDIUM[0m,-,policy 5 for testing,"- test violation 1
+- test violation 2
+- test violation 3
+- test violation 1",policy 5 for testing
+policy 6,[33mMEDIUM[0m,-,policy 6 for testing,- test violation 1,policy 6 for testing
+policy 7,[34;2mLOW[0m,-,policy 7 for testing,- test violation 1,policy 7 for testing

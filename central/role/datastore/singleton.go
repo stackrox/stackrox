@@ -31,8 +31,20 @@ func Singleton() DataStore {
 		utils.CrashOnError(err)
 
 		// Which role format is used is determined solely by the feature flag.
-		useRolesWithPermissionSets := features.ScopedAccessControl.Enabled()
-		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, useRolesWithPermissionSets)
+		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
+
+		// extend default roles if vuln risk management feature flag is enabled
+		if features.VulnRiskManagement.Enabled() {
+			for r, a := range vulnRiskManagementDefaultRoles {
+				defaultRoles[r] = a
+			}
+		}
+
+		if features.VulnReporting.Enabled() {
+			for r, a := range vulnReportingDefaultRoles {
+				defaultRoles[r] = a
+			}
+		}
 
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(roles))
@@ -71,6 +83,20 @@ var defaultRoles = map[string]roleAttributes{
 		idSuffix:    "none",
 		description: "For users: use it to provide no read and write access to any resource",
 	},
+	rolePkg.ScopeManager: {
+		idSuffix:    "scopemanager",
+		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.AuthProvider),
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Namespace),
+			permissions.View(resources.Role),
+			permissions.Modify(resources.Role),
+			permissions.View(resources.AuthProvider),
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Namespace),
+		},
+	},
 	rolePkg.SensorCreator: {
 		idSuffix:    "sensorcreator",
 		description: "For automation: it consists of the permissions to create Sensors in secured clusters",
@@ -78,6 +104,41 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.View(resources.Cluster),
 			permissions.Modify(resources.Cluster),
 			permissions.Modify(resources.ServiceIdentity),
+		},
+	},
+}
+
+var vulnRiskManagementDefaultRoles = map[string]roleAttributes{
+	rolePkg.VulnMgmtApprover: {
+		idSuffix:    "vulnmgmtapprover",
+		description: "For users: use it to provide access to approve vulnerability deferrals or false positive requests",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.VulnerabilityManagementApprovals),
+			permissions.Modify(resources.VulnerabilityManagementApprovals),
+		},
+	},
+	rolePkg.VulnMgmtRequester: {
+		idSuffix:    "vulnmgmtrequester",
+		description: "For users: use it to provide access to request vulnerability deferrals or false positives",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.VulnerabilityManagementRequests),
+			permissions.Modify(resources.VulnerabilityManagementRequests),
+		},
+	},
+}
+
+var vulnReportingDefaultRoles = map[string]roleAttributes{
+	rolePkg.VulnReporter: {
+		idSuffix:    "vulnreporter",
+		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
+			permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
+			permissions.View(resources.Role),                   // required for scopes
+			permissions.View(resources.Image),                  // required to gather CVE data for the report
+			permissions.View(resources.Notifier),               // required for vuln report configurations
+			permissions.Modify(resources.Notifier),             // required for vuln report configurations
+
 		},
 	},
 }
@@ -94,18 +155,14 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 			Description: attributes.description,
 		}
 
-		if features.ScopedAccessControl.Enabled() {
-			permissionSet := &storage.PermissionSet{
-				Id:               rolePkg.EnsureValidPermissionSetID(attributes.idSuffix),
-				Name:             role.Name,
-				Description:      role.Description,
-				ResourceToAccess: resourceToAccess,
-			}
-			role.PermissionSetId = permissionSet.Id
-			permissionSets = append(permissionSets, permissionSet)
-		} else {
-			role.ResourceToAccess = resourceToAccess
+		permissionSet := &storage.PermissionSet{
+			Id:               rolePkg.EnsureValidPermissionSetID(attributes.idSuffix),
+			Name:             role.Name,
+			Description:      role.Description,
+			ResourceToAccess: resourceToAccess,
 		}
+		role.PermissionSetId = permissionSet.Id
+		permissionSets = append(permissionSets, permissionSet)
 
 		roles = append(roles, role)
 

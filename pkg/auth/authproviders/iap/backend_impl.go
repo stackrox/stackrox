@@ -70,8 +70,8 @@ func (p *backendImpl) OnEnable(provider authproviders.Provider) {
 func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 }
 
-func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
-	return p.loginURL
+func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
+	return p.loginURL, nil
 }
 
 func (p *backendImpl) RefreshURL() string {
@@ -144,10 +144,10 @@ func (p *backendImpl) getAuthResponse(token string) (*authproviders.AuthResponse
 			FullName: extraClaims.Email,
 			Email:    extraClaims.Email,
 			Attributes: map[string][]string{
-				"userid":        {claims.Subject},
-				"email":         {extraClaims.Email},
-				"hd":            {extraClaims.Hd},
-				"access_levels": extraClaims.Google.AccessLevels,
+				authproviders.UseridAttribute: {claims.Subject},
+				authproviders.EmailAttribute:  {extraClaims.Email},
+				"hd":                          {extraClaims.Hd},
+				"access_levels":               extraClaims.Google.AccessLevels,
 			},
 		},
 		Expiration: claims.Expiry.Time(),

@@ -21,5 +21,6 @@ type policyUpdatesTestSuite struct {
 
 // Test that all unmodified policies are migrated
 func (suite *policyUpdatesTestSuite) TestMigration() {
-	suite.RunTests(updatePolicies)
+	// For default policies, MITRE fields are always migrated because they cannot be modified by users, hence skip the modified policy test.
+	suite.RunTests(updatePolicies, true)
 }

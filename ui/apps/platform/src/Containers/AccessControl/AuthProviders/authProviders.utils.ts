@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/dot-notation */
-/* eslint-disable import/prefer-default-export */
 import { AuthProvider, AuthProviderConfig, Group } from 'services/AuthService';
 
 export type DisplayedAuthProvider = AuthProvider & {
@@ -154,7 +152,7 @@ export function mergeGroupsWithAuthProviders(
         item.groups = [];
 
         // comma operator is much faster than spread in a reduce loop
-        // eslint-disable-next-line prettier/prettier, no-return-assign, no-param-reassign, no-sequences, @typescript-eslint/dot-notation
+        // eslint-disable-next-line no-return-assign, no-param-reassign, no-sequences
         return (obj[item.id] = item), obj;
     }, {});
 

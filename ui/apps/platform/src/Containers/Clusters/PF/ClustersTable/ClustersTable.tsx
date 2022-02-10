@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 
-import BulkActionsDropdown from './BulkActionsDropdown';
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import AutoUpgradeToggle from './AutoUpgradeToggle';
 
 function ClustersTable(): ReactElement {

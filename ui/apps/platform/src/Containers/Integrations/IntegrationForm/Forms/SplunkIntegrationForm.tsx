@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -12,7 +13,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type SplunkIntegration = {
@@ -36,7 +36,7 @@ export type SplunkIntegrationFormValues = {
 };
 
 const validHttpEndpointRegex =
-    /^((https?):\/\/)?([a-zA-Z0-9\-.]\.)?[a-zA-Z0-9\-.]{1,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(:[0-9]+)?(\/[a-zA-Z0-9-]*\/?)*$/;
+    /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
@@ -138,10 +138,15 @@ function SplunkIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('notifier.splunk.httpToken', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
@@ -177,18 +182,18 @@ function SplunkIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
-                            helperText="Leave this off to use the currently stored credentials."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox
                                 label="Update token"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

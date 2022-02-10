@@ -24,7 +24,13 @@ describe('Cert Expiration Banner', () => {
 
         it('should display banner without download button if user does not have the required permission', () => {
             cy.intercept('GET', api.permissions.mypermissions, {
-                body: { globalAccess: 'READ_ACCESS' },
+                body: {
+                    globalAccess: 'READ_ACCESS',
+                    resourceToAccess: {
+                        VulnerabilityManagementRequests: 'READ_ACCESS',
+                        VulnerabilityManagementApprovals: 'READ_ACCESS',
+                    },
+                },
             }).as('permissions');
             const expiry = dateFns.addMinutes(dateFns.addHours(new Date(), 23), 30);
             mockCertExpiryAndVisitHomepage(api.certExpiry.central, expiry);
@@ -72,7 +78,13 @@ describe('Cert Expiration Banner', () => {
 
         it("should display banner without download button if user doesn't have the required permission", () => {
             cy.intercept('GET', api.permissions.mypermissions, {
-                body: { globalAccess: 'READ_ACCESS' },
+                body: {
+                    globalAccess: 'READ_ACCESS',
+                    resourceToAccess: {
+                        VulnerabilityManagementRequests: 'READ_ACCESS',
+                        VulnerabilityManagementApprovals: 'READ_ACCESS',
+                    },
+                },
             }).as('permissions');
             const expiry = dateFns.addMinutes(dateFns.addHours(new Date(), 23), 30);
             mockCertExpiryAndVisitHomepage(api.certExpiry.scanner, expiry);

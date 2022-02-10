@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -87,7 +87,7 @@ func readDataForBenchmark() *standards.ComplianceData {
 	}
 	defer utils.IgnoreError(jsonFile.Close)
 
-	bytes, err := ioutil.ReadAll(jsonFile)
+	bytes, err := io.ReadAll(jsonFile)
 	if err != nil {
 		panic(err)
 	}

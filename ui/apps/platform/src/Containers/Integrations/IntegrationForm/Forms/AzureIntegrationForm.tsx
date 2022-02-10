@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -12,7 +13,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type AzureIntegration = {
@@ -124,10 +124,15 @@ function ClairifyIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.docker.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         label="Integration name"
@@ -181,17 +186,17 @@ function ClairifyIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
-                            helperText="Leave this off to use the currently stored credentials."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

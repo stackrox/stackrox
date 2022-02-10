@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -24,9 +23,6 @@ func init() {
 
 // PermissionSets returns GraphQL resolvers for all permission sets
 func (resolver *Resolver) PermissionSets(ctx context.Context) ([]*permissionSetResolver, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PermissionSets")
 	err := readRoles(ctx)
 	if err != nil {
@@ -41,9 +37,6 @@ func (resolver *Resolver) PermissionSets(ctx context.Context) ([]*permissionSetR
 
 // PermissionSet returns a GraphQL resolver for the matching permission set, if it exists
 func (resolver *Resolver) PermissionSet(ctx context.Context, args struct{ *graphql.ID }) (*permissionSetResolver, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PermissionSet")
 	err := readRoles(ctx)
 	if err != nil {

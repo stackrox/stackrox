@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
+	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -17,16 +17,6 @@ import (
 )
 
 var (
-	metaValues = map[string]interface{}{
-		"Versions": version.Versions{
-			ChartVersion:   "1.0.0",
-			MainVersion:    "3.0.49.0",
-			ScannerVersion: "1.2.3",
-		},
-		"MainRegistry": "stackrox.io",
-		"RenderMode":   "",
-	}
-
 	installOpts = helmUtil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      "stackrox-central-services",
@@ -125,7 +115,7 @@ func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...stri
 	// Retrieve template files from box.
 	tpl, err := helmImage.GetCentralServicesChartTemplate()
 	s.Require().NoError(err, "error retrieving chart template")
-	ch, err := tpl.InstantiateAndLoad(metaValues)
+	ch, err := tpl.InstantiateAndLoad(metaUtil.MakeMetaValuesForTest(s.T()))
 	s.Require().NoError(err, "error instantiating chart")
 
 	effectiveInstallOpts := installOpts

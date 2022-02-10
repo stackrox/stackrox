@@ -28,3 +28,11 @@
     --pf-c-dropdown__menu-item--PaddingBottom: calc(var(--pf-global--spacer--sm) / 2);
     --pf-c-dropdown__menu-item--PaddingLeft: var(--pf-global--spacer--sm);
 }
+
+/*
+ * Disabled primary Dropdown needs same colors as Button.
+ */
+.pf-c-dropdown__toggle.pf-m-primary[disabled] {
+    background-color: var(--pf-global--disabled-color--200);
+    color: var(--pf-global--disabled-color--100);
+}

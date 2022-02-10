@@ -56,15 +56,20 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 		return nil, errors.New("cannot force HTTP/1 mode if direct gRPC is enabled")
 	}
 
-	apiToken, err := RetrieveAuthToken()
-	if err != nil {
+	if err := checkAuthParameters(); err != nil {
 		return nil, err
 	}
-
 	if flags.Password() != "" {
 		opts.ConfigureBasicAuth(basic.DefaultUsername, flags.Password())
-	} else if apiToken != "" {
-		opts.ConfigureTokenAuth(apiToken)
+	} else {
+		apiToken, err := retrieveAuthToken()
+		if err != nil {
+			printAuthHelp()
+			return nil, err
+		}
+		if apiToken != "" {
+			opts.ConfigureTokenAuth(apiToken)
+		}
 	}
 
 	return clientconn.GRPCConnection(common.Context(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)

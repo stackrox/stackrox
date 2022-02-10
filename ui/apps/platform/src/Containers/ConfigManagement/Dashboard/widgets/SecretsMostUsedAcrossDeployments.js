@@ -108,13 +108,13 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                     .url();
                                 return (
                                     <Link
-                                        key={`${item.id}-${index}`}
+                                        key={item.id}
                                         to={linkTo}
                                         className={`no-underline text-base-600 hover:bg-base-200 inline-block border-base-300 w-full ${
                                             index !== 4 || index !== 9 ? 'border-b' : ''
                                         }`}
                                     >
-                                        <li key={`${item.name}-${index}`}>
+                                        <li>
                                             <div className="flex flex-row">
                                                 <div className="self-center text-2xl tracking-widest pl-4 pr-4">
                                                     {index + 1}

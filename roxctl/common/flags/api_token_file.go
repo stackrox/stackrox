@@ -1,7 +1,7 @@
 package flags
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ func APITokenFile() string {
 
 // ReadTokenFromFile attempts to retrieve a token from the currently specified file.
 func ReadTokenFromFile(fileName string) (string, error) {
-	content, err := ioutil.ReadFile(fileName)
+	content, err := os.ReadFile(fileName)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to retrieve token from file %q", fileName)
 	}

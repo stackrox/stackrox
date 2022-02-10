@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/control-has-associated-label */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { Download, ExternalLink } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
@@ -197,7 +196,7 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
                     />
                     <div className="inline-flex flex-row text-tertiary-700">
                         <a
-                            href="/docs/product/docs/configure-stackrox/generate-diagnostic-bundle/"
+                            href="/docs/product/rhacs/latest/configuration/generate-diagnostic-bundle.html"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="underline"

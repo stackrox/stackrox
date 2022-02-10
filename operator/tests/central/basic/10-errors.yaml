@@ -2,13 +2,3 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: proxy-config
----
-apiVersion: security.openshift.io/v1
-kind: SecurityContextConstraints
-metadata:
-  name: stackrox-central
----
-apiVersion: security.openshift.io/v1
-kind: SecurityContextConstraints
-metadata:
-  name: stackrox-scanner

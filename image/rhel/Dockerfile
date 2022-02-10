@@ -1,6 +1,6 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
-ARG BASE_TAG=8.4
+ARG BASE_TAG=8.5
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
@@ -16,8 +16,11 @@ LABEL name="main" \
       summary="The StackRox Kubernetes Security Platform" \
       description="This image contains components required to operate the StackRox Kubernetes Security Platform."
 
+ARG ROX_IMAGE_FLAVOR
+
 ENV PATH="/stackrox:$PATH" \
-    ROX_ROXCTL_IN_MAIN_IMAGE="true"
+    ROX_ROXCTL_IN_MAIN_IMAGE="true" \
+    ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
 COPY scripts /stackrox/
@@ -27,6 +30,7 @@ COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/ui/ /ui/
 COPY --from=extracted_bundle /bundle/usr/local/bin/ldb /usr/local/bin/
 COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
+COPY --from=extracted_bundle /bundle/go/ /go/
 
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \
@@ -37,10 +41,10 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     dnf upgrade -y && \
     dnf install -y lz4 bzip2 /tmp/snappy.rpm && \
     dnf clean all && \
-    rm -rf /var/cache/dnf && \
     rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
+    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
     # by the script `save-dir-contents` during the image build. The directory
     # contents are then restored by the script `restore-all-dir-contents`

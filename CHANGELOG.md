@@ -1,15 +1,77 @@
 # Changelog
 Entries in this file should be limited to:
 -  Any changes that introduce a deprecation in functionality, OR
--  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes. 
+-  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+
+- Improved accuracy of active component and vulnerability and presented it with higher confidence.
+  - Added `Active` state to list of components and list of vulnerabilities under Vulnerability Management within the scope of a specific deployment.
+  - Added `Inactive` state: the component or vulnerability was not run in the specific deployment.
+  - Added image scope so that the Active State can be determined in the scope of a deployment for a specific image.
+- The default gRPC port in Scanner's config map is changed to 8443, as that is what Scanner has actually been defaulting to this whole time.
+  - Note: Scanner had been ignoring the default `httpsPort` and `grpcPort` in its config map, as Scanner expected `HTTPSPort` and `GRPCPort` (and `MetricsPort`, if ever specified).
+- Scanner now supports Alpine 3.15.
+- CVEs in Ubuntu images will no longer link to http://people.ubuntu.com/~ubuntu-security/cve/<CVE>. Now it links to https://ubuntu.com/security/<CVE>.
+
+## [68.0]
+
+- AWS ECR integration supports AssumeRole authentication.
+- The default policy to detect Log4Shell vulnerability has been updated to also detect CVE-2021-45046 and the remediation has been updated to reflect the latest guidance by the Apache Logging security team.
+- Prior to this release, CVEs could be snoozed using global write access on `Images`. Starting this release, requests to snooze CVEs can be created only using `VulnerabilityManagementRequests` global write access and requests can be approved only using `VulnerabilityManagementApprovals` global write access. Roles with write access on `Images`, created prior to this release, are provided with both the newly added permissions. We recommend updating the roles to only include the least amount of resources required for each role. All new roles must be explicitly supplied with `VulnerabilityManagementRequests` and/or `VulnerabilityManagementApprovals` permissions in order to use CVE snoozing functionality.
+- Editing the cluster configuration in the UI is now disabled for Helm-based installations.
+- For `roxctl helm output` and `roxctl central generate` added a new flag `--image-defaults` that allows selecting the default registry from which container images will be taken for deploying central and scanner.
+- For `roxctl helm output` deprecated flag `--rhacs` in favor of `--image-defaults=rhacs` (using `--rhacs` with `--image-defaults` results in an error).
+- Default behavior of `roxctl helm output` results now in using container images from `registry.redhat.io` instead of `stackrox.io`.
+- By default, notifications will be sent for every runtime policy violation instead of only the first encountered violation. If this is undesired, setting an environment variable `NOTIFY_EVERY_RUNTIME_EVENT` to `false` will restore the previous behavior. Please note that the environment variable will be removed in a future release, so please notify the ACS team if you have a valid use case.
+- Certain ACS images were moved to new repositories: 
+  - main: from `registry.redhat.io/rh-acs/main` to `registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8`
+  - collector: from `registry.redhat.io/rh-acs/collector` (with `-latest` tag) to `registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8`
+  - collector (slim): from `registry.redhat.io/rh-acs/collector` (with `-slim` tag) to `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8`
+  - scanner: from `registry.redhat.io/rh-acs/scanner` to `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8`
+  - scanner-db: from `registry.redhat.io/rh-acs/scanner-db` to `registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8`
+- Tags of `scanner`, `scanner-db`, and `collector` (including slim variant) images are now identical to the tag of `main` image (same as product version) for the released images. For example, a scanner image for ACS 3.68.0 is now identified as following `registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:3.68.0` and `stackrox.io/scanner:3.68.0`. Please make sure you follow this versioning scheme when upgrading manually. This scheme will be used for all future releases.
+- Collector Slim image name and tag have changed. Now the `-slim` is not part of the image tag but part of the image name. This means that Collector Slim image for the release 3.68.0 is identified as `registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8:3.68.0` and `collector.stackrox.io/collector-slim:3.68.0`.
+
+## [67.2]
+
+- A new default policy to detect Log4Shell vulnerability (CVE-2021-44228) has been added.
+
+## [67.0]
+
+- When the environment variable `ROX_NETWORK_ACCESS_LOG` for Central is enabled, the logs will now contain the request URI and `X-Forwarded-For` header values.
+  Note: The network access logging feature was introduced in 51.0 and when enabled will cause noisy logging, and hence should be turned on
+  only for the purpose of debugging network connectivity issues.
+- Scanner container image `uid:gid` changed to `65534:65534` (user nobody).
+- A new default Role called `Scope Manager` has been introduced, to be used to provide users the minimal set of
+  privileges required to create and modify access scopes for the purpose of configuring access control or use in vulnerability reporting.
+- The Compliance Operator integration now supports TailoredProfiles.
+- Presence of `microdnf` (presence in the image and process execution) is treated as violation of policies `Red Hat Package Manager in Image` and `Red Hat Package Manager Execution` respectively.
+- Central is now the only source for Scanner vulnerability updates.
+  - Central, instead of Scanner, now queries definitions.stackrox.io in online-mode (determined based on `ROX_OFFLINE_MODE`).
+  - `ROX_SCANNER_VULN_UPDATE_INTERVAL` determines the frequency Central should query definitions.stackrox.io, in online-mode. It is defaulted to 5 minutes.
+  - Scanner's ConfigMap still has an `updater.interval` field for its own updating frequency, but it no longer has `updater.fetchFromCentral`.
+- Users may upload Scanner vulnerability dumps even when we are not in "offline-mode".
+  - If we are in online-mode, this vuln dump is used over the Scanner's requested one if it is more recent.
+  - K8s and Istio vulns manually uploaded in online-mode are ignored. This is just for Scanner definitions.
+- Roxctl's `image scan | image check | deployment check` commands received a usability overhaul.
+  This includes introducing output format's `table, csv, json` for each command.
+  Note: the `csv` and `json` output formats contain **breaking changes**, the old formats are kept as default but marked as deprecated.
+  Ensure that you switch to the new formats in a timely manner.
+- In policy exclusions, the deployment name can now be a regex. Earlier, it was an exact string match.
+
+- Behaviour change: The built-in `None` role is no longer taken into account when determining the roles for a user. Therefore, users with only the `None`
+  role will be logged out and not be able to log in, as a valid user must have some role assigned. Logout and login prevention are materialized with HTTP
+  status 401 `Unauthorized` and error message reporting the lack of valid role.
+
+## [66.0]
+
 - Default system policies `DockerHub NGINX 1.10`, `Shellshock: Multiple CVEs`, and `Heartbleed: CVE-2014-0160` have been deprecated.
-- Default system policy deletion is prohibited in fresh installations of 65 or greater. If the initial installation 
+- Default system policy deletion is prohibited in fresh installations of 65 or greater. If the initial installation
   was done in a version lower than 65, then default policies can be deleted even after an upgrade to 65 or greater.
 - `Analyst` permission set and corresponding role will no longer have `DebugLogs` permission. The only default role with this permission will be `Admin` role.
-- The "Mount Docker Socket" policy has been renamed to "Mount Container Runtime Socket" and will now also detect if a deployment 
+- The "Mount Docker Socket" policy has been renamed to "Mount Container Runtime Socket" and will now also detect if a deployment
   mounts the CRI-O socket for both Kubernetes and OpenShift.
 - The policy "Docker CIS 4.4: Ensure images are scanned and rebuilt to include security patches" is now disabled by default
 - Alpine-based images are now deprecated and all images will be based on UBI. main-rhel will continue to be pushed for consistency.
@@ -18,19 +80,23 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Operator now supports `tolerations`  for `Central` and `SecuredCluster`
 - Operator now supports disabling the admin password generation by setting Central's option `adminPasswordGenerationDisabled` to `true`.
 - Roxctl now supports shell completion for bash, zsh, fish and powershell
-- Added `roxctl central debug authz-trace` command. It streams built-in authorizer traces for all incoming requests. 
+- Added `roxctl central debug authz-trace` command. It streams built-in authorizer traces for all incoming requests.
 - Operator defaults changed for `SecuredCluster` fields `spec.admissionControl.listenOnCreates` and `spec.admissionControl.listenOnUpdates`
   from `false` to `true`. This should not affect these settings in existing `SecuredCluster` resource instances
   where the previous default had already been applied at instance creation (this typically happens when creating the resource from the OpenShift console).
   In some circumstances (for example if the instance was created without a `spec.admissionControl` section from the CLI),
   the default might not have been applied: a symptom of this is that the fields are not shown when printing the object.
   In these cases this update will change the behaviour of admission controller.
+- Scanner no longer supports Oracle Linux
+- Added component `Active` state to individual component and list of components under Vulnerability Management within the scope of a specific deployment. The Active state can be:
+  - `Undetermined`: the component is not detected to be run in the specific deployment.
+  - `Active`: the component was run in the specific deployment.
 
 ## [65.0]
-- Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 
-  included in fresh install of 65.0 and later, and new default system policies added since 65.0. Policy criteria fields 
+- Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies
+  included in fresh install of 65.0 and later, and new default system policies added since 65.0. Policy criteria fields
   for user-defined policies, created through 'New' and 'Clone' operation, will continue to be editable.
-- Newly added MITRE ATT&CK policy section is read-only for default system policies. MITRE ATT&CK section for user-defined 
+- Newly added MITRE ATT&CK policy section is read-only for default system policies. MITRE ATT&CK section for user-defined
   policies, created through 'New' and 'Clone' operation, will continue to be editable.
 - Alert titles for the PagerDuty, Slack, Microsoft Teams, JIRA and email notifiers now contain the cluster and policy names
   in addition to the deployment or image name if it exists.
@@ -154,8 +220,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - The product no longer requires a license to run. Several license-related functionalities and flags
   have been removed from the product and related tooling, as well as from the Helm charts.
-- Components now have `Fixed By` field that indicates the version that will fixes all the fixable vulnerabilities in the component. 
-  - Note: 
+- Components now have `Fixed By` field that indicates the version that will fixes all the fixable vulnerabilities in the component.
+  - Note:
     - It is supported only when StackRox Scanner is used.
     - It is not namespaced to distro.
 - Added upgrade rollback function. By default, users may rollback to their previous version if upgrade fails before Central has started.
@@ -175,7 +241,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   to deploy on. By default, deployment files are generated in a compatibility mode that works on OpenShift
   3.11 as well as 4.x. When deploying to a cluster running a recent OpenShift version, set this flag to `4`
   in order to take advantage of features only supported on OpenShift 4.x.
-  
+
 
 ## [56.0]
 - Page titles now reflect the URL location of the user within the app in the browser tab and history.
@@ -219,7 +285,7 @@ are outside of its network baseline can now raise violations
   - `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
   - In the GraphQL API, `ProcessActivityEvent { whitelisted: Boolean! }` is deprecated, use
     `ProcessActivityEvent { inBaseline: Boolean! }` instead.
-  - In the GraphQL schema, the type name `Policy { whitelists: [Whitelist]! }` changes to 
+  - In the GraphQL schema, the type name `Policy { whitelists: [Whitelist]! }` changes to
     `Policy { whitelists: [Exclusion]! }` preserving the existing structure and field names.
   - In the GraphQL API, `Policy { whitelists: [Whitelist]! }` is deprecated, use
     `Policy { exclusions: [Whitelist]! }` instead.
@@ -241,7 +307,7 @@ will not be deployed on OpenShift clusters.
   - Introduced two new flags, `--retries` and `--retry-delay`, that change how the commands deal with errors
   - `--retries 3 --retry-delay 2` will retry the command three times on failure with two seconds delay between retries
   - As the default value for `retries` is 0, the behaviour of the commands is unchanged if the flag is not used
-- Added a new flag `--admission-controller-listen-on-events` to `roxctl sensor generate k8s` and 
+- Added a new flag `--admission-controller-listen-on-events` to `roxctl sensor generate k8s` and
 `roxctl sensor generate openshift`, that controls the deployment of the admission controller webhook which
 listens on Kubernetes events like exec and portforward. Default value is `true` for `roxctl sensor generate k8s`
 and false for `roxctl sensor generate openshift`.
@@ -273,7 +339,7 @@ and false for `roxctl sensor generate openshift`.
 - UI: remove "phantom" turndown triangle on Network Flows table rows that have only one bidirectional connection on the same port and protocol
 - UI: fix pagination in Vuln Mmgt so that filtering a list by searching will reset the page number to 1 (ROX-5751)
 - A new environment variable for Central ROX_NETWORK_ACCESS_LOG, defaulted to false, is available.
-When set to true, each network request to Central (via API, UI) is logged in the Central logs. 
+When set to true, each network request to Central (via API, UI) is logged in the Central logs.
 Note: When turned on, this environment variable will cause noisy logging, and hence should be turned on only for the
 purpose of debugging network connectivity issues. Once network connectivity is established, we should advise
 to immediately set this to false to stop logging.
@@ -316,7 +382,7 @@ to immediately set this to false to stop logging.
 - In `GetImage(/v1/images/{id})` response, a new field `firstImageOccurrence` is added to `vulns` which represents the first time a CVE was discovered in respective image.
 - The default for the `--create-upgrader-sa` flag has changed to `true` in both the `roxctl sensor generate` and the
   `roxctl sensor get-bundle` commands. In order to restore the old behavior, you need to explicitly specify
-  `--create-upgrader-sa=false`. 
+  `--create-upgrader-sa=false`.
 - UI: Hovering over a node in the Network Graph will show that node's listening ports (ROX-5469)
 - Fixed an issue on the API docs page where the left menu panel no longer scrolled independently of the main content.
 - UI: Added `Scanner` to the image single page in Vuln Mgmt (ROX-5289)

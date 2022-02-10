@@ -120,7 +120,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         policyName                                                   | deploymentName
         // "30-Day Scan Age" <- Not covered
         "ADD Command used instead of COPY"                           | TRIGGER_MOST
-        // "Alpine Linux Package Manager (apk) in Image"            | TRIGGER_ALPINE  // ROX-5099 does not trigger
+        "Alpine Linux Package Manager (apk) in Image"                | TRIGGER_ALPINE
         "Alpine Linux Package Manager Execution"                     | TRIGGER_ALPINE
         // "CAP_SYS_ADMIN capability added" <- Not covered
         "chkconfig Execution"                                        | TRIGGER_MOST

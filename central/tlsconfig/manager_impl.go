@@ -64,7 +64,6 @@ func (c *configurer) updateTLSConfig() {
 		newTLSConfig.ClientAuth = tls.NoClientCert
 	}
 
-	newTLSConfig.BuildNameToCertificate()
 	atomic.StorePointer(&c.liveTLSConfig, (unsafe.Pointer)(newTLSConfig))
 }
 
@@ -97,14 +96,14 @@ type managerImpl struct {
 	configurers []*configurer
 }
 
-func newManager() (*managerImpl, error) {
+func newManager(namespace string) (*managerImpl, error) {
 	ca, _, err := mtls.CACert()
 	if err != nil {
 		return nil, err
 	}
 	trustRoots := []*x509.Certificate{ca}
 
-	internalCert, err := getInternalCertificate()
+	internalCerts, err := getInternalCertificates(namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func newManager() (*managerImpl, error) {
 	mgr := &managerImpl{
 		providerIDToProviderData: make(map[string]providerData),
 		internalTrustRoots:       trustRoots,
-		internalCerts:            []tls.Certificate{*internalCert},
+		internalCerts:            internalCerts,
 	}
 
 	wh := &defaultCertWatchHandler{

@@ -178,25 +178,23 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 		return err
 	}
 
-	var oldDeployment *storage.Deployment
-	var exists bool
+	incrementNetworkGraphEpoch := true
+	// Only need to get if it's an update call
 	if action == central.ResourceAction_UPDATE_RESOURCE {
-		oldDeployment, exists, err = s.deployments.GetDeployment(ctx, deployment.GetId())
+		oldDeployment, exists, err := s.deployments.GetDeployment(ctx, deployment.GetId())
 		if err != nil {
 			return err
 		}
-	}
-	incrementNetworkGraphEpoch := true
-
-	// If it exists, check to see if we can dedupe it
-	if exists {
-		if oldDeployment.GetHash() == deployment.GetHash() {
-			// There is a separate handler for ContainerInstances,
-			// so there is no longer a need to continue from this point.
-			// This will only be reached upon a re-sync event from k8s.
-			return nil
+		// If it exists, check to see if we can dedupe it
+		if exists {
+			if oldDeployment.GetHash() == deployment.GetHash() {
+				// There is a separate handler for ContainerInstances,
+				// so there is no longer a need to continue from this point.
+				// This will only be reached upon a re-sync event from k8s.
+				return nil
+			}
+			incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 		}
-		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 	}
 
 	if features.ActiveVulnManagement.Enabled() {

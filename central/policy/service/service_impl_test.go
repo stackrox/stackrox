@@ -86,7 +86,6 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 		s.mockLifecycleManager,
 		nil,
 		nil,
-		nil,
 		s.mockConnectionManager,
 	)
 }

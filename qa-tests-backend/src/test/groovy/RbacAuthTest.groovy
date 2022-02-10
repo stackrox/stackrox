@@ -120,9 +120,8 @@ spec:
         "Create a test role"
         def testRole = RoleOuterClass.Role.newBuilder()
                 .setName("Automation Role")
-                .putAllResourceToAccess(resourceAccess)
                 .build()
-        RoleService.createRole(testRole)
+        RoleService.createRoleWithPermissionSet(testRole, resourceAccess)
         assert RoleService.getRole(testRole.name)
         println "Created Role:\n${testRole}"
 
@@ -190,9 +189,11 @@ spec:
         def roles = ["Indicator", "ProcessWhitelist"].collect {
             def role = RoleOuterClass.Role.newBuilder()
                     .setName("View ${it}")
-                    .putResourceToAccess(it, RoleOuterClass.Access.READ_ACCESS)
                     .build()
-            RoleService.createRole(role)
+            Map<String, RoleOuterClass.Access> resourceToAccess = [
+                    (it): RoleOuterClass.Access.READ_ACCESS
+            ]
+            RoleService.createRoleWithPermissionSet(role, resourceToAccess)
             assert RoleService.getRole(role.name)
             println "Created Role:\n${role.name}"
             role

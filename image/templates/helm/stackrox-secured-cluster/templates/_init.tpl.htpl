@@ -18,7 +18,7 @@
 {{/*
     Calculate the fingerprint of the input config.
    */}}
-{{ $configFP := printf "%s-%d" (.Values | toJson | sha256sum) .Release.Revision }}
+{{ $configFP := (.Values | toJson | sha256sum) }}
 
 {{/*
     Initial Setup
@@ -36,6 +36,14 @@
 {{ $rox := deepCopy $values }}
 {{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml)) }}
 {{ $_ = set $ "_rox" $rox }}
+
+[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+{{/*
+  #TODO(ROX-8672): Add setup and defaulting logic to secured cluster chart
+    Scanner setup
+  */}}
+{{ $_ := set $._rox "scanner" (dict "disable" true) }}
+[<- end >]
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
 {{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
@@ -154,7 +162,7 @@
     {{ include "srox.fail"  (printf "Failed to change cluster name. Values for confirmNewClusterName '%s' did not match clusterName '%s'." $._rox.confirmNewClusterName $._rox.clusterName) }}
 {{ end }}
 
-[< if not .RenderAsLegacyChart >]
+[< if not .KubectlOutput >]
 {{ if not $.Release.IsUpgrade }}
 {{ if ne $.Release.Name $.Chart.Name }}
   {{ if $._rox.allowNonstandardReleaseName }}
@@ -167,8 +175,8 @@
 
 [< end >]
 
-[</* In legacy mode, the audit logs setting doesn't matter, since dynamic config isn't part of the legacy chart. */>]
-[< if not .RenderAsLegacyChart >]
+[</* In kubectl mode, the audit logs setting doesn't matter, since dynamic config isn't part of the YAML bundle. */>]
+[< if not .KubectlOutput >]
 {{ if and (not $._rox.auditLogs.disableCollection) (ne $._rox.env.openshift 4) }}
   {{ include "srox.fail" "'auditLogs.disableCollection' is set to false, but the chart is not being deployed in OpenShift 4 mode. Set 'env.openshift' to '4' in order to enable OpenShift 4 features." }}
 {{ end }}
@@ -237,6 +245,13 @@
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
+
+{{/* ManagedBy related settings */}}
+{{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here
+     in case it was explicitly set `helmManaged=false`. */}}
+{{- if not ._rox.helmManaged }}
+  {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
+{{- end }}
 
 {{/*
     Post-processing steps.

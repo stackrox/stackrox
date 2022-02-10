@@ -3,45 +3,51 @@
 package printer
 
 const (
-	AddCapabilityKey        = "addCapability"
-	AppArmorProfileKey      = "appArmorProfile"
-	ComponentKey            = "component"
-	ContainerNameKey        = "containerName"
-	CveKey                  = "cve"
-	DisallowedAnnotationKey = "disallowedAnnotation"
-	DisallowedImageLabelKey = "disallowedImageLabel"
-	DropCapabilityKey       = "dropCapability"
-	EnvKey                  = "env"
-	HostIPCKey              = "hostIPC"
-	HostNetworkKey          = "hostNetwork"
-	HostPIDKey              = "hostPID"
-	ImageAgeKey             = "imageAge"
-	ImageDetailsKey         = "imageDetails"
-	ImageOSKey              = "imageOS"
-	ImageScanKey            = "imageScan"
-	ImageScanAgeKey         = "imageScanAge"
-	ImageUserKey            = "imageUser"
-	LineKey                 = "line"
-	NamespaceKey            = "namespace"
-	NodePortKey             = "nodePort"
-	PortKey                 = "port"
-	PortExposureKey         = "portExposure"
-	PrivilegedKey           = "privileged"
-	ProcessBaselineKey      = "processBaseline"
-	RbacKey                 = "rbac"
-	ReadOnlyRootFSKey       = "readOnlyRootFS"
-	RequiredAnnotationKey   = "requiredAnnotation"
-	RequiredImageLabelKey   = "requiredImageLabel"
-	RequiredLabelKey        = "requiredLabel"
-	ResourceKey             = "resource"
-	SeccompProfileTypeKey   = "seccompProfileType"
-	ServiceAccountKey       = "serviceAccount"
-	VolumeKey               = "volume"
+	AddCapabilityKey                = "addCapability"
+	AppArmorProfileKey              = "appArmorProfile"
+	AutomountServiceAccountTokenKey = "automountServiceAccountToken"
+	ComponentKey                    = "component"
+	ContainerNameKey                = "containerName"
+	CveKey                          = "cve"
+	DisallowedAnnotationKey         = "disallowedAnnotation"
+	DisallowedImageLabelKey         = "disallowedImageLabel"
+	DropCapabilityKey               = "dropCapability"
+	EnvKey                          = "env"
+	HostIPCKey                      = "hostIPC"
+	HostNetworkKey                  = "hostNetwork"
+	HostPIDKey                      = "hostPID"
+	ImageAgeKey                     = "imageAge"
+	ImageDetailsKey                 = "imageDetails"
+	ImageOSKey                      = "imageOS"
+	ImageScanKey                    = "imageScan"
+	ImageScanAgeKey                 = "imageScanAge"
+	ImageUserKey                    = "imageUser"
+	LineKey                         = "line"
+	LivenessProbeDefinedKey         = "livenessProbeDefined"
+	NamespaceKey                    = "namespace"
+	NodePortKey                     = "nodePort"
+	PortKey                         = "port"
+	PortExposureKey                 = "portExposure"
+	PrivilegedKey                   = "privileged"
+	ProcessBaselineKey              = "processBaseline"
+	RbacKey                         = "rbac"
+	ReadOnlyRootFSKey               = "readOnlyRootFS"
+	ReadinessProbeDefinedKey        = "readinessProbeDefined"
+	ReplicasKey                     = "replicas"
+	RequiredAnnotationKey           = "requiredAnnotation"
+	RequiredImageLabelKey           = "requiredImageLabel"
+	RequiredLabelKey                = "requiredLabel"
+	ResourceKey                     = "resource"
+	RuntimeClassKey                 = "runtimeClass"
+	SeccompProfileTypeKey           = "seccompProfileType"
+	ServiceAccountKey               = "serviceAccount"
+	VolumeKey                       = "volume"
 )
 
 func init() {
 	registerFunc(AddCapabilityKey, addCapabilityPrinter)
 	registerFunc(AppArmorProfileKey, appArmorProfilePrinter)
+	registerFunc(AutomountServiceAccountTokenKey, automountServiceAccountTokenPrinter)
 	registerFunc(ComponentKey, componentPrinter)
 	registerFunc(ContainerNameKey, containerNamePrinter)
 	registerFunc(CveKey, cvePrinter)
@@ -59,6 +65,7 @@ func init() {
 	registerFunc(ImageScanAgeKey, imageScanAgePrinter)
 	registerFunc(ImageUserKey, imageUserPrinter)
 	registerFunc(LineKey, linePrinter)
+	registerFunc(LivenessProbeDefinedKey, livenessProbeDefinedPrinter)
 	registerFunc(NamespaceKey, namespacePrinter)
 	registerFunc(NodePortKey, nodePortPrinter)
 	registerFunc(PortKey, portPrinter)
@@ -67,10 +74,13 @@ func init() {
 	registerFunc(ProcessBaselineKey, processBaselinePrinter)
 	registerFunc(RbacKey, rbacPrinter)
 	registerFunc(ReadOnlyRootFSKey, readOnlyRootFSPrinter)
+	registerFunc(ReadinessProbeDefinedKey, readinessProbeDefinedPrinter)
+	registerFunc(ReplicasKey, replicasPrinter)
 	registerFunc(RequiredAnnotationKey, requiredAnnotationPrinter)
 	registerFunc(RequiredImageLabelKey, requiredImageLabelPrinter)
 	registerFunc(RequiredLabelKey, requiredLabelPrinter)
 	registerFunc(ResourceKey, resourcePrinter)
+	registerFunc(RuntimeClassKey, runtimeClassPrinter)
 	registerFunc(SeccompProfileTypeKey, seccompProfileTypePrinter)
 	registerFunc(ServiceAccountKey, serviceAccountPrinter)
 	registerFunc(VolumeKey, volumePrinter)

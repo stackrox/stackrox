@@ -156,7 +156,6 @@ export function getNamespaceTableColumns(workflowState) {
             Header: `Policy Status`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { policyStatusOnly } = original;
                 const policyLabel = <StatusChip status={policyStatusOnly} asString={pdf} />;

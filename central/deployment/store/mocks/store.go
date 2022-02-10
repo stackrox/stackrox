@@ -5,71 +5,69 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// ListDeployment mocks base method
-func (m *MockStore) ListDeployment(id string) (*storage.ListDeployment, bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListDeployment", id)
-	ret0, _ := ret[0].(*storage.ListDeployment)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// ListDeployment indicates an expected call of ListDeployment
-func (mr *MockStoreMockRecorder) ListDeployment(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeployment", reflect.TypeOf((*MockStore)(nil).ListDeployment), id)
-}
-
-// ListDeploymentsWithIDs mocks base method
-func (m *MockStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
+// AckKeysIndexed mocks base method.
+func (m *MockStore) AckKeysIndexed(keys ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
-	for _, a := range ids {
+	for _, a := range keys {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "ListDeploymentsWithIDs", varargs...)
-	ret0, _ := ret[0].([]*storage.ListDeployment)
-	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret := m.ctrl.Call(m, "AckKeysIndexed", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// ListDeploymentsWithIDs indicates an expected call of ListDeploymentsWithIDs
-func (mr *MockStoreMockRecorder) ListDeploymentsWithIDs(ids ...interface{}) *gomock.Call {
+// AckKeysIndexed indicates an expected call of AckKeysIndexed.
+func (mr *MockStoreMockRecorder) AckKeysIndexed(keys ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeploymentsWithIDs", reflect.TypeOf((*MockStore)(nil).ListDeploymentsWithIDs), ids...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockStore)(nil).AckKeysIndexed), keys...)
 }
 
-// GetDeployment mocks base method
+// CountDeployments mocks base method.
+func (m *MockStore) CountDeployments() (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountDeployments")
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountDeployments indicates an expected call of CountDeployments.
+func (mr *MockStoreMockRecorder) CountDeployments() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeployments", reflect.TypeOf((*MockStore)(nil).CountDeployments))
+}
+
+// GetDeployment mocks base method.
 func (m *MockStore) GetDeployment(id string) (*storage.Deployment, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDeployment", id)
@@ -79,13 +77,28 @@ func (m *MockStore) GetDeployment(id string) (*storage.Deployment, bool, error) 
 	return ret0, ret1, ret2
 }
 
-// GetDeployment indicates an expected call of GetDeployment
+// GetDeployment indicates an expected call of GetDeployment.
 func (mr *MockStoreMockRecorder) GetDeployment(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeployment", reflect.TypeOf((*MockStore)(nil).GetDeployment), id)
 }
 
-// GetDeploymentsWithIDs mocks base method
+// GetDeploymentIDs mocks base method.
+func (m *MockStore) GetDeploymentIDs() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDeploymentIDs")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDeploymentIDs indicates an expected call of GetDeploymentIDs.
+func (mr *MockStoreMockRecorder) GetDeploymentIDs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentIDs", reflect.TypeOf((*MockStore)(nil).GetDeploymentIDs))
+}
+
+// GetDeploymentsWithIDs mocks base method.
 func (m *MockStore) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -99,74 +112,13 @@ func (m *MockStore) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment,
 	return ret0, ret1, ret2
 }
 
-// GetDeploymentsWithIDs indicates an expected call of GetDeploymentsWithIDs
+// GetDeploymentsWithIDs indicates an expected call of GetDeploymentsWithIDs.
 func (mr *MockStoreMockRecorder) GetDeploymentsWithIDs(ids ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentsWithIDs", reflect.TypeOf((*MockStore)(nil).GetDeploymentsWithIDs), ids...)
 }
 
-// CountDeployments mocks base method
-func (m *MockStore) CountDeployments() (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountDeployments")
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountDeployments indicates an expected call of CountDeployments
-func (mr *MockStoreMockRecorder) CountDeployments() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeployments", reflect.TypeOf((*MockStore)(nil).CountDeployments))
-}
-
-// UpsertDeployment mocks base method
-func (m *MockStore) UpsertDeployment(deployment *storage.Deployment) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertDeployment", deployment)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertDeployment indicates an expected call of UpsertDeployment
-func (mr *MockStoreMockRecorder) UpsertDeployment(deployment interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeployment", reflect.TypeOf((*MockStore)(nil).UpsertDeployment), deployment)
-}
-
-// RemoveDeployment mocks base method
-func (m *MockStore) RemoveDeployment(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveDeployment", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveDeployment indicates an expected call of RemoveDeployment
-func (mr *MockStoreMockRecorder) RemoveDeployment(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeployment", reflect.TypeOf((*MockStore)(nil).RemoveDeployment), id)
-}
-
-// AckKeysIndexed mocks base method
-func (m *MockStore) AckKeysIndexed(keys ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range keys {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AckKeysIndexed", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AckKeysIndexed indicates an expected call of AckKeysIndexed
-func (mr *MockStoreMockRecorder) AckKeysIndexed(keys ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockStore)(nil).AckKeysIndexed), keys...)
-}
-
-// GetKeysToIndex mocks base method
+// GetKeysToIndex mocks base method.
 func (m *MockStore) GetKeysToIndex() ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetKeysToIndex")
@@ -175,23 +127,72 @@ func (m *MockStore) GetKeysToIndex() ([]string, error) {
 	return ret0, ret1
 }
 
-// GetKeysToIndex indicates an expected call of GetKeysToIndex
+// GetKeysToIndex indicates an expected call of GetKeysToIndex.
 func (mr *MockStoreMockRecorder) GetKeysToIndex() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex))
 }
 
-// GetDeploymentIDs mocks base method
-func (m *MockStore) GetDeploymentIDs() ([]string, error) {
+// ListDeployment mocks base method.
+func (m *MockStore) ListDeployment(id string) (*storage.ListDeployment, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDeploymentIDs")
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "ListDeployment", id)
+	ret0, _ := ret[0].(*storage.ListDeployment)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetDeploymentIDs indicates an expected call of GetDeploymentIDs
-func (mr *MockStoreMockRecorder) GetDeploymentIDs() *gomock.Call {
+// ListDeployment indicates an expected call of ListDeployment.
+func (mr *MockStoreMockRecorder) ListDeployment(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentIDs", reflect.TypeOf((*MockStore)(nil).GetDeploymentIDs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeployment", reflect.TypeOf((*MockStore)(nil).ListDeployment), id)
+}
+
+// ListDeploymentsWithIDs mocks base method.
+func (m *MockStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range ids {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListDeploymentsWithIDs", varargs...)
+	ret0, _ := ret[0].([]*storage.ListDeployment)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListDeploymentsWithIDs indicates an expected call of ListDeploymentsWithIDs.
+func (mr *MockStoreMockRecorder) ListDeploymentsWithIDs(ids ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeploymentsWithIDs", reflect.TypeOf((*MockStore)(nil).ListDeploymentsWithIDs), ids...)
+}
+
+// RemoveDeployment mocks base method.
+func (m *MockStore) RemoveDeployment(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveDeployment", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveDeployment indicates an expected call of RemoveDeployment.
+func (mr *MockStoreMockRecorder) RemoveDeployment(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeployment", reflect.TypeOf((*MockStore)(nil).RemoveDeployment), id)
+}
+
+// UpsertDeployment mocks base method.
+func (m *MockStore) UpsertDeployment(deployment *storage.Deployment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertDeployment", deployment)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertDeployment indicates an expected call of UpsertDeployment.
+func (mr *MockStoreMockRecorder) UpsertDeployment(deployment interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeployment", reflect.TypeOf((*MockStore)(nil).UpsertDeployment), deployment)
 }

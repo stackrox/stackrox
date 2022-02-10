@@ -18,7 +18,7 @@ func TestDoRunCatchesHalt(t *testing.T) {
 	}
 
 	stopSig := concurrency.NewErrorSignal()
-	ctx := newToplevelContext(testDomain, nil, newResults(), &stopSig)
+	ctx := newToplevelContext("", testDomain, nil, newResults(), &stopSig)
 	assert.NotPanics(t, func() { doRun(ctx, checkFn) })
 }
 
@@ -33,7 +33,7 @@ func TestForEachNode(t *testing.T) {
 	}
 
 	stopSig := concurrency.NewErrorSignal()
-	ctx := newToplevelContext(testDomain, nil, newResults(), &stopSig)
+	ctx := newToplevelContext("", testDomain, nil, newResults(), &stopSig)
 	ForEachNode(ctx, checkFn)
 	assert.Equal(t, expectedNodeIDs, seenNodeIDs)
 }
@@ -49,7 +49,7 @@ func TestForEachDeployment(t *testing.T) {
 	}
 
 	stopSig := concurrency.NewErrorSignal()
-	ctx := newToplevelContext(testDomain, nil, newResults(), &stopSig)
+	ctx := newToplevelContext("", testDomain, nil, newResults(), &stopSig)
 	ForEachDeployment(ctx, checkFn)
 	assert.Equal(t, expectedDeploymentIDs, seenDeploymentIDs)
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 )
@@ -18,8 +19,8 @@ func AddCertToFileMap(fileMap map[string][]byte, cert *mtls.IssuedCert, fileName
 
 // IssueServiceCert issues a certificate for the given service, and stores it in the given fileMap
 // (keys prefixed with fileNamePrefix, if any).
-func IssueServiceCert(fileMap map[string][]byte, ca mtls.CA, subject mtls.Subject, fileNamePrefix string) error {
-	cert, err := ca.IssueCertForSubject(subject)
+func IssueServiceCert(fileMap map[string][]byte, ca mtls.CA, subject mtls.Subject, fileNamePrefix string, opts ...mtls.IssueCertOption) error {
+	cert, err := ca.IssueCertForSubject(subject, opts...)
 	if err != nil {
 		return errors.Wrapf(err, "could not issue cert for %s", subject.Identifier)
 	}
@@ -39,8 +40,8 @@ func IssueOtherServiceCerts(fileMap map[string][]byte, ca mtls.CA, subjs ...mtls
 }
 
 // VerifyServiceCert verifies that the service certificate (stored with the given fileNamePrefix in the file
-// map) is a valid service certificate relative to the given CA.
-func VerifyServiceCert(fileMap map[string][]byte, ca mtls.CA, subj mtls.Subject, fileNamePrefix string) error {
+// map) is a valid service certificate for the given serviceType, relative to the given CA.
+func VerifyServiceCert(fileMap map[string][]byte, ca mtls.CA, serviceType storage.ServiceType, fileNamePrefix string) error {
 	certPEM := fileMap[fileNamePrefix+mtls.ServiceCertFileName]
 	if len(certPEM) == 0 {
 		return errors.New("no service certificate in file map")
@@ -52,8 +53,8 @@ func VerifyServiceCert(fileMap map[string][]byte, ca mtls.CA, subj mtls.Subject,
 
 	if subjFromCert, err := ca.ValidateAndExtractSubject(cert); err != nil {
 		return errors.Wrap(err, "failed to validate certificate and extract subject")
-	} else if subjFromCert.ServiceType != subj.ServiceType {
-		return errors.Errorf("unexpected certificate service type: got %s, expected %s", subjFromCert.ServiceType, subj.ServiceType)
+	} else if subjFromCert.ServiceType != serviceType {
+		return errors.Errorf("unexpected certificate service type: got %s, expected %s", subjFromCert.ServiceType, serviceType)
 	}
 
 	keyPEM := fileMap[fileNamePrefix+mtls.ServiceKeyFileName]

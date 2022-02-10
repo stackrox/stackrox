@@ -93,7 +93,7 @@ Metadata.propTypes = {
     keyValuePairs: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string.isRequired,
-            value: PropTypes.oneOfType([PropTypes.string, PropTypes.element, PropTypes.number]),
+            value: PropTypes.oneOfType([PropTypes.string, PropTypes.node, PropTypes.number]),
         })
     ).isRequired,
     title: PropTypes.string,

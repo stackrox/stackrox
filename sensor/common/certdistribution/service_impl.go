@@ -3,7 +3,7 @@ package certdistribution
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -123,11 +123,11 @@ func (s *service) loadCertsForService(serviceName string) (certPEM, keyPEM strin
 		return "", "", errors.Wrapf(errorhelpers.ErrNotFound, "no set of certificates for service %s is available", serviceName)
 	}
 
-	certBytes, err := ioutil.ReadFile(certFileName)
+	certBytes, err := os.ReadFile(certFileName)
 	if err != nil {
 		return "", "", errors.Errorf("failed to read certificate file: %s", err)
 	}
-	keyBytes, err := ioutil.ReadFile(keyFileName)
+	keyBytes, err := os.ReadFile(keyFileName)
 	if err != nil {
 		return "", "", errors.Errorf("failed to read key file: %s", err)
 	}
@@ -172,7 +172,7 @@ func (s *service) FetchCertificate(ctx context.Context, req *sensor.FetchCertifi
 	}
 
 	var requestingServiceIdentity *storage.ServiceIdentity
-	if id := authn.IdentityFromContext(ctx); id != nil {
+	if id := authn.IdentityFromContextOrNil(ctx); id != nil {
 		requestingServiceIdentity = id.Service()
 	}
 	// If the request is made with a valid service cert with a matching type, we do not need to go through the

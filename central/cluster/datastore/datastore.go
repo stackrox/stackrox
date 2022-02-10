@@ -39,7 +39,7 @@ var (
 )
 
 // DataStore is the entry point for modifying Cluster data.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
 	GetClusterName(ctx context.Context, id string) (string, bool, error)
@@ -68,6 +68,7 @@ type DataStore interface {
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
 	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error)
+	GetClusterDefaults(ctx context.Context) (*storage.Cluster, error)
 }
 
 // New returns an instance of DataStore.

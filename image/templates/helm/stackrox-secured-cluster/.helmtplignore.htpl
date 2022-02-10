@@ -1,30 +1,28 @@
-[<- if .RenderAsLegacyChart >]
-scripts/fetch-secrets.sh
-scripts/fetched-secrets-bundle.yaml.tpl
-scripts/fetched-secrets-bundle-ca-only.yaml.tpl
-sensor-chart-upgrade.md
 [<- if .KubectlOutput >]
+templates/cluster-config.yaml
+templates/openshift-monitoring.yaml
+internal/cluster-config.yaml.tpl
+sensor-chart-upgrade.md
 scripts/
 /README.md
 /.helmignore
-[<- end >]
 [<- if .CertsOnly >]
 scripts/
 !/*.yaml
-!templates/*-secret.yaml
+!templates/admission-controller-secret.yaml
+!templates/sensor-secret.yaml
+!templates/collector-secret.yaml
 !templates/_*.tpl
 templates/*
 [<- end >]
-[<- else >]
-scripts/add-cluster.sh
-scripts/setup.sh
 [<- end >]
-[<- if .KubectlOutput >]
-templates/cluster-config.yaml
-internal/cluster-config.yaml.tpl
-[<- end >]
-[< if .ReleaseBuild >]
+[< if not .FeatureFlags >]
 feature-flag-values.yaml
 [< end >]
-main.go
 *.swp
+[< if not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
+templates/keep.yaml
+templates/*scanner*
+internal/scanner-config-shape.yaml
+config-templates/scanner/
+[< end >]

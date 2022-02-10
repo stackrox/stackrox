@@ -1,20 +1,25 @@
 package services
 
-import io.stackrox.proto.api.v1.ClustersServiceGrpc
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.ClusterService.GetClustersRequest
+import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
 
+@CompileStatic
 class ClusterService extends BaseService {
-    static getClusterServiceClient() {
+    static final DEFAULT_CLUSTER_NAME = "remote"
+
+    static ClustersServiceGrpc.ClustersServiceBlockingStub getClusterServiceClient() {
         return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<Cluster> getClusters() {
-        return getClusterServiceClient().getClusters().clustersList
+        return getClusterServiceClient().getClusters(null).clustersList
     }
 
     static Cluster getCluster() {
@@ -22,7 +27,7 @@ class ClusterService extends BaseService {
         return getClusterServiceClient().getCluster(Common.ResourceByID.newBuilder().setId(clusterId).build()).cluster
     }
 
-    static getClusterId(String name = "remote") {
+    static getClusterId(String name = DEFAULT_CLUSTER_NAME) {
         return getClusterServiceClient().getClusters(
                 GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
             ).clustersList.find { it.name == name }?.id
@@ -99,7 +104,7 @@ class ClusterService extends BaseService {
     static Boolean isEKS() {
         Boolean isEKS = false
         try {
-            isEKS = getClusterServiceClient().getClusters().getClustersList().every {
+            isEKS = clusters.every {
                 Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAws() &&
                                    cluster.getStatus().getOrchestratorMetadata().getVersion().contains("eks")
             }
@@ -112,7 +117,7 @@ class ClusterService extends BaseService {
     static Boolean isAKS() {
         Boolean isAKS = false
         try {
-            isAKS = getClusterServiceClient().getClusters().getClustersList().every {
+            isAKS = clusters.every {
                 Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
             }
         } catch (Exception e) {

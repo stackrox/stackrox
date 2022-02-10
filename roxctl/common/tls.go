@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -23,6 +22,7 @@ Please do one of the following at your earliest convenience:
   3. Update all your roxctl usages to pass the --insecure-skip-tls-verify option, in order to
      suppress this warning and retain the old behavior of not validating TLS certificates in
      the future (NOT RECOMMENDED).
+
 `
 
 type insecureVerifierWithWarning struct {
@@ -39,7 +39,7 @@ func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certifica
 	_, err := leaf.Verify(verifyOpts)
 	if err != nil {
 		v.printWarningOnce.Do(func() {
-			fmt.Fprintln(os.Stderr, warningMsg)
+			fmt.Fprint(os.Stderr, warningMsg)
 			fmt.Fprintln(os.Stderr, "Certificate validation error:", err.Error())
 		})
 	}
@@ -79,7 +79,7 @@ func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 	var roots *x509.CertPool
 	var customVerifier clientconn.TLSCertVerifier
 	if flags.CAFile() != "" {
-		caPEMData, err := ioutil.ReadFile(flags.CAFile())
+		caPEMData, err := os.ReadFile(flags.CAFile())
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to parse CA certificates from file")
 		}

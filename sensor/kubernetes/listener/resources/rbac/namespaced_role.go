@@ -72,7 +72,8 @@ func canReadAResource(pr *storage.PolicyRule) bool {
 func maxPermissionLevel(rules []v1.PolicyRule) rolePermissionLevel {
 	permissionLevel := permissionNone
 
-	for _, rule := range rules {
+	for i := range rules {
+		rule := rules[i]
 		if p := ruleToRolePermissionLevel(&rule); p > permissionLevel {
 			permissionLevel = p
 		}

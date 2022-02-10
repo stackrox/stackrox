@@ -14,15 +14,6 @@ var WriteResourceVerbs = set.NewFrozenStringSet("create", "bind", "patch", "upda
 // ResourceVerbs verbs are all possible verbs in a PolicyRule that give access.
 var ResourceVerbs = WriteResourceVerbs.Union(ReadResourceVerbs)
 
-// ReadURLVerbs verbs are all possible verbs in a PolicyRule that give some read access to a raw URL suffix.
-var ReadURLVerbs = set.NewFrozenStringSet("get", "head")
-
-// WriteURLVerbs verbs are all possible verbs in a PolicyRule that give some write access to a raw URL suffix.
-var WriteURLVerbs = set.NewFrozenStringSet("post", "put", "patch", "delete")
-
-// URLVerbs verbs are all possible verbs in a PolicyRule that give some access to a raw URL suffix.
-var URLVerbs = WriteURLVerbs.Union(ReadURLVerbs)
-
 // DefaultLabel key/value pair that identifies default Kubernetes roles and role bindings
 var DefaultLabel = struct {
 	Key   string
@@ -49,43 +40,6 @@ func IsDefaultServiceAccountSubject(sub *storage.Subject) bool {
 	return sub.GetKind() == storage.SubjectKind_SERVICE_ACCOUNT && sub.GetName() == DefaultServiceAccountName
 }
 
-// IsReadOnlyPolicyRule returns if the rule is 'read only', that is only allows reading of it's resource.
-func IsReadOnlyPolicyRule(rule *storage.PolicyRule) bool {
-	for _, verb := range rule.GetVerbs() {
-		if !ReadResourceVerbs.Contains(verb) {
-			return false
-		}
-	}
-	return true
-}
-
-// IsWriteOnlyPolicyRule returns if the rule is 'write only', that is only allows writing of it's resource.
-func IsWriteOnlyPolicyRule(rule *storage.PolicyRule) bool {
-	for _, verb := range rule.GetVerbs() {
-		if !WriteResourceVerbs.Contains(verb) {
-			return false
-		}
-	}
-	return true
-}
-
-// CanWriteAResource returns if there is any core api resource that can be written in the policy set.
-func CanWriteAResource(ruleSet PolicyRuleSet) bool {
-	return ruleSet.Grants(CreateAnything) ||
-		ruleSet.Grants(BindAnything) ||
-		ruleSet.Grants(PatchAnything) ||
-		ruleSet.Grants(UpdateAnything) ||
-		ruleSet.Grants(DeleteAnything) ||
-		ruleSet.Grants(DeletecollectionAnything)
-}
-
-// CanReadAResource returns if there is any core api resource that can be read in the policy set.
-func CanReadAResource(ruleSet PolicyRuleSet) bool {
-	return ruleSet.Grants(GetAnything) ||
-		ruleSet.Grants(ListAnything) ||
-		ruleSet.Grants(WatchAnything)
-}
-
 // EffectiveAdmin represents the rule that grants admin if granted by a policy rule.
 var EffectiveAdmin = &storage.PolicyRule{
 	Verbs:     []string{"*"},
@@ -97,56 +51,47 @@ var EffectiveAdmin = &storage.PolicyRule{
 // ruleSet.Grants(getAnything) will return true for instance. You do not need to be able to get EVERYTHING, just
 // ANYTHING.
 
-// GetAnything is the permission that if granted means something in the core api can have 'get' called on it.
+// GetAnything is the permission that if granted means something in some api group can have 'get' called on it.
 var GetAnything = &storage.PolicyRule{
-	Verbs:     []string{"get"},
-	ApiGroups: []string{""},
+	Verbs: []string{"get"},
 }
 
-// ListAnything is the permission that if granted means something in the core api can have 'list' called on it.
+// ListAnything is the permission that if granted means something in some api group can have 'list' called on it.
 var ListAnything = &storage.PolicyRule{
-	Verbs:     []string{"list"},
-	ApiGroups: []string{""},
+	Verbs: []string{"list"},
 }
 
-// WatchAnything is the permission that if granted means something in the core api can have 'watch' called on it.
+// WatchAnything is the permission that if granted means something in some api group can have 'watch' called on it.
 var WatchAnything = &storage.PolicyRule{
-	Verbs:     []string{"watch"},
-	ApiGroups: []string{""},
+	Verbs: []string{"watch"},
 }
 
-// CreateAnything is the permission that if granted means something in the core api can have 'create' called on it.
+// CreateAnything is the permission that if granted means something in some api group can have 'create' called on it.
 var CreateAnything = &storage.PolicyRule{
-	Verbs:     []string{"create"},
-	ApiGroups: []string{""},
+	Verbs: []string{"create"},
 }
 
-// BindAnything is the permission that if granted means something in the core api can have 'bind' called on it.
+// BindAnything is the permission that if granted means something in some api group can have 'bind' called on it.
 var BindAnything = &storage.PolicyRule{
-	Verbs:     []string{"bind"},
-	ApiGroups: []string{""},
+	Verbs: []string{"bind"},
 }
 
-// PatchAnything is the permission that if granted means something in the core api can have 'patch' called on it.
+// PatchAnything is the permission that if granted means something in some api group can have 'patch' called on it.
 var PatchAnything = &storage.PolicyRule{
-	Verbs:     []string{"patch"},
-	ApiGroups: []string{""},
+	Verbs: []string{"patch"},
 }
 
-// UpdateAnything is the permission that if granted means something in the core api can have 'update' called on it.
+// UpdateAnything is the permission that if granted means something in some api group can have 'update' called on it.
 var UpdateAnything = &storage.PolicyRule{
-	Verbs:     []string{"update"},
-	ApiGroups: []string{""},
+	Verbs: []string{"update"},
 }
 
-// DeleteAnything is the permission that if granted means something in the core api can have 'delete' called on it.
+// DeleteAnything is the permission that if granted means something in some api group can have 'delete' called on it.
 var DeleteAnything = &storage.PolicyRule{
-	Verbs:     []string{"delete"},
-	ApiGroups: []string{""},
+	Verbs: []string{"delete"},
 }
 
-// DeletecollectionAnything is the permission that if granted means something in the core api can have 'deletecollection' called on it.
+// DeletecollectionAnything is the permission that if granted means something in some api group can have 'deletecollection' called on it.
 var DeletecollectionAnything = &storage.PolicyRule{
-	Verbs:     []string{"deletecollection"},
-	ApiGroups: []string{""},
+	Verbs: []string{"deletecollection"},
 }

@@ -1,4 +1,4 @@
-import { intersection } from 'lodash';
+import intersection from 'lodash/intersection';
 
 import entityTypes from 'constants/entityTypes';
 import relationshipTypes from 'constants/relationshipTypes';

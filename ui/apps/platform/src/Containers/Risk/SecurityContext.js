@@ -22,13 +22,13 @@ const SecurityContext = ({ deployment }) => {
     if (deployment.containers) {
         containers = deployment.containers
             .filter((container) => container.securityContext)
-            .map((container, index) => {
+            .map((container) => {
                 const data = getSecurityContext(container);
                 if (data === {}) {
                     return null;
                 }
                 return (
-                    <div key={index}>
+                    <div key={container.id}>
                         {data && (
                             <KeyValuePairs data={data} keyValueMap={containerSecurityContextMap} />
                         )}

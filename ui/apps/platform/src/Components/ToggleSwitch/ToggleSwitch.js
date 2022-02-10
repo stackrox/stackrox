@@ -6,7 +6,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { set } from 'lodash';
+import set from 'lodash/set';
 
 function ToggleSwitch({
     id,

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
@@ -30,6 +31,7 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -346,6 +348,9 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 	if exists {
 		if cluster.GetName() != existingCluster.GetName() {
 			return errors.Errorf("cannot update cluster. Cluster name change from %s not permitted", existingCluster.GetName())
+		}
+		if cluster.GetManagedBy() != existingCluster.GetManagedBy() {
+			return errors.Errorf("Cannot update cluster. Cluster manager type change from %s not permitted.", existingCluster.GetManagedBy())
 		}
 		cluster.Status = existingCluster.GetStatus()
 	}
@@ -724,6 +729,12 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	helmConfig := hello.GetHelmManagedConfigInit()
+	manager := helmConfig.GetManagedBy()
+
+	// Be backwards compatible for older Helm charts, which do not send the `managedBy` field: derive `managedBy` from the provided `notHelmManaged` property.
+	if manager == storage.ManagerType_MANAGER_TYPE_UNKNOWN && helmConfig.GetNotHelmManaged() {
+		manager = storage.ManagerType_MANAGER_TYPE_MANUAL
+	}
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
@@ -763,9 +774,13 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
-		if !helmConfig.GetNotHelmManaged() {
+
+		// Unless we know for sure that we are not Helm-managed we do store the Helm configuration,
+		// in particular this also applies to the UNKNOWN case.
+		if manager != storage.ManagerType_MANAGER_TYPE_MANUAL {
 			cluster.HelmConfig = clusterConfig.Clone()
 		}
+
 		if _, err := ds.addClusterNoLock(cluster); err != nil {
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
 		}
@@ -773,49 +788,87 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		return nil, errors.New("neither a cluster ID nor a cluster name was specified")
 	}
 
-	// If the cluster should not be helm-managed, clear out the helm config field, if necessary.
-	if helmConfig == nil || helmConfig.GetNotHelmManaged() {
-		if cluster.GetHelmConfig() != nil || cluster.GetInitBundleId() != bundleID {
-			cluster.HelmConfig = nil
-			cluster.InitBundleId = bundleID
-			if err := ds.updateClusterNoLock(cluster); err != nil {
-				return nil, err
-			}
-		}
-		return cluster, nil
-	}
+	if manager != storage.ManagerType_MANAGER_TYPE_MANUAL && isExisting {
+		// This is short-cut for clusters whose Helm config fingerprint and init bundle ID is unchanged.
+		// Applies to Helm- and Operator-managed clusters, not to manually managed clusters.
 
-	if isExisting {
 		// Check if the newly incoming request may replace the old connection
 		lastContact := protoconv.ConvertTimestampToTimeOrDefault(cluster.GetHealthStatus().GetLastContact(), time.Time{})
 		timeLeftInGracePeriod := clusterMoveGracePeriod - time.Since(lastContact)
 
 		if timeLeftInGracePeriod > 0 {
 			if err := common.CheckConnReplace(hello.GetDeploymentIdentification(), cluster.GetMostRecentSensorId()); err != nil {
-				return nil, errors.Errorf("registering Helm-managed cluster is not allowed: %s. If you recently re-deployed, please wait for another %v", err, timeLeftInGracePeriod)
+				managerPretty := "non-manually" // Unless we extend the `ManagerType` and forget to extend the switch here, this should never surface to the user.
+				switch manager {
+				case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
+					managerPretty = "Helm"
+				case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
+					managerPretty = "Operator"
+				}
+				return nil, errors.Errorf("registering %s-managed cluster is not allowed: %s. If you recently re-deployed, please wait for another %v",
+					managerPretty, err, timeLeftInGracePeriod)
 			}
 		}
 
-		if cluster.GetInitBundleId() == bundleID && cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() {
-			// No change in fingerprint nor in init bundle ID, do not update. Note: this also is the case if the cluster was newly added.
+		if cluster.GetInitBundleId() == bundleID &&
+			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
+			cluster.GetManagedBy() == manager {
+			// No change in either of
+			// * fingerprint of the Helm configuration
+			// * in init bundle ID
+			// * manager type
+			//
+			// => there is no need to update the cluster, return immediately.
+			//
+			// Note: this also is the case if the cluster was newly added.
 			return cluster, nil
 		}
 	}
 
-	// We know that the cluster is helm-managed at this point
 	clusterConfig := helmConfig.GetClusterConfig()
-	configureFromHelmConfig(cluster, clusterConfig)
-	cluster.HelmConfig = clusterConfig.Clone()
-	cluster.InitBundleId = bundleID
+	currentCluster := cluster
 
-	if err := ds.updateClusterNoLock(cluster); err != nil {
-		return nil, err
+	cluster = cluster.Clone()
+	cluster.ManagedBy = manager
+	cluster.InitBundleId = bundleID
+	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL {
+		cluster.HelmConfig = nil
+	} else {
+		configureFromHelmConfig(cluster, clusterConfig)
+		cluster.HelmConfig = clusterConfig.Clone()
+	}
+
+	if !proto.Equal(currentCluster, cluster) {
+		// Cluster is dirty and needs to be updated in the DB.
+		if err := ds.updateClusterNoLock(cluster); err != nil {
+			return nil, err
+		}
 	}
 
 	return cluster, nil
 }
 
+// GetClusterDefaults is consumed by the API to provide the user with the default secured cluster values.
+func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
+	cluster := &storage.Cluster{}
+	if err := addDefaults(cluster); err != nil {
+		return nil, err
+	}
+
+	// Collector image default is not supposed to be stored in cluster object but only used to display to the user
+	// on the UI.
+	flavor := defaults.GetImageFlavorFromEnv()
+	if cluster.GetCollectorImage() == "" {
+		cluster.CollectorImage = flavor.CollectorFullImageNoTag()
+	}
+	return cluster, nil
+}
+
 func normalizeCluster(cluster *storage.Cluster) error {
+	if cluster == nil {
+		return errorhelpers.NewErrInvariantViolation("cannot normalize nil cluster object")
+	}
+
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
 
@@ -826,7 +879,13 @@ func validateInput(cluster *storage.Cluster) error {
 	return clusterValidation.Validate(cluster).ToError()
 }
 
+// addDefaults enriches the provided non-nil cluster object with defaults for
+// fields that cannot stay empty.
 func addDefaults(cluster *storage.Cluster) error {
+	if cluster == nil {
+		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
+	}
+
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
 		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
@@ -858,6 +917,13 @@ func addDefaults(cluster *storage.Cluster) error {
 	}
 	if acConfig.GetTimeoutSeconds() == 0 {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
+	}
+	flavor := defaults.GetImageFlavorFromEnv()
+	if cluster.GetMainImage() == "" {
+		cluster.MainImage = flavor.MainImageNoTag()
+	}
+	if cluster.GetCentralApiEndpoint() == "" {
+		cluster.CentralApiEndpoint = "central.stackrox:443"
 	}
 	return nil
 }

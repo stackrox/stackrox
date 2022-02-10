@@ -8,8 +8,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -47,6 +49,15 @@ func validate(ecr *storage.ECRConfig) error {
 		}
 	}
 
+	if ecr.GetUseAssumeRole() {
+		if ecr.GetEndpoint() != "" {
+			errorList.AddString("AssumeRole cannot be done with an endpoint defined")
+		}
+		if ecr.GetAssumeRoleId() == "" {
+			errorList.AddString("AssumeRole ID must be set to use AssumeRole")
+		}
+	}
+
 	if ecr.GetRegion() == "" {
 		errorList.AddString("Region must be specified")
 	}
@@ -57,11 +68,7 @@ func (e *ecr) refreshDockerClient() error {
 	if e.expiryTime.After(time.Now()) {
 		return nil
 	}
-	authToken, err := e.service.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{
-		RegistryIds: []*string{
-			aws.String(e.config.GetRegistryId()),
-		},
-	})
+	authToken, err := e.service.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{})
 	if err != nil {
 		return err
 	}
@@ -111,7 +118,18 @@ func (e *ecr) Test() error {
 	if err := e.refreshDockerClient(); err != nil {
 		return err
 	}
-	return e.Registry.Test()
+
+	_, err := e.Registry.Client.Repositories()
+
+	// the following code taken from generic Test method
+	if err != nil {
+		logging.Errorf("error testing ECR integration: %v", err)
+		if e, _ := err.(*registry.ClientError); e != nil {
+			return errors.Errorf("error testing ECR integration (code: %d). Please check Central logs for full error", e.Code())
+		}
+		return err
+	}
+	return nil
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
@@ -148,7 +166,30 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 	if err != nil {
 		return nil, err
 	}
-	service := awsECR.New(sess)
+
+	var service *awsECR.ECR
+
+	if conf.GetUseAssumeRole() {
+		if endpoint != "" {
+			return nil, errorhelpers.NewErrInvalidArgs("AssumeRole and Endpoint cannot both be enabled")
+		}
+		if conf.GetAssumeRoleId() == "" {
+			return nil, errorhelpers.NewErrInvalidArgs("AssumeRole ID is required to use AssumeRole")
+		}
+
+		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.RegistryId, conf.AssumeRoleId)
+		stsCred := stscreds.NewCredentials(sess, roleToAssumeArn, func(p *stscreds.AssumeRoleProvider) {
+			assumeRoleExternalID := conf.GetAssumeRoleExternalId()
+			if assumeRoleExternalID != "" {
+				p.ExternalID = &assumeRoleExternalID
+			}
+		})
+
+		service = awsECR.New(sess, &aws.Config{Credentials: stsCred})
+	} else {
+		service = awsECR.New(sess)
+	}
+
 	reg := &ecr{
 		config:      conf,
 		integration: integration,

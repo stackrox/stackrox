@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -231,11 +231,11 @@ func TestReport(t *testing.T) {
 			// If the -update flag was passed to go test, update the contents
 			// of all golden files.
 			if *updateFlag {
-				a.NoError(ioutil.WriteFile(test.goldenFile, buf.Bytes(), 0644))
+				a.NoError(os.WriteFile(test.goldenFile, buf.Bytes(), 0644))
 				return
 			}
 
-			raw, err := ioutil.ReadFile(test.goldenFile)
+			raw, err := os.ReadFile(test.goldenFile)
 			require.Nil(t, err)
 			assert.Equal(t, string(raw), buf.String())
 		})

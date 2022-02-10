@@ -12,9 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/sac"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
@@ -26,8 +29,9 @@ const (
 )
 
 type enricherImpl struct {
-	cves         cveSuppressor
-	integrations integration.Set
+	cvesSuppressor   cveSuppressor
+	cvesSuppressorV2 cveSuppressor
+	integrations     integration.Set
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
 	registryErrorsLock sync.RWMutex
@@ -39,8 +43,9 @@ type enricherImpl struct {
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
 
+	imageGetter imageGetter
+
 	asyncRateLimiter *rate.Limiter
-	scanCache        expiringcache.Cache
 
 	metrics metrics
 }
@@ -75,7 +80,10 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 		image.Notes = append(image.Notes, note)
 	}
 
-	e.cves.EnrichImageWithSuppressedCVEs(image)
+	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
+	if features.VulnRiskManagement.Enabled() {
+		e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+	}
 
 	return EnrichmentResult{
 		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone),
@@ -85,10 +93,13 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
-	if ctx.FetchOnlyIfMetadataEmpty() && image.GetMetadata() != nil {
+	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
+	if !metadataOutOfDate {
 		return false, nil
 	}
+
 	if ctx.FetchOpt != ForceRefetch {
+		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
 			e.metrics.IncrementMetadataCacheHit()
 			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
@@ -190,6 +201,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 		return false, errors.Wrapf(err, "error getting metadata from registry: %q", registry.Name())
 	}
 	metadata.DataSource = registry.DataSource()
+	metadata.Version = metadataVersion
 	image.Metadata = metadata
 
 	cachedMetadata := metadata.Clone()
@@ -205,14 +217,36 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 	return true, nil
 }
 
+func (e *enricherImpl) fetchFromDatabase(img *storage.Image, option FetchOption) bool {
+	if option == ForceRefetch || option == ForceRefetchScansOnly {
+		return false
+	}
+	// See if the image exists in the DB with a scan, if it does, then use that instead of fetching
+	id := utils.GetImageID(img)
+	if id == "" {
+		return false
+	}
+	existingImage, exists, err := e.imageGetter(sac.WithAllAccess(context.Background()), id)
+	if err != nil {
+		log.Errorf("error fetching image %q: %v", id, err)
+		return false
+	}
+	if exists && existingImage.GetScan() != nil {
+		img.Scan = existingImage.GetScan()
+		return true
+	}
+	return false
+}
+
 func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) (ScanResult, error) {
 	// Attempt to short-circuit before checking scanners.
 	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
 		return ScanNotDone, nil
 	}
-	if e.populateFromCache(ctx, image) {
+	if e.fetchFromDatabase(image, ctx.FetchOpt) {
 		return ScanSucceeded, nil
 	}
+
 	if ctx.FetchOpt == NoExternalMetadata {
 		return ScanNotDone, nil
 	}
@@ -272,23 +306,6 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 	return ScanNotDone, errorList.ToError()
 }
 
-func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, image *storage.Image) bool {
-	if ctx.FetchOpt == ForceRefetch || ctx.FetchOpt == ForceRefetchScansOnly {
-		return false
-	}
-	ref := getRef(image)
-	scanValue := e.scanCache.Get(ref)
-	if scanValue == nil {
-		e.metrics.IncrementScanCacheMiss()
-		return false
-	}
-
-	e.metrics.IncrementScanCacheHit()
-	image.Scan = scanValue.(*storage.ImageScan).Clone()
-	FillScanStats(image)
-	return true
-}
-
 func normalizeVulnerabilities(scan *storage.ImageScan) {
 	for _, c := range scan.GetComponents() {
 		for _, v := range c.GetVulns() {
@@ -341,18 +358,6 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	//  no error scanning.
 	image.Scan = scan
 	FillScanStats(image)
-
-	// Clone the cachedScan because the scan is used within the image leading to race conditions
-	cachedScan := scan.Clone()
-	e.scanCache.Add(getRef(image), cachedScan)
-	if image.GetId() == "" {
-		if digest := image.GetMetadata().GetV2().GetDigest(); digest != "" {
-			e.scanCache.Add(digest, cachedScan)
-		}
-		if digest := image.GetMetadata().GetV1().GetDigest(); digest != "" {
-			e.scanCache.Add(digest, cachedScan)
-		}
-	}
 	return ScanSucceeded, nil
 }
 

@@ -2,7 +2,7 @@ package transports
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -63,7 +63,7 @@ func (t *PersistentTokenTransport) refreshToken() error {
 
 	defer utils.IgnoreError(resp.Body.Close)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

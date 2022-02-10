@@ -6,56 +6,60 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // All resource types that we want to define (for the purposes of enforcing
 // API permissions) must be defined here.
 // KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER.
 var (
-	APIToken              = newResourceMetadata("APIToken", permissions.GlobalScope)
-	Alert                 = newResourceMetadata("Alert", permissions.NamespaceScope)
-	AllComments           = newResourceMetadata("AllComments", permissions.GlobalScope)
-	AuthPlugin            = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
-	AuthProvider          = newResourceMetadata("AuthProvider", permissions.GlobalScope)
-	BackupPlugins         = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
-	Cluster               = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance            = newResourceMetadata("Compliance", permissions.ClusterScope)
-	ComplianceRunSchedule = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
-	ComplianceRuns        = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
-	Config                = newResourceMetadata("Config", permissions.GlobalScope)
-	CVE                   = newResourceMetadata("CVE", permissions.NamespaceScope)
-	DebugLogs             = newResourceMetadata("DebugLogs", permissions.GlobalScope)
-	Deployment            = newResourceMetadata("Deployment", permissions.NamespaceScope)
-	Detection             = newResourceMetadata("Detection", permissions.GlobalScope)
-	Group                 = newResourceMetadata("Group", permissions.GlobalScope)
-	Image                 = newResourceMetadata("Image", permissions.NamespaceScope)
-	ImageComponent        = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
-	ImageIntegration      = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
-	Indicator             = newResourceMetadata("Indicator", permissions.NamespaceScope)
-	K8sRole               = newResourceMetadata("K8sRole", permissions.NamespaceScope)
-	K8sRoleBinding        = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
-	K8sSubject            = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
-	Licenses              = newResourceMetadata("Licenses", permissions.GlobalScope)
-	Namespace             = newResourceMetadata("Namespace", permissions.NamespaceScope)
-	NetworkBaseline       = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
-	NetworkGraph          = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
-	NetworkGraphConfig    = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
-	NetworkPolicy         = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
-	Node                  = newResourceMetadata("Node", permissions.ClusterScope)
-	Notifier              = newResourceMetadata("Notifier", permissions.GlobalScope)
-	Policy                = newResourceMetadata("Policy", permissions.GlobalScope)
-	ProbeUpload           = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
-	ProcessWhitelist      = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
-	Role                  = newResourceMetadata("Role", permissions.GlobalScope)
-	Risk                  = newResourceMetadata("Risk", permissions.NamespaceScope)
-	ScannerBundle         = newResourceMetadata("ScannerBundle", permissions.GlobalScope)
-	ScannerDefinitions    = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
-	Secret                = newResourceMetadata("Secret", permissions.NamespaceScope)
-	SensorUpgradeConfig   = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
-	ServiceAccount        = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
-	ServiceIdentity       = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
-	User                  = newResourceMetadata("User", permissions.GlobalScope)
-	WatchedImage          = newResourceMetadata("WatchedImage", permissions.GlobalScope)
+	APIToken                         = newResourceMetadata("APIToken", permissions.GlobalScope)
+	Alert                            = newResourceMetadata("Alert", permissions.NamespaceScope)
+	AllComments                      = newResourceMetadata("AllComments", permissions.GlobalScope)
+	AuthPlugin                       = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
+	AuthProvider                     = newResourceMetadata("AuthProvider", permissions.GlobalScope)
+	BackupPlugins                    = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
+	Cluster                          = newResourceMetadata("Cluster", permissions.ClusterScope)
+	Compliance                       = newResourceMetadata("Compliance", permissions.ClusterScope)
+	ComplianceRunSchedule            = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
+	ComplianceRuns                   = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
+	Config                           = newResourceMetadata("Config", permissions.GlobalScope)
+	CVE                              = newResourceMetadata("CVE", permissions.NamespaceScope)
+	DebugLogs                        = newResourceMetadata("DebugLogs", permissions.GlobalScope)
+	Deployment                       = newResourceMetadata("Deployment", permissions.NamespaceScope)
+	Detection                        = newResourceMetadata("Detection", permissions.GlobalScope)
+	Group                            = newResourceMetadata("Group", permissions.GlobalScope)
+	Image                            = newResourceMetadata("Image", permissions.NamespaceScope)
+	ImageComponent                   = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
+	ImageIntegration                 = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
+	Indicator                        = newResourceMetadata("Indicator", permissions.NamespaceScope)
+	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
+	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
+	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
+	Licenses                         = newResourceMetadata("Licenses", permissions.GlobalScope)
+	Namespace                        = newResourceMetadata("Namespace", permissions.NamespaceScope)
+	NetworkBaseline                  = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
+	NetworkGraph                     = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
+	NetworkGraphConfig               = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
+	NetworkPolicy                    = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
+	Node                             = newResourceMetadata("Node", permissions.ClusterScope)
+	Notifier                         = newResourceMetadata("Notifier", permissions.GlobalScope)
+	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
+	ProbeUpload                      = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
+	ProcessWhitelist                 = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
+	Role                             = newResourceMetadata("Role", permissions.GlobalScope)
+	Risk                             = newResourceMetadata("Risk", permissions.NamespaceScope)
+	ScannerBundle                    = newResourceMetadata("ScannerBundle", permissions.GlobalScope)
+	ScannerDefinitions               = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
+	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
+	SensorUpgradeConfig              = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
+	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
+	ServiceIdentity                  = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
+	User                             = newResourceMetadata("User", permissions.GlobalScope)
+	VulnerabilityManagementRequests  = newResourceMetadataWithFeatureFlag("VulnerabilityManagementRequests", permissions.GlobalScope, features.VulnRiskManagement)
+	VulnerabilityManagementApprovals = newResourceMetadataWithFeatureFlag("VulnerabilityManagementApprovals", permissions.GlobalScope, features.VulnRiskManagement)
+	VulnerabilityReports             = newResourceMetadataWithFeatureFlag("VulnerabilityReports", permissions.GlobalScope, features.VulnReporting)
+	WatchedImage                     = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
 	// Internal Resources
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
@@ -69,6 +73,17 @@ func newResourceMetadata(name permissions.Resource, scope permissions.ResourceSc
 		Scope:    scope,
 	}
 	resourceToMetadata[name] = md
+	return md
+}
+
+func newResourceMetadataWithFeatureFlag(name permissions.Resource, scope permissions.ResourceScope, flag features.FeatureFlag) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource: name,
+		Scope:    scope,
+	}
+	if flag.Enabled() {
+		resourceToMetadata[name] = md
+	}
 	return md
 }
 

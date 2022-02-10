@@ -28,7 +28,6 @@ const nodesAcrossControlsColumns = [
         Header: `Control Status`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        // eslint-disable-next-line
         Cell: ({ original }) => {
             return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
         },
@@ -40,7 +39,6 @@ const imageColumns = [
         expander: true,
         headerClassName: `w-1/8 ${defaultHeaderClassName} pointer-events-none`,
         className: 'w-1/8 pointer-events-none flex items-center justify-end',
-        // eslint-disable-next-line react/prop-types
         Expander: ({ isExpanded, ...rest }) => {
             if (!rest.original.components || rest.original.components.length === 0) {
                 return '';

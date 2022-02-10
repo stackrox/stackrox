@@ -72,8 +72,7 @@ export function getCveTableColumns(workflowState) {
             Header: `Type`,
             headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({original}) => {
+            Cell: ({ original }) => {
                 return (
                     <span className="mx-auto" data-testid="cve-type">
                         <CveType types={original.vulnerabilityTypes} />
@@ -89,7 +88,6 @@ export function getCveTableColumns(workflowState) {
             Header: `Fixable`,
             headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 const fixableFlag = original.isFixable ? (
                     <LabelChip text="Fixable" type="success" size="large" />
@@ -100,6 +98,36 @@ export function getCveTableColumns(workflowState) {
             },
             id: cveSortFields.FIXABLE,
             accessor: 'isFixable',
+            sortField: cveSortFields.FIXABLE,
+            sortable: false,
+        },
+        {
+            Header: `Active`,
+            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original }) => {
+                const activeStatus = original.activeState?.state || 'Undetermined';
+                switch (activeStatus) {
+                    case 'Active': {
+                        return (
+                            <div className="mx-auto">
+                                <LabelChip text={activeStatus} type="alert" size="large" />
+                            </div>
+                        );
+                    }
+                    // TODO: uncomment the following case,  once Inactive can be determined with precision
+                    // case 'Inactive': {
+                    //     return <div className="mx-auto">{activeStatus}</div>;
+                    // }
+                    case 'Undetermined':
+                    default: {
+                        return <div className="mx-auto">Undetermined</div>;
+                    }
+                }
+            },
+            id: cveSortFields.FIXABLE,
+            accessor: 'isActive',
             sortField: cveSortFields.FIXABLE,
             sortable: false,
         },
@@ -116,7 +144,6 @@ export function getCveTableColumns(workflowState) {
             Header: `Severity`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 text-center ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 return <CVSSSeverityLabel severity={original.severity} />;
             },
@@ -128,7 +155,6 @@ export function getCveTableColumns(workflowState) {
             Header: `CVSS Score`,
             headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { cvss, scoreVersion } = original;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
@@ -170,7 +196,6 @@ export function getCveTableColumns(workflowState) {
             Header: `Entities`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => (
                 <TableCountLinks row={original} textOnly={inFindingsSection || pdf} />
             ),
@@ -210,7 +235,6 @@ export function getCveTableColumns(workflowState) {
         },
     ];
 
-    // TODO: remove this feature flag check after the flag is turned on for good
     const nonNullTableColumns = tableColumns.filter((col) => col);
 
     const cveColumnsBasedOnContext = getFilteredCVEColumns(nonNullTableColumns, workflowState);
@@ -302,11 +326,13 @@ const VulnMgmtCves = ({
                 // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
                 const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
 
-                addToast(`Successfully snoozed ${cveIdsToToggle.length} ${pluralizedCVEs}`);
+                addToast(
+                    `Successfully deferred and approved ${cveIdsToToggle.length} ${pluralizedCVEs}`
+                );
                 setTimeout(removeToast, 2000);
             })
             .catch((evt) => {
-                addToast(`Could not snooze all of the selected CVEs: ${evt.message}`);
+                addToast(`Could not defer and approve all of the selected CVEs: ${evt.message}`);
                 setTimeout(removeToast, 2000);
             });
     };
@@ -325,11 +351,11 @@ const VulnMgmtCves = ({
                 // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
                 const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
 
-                addToast(`Successfully unsnoozed ${cveIdsToToggle.length} ${pluralizedCVEs}`);
+                addToast(`Successfully reobserved ${cveIdsToToggle.length} ${pluralizedCVEs}`);
                 setTimeout(removeToast, 2000);
             })
             .catch((evt) => {
-                addToast(`Could not unsnooze all of the selected CVEs: ${evt.message}`);
+                addToast(`Could not reobserve all of the selected CVEs: ${evt.message}`);
                 setTimeout(removeToast, 2000);
             });
     };
@@ -374,13 +400,13 @@ const VulnMgmtCves = ({
                     border="border-l-2 border-base-400"
                     icon={<Icon.BellOff className="h-4 w-4" />}
                     options={snoozeOptions(id)}
-                    text="Snooze CVE"
+                    text="Defer and Approve CVE"
                     dataTestId="row-action-suppress"
                 />
             )}
             {viewingSuppressed && (
                 <RowActionButton
-                    text="Unsnooze CVE"
+                    text="Reobserve CVE"
                     border="border-l-2 border-base-400"
                     onClick={unsuppressCves(id)}
                     date-testid="row-action-unsuppress"
@@ -391,7 +417,7 @@ const VulnMgmtCves = ({
         </div>
     );
 
-    const viewButtonText = viewingSuppressed ? 'View Unsnoozed' : 'View Snoozed';
+    const viewButtonText = viewingSuppressed ? 'View Observed' : 'View Deferred';
 
     const tableHeaderComponents = (
         <>
@@ -410,11 +436,11 @@ const VulnMgmtCves = ({
                     className="h-full min-w-30 ml-2"
                     menuClassName="bg-base-100 min-w-28"
                     buttonClass="btn-icon btn-tertiary"
-                    buttonText="Snooze"
+                    buttonText="Defer and Approve"
                     buttonIcon={<Icon.BellOff className="h-4 w-4 mr-2" />}
                     options={snoozeOptions()}
                     disabled={selectedCveIds.length === 0}
-                    tooltip="Snooze Selected CVEs"
+                    tooltip="Defer and Approve Selected CVEs"
                     dataTestId="panel-button-suppress-selected-cves"
                 />
             )}
@@ -425,10 +451,10 @@ const VulnMgmtCves = ({
                     className="btn-icon btn-tertiary ml-2"
                     onClick={unsuppressCves()}
                     disabled={selectedCveIds.length === 0}
-                    tooltip="Unsnooze Selected CVEs"
+                    tooltip="Reobserve Selected CVEs"
                     dataTestId="panel-button-unsuppress-selected-cves"
                 >
-                    Unsnooze
+                    Reobserve
                 </PanelButton>
             )}
 

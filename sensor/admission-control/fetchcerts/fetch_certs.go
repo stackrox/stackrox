@@ -2,7 +2,6 @@ package fetchcerts
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -48,10 +47,10 @@ func changeCertAndKeyFileEnvVars() error {
 }
 
 func applyFetchedCertSettings(fetchResult *sensor.FetchCertificateResponse) error {
-	if err := ioutil.WriteFile(certFile, []byte(fetchResult.GetPemCert()), 0600); err != nil {
+	if err := os.WriteFile(certFile, []byte(fetchResult.GetPemCert()), 0600); err != nil {
 		return errors.Wrap(err, "writing certificate to file")
 	}
-	if err := ioutil.WriteFile(keyFile, []byte(fetchResult.GetPemKey()), 0600); err != nil {
+	if err := os.WriteFile(keyFile, []byte(fetchResult.GetPemKey()), 0600); err != nil {
 		return errors.Wrap(err, "writing private key to file")
 	}
 

@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/maincommand"
 	"github.com/stackrox/rox/roxctl/properties"
 
@@ -15,10 +14,6 @@ import (
 func main() {
 	c := maincommand.Command()
 	addHelp(c.Commands())
-
-	flags.AddPassword(c)
-	flags.AddConnectionFlags(c)
-	flags.AddAPITokenFile(c)
 
 	// This is a workaround. Cobra/pflag takes care of presenting flag usage information
 	// to the user including the respective flag default values.

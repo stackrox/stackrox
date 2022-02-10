@@ -45,6 +45,25 @@ INDEX_IMG ?= $(INDEX_IMG_BASE):v$(VERSION)
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
+# Set up the so-called "storage image" for executing scorecard test suite.
+# By default a busybox image is pulled from docker.io. In order to rule out timing issues related to rate limiting
+# we use our own copy of a busybox image from quay.io.
+#
+# We expect this dependency on busybox to not be very volatile, but in case it is necessary to use a newer busybox
+# image for the scorecard tests, proceed as follows:
+#
+# 1. Push a new busybox image to the quay.io repository.
+# 2. Update the image image tag below.
+SCORECARD_STORAGE_IMAGE_BASE ?= quay.io/rhacs-eng/mirror-busybox
+SCORECARD_STORAGE_IMAGE_TAG ?= @sha256:fe9664ceda9c13b7fd65f5bc3c0bca5060de3a66fedc39d33926b573599da3b7
+SCORECARD_STORAGE_IMAGE ?= $(SCORECARD_STORAGE_IMAGE_BASE):$(SCORECARD_STORAGE_IMAGE_TAG)
+
+# Increase the scorecard wait time from (default) 30s to 40s, since we experienced some time out issues in the past.
+SCORECARD_WAIT_TIME_DURATION ?= 40s
+
+# SCORECARD_ARGS should be passed to any invocation of "$(OPERATOR_SDK) scorecard".
+SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)"
+
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
 TEST_NAMESPACE ?= stackrox-operator
 
@@ -53,8 +72,10 @@ TEST_NAMESPACE ?= stackrox-operator
 # to your manager process.
 ENABLE_WEBHOOKS ?= false
 
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
+# Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
+ROX_IMAGE_FLAVOR ?= $(shell $(MAKE) --quiet --no-print-directory -C .. image-flavor)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -98,6 +119,9 @@ help: ## Display this help.
 tag: ## Print the correct operator version (== image tag).
 	@echo $(VERSION)
 
+image-flavor: ## Print the current image flavor.
+	@echo $(ROX_IMAGE_FLAVOR)
+
 # `everything` and `all` are separate targets.
 # `everything` pushes images. `all` is the default target that's executed when you simply run `make` without arguments.
 # If `all` would push images, parameter-less `make` execution would have side-effect of pushing images to registry
@@ -116,15 +140,11 @@ CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
-CLIENT_GEN=$(PROJECT_DIR)/bin/client-gen
-client-gen: ## Download client-gen locally if necessary
-	$(call go-get-tool,$(CLIENT_GEN),k8s.io/code-generator/cmd/client-gen@v0.20.4)
-
 KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
-OPERATOR_SDK_VERSION = 1.9.0
+OPERATOR_SDK_VERSION = 1.14.0
 OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
 .PHONY: operator-sdk
 operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
@@ -152,6 +172,10 @@ opm: ## Download opm.
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(OPM) $${OPM_URL}
 
+ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
+envtest: ## Download envtest-setup locally if necessary.
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+
 GET_GITHUB_RELEASE_FN = get_github_release() { \
 	[ -f $${1} ] || { \
 		set -euxo pipefail ;\
@@ -162,7 +186,7 @@ GET_GITHUB_RELEASE_FN = get_github_release() { \
 	} \
 }
 
-# go-get-tool will 'go get' any package $2 and install it to $1.
+# go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
 define go-get-tool
 @[ -f $(1) ] || { \
 set -e ;\
@@ -170,7 +194,8 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+go get -d $(2) ;\
+GOBIN=$(PROJECT_DIR)/bin go install $(firstword $(subst @, ,$(2))) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
@@ -181,13 +206,12 @@ parent-proto-generate: ## Make sure ../generated directory has up-to-date conten
 	$(MAKE) -C .. proto-generated-srcs
 
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-generate: parent-proto-generate controller-gen client-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations, as well as the client code.
+generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-	$(CLIENT_GEN) --input-base="github.com/stackrox/rox/operator/apis" --input="platform/v1alpha1" --clientset-name="stackrox" --output-package="github.com/stackrox/rox/operator/pkg/clientset" --fake-clientset --go-header-file="hack/boilerplate.go.txt"
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
-	go fmt ./apis/... ./pkg/clientset/...
+	go fmt ./apis/...
 
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -195,17 +219,22 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate fmt vet ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
+ENVTEST_K8S_VERSION = 1.22
 
-test-e2e: build install kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
+test: manifests generate fmt vet envtest ## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+
+.PHONY: validate-crs
+CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
+validate-crs:
+	./tests/scripts/validate-crs.sh ./tests $(CRDS)
+
+test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
 
-test-e2e-deployed: kuttl ## Run e2e tests with manager deployed on cluster.
+test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	SKIP_MANAGER_START=1 $(KUTTL) test
 
@@ -221,8 +250,12 @@ stackrox-image-pull-secret: ## Create default image pull secret for StackRox ima
 # Create stackrox image pull secret in stackrox namespace.
 	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox docker.io | kubectl -n stackrox apply -f -
 
+.PHONY: check-ci-setup
+check-ci-setup: ## Make sure this target is not started in CI environment.
+	@if [ -n "$$CI" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
+
 .PHONY: run
-run: manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
+run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
 	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) ../scripts/go-run.sh ./main.go
 
 .PHONY: ensure-rox-main-image-exists
@@ -250,26 +283,35 @@ docker-build: test ## Build docker image with the operator.
 		`# Verify that the resulting status.sh is actually runnable` \
 		"$${smuggled_status_sh}" ;\
 	)
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build -t ${IMG} --ssh default=${SSH_AUTH_SOCK} -f Dockerfile ..
+	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+		-t ${IMG} \
+		--ssh default=${SSH_AUTH_SOCK} \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		-f Dockerfile \
+		..
 
 ##@ Deployment
 
 .PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+uninstall: check-ci-setup manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
+	rm -rf config/local-deploy-versioned && \
+		mkdir config/local-deploy-versioned && \
+		cd config/local-deploy-versioned && \
+		$(KUSTOMIZE) create --resources ../default && \
+		$(KUSTOMIZE) edit set image controller=$(IMG)
+	$(KUSTOMIZE) build config/local-deploy-versioned | kubectl create -f -
 
 .PHONY: undeploy
-undeploy: kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
 
 .PHONY: deploy-via-olm
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
@@ -294,7 +336,7 @@ upgrade-via-olm: kuttl
 # Commands to enter local Python virtual environment and get needed dependencies there.
 ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip setuptools ;\
+	pip3 install --upgrade pip==21.3.1 setuptools==60.2.0 ;\
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
@@ -305,6 +347,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=docker.io/stackrox/stackrox-operator:0.0.1
+	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:v$(OPERATOR_SDK_VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
 # Post-processed files will be copied instead, as configured in bundle.Dockerfile.extra.
@@ -339,7 +382,9 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 		--first-version 3.62.0 `# 3.62.0 is the first operator version ever released` \
 		--operator-image $(IMG) \
 		--no-related-images \
-		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+	| sed 's,replaces: rhacs-operator.v3.66.0,replaces: rhacs-operator.v3.66.1,' > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+# TODO(ROX-8618): make the above sed on `replaces:` line generic (quick hack to address ROX-8630)
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 
@@ -349,11 +394,11 @@ bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
 
 .PHONY: bundle-test
 bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
-	$(OPERATOR_SDK) scorecard build/bundle/
+	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
 bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in the registry. Bundle image must be pushed beforehand.
-	$(OPERATOR_SDK) scorecard $(BUNDLE_IMG)
+	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
 index-build: opm bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
@@ -380,12 +425,14 @@ index-build: opm bundle-post-process ## Build Index (a.k.a. Catalog) image with 
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the operator.
-	docker push ${IMG}
+# Use push-as-manifest-list.sh here to make sure manifests for the operator image are created. The script also retries on error.
+# We're not using push-as-manifest-list.sh for pushing other two images because they are independent from architecture.
+	../scripts/ci/push-as-manifest-list.sh "$(IMG)"
 
 .PHONY: docker-push-bundle
 docker-push-bundle: ## Push docker image with the bundle.
-	docker push ${BUNDLE_IMG}
+	docker push "$(BUNDLE_IMG)"
 
 .PHONY: docker-push-index
 docker-push-index: ## Push docker image with the index.
-	docker push ${INDEX_IMG}
+	docker push "$(INDEX_IMG)"

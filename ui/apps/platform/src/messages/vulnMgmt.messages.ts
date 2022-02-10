@@ -1,5 +1,3 @@
-/* eslint-disable import/prefer-default-export */
-
 export type ScanMessages = {
     header?: string;
     body?: string;

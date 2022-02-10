@@ -11,3 +11,4 @@ templates/*
 !templates/01-central-05-tls-secret.yaml
 templates/*
 [< end >]
+templates/keep.yaml

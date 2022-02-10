@@ -3,7 +3,7 @@ package flags
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -54,7 +54,7 @@ func readLicenseFromStdin() ([]byte, error) {
 	if mode.IsInInteractiveMode() {
 		_, _ = fmt.Fprintln(os.Stderr, "Reading license data from terminal. Press Enter followed by Ctrl+D to mark end of input.")
 	}
-	data, err := ioutil.ReadAll(os.Stdin)
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "failed to read from stdin")
 	}
@@ -62,7 +62,7 @@ func readLicenseFromStdin() ([]byte, error) {
 }
 
 func tryReadLicenseFromFile(filename string) ([]byte, error) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

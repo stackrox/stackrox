@@ -116,7 +116,8 @@
                         }
                     }
                 }
-            }
+            },
+            "managedBy": "MANAGER_TYPE_HELM_CHART"
         },
         {
             "id": "f342ca31-9271-081c-c40d-4e4cd442707a",
@@ -182,7 +183,8 @@
                 "healthInfoComplete": true
             },
             "slimCollector": false,
-            "helmConfig": null
+            "helmConfig": null,
+            "managedBy": "MANAGER_TYPE_MANUAL"
         },
         {
             "id": "2a226ad1-9f7a-eb6d-b0e5-a0db4ad68161",
@@ -248,7 +250,79 @@
                 "healthInfoComplete": true
             },
             "slimCollector": false,
-            "helmConfig": null
+            "helmConfig": {
+                "clusterName": "eta-7",
+                "initToken": null,
+                "centralEndpoint": "central.stackrox:443",
+                "imagePullSecrets": {
+                    "useExisting": ["stackrox"]
+                },
+                "image": {
+                    "registry": "stackrox.io"
+                },
+                "env": {
+                    "openshift": true
+                },
+                "sensor": {
+                    "resources": {
+                        "requests": {
+                            "memory": "1Gi",
+                            "cpu": "1"
+                        },
+                        "limits": {
+                            "memory": "4Gi",
+                            "cpu": "2"
+                        }
+                    }
+                },
+                "admissionControl": {
+                    "enable": false,
+                    "listenOnUpdates": false,
+                    "enforceOnUpdates": false,
+                    "dynamic": {
+                        "enforce": false,
+                        "scanInline": false,
+                        "disableBypass": false,
+                        "timeout": 3
+                    },
+                    "resources": {
+                        "requests": {
+                            "memory": "100Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "500Mi",
+                            "cpu": "500m"
+                        }
+                    }
+                },
+                "collector": {
+                    "collectionMethod": "KERNEL_MODULE",
+                    "disableTaintTolerations": false,
+                    "slimMode": true,
+                    "resources": {
+                        "requests": {
+                            "memory": "320Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "1Gi",
+                            "cpu": "750m"
+                        }
+                    },
+                    "complianceResources": {
+                        "requests": {
+                            "memory": "10Mi",
+                            "cpu": "10m"
+                        },
+                        "limits": {
+                            "memory": "2Gi",
+                            "cpu": "1"
+                        }
+                    }
+                }
+            },
+            "managedBy": "MANAGER_TYPE_KUBERNETES_OPERATOR"
         },
         {
             "id": "e3a8407f-db07-3d01-5371-aeb7159779dd",
@@ -315,7 +389,79 @@
                 "healthInfoComplete": true
             },
             "slimCollector": false,
-            "helmConfig": null
+            "helmConfig": {
+                "clusterName": "kappa-kilogramme-10",
+                "initToken": null,
+                "centralEndpoint": "central.stackrox:443",
+                "imagePullSecrets": {
+                    "useExisting": ["stackrox"]
+                },
+                "image": {
+                    "registry": "stackrox.io"
+                },
+                "env": {
+                    "openshift": true
+                },
+                "sensor": {
+                    "resources": {
+                        "requests": {
+                            "memory": "1Gi",
+                            "cpu": "1"
+                        },
+                        "limits": {
+                            "memory": "4Gi",
+                            "cpu": "2"
+                        }
+                    }
+                },
+                "admissionControl": {
+                    "enable": false,
+                    "listenOnUpdates": false,
+                    "enforceOnUpdates": false,
+                    "dynamic": {
+                        "enforce": false,
+                        "scanInline": false,
+                        "disableBypass": false,
+                        "timeout": 3
+                    },
+                    "resources": {
+                        "requests": {
+                            "memory": "100Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "500Mi",
+                            "cpu": "500m"
+                        }
+                    }
+                },
+                "collector": {
+                    "collectionMethod": "KERNEL_MODULE",
+                    "disableTaintTolerations": false,
+                    "slimMode": true,
+                    "resources": {
+                        "requests": {
+                            "memory": "320Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "1Gi",
+                            "cpu": "750m"
+                        }
+                    },
+                    "complianceResources": {
+                        "requests": {
+                            "memory": "10Mi",
+                            "cpu": "10m"
+                        },
+                        "limits": {
+                            "memory": "2Gi",
+                            "cpu": "1"
+                        }
+                    }
+                }
+            },
+            "managedBy": "MANAGER_TYPE_UNKNOWN"
         },
         {
             "id": "4dd3f266-f78c-2cff-788e-4b0e26d5f585",
@@ -354,7 +500,7 @@
                     }
                 },
                 "certExpiryStatus": {
-                    "sensorCertExpiry": "2020-10-30T13:01:00Z"
+                    "sensorCertExpiry": "2020-10-31T13:01:00Z"
                 }
             },
             "dynamicConfig": {
@@ -389,7 +535,8 @@
                 "healthInfoComplete": true
             },
             "slimCollector": false,
-            "helmConfig": null
+            "helmConfig": null,
+            "managedBy": "MANAGER_TYPE_UNKNOWN"
         },
         {
             "id": "196eab32-b03a-972a-938e-2cbf265b7490",
@@ -448,7 +595,8 @@
                 "healthInfoComplete": false
             },
             "slimCollector": false,
-            "helmConfig": null
+            "helmConfig": null,
+            "managedBy": "MANAGER_TYPE_MANUAL"
         },
         {
             "id": "8996128e-e999-ce19-bd68-8eda43ef1d8b",
@@ -521,7 +669,8 @@
                 "healthInfoComplete": true
             },
             "slimCollector": false,
-            "helmConfig": null
+            "helmConfig": null,
+            "managedBy": "MANAGER_TYPE_MANUAL"
         }
     ]
 }

@@ -5,34 +5,49 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetLogs mocks base method
+// AddLog mocks base method.
+func (m *MockStore) AddLog(log string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddLog", log)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddLog indicates an expected call of AddLog.
+func (mr *MockStoreMockRecorder) AddLog(log interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLog", reflect.TypeOf((*MockStore)(nil).AddLog), log)
+}
+
+// GetLogs mocks base method.
 func (m *MockStore) GetLogs() ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLogs")
@@ -41,13 +56,13 @@ func (m *MockStore) GetLogs() ([]string, error) {
 	return ret0, ret1
 }
 
-// GetLogs indicates an expected call of GetLogs
+// GetLogs indicates an expected call of GetLogs.
 func (mr *MockStoreMockRecorder) GetLogs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogs", reflect.TypeOf((*MockStore)(nil).GetLogs))
 }
 
-// GetLogsRange mocks base method
+// GetLogsRange mocks base method.
 func (m *MockStore) GetLogsRange() (int64, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLogsRange")
@@ -57,27 +72,13 @@ func (m *MockStore) GetLogsRange() (int64, int64, error) {
 	return ret0, ret1, ret2
 }
 
-// GetLogsRange indicates an expected call of GetLogsRange
+// GetLogsRange indicates an expected call of GetLogsRange.
 func (mr *MockStoreMockRecorder) GetLogsRange() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogsRange", reflect.TypeOf((*MockStore)(nil).GetLogsRange))
 }
 
-// AddLog mocks base method
-func (m *MockStore) AddLog(log string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddLog", log)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddLog indicates an expected call of AddLog
-func (mr *MockStoreMockRecorder) AddLog(log interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLog", reflect.TypeOf((*MockStore)(nil).AddLog), log)
-}
-
-// RemoveLogs mocks base method
+// RemoveLogs mocks base method.
 func (m *MockStore) RemoveLogs(from, to int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveLogs", from, to)
@@ -85,7 +86,7 @@ func (m *MockStore) RemoveLogs(from, to int64) error {
 	return ret0
 }
 
-// RemoveLogs indicates an expected call of RemoveLogs
+// RemoveLogs indicates an expected call of RemoveLogs.
 func (mr *MockStoreMockRecorder) RemoveLogs(from, to interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLogs", reflect.TypeOf((*MockStore)(nil).RemoveLogs), from, to)

@@ -2,13 +2,13 @@ package satoken
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 )
 
 // LoadTokenFromFile loads the Kubernetes service account JWT token from the canonical file location and returns the
 // token or an error.
 func LoadTokenFromFile() (string, error) {
-	contents, err := ioutil.ReadFile(ServiceAccountTokenJWTPath)
+	contents, err := os.ReadFile(ServiceAccountTokenJWTPath)
 	if err != nil {
 		return "", err
 	}
@@ -18,7 +18,7 @@ func LoadTokenFromFile() (string, error) {
 // LoadNamespaceFromFile loads the Kubernetes service account namespace (which is the same as the pod namespace)
 // from the canonical file location and returns the namespace or an error.
 func LoadNamespaceFromFile() (string, error) {
-	contents, err := ioutil.ReadFile(ServiceAccountTokenNamespacePath)
+	contents, err := os.ReadFile(ServiceAccountTokenNamespacePath)
 	if err != nil {
 		return "", err
 	}

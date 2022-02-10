@@ -31,7 +31,7 @@ func clusterIDFromCert() string {
 func Get() string {
 	once.Do(func() {
 		id := clusterIDFromCert()
-		if id == centralsensor.InitCertClusterID {
+		if centralsensor.IsInitCertClusterID(id) {
 			log.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
 			clusterIDAvailable.Wait()
 		} else {

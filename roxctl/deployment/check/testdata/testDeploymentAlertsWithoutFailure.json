@@ -1,0 +1,99 @@
+{
+  "results": [
+    {
+      "metadata": {
+        "id": "",
+        "additionalInfo": {
+          "name": "wordpress",
+          "namespace": "",
+          "type": "Deployment"
+        }
+      },
+      "summary": {
+        "CRITICAL": 1,
+        "HIGH": 1,
+        "LOW": 1,
+        "MEDIUM": 3,
+        "TOTAL": 6
+      },
+      "violatedPolicies": [
+        {
+          "name": "policy 1",
+          "severity": "CRITICAL",
+          "description": "policy 1 for testing",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 1 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 8",
+          "severity": "HIGH",
+          "description": "",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 8 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 2",
+          "severity": "MEDIUM",
+          "description": "policy 2 for testing",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 2 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 5",
+          "severity": "MEDIUM",
+          "description": "policy 5 for testing",
+          "violation": [
+            "testing alert violation message",
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 5 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 6",
+          "severity": "MEDIUM",
+          "description": "policy 6 for testing",
+          "violation": [
+            "testing alert violation message"
+          ],
+          "remediation": "policy 6 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 7",
+          "severity": "LOW",
+          "description": "policy 7 for testing",
+          "violation": [
+            "testing alert violation message"
+          ],
+          "remediation": "policy 7 for testing",
+          "failingCheck": false
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "CRITICAL": 1,
+    "HIGH": 1,
+    "LOW": 1,
+    "MEDIUM": 3,
+    "TOTAL": 6
+  }
+}

@@ -13,6 +13,7 @@ import (
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -35,7 +36,8 @@ func Singleton() GarbageCollector {
 			networkFlowsDataStore.Singleton(),
 			configDatastore.Singleton(),
 			imageComponentDatastore.Singleton(),
-			riskDataStore.Singleton())
+			riskDataStore.Singleton(),
+			vulnReqDataStore.Singleton())
 	})
 	return gc
 }

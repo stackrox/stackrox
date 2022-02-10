@@ -9,7 +9,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // secretDataMap represents data stored as part of a secret.
@@ -21,7 +21,7 @@ var (
 	errUnexpectedGVK = errors.New("invoked reconciliation extension for object with unexpected GVK")
 )
 
-func wrapExtension(runFn func(ctx context.Context, central *platform.Central, k8sClient kubernetes.Interface, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, k8sClient kubernetes.Interface) extensions.ReconcileExtension {
+func wrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != platform.CentralGVK {
 			log.Error(errUnexpectedGVK, "unable to reconcile central TLS secrets", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
@@ -46,6 +46,6 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, k8
 				return true
 			})
 		}
-		return runFn(ctx, &c, k8sClient, wrappedStatusUpdater, log)
+		return runFn(ctx, &c, client, wrappedStatusUpdater, log)
 	}
 }

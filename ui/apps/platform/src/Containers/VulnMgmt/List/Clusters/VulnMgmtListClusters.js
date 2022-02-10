@@ -28,8 +28,6 @@ export const defaultClusterSort = [
     },
 ];
 
-// @TODO: remove this exception, once Clusters pagination is fixed on the back end
-// eslint-disable-next-line
 const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
         query getClusters(
@@ -124,7 +122,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 entityType: entityTypes.NAMESPACE,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
                 Cell: ({ original, pdf }) => (
                     <TableCountLink
                         entityType={entityTypes.NAMESPACE}
@@ -142,7 +139,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 entityType: entityTypes.DEPLOYMENT,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
                 Cell: ({ original, pdf }) => (
                     <TableCountLink
                         entityType={entityTypes.DEPLOYMENT}
@@ -160,7 +156,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 entityType: entityTypes.NODE,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
                 Cell: ({ original, pdf }) => (
                     <TableCountLink
                         entityType={entityTypes.NODE}
@@ -199,7 +194,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 Header: `Policy Status`,
                 headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
                 Cell: ({ original, pdf }) => {
                     const { policyStatus } = original;
                     const policyLabel = (

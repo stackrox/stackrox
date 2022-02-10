@@ -6,7 +6,7 @@ allowNonstandardReleaseName: true
 clusterName: test-cluster-for-lint
 {{- end }}
 ---
-[< if .RenderAsLegacyChart >]
+[< if .KubectlOutput >]
 _namespace: "stackrox"
 [< else >]
 _namespace: {{ default .Release.Namespace ._rox.meta.namespaceOverride }}

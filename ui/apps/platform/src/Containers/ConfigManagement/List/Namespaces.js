@@ -50,7 +50,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'metadata.clusterName',
-                  // eslint-disable-next-line
                   Cell: ({ original, pdf }) => {
                       const { metadata } = original;
                       if (!metadata) {
@@ -74,7 +73,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { policyStatus } = original;
                 return <StatusChip status={policyStatus.status} asString={pdf} />;
@@ -87,7 +85,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Secrets`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { numSecrets, metadata } = original;
                 if (!metadata || numSecrets === 0) {
@@ -113,7 +110,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Users & Groups`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { subjectsCount, metadata } = original;
                 if (!subjectsCount || subjectsCount === 0) {
@@ -138,7 +134,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { serviceAccountCount, metadata } = original;
                 if (!serviceAccountCount || serviceAccountCount === 0) {
@@ -166,7 +161,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Roles`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { k8sRoleCount, metadata } = original;
                 if (!k8sRoleCount || k8sRoleCount === 0) {

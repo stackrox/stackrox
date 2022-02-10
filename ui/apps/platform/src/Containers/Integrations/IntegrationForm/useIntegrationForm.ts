@@ -1,20 +1,15 @@
 import { useState } from 'react';
 import { useFormik, FormikProps } from 'formik';
-import { BaseSchema } from 'yup';
+import { Schema } from 'yup';
 
 import { IntegrationOptions } from 'services/IntegrationsService';
 
+import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useIntegrationActions from '../hooks/useIntegrationActions';
-
-export type FormResponseMessage = {
-    message: string;
-    isError: boolean;
-    responseData?: unknown;
-} | null;
 
 export type UseIntegrationForm<T> = {
     initialValues: T;
-    validationSchema: BaseSchema | (() => BaseSchema);
+    validationSchema: Schema | (() => Schema);
 };
 
 export type UseIntegrationFormResult<T> = FormikProps<T> & {
@@ -53,12 +48,21 @@ function useIntegrationForm<T>({
 
     const { submitForm } = formik;
 
+    function scrollToFormAlert() {
+        const alertEl = document.getElementById('form-message-alert');
+
+        if (alertEl) {
+            alertEl.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
     async function onTestHandler(optionsArg = {}) {
         setMessage(null);
         setIsTesting(true);
         setOptions(optionsArg);
         const response = await submitForm();
         setMessage(response);
+        scrollToFormAlert();
     }
 
     async function onSaveHandler(optionsArg = {}) {
@@ -67,6 +71,7 @@ function useIntegrationForm<T>({
         setOptions(optionsArg);
         const response = await submitForm();
         setMessage(response);
+        scrollToFormAlert();
     }
 
     return {

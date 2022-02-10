@@ -1,0 +1,25 @@
+defs: |
+  def container(obj; name):
+    obj.spec.template.spec.containers[] | select(.name == name);
+
+  def mainImageContainers:
+    [(container(.deployments.sensor; "sensor")),
+     (container(.daemonsets.collector; "compliance")),
+     (container(.deployments["admission-control"]; "admission-control"))][];
+
+  def assertMainIs(name):
+    mainImageContainers | assertThat(.image == name);
+
+  def assertCollectorIs(name):
+    container(.daemonsets.collector; "collector") | assertThat(.image == name);
+
+server:
+  visibleSchemas:
+  - kubernetes-1.20.2
+values:
+  clusterName: "testcluster"
+  imagePullSecrets:
+    allowNone: true
+  createSecrets: false
+  ca:
+    cert: "DUMMY CA CERTIFICATE"

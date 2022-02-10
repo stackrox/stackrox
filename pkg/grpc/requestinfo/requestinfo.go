@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -283,30 +284,39 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 			ri.VerifiedChains = ExtractCertInfoChains(r.TLS.VerifiedChains)
 		}
 		newCtx := context.WithValue(r.Context(), requestInfoKey{}, *ri)
-		logRequest(ri)
+		logRequest(r)
 		handler.ServeHTTP(w, r.WithContext(newCtx))
 	})
 }
 
-func logRequest(ri *RequestInfo) {
-	if !networkLog || ri.HTTPRequest == nil {
+func logRequest(request *http.Request) {
+	if !networkLog || request == nil {
 		return
 	}
 
-	forwardedBy := stringutils.OrDefault(ri.HTTPRequest.Headers.Get(forwardedKey), "N/A")
-	sourceIP := stringutils.FirstNonEmpty(ri.HTTPRequest.Headers.Get(remoteAddr), ri.HTTPRequest.Headers.Get(forwardedForKey), "N/A")
+	forwardedBy := stringutils.OrDefault(request.Header.Get(forwardedKey), "N/A")
+
+	// If using the XFF header, the real client IP is the first one in the csv value
+	xff := request.Header.Get(forwardedForKey)
+	clientIP := ""
+	if xff != "" {
+		ips := strings.Split(xff, ",")
+		clientIP = strings.TrimSpace(ips[0])
+	}
+	sourceIP := stringutils.FirstNonEmpty(clientIP, request.RemoteAddr, request.Header.Get(remoteAddr), "N/A")
 
 	var referer string
-	if ri.HTTPRequest.Headers.Get(refererKey) != "" {
+	if request.Header.Get(refererKey) != "" {
 		referer = v1.Audit_UI.String()
 	} else {
 		referer = v1.Audit_API.String()
 	}
-	destHost := stringutils.OrDefault(ri.HTTPRequest.Headers.Get(host), "N/A")
+	destHost := stringutils.FirstNonEmpty(request.Header.Get(host), request.Host, "N/A")
+	uri := stringutils.OrDefault(request.URL.RequestURI(), "N/A")
 
 	log.Infof(
-		"Source IP: %s, Method: %s, User Agent: %s, Forwarded: %s, Destination Host: %s, Referer: %s",
-		sourceIP, ri.HTTPRequest.Method, ri.HTTPRequest.Headers.Get(userAgent), forwardedBy, destHost, referer)
+		"Source IP: %s, Method: %s, User Agent: %s, Forwarded: %s, Destination Host: %s, Referer: %s, X-Forwarded-For: %s, URL: %s",
+		sourceIP, request.Method, request.Header.Get(userAgent), forwardedBy, destHost, referer, stringutils.OrDefault(xff, "N/A"), uri)
 }
 
 func sourceAddr(ctx context.Context) net.Addr {

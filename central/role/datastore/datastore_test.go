@@ -22,6 +22,17 @@ import (
 )
 
 func TestAllDefaultRolesAreCovered(t *testing.T) {
+	// Merge the roles for vuln risk management into the defaults
+	// TODO: Remove once the feature is released
+	for r, a := range vulnRiskManagementDefaultRoles {
+		defaultRoles[r] = a
+	}
+	// Merge the roles for vuln reporting into the defaults
+	// TODO: Remove once the feature is released
+	for r, a := range vulnReportingDefaultRoles {
+		defaultRoles[r] = a
+	}
+
 	assert.Len(t, defaultRoles, len(role.DefaultRoleNames))
 	for r := range defaultRoles {
 		assert.Contains(t, role.DefaultRoleNames, r)
@@ -80,10 +91,10 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Role)))
 
-	s.initDataStore(true)
+	s.initDataStore()
 }
 
-func (s *roleDataStoreTestSuite) initDataStore(useRolesWithPermissionSets bool) {
+func (s *roleDataStoreTestSuite) initDataStore() {
 	var err error
 	s.boltDB, err = bolthelper.NewTemp(s.T().Name() + "-bolt.db")
 	s.Require().NoError(err)
@@ -96,29 +107,15 @@ func (s *roleDataStoreTestSuite) initDataStore(useRolesWithPermissionSets bool) 
 	scopeStorage, err := simpleAccessScopeStore.New(s.rocksie)
 	s.Require().NoError(err)
 
-	s.dataStore = New(roleStorage, permissionSetStorage, scopeStorage, useRolesWithPermissionSets)
+	s.dataStore = New(roleStorage, permissionSetStorage, scopeStorage)
 
-	if useRolesWithPermissionSets {
-		// Insert a permission set, access scope, and role into the test DB.
-		s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
-		s.Require().NoError(permissionSetStorage.Upsert(s.existingPermissionSet))
-		s.existingScope = getValidAccessScope("scope.existing", "existing scope")
-		s.Require().NoError(scopeStorage.Upsert(s.existingScope))
-		s.existingRole = getValidRole("existing role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
-		s.Require().NoError(roleStorage.Upsert(s.existingRole))
-	} else {
-		s.existingRole = getValidRole("existing role", "", "")
-		s.existingRole.ResourceToAccess = map[string]storage.Access{
-			"Policy": storage.Access_READ_ACCESS,
-		}
-		s.Require().NoError(roleStorage.Upsert(s.existingRole))
-	}
-}
-
-// This will go away when we sunset old role format.
-func (s *roleDataStoreTestSuite) reInitDataStore(useRolesWithPermissionSets bool) {
-	s.TearDownTest()
-	s.initDataStore(useRolesWithPermissionSets)
+	// Insert a permission set, access scope, and role into the test DB.
+	s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
+	s.Require().NoError(permissionSetStorage.Upsert(s.existingPermissionSet))
+	s.existingScope = getValidAccessScope("scope.existing", "existing scope")
+	s.Require().NoError(scopeStorage.Upsert(s.existingScope))
+	s.existingRole = getValidRole("existing role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
+	s.Require().NoError(roleStorage.Upsert(s.existingRole))
 }
 
 func (s *roleDataStoreTestSuite) TearDownTest() {
@@ -558,7 +555,7 @@ func (s *roleDataStoreTestSuite) TestForeignKeyConstraints() {
 	s.NoError(s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId()))
 }
 
-func (s *roleDataStoreTestSuite) TestGetAndResolveRoleNewFormat() {
+func (s *roleDataStoreTestSuite) TestGetAndResolveRole() {
 	noScopeRole := getValidRole("role without a scope", s.existingPermissionSet.GetId(), "")
 
 	resolvedRole, err := s.dataStore.GetAndResolveRole(s.hasNoneCtx, s.existingRole.GetName())
@@ -582,23 +579,4 @@ func (s *roleDataStoreTestSuite) TestGetAndResolveRoleNewFormat() {
 	s.Equal(s.existingRole.GetName(), resolvedRole.GetRoleName())
 	s.Equal(s.existingPermissionSet.GetResourceToAccess(), resolvedRole.GetPermissions())
 	s.Equal(s.existingScope, resolvedRole.GetAccessScope())
-}
-
-func (s *roleDataStoreTestSuite) TestGetAndResolveRoleOldFormat() {
-	s.reInitDataStore(false)
-
-	misplacedRole := getValidRole("non-existing role", "", "")
-
-	resolvedRole, err := s.dataStore.GetAndResolveRole(s.hasNoneCtx, s.existingRole.GetName())
-	s.NoError(err, "no access for GetAndResolveRole() is not an error")
-	s.Nil(resolvedRole)
-
-	resolvedRole, err = s.dataStore.GetAndResolveRole(s.hasReadCtx, misplacedRole.GetName())
-	s.NoError(err, "no error even if the role does not exist")
-	s.Nil(resolvedRole)
-
-	resolvedRole, err = s.dataStore.GetAndResolveRole(s.hasReadCtx, s.existingRole.GetName())
-	s.NoError(err)
-	s.Equal(s.existingRole.GetName(), resolvedRole.GetRoleName())
-	s.Equal(s.existingRole.GetResourceToAccess(), resolvedRole.GetPermissions())
 }

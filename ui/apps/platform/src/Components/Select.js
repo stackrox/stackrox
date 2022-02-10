@@ -16,6 +16,7 @@ class Select extends Component {
         wrapperClass: PropTypes.string,
         triggerClass: PropTypes.string,
         value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        disabled: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -25,6 +26,7 @@ class Select extends Component {
         wrapperClass: '',
         triggerClass: '',
         value: '',
+        disabled: false,
     };
 
     onClick = (event) => {
@@ -39,7 +41,8 @@ class Select extends Component {
     };
 
     render() {
-        const { className, wrapperClass, triggerClass, options, placeholder, value } = this.props;
+        const { className, wrapperClass, triggerClass, options, placeholder, value, disabled } =
+            this.props;
         return (
             <div className={`flex relative ${wrapperClass}`}>
                 <select
@@ -47,6 +50,7 @@ class Select extends Component {
                     onChange={this.onClick}
                     value={value}
                     aria-label={placeholder}
+                    disabled={disabled}
                 >
                     {placeholder && (
                         <option value="" disabled>

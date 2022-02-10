@@ -24,7 +24,7 @@ var (
 	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap)
 )
 
-// searcherImpl provides an intermediary implementation layer focentral/serviceaccount/search/searcher_impl.gor AlertStorage.
+// searcherImpl provides an intermediary implementation layer for secrets
 type searcherImpl struct {
 	storage  store.Store
 	indexer  index.Indexer

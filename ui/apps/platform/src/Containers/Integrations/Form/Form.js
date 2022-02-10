@@ -240,7 +240,6 @@ class Form extends Component {
                                 ? field.helpFunction(initialValues)
                                 : field.help;
                             return (
-                                // eslint-disable-next-line jsx-a11y/label-has-for
                                 <div className="flex mt-4" htmlFor={field.key} key={field.label}>
                                     <div
                                         className={`mr-4 flex font-600 text-base-600 ${width} capitalize ${align}`}

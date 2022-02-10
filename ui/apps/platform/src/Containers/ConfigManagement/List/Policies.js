@@ -71,7 +71,6 @@ const tableColumns = [
         Header: `Policy Status`,
         headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        // eslint-disable-next-line
         Cell: ({ original, pdf }) => {
             const { policyStatus } = original;
             return <StatusChip status={policyStatus} asString={pdf} />;
@@ -83,7 +82,6 @@ const tableColumns = [
         Header: `Severity`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        // eslint-disable-next-line
         Cell: ({ original }) => {
             const { severity } = original;
             return <SeverityLabel severity={severity} />;

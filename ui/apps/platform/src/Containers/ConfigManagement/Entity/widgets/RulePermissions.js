@@ -34,7 +34,7 @@ const RulePermissions = ({ rules, ...rest }) => {
 };
 
 RulePermissions.propTypes = {
-    rules: PropTypes.arrayOf({}),
+    rules: PropTypes.arrayOf(PropTypes.shape({})),
 };
 
 RulePermissions.defaultProps = {

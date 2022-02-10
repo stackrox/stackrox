@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -100,7 +100,7 @@ func (c *clair) sendRequest(method string, values url.Values, pathSegments ...st
 		return nil, -1, err
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, resp.StatusCode, errors.Wrap(err, "Error reading Clair response body")
 	}

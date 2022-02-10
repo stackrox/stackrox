@@ -6,51 +6,37 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
-	reflect "reflect"
 )
 
-// MockGRPCMetrics is a mock of GRPCMetrics interface
+// MockGRPCMetrics is a mock of GRPCMetrics interface.
 type MockGRPCMetrics struct {
 	ctrl     *gomock.Controller
 	recorder *MockGRPCMetricsMockRecorder
 }
 
-// MockGRPCMetricsMockRecorder is the mock recorder for MockGRPCMetrics
+// MockGRPCMetricsMockRecorder is the mock recorder for MockGRPCMetrics.
 type MockGRPCMetricsMockRecorder struct {
 	mock *MockGRPCMetrics
 }
 
-// NewMockGRPCMetrics creates a new mock instance
+// NewMockGRPCMetrics creates a new mock instance.
 func NewMockGRPCMetrics(ctrl *gomock.Controller) *MockGRPCMetrics {
 	mock := &MockGRPCMetrics{ctrl: ctrl}
 	mock.recorder = &MockGRPCMetricsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockGRPCMetrics) EXPECT() *MockGRPCMetricsMockRecorder {
 	return m.recorder
 }
 
-// UnaryMonitoringInterceptor mocks base method
-func (m *MockGRPCMetrics) UnaryMonitoringInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnaryMonitoringInterceptor", ctx, req, info, handler)
-	ret0, _ := ret[0].(interface{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UnaryMonitoringInterceptor indicates an expected call of UnaryMonitoringInterceptor
-func (mr *MockGRPCMetricsMockRecorder) UnaryMonitoringInterceptor(ctx, req, info, handler interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnaryMonitoringInterceptor", reflect.TypeOf((*MockGRPCMetrics)(nil).UnaryMonitoringInterceptor), ctx, req, info, handler)
-}
-
-// GetMetrics mocks base method
+// GetMetrics mocks base method.
 func (m *MockGRPCMetrics) GetMetrics() (map[string]map[codes.Code]int64, map[string]map[string]int64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMetrics")
@@ -59,8 +45,23 @@ func (m *MockGRPCMetrics) GetMetrics() (map[string]map[codes.Code]int64, map[str
 	return ret0, ret1
 }
 
-// GetMetrics indicates an expected call of GetMetrics
+// GetMetrics indicates an expected call of GetMetrics.
 func (mr *MockGRPCMetricsMockRecorder) GetMetrics() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetrics", reflect.TypeOf((*MockGRPCMetrics)(nil).GetMetrics))
+}
+
+// UnaryMonitoringInterceptor mocks base method.
+func (m *MockGRPCMetrics) UnaryMonitoringInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnaryMonitoringInterceptor", ctx, req, info, handler)
+	ret0, _ := ret[0].(interface{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UnaryMonitoringInterceptor indicates an expected call of UnaryMonitoringInterceptor.
+func (mr *MockGRPCMetricsMockRecorder) UnaryMonitoringInterceptor(ctx, req, info, handler interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnaryMonitoringInterceptor", reflect.TypeOf((*MockGRPCMetrics)(nil).UnaryMonitoringInterceptor), ctx, req, info, handler)
 }

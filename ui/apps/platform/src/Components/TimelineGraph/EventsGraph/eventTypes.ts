@@ -10,8 +10,3 @@ export type Event = {
     timestamp: string;
     inBaseline?: boolean;
 };
-
-export type ClusteredEvent = {
-    size: number;
-    numEvents: number;
-};

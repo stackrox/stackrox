@@ -1,6 +1,6 @@
 # Working with helm
 
-The currently maintained helm charts consists of into the `stackrox-central-services`
+The currently maintained helm charts consists of the `stackrox-central-services`
 and `stackrox-secured-cluster-services` charts.
 
 Helm charts are distributed by `https://charts.stackrox.io` and [stackrox/helm-charts](https://github.com/stackrox/helm-charts).
@@ -25,9 +25,18 @@ Installs:
 
 ## Developing helm charts
 
-To extend templating to, e.g., `Chart.yaml`, which in a normal helm chart cannot be templated `.htpl` files are used.
+### Meta templating
+
+To extend templating to, e.g., `Chart.yaml`, which in a normal helm chart cannot be templated `.htpl` files are used, which we call "meta templating".
 The main difference is that `.htpl` files are rendered before loading the files as a Helm chart
-(i.e., the rendered `.htpl` file is loaded for the helm chart).
+(i.e., the rendered `.htpl` file is loaded for the helm chart). This pre-rendering takes place whenever the Helm charts are instantiated, e.g. during use by the operator or via roxctl.
+
+To render files at the meta templating stage the `roxctl helm output` commands are used.
+
+Meta templating does the following:
+
+ - Merge files from `./shared/*` into both charts
+ - Renders `.htpl` files based on passed values, see `pkg/helm/charts/meta.go`
 
 ### Workflow
 
@@ -39,7 +48,7 @@ $ cdrox
 
 # Receive the rendered helm chart from roxctl
 # To use a custom template path use the `--debug-path=</path/to/templates>` argument.
-$ ./bin/darwin/roxctl helm output central-services --debug
+$ ./bin/darwin/roxctl helm output central-services --image-defaults=development_build --debug
 
 # Install the helm chart
 $ helm upgrade --install -n stackrox stackrox-central-services --create-namespace  ./stackrox-central-services-chart \

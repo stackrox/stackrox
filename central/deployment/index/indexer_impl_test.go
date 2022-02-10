@@ -619,7 +619,7 @@ func TestMapQueries(t *testing.T) {
 		key, value  string
 		expectedIDs []string
 	}{
-		//Key and value must exist
+		// Key and value must exist
 		{
 			key:         "h1",
 			value:       "h2",
@@ -631,13 +631,13 @@ func TestMapQueries(t *testing.T) {
 			value:       "!h2",
 			expectedIDs: []string{"d4"},
 		},
-		//Key cannot have a value that's not h1 and a value of h2
+		// Key cannot have a value that's not h1 and a value of h2
 		{
 			key:         "!h1",
 			value:       "h2",
 			expectedIDs: []string{"d2"},
 		},
-		//Key cannot have any values that aren't h1 -> h2, also check if value is nil
+		// Key cannot have any values that aren't h1 -> h2, also check if value is nil
 		{
 			key:         "!h1",
 			value:       "!h2",

@@ -339,7 +339,7 @@ func (suite *UpgradeCtrlTestSuite) TestUpgradeExecutionErrorAndRollback() {
 	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK)
 	suite.upgraderCheckInAndRespMustBe(processID, sensorupgrader.RollBackWorkflow, sensorupgrader.ExecuteStage, sensorupgrader.CleanupWorkflow)
 
-	//Now, an old sensor checks in.
+	// Now, an old sensor checks in.
 	suite.registerConnectionFromNonAncientSensorVersion(fakeOldVersion)
 	time.Sleep(rollBackSucessPeriod / 3)
 	suite.upgradeStateMustBe(storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK)

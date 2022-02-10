@@ -17,8 +17,9 @@ metadata:
     createdAt: '1999-12-31T23:59:59Z'
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the
       services necessary to secure each of your OpenShift and Kubernetes clusters.
+    operatorframework.io/suggested-namespace: rhacs-operator
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware"]'
-    operators.operatorframework.io/builder: operator-sdk-v1.8.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.13.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     support: Red Hat
   name: rhacs-operator.v0.0.1
@@ -690,6 +691,7 @@ spec:
                 ports:
                 - containerPort: 8443
                   name: https
+                  protocol: TCP
                 resources: {}
               - args:
                 - --health-probe-bind-address=:8081
@@ -702,6 +704,7 @@ spec:
                 - name: RELATED_IMAGE_COLLECTOR_SLIM
                 - name: RELATED_IMAGE_COLLECTOR_FULL
                 - name: RELATED_IMAGE_ROXCTL
+                - name: RELATED_IMAGE_DOCS
                 image: docker.io/stackrox/stackrox-operator:0.0.1
                 livenessProbe:
                   httpGet:
@@ -722,7 +725,7 @@ spec:
                   periodSeconds: 10
                 resources:
                   limits:
-                    cpu: 100m
+                    cpu: 200m
                     memory: 1Gi
                   requests:
                     cpu: 100m
@@ -810,7 +813,6 @@ spec:
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
-    - v1beta1
     containerPort: 443
     deploymentName: rhacs-operator-controller-manager
     failurePolicy: Fail

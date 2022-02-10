@@ -780,7 +780,8 @@
         "EXTERNAL",
         "NODE",
         "INTERNAL",
-        "HOST"
+        "HOST",
+        "ROUTE"
       ],
       "default": "UNSET"
     },

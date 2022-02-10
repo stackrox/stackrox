@@ -72,7 +72,8 @@ func FilterSlice(ctx context.Context, sc ScopeChecker, objs []interface{}, scope
 	}
 
 	f := NewObjectFilter(sc)
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		f.Add(obj, scopePredFunc(obj))
 	}
 	return f.GetAllowed(ctx)

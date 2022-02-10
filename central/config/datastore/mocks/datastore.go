@@ -6,35 +6,36 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// GetConfig mocks base method
+// GetConfig mocks base method.
 func (m *MockDataStore) GetConfig(arg0 context.Context) (*storage.Config, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetConfig", arg0)
@@ -43,13 +44,13 @@ func (m *MockDataStore) GetConfig(arg0 context.Context) (*storage.Config, error)
 	return ret0, ret1
 }
 
-// GetConfig indicates an expected call of GetConfig
+// GetConfig indicates an expected call of GetConfig.
 func (mr *MockDataStoreMockRecorder) GetConfig(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDataStore)(nil).GetConfig), arg0)
 }
 
-// UpsertConfig mocks base method
+// UpsertConfig mocks base method.
 func (m *MockDataStore) UpsertConfig(arg0 context.Context, arg1 *storage.Config) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertConfig", arg0, arg1)
@@ -57,7 +58,7 @@ func (m *MockDataStore) UpsertConfig(arg0 context.Context, arg1 *storage.Config)
 	return ret0
 }
 
-// UpsertConfig indicates an expected call of UpsertConfig
+// UpsertConfig indicates an expected call of UpsertConfig.
 func (mr *MockDataStoreMockRecorder) UpsertConfig(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertConfig), arg0, arg1)

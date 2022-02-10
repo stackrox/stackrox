@@ -2,8 +2,8 @@ package docs
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ func Swagger() http.Handler {
 }
 
 func swaggerForRequest(req *http.Request) ([]byte, error) {
-	b, err := ioutil.ReadFile("/stackrox/static-data/docs/api/v1/swagger.json")
+	b, err := os.ReadFile("/stackrox/static-data/docs/api/v1/swagger.json")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load swagger file")
 	}

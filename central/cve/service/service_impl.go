@@ -10,12 +10,15 @@ import (
 	"github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
+	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
@@ -25,17 +28,30 @@ import (
 
 var (
 	// TODO: Change the resource to CVE once SAC is in place
-	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
-			"/v1.CVEService/SuppressCVEs",
-			"/v1.CVEService/UnsuppressCVEs",
-		},
-	})
+	authorizer = func() authz.Authorizer {
+		if features.VulnRiskManagement.Enabled() {
+			return perrpc.FromMap(map[authz.Authorizer][]string{
+				and.And(
+					user.With(permissions.Modify(resources.VulnerabilityManagementRequests)),
+					user.With(permissions.Modify(resources.VulnerabilityManagementApprovals))): {
+					"/v1.CVEService/SuppressCVEs",
+					"/v1.CVEService/UnsuppressCVEs",
+				},
+			})
+		}
+		return perrpc.FromMap(map[authz.Authorizer][]string{
+			user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
+				"/v1.CVEService/SuppressCVEs",
+				"/v1.CVEService/UnsuppressCVEs",
+			},
+		})
+	}()
 )
 
 // serviceImpl provides APIs for cves.
 type serviceImpl struct {
 	cves        datastore.DataStore
+	vulnReqMgr  vulnReqMgr.Manager
 	indexQ      queue.WaitableQueue
 	reprocessor reprocessor.Loop
 }
@@ -57,21 +73,26 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // SuppressCVE suppresses cves for specific duration or indefinitely.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
-	activation := types.TimestampNow()
+	createdAt := types.TimestampNow()
 	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
 		return nil, err
 	}
 
-	if err := s.cves.Suppress(ctx, activation, request.GetDuration(), request.GetIds()...); err != nil {
+	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetIds()...); err != nil {
 		return nil, err
 	}
 
 	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
 		return nil, err
 	}
-
-	s.reprocessDeployments()
-
+	if features.VulnRiskManagement.Enabled() {
+		// This handles updating image-cve edges and reprocessing affected deployments.
+		if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, suppressCVEReqToVulnReq(request, createdAt)); err != nil {
+			log.Error(err)
+		}
+	} else {
+		go s.reprocessDeployments()
+	}
 	return &v1.Empty{}, nil
 }
 
@@ -88,9 +109,14 @@ func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.Unsuppress
 	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
 		return nil, err
 	}
-
-	s.reprocessDeployments()
-
+	if features.VulnRiskManagement.Enabled() {
+		// This handles updating image-cve edges and reprocessing affected deployments.
+		if err := s.vulnReqMgr.UnSnoozeVulnerabilityOnRequest(ctx, unSuppressCVEReqToVulnReq(request)); err != nil {
+			log.Error(err)
+		}
+	} else {
+		go s.reprocessDeployments()
+	}
 	return &v1.Empty{}, nil
 }
 

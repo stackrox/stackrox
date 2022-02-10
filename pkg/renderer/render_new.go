@@ -6,9 +6,9 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/zip"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -70,8 +70,8 @@ func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles [
 	return renderedFiles, nil
 }
 
-func renderNewBasicFiles(c Config, mode mode) ([]*zip.File, error) {
-	helmImage := image.GetDefaultImage()
+func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
+	helmImage := c.HelmImage
 	valuesFiles, err := renderNewHelmValues(c)
 	if err != nil {
 		return nil, errors.Wrap(err, "rendering new helm values")
@@ -88,8 +88,10 @@ func renderNewBasicFiles(c Config, mode mode) ([]*zip.File, error) {
 		return nil, errors.Wrap(err, "failed to obtain central services chart template")
 	}
 
-	metaVals := charts.DefaultMetaValues()
-	metaVals["RenderMode"] = mode.String()
+	metaVals := charts.GetMetaValuesForFlavor(imageFlavor)
+	metaVals.RenderMode = mode.String()
+	// Modify metaVals depending on deployment format:
+	metaVals.KubectlOutput = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL
 
 	chartFiles, err := chTpl.InstantiateRaw(metaVals)
 	if err != nil {
@@ -197,10 +199,10 @@ func renderAuxiliaryFiles(c Config, mode mode) ([]*zip.File, error) {
 	return auxFiles, nil
 }
 
-func renderNew(c Config, mode mode) ([]*zip.File, error) {
+func renderNew(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
 	var allFiles []*zip.File
 
-	basicFiles, err := renderNewBasicFiles(c, mode)
+	basicFiles, err := renderNewBasicFiles(c, mode, imageFlavor)
 	if err != nil {
 		return nil, errors.Wrap(err, "rendering basic output files")
 	}

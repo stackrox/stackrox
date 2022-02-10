@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"hash/crc32"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -174,7 +173,7 @@ func (m *manager) getFileInfo(file string) (*v1.ProbeUploadManifest_File, error)
 	}
 
 	crc32File := filepath.Join(dataDir, crc32FileName)
-	crc32Data, err := ioutil.ReadFile(crc32File)
+	crc32Data, err := os.ReadFile(crc32File)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +232,7 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 		return errors.Wrap(err, "failed to create directory for module version")
 	}
 
-	tempDataDir, err := ioutil.TempDir(modVerDir, tempUploadPrefix)
+	tempDataDir, err := os.MkdirTemp(modVerDir, tempUploadPrefix)
 	if err != nil {
 		return errors.Wrap(err, "failed to create temporary directory for uploaded data")
 	}
@@ -275,7 +274,7 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 
 	crc32FileName := filepath.Join(tempDataDir, crc32FileName)
 	checksumBytes := binenc.BigEndian.EncodeUint32(crc32Sum)
-	if err := ioutil.WriteFile(crc32FileName, checksumBytes, 0600); err != nil {
+	if err := os.WriteFile(crc32FileName, checksumBytes, 0600); err != nil {
 		return errors.Wrap(err, "could not write probe checksum file")
 	}
 

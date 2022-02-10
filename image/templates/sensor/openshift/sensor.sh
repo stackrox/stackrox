@@ -40,7 +40,7 @@ ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
 sleep 5
 
 if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox &>/dev/null; then
-  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.ImageRegistry}}")"
+  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{ required "" .MainRegistry }}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
   ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
 apiVersion: v1
@@ -59,7 +59,7 @@ fi
 ${KUBE_COMMAND} secrets link serviceaccount/sensor secrets/stackrox --for=pull
 
 if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
-  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"
+  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{ required "" .CollectorRegistry }}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
   ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
 apiVersion: v1

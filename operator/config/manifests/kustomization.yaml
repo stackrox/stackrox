@@ -4,7 +4,7 @@ resources:
 - bases/rhacs-operator.clusterserviceversion.yaml
 - ../default
 - ../samples
-- ../scorecard
+- ../scorecard-versioned
 
 # These patches remove the unnecessary "cert" volume and its manager container volumeMount.
 patchesJson6902:

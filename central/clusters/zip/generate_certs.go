@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -42,7 +41,7 @@ func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
 			continue
 		}
 		fullPath := path.Join(tlsconfig.AdditionalCACertsDirPath(), fileInfo.Name())
-		contents, err := ioutil.ReadFile(fullPath)
+		contents, err := os.ReadFile(fullPath)
 		if err != nil {
 			return nil, err
 		}

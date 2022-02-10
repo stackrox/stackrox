@@ -49,7 +49,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
-                  // eslint-disable-next-line
                   Cell: ({ original, pdf }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
@@ -72,7 +71,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'namespace',
-                  // eslint-disable-next-line
                   Cell: ({ original, pdf }) => {
                       const { namespace, namespaceId, id } = original;
                       const url = URLService.getURL(match, location)
@@ -92,7 +90,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { policyStatus } = original;
                 return <StatusChip status={policyStatus} asString={pdf} />;
@@ -105,7 +102,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Images`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { imageCount, id } = original;
                 if (imageCount === 0) {
@@ -129,7 +125,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Secrets`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { secretCount, id } = original;
                 if (secretCount === 0) {
@@ -156,7 +151,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'serviceAccount',
-                  // eslint-disable-next-line
                   Cell: ({ original, pdf }) => {
                       const { serviceAccount, serviceAccountID, id } = original;
                       const url = URLService.getURL(match, location)

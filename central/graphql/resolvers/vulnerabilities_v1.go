@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -462,15 +461,11 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, q
 }
 
 // ActiveState shows the activeness of a vulnerability in a deployment context.
-func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error) {
+func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ RawQuery) (*activeStateResolver, error) {
 	if !features.ActiveVulnManagement.Enabled() {
 		return nil, nil
 	}
-	deploymentID := deploymentctx.FromContext(ctx)
-	if deploymentID == "" {
-		deploymentID = deploymentctx.FromContext(evr.ctx)
-	}
-
+	deploymentID := getDeploymentScope(nil, ctx, evr.ctx)
 	if deploymentID == "" {
 		return nil, nil
 	}
@@ -498,6 +493,11 @@ func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, args 
 	return &activeStateResolver{root: evr.root, state: state, activeComponentIDs: ids}, nil
 }
 
+// VulnerabilityState return the effective state of this vulnerability (observed, deferred or marked as false positive).
+func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(ctx context.Context) string {
+	return evr.data.GetState().String()
+}
+
 func (evr *EmbeddedVulnerabilityResolver) getDeploymentBaseQuery(ctx context.Context) (*v1.Query, error) {
 	imageQuery := evr.vulnQuery()
 	results, err := evr.root.ImageDataStore.Search(ctx, imageQuery)
@@ -515,4 +515,9 @@ func (evr *EmbeddedVulnerabilityResolver) vulnQuery() *v1.Query {
 
 func (evr *EmbeddedVulnerabilityResolver) vulnRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).Query()
+}
+
+// EffectiveVulnerabilityRequest is not implemented for v1.
+func (evr *EmbeddedVulnerabilityResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
+	return nil, nil
 }

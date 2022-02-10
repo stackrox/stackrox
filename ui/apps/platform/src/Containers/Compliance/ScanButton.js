@@ -28,6 +28,27 @@ const areRunsFinished = (data) => {
 };
 
 class ScanButton extends React.Component {
+    static propTypes = {
+        className: PropTypes.string,
+        text: PropTypes.string.isRequired,
+        textCondensed: PropTypes.string,
+        textClass: PropTypes.string,
+        clusterId: PropTypes.string,
+        standardId: PropTypes.string,
+        loaderSize: PropTypes.number,
+        addToast: PropTypes.func.isRequired,
+        removeToast: PropTypes.func.isRequired,
+    };
+
+    static defaultProps = {
+        className: 'btn btn-base h-10',
+        clusterId: '*',
+        textClass: null,
+        textCondensed: null,
+        standardId: '*',
+        loaderSize: 20,
+    };
+
     constructor(props) {
         super(props);
 
@@ -119,28 +140,6 @@ class ScanButton extends React.Component {
         );
     }
 }
-
-ScanButton.propTypes = {
-    className: PropTypes.string,
-    text: PropTypes.string.isRequired,
-    textCondensed: PropTypes.string,
-    textClass: PropTypes.string,
-    clusterId: PropTypes.string,
-    standardId: PropTypes.string,
-    loaderSize: PropTypes.number,
-
-    addToast: PropTypes.func.isRequired,
-    removeToast: PropTypes.func.isRequired,
-};
-
-ScanButton.defaultProps = {
-    className: 'btn btn-base h-10',
-    clusterId: '*',
-    textClass: null,
-    textCondensed: null,
-    standardId: '*',
-    loaderSize: 20,
-};
 
 const mapDispatchToProps = {
     addToast: notificationActions.addNotification,

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -57,15 +56,7 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 		d.handler.hierarchy.Remove(string(metaObj.GetUID()))
 		return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 	}
-
-	parents := make([]string, 0, len(metaObj.GetOwnerReferences()))
-	for _, ref := range metaObj.GetOwnerReferences() {
-		if ref.UID != "" && resources.IsTrackedOwnerReference(ref) {
-			// Only bother adding parents we track.
-			parents = append(parents, string(ref.UID))
-		}
-	}
-	d.handler.hierarchy.Add(parents, string(metaObj.GetUID()))
+	d.handler.hierarchy.Add(metaObj)
 	return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 }
 
@@ -75,7 +66,7 @@ type deploymentHandler struct {
 	serviceStore           *serviceStore
 	deploymentStore        *DeploymentStore
 	podStore               *PodStore
-	endpointManager        *endpointManager
+	endpointManager        endpointManager
 	namespaceStore         *namespaceStore
 	processFilter          filter.Filter
 	config                 config.Handler
@@ -90,7 +81,7 @@ type deploymentHandler struct {
 
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
-	endpointManager *endpointManager, namespaceStore *namespaceStore, rbac rbac.Store, podLister v1listers.PodLister,
+	endpointManager endpointManager, namespaceStore *namespaceStore, rbac rbac.Store, podLister v1listers.PodLister,
 	processFilter filter.Filter, config config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:              podLister,
@@ -257,8 +248,6 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 
 	d.podStore.addOrUpdatePod(p)
 	d.processFilter.UpdateByGivenContainers(p.DeploymentId, d.podStore.getContainersForDeployment(p.Namespace, p.DeploymentId))
-
-	log.Debugf("Action: %+v Pod: %+v", action, p)
 
 	return &central.SensorEvent{
 		Id:     p.GetId(),

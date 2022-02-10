@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -25,17 +26,19 @@ var (
 
 // DatastoreBasedIntegrationHealthReporter updates the integration health in the central database
 type DatastoreBasedIntegrationHealthReporter struct {
-	healthUpdates        chan *storage.IntegrationHealth
+	healthUpdates chan *storage.IntegrationHealth
+	healthRemoval chan string
+
 	stopSig              concurrency.Signal
 	latestDBTimestampMap map[string]*types.Timestamp
-
-	integrationDS datastore.DataStore
+	integrationDS        datastore.DataStore
 }
 
 // New returns a new datastore based integration health reporter
 func New(datastore datastore.DataStore) *DatastoreBasedIntegrationHealthReporter {
 	d := &DatastoreBasedIntegrationHealthReporter{
 		healthUpdates:        make(chan *storage.IntegrationHealth, 5),
+		healthRemoval:        make(chan string, 5),
 		stopSig:              concurrency.NewSignal(),
 		latestDBTimestampMap: make(map[string]*types.Timestamp),
 		integrationDS:        datastore,
@@ -44,7 +47,7 @@ func New(datastore datastore.DataStore) *DatastoreBasedIntegrationHealthReporter
 	return d
 }
 
-//Register registers the integration health for an integration, if it doesn't exist
+// Register registers the integration health for an integration, if it doesn't exist
 func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ storage.IntegrationHealth_Type) error {
 	_, exists, err := d.integrationDS.GetIntegrationHealth(allAccessCtx, id)
 	if err != nil {
@@ -73,11 +76,15 @@ func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ 
 
 // RemoveIntegrationHealth removes the health entry corresponding to the integration
 func (d *DatastoreBasedIntegrationHealthReporter) RemoveIntegrationHealth(id string) error {
-	err := d.integrationDS.RemoveIntegrationHealth(allAccessCtx, id)
-	if err == nil {
-		delete(d.latestDBTimestampMap, id)
+	if err := d.integrationDS.RemoveIntegrationHealth(allAccessCtx, id); err != nil {
+		return errors.Wrapf(err, "Error removing health for integration %s", id)
 	}
-	return err
+	select {
+	case d.healthRemoval <- id:
+		return nil
+	case <-d.stopSig.Done():
+		return nil
+	}
 }
 
 // UpdateIntegrationHealthAsync updates the health of the integration
@@ -113,6 +120,9 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
 			}
+		case id := <-d.healthRemoval:
+			delete(d.latestDBTimestampMap, id)
+
 		case <-d.stopSig.Done():
 			return
 		}

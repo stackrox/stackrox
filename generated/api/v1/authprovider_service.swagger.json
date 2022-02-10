@@ -239,6 +239,28 @@
         ]
       }
     },
+    "/v1/availableAuthProviders": {
+      "get": {
+        "operationId": "AuthProviderService_ListAvailableProviderTypes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AvailableProviderTypesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "AuthProviderService"
+        ]
+      }
+    },
     "/v1/login/authproviders": {
       "get": {
         "operationId": "AuthProviderService_GetLoginAuthProviders",
@@ -263,6 +285,20 @@
     }
   },
   "definitions": {
+    "AvailableProviderTypesResponseAuthProviderType": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "suggestedAttributes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "GetLoginAuthProvidersResponseLoginAuthProvider": {
       "type": "object",
       "properties": {
@@ -481,6 +517,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1UserAttribute"
+          }
+        }
+      }
+    },
+    "v1AvailableProviderTypesResponse": {
+      "type": "object",
+      "properties": {
+        "authProviderTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AvailableProviderTypesResponseAuthProviderType"
           }
         }
       }

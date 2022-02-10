@@ -3,7 +3,6 @@ package tokens
 import (
 	"encoding/json"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
@@ -19,9 +18,6 @@ type ExternalUserClaim struct {
 
 // RoxClaims are the claims used for authentication by the StackRox Kubernetes security platform.
 type RoxClaims struct {
-	// Permissions represents the claim that the user identified by the token has the given permissions. Setting this
-	// makes the token a pure by-value token.
-	Permissions []*v1.Permission `json:"permissions,omitempty"`
 	// Role represents the claim that the user identified by the token has the given role.
 	// Deprecated: Use RoleNames instead.
 	RoleName string `json:"role,omitempty"`

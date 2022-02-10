@@ -2,7 +2,6 @@ package backup
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestGetFilePath(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.Remove(tempDir)

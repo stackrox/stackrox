@@ -77,7 +77,7 @@ type ComponentResolver interface {
 
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
-	ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error)
+	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
 	NodeCount(ctx context.Context, args RawQuery) (int32, error)

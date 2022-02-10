@@ -70,11 +70,11 @@ func convertMany(cves []*storage.ImageComponentEdge, results []search.Result) []
 	return outputResults
 }
 
-func convertOne(cve *storage.ImageComponentEdge, result *search.Result) *v1.SearchResult {
+func convertOne(edge *storage.ImageComponentEdge, result *search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_IMAGE_COMPONENT_EDGE,
-		Id:             cve.GetId(),
-		Name:           cve.GetId(),
+		Id:             edge.GetId(),
+		Name:           edge.GetId(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}

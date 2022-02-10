@@ -12,18 +12,19 @@ function closeThisWindow() {
     window.close();
 }
 
-function getMessageBody(response) {
+function getMessage(response) {
     const messageClass = 'flex flex-col items-left w-full';
     const headingClass = 'font-700 mb-2';
 
-    if (!response?.userAttributes) {
-        return (
+    if (response?.error || !response?.userAttributes || !response?.roles) {
+        const body = (
             <div className={messageClass}>
                 <h1 className={headingClass}>Authentication error</h1>
                 <p> {upperFirst(response?.error) || 'An unrecognized error occurred.'}</p>
                 {response?.error_description && <p>{response.error_description}</p>}
             </div>
         );
+        return { messageBody: body, messageType: 'error' };
     }
 
     const displayAttributes = response.userAttributes.map((curr) => {
@@ -35,6 +36,15 @@ function getMessageBody(response) {
         );
     });
 
+    // None is likely already filtered by the backend but we keep this code to be robust.
+    const displayRoles = response.roles
+        .filter((role) => {
+            return role.name !== `None`;
+        })
+        .map((role) => {
+            return <li key={role.name}>{role.name}</li>;
+        });
+
     const content = (
         <>
             <p className="pb-2 mb-2 border-b border-success-700">
@@ -43,17 +53,34 @@ function getMessageBody(response) {
                 </span>{' '}
                 <span aria-labelledby="user-id-label">{response?.userID}</span>
             </p>
-            <h2 className="italic">User Attributes:</h2>
-            <ul className="list-none">{displayAttributes}</ul>
+            <p className="pb-2 mb-2 border-b border-success-700">
+                <h2 className="italic">User Attributes:</h2>
+                <ul className="list-none">{displayAttributes}</ul>
+            </p>
+            <h2 className="italic">User Roles:</h2>
+            <ul className="list-none">{displayRoles}</ul>
         </>
     );
 
-    return (
+    if (displayRoles.length === 0) {
+        const body = (
+            <div className={messageClass}>
+                <h1 className={headingClass}>
+                    WARNING: Under the current configuration, the user would not be assigned any
+                    roles and therefore would be unable to log in.
+                </h1>
+                <>{content}</>
+            </div>
+        );
+        return { messageBody: body, messageType: 'warn' };
+    }
+    const body = (
         <div className={messageClass}>
             <h1 className={headingClass}>Authentication successful</h1>
             <>{content}</>
         </div>
     );
+    return { messageBody: body, messageType: 'success' };
 }
 
 function TestLoginResultsPage({ authProviderTestResults }) {
@@ -61,8 +88,7 @@ function TestLoginResultsPage({ authProviderTestResults }) {
         closeThisWindow();
     }
 
-    const messageType = authProviderTestResults?.userAttributes ? 'success' : 'error';
-    const messageBody = getMessageBody(authProviderTestResults);
+    const { messageBody, messageType } = getMessage(authProviderTestResults);
 
     return (
         <AppWrapper>
@@ -95,6 +121,7 @@ TestLoginResultsPage.propTypes = {
     authProviderTestResults: PropTypes.shape({
         userID: PropTypes.string,
         userAttributes: PropTypes.shape({}),
+        roles: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })),
     }),
 };
 

@@ -18,12 +18,13 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
             new Deployment()
                 .setName (APACHEDEPLOYMENT)
                 .setReplicas(REPLICACOUNT)
-                .setImage ("quay.io/cgorman1/qa:apache-server")
+                .setImage ("quay.io/rhacs-eng/qa:apache-server")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (MONGODEPLOYMENT)
                 .setReplicas(REPLICACOUNT)
-                .setImage ("quay.io/cgorman1/qa:mongo-dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
+                .setImage ("quay.io/rhacs-eng/qa" +
+                    ":mongo-dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
                 .addLabel ("app", "test" ),
      ]
 

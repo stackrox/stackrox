@@ -2,10 +2,12 @@ package effectiveaccessscope
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // ScopeTreeCompacted is a compacted, JSON-ready representation of a ScopeTree.
@@ -50,4 +52,21 @@ func (c ScopeTreeCompacted) ToJSON() (string, error) {
 		return "", errors.Wrap(err, "converting compacted scope tree to JSON")
 	}
 	return string(jsonified), nil
+}
+
+// ToScopeQueries converts ScopeTreeCompacted to multiple scope query strings, one for each cluster or cluster/namespace.
+func (c ScopeTreeCompacted) ToScopeQueries() []string {
+	scopeQueries := make([]string, 0, len(c))
+	for cluster, namespaces := range c {
+		if len(namespaces) == 1 && namespaces[0] == "*" {
+			scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%s", search.Cluster.String(), cluster))
+			continue
+		}
+		for _, ns := range namespaces {
+			scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%s+%s:%s",
+				search.Cluster.String(), cluster,
+				search.Namespace.String(), ns))
+		}
+	}
+	return scopeQueries
 }

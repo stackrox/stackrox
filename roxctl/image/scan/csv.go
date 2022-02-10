@@ -3,7 +3,7 @@ package scan
 import (
 	"encoding/csv"
 	"fmt"
-	"os"
+	"io"
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -16,8 +16,8 @@ type sortRecord struct {
 }
 
 // PrintCSV prints image scan result in csv format
-func PrintCSV(imageResult *storage.Image) error {
-	w := csv.NewWriter(os.Stdout)
+func PrintCSV(imageResult *storage.Image, out io.Writer) error {
+	w := csv.NewWriter(out)
 	w.UseCRLF = true
 
 	defer w.Flush()

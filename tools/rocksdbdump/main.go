@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -58,6 +57,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"complianceoperatorprofiles":           (*storage.ComplianceOperatorProfile)(nil),
 	"complianceoperatorrules":              (*storage.ComplianceOperatorRule)(nil),
 	"complianceoperatorscansettingbinding": (*storage.ComplianceOperatorScanSettingBinding)(nil),
+	"complianceoperatorscans":              (*storage.ComplianceOperatorScan)(nil),
 	"deployments":                          (*storage.Deployment)(nil),
 	"deployments_list":                     (*storage.ListDeployment)(nil),
 	"imageBucket":                          (*storage.Image)(nil),
@@ -81,6 +81,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"processWhitelistResults":              (*storage.ProcessBaselineResults)(nil),
 	"processWhitelists2":                   (*storage.ProcessBaseline)(nil),
 	"process_indicators2":                  (*storage.ProcessIndicator)(nil),
+	"report_configurations":                (*storage.ReportConfiguration)(nil),
 	"risk":                                 (*storage.Risk)(nil),
 	"rolebindings":                         (*storage.K8SRoleBinding)(nil),
 	"roles":                                (*storage.Role)(nil),
@@ -88,6 +89,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"service_accounts":                     (*storage.ServiceAccount)(nil),
 	"simple_access_scopes":                 (*storage.SimpleAccessScope)(nil),
 	"version":                              (*storage.Version)(nil),
+	"vuln_req":                             (*storage.VulnerabilityRequest)(nil),
 }
 
 var knownUnhandledBuckets = set.NewStringSet(
@@ -221,7 +223,7 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 
 func restoreRocksDBBackup(backupFile string) (string, error) {
 	parentDir := os.TempDir()
-	tmpDbPath, err := ioutil.TempDir(parentDir, "*-rocksdb")
+	tmpDbPath, err := os.MkdirTemp(parentDir, "*-rocksdb")
 	if err != nil {
 		return "", err
 	}

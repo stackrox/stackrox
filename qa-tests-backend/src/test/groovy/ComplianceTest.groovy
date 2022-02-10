@@ -1,3 +1,8 @@
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceControl
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+import static services.ClusterService.DEFAULT_CLUSTER_NAME
+
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -9,9 +14,6 @@ import com.google.protobuf.util.Timestamps
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
-import v1.ComplianceServiceOuterClass.ComplianceControl
-import v1.ComplianceServiceOuterClass.ComplianceStandard
-import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
@@ -48,6 +50,7 @@ import services.NetworkPolicyService
 import services.NodeService
 import services.PolicyService
 import services.ProcessService
+import util.Env
 import util.Timer
 
 import org.junit.Assume
@@ -75,7 +78,7 @@ class ComplianceTest extends BaseSpecification {
     private gcrId = ""
     @Shared
     private Map<String, String> standardsByName = [:]
-    static final private String NONE = "None"
+    static final private String TESTROLE = "Continuous Integration"
     static final private String COMPLIANCETOKEN = "stackrox-compliance"
 
     def setupSpec() {
@@ -141,22 +144,26 @@ class ComplianceTest extends BaseSpecification {
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:308_a_3_ii_a",
-                        ["Runtime support is enabled (or collector service is running) for cluster remote. Network " +
-                                 "visualization for active network connections is possible."],
+                        ["Runtime support is enabled (or collector service is running) for cluster "
+                                 + DEFAULT_CLUSTER_NAME
+                                 + ". Network visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:310_d",
-                        ["Runtime support is enabled (or collector service is running) for cluster remote. Network " +
-                                 "visualization for active network connections is possible."],
+                        ["Runtime support is enabled (or collector service is running) for cluster "
+                                + DEFAULT_CLUSTER_NAME
+                                + ". Network visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:310_d",
-                        ["Runtime support is enabled (or collector service is running) for cluster remote. Network " +
-                                 "visualization for active network connections is possible."],
+                        ["Runtime support is enabled (or collector service is running) for cluster "
+                                 + DEFAULT_CLUSTER_NAME
+                                 + ". Network visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "NIST_SP_800_53_Rev_4:RA_3",
-                        ["StackRox is installed in cluster \"remote\", and provides continuous risk assessment."],
+                        ['StackRox is installed in cluster "' + DEFAULT_CLUSTER_NAME +
+                                '", and provides continuous risk assessment.'],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
         if (!ClusterService.isAKS()) { // ROX-6993
@@ -1048,6 +1055,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "get compliance aggregation results"
         Assume.assumeTrue(ClusterService.isOpenShift4())
+        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
         println "Getting compliance results for ${standard}"
         ComplianceRunResults run = BASE_RESULTS.get(standard)
@@ -1074,9 +1082,36 @@ class ComplianceTest extends BaseSpecification {
 
         where:
         "Data inputs are: "
-        standard          | _
-        "rhcos4-moderate" | _
-        "ocp4-cis-node"   | _
+        standard                     | _
+        "ocp4-cis-node"              | _
+        "rhcos4-moderate"            | _
+        "rhcos4-moderate-modified"   | _
+    }
+
+    @Category(BAT)
+    def "Verify Tailored Profile does not have evidence for disabled rule"() {
+        given:
+        "get compliance aggregation results"
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
+        ComplianceRunResults run = BASE_RESULTS.get("rhcos4-moderate-modified")
+
+        expect:
+        "compare"
+
+        // We shouldn't have more than two machine config maps as we only have the roles master/worker
+        def machineConfigsWithResults = 0
+        def numErrors = 0
+        for (def entry in run.machineConfigResultsMap) {
+            println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
+            if (entry.value.controlResultsMap.size()  > 0) {
+                machineConfigsWithResults++
+            }
+            assert !entry.value.controlResultsMap.keySet().contains(
+                    "rhcos4-moderate-modified:usbguard-allow-hid-and-hub")
+        }
+        assert numErrors == 0
+        assert machineConfigsWithResults == 2
     }
 
     @Category(BAT)
@@ -1084,6 +1119,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "get compliance aggregation results"
         Assume.assumeTrue(ClusterService.isOpenShift4())
+        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
         println "Getting compliance results for ocp4-cis"
         ComplianceRunResults run = BASE_RESULTS.get("ocp4-cis")
@@ -1335,7 +1371,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "Enable SAC token and add other cluster"
         ClusterService.createCluster(otherClusterName, "stackrox/main:latest", "central.stackrox:443")
-        ApiTokenService.GenerateTokenResponse token = services.ApiTokenService.generateToken(COMPLIANCETOKEN, NONE)
+        ApiTokenService.GenerateTokenResponse token = services.ApiTokenService.generateToken(COMPLIANCETOKEN, TESTROLE)
         BaseService.useApiToken(token.token)
 
         when:

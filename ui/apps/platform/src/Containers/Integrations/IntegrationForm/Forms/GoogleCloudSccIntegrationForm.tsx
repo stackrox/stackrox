@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -12,7 +13,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type GoogleCloudSccIntegration = {
@@ -38,17 +38,29 @@ export const validationSchema = yup.object().shape({
                 .string()
                 .trim()
                 .required('A service account is required')
-                .test('isValidJson', 'Service account must be valid JSON', (value) => {
-                    if (!value) {
-                        return false;
+                .test(
+                    'isValidJson',
+                    'Service account must be valid JSON',
+                    (value, context: yup.TestContext) => {
+                        const isRequired =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!isRequired) {
+                            return true;
+                        }
+                        if (!value) {
+                            return false;
+                        }
+                        try {
+                            JSON.parse(value);
+                        } catch (e) {
+                            return false;
+                        }
+                        return true;
                     }
-                    try {
-                        JSON.parse(value);
-                    } catch (e) {
-                        return false;
-                    }
-                    return true;
-                }),
+                ),
             sourceId: yup
                 .string()
                 .trim()
@@ -116,10 +128,15 @@ function GoogleCloudSccIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('notifier.cscc.serviceAccount', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         label="Integration name"
@@ -157,18 +174,18 @@ function GoogleCloudSccIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
-                            helperText="Leave this off to use the currently stored credentials."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox
                                 label="Update token"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

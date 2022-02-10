@@ -8,6 +8,14 @@ ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
+# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
+# The value is assigned as following:
+# 1. Use environment variable if provided.
+# 2. If makefile variable GOTAGS is contains "release", use "stackrox.io".
+# 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
+ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
+
 # Compute the tag of the build image based on the contents of the tracked files in
 # build. This ensures that we build it if and only if necessary, pulling from DockerHub
 # otherwise.
@@ -17,14 +25,16 @@ BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
 
 BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
 MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
-DOCS_IMAGE := stackrox/docs:embed-$(shell cat DOCS_VERSION)
+DOCS_IMAGE_BASE := stackrox/docs
 
 ifdef CI
-    QUAY_REPO := cgorman1
+    QUAY_REPO := rhacs-eng
     BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
     MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
-    DOCS_IMAGE := quay.io/$(QUAY_REPO)/docs:embed-$(shell cat DOCS_VERSION)
+    DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
 endif
+
+DOCS_IMAGE = $(DOCS_IMAGE_BASE):$(shell make --quiet --no-print-directory docs-tag)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
@@ -81,7 +91,7 @@ all: deps style test image
 GOLANGCILINT_BIN := $(GOBIN)/golangci-lint
 $(GOLANGCILINT_BIN): deps
 	@echo "+ $@"
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	@cd tools/linters/ && go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 EASYJSON_BIN := $(GOBIN)/easyjson
 $(EASYJSON_BIN): deps
@@ -91,12 +101,12 @@ $(EASYJSON_BIN): deps
 STATICCHECK_BIN := $(GOBIN)/staticcheck
 $(STATICCHECK_BIN): deps
 	@echo "+ $@"
-	@go install honnef.co/go/tools/cmd/staticcheck
+	@cd tools/linters/ && go install honnef.co/go/tools/cmd/staticcheck
 
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
 	@echo "+ $@"
-	go install github.com/mattn/goveralls
+	@cd tools/test/ && go install github.com/mattn/goveralls
 
 ROXVET_BIN := $(GOBIN)/roxvet
 .PHONY: $(ROXVET_BIN)
@@ -122,18 +132,18 @@ $(GENNY_BIN): deps
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
-	go install github.com/jstemmer/go-junit-report
+	@cd tools/test/ && go install github.com/jstemmer/go-junit-report
 
 PROTOLOCK_BIN := $(GOBIN)/protolock
 $(PROTOLOCK_BIN): deps
 	@echo "+ $@"
-	@go install github.com/nilslice/protolock/cmd/protolock
+	@cd tools/linters/ && go install github.com/nilslice/protolock/cmd/protolock
 
 ###########
 ## Style ##
 ###########
 .PHONY: style
-style: golangci-lint roxvet blanks newlines validateimports check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
 
 # staticcheck is useful, but extremely computationally intensive on some people's machines.
 # Therefore, to allow people to continue running `make style`, staticcheck is not run along with
@@ -176,6 +186,12 @@ ui-lint:
 	@echo "+ $@"
 	make -C ui lint
 
+.PHONY: ci-config-validate
+ci-config-validate:
+	@echo "+ $@"
+	@circleci diagnostic > /dev/null 2>&1 || (echo "Must first set CIRCLECI_CLI_TOKEN or run circleci setup"; exit 1)
+	circleci config validate --org-slug gh/stackrox
+
 .PHONY: staticcheck
 staticcheck: $(STATICCHECK_BIN)
 	@echo "+ $@"
@@ -213,11 +229,6 @@ fast-migrator-build:
 	@echo "+ $@"
 	$(GOBUILD) migrator
 
-.PHONY: validateimports
-validateimports:
-	@echo "+ $@"
-	@go run $(BASE_DIR)/tools/validateimports/verify.go $(shell go list -e ./...)
-
 .PHONY: check-service-protos
 check-service-protos:
 	@echo "+ $@"
@@ -225,8 +236,7 @@ check-service-protos:
 
 .PHONY: no-large-files
 no-large-files:
-	@echo "+ $@"
-	@$(BASE_DIR)/tools/large-git-files/find.sh
+	$(BASE_DIR)/tools/detect-large-files.sh "$(BASE_DIR)/tools/allowed-large-files"
 
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
@@ -254,7 +264,7 @@ endif
 .PHONY: init-githooks
 init-githooks:
 	@echo "+ $@"
-	./tools/githooks/install-hooks.sh
+	./tools/githooks/install-hooks.sh tools/githooks/pre-commit
 
 .PHONY: dev
 dev: install-dev-tools
@@ -272,13 +282,9 @@ include make/protogen.mk
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
 	@easyjson -pkg pkg/docker/types/types.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/types_easyjson.go
 	@easyjson -pkg pkg/docker/types/container.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/container_easyjson.go
 	@easyjson -pkg pkg/docker/types/image.go
-	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
 	@easyjson -pkg pkg/compliance/compress/compress.go
-    @echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/compress_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
@@ -286,9 +292,9 @@ clean-easyjson-srcs:
 	@find . -name '*_easyjson.go' -exec rm {} \;
 
 .PHONY: go-generated-srcs
-go-generated-srcs: deps go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
-	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
+	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x ./...
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
@@ -322,7 +328,7 @@ clean-deps:
 clean-obsolete-protos:
 	@echo "+ $@"
 	$(BASE_DIR)/tools/clean_autogen_protos.py --protos $(BASE_DIR)/proto --generated $(BASE_DIR)/generated
-	
+
 
 
 ###########
@@ -406,12 +412,12 @@ sensor-kubernetes-build:
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
 ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
-	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --name builder $(BUILD_IMAGE) make main-build-nodeps
+	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --name builder $(BUILD_IMAGE) make main-build-nodeps
 	docker cp $(GOPATH) builder:/
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
 else
-	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 endif
 
 .PHONY: main-build-nodeps
@@ -522,19 +528,29 @@ main-image: all-builds
 	make docker-build-main-image
 
 $(CURDIR)/image/rhel/bundle.tar.gz:
-	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz
-	docker build -t stackrox/main:$(TAG) --file image/rhel/Dockerfile --label version=$(TAG) --label release=$(TAG) image/rhel
-	@echo "Built main image for RHEL with tag: $(TAG)"
+	docker build \
+		-t stackrox/main:$(TAG) \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		--file image/rhel/Dockerfile \
+		--label version=$(TAG) \
+		--label release=$(TAG) \
+		image/rhel
+	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 ifdef CI
 	docker tag stackrox/main:$(TAG) quay.io/$(QUAY_REPO)/main:$(TAG)
 endif
 
+.PHONY: docs-image
+docs-image:
+	scripts/ensure_image.sh $(DOCS_IMAGE) docs/Dockerfile docs/
+
 .PHONY: docker-build-data-image
-docker-build-data-image:
+docker-build-data-image: docs-image
 	docker build -t stackrox-data:$(TAG) \
 	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
 		image/ \
@@ -628,14 +644,9 @@ else
 endif
 endif
 
-.PHONY: render-helm-yamls
-sensorChartDir="image/templates/helm/stackrox-secured-cluster"
-collectorVersion=$(shell cat COLLECTOR_VERSION)
-render-helm-yamls: proto-generated-srcs
-	@rm -rf /tmp/$(TAG)
-	@mkdir -p /tmp/$(TAG)
-	@go run -tags "$(subst $(comma),$(space),$(GOTAGS))" $(BASE_DIR)/$(sensorChartDir)/main.go "$(TAG)" "$(collectorVersion)" /tmp/$(TAG)
-	@cp $(BASE_DIR)/deploy/common/docker-auth.sh  /tmp/$(TAG)/scripts/
+.PHONY: image-flavor
+image-flavor:
+	@echo $(ROX_IMAGE_FLAVOR)
 
 .PHONY: ossls-audit
 ossls-audit: deps
@@ -653,7 +664,7 @@ collector-tag:
 
 .PHONY: docs-tag
 docs-tag:
-	@cat DOCS_VERSION
+	@echo $$(git ls-tree -d --abbrev=8 HEAD docs | awk '{ print $$3; }')-$$(git submodule status -- docs/content | cut -c 2-9)-$$(git submodule status -- docs/tools | cut -c 2-9)
 
 .PHONY: scanner-tag
 scanner-tag:
@@ -675,7 +686,7 @@ install-dev-tools:
 	@echo "+ $@"
 	@$(GET_DEVTOOLS_CMD) | xargs $(MAKE)
 ifeq ($(UNAME_S),Darwin)
-	@brew install rocksdb
+	@echo "Please manually install RocksDB if you haven't already. See README for details"
 endif
 
 .PHONY: roxvet

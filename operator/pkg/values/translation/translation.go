@@ -41,7 +41,8 @@ func GetCustomize(customizeSpec *platform.CustomizeSpec) *ValuesBuilder {
 	res.SetStringMap("labels", customizeSpec.Labels)
 	res.SetStringMap("annotations", customizeSpec.Annotations)
 	envVarMap := make(map[string]interface{}, len(customizeSpec.EnvVars))
-	for _, envVar := range customizeSpec.EnvVars {
+	for i := range customizeSpec.EnvVars {
+		envVar := customizeSpec.EnvVars[i]
 		if _, ok := envVarMap[envVar.Name]; ok {
 			res.SetError(errors.Errorf("duplicate environment variable name %q", envVar.Name))
 			return &res

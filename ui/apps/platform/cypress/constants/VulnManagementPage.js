@@ -24,10 +24,20 @@ export const url = {
     sidepanel: {
         image: `${baseURL}/images?workflowState[0][t]=IMAGE&workflowState[0][i]=sha256:02382353821b12c21b062c59184e227e001079bb13ebd01f9d3270ba0fcbf1e4`,
     },
+    reporting: {
+        list: `${baseURL}/reports`,
+        create: `${baseURL}/reports?action=create`,
+    },
 };
 
 export const vmHomePageSelectors = {
-    vmDBPageTileLink: `${navigationSelectors.navLinks}:contains("Vulnerability Management")`,
+    // TODO: remove this selector, after at least one sub-menu is added to Vuln Mgmt menu
+    vulnManagementNavLink: `${navigationSelectors.navLinks}:contains("Vulnerability Management")`,
+
+    // the selectors below are for when the Vulm Mgmt menu item is expandable
+    vulnManagementExpandableNavLink: `${navigationSelectors.navExpandable}:contains("Vulnerability Management")`,
+    vulnManagementExpandedDashboardNavLink: `${navigationSelectors.nestedNavLinks}:contains("Dashboard")`,
+    vulnManagementExpandedReportingNavLink: `${navigationSelectors.nestedNavLinks}:contains("Reporting")`,
 };
 export const listSelectors = {
     riskScoreCol: '.rt-table > .rt-tbody > div > div > div:nth-child(10)',
@@ -112,7 +122,7 @@ export const dashboardSelectors = {
         return `[data-testid="tile-link-value"]:contains('${title}')`;
     },
     widgetBody: '[data-testid="widget-body"]',
-    viewAllButton: 'button:contains("View All")',
+    viewAllButton: 'a:contains("View All")',
     dataRowLink: '[data-testid="numbered-list-item-name"]',
     topMostRowMCV:
         '#capture-dashboard > div > div > div > .h-full > div > div > svg > g > text:nth-child(20)',
@@ -160,6 +170,15 @@ const policySidePanelSelectors = {
     policyEditPageHeader: '[data-testid="side-panel-header"]',
 };
 
+const reportSection = {
+    createReportLink: 'a:contains("Create report")',
+    breadcrumbItems: '.pf-c-breadcrumb__item',
+    buttons: {
+        create: 'button:contains("Create")',
+        cancel: 'button:contains("Cancel")',
+    },
+};
+
 export const selectors = {
     ...dashboardSelectors,
     ...listSelectors,
@@ -173,4 +192,5 @@ export const selectors = {
     // TODO-ivan: unscrew everything above, it overrides each other etc., move to scoped definitions
     mainTable: scopeSelectors('[data-testid="panel"]', tableSelectors),
     sidePanel1: scopeSelectors(panelSelectors.sidePanel, sidePanelSelectors),
+    reportSection,
 };

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"sort"
@@ -311,7 +311,7 @@ func (j *jira) createIssue(ctx context.Context, severity storage.Severity, i *ji
 		return errors.Errorf("Error creating issue. Response: %v", err)
 	}
 	if err != nil {
-		bytes, readErr := ioutil.ReadAll(resp.Body)
+		bytes, readErr := io.ReadAll(resp.Body)
 		if readErr == nil {
 			return errors.Wrapf(err, "error creating issue. Response: %s", bytes)
 		}

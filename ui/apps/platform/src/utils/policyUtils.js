@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 
 import removeEmptyFieldsDeep from 'utils/removeEmptyFieldsDeep';
 import { severities } from 'constants/severities';

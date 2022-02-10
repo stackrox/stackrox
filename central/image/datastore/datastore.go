@@ -13,6 +13,7 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,7 @@ import (
 )
 
 // DataStore is an intermediary to AlertStorage.
-//go:generate mockgen-wrapper DataStore
+//go:generate mockgen-wrapper
 type DataStore interface {
 	SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error)
 	ListImage(ctx context.Context, sha string) (*storage.ListImage, bool, error)
@@ -53,6 +54,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		imageComponentEdgeIndexer.New(bleveIndex),
 		imageIndexer.New(bleveIndex),
 		deploymentIndexer.New(bleveIndex, nil),
+		imageCVEEdgeIndexer.New(bleveIndex),
 	)
 	ds := newDatastoreImpl(storage, searcher, risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()

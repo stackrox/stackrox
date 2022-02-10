@@ -1,0 +1,4 @@
+/* z index override for sticky table header in PF */
+#policies-table-header div.react-select__menu {
+    z-index: 200 !important;
+}

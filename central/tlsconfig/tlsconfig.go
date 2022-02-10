@@ -3,7 +3,6 @@ package tlsconfig
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/x509utils"
+	"go.uber.org/zap"
 )
 
 const (
@@ -40,7 +40,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 		if filepath.Ext(certFile.Name()) != ".crt" {
 			continue
 		}
-		content, err := ioutil.ReadFile(path.Join(additionalCADir, certFile.Name()))
+		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
 		if err != nil {
 			return nil, errors.Wrap(err, "reading additional CAs cert")
 		}
@@ -58,7 +58,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 // GetDefaultCertChain reads and parses default cert chain and returns it in DER encoded format
 func GetDefaultCertChain() ([][]byte, error) {
 	certFile := filepath.Join(DefaultCertPath, TLSCertFileName)
-	content, err := ioutil.ReadFile(certFile)
+	content, err := os.ReadFile(certFile)
 	if err != nil {
 		// Ignore error if default certs do not exist on filesystem
 		if os.IsNotExist(err) {
@@ -108,8 +108,8 @@ func loadInternalCertificateFromFiles() (*tls.Certificate, error) {
 	return &cert, nil
 }
 
-func issueInternalCertificate() (*tls.Certificate, error) {
-	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject)
+func issueInternalCertificate(namespace string) (*tls.Certificate, error) {
+	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject, mtls.WithNamespace(namespace))
 	if err != nil {
 		return nil, errors.Wrap(err, "server keypair")
 	}
@@ -117,7 +117,8 @@ func issueInternalCertificate() (*tls.Certificate, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "CA cert retrieval")
 	}
-	serverCertBundle := append(issuedCert.CertPEM, caPEM...)
+	serverCertBundle := append(issuedCert.CertPEM, []byte("\n")...)
+	serverCertBundle = append(serverCertBundle, caPEM...)
 
 	serverTLSCert, err := tls.X509KeyPair(serverCertBundle, issuedCert.KeyPEM)
 	if err != nil {
@@ -126,14 +127,42 @@ func issueInternalCertificate() (*tls.Certificate, error) {
 	return &serverTLSCert, nil
 }
 
-func getInternalCertificate() (*tls.Certificate, error) {
+func getInternalCertificates(namespace string) ([]tls.Certificate, error) {
+	var internalCerts []tls.Certificate
 	// First try to load the internal certificate from files. If the files don't exist, issue
 	// ourselves a cert.
 	if certFromFiles, err := loadInternalCertificateFromFiles(); err != nil {
 		return nil, err
 	} else if certFromFiles != nil {
-		return certFromFiles, nil
+		internalCerts = append(internalCerts, *certFromFiles)
 	}
 
-	return issueInternalCertificate()
+	if len(internalCerts) > 0 {
+		serviceCert, err := x509.ParseCertificate(internalCerts[0].Certificate[0])
+		if err != nil {
+			return nil, errors.Wrap(err, "loaded internal certificate is invalid")
+		}
+		if validForAllDNSNames(serviceCert, mtls.CentralSubject.AllHostnamesForNamespace(namespace)...) {
+			return internalCerts, nil // cert loaded from secret is sufficient
+		}
+	}
+
+	log.Warnw("Internal TLS certificates are not valid for all cluster-internal DNS names due to deployment in "+
+		"alternative namespace, issuing ephemeral certificate with adequate DNS names",
+		zap.String("namespace", namespace), zap.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(namespace)))
+	newInternalCert, err := issueInternalCertificate(namespace)
+	if err != nil {
+		return internalCerts, err
+	}
+	internalCerts = append(internalCerts, *newInternalCert)
+	return internalCerts, nil
+}
+
+func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {
+	for _, dnsName := range dnsNames {
+		if err := cert.VerifyHostname(dnsName); err != nil {
+			return false
+		}
+	}
+	return true
 }

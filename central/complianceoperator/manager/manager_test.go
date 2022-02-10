@@ -14,6 +14,8 @@ import (
 	profileStore "github.com/stackrox/rox/central/complianceoperator/profiles/store"
 	rulesDatastore "github.com/stackrox/rox/central/complianceoperator/rules/datastore"
 	rulesStore "github.com/stackrox/rox/central/complianceoperator/rules/store"
+	scansDatastore "github.com/stackrox/rox/central/complianceoperator/scans/datastore"
+	scansStore "github.com/stackrox/rox/central/complianceoperator/scans/store"
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
 	scanSettingBindingStore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,13 +43,18 @@ func newManager(t *testing.T) *managerImpl {
 	rulesDS, err := rulesDatastore.NewDatastore(rules)
 	require.NoError(t, err)
 
+	scans, err := scansStore.New(db)
+	require.NoError(t, err)
+
+	scansDS := scansDatastore.NewDatastore(scans)
+
 	checks, err := checkResultsStore.New(db)
 	require.NoError(t, err)
 
 	ctrl := gomock.NewController(t)
 	compliance := mocks.NewMockDataStore(ctrl)
 
-	mgr, err := NewManager(registry, profileDatastore.NewDatastore(prof), scanSettingBindingDatastore.NewDatastore(ssb), rulesDS, checkResultsDatastore.NewDatastore(checks), compliance)
+	mgr, err := NewManager(registry, profileDatastore.NewDatastore(prof), scansDS, scanSettingBindingDatastore.NewDatastore(ssb), rulesDS, checkResultsDatastore.NewDatastore(checks), compliance)
 	require.NoError(t, err)
 
 	return mgr.(*managerImpl)
@@ -412,4 +419,51 @@ func TestDeleteRule(t *testing.T) {
 
 	assert.NoError(t, mgr.DeleteRule(rule2))
 	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name)))
+}
+
+func TestGetMachineConfigs(t *testing.T) {
+	mgr := newManager(t)
+
+	result, err := mgr.GetMachineConfigs("")
+	assert.NoError(t, err)
+	assert.Len(t, result, 0)
+
+	initialProfile := &storage.ComplianceOperatorProfile{
+		Id:        uuid.NewV4().String(),
+		Name:      "profile1",
+		ProfileId: "profile-id",
+		ClusterId: "cluster1",
+		Annotations: map[string]string{
+			v1alpha1.ProductTypeAnnotation: string(v1alpha1.ScanTypeNode),
+		},
+		Rules: []*storage.ComplianceOperatorProfile_Rule{},
+	}
+	assert.NoError(t, mgr.AddProfile(initialProfile))
+	result, err = mgr.GetMachineConfigs("cluster1")
+	assert.NoError(t, err)
+	assert.Len(t, result, 0)
+
+	scan := &storage.ComplianceOperatorScan{
+		Id:        uuid.NewV4().String(),
+		Name:      "scan",
+		ClusterId: "cluster1",
+		ProfileId: "profile-id",
+	}
+	assert.NoError(t, mgr.AddScan(scan))
+	result, err = mgr.GetMachineConfigs("cluster1")
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result["profile1"], []string{"scan"})
+
+	scan2 := &storage.ComplianceOperatorScan{
+		Id:        uuid.NewV4().String(),
+		Name:      "scan2",
+		ClusterId: "cluster1",
+		ProfileId: "profile-id",
+	}
+	assert.NoError(t, mgr.AddScan(scan2))
+	result, err = mgr.GetMachineConfigs("cluster1")
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.ElementsMatch(t, result["profile1"], []string{"scan", "scan2"})
 }

@@ -12,6 +12,8 @@ import {
 
 import * as yup from 'yup';
 
+import { ApiToken } from 'types/apiToken.proto';
+
 import SelectSingle from 'Components/SelectSingle';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import { getDateTime } from 'utils/dateUtils';
@@ -24,22 +26,13 @@ import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiToke
 import FormLabelGroup from '../../FormLabelGroup';
 import useFetchRoles from './useFetchRoles';
 
-export type ApiTokenIntegration = {
-    expiration: string;
-    id: string;
-    issuedAt: string;
-    name: string;
-    revoked: boolean;
-    roles: string[];
-};
-
 export type ApiTokenIntegrationFormValues = {
     name: string;
     roles: string[];
 };
 
 export type ApiTokenIntegrationFormProps = {
-    initialValues: ApiTokenIntegration | null;
+    initialValues: ApiToken | null;
     isEditable?: boolean;
 };
 
@@ -81,7 +74,7 @@ function ApiTokenIntegrationForm({
     });
     const { isEditing, isViewingDetails } = usePageState();
     const { roles, isLoading: isRolesLoading } = useFetchRoles();
-    const isGenerated = Boolean(message?.responseData);
+    const isGenerated = Boolean((message as ApiTokenFormResponseMessage)?.responseData);
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
@@ -104,13 +97,10 @@ function ApiTokenIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && (
-                    <div className="pf-u-pb-md">
-                        <ApiTokenFormMessageAlert
-                            message={message as ApiTokenFormResponseMessage}
-                        />
-                    </div>
-                )}
+                <div id="form-message-alert" className="pf-u-pb-md">
+                    {message && <ApiTokenFormMessageAlert message={message} />}
+                </div>
+
                 {isViewingDetails && initialValues ? (
                     <DescriptionList>
                         <DescriptionListGroup>
@@ -206,7 +196,7 @@ function ApiTokenIntegrationForm({
                 ) : (
                     <IntegrationFormActions>
                         <FormCancelButton onCancel={onCancel} isDisabled={isSubmitting}>
-                            Close
+                            Back
                         </FormCancelButton>
                     </IntegrationFormActions>
                 ))}

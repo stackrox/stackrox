@@ -11,23 +11,26 @@ import {
     clustersListPath,
     integrationsPath,
     policiesPath,
+    policiesPathPatternFly,
     riskPath,
     apidocsPath,
-    accessControlPath,
     accessControlPathV2,
     userBasePath,
     systemConfigPath,
     systemHealthPath,
+    systemHealthPathPF,
     vulnManagementPath,
+    vulnManagementReportsPath,
     configManagementPath,
+    vulnManagementRiskAcceptancePath,
 } from 'routePaths';
-import { knownBackendFlags } from 'utils/featureFlags';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { useTheme } from 'Containers/ThemeProvider';
 
 import asyncComponent from 'Components/AsyncComponent';
 import ProtectedRoute from 'Components/ProtectedRoute';
 import ErrorBoundary from 'Containers/ErrorBoundary';
+import { knownBackendFlags } from 'utils/featureFlags';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
@@ -37,31 +40,44 @@ const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/
 const AsyncIntegrationsPage = asyncComponent(
     () => import('Containers/Integrations/IntegrationsPage')
 );
-const AsyncViolationsPage = asyncComponent(
-    () => import('Containers/Violations/PatternFly/ViolationsPage')
-);
+const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
+const AsyncPoliciesPagePatternFly = asyncComponent(
+    () => import('Containers/Policies/PatternFly/PoliciesPage')
+);
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
-const AsyncAccessControlPage = asyncComponent(
-    () => import('Containers/AccessControl/classic/Page')
-);
 const AsyncAccessControlPageV2 = asyncComponent(
     () => import('Containers/AccessControl/AccessControl')
 );
 const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
+const AsyncVulnMgmtReports = asyncComponent(
+    () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
+);
+const AsyncVulnMgmtRiskAcceptancePage = asyncComponent(
+    () => import('Containers/VulnMgmt/RiskAcceptance/RiskAcceptancePage')
+);
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
+const AsyncSystemHealthPagePF = asyncComponent(
+    () => import('Containers/SystemHealth/PatternFly/SystemHealthDashboard')
+);
 
 function Body(): ReactElement {
     const { isDarkMode } = useTheme();
-    const isScopedAccessControlEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_SCOPED_ACCESS_CONTROL
+    const isSystemHealthPatternFlyEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
-
+    const isPoliciesPatternFlyEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_POLICIES_PATTERNFLY
+    );
+    const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
+    const isVulnRiskAcceptanceEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
+    );
     return (
         <div
             className={`flex flex-col h-full w-full relative overflow-auto ${
@@ -76,16 +92,30 @@ function Body(): ReactElement {
                     <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
                     <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />
                     <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
+                    <ProtectedRoute
+                        path={policiesPathPatternFly}
+                        component={AsyncPoliciesPagePatternFly}
+                        featureFlagEnabled={isPoliciesPatternFlyEnabled}
+                    />
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
-                    <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute
                         path={accessControlPathV2}
                         component={AsyncAccessControlPageV2}
-                        featureFlagEnabled={isScopedAccessControlEnabled}
                     />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     <ProtectedRoute path={userBasePath} component={AsyncUserPage} />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
+                    <ProtectedRoute
+                        path={vulnManagementReportsPath}
+                        component={AsyncVulnMgmtReports}
+                        featureFlagEnabled={isVulnReportingEnabled}
+                        requiredPermission="VulnerabilityReports"
+                    />
+                    <ProtectedRoute
+                        path={vulnManagementRiskAcceptancePath}
+                        component={AsyncVulnMgmtRiskAcceptancePage}
+                        featureFlagEnabled={isVulnRiskAcceptanceEnabled}
+                    />
                     <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <ProtectedRoute
                         path={configManagementPath}
@@ -96,6 +126,11 @@ function Body(): ReactElement {
                         <ProtectedRoute path={clustersListPath} component={AsyncPFClustersPage} />
                     )}
                     <ProtectedRoute path={systemHealthPath} component={AsyncSystemHealthPage} />
+                    <ProtectedRoute
+                        path={systemHealthPathPF}
+                        component={AsyncSystemHealthPagePF}
+                        featureFlagEnabled={isSystemHealthPatternFlyEnabled}
+                    />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>

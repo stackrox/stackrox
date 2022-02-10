@@ -455,7 +455,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 	//  2. cluster-elevated (get on all resources)
 	//  3. cluster-elevated-2 (deletecollection)
 	//  4. cluster-elevated-3 (deletecollection on pod duplicated)
-	//  5. cluster-none (all verbs on all resources but no API groups)
+	//  5. cluster-none (invalid verb on all resources in all API groups)
 	//  6. cluster-elevated-admin (all verbs on all resources with additional rule)
 	// Cluster Bindings:
 	//  3. cluster-admin-subject    -> cluster-admin
@@ -599,9 +599,9 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		{
 			ObjectMeta: meta("cluster-none"),
 			Rules: []v1.PolicyRule{{
-				APIGroups: []string{},
+				APIGroups: []string{"*"},
 				Resources: []string{"*"},
-				Verbs:     []string{"*"},
+				Verbs:     []string{"invalidverb"},
 			}},
 		},
 		{

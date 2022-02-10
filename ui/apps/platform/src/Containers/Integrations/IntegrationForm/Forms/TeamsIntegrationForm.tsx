@@ -4,6 +4,7 @@ import * as yup from 'yup';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -11,7 +12,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
@@ -19,19 +19,9 @@ export type TeamsIntegration = {
     type: 'teams';
 } & NotifierIntegrationBase;
 
-const validTeamsWebhookRegex =
-    /^((https?):\/\/)?(outlook.office365.com\/webhook)(\/[a-zA-Z0-9-]+)+$/;
-
 export const validationSchema = yup.object().shape({
     name: yup.string().trim().required('Integration name is required'),
-    labelDefault: yup
-        .string()
-        .trim()
-        .required('Webhook is required')
-        .matches(
-            validTeamsWebhookRegex,
-            'Must be a valid Teams webhook URL, like https://outlook.office365.com/webhook/EXAMPLE'
-        ),
+    labelDefault: yup.string().trim().required('Webhook is required'),
     labelKey: yup.string().trim(),
     uiEndpoint: yup.string(),
     type: yup.string().matches(/teams/),
@@ -80,7 +70,7 @@ function TeamsIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         label="Integration name"

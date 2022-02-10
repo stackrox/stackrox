@@ -6,6 +6,7 @@ import * as yup from 'yup';
 import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -13,7 +14,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 import ScheduleIntervalOptions from '../FormSchedule/ScheduleIntervalOptions';
 import ScheduleWeeklyOptions from '../FormSchedule/ScheduleWeeklyOptions';
@@ -162,10 +162,16 @@ function S3IntegrationForm({
         }
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('externalBackup.s3.accessKeyId', '');
+        setFieldValue('externalBackup.s3.secretAccessKey', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
@@ -334,18 +340,18 @@ function S3IntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
-                            helperText="Leave this off to use the currently stored credentials."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox
                                 label="Update access key ID and secret access key"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

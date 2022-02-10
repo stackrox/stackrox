@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -35,7 +34,7 @@ func BenchmarkNodes(b *testing.B) {
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(b, err)
 
-	tempPath, err := ioutil.TempDir("", "")
+	tempPath, err := os.MkdirTemp("", "")
 	require.NoError(b, err)
 	defer func() {
 		_ = os.RemoveAll(tempPath)

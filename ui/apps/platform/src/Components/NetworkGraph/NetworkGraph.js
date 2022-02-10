@@ -4,7 +4,9 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
-import { throttle, debounce, includes } from 'lodash';
+import debounce from 'lodash/debounce';
+import includes from 'lodash/includes';
+import throttle from 'lodash/throttle';
 import popper from 'cytoscape-popper';
 /* Cannot use neither Tooltip nor HoverHint components as Cytoscape renders on
 canvas (no DOM elements). Instead using 'cytoscape-popper' and  special
@@ -673,6 +675,7 @@ const NetworkGraph = ({
         CY.nodes(`.deployment`).ungrabify();
     }
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
     useEffect(runLayout, [
@@ -684,6 +687,7 @@ const NetworkGraph = ({
         match.params.deploymentId,
         simulatedBaselines,
     ]);
+    /* eslint-enable react-hooks/exhaustive-deps */
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
 

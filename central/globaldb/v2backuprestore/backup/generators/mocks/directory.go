@@ -6,34 +6,35 @@ package mocks
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockDirectoryGenerator is a mock of DirectoryGenerator interface
+// MockDirectoryGenerator is a mock of DirectoryGenerator interface.
 type MockDirectoryGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockDirectoryGeneratorMockRecorder
 }
 
-// MockDirectoryGeneratorMockRecorder is the mock recorder for MockDirectoryGenerator
+// MockDirectoryGeneratorMockRecorder is the mock recorder for MockDirectoryGenerator.
 type MockDirectoryGeneratorMockRecorder struct {
 	mock *MockDirectoryGenerator
 }
 
-// NewMockDirectoryGenerator creates a new mock instance
+// NewMockDirectoryGenerator creates a new mock instance.
 func NewMockDirectoryGenerator(ctrl *gomock.Controller) *MockDirectoryGenerator {
 	mock := &MockDirectoryGenerator{ctrl: ctrl}
 	mock.recorder = &MockDirectoryGeneratorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDirectoryGenerator) EXPECT() *MockDirectoryGeneratorMockRecorder {
 	return m.recorder
 }
 
-// WriteDirectory mocks base method
+// WriteDirectory mocks base method.
 func (m *MockDirectoryGenerator) WriteDirectory(ctx context.Context) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WriteDirectory", ctx)
@@ -42,7 +43,7 @@ func (m *MockDirectoryGenerator) WriteDirectory(ctx context.Context) (string, er
 	return ret0, ret1
 }
 
-// WriteDirectory indicates an expected call of WriteDirectory
+// WriteDirectory indicates an expected call of WriteDirectory.
 func (mr *MockDirectoryGeneratorMockRecorder) WriteDirectory(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteDirectory", reflect.TypeOf((*MockDirectoryGenerator)(nil).WriteDirectory), ctx)

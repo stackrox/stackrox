@@ -3,7 +3,7 @@ package sensor
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -29,7 +29,7 @@ const (
 // /run/secrets/kubernetes.io/serviceaccount/token, which contains the namespace as well as the UID of the service
 // account objects as a JWT.
 func populateFromServiceAccountTokenFile(out *storage.SensorDeploymentIdentification) error {
-	tokenBytes, err := ioutil.ReadFile(tokenFile)
+	tokenBytes, err := os.ReadFile(tokenFile)
 	if err != nil {
 		return errors.Wrapf(err, "reading token from file %s", tokenFile)
 	}
@@ -55,7 +55,7 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 		return nil
 	}
 
-	appNamespaceBytes, err := ioutil.ReadFile(namespaceFile)
+	appNamespaceBytes, err := os.ReadFile(namespaceFile)
 	if err != nil {
 		return errors.Wrapf(err, "reading application namespace from file %s", namespaceFile)
 	}
@@ -67,6 +67,8 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 // Kubernetes API server.
 func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface, out *storage.SensorDeploymentIdentification) error {
 	nsClient := k8sClient.CoreV1().Namespaces()
+
+	out.K8SNodeName = k8sNodeName.Setting()
 
 	var errResult error
 	systemNS, err := k8sClient.CoreV1().Namespaces().Get(ctx, namespaces.KubeSystem, metav1.GetOptions{})

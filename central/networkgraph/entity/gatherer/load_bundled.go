@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -22,7 +21,7 @@ func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore) er
 		return errors.Wrap(err, "extracting external networks bundle")
 	}
 
-	newChecksum, err := ioutil.ReadFile(checksumFile)
+	newChecksum, err := os.ReadFile(checksumFile)
 	if err != nil {
 		return errors.Wrapf(err, "reading bundled external networks checksum from %q", checksumFile)
 	}
@@ -30,7 +29,7 @@ func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore) er
 	var localChecksum []byte
 	_, err = os.Open(defaultexternalsrcs.LocalChecksumFile)
 	if os.IsExist(err) {
-		localChecksum, err = ioutil.ReadFile(defaultexternalsrcs.LocalChecksumFile)
+		localChecksum, err = os.ReadFile(defaultexternalsrcs.LocalChecksumFile)
 		if err != nil {
 			return errors.Wrapf(err, "reading local external networks checksum from %q", defaultexternalsrcs.LocalChecksumFile)
 		}
@@ -40,7 +39,7 @@ func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore) er
 		return nil
 	}
 
-	data, err := ioutil.ReadFile(dataFile)
+	data, err := os.ReadFile(dataFile)
 	if err != nil {
 		return errors.Wrap(err, "reading new external networks data")
 	}
@@ -87,7 +86,7 @@ func extractBundle(src string) (string, string, error) {
 	}
 	defer utils.IgnoreError(zipR.Close)
 
-	tmpPath, err := ioutil.TempDir("", defaultexternalsrcs.SubDir)
+	tmpPath, err := os.MkdirTemp("", defaultexternalsrcs.SubDir)
 	if err != nil {
 		return "", "", err
 	}

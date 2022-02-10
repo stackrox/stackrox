@@ -5,36 +5,51 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	search "github.com/stackrox/rox/pkg/search"
-	reflect "reflect"
 )
 
-// MockOptionsMap is a mock of OptionsMap interface
+// MockOptionsMap is a mock of OptionsMap interface.
 type MockOptionsMap struct {
 	ctrl     *gomock.Controller
 	recorder *MockOptionsMapMockRecorder
 }
 
-// MockOptionsMapMockRecorder is the mock recorder for MockOptionsMap
+// MockOptionsMapMockRecorder is the mock recorder for MockOptionsMap.
 type MockOptionsMapMockRecorder struct {
 	mock *MockOptionsMap
 }
 
-// NewMockOptionsMap creates a new mock instance
+// NewMockOptionsMap creates a new mock instance.
 func NewMockOptionsMap(ctrl *gomock.Controller) *MockOptionsMap {
 	mock := &MockOptionsMap{ctrl: ctrl}
 	mock.recorder = &MockOptionsMapMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOptionsMap) EXPECT() *MockOptionsMapMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Add mocks base method.
+func (m *MockOptionsMap) Add(label search.FieldLabel, field *search.Field) search.OptionsMap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Add", label, field)
+	ret0, _ := ret[0].(search.OptionsMap)
+	return ret0
+}
+
+// Add indicates an expected call of Add.
+func (mr *MockOptionsMapMockRecorder) Add(label, field interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockOptionsMap)(nil).Add), label, field)
+}
+
+// Get mocks base method.
 func (m *MockOptionsMap) Get(field string) (*search.Field, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", field)
@@ -43,69 +58,13 @@ func (m *MockOptionsMap) Get(field string) (*search.Field, bool) {
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockOptionsMapMockRecorder) Get(field interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockOptionsMap)(nil).Get), field)
 }
 
-// MustGet mocks base method
-func (m *MockOptionsMap) MustGet(field string) *search.Field {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MustGet", field)
-	ret0, _ := ret[0].(*search.Field)
-	return ret0
-}
-
-// MustGet indicates an expected call of MustGet
-func (mr *MockOptionsMapMockRecorder) MustGet(field interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MustGet", reflect.TypeOf((*MockOptionsMap)(nil).MustGet), field)
-}
-
-// Add mocks base method
-func (m *MockOptionsMap) Add(label search.FieldLabel, field *search.Field) search.OptionsMap {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", label, field)
-	ret0, _ := ret[0].(search.OptionsMap)
-	return ret0
-}
-
-// Add indicates an expected call of Add
-func (mr *MockOptionsMapMockRecorder) Add(label, field interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockOptionsMap)(nil).Add), label, field)
-}
-
-// Remove mocks base method
-func (m *MockOptionsMap) Remove(label search.FieldLabel) search.OptionsMap {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", label)
-	ret0, _ := ret[0].(search.OptionsMap)
-	return ret0
-}
-
-// Remove indicates an expected call of Remove
-func (mr *MockOptionsMapMockRecorder) Remove(label interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockOptionsMap)(nil).Remove), label)
-}
-
-// Original mocks base method
-func (m *MockOptionsMap) Original() map[search.FieldLabel]*search.Field {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Original")
-	ret0, _ := ret[0].(map[search.FieldLabel]*search.Field)
-	return ret0
-}
-
-// Original indicates an expected call of Original
-func (mr *MockOptionsMapMockRecorder) Original() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Original", reflect.TypeOf((*MockOptionsMap)(nil).Original))
-}
-
-// Merge mocks base method
+// Merge mocks base method.
 func (m *MockOptionsMap) Merge(o search.OptionsMap) search.OptionsMap {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Merge", o)
@@ -113,13 +72,41 @@ func (m *MockOptionsMap) Merge(o search.OptionsMap) search.OptionsMap {
 	return ret0
 }
 
-// Merge indicates an expected call of Merge
+// Merge indicates an expected call of Merge.
 func (mr *MockOptionsMapMockRecorder) Merge(o interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Merge", reflect.TypeOf((*MockOptionsMap)(nil).Merge), o)
 }
 
-// PrimaryCategory mocks base method
+// MustGet mocks base method.
+func (m *MockOptionsMap) MustGet(field string) *search.Field {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MustGet", field)
+	ret0, _ := ret[0].(*search.Field)
+	return ret0
+}
+
+// MustGet indicates an expected call of MustGet.
+func (mr *MockOptionsMapMockRecorder) MustGet(field interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MustGet", reflect.TypeOf((*MockOptionsMap)(nil).MustGet), field)
+}
+
+// Original mocks base method.
+func (m *MockOptionsMap) Original() map[search.FieldLabel]*search.Field {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Original")
+	ret0, _ := ret[0].(map[search.FieldLabel]*search.Field)
+	return ret0
+}
+
+// Original indicates an expected call of Original.
+func (mr *MockOptionsMapMockRecorder) Original() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Original", reflect.TypeOf((*MockOptionsMap)(nil).Original))
+}
+
+// PrimaryCategory mocks base method.
 func (m *MockOptionsMap) PrimaryCategory() v1.SearchCategory {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrimaryCategory")
@@ -127,8 +114,22 @@ func (m *MockOptionsMap) PrimaryCategory() v1.SearchCategory {
 	return ret0
 }
 
-// PrimaryCategory indicates an expected call of PrimaryCategory
+// PrimaryCategory indicates an expected call of PrimaryCategory.
 func (mr *MockOptionsMapMockRecorder) PrimaryCategory() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrimaryCategory", reflect.TypeOf((*MockOptionsMap)(nil).PrimaryCategory))
+}
+
+// Remove mocks base method.
+func (m *MockOptionsMap) Remove(label search.FieldLabel) search.OptionsMap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", label)
+	ret0, _ := ret[0].(search.OptionsMap)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove.
+func (mr *MockOptionsMapMockRecorder) Remove(label interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockOptionsMap)(nil).Remove), label)
 }

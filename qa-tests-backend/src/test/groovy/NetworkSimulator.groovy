@@ -24,21 +24,21 @@ class NetworkSimulator extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(WEBDEPLOYMENT)
-                    .setImage("quay.io/cgorman1/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa:nginx")
                     .addPort(80)
                     .addLabel("app", WEBDEPLOYMENT),
             new Deployment()
                     .setName(WEB2DEPLOYMENT)
-                    .setImage("quay.io/cgorman1/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa:nginx")
                     .addLabel("app", WEB2DEPLOYMENT),
             new Deployment()
                     .setName(CLIENTDEPLOYMENT)
-                    .setImage("quay.io/cgorman1/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa:nginx")
                     .addPort(443)
                     .addLabel("app", CLIENTDEPLOYMENT),
             new Deployment()
                     .setName(CLIENT2DEPLOYMENT)
-                    .setImage("quay.io/cgorman1/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa:nginx")
                     .addLabel("app", CLIENT2DEPLOYMENT),
     ]
 

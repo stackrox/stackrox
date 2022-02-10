@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net"
 	"net/smtp"
 	"net/textproto"
@@ -17,6 +19,7 @@ import (
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -170,19 +173,52 @@ func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStor
 }
 
 type message struct {
-	To      string
-	From    string
-	Subject string
-	Body    string
+	To          []string
+	From        string
+	Subject     string
+	Body        string
+	Attachments map[string][]byte
+	EmbedLogo   bool
 }
 
 func (m message) Bytes() []byte {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "From: %s\r\n", m.From)
-	fmt.Fprintf(&buf, "To: %s\r\n", m.To)
-	fmt.Fprintf(&buf, "Subject: %s\r\n", m.Subject)
-	fmt.Fprint(&buf, "Content-Type: text/plain; charset=utf-8\r\n\r\n")
-	fmt.Fprintf(&buf, "%s\r\n", m.Body)
+	buf := bytes.NewBuffer(nil)
+	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
+	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(m.To, ",")))
+	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", m.Subject))
+
+	buf.WriteString("MIME-Version: 1.0\r\n")
+
+	writer := multipart.NewWriter(buf)
+	boundary := writer.Boundary()
+
+	if m.EmbedLogo {
+		buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", boundary))
+		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+
+		buf.WriteString("Content-Type: image/png; name=logo.png\r\n")
+		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
+		buf.WriteString("Content-Disposition: inline; filename=logo.png\r\n")
+		buf.WriteString("Content-ID: <logo.png>\r\n")
+		buf.WriteString("X-Attachment-Id: logo.png\r\n")
+		buf.WriteString(fmt.Sprintf("%s\r\n", common.GetLogoBase64()))
+		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+		buf.WriteString("Content-Type: text/html; charset=\"utf-8\"\r\n\r\n")
+		buf.WriteString("<img src=\"cid:logo.png\" width=\"20%\" height=\"20%\"><br><br>")
+		buf.WriteString(fmt.Sprintf("<div>%s</div>\r\n", m.Body))
+	} else {
+		buf.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
+		buf.WriteString(fmt.Sprintf("%s\r\n", m.Body))
+	}
+
+	for k, v := range m.Attachments {
+		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+		buf.WriteString("Content-Type: application/zip\r\n")
+		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
+		buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\r\n", k))
+		buf.WriteString(base64.StdEncoding.EncodeToString(v))
+		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
+	}
 	return buf.Bytes()
 }
 
@@ -233,6 +269,30 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 
+// ReportNotify takes in reporting data, a list of intended recipients, and an email message to send out a report
+func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, messageText string) error {
+	var from string
+	if e.config.GetFrom() != "" {
+		from = fmt.Sprintf("%s <%s>", e.config.GetFrom(), e.config.GetSender())
+	} else {
+		from = e.config.GetSender()
+	}
+	msg := message{
+		To:        recipients,
+		From:      from,
+		Subject:   fmt.Sprintf("Red Hat Image Vulnerability Report for %s", time.Now().Format("02-January-2006")),
+		Body:      messageText,
+		EmbedLogo: true,
+	}
+
+	if zippedReportData != nil {
+		msg.Attachments = map[string][]byte{
+			fmt.Sprintf("RHACS_Vulnerability_Report_%s.zip", time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
+		}
+	}
+	return e.send(ctx, &msg)
+}
+
 // YamlNotify takes in a yaml file and generates the email message
 func (e *email) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	subject := fmt.Sprintf("New network policy YAML for cluster '%s' needs to be applied", clusterName)
@@ -265,12 +325,16 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 	}
 
 	msg := message{
-		To:      recipient,
-		From:    from,
-		Subject: subject,
-		Body:    body,
+		To:        []string{recipient},
+		From:      from,
+		Subject:   subject,
+		Body:      body,
+		EmbedLogo: false,
 	}
+	return e.send(ctx, &msg)
+}
 
+func (e *email) send(ctx context.Context, m *message) error {
 	conn, auth, err := e.connection(ctx)
 	if err != nil {
 		return createError("Connection failed", err)
@@ -299,8 +363,10 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 	if err = client.Mail(e.config.GetSender()); err != nil {
 		return createError("SMTP MAIL command failed", err)
 	}
-	if err = client.Rcpt(recipient); err != nil {
-		return createError("SMTP RCPT command failed", err)
+	for _, toAddr := range m.To {
+		if err = client.Rcpt(toAddr); err != nil {
+			return createError("SMTP RCPT command failed", err)
+		}
 	}
 
 	w, err := client.Data()
@@ -309,7 +375,7 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 	}
 	defer utils.IgnoreError(w.Close)
 
-	_, err = w.Write(msg.Bytes())
+	_, err = w.Write(m.Bytes())
 	if err != nil {
 		return createError("SMTP message writing failed", err)
 	}

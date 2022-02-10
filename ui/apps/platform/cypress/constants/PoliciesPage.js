@@ -4,7 +4,7 @@ export const url = '/main/policies';
 
 export const selectors = {
     configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
-    navLink: `${navigationSelectors.navLinks}:contains("System Policies")`,
+    navLink: `${navigationSelectors.nestedNavLinks}:contains("System Policies")`,
     newPolicyButton: 'button:contains("New")',
     importPolicyButton: 'button[data-testid="import-policy-btn"]:contains("Import Policy")',
     singlePolicyExportButton: 'button[data-testid="single-policy-export"]',
@@ -19,14 +19,12 @@ export const selectors = {
     actionsMenuButton: '[data-testid="menu-list"] button',
     checkbox1: '.rt-thead input:checkbox',
     policies: {
-        scanImage: 'div.rt-tr:contains("90-Day")',
-        addCapabilities: '.rt-tr:contains("CAP_SYS_ADMIN capability added")',
-        disabledPolicyImage: 'div.rt-tr.data-test-disabled:first',
+        disabledPolicyImage: 'div.rt-tr.data-test-disabled:first [data-testid=policy-name]',
     },
     form: {
         nameInput: 'form input[name=name]',
         enableField: 'form input[name=disabled]',
-        required: 'form span[data-testid="required"]',
+        required: 'span[data-testid="required"]',
         select: 'form select',
         selectValue: 'form .react-select__single-value',
     },
@@ -124,10 +122,14 @@ export const selectors = {
     tableFirstRow: 'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd',
     tableFirstRowName:
         'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd [data-testid=policy-name]',
+    tableRowName: 'div.rt-tbody [data-testid="policy-name"]',
     hoverActionButtons: '.rt-tr-actions svg',
     tableContainer: '[data-testid="policies-table-container"]',
+    deleteButton: '.rt-tr-actions div button:nth-child(2)',
+    enableDisableButton: '.rt-tr-actions div button:nth-child(1)',
     enableDisableIcon: '[data-testid="enable-disable-icon"]',
     enabledIconColor: 'bg-success-500',
+    disabledIconColor: 'bg-base-300',
     enforcement: {
         buildTile: '[data-testid="policy-enforcement-build-tile"]',
         deployTile: '[data-testid="policy-enforcement-deploy-tile"]',
@@ -169,9 +171,11 @@ export const selectors = {
 };
 
 export const text = {
+    addCapabilities: 'CAP_SYS_ADMIN capability added',
     policyLatestTagName: 'Latest tag',
     policyPreview: {
-        message:
+        disabled:
             'This policy is not currently enabled. If enabled, the policy would generate violations for the following deployments on your system.',
     },
+    scanImage: '90-Day',
 };

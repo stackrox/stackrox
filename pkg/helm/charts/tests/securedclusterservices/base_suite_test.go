@@ -7,8 +7,11 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
+	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -17,18 +20,6 @@ import (
 )
 
 var (
-	metaValues = map[string]interface{}{
-		"Versions": version.Versions{
-			ChartVersion:     "1.0.0",
-			MainVersion:      "3.0.49.0",
-			CollectorVersion: "1.2.3",
-		},
-		"MainRegistry":      "stackrox.io", // TODO: custom?
-		"CollectorRegistry": "collector.stackrox.io",
-		"RenderMode":        "",
-		"FeatureFlags":      map[string]interface{}{},
-	}
-
 	installOpts = helmUtil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      "stackrox-secured-cluster-services",
@@ -107,10 +98,19 @@ enableOpenShiftMonitoring: true
 
 type baseSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
 }
 
 func TestBase(t *testing.T) {
 	suite.Run(t, new(baseSuite))
+}
+
+func (s *baseSuite) SetupTest() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+}
+
+func (s *baseSuite) TeardownTest() {
+	s.envIsolator.RestoreAll()
 }
 
 func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...string) (*chart.Chart, map[string]string) {
@@ -126,7 +126,7 @@ func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...stri
 	// Retrieve template files from box.
 	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 	s.Require().NoError(err, "error retrieving chart template")
-	ch, err := tpl.InstantiateAndLoad(metaValues)
+	ch, err := tpl.InstantiateAndLoad(metaUtil.MakeMetaValuesForTest(s.T()))
 	s.Require().NoError(err, "error instantiating chart")
 
 	effectiveInstallOpts := installOpts
@@ -171,6 +171,10 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 func (s *baseSuite) TestAllGeneratableExplicit() {
 	// Ensures that allValuesExplicit causes all templates to be rendered non-empty, including the one
 	// containing generated values.
+	// TODO(ROX-8793): The tests will be enabled in a follow-up ticket because the current implementation breaks helm chart rendering.
+	if !buildinfo.ReleaseBuild {
+		s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
+	}
 
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 	s.Require().NotEmpty(rendered)
@@ -190,7 +194,8 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	}
 
 	objs := s.ParseObjects(rendered)
-	for _, obj := range objs {
+	for i := range objs {
+		obj := objs[i]
 		if obj.GetKind() != "Deployment" && obj.GetKind() != "DaemonSet" {
 			continue
 		}

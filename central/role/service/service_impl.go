@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -24,8 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -168,9 +165,9 @@ func (s *serviceImpl) GetResources(context.Context, *v1.Empty) (*v1.GetResources
 // GetMyPermissions returns the permissions for a user based on the context.
 func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
 	// Get the perms from the current user context.
-	id := authn.IdentityFromContext(ctx)
-	if id == nil {
-		return nil, errorhelpers.ErrNoCredentials
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return &v1.GetPermissionsResponse{
 		ResourceToAccess: id.Permissions(),
@@ -182,9 +179,6 @@ func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
 //                                                                            //
 
 func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID) (*storage.PermissionSet, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	permissionSet, found, err := s.roleDataStore.GetPermissionSet(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve permission set %s", id.GetId())
@@ -197,9 +191,6 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 }
 
 func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.ListPermissionSetsResponse, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	permissionSets, err := s.roleDataStore.GetAllPermissionSets(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve permission sets")
@@ -214,9 +205,6 @@ func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.
 }
 
 func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*storage.PermissionSet, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	if permissionSet.GetId() != "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "setting id field is not allowed")
 	}
@@ -235,9 +223,6 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 }
 
 func (s *serviceImpl) PutPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*v1.Empty, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	err := s.roleDataStore.UpdatePermissionSet(ctx, permissionSet)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to update permission set %s", permissionSet.GetId())
@@ -247,9 +232,6 @@ func (s *serviceImpl) PutPermissionSet(ctx context.Context, permissionSet *stora
 }
 
 func (s *serviceImpl) DeletePermissionSet(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	err := s.roleDataStore.RemovePermissionSet(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to delete permission set %s", id.GetId())
@@ -263,10 +245,6 @@ func (s *serviceImpl) DeletePermissionSet(ctx context.Context, id *v1.ResourceBy
 //                                                                            //
 
 func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceByID) (*storage.SimpleAccessScope, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
-
 	scope, found, err := s.roleDataStore.GetAccessScope(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve access scope %s", id.GetId())
@@ -279,10 +257,6 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 }
 
 func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (*v1.ListSimpleAccessScopesResponse, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
-
 	scopes, err := s.roleDataStore.GetAllAccessScopes(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve access scopes")
@@ -297,10 +271,6 @@ func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (
 }
 
 func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
-
 	if scope.GetId() != "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "setting id field is not allowed")
 	}
@@ -318,10 +288,6 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 }
 
 func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*v1.Empty, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
-
 	err := s.roleDataStore.UpdateAccessScope(ctx, scope)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to update access scope %s", scope.GetId())
@@ -331,10 +297,6 @@ func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.S
 }
 
 func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
-
 	err := s.roleDataStore.RemoveAccessScope(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to delete access scope %s", id.GetId())
@@ -346,10 +308,6 @@ func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.Resour
 // TODO(ROX-7076): Instead of fetching all clusters and namespaces for each
 //   request, rely on optimizations made by built-in scoped authorizer.
 func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error) {
-	if !features.ScopedAccessControl.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
-
 	// If we're here, service-level authz has already verified that the caller
 	// has at least READ permission on the Role resource.
 	err := role.ValidateSimpleAccessScopeRules(req.GetAccessScope().GetSimpleRules())

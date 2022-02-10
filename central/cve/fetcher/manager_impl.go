@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -47,8 +46,7 @@ const (
 
 // Init copies build time CVEs to persistent volume
 func (m *orchestratorIstioCVEManagerImpl) initialize() {
-	offlineModeSetting := env.OfflineModeEnv.Setting()
-	if offlineModeSetting == "true" {
+	if env.OfflineModeEnv.BooleanSetting() {
 		m.mgrMode = offline
 	} else {
 		m.mgrMode = online
@@ -137,7 +135,7 @@ func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOfflineMode(zipPath 
 }
 
 func extractK8sIstioCVEsInScannerBundleZip(zipPath string) (string, error) {
-	tmpPath, err := ioutil.TempDir("", "")
+	tmpPath, err := os.MkdirTemp("", "")
 	if err != nil {
 		return "", err
 	}

@@ -1,5 +1,5 @@
 apiVersion: v2 [</* Can probably be generalized to v1 later. TODO(ROX-5502). */>]
-[<- if .RenderAsLegacyChart >]
+[<- if .KubectlOutput >]
 name: sensor
 [<- else >]
 name: stackrox-secured-cluster-services
@@ -7,5 +7,5 @@ name: stackrox-secured-cluster-services
 icon: https://www.stackrox.com/img/logo.svg
 description: Helm Chart for StackRox Secured Clusters
 type: application
-version: [< .Versions.ChartVersion >]
-appVersion: [< .Versions.MainVersion >]
+version: [< required "" .Versions.ChartVersion >]
+appVersion: [< required "" .Versions.MainVersion >]

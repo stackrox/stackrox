@@ -128,7 +128,7 @@ function PermissionSetForm({
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'update'}
+                                        isDisabled={action === 'edit'}
                                         isSmall
                                     >
                                         Edit permission set

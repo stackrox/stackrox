@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"time"
@@ -103,7 +103,7 @@ func getAttestedVMID(ctx context.Context) (string, error) {
 		}
 		defer utils.IgnoreError(resp.Body.Close)
 
-		bytes, err := ioutil.ReadAll(resp.Body)
+		bytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return "", errors.Wrap(err, "retrieving intermediate CA certificate")
 		}

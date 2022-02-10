@@ -18,9 +18,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestReadBaseValues(t *testing.T) {
@@ -42,7 +42,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	u, err := toUnstructured(sc)
 	require.NoError(t, err)
 
-	translator := Translator{clientSet: newFakeClientSetWithInitBundle()}
+	translator := Translator{client: newFakeClientWithInitBundle()}
 	vals, err := translator.Translate(context.Background(), u)
 	require.NoError(t, err)
 
@@ -51,8 +51,8 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 
 func TestTranslate(t *testing.T) {
 	type args struct {
-		clientSet kubernetes.Interface
-		sc        platform.SecuredCluster
+		client ctrlClient.Client
+		sc     platform.SecuredCluster
 	}
 
 	// TODO(ROX-7647): Add sensor, collector and compliance tests
@@ -62,7 +62,7 @@ func TestTranslate(t *testing.T) {
 	}{
 		"minimal spec": {
 			args: args{
-				clientSet: newFakeClientSetWithInitBundle(),
+				client: newFakeClientWithInitBundle(),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
@@ -86,7 +86,7 @@ func TestTranslate(t *testing.T) {
 		},
 		"complete spec": {
 			args: args{
-				clientSet: newFakeClientSetWithInitBundle(),
+				client: newFakeClientWithInitBundle(),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-secured-cluster",
@@ -306,7 +306,7 @@ func TestTranslate(t *testing.T) {
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
-			translator := Translator{clientSet: tt.args.clientSet}
+			translator := Translator{client: tt.args.client}
 			got, err := translator.translate(context.Background(), tt.args.sc)
 			require.NoError(t, err)
 
@@ -331,8 +331,11 @@ func toUnstructured(sc platform.SecuredCluster) (*unstructured.Unstructured, err
 	return &unstructured.Unstructured{Object: obj}, nil
 }
 
-func newFakeClientSetWithInitBundle() *fake.Clientset {
-	return fake.NewSimpleClientset(createSecret(sensorTLSSecretName), createSecret(collectorTLSSecretName), createSecret(admissionControlTLSSecretName))
+func newFakeClientWithInitBundle() ctrlClient.Client {
+	return fake.NewClientBuilder().WithObjects(
+		createSecret(sensorTLSSecretName),
+		createSecret(collectorTLSSecretName),
+		createSecret(admissionControlTLSSecretName)).Build()
 }
 
 func createSecret(name string) *v1.Secret {

@@ -5,65 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetCommentsForAlert mocks base method
-func (m *MockStore) GetCommentsForAlert(alertID string) ([]*storage.Comment, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommentsForAlert", alertID)
-	ret0, _ := ret[0].([]*storage.Comment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCommentsForAlert indicates an expected call of GetCommentsForAlert
-func (mr *MockStoreMockRecorder) GetCommentsForAlert(alertID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsForAlert", reflect.TypeOf((*MockStore)(nil).GetCommentsForAlert), alertID)
-}
-
-// GetComment mocks base method
-func (m *MockStore) GetComment(alertID, commentID string) (*storage.Comment, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetComment", alertID, commentID)
-	ret0, _ := ret[0].(*storage.Comment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetComment indicates an expected call of GetComment
-func (mr *MockStoreMockRecorder) GetComment(alertID, commentID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComment", reflect.TypeOf((*MockStore)(nil).GetComment), alertID, commentID)
-}
-
-// AddAlertComment mocks base method
+// AddAlertComment mocks base method.
 func (m *MockStore) AddAlertComment(comment *storage.Comment) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddAlertComment", comment)
@@ -72,27 +43,43 @@ func (m *MockStore) AddAlertComment(comment *storage.Comment) (string, error) {
 	return ret0, ret1
 }
 
-// AddAlertComment indicates an expected call of AddAlertComment
+// AddAlertComment indicates an expected call of AddAlertComment.
 func (mr *MockStoreMockRecorder) AddAlertComment(comment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAlertComment", reflect.TypeOf((*MockStore)(nil).AddAlertComment), comment)
 }
 
-// UpdateAlertComment mocks base method
-func (m *MockStore) UpdateAlertComment(comment *storage.Comment) error {
+// GetComment mocks base method.
+func (m *MockStore) GetComment(alertID, commentID string) (*storage.Comment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAlertComment", comment)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "GetComment", alertID, commentID)
+	ret0, _ := ret[0].(*storage.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// UpdateAlertComment indicates an expected call of UpdateAlertComment
-func (mr *MockStoreMockRecorder) UpdateAlertComment(comment interface{}) *gomock.Call {
+// GetComment indicates an expected call of GetComment.
+func (mr *MockStoreMockRecorder) GetComment(alertID, commentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAlertComment", reflect.TypeOf((*MockStore)(nil).UpdateAlertComment), comment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComment", reflect.TypeOf((*MockStore)(nil).GetComment), alertID, commentID)
 }
 
-// RemoveAlertComment mocks base method
+// GetCommentsForAlert mocks base method.
+func (m *MockStore) GetCommentsForAlert(alertID string) ([]*storage.Comment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommentsForAlert", alertID)
+	ret0, _ := ret[0].([]*storage.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommentsForAlert indicates an expected call of GetCommentsForAlert.
+func (mr *MockStoreMockRecorder) GetCommentsForAlert(alertID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsForAlert", reflect.TypeOf((*MockStore)(nil).GetCommentsForAlert), alertID)
+}
+
+// RemoveAlertComment mocks base method.
 func (m *MockStore) RemoveAlertComment(alertID, commentID string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveAlertComment", alertID, commentID)
@@ -100,13 +87,13 @@ func (m *MockStore) RemoveAlertComment(alertID, commentID string) error {
 	return ret0
 }
 
-// RemoveAlertComment indicates an expected call of RemoveAlertComment
+// RemoveAlertComment indicates an expected call of RemoveAlertComment.
 func (mr *MockStoreMockRecorder) RemoveAlertComment(alertID, commentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAlertComment", reflect.TypeOf((*MockStore)(nil).RemoveAlertComment), alertID, commentID)
 }
 
-// RemoveAlertComments mocks base method
+// RemoveAlertComments mocks base method.
 func (m *MockStore) RemoveAlertComments(alertID string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveAlertComments", alertID)
@@ -114,8 +101,22 @@ func (m *MockStore) RemoveAlertComments(alertID string) error {
 	return ret0
 }
 
-// RemoveAlertComments indicates an expected call of RemoveAlertComments
+// RemoveAlertComments indicates an expected call of RemoveAlertComments.
 func (mr *MockStoreMockRecorder) RemoveAlertComments(alertID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAlertComments", reflect.TypeOf((*MockStore)(nil).RemoveAlertComments), alertID)
+}
+
+// UpdateAlertComment mocks base method.
+func (m *MockStore) UpdateAlertComment(comment *storage.Comment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAlertComment", comment)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAlertComment indicates an expected call of UpdateAlertComment.
+func (mr *MockStoreMockRecorder) UpdateAlertComment(comment interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAlertComment", reflect.TypeOf((*MockStore)(nil).UpdateAlertComment), comment)
 }

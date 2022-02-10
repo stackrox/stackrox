@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -100,7 +99,7 @@ func (w *Wrapper) Directory(path string) (string, error) {
 			return "", err
 		}
 		fullFilePath := filepath.Join(path, file.Name)
-		if err := ioutil.WriteFile(fullFilePath, file.Content, getFilePerms(file)); err != nil {
+		if err := os.WriteFile(fullFilePath, file.Content, getFilePerms(file)); err != nil {
 			return "", err
 		}
 	}

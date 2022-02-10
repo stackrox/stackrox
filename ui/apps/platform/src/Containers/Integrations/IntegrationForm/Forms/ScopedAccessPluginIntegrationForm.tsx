@@ -1,5 +1,4 @@
 /* eslint-disable react/no-array-index-key */
-/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement } from 'react';
 import {
     Button,
@@ -17,6 +16,7 @@ import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -24,7 +24,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type ScopedAccessPluginIntegration = {
@@ -159,14 +158,18 @@ function ScopedAccessPluginIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return setFieldValue(event.target.id, value);
+    }
+
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.endpointConfig.password', '');
         return setFieldValue(event.target.id, value);
     }
 
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
                         <FormLabelGroup
@@ -263,18 +266,18 @@ function ScopedAccessPluginIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        {!isCreating && (
+                        {!isCreating && isEditable && (
                             <FormLabelGroup
                                 label=""
                                 fieldId="updatePassword"
-                                helperText="Leave this off to use the currently stored credentials."
+                                helperText="Enable this option to replace currently stored credentials (if any)"
                                 errors={errors}
                             >
                                 <Checkbox
                                     label="Update password"
                                     id="updatePassword"
                                     isChecked={values.updatePassword}
-                                    onChange={onChange}
+                                    onChange={onUpdateCredentialsChange}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />

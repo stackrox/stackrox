@@ -86,7 +86,7 @@ function CredentialExpiration({
                     {expirationElement}
                     <div className="flex flex-row items-end leading-tight text-tertiary-700">
                         <a
-                            href="/docs/product/docs/configure-stackrox/reissue-internal-certificates/#secured-clusters-sensor-collector-admission-controller"
+                            href="/docs/product/rhacs/latest/configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="underline"

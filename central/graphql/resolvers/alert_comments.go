@@ -31,7 +31,7 @@ func (resolver *Resolver) AlertComments(ctx context.Context, args struct{ Resour
 		resolver.ViolationsDataStore.GetAlertComments(ctx, string(args.ResourceID)))
 }
 
-//AddAlertComment adds a comment to an alert
+// AddAlertComment adds a comment to an alert
 func (resolver *Resolver) AddAlertComment(ctx context.Context, args struct {
 	ResourceID     graphql.ID
 	CommentMessage string
@@ -51,7 +51,7 @@ func (resolver *Resolver) AddAlertComment(ctx context.Context, args struct {
 	return commentID, nil
 }
 
-//UpdateAlertComment updates an existing alert comment
+// UpdateAlertComment updates an existing alert comment
 func (resolver *Resolver) UpdateAlertComment(ctx context.Context, args struct {
 	ResourceID, CommentID graphql.ID
 	CommentMessage        string

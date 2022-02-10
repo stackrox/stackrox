@@ -275,9 +275,8 @@ function NetworkBaselinesTable({
                         ) : null;
 
                         return (
-                            <>
+                            <React.Fragment key={key}>
                                 <TableRow
-                                    key={key}
                                     row={row}
                                     colorStyles={rowColorStyles}
                                     HoveredRowComponent={HoveredRowComponent}
@@ -293,7 +292,7 @@ function NetworkBaselinesTable({
                                         row.cells.map((cell) => {
                                             return (
                                                 <TableCell
-                                                    key={cell.column.Header}
+                                                    key={cell.column.id}
                                                     cell={cell}
                                                     colorStyles={rowColorStyles}
                                                 />
@@ -310,7 +309,7 @@ function NetworkBaselinesTable({
                                             columnCount={includedColumns.length}
                                         />
                                     )}
-                            </>
+                            </React.Fragment>
                         );
                     })}
                 </TableBody>

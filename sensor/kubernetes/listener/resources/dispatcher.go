@@ -16,11 +16,12 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1Listers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
 )
 
 // Dispatcher is responsible for processing resource events, and returning the sensor events that should be emitted
 // in response.
-//go:generate mockgen-wrapper Dispatcher
+//go:generate mockgen-wrapper
 type Dispatcher interface {
 	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent
 }
@@ -35,6 +36,7 @@ type DispatcherRegistry interface {
 	ForNodes() Dispatcher
 	ForSecrets() Dispatcher
 	ForServices() Dispatcher
+	ForOpenshiftRoutes() Dispatcher
 	ForServiceAccounts() Dispatcher
 	ForRBAC() Dispatcher
 	ForClusterOperators() Dispatcher
@@ -43,10 +45,12 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorProfiles() Dispatcher
 	ForComplianceOperatorRules() Dispatcher
 	ForComplianceOperatorScanSettingBindings() Dispatcher
+	ForComplianceOperatorScans() Dispatcher
+	ForComplianceOperatorTailoredProfiles() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister,
+func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, profileLister cache.GenericLister,
 	entityStore *clusterentities.Store, processFilter filter.Filter,
 	configHandler config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) DispatcherRegistry {
 	serviceStore := newServiceStore()
@@ -56,6 +60,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister,
 	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
 	rbacUpdater := rbac.NewStore()
+	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
@@ -63,7 +68,8 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister,
 
 		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
-		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
+		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
+		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
 		secretDispatcher:          newSecretDispatcher(),
 		networkPolicyDispatcher:   newNetworkPolicyDispatcher(),
 		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
@@ -74,6 +80,8 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister,
 		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),
 		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
 		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(),
+		complianceOperatorScanDispatcher:                complianceOperatorDispatchers.NewScanDispatcher(),
+		complianceOperatorTailoredProfileDispatcher:     complianceOperatorDispatchers.NewTailoredProfileDispatcher(profileLister),
 	}
 }
 
@@ -83,6 +91,7 @@ type registryImpl struct {
 	rbacDispatcher            *rbac.Dispatcher
 	namespaceDispatcher       *namespaceDispatcher
 	serviceDispatcher         *serviceDispatcher
+	osRouteDispatcher         *routeDispatcher
 	secretDispatcher          *secretDispatcher
 	networkPolicyDispatcher   *networkPolicyDispatcher
 	nodeDispatcher            *nodeDispatcher
@@ -93,6 +102,8 @@ type registryImpl struct {
 	complianceOperatorProfileDispatcher             *complianceOperatorDispatchers.ProfileDispatcher
 	complianceOperatorScanSettingBindingsDispatcher *complianceOperatorDispatchers.ScanSettingBindings
 	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
+	complianceOperatorScanDispatcher                *complianceOperatorDispatchers.ScanDispatcher
+	complianceOperatorTailoredProfileDispatcher     *complianceOperatorDispatchers.TailoredProfileDispatcher
 }
 
 func wrapWithMetricDispatcher(d Dispatcher) Dispatcher {
@@ -150,6 +161,10 @@ func (d *registryImpl) ForServices() Dispatcher {
 	return wrapWithMetricDispatcher(d.serviceDispatcher)
 }
 
+func (d *registryImpl) ForOpenshiftRoutes() Dispatcher {
+	return wrapWithMetricDispatcher(d.osRouteDispatcher)
+}
+
 func (d *registryImpl) ForServiceAccounts() Dispatcher {
 	return wrapWithMetricDispatcher(d.serviceAccountDispatcher)
 }
@@ -170,10 +185,18 @@ func (d *registryImpl) ForComplianceOperatorProfiles() Dispatcher {
 	return wrapWithMetricDispatcher(d.complianceOperatorProfileDispatcher)
 }
 
+func (d *registryImpl) ForComplianceOperatorTailoredProfiles() Dispatcher {
+	return wrapWithMetricDispatcher(d.complianceOperatorTailoredProfileDispatcher)
+}
+
 func (d *registryImpl) ForComplianceOperatorRules() Dispatcher {
 	return wrapWithMetricDispatcher(d.complianceOperatorRulesDispatcher)
 }
 
 func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
 	return wrapWithMetricDispatcher(d.complianceOperatorScanSettingBindingsDispatcher)
+}
+
+func (d *registryImpl) ForComplianceOperatorScans() Dispatcher {
+	return wrapWithMetricDispatcher(d.complianceOperatorScanDispatcher)
 }

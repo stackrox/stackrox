@@ -6,6 +6,7 @@ import (
 
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -60,10 +61,10 @@ func (h *httpMetricsImpl) WrapHandler(handler http.Handler, path string) http.Ha
 			panic(r)
 		}()
 
-		monitoringWriter := newMonitoringResponseWriter(w)
-		handler.ServeHTTP(monitoringWriter, r)
+		statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
+		handler.ServeHTTP(statusTrackingWriter, r)
 
-		statusCode := monitoringWriter.GetStatusCode()
+		statusCode := statusTrackingWriter.GetStatusCode()
 		if statusCode == nil {
 			sc := 200
 			statusCode = &sc

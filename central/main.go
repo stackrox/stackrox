@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -94,6 +93,9 @@ import (
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
+	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
+	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
+	reportService "github.com/stackrox/rox/central/reports/service"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	"github.com/stackrox/rox/central/role"
@@ -125,19 +127,22 @@ import (
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
+	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
+	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
+	"github.com/stackrox/rox/pkg/auth/authproviders/openshift"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -149,6 +154,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -223,20 +229,7 @@ func main() {
 
 	proxy.WatchProxyConfig(context.Background(), proxyConfigPath, proxyConfigFile, true)
 
-	if devbuild.IsEnabled() {
-		if env.HotReload.BooleanSetting() {
-			log.Warn("***********************************************************************************")
-			log.Warn("This binary is being hot reloaded. It may be a different version from the image tag")
-			log.Warn("***********************************************************************************")
-		}
-
-		debughandler.MustStartServerAsync("")
-
-		devmode.StartBinaryWatchdog("central")
-
-		runtime.SetBlockProfileRate(1)
-		runtime.SetMutexProfileFraction(1)
-	}
+	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	ensureDB()
@@ -279,6 +272,10 @@ func startServices() {
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
+
+	if features.VulnRiskManagement.Enabled() {
+		vulnRequestManager.Singleton().Start()
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -346,6 +343,16 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		userService.Singleton(),
 	}
 
+	if features.VulnRiskManagement.Enabled() {
+		servicesToRegister = append(servicesToRegister, vulnRequestService.Singleton())
+	}
+
+	if features.VulnReporting.Enabled() {
+		servicesToRegister = append(servicesToRegister,
+			reportConfigurationService.Singleton(),
+			reportService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -358,7 +365,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 
-	if env.OfflineModeEnv.Setting() != "true" {
+	if !env.OfflineModeEnv.BooleanSetting() {
 		go fetcher.SingletonManager().Start()
 	}
 
@@ -429,6 +436,13 @@ func startGRPCServer() {
 		log.Panicf("Could not create auth provider registry: %v", err)
 	}
 
+	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
+	// is configured correctly to talk to the OpenShift's OAuth server. If this
+	// is the case, we can be setting up an auth providers which won't work.
+	if env.EnableOpenShiftAuth.BooleanSetting() {
+		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
+	}
+
 	for typeName, factoryCreator := range authProviderBackendFactories {
 		if err := registry.RegisterBackendFactory(authProviderRegisteringCtx, typeName, factoryCreator); err != nil {
 			log.Panicf("Could not register %s auth provider factory: %v", typeName, err)
@@ -479,8 +493,10 @@ func startGRPCServer() {
 		Endpoints:          endpointCfgs,
 	}
 
-	// This helps validate that SAC is being used correctly.
 	if devbuild.IsEnabled() {
+		config.UnaryInterceptors = append(config.UnaryInterceptors, errors.PanicOnInvariantViolationUnaryInterceptor)
+		config.StreamInterceptors = append(config.StreamInterceptors, errors.PanicOnInvariantViolationStreamInterceptor)
+		// This helps validate that SAC is being used correctly.
 		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
 
@@ -489,6 +505,7 @@ func startGRPCServer() {
 	config.UnaryInterceptors = append(config.UnaryInterceptors,
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
+	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
 	// The below enrichers handle SAC being off or on.
 	// Before authorization is checked, we want to inject the sac client into the context.
@@ -659,7 +676,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/logimbue",
-			Authorizer:    user.WithAnyRole(),
+			Authorizer:    user.With(),
 			ServerHandler: logimbueHandler.Singleton(),
 			Compression:   false,
 		},
@@ -738,6 +755,14 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
+	}
+
+	if features.VulnRiskManagement.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"})
+	}
+
+	if features.VulnReporting.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
 	}
 
 	var wg sync.WaitGroup

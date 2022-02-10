@@ -405,54 +405,6 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			},
 			status: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 		},
-		//{
-		//	name: "CIS_Docker_v1_2_0:5_6",
-		//	container: types.ContainerJSON{
-		//		ContainerJSONBase: &types.ContainerJSONBase{
-		//			ID: "17e5fdec203e131d823ee0167089847976b9a71f7ad2cafbe45b60ec2bf427b7",
-		//			State: &types.ContainerState{
-		//				Running: true,
-		//			},
-		//		},
-		//	},
-		//	status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-		//},
-		//{
-		//	name: "CIS_Docker_v1_2_0:5_6",
-		//	container: types.ContainerJSON{
-		//		ContainerJSONBase: &types.ContainerJSONBase{
-		//			ID: "860a6347711e0989ab0ccdcbe618bcad7cbbb440c27d0d6b02d02388940dd276",
-		//			State: &types.ContainerState{
-		//				Running: true,
-		//			},
-		//		},
-		//	},
-		//	status: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
-		//},
-		//{
-		//	name: "CIS_Docker_v1_2_0:5_6",
-		//	container: types.ContainerJSON{
-		//		ContainerJSONBase: &types.ContainerJSONBase{
-		//			ID: "828b7beae96bb06b275ef589ad6f861e40fc61f7a64c1239526b1ac8df241000",
-		//			State: &types.ContainerState{
-		//				Running: true,
-		//			},
-		//		},
-		//	},
-		//	status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-		//},
-		//{
-		//	name: "CIS_Docker_v1_2_0:5_6",
-		//	container: types.ContainerJSON{
-		//		ContainerJSONBase: &types.ContainerJSONBase{
-		//			ID: "13ea7ce738f4d5921bd2503618a59dfcb48029149d7cbf712063adabbed8e0d2",
-		//			State: &types.ContainerState{
-		//				Running: true,
-		//			},
-		//		},
-		//	},
-		//	status: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
-		//},
 		{
 			name: "CIS_Docker_v1_2_0:5_7",
 			container: types.ContainerJSON{
@@ -775,8 +727,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 	}
 
-	for _, cIt := range cases {
-		c := cIt
+	for _, c := range cases {
+		c := c
 		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 

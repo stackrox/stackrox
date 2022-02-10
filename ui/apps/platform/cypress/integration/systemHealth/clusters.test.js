@@ -1,6 +1,7 @@
 import { selectors, systemHealthUrl } from '../../constants/SystemHealth';
 import { clusters as clustersApi } from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import navigationSelectors from '../../selectors/navigation';
 
 describe('System Health Clusters local deployment', () => {
@@ -13,7 +14,7 @@ describe('System Health Clusters local deployment', () => {
     it('should go from left navigation to Dashboard and have widgets', () => {
         cy.visit('/');
         cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
-        cy.get(`${navigationSelectors.navLinks}:contains("System Health")`).click();
+        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Health")`).click();
         cy.wait('@GetClusters');
 
         cy.get('[data-testid="header-text"]').should('have.text', 'System Health');
@@ -465,5 +466,32 @@ describe('System Health Clusters subset 1 Healthy', () => {
             cy.get(`${widgetSelector} ${categoryCount}`).should('not.exist');
             cy.get(`${widgetSelector} ${problemCount}`).should('not.exist');
         });
+    });
+});
+
+describe('System Health, PatternFly version', () => {
+    withAuth();
+
+    before(function beforeHook() {
+        if (!hasFeatureFlag('ROX_SYSTEM_HEALTH_PF')) {
+            this.skip();
+        }
+    });
+
+    beforeEach(() => {
+        cy.intercept('GET', clustersApi.list).as('GetClusters');
+    });
+
+    it('should go from left navigation to Dashboard and have widgets', () => {
+        cy.visit('/');
+        cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
+        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Health")`).click();
+
+        // TODO: remove this direct access shim after the PF version of the page is the default
+        cy.visit('/main/system-health-pf');
+
+        cy.wait('@GetClusters');
+
+        cy.get('h1:contains("System Health")');
     });
 });

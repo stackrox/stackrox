@@ -52,17 +52,15 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 }
 
 func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
-	var filtered []*storage.Policy
-	var runtime []*storage.Policy
+	var deploytimePolicies, runtimePolicies []*storage.Policy
 	for _, policy := range policies {
+		if isEnforcedDeployTimePolicy(policy) {
+			deploytimePolicies = append(deploytimePolicies, policy.Clone())
+		}
 		if pkgPolicies.AppliesAtRunTime(policy) &&
 			booleanpolicy.ContainsOneOf(policy, booleanpolicy.KubeEvent) {
-			runtime = append(runtime, policy.Clone())
-		} else if !isEnforcedDeployTimePolicy(policy) {
-			continue
+			runtimePolicies = append(runtimePolicies, policy.Clone())
 		}
-
-		filtered = append(filtered, policy.Clone())
 	}
 
 	p.mutex.Lock()
@@ -71,8 +69,8 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	p.hasPolicies = true
 
 	newSettings := p.newSettingsNoLock()
-	newSettings.EnforcedDeployTimePolicies = &storage.PolicyList{Policies: filtered}
-	newSettings.RuntimePolicies = &storage.PolicyList{Policies: runtime}
+	newSettings.EnforcedDeployTimePolicies = &storage.PolicyList{Policies: deploytimePolicies}
+	newSettings.RuntimePolicies = &storage.PolicyList{Policies: runtimePolicies}
 
 	if p.hasClusterConfig && p.hasPolicies {
 		p.settingsStream.Push(newSettings)

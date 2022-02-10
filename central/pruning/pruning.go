@@ -18,9 +18,11 @@ import (
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -56,7 +58,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
 	config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore,
-	risks riskDataStore.DataStore) GarbageCollector {
+	risks riskDataStore.DataStore,
+	vulnReqs vulnReqDataStore.DataStore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -70,6 +73,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		networkflows:    networkflows,
 		config:          config,
 		risks:           risks,
+		vulnReqs:        vulnReqs,
 		stopSig:         concurrency.NewSignal(),
 		stoppedSig:      concurrency.NewSignal(),
 	}
@@ -88,6 +92,7 @@ type garbageCollectorImpl struct {
 	networkflows    networkFlowDatastore.ClusterDataStore
 	config          configDatastore.DataStore
 	risks           riskDataStore.DataStore
+	vulnReqs        vulnReqDataStore.DataStore
 	stopSig         concurrency.Signal
 	stoppedSig      concurrency.Signal
 }
@@ -112,6 +117,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()
 	g.removeOrphanedRisks()
+	if features.VulnRiskManagement.Enabled() {
+		g.removeExpiredVulnRequests()
+	}
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
 
@@ -127,6 +135,29 @@ func (g *garbageCollectorImpl) runGC() {
 			g.stoppedSig.Signal()
 			return
 		}
+	}
+}
+
+// Remove vulnerability requests that have expired and past the retention period.
+func (g *garbageCollectorImpl) removeExpiredVulnRequests() {
+	results, err := g.vulnReqs.Search(
+		pruningCtx,
+		search.ConjunctionQuery(
+			search.NewQueryBuilder().AddBools(search.ExpiredRequest, true).ProtoQuery(),
+			search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(configDatastore.DefaultExpiredVulnReqRetention)).ProtoQuery()),
+	)
+	if err != nil {
+		log.Errorf("Error fetching expired vulnerability requests for pruning: %v", err)
+		return
+	}
+	if len(results) == 0 {
+		return
+	}
+
+	log.Infof("[Pruning] Found %d expired vulnerability requests. Deleting...", len(results))
+
+	if err := g.vulnReqs.RemoveRequestsInternal(pruningCtx, search.ResultsToIDs(results)); err != nil {
+		log.Errorf("Failed to remove some expired vulnerability requests. Removal will be retried in next pruning cycle: %v", err)
 	}
 }
 

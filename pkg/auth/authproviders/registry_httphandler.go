@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sac"
@@ -139,9 +140,15 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	}
 
 	ri := requestinfo.FromContext(req.Context())
-	loginURL := backend.LoginURL(clientState, &ri)
+	loginURL, err := backend.LoginURL(clientState, &ri)
+	if err != nil {
+		log.Warnf("could not obtain the login URL for %s: %v", providerID, err)
+		http.Error(w, fmt.Sprintf("could not get login URL: %v", err), http.StatusInternalServerError)
+		return
+	}
 	if loginURL == "" {
-		http.Error(w, "could not get login URL", http.StatusInternalServerError)
+		log.Warnf("empty login URL for %s", providerID)
+		http.Error(w, "empty login URL", http.StatusInternalServerError)
 		return
 	}
 
@@ -253,17 +260,29 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+	// We need all access for retrieving roles.
+	user, err := CreateRoleBasedIdentity(sac.WithAllAccess(req.Context()), provider, authResp)
+	if err != nil {
+		r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, testMode)
+		return
+	}
 
 	if testMode {
-		// We need all access for retrieving roles.
-		user, err := CreateRoleBasedIdentity(sac.WithAllAccess(req.Context()), provider, authResp)
-		if err != nil {
-			r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, testMode)
-			return
-		}
-
 		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, testMode).String())
 		w.WriteHeader(http.StatusSeeOther)
+		return
+	}
+
+	userInfo := user.GetUserInfo()
+	if userInfo == nil {
+		err := errorhelpers.NewErrNotAuthorized("failed to get user info")
+		r.error(w, err, typ, clientState, testMode)
+		return
+	}
+	userRoles := userInfo.GetRoles()
+	if len(userRoles) == 0 {
+		err := errorhelpers.GenericNoValidRole()
+		r.error(w, err, typ, clientState, testMode)
 		return
 	}
 

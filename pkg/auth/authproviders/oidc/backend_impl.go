@@ -158,7 +158,7 @@ func (p *backendImpl) RevokeRefreshToken(ctx context.Context, refreshTokenData a
 	return errors.New(errMsg)
 }
 
-func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
+func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
 	return p.loginURL(clientState, ri)
 }
 
@@ -358,7 +358,7 @@ func (p *backendImpl) oauthCfgForRequest(ri *requestinfo.RequestInfo) *oauth2.Co
 	return &oauthCfg
 }
 
-func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) string {
+func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
 	state := idputil.MakeState(p.id, clientState)
 	options := make([]oauth2.AuthCodeOption, len(p.baseOptions), len(p.baseOptions)+1)
 	copy(options, p.baseOptions)
@@ -369,24 +369,13 @@ func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) 
 		nonce, err := p.noncePool.IssueNonce()
 		if err != nil {
 			log.Error("UNEXPECTED: could not issue nonce")
-			return ""
+			return "", err
 		}
 
 		options = append(options, oidc.Nonce(nonce))
 	}
 
-	redirectURL := p.baseRedirectURL
-	if p.allowedUIEndpoints.Contains(ri.Hostname) {
-		redirectURL.Host = ri.Hostname
-		// Allow HTTP only if the client did not use TLS and the host is localhost.
-		if !ri.ClientUsedTLS && netutil.IsLocalEndpoint(redirectURL.Host) {
-			redirectURL.Scheme = "http"
-		}
-	} else {
-		redirectURL.Host = p.defaultUIEndpoint
-	}
-
-	return p.oauthCfgForRequest(ri).AuthCodeURL(state, options...)
+	return p.oauthCfgForRequest(ri).AuthCodeURL(state, options...), nil
 }
 
 func (p *backendImpl) processIDPResponseForImplicitFlowWithIDToken(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
@@ -596,18 +585,18 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	// Add all fields as attributes.
 	claim.Attributes = make(map[string][]string)
 	if claim.UserID != "" {
-		claim.Attributes["userid"] = []string{claim.UserID}
+		claim.Attributes[authproviders.UseridAttribute] = []string{claim.UserID}
 	}
 	if claim.FullName != "" {
-		claim.Attributes["name"] = []string{claim.FullName}
+		claim.Attributes[authproviders.NameAttribute] = []string{claim.FullName}
 	}
 	if claim.Email != "" {
-		claim.Attributes["email"] = []string{claim.Email}
+		claim.Attributes[authproviders.EmailAttribute] = []string{claim.Email}
 	}
 
 	// If using non-standard group information add them.
 	if len(userInfo.Groups) > 0 {
-		claim.Attributes["groups"] = userInfo.Groups
+		claim.Attributes[authproviders.GroupsAttribute] = userInfo.Groups
 	}
 	return claim
 }

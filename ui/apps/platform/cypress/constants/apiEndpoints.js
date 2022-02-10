@@ -80,6 +80,7 @@ export const alerts = {
         tagsAutocomplete: 'autocomplete',
         bulkAddAlertTags: 'bulkAddAlertTags',
         getComments: 'getAlertComments',
+        removeTags: 'removeAlertTags',
     },
 };
 
@@ -239,6 +240,8 @@ export const vulnMgmt = {
         getPolicies: 'getPolicies',
         getPolicy: 'getPolicy',
         getImage: 'getImage',
+        getDeploymentCOMPONENT: 'getDeploymentCOMPONENT',
+        getFixableCvesForEntity: 'getFixableCvesForEntity',
     },
 };
 
@@ -267,6 +270,16 @@ export const integration = {
         generate: 'v1/cluster-init/init-bundles',
         revoke: '/v1/cluster-init/init-bundles/revoke',
     },
+};
+
+export const report = {
+    configurations: '/v1/report/configurations*',
+};
+
+export const riskAcceptance = {
+    getImageVulnerabilities: graphql('getImageVulnerabilities'),
+    deferVulnerability: graphql('deferVulnerability'),
+    markVulnerabilityFalsePositive: graphql('markVulnerabilityFalsePositive'),
 };
 
 export const system = {

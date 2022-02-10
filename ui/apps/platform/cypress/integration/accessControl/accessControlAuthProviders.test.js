@@ -4,13 +4,18 @@ import {
     accessModalSelectors,
 } from '../../constants/AccessControlPage';
 import { permissions as permissionsApi } from '../../constants/apiEndpoints';
+import sampleCert from '../../helpers/sampleCert';
+import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
 
 import withAuth from '../../helpers/basicAuth';
 
 // TODO Fix 'v1/authProviders*' without initial slash and with asterisk in apiEndpoints?
 const authProvidersApi = {
     list: '/v1/authProviders',
+    create: '/v1/authProviders',
 };
+
+const mypermissionApi = '/v1/mypermissions';
 
 const groupsApi = {
     list: '/v1/groups',
@@ -24,8 +29,11 @@ describe('Access Control Auth providers', () => {
 
     function visitAuthProviders() {
         cy.intercept('GET', authProvidersApi.list).as('GetAuthProviders');
+        cy.intercept('GET', mypermissionApi).as('GetMyPermissions');
+        cy.intercept('POST', authProvidersApi.create, {}).as('CreateAuthProvider');
         cy.visit(authProvidersUrl);
         cy.wait('@GetAuthProviders');
+        cy.wait('@GetMyPermissions');
     }
 
     it('displays alert if no permission', () => {
@@ -234,6 +242,7 @@ describe('Access Control Auth providers', () => {
         visitAuthProviders();
 
         const type = 'User Certificates';
+        const newProviderName = generateNameWithDate('User Cert Test Provide');
 
         cy.get(selectors.list.addButton).click();
         cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
@@ -247,17 +256,30 @@ describe('Access Control Auth providers', () => {
 
         cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
 
-        cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
+        getInputByLabel('Name').should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
             .should('be.disabled')
             .should('contain', type);
 
-        cy.get(selectors.form.authProvider.userpki.textareaCertificates)
+        getInputByLabel('CA certificate(s) (PEM)')
             .should('be.enabled')
             .should('have.attr', 'required');
 
         cy.get(selectors.form.saveButton).should('be.disabled');
         cy.get(selectors.form.cancelButton).should('be.enabled');
+
+        getInputByLabel('Name').type(newProviderName, { delay: 1 });
+        getInputByLabel('CA certificate(s) (PEM)').type(sampleCert, {
+            delay: 1,
+        });
+
+        cy.get(selectors.form.saveButton).should('be.enabled').click();
+
+        cy.wait('@CreateAuthProvider'); // wait for POST to finish
+        cy.wait('@GetAuthProviders'); // wait for GET to finish, which means redirect back to list page
+        cy.location().should((loc) => {
+            expect(loc.pathname).to.eq('/main/access-control/auth-providers');
+        });
     });
 
     it('add Google IAP', () => {

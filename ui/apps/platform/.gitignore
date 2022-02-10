@@ -1,6 +1,3 @@
-# development
-storybook-static/
-
 # testing
 /coverage
 /cypress/test-results

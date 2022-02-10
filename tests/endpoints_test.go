@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -331,13 +330,13 @@ func TestEndpoints(t *testing.T) {
 	require.NoError(t, err, "failed to load service certificate")
 
 	trustPool := x509.NewCertPool()
-	serviceCAPEMBytes, err := ioutil.ReadFile(os.Getenv("SERVICE_CA_FILE"))
+	serviceCAPEMBytes, err := os.ReadFile(os.Getenv("SERVICE_CA_FILE"))
 	require.NoError(t, err, "failed to load service CA file")
 	serviceCACert, err := helpers.ParseCertificatePEM(serviceCAPEMBytes)
 	require.NoError(t, err, "failed to parse service CA cert")
 	trustPool.AddCert(serviceCACert)
 
-	defaultCAPEMBytes, err := ioutil.ReadFile(os.Getenv("DEFAULT_CA_FILE"))
+	defaultCAPEMBytes, err := os.ReadFile(os.Getenv("DEFAULT_CA_FILE"))
 	require.NoError(t, err, "failed to load default CA file")
 	defaultCACert, err := helpers.ParseCertificatePEM(defaultCAPEMBytes)
 	require.NoError(t, err, "failed to parse default CA cert")

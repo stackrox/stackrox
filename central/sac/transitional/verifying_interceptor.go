@@ -65,6 +65,12 @@ var (
 // checked for by scoped access control are at least as strong as the permissions governing access
 // to the service method.
 func VerifySACScopeChecksInterceptor(ctx context.Context, req interface{}, serverInfo *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	// We cannot validate the built-in scoped authorizer's permission checks
+	// because it does not check permissions via ScopeCheckerCore::TryAllowed().
+	if sac.IsContextBuiltinScopedAuthzEnabled(ctx) {
+		return handler(ctx, req)
+	}
+
 	scc := sac.GlobalAccessScopeChecker(ctx).Core()
 
 	recordingSCC := newPermissionRecordingSCC(scc)

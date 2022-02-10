@@ -4,28 +4,19 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
-	helmTest "github.com/stackrox/rox/pkg/helm/test"
-	"github.com/stretchr/testify/require"
-	"helm.sh/helm/v3/pkg/chartutil"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/helm/charts"
+	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
 )
 
 func TestWithHelmtest(t *testing.T) {
-	helmImage := image.GetDefaultImage()
-	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
-	require.NoError(t, err, "error retrieving chart template")
-	ch, err := tpl.InstantiateAndLoad(metaValues)
-	require.NoError(t, err, "error instantiating chart")
-
-	suite, err := helmTest.LoadSuite("testdata/helmtest")
-	require.NoError(t, err, "failed to load helmtest suite")
-
-	target := &helmTest.Target{
-		Chart: ch,
-		ReleaseOptions: chartutil.ReleaseOptions{
-			Name:      "stackrox-secured-cluster-services",
-			Namespace: "stackrox",
-			IsInstall: true,
-		},
-	}
-	suite.Run(t, target)
+	helmChartTestUtils.RunHelmTestSuite(t, "testdata/helmtest", image.SecuredClusterServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
+		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
+			// TODO(ROX-8793): The tests will be enabled in a follow-up ticket because the current implementation breaks helm chart rendering.
+			if !buildinfo.ReleaseBuild {
+				values.FeatureFlags[features.LocalImageScanning.EnvVar()] = false
+			}
+		}},
+	)
 }

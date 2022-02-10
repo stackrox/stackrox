@@ -62,6 +62,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
+	suite.envIsolator.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
@@ -90,7 +91,6 @@ func (suite *PipelineTestSuite) TestCreateNetworkBaseline() {
 	deployment := fixtures.GetDeployment()
 
 	suite.clusters.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("cluster-name", true, nil)
-	suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 	suite.deployments.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Return(nil)
 	suite.networkBaselines.EXPECT().ProcessDeploymentCreate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any()).Return()

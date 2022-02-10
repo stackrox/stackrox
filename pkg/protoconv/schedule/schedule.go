@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 // ConvertToCronTab validates and converts storage.Schedule to crontab format
@@ -20,12 +21,25 @@ func ConvertToCronTab(schedule *storage.Schedule) (string, error) {
 	minutes := schedule.GetMinute()
 
 	switch schedule.GetIntervalType() {
+	case storage.Schedule_MONTHLY:
+		daysOfMonth := schedule.GetDaysOfMonth().GetDays()
+		return fmt.Sprintf("%d %d %s * *", minutes, hours, stringutils.JoinInt32(",", daysOfMonth...)), nil
 	case storage.Schedule_WEEKLY:
-		weekDay := schedule.GetWeekly().GetDay()
-		if weekDay < 0 || weekDay > 6 {
-			return "", fmt.Errorf("weekday of %d is invalid. Must be between 0 and 6", weekDay)
+		i := schedule.GetInterval()
+		var weekDays []int32
+		if _, ok := i.(*storage.Schedule_Weekly); ok {
+			weekDays = []int32{schedule.GetWeekly().GetDay()}
+
+		} else if _, ok := i.(*storage.Schedule_DaysOfWeek_); ok {
+			weekDays = schedule.GetDaysOfWeek().GetDays()
 		}
-		return fmt.Sprintf("%d %d * * %d", minutes, hours, weekDay), nil
+
+		for _, weekDay := range weekDays {
+			if weekDay < 0 || weekDay > 6 {
+				return "", fmt.Errorf("weekday of %d is invalid. Must be between 0 and 6", weekDay)
+			}
+		}
+		return fmt.Sprintf("%d %d * * %s", minutes, hours, stringutils.JoinInt32(",", weekDays...)), nil
 	case storage.Schedule_DAILY:
 		return fmt.Sprintf("%d %d * * *", minutes, hours), nil
 	default:

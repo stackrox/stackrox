@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"hash/crc32"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,7 +30,7 @@ func TestManager(t *testing.T) {
 }
 
 func (s *managerTestSuite) SetupTest() {
-	dataDir, err := ioutil.TempDir("", "probeupload-mgr-test-")
+	dataDir, err := os.MkdirTemp("", "probeupload-mgr-test-")
 	s.Require().NoError(err)
 
 	s.dataDir = dataDir
@@ -61,8 +60,8 @@ func (s *managerTestSuite) TestGetExistingProbeFilesOnNonEmptyDir() {
 
 	fileDataDir := filepath.Join(s.mgr.rootDir, filepath.FromSlash(validFilePath))
 	s.Require().NoError(os.MkdirAll(fileDataDir, 0700))
-	s.Require().NoError(ioutil.WriteFile(filepath.Join(fileDataDir, dataFileName), []byte("foobarbaz"), 0600))
-	s.Require().NoError(ioutil.WriteFile(filepath.Join(fileDataDir, crc32FileName), binenc.BigEndian.EncodeUint32(1337), 0600))
+	s.Require().NoError(os.WriteFile(filepath.Join(fileDataDir, dataFileName), []byte("foobarbaz"), 0600))
+	s.Require().NoError(os.WriteFile(filepath.Join(fileDataDir, crc32FileName), binenc.BigEndian.EncodeUint32(1337), 0600))
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
 	fileInfos, err := s.mgr.GetExistingProbeFiles(allAccessCtx, []string{validFilePath})
@@ -95,11 +94,11 @@ func (s *managerTestSuite) TestStoreFile() {
 	_, err := os.Stat(fileDataDir)
 	s.Require().NoError(err)
 
-	dataContents, err := ioutil.ReadFile(filepath.Join(fileDataDir, dataFileName))
+	dataContents, err := os.ReadFile(filepath.Join(fileDataDir, dataFileName))
 	s.NoError(err)
 	s.Equal(data, dataContents)
 
-	checksumContents, err := ioutil.ReadFile(filepath.Join(fileDataDir, crc32FileName))
+	checksumContents, err := os.ReadFile(filepath.Join(fileDataDir, crc32FileName))
 	s.NoError(err)
 	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), checksumContents)
 }

@@ -17,11 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
+	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -37,13 +37,13 @@ var (
 )
 
 // NewTranslator creates a translator
-func NewTranslator(client kubernetes.Interface) Translator {
-	return Translator{clientSet: client}
+func NewTranslator(client ctrlClient.Client) Translator {
+	return Translator{client: client}
 }
 
 // Translator translates and enriches helm values
 type Translator struct {
-	clientSet kubernetes.Interface
+	client ctrlClient.Client
 }
 
 // Translate translates and enriches helm values
@@ -121,8 +121,9 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 	}
 
 	v.SetBoolValue("createSecrets", false)
-	sensorSecret, err := t.clientSet.CoreV1().Secrets(sc.Namespace).Get(ctx, sensorTLSSecretName, metav1.GetOptions{})
-	if err != nil {
+	sensorSecret := &corev1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: sc.Namespace, Name: sensorTLSSecretName}
+	if err := t.client.Get(ctx, key, sensorSecret); err != nil {
 		return v.SetError(errors.Wrapf(err, "failed reading %q secret", sensorTLSSecretName))
 	}
 
@@ -149,7 +150,9 @@ func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.Sec
 
 func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.SecuredCluster, secretName string) error {
 	namespace := sc.Namespace
-	if _, err := t.clientSet.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{}); err != nil {
+	secret := &corev1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: namespace, Name: secretName}
+	if err := t.client.Get(ctx, key, secret); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "init-bundle secret %q does not exist in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", secretName, namespace)
 		}

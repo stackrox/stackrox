@@ -8,6 +8,7 @@ import (
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
 	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/mapping"
+	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/index/mappings"
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterVulnEdgeMapping "github.com/stackrox/rox/central/clustercveedge/mappings"
@@ -16,6 +17,7 @@ import (
 	cveMapping "github.com/stackrox/rox/central/cve/mappings"
 	imageComponentMapping "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMapping "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	imageCVEEdgeMapping "github.com/stackrox/rox/central/imagecveedge/mappings"
 	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
@@ -25,9 +27,11 @@ import (
 	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
+	reportConfigurationsMapping "github.com/stackrox/rox/central/reportconfigurations/mappings"
 	riskMappings "github.com/stackrox/rox/central/risk/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/mappings"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
+	vulnReqMapping "github.com/stackrox/rox/central/vulnerabilityrequest/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -117,30 +121,34 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
-		v1.SearchCategory_ALERTS:               alertMapping.OptionsMap,
-		v1.SearchCategory_DEPLOYMENTS:          deployments.OptionsMap,
-		v1.SearchCategory_PODS:                 podMapping.OptionsMap,
-		v1.SearchCategory_IMAGES:               imageSearchOptions,
-		v1.SearchCategory_POLICIES:             policyMapping.OptionsMap,
-		v1.SearchCategory_SECRETS:              secretOptions.OptionsMap,
-		v1.SearchCategory_PROCESS_INDICATORS:   processindicators.OptionsMap,
-		v1.SearchCategory_COMPLIANCE_STANDARD:  index.StandardOptions,
-		v1.SearchCategory_COMPLIANCE_CONTROL:   index.ControlOptions,
-		v1.SearchCategory_CLUSTERS:             clusterMapping.OptionsMap,
-		v1.SearchCategory_NAMESPACES:           namespaceMapping.OptionsMap,
-		v1.SearchCategory_NODES:                nodeMapping.OptionsMap,
-		v1.SearchCategory_PROCESS_BASELINES:    processBaselineMapping.OptionsMap,
-		v1.SearchCategory_RISKS:                riskMappings.OptionsMap,
-		v1.SearchCategory_ROLES:                roleOptions.OptionsMap,
-		v1.SearchCategory_ROLEBINDINGS:         roleBindingOptions.OptionsMap,
-		v1.SearchCategory_SERVICE_ACCOUNTS:     serviceAccountOptions.OptionsMap,
-		v1.SearchCategory_SUBJECTS:             subjectMapping.OptionsMap,
-		v1.SearchCategory_VULNERABILITIES:      cveSearchOptions,
-		v1.SearchCategory_COMPONENT_VULN_EDGE:  componentVulnEdgeMapping.OptionsMap,
-		v1.SearchCategory_CLUSTER_VULN_EDGE:    clusterVulnEdgeMapping.OptionsMap,
-		v1.SearchCategory_IMAGE_COMPONENT_EDGE: imageComponentEdgeMapping.OptionsMap,
-		v1.SearchCategory_IMAGE_COMPONENTS:     componentSearchOptions,
-		v1.SearchCategory_NODE_COMPONENT_EDGE:  nodeComponentEdgeMappings.OptionsMap,
+		v1.SearchCategory_ACTIVE_COMPONENT:      activeComponentMappings.OptionsMap,
+		v1.SearchCategory_ALERTS:                alertMapping.OptionsMap,
+		v1.SearchCategory_DEPLOYMENTS:           deployments.OptionsMap,
+		v1.SearchCategory_PODS:                  podMapping.OptionsMap,
+		v1.SearchCategory_IMAGES:                imageSearchOptions,
+		v1.SearchCategory_POLICIES:              policyMapping.OptionsMap,
+		v1.SearchCategory_SECRETS:               secretOptions.OptionsMap,
+		v1.SearchCategory_PROCESS_INDICATORS:    processindicators.OptionsMap,
+		v1.SearchCategory_COMPLIANCE_STANDARD:   index.StandardOptions,
+		v1.SearchCategory_COMPLIANCE_CONTROL:    index.ControlOptions,
+		v1.SearchCategory_CLUSTERS:              clusterMapping.OptionsMap,
+		v1.SearchCategory_NAMESPACES:            namespaceMapping.OptionsMap,
+		v1.SearchCategory_NODES:                 nodeMapping.OptionsMap,
+		v1.SearchCategory_PROCESS_BASELINES:     processBaselineMapping.OptionsMap,
+		v1.SearchCategory_REPORT_CONFIGURATIONS: reportConfigurationsMapping.OptionsMap,
+		v1.SearchCategory_RISKS:                 riskMappings.OptionsMap,
+		v1.SearchCategory_ROLES:                 roleOptions.OptionsMap,
+		v1.SearchCategory_ROLEBINDINGS:          roleBindingOptions.OptionsMap,
+		v1.SearchCategory_SERVICE_ACCOUNTS:      serviceAccountOptions.OptionsMap,
+		v1.SearchCategory_SUBJECTS:              subjectMapping.OptionsMap,
+		v1.SearchCategory_VULNERABILITIES:       cveSearchOptions,
+		v1.SearchCategory_COMPONENT_VULN_EDGE:   componentVulnEdgeMapping.OptionsMap,
+		v1.SearchCategory_CLUSTER_VULN_EDGE:     clusterVulnEdgeMapping.OptionsMap,
+		v1.SearchCategory_IMAGE_COMPONENT_EDGE:  imageComponentEdgeMapping.OptionsMap,
+		v1.SearchCategory_IMAGE_COMPONENTS:      componentSearchOptions,
+		v1.SearchCategory_IMAGE_VULN_EDGE:       imageCVEEdgeMapping.OptionsMap,
+		v1.SearchCategory_NODE_COMPONENT_EDGE:   nodeComponentEdgeMappings.OptionsMap,
+		v1.SearchCategory_VULN_REQUEST:          vulnReqMapping.OptionsMap,
 	}
 
 	return entityOptionsMap

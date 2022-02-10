@@ -7,6 +7,7 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -159,6 +160,12 @@ func IsPullable(imageStr string) bool {
 	return err == nil
 }
 
+// IsValidImageString returns whether the given string can be parsed as a docker image reference
+func IsValidImageString(imageStr string) error {
+	_, err := reference.ParseAnyReference(imageStr)
+	return err
+}
+
 // ExtractImageDigest returns the image sha if it exists within the string.
 func ExtractImageDigest(imageStr string) string {
 	if idx := strings.Index(imageStr, "sha256:"); idx != -1 {
@@ -211,7 +218,7 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 	for _, c := range img.GetScan().GetComponents() {
 		filteredVulns := make([]*storage.EmbeddedVulnerability, 0, len(c.GetVulns()))
 		for _, vuln := range c.GetVulns() {
-			if !vuln.GetSuppressed() {
+			if !cve.IsCVESnoozed(vuln) {
 				cveSet.Add(vuln.GetCve())
 				filteredVulns = append(filteredVulns, vuln)
 			}

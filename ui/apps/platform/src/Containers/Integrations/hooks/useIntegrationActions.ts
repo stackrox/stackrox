@@ -14,14 +14,9 @@ import { generateAPIToken } from 'services/APITokensService';
 import { generateClusterInitBundle } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
-
-export type FormResponseMessage = {
-    message: string;
-    isError: boolean;
-    responseData?: unknown;
-} | null;
 
 export type UseIntegrationActions = {
     source: IntegrationSource;
@@ -60,7 +55,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
             } else {
                 responseData = await createIntegration(source, data);
                 // we only want to redirect when creating a new (non-apitoken and non-clusterinitbundle) integration
-                history.push(integrationsListPath);
+                history.goBack();
             }
 
             fetchIntegrations();

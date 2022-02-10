@@ -13,8 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/renderer"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	coreV1 "k8s.io/api/core/v1"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -26,15 +26,15 @@ const (
 )
 
 // ReconcileAdminPasswordExtension returns an extension that takes care of reconciling the central-htpasswd secret.
-func ReconcileAdminPasswordExtension(k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return wrapExtension(reconcileAdminPassword, k8sClient)
+func ReconcileAdminPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
+	return wrapExtension(reconcileAdminPassword, client)
 }
 
-func reconcileAdminPassword(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, statusUpdater func(updateStatusFunc), log logr.Logger) error {
+func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileAdminPasswordExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
-			k8sClient:  k8sClient,
+			client:     client,
 			centralObj: c,
 		},
 		statusUpdater: statusUpdater,
@@ -60,14 +60,15 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret() 
 
 	r.passwordSecretName = r.centralObj.Spec.Central.AdminPasswordSecret.Name
 
-	passwordSecret, err := r.SecretsClient().Get(r.ctx, r.passwordSecretName, metav1.GetOptions{})
-	if err != nil {
+	passwordSecret := &coreV1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: r.passwordSecretName}
+	if err := r.client.Get(r.ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve admin password secret %q", r.passwordSecretName)
 	}
 
 	password := strings.TrimSpace(string(passwordSecret.Data[adminPasswordKey]))
 	if password == "" || strings.ContainsAny(password, "\r\n") {
-		return errors.Wrapf(err, "admin password secret %s must contain a non-empty, single-line %q entry", r.passwordSecretName, adminPasswordKey)
+		return errors.Errorf("admin password secret %s must contain a non-empty, single-line %q entry", r.passwordSecretName, adminPasswordKey)
 	}
 
 	r.password = password

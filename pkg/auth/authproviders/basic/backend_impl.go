@@ -57,7 +57,7 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state
 	}, state, nil
 }
 
-func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
+func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) (string, error) {
 	queryParams := url.Values{}
 	queryParams.Set(clientStateQueryParamName, clientState)
 	queryParams.Set("micro_ts", strconv.FormatInt(int64(p.monoClock.SinceEpoch()/time.Microsecond), 10))
@@ -65,7 +65,7 @@ func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) s
 		Path:     p.urlPathPrefix + challengeHandlerPath,
 		RawQuery: queryParams.Encode(),
 	}
-	return u.String()
+	return u.String(), nil
 }
 
 func (p *backendImpl) Config() map[string]string {
@@ -100,7 +100,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 
 	// If logging in via basic auth, the identity extractor of the request pipeline should already have validated our
 	// identity.
-	identity := authn.IdentityFromContext(r.Context())
+	identity := authn.IdentityFromContextOrNil(r.Context())
 	if identity != nil {
 		if basicAuthIdentity, ok := identity.(basic.Identity); ok {
 			authResp := &authproviders.AuthResponse{

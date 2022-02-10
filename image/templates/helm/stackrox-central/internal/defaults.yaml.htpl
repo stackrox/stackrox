@@ -6,7 +6,7 @@ defaults:
     useFromDefaultServiceAccount: true
 
   image:
-    registry: [< .MainRegistry >]
+    registry: [< required "" .MainRegistry >]
 
   env:
     offlineMode: false
@@ -18,8 +18,8 @@ defaults:
     exposeMonitoring: false
 
     image:
-      name: main
-      tag: [< .Versions.MainVersion >]
+      name: [< required "" .ImageRemote >]
+      tag: [< required "" .ImageTag >]
 
     resources:
       requests:
@@ -43,6 +43,7 @@ defaults:
     disable: false
     replicas: 3
     logLevel: INFO
+    mode: full
 
     autoscaling:
       disable: false
@@ -58,8 +59,14 @@ defaults:
         cpu: "2000m"
 
     image:
-      name: scanner
-      tag: [< .Versions.ScannerVersion >]
+      name: [< required "" .ScannerImageRemote >]
+      tag: [< required "" .ScannerImageTag >]
+
+    [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+    slimImage:
+      name: [< required "" .ScannerSlimImageRemote >]
+      tag: [< required "" .ScannerImageTag >]
+    [< end >]
 
     dbResources:
       limits:
@@ -70,8 +77,14 @@ defaults:
         memory: "200Mi"
 
     dbImage:
-      name: scanner-db
-      tag: [< .Versions.ScannerVersion >]
+      name: [< required "" .ScannerDBImageRemote >]
+      tag: [< required "" .ScannerDBImageTag >]
+
+    [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+    slimDBImage:
+      name: [< required "" .ScannerDBSlimImageRemote >]
+      tag: [< required "" .ScannerDBImageTag >]
+    [< end >]
 
   system:
     createSCCs: [< not .Operator >]

@@ -5,35 +5,50 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockPermissionSetStore is a mock of PermissionSetStore interface
+// MockPermissionSetStore is a mock of PermissionSetStore interface.
 type MockPermissionSetStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockPermissionSetStoreMockRecorder
 }
 
-// MockPermissionSetStoreMockRecorder is the mock recorder for MockPermissionSetStore
+// MockPermissionSetStoreMockRecorder is the mock recorder for MockPermissionSetStore.
 type MockPermissionSetStoreMockRecorder struct {
 	mock *MockPermissionSetStore
 }
 
-// NewMockPermissionSetStore creates a new mock instance
+// NewMockPermissionSetStore creates a new mock instance.
 func NewMockPermissionSetStore(ctrl *gomock.Controller) *MockPermissionSetStore {
 	mock := &MockPermissionSetStore{ctrl: ctrl}
 	mock.recorder = &MockPermissionSetStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPermissionSetStore) EXPECT() *MockPermissionSetStoreMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Delete mocks base method.
+func (m *MockPermissionSetStore) Delete(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockPermissionSetStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPermissionSetStore)(nil).Delete), id)
+}
+
+// Get mocks base method.
 func (m *MockPermissionSetStore) Get(id string) (*storage.PermissionSet, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id)
@@ -43,13 +58,13 @@ func (m *MockPermissionSetStore) Get(id string) (*storage.PermissionSet, bool, e
 	return ret0, ret1, ret2
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockPermissionSetStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPermissionSetStore)(nil).Get), id)
 }
 
-// Upsert mocks base method
+// Upsert mocks base method.
 func (m *MockPermissionSetStore) Upsert(obj *storage.PermissionSet) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", obj)
@@ -57,27 +72,13 @@ func (m *MockPermissionSetStore) Upsert(obj *storage.PermissionSet) error {
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert
+// Upsert indicates an expected call of Upsert.
 func (mr *MockPermissionSetStoreMockRecorder) Upsert(obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockPermissionSetStore)(nil).Upsert), obj)
 }
 
-// Delete mocks base method
-func (m *MockPermissionSetStore) Delete(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete
-func (mr *MockPermissionSetStoreMockRecorder) Delete(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPermissionSetStore)(nil).Delete), id)
-}
-
-// Walk mocks base method
+// Walk mocks base method.
 func (m *MockPermissionSetStore) Walk(fn func(*storage.PermissionSet) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", fn)
@@ -85,36 +86,50 @@ func (m *MockPermissionSetStore) Walk(fn func(*storage.PermissionSet) error) err
 	return ret0
 }
 
-// Walk indicates an expected call of Walk
+// Walk indicates an expected call of Walk.
 func (mr *MockPermissionSetStoreMockRecorder) Walk(fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockPermissionSetStore)(nil).Walk), fn)
 }
 
-// MockSimpleAccessScopeStore is a mock of SimpleAccessScopeStore interface
+// MockSimpleAccessScopeStore is a mock of SimpleAccessScopeStore interface.
 type MockSimpleAccessScopeStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockSimpleAccessScopeStoreMockRecorder
 }
 
-// MockSimpleAccessScopeStoreMockRecorder is the mock recorder for MockSimpleAccessScopeStore
+// MockSimpleAccessScopeStoreMockRecorder is the mock recorder for MockSimpleAccessScopeStore.
 type MockSimpleAccessScopeStoreMockRecorder struct {
 	mock *MockSimpleAccessScopeStore
 }
 
-// NewMockSimpleAccessScopeStore creates a new mock instance
+// NewMockSimpleAccessScopeStore creates a new mock instance.
 func NewMockSimpleAccessScopeStore(ctrl *gomock.Controller) *MockSimpleAccessScopeStore {
 	mock := &MockSimpleAccessScopeStore{ctrl: ctrl}
 	mock.recorder = &MockSimpleAccessScopeStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSimpleAccessScopeStore) EXPECT() *MockSimpleAccessScopeStoreMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Delete mocks base method.
+func (m *MockSimpleAccessScopeStore) Delete(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Delete), id)
+}
+
+// Get mocks base method.
 func (m *MockSimpleAccessScopeStore) Get(id string) (*storage.SimpleAccessScope, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id)
@@ -124,13 +139,13 @@ func (m *MockSimpleAccessScopeStore) Get(id string) (*storage.SimpleAccessScope,
 	return ret0, ret1, ret2
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockSimpleAccessScopeStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Get), id)
 }
 
-// Upsert mocks base method
+// Upsert mocks base method.
 func (m *MockSimpleAccessScopeStore) Upsert(obj *storage.SimpleAccessScope) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", obj)
@@ -138,27 +153,13 @@ func (m *MockSimpleAccessScopeStore) Upsert(obj *storage.SimpleAccessScope) erro
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert
+// Upsert indicates an expected call of Upsert.
 func (mr *MockSimpleAccessScopeStoreMockRecorder) Upsert(obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Upsert), obj)
 }
 
-// Delete mocks base method
-func (m *MockSimpleAccessScopeStore) Delete(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete
-func (mr *MockSimpleAccessScopeStoreMockRecorder) Delete(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Delete), id)
-}
-
-// Walk mocks base method
+// Walk mocks base method.
 func (m *MockSimpleAccessScopeStore) Walk(fn func(*storage.SimpleAccessScope) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", fn)
@@ -166,36 +167,50 @@ func (m *MockSimpleAccessScopeStore) Walk(fn func(*storage.SimpleAccessScope) er
 	return ret0
 }
 
-// Walk indicates an expected call of Walk
+// Walk indicates an expected call of Walk.
 func (mr *MockSimpleAccessScopeStoreMockRecorder) Walk(fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Walk), fn)
 }
 
-// MockRoleStore is a mock of RoleStore interface
+// MockRoleStore is a mock of RoleStore interface.
 type MockRoleStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockRoleStoreMockRecorder
 }
 
-// MockRoleStoreMockRecorder is the mock recorder for MockRoleStore
+// MockRoleStoreMockRecorder is the mock recorder for MockRoleStore.
 type MockRoleStoreMockRecorder struct {
 	mock *MockRoleStore
 }
 
-// NewMockRoleStore creates a new mock instance
+// NewMockRoleStore creates a new mock instance.
 func NewMockRoleStore(ctrl *gomock.Controller) *MockRoleStore {
 	mock := &MockRoleStore{ctrl: ctrl}
 	mock.recorder = &MockRoleStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockRoleStore) EXPECT() *MockRoleStoreMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Delete mocks base method.
+func (m *MockRoleStore) Delete(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockRoleStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleStore)(nil).Delete), id)
+}
+
+// Get mocks base method.
 func (m *MockRoleStore) Get(id string) (*storage.Role, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id)
@@ -205,13 +220,13 @@ func (m *MockRoleStore) Get(id string) (*storage.Role, bool, error) {
 	return ret0, ret1, ret2
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockRoleStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRoleStore)(nil).Get), id)
 }
 
-// Upsert mocks base method
+// Upsert mocks base method.
 func (m *MockRoleStore) Upsert(obj *storage.Role) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", obj)
@@ -219,27 +234,13 @@ func (m *MockRoleStore) Upsert(obj *storage.Role) error {
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert
+// Upsert indicates an expected call of Upsert.
 func (mr *MockRoleStoreMockRecorder) Upsert(obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockRoleStore)(nil).Upsert), obj)
 }
 
-// Delete mocks base method
-func (m *MockRoleStore) Delete(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete
-func (mr *MockRoleStoreMockRecorder) Delete(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleStore)(nil).Delete), id)
-}
-
-// Walk mocks base method
+// Walk mocks base method.
 func (m *MockRoleStore) Walk(fn func(*storage.Role) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", fn)
@@ -247,7 +248,7 @@ func (m *MockRoleStore) Walk(fn func(*storage.Role) error) error {
 	return ret0
 }
 
-// Walk indicates an expected call of Walk
+// Walk indicates an expected call of Walk.
 func (mr *MockRoleStoreMockRecorder) Walk(fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockRoleStore)(nil).Walk), fn)

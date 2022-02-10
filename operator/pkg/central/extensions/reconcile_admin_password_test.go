@@ -35,7 +35,6 @@ func TestReconcileAdminPassword(t *testing.T) {
 			Name:      "central-htpasswd",
 			Namespace: testNamespace,
 		},
-		Data: map[string][]byte{},
 	}
 
 	plaintextPasswordSecret := &v1.Secret{
@@ -135,6 +134,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 	}
 
 	for name, c := range cases {
+		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 

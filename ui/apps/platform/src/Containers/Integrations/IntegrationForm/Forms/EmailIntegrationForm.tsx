@@ -7,6 +7,7 @@ import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import SelectSingle from 'Components/SelectSingle';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -14,7 +15,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
@@ -56,7 +56,7 @@ const validHostnameRegex =
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
-        name: yup.string().trim().required('Required'),
+        name: yup.string().trim().required('Email integration name is required'),
         labelDefault: yup
             .string()
             .trim()
@@ -97,7 +97,7 @@ export const validationSchema = yup.object().shape({
                 .email('Must be a valid sender email address'),
             startTLSAuthMethod: yup.string().when('disableTLS', {
                 is: true,
-                then: yup.string().required(),
+                then: (startTLSAuthMethodSchema) => startTLSAuthMethodSchema.required(),
             }),
         }),
     }),
@@ -170,10 +170,15 @@ function EmailIntegrationForm({
         }
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('notifier.email.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         label="Integration name"
@@ -229,18 +234,18 @@ function EmailIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
-                            helperText="Leave this off to use the currently stored credentials."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox
                                 label="Update token"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -275,7 +280,7 @@ function EmailIntegrationForm({
                         errors={errors}
                         helperText={
                             <span className="pf-u-font-size-sm">
-                                (optional) Specifies the email FROM header
+                                Specifies the email FROM header
                             </span>
                         }
                     >
@@ -283,7 +288,7 @@ function EmailIntegrationForm({
                             type="text"
                             id="notifier.email.from"
                             value={values.notifier.email.from}
-                            placeholder="example, Advanced Cluster Management"
+                            placeholder="example, Advanced Cluster Security"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}

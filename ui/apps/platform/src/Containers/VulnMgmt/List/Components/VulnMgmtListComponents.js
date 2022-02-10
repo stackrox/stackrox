@@ -1,7 +1,12 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import LabelChip from 'Components/LabelChip';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
@@ -71,6 +76,36 @@ export function getComponentTableColumns(workflowState) {
             id: componentSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
             sortField: componentSortFields.CVE_COUNT,
+        },
+        {
+            Header: `Active`,
+            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original }) => {
+                const activeStatus = original.activeState?.state || 'Undetermined';
+                switch (activeStatus) {
+                    case 'Active': {
+                        return (
+                            <div className="mx-auto">
+                                <LabelChip text={activeStatus} type="alert" size="large" />
+                            </div>
+                        );
+                    }
+                    // TODO: uncomment the following case,  once Inactive can be determined with precision
+                    // case 'Inactive': {
+                    //     return <div className="mx-auto">{activeStatus}</div>;
+                    // }
+                    case 'Undetermined':
+                    default: {
+                        return <div className="mx-auto">Undetermined</div>;
+                    }
+                }
+            },
+            id: componentSortFields.ACTIVE,
+            accessor: 'isActive',
+            sortField: componentSortFields.ACTIVE,
+            sortable: false,
         },
         {
             Header: `Fixed In`,

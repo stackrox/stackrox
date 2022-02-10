@@ -8,7 +8,6 @@ import (
 	"hash"
 	"hash/crc32"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,7 +17,6 @@ import (
 	"github.com/VividCortex/ewma"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -28,7 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/v2backuprestore"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
 	"golang.org/x/crypto/ssh/terminal"
@@ -54,9 +52,11 @@ var (
 )
 
 type v2Restorer struct {
+	env           environment.Environment
 	retryDeadline time.Time // does not affect ongoing transfers
 
-	cmd *cobra.Command
+	interrupt bool
+	confirm   func() error
 
 	processID     string
 	lastAttemptID string
@@ -69,30 +69,32 @@ type v2Restorer struct {
 	errorLine           statusLine
 	statusLine          statusLine
 
-	httpClient *http.Client
+	httpClient common.RoxctlHTTPClient
 	dbClient   v1.DBServiceClient
 
 	transferStatusText      string
 	transferStatusTextMutex sync.RWMutex
 }
 
-func newV2Restorer(cmd *cobra.Command, retryDeadline time.Time) (*v2Restorer, error) {
-	conn, err := common.GetGRPCConnection()
+func (cmd *centralDbRestoreCommand) newV2Restorer(confirm func() error, retryDeadline time.Time) (*v2Restorer, error) {
+	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 
 	dbClient := v1.NewDBServiceClient(conn)
-	httpClient, err := common.GetHTTPClient(0)
+	httpClient, err := cmd.env.HTTPClient(0)
 	if err != nil {
 		return nil, err
 	}
 
 	return &v2Restorer{
+		env:           cmd.env,
 		httpClient:    httpClient,
 		dbClient:      dbClient,
 		retryDeadline: retryDeadline,
-		cmd:           cmd,
+		interrupt:     cmd.interrupt,
+		confirm:       confirm,
 	}, nil
 }
 
@@ -202,9 +204,9 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 		if r.transferProgressBar != nil {
 			go r.updateTransferStatus(&transferInProgressSig)
 		} else {
-			fmt.Println("Transferring data ...")
+			r.env.Logger().PrintfLn("Transferring data ...")
 		}
-		resp, err := r.performHTTPRequest(ctx, nextReq)
+		resp, err := r.performHTTPRequest(nextReq.WithContext(ctx))
 		transferInProgressSig.Signal()
 
 		if resp != nil {
@@ -219,7 +221,7 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 			}
 
 			if r.transferProgressBar == nil {
-				fmt.Printf("Encountered a temporary error: %v. Retrying in %v (attempt %d out of %d)\n", err, retryDelay, i+1, resumeRetries)
+				r.env.Logger().ErrfLn("Encountered a temporary error: %v. Retrying in %v (attempt %d out of %d)", err, retryDelay, i+1, resumeRetries)
 			}
 
 			continueTime := time.Now().Add(retryDelay)
@@ -250,16 +252,11 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 	return nil, ctx.Err()
 }
 
-func (r *v2Restorer) performHTTPRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
-	req = req.WithContext(ctx)
+func (r *v2Restorer) performHTTPRequest(req *http.Request) (*http.Response, error) {
 	if r.transferProgressBar != nil {
 		req.Body = r.transferProgressBar.ProxyReader(req.Body)
 	}
-	resp, err := r.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return r.httpClient.Do(req)
 }
 
 func (r *v2Restorer) initDataReader(file *os.File, manifest *v1.DBExportManifest) error {
@@ -287,13 +284,13 @@ func (r *v2Restorer) initResume(ctx context.Context, file *os.File, activeStatus
 
 	resumeInfo := activeStatus.GetResumeInfo()
 	if resumeInfo == nil {
-		if interrupt, _ := r.cmd.Flags().GetBool("interrupt"); interrupt {
-			fmt.Println("Active database restore process information")
-			fmt.Println("===========================================")
-			printStatus(activeStatus)
-			fmt.Println()
-			fmt.Println("The above restore process will be interrupted for resuming.")
-			if err := flags.CheckConfirmation(r.cmd); err != nil {
+		if r.interrupt {
+			r.env.Logger().PrintfLn("Active database restore process information")
+			r.env.Logger().PrintfLn("===========================================")
+			printStatus(r.env.Logger(), activeStatus)
+			r.env.Logger().PrintfLn("")
+			r.env.Logger().PrintfLn("The above restore process will be interrupted for resuming.")
+			if err := r.confirm(); err != nil {
 				return nil, err
 			}
 
@@ -365,8 +362,8 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 		return nil, errors.Wrap(err, "could not get data readers for manifest")
 	}
 
-	bodyReader := ioutils.ChainReadersEager(bytes.NewReader(headerBytes), ioutil.NopCloser(r.dataReader))
-	req, err := common.NewHTTPRequestWithAuth(http.MethodPost, "/db/v2/restore", bodyReader)
+	bodyReader := ioutils.ChainReadersEager(bytes.NewReader(headerBytes), io.NopCloser(r.dataReader))
+	req, err := r.httpClient.NewReq(http.MethodPost, "/db/v2/restore", bodyReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create restore HTTP request")
 	}
@@ -382,7 +379,7 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 }
 
 func (r *v2Restorer) init(ctx context.Context, file *os.File) (*http.Request, error) {
-	conn, err := common.GetGRPCConnection()
+	conn, err := r.env.GRPCConnection()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
@@ -420,7 +417,7 @@ func (r *v2Restorer) prepareResumeRequest(resumeInfo *v1.DBRestoreProcessStatus_
 		r.transferProgressBar.SetRefill(r.headerSize + pos)
 	}
 
-	req, err := common.NewHTTPRequestWithAuth(http.MethodPost, "/db/v2/resumerestore", ioutil.NopCloser(r.dataReader))
+	req, err := r.httpClient.NewReq(http.MethodPost, "/db/v2/resumerestore", io.NopCloser(r.dataReader))
 	if err != nil {
 		return nil, err
 	}

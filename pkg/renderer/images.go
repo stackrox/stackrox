@@ -3,9 +3,8 @@ package renderer
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 // ComputeImageOverrides takes in a full image reference as well as default registries, names,
@@ -74,21 +73,24 @@ func ComputeImageOverrides(fullImageRef, defRegistry, defName, defTag string) ma
 // `us.gcr.io/stackrox-main/main` and `us.gcr.io/stackrox-scanner/scanner`, no name overrides are
 // inferred, and instead the inferred central and scanner "registries" are
 // `us.gcr.io/stackrox-main` and `us.gcr.io/stackrox-scanner`.
-func configureImageOverrides(c *Config) {
+func configureImageOverrides(c *Config, imageFlavor defaults.ImageFlavor) {
 	imageOverrides := make(map[string]interface{})
 
-	mainOverrides := ComputeImageOverrides(c.K8sConfig.MainImage, defaults.MainImageRegistry(), "main", version.GetMainVersion())
+	mainOverrides := ComputeImageOverrides(c.K8sConfig.MainImage, imageFlavor.MainRegistry, imageFlavor.MainImageName,
+		imageFlavor.MainImageTag)
 	registry := mainOverrides["Registry"]
 	if registry == "" {
-		registry = defaults.MainImageRegistry()
+		registry = imageFlavor.MainRegistry
 	} else {
 		imageOverrides["MainRegistry"] = registry
 		delete(mainOverrides, "Registry")
 	}
 	imageOverrides["Main"] = mainOverrides
 
-	imageOverrides["Scanner"] = ComputeImageOverrides(c.K8sConfig.ScannerImage, registry, "scanner", version.GetScannerVersion())
-	imageOverrides["ScannerDB"] = ComputeImageOverrides(c.K8sConfig.ScannerDBImage, registry, "scanner-db", version.GetScannerVersion())
+	imageOverrides["Scanner"] = ComputeImageOverrides(c.K8sConfig.ScannerImage, registry, imageFlavor.ScannerImageName,
+		imageFlavor.ScannerImageTag)
+	imageOverrides["ScannerDB"] = ComputeImageOverrides(c.K8sConfig.ScannerDBImage, registry, imageFlavor.ScannerDBImageName,
+		imageFlavor.ScannerDBImageTag)
 
 	c.K8sConfig.ImageOverrides = imageOverrides
 }

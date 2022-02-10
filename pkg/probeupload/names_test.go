@@ -16,6 +16,9 @@ func TestIsValidModuleVersion_Valid(t *testing.T) {
 		"a409284ad5be9a95bfd65b9eac6f179094d5b36af9a6ba3548fa98ee4d23a7a5",
 		"7c30b6f295bae9ccf8695982687d871847dfecd12a1cfbc3edcfa93ceec6b5dc",
 		"f7bd36bc2f3299306385c1270805fa3705af934acd37c6d2395dbba567dd3c58",
+		"0.0.1",
+		"1.2.3",
+		"10.5.155",
 	}
 
 	for _, v := range values {
@@ -28,7 +31,10 @@ func TestIsValidModuleVersion_Invalid(t *testing.T) {
 
 	values := []string{
 		"",
-		"1.2.3",
+		"0.0",
+		".2.3",
+		"2.3.",
+		"10.5.155.123",
 		"latest",
 		"1123dde0458e72a49880b06922e135dbcd36fb784fed530ab84ddfa8924e5c050",
 		"95eb0815c4e7b59e0e5d0e53adb1a4",

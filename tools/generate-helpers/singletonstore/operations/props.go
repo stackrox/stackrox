@@ -7,4 +7,7 @@ type GeneratorProperties struct {
 	HumanName          string
 	BucketName         string
 	AddInsteadOfUpsert bool
+
+	GenerateMockStore            bool
+	MockgenWrapperExecutablePath string
 }

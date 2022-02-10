@@ -1,7 +1,9 @@
 import React, { ReactElement } from 'react';
 
+import { ResourceName } from 'types/roleResources';
+
 // First draft of description fields for possible future request from backend.
-const resourceDescriptions: Record<string, string> = {
+const resourceDescriptions: Record<ResourceName, string> = {
     APIToken: 'Read: View API tokens. Write: Add or revoke API tokens.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
     AllComments:
@@ -66,6 +68,12 @@ const resourceDescriptions: Record<string, string> = {
     ServiceIdentity:
         'Read: View metadata about Red Hat Advanced Cluster Security for Kubernetes service-to-service authentication. Write: Revoke or reissue service-to-service authentication credentials.',
     User: 'Read: View users that have accessed the Red Hat Advanced Cluster Security for Kubernetes instance, including the metadata that the authentication provider provides about them. Write: N/A',
+    VulnerabilityManagementRequests:
+        'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Request a deferral on a vulnerability, mark it as a false positive or move a pending or previously approved request (made by the same user) back to observed.',
+    VulnerabilityManagementApprovals:
+        'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Approve or deny any pending deferral or false positive requests and move any previously approved requests back to observed.',
+    VulnerabilityReports:
+        'Read: View all vulnerability report configurations. Write: Add, modify or delete vulnerability report configurations.',
     WatchedImage:
         'Read: View undeployed watched images monitored. Write: Configure watched images.',
 };
@@ -87,6 +95,7 @@ function ResourceDescription({ resource }: ResourceDescriptionProps): ReactEleme
                     <strong>Read</strong>: {description.slice(6, writeIndex)}
                 </p>
                 <p>
+                    {/* eslint-disable-next-line @typescript-eslint/restrict-plus-operands */}
                     <strong>Write</strong>: {description.slice(writeIndex + 8)}
                 </p>
             </>

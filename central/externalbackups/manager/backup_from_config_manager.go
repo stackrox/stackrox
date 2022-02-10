@@ -2,7 +2,7 @@ package manager
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -50,7 +50,7 @@ type watchHandler struct {
 }
 
 func getConfig(filename string) (*v1.IntegrationAsConfiguration, error) {
-	yamlBytes, err := ioutil.ReadFile(filename)
+	yamlBytes, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading from file")
 	}

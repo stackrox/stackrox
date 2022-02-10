@@ -3,75 +3,90 @@ package charts
 import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/roxctl/defaults"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 // MetaValues are the values to be passed to the StackRox chart templates.
-type MetaValues map[string]interface{}
-
-// ChartRepo contains information about where the Helm charts are published.
-type ChartRepo struct {
-	URL string
+type MetaValues struct {
+	Versions                         version.Versions
+	MainRegistry                     string
+	ImageRemote                      string
+	CollectorRegistry                string
+	CollectorFullImageRemote         string
+	CollectorSlimImageRemote         string
+	CollectorFullImageTag            string
+	CollectorSlimImageTag            string
+	ScannerImageRemote               string
+	ScannerSlimImageRemote           string
+	ScannerImageTag                  string
+	ScannerDBImageRemote             string
+	ScannerDBSlimImageRemote         string
+	ScannerDBImageTag                string
+	RenderMode                       string
+	ChartRepo                        defaults.ChartRepo
+	ImagePullSecrets                 defaults.ImagePullSecrets
+	Operator                         bool
+	FeatureFlags                     map[string]interface{}
+	CertsOnly                        bool
+	ClusterType                      string
+	ClusterName                      string
+	KubectlOutput                    bool
+	ImageTag                         string
+	PublicEndpoint                   string
+	AdvertisedEndpoint               string
+	CollectionMethod                 string
+	TolerationsEnabled               bool
+	CreateUpgraderSA                 bool
+	EnvVars                          map[string]string
+	K8sCommand                       string
+	K8sConfig                        map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
+	OfflineMode                      bool
+	SlimCollector                    bool
+	AdmissionController              bool
+	AdmissionControlListenOnUpdates  bool
+	AdmissionControlListenOnEvents   bool
+	DisableBypass                    bool
+	TimeoutSeconds                   int32
+	ScanInline                       bool
+	AdmissionControllerEnabled       bool
+	AdmissionControlEnforceOnUpdates bool
 }
 
-// ImagePullSecrets represents the image pull secret defaults.
-type ImagePullSecrets struct {
-	AllowNone bool
-}
-
-// DefaultMetaValues are the default meta values for rendering the StackRox charts in production.
-func DefaultMetaValues() MetaValues {
-	metaValues := map[string]interface{}{
-		"Versions":          version.GetAllVersions(),
-		"MainRegistry":      defaults.MainImageRegistry(),
-		"CollectorRegistry": defaults.CollectorImageRegistry(),
-		"RenderMode":        "",
-		"ChartRepo": ChartRepo{
-			URL: "https://charts.stackrox.io",
-		},
-		"ImagePullSecrets": ImagePullSecrets{
-			AllowNone: false,
-		},
-		"Operator": false,
-	}
-
-	featureFlagVals := make(map[string]interface{})
-	for _, feature := range features.Flags {
-		featureFlagVals[feature.EnvVar()] = feature.Enabled()
-	}
-	metaValues["FeatureFlags"] = featureFlagVals
-
-	return metaValues
-}
-
-// RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
-func RHACSMetaValues() MetaValues {
-	metaValues := map[string]interface{}{
-		"Versions":          version.GetAllVersions(),
-		"MainRegistry":      "registry.redhat.io/rh-acs",
-		"CollectorRegistry": "registry.redhat.io/rh-acs",
-		"RenderMode":        "",
-		"ChartRepo": ChartRepo{
-			URL: "http://mirror.openshift.com/pub/rhacs/charts",
-		},
-		"ImagePullSecrets": ImagePullSecrets{
-			AllowNone: true,
-		},
-		"Operator": false,
+// GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
+func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
+	metaValues := MetaValues{
+		Versions:                 imageFlavor.Versions,
+		MainRegistry:             imageFlavor.MainRegistry,
+		ImageRemote:              imageFlavor.MainImageName,
+		ImageTag:                 imageFlavor.MainImageTag,
+		CollectorRegistry:        imageFlavor.CollectorRegistry,
+		CollectorFullImageRemote: imageFlavor.CollectorImageName,
+		CollectorSlimImageRemote: imageFlavor.CollectorSlimImageName,
+		CollectorFullImageTag:    imageFlavor.CollectorImageTag,
+		CollectorSlimImageTag:    imageFlavor.CollectorSlimImageTag,
+		ScannerImageRemote:       imageFlavor.ScannerImageName,
+		ScannerSlimImageRemote:   imageFlavor.ScannerSlimImageName,
+		ScannerImageTag:          imageFlavor.ScannerImageTag,
+		ScannerDBImageRemote:     imageFlavor.ScannerDBImageName,
+		ScannerDBSlimImageRemote: imageFlavor.ScannerDBSlimImageName,
+		ScannerDBImageTag:        imageFlavor.ScannerDBImageTag,
+		RenderMode:               "",
+		ChartRepo:                imageFlavor.ChartRepo,
+		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
+		Operator:                 false,
 	}
 
 	if !buildinfo.ReleaseBuild {
-		// TODO(ROX-7740): Temporarily use images from quay until our private registries are up again
-		metaValues["MainRegistry"] = mainRegistryOverride.Setting()
-		metaValues["CollectorRegistry"] = collectorRegistryOverride.Setting()
+		metaValues.FeatureFlags = getFeatureFlags()
 	}
+	return &metaValues
+}
 
+func getFeatureFlags() map[string]interface{} {
 	featureFlagVals := make(map[string]interface{})
 	for _, feature := range features.Flags {
 		featureFlagVals[feature.EnvVar()] = feature.Enabled()
 	}
-	metaValues["FeatureFlags"] = featureFlagVals
-
-	return metaValues
+	return featureFlagVals
 }

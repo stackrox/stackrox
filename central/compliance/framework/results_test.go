@@ -14,7 +14,7 @@ func TestWithResults(t *testing.T) {
 
 	results := newResults()
 	stopSig := concurrency.NewErrorSignal()
-	ctx := newToplevelContext(testDomain, nil, results, &stopSig)
+	ctx := newToplevelContext("", testDomain, nil, results, &stopSig)
 
 	var deploymentCheck = func(ctx ComplianceContext) {
 		PassNow(ctx, ctx.Target().Deployment().GetId())

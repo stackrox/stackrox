@@ -176,7 +176,8 @@ func (m *manager) GetConnection(clusterID string) SensorConnection {
 	return conn
 }
 
-func (m *manager) replaceConnection(ctx context.Context, clusterID string, newConnection *sensorConnection) (oldConnection *sensorConnection, err error) {
+func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluster, newConnection *sensorConnection) (oldConnection *sensorConnection, err error) {
+	clusterID := cluster.GetId()
 	m.connectionsByClusterIDMutex.Lock()
 	defer m.connectionsByClusterIDMutex.Unlock()
 
@@ -184,7 +185,7 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 	oldConnection = connAndUpgradeCtrl.connection
 	if oldConnection != nil {
 		if err := common.CheckConnReplace(newConnection.sensorHello.GetDeploymentIdentification(), oldConnection.sensorHello.GetDeploymentIdentification()); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "replacing connection for cluster: %s", cluster.GetName())
 		}
 	}
 
@@ -226,14 +227,16 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	ctx = withConnection(ctx, conn)
 
 	clusterID := cluster.GetId()
-	oldConnection, err := m.replaceConnection(ctx, clusterID, conn)
+	clusterName := cluster.GetName()
+	oldConnection, err := m.replaceConnection(ctx, cluster, conn)
 	if err != nil {
 		log.Errorf("Replacing connection: %v", err)
 		return errors.Wrap(err, "replacing old connection")
 	}
 
 	if oldConnection != nil {
-		oldConnection.Terminate(errors.New("replaced by new connection"))
+		nodeName := sensorHello.GetDeploymentIdentification().GetK8SNodeName()
+		oldConnection.Terminate(errors.Errorf("a new connection for cluster %s was detected from node with name %s", clusterName, nodeName))
 	}
 
 	err = conn.Run(ctx, server, conn.capabilities)

@@ -4,10 +4,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/stackrox/rox/pkg/debughandler"
-	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
@@ -26,17 +23,7 @@ var (
 func main() {
 	premain.StartMain()
 
-	if devbuild.IsEnabled() {
-		if env.HotReload.BooleanSetting() {
-			log.Warn("***********************************************************************************")
-			log.Warn("This binary is being hot reloaded. It may be a different version from the image tag")
-			log.Warn("***********************************************************************************")
-		}
-
-		debughandler.MustStartServerAsync("")
-
-		devmode.StartBinaryWatchdog("kubernetes-sensor")
-	}
+	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 

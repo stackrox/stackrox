@@ -29,10 +29,10 @@ type processBaselineWrapper struct {
 	Type                     string `json:"type"`
 }
 
-func (b *indexerImpl) AddProcessBaseline(processbaseline *storage.ProcessBaseline) error {
+func (b *indexerImpl) AddBaseline(baseline *storage.ProcessBaseline) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "ProcessBaseline")
-	if err := b.index.Index(processbaseline.GetId(), &processBaselineWrapper{
-		ProcessBaseline: processbaseline,
+	if err := b.index.Index(baseline.GetId(), &processBaselineWrapper{
+		ProcessBaseline: baseline,
 		Type:            v1.SearchCategory_PROCESS_BASELINES.String(),
 	}); err != nil {
 		return err
@@ -40,26 +40,26 @@ func (b *indexerImpl) AddProcessBaseline(processbaseline *storage.ProcessBaselin
 	return nil
 }
 
-func (b *indexerImpl) AddProcessBaselines(processbaselines []*storage.ProcessBaseline) error {
+func (b *indexerImpl) AddBaselines(baselines []*storage.ProcessBaseline) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "ProcessBaseline")
-	batchManager := batcher.New(len(processbaselines), batchSize)
+	batchManager := batcher.New(len(baselines), batchSize)
 	for {
 		start, end, ok := batchManager.Next()
 		if !ok {
 			break
 		}
-		if err := b.processBatch(processbaselines[start:end]); err != nil {
+		if err := b.processBatch(baselines[start:end]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (b *indexerImpl) processBatch(processbaselines []*storage.ProcessBaseline) error {
+func (b *indexerImpl) processBatch(baselines []*storage.ProcessBaseline) error {
 	batch := b.index.NewBatch()
-	for _, processbaseline := range processbaselines {
-		if err := batch.Index(processbaseline.GetId(), &processBaselineWrapper{
-			ProcessBaseline: processbaseline,
+	for _, baseline := range baselines {
+		if err := batch.Index(baseline.GetId(), &processBaselineWrapper{
+			ProcessBaseline: baseline,
 			Type:            v1.SearchCategory_PROCESS_BASELINES.String(),
 		}); err != nil {
 			return err
@@ -73,7 +73,7 @@ func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int,
 	return blevesearch.RunCountRequest(v1.SearchCategory_PROCESS_BASELINES, q, b.index, mappings.OptionsMap, opts...)
 }
 
-func (b *indexerImpl) DeleteProcessBaseline(id string) error {
+func (b *indexerImpl) DeleteBaseline(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ProcessBaseline")
 	if err := b.index.Delete(id); err != nil {
 		return err
@@ -81,7 +81,7 @@ func (b *indexerImpl) DeleteProcessBaseline(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteProcessBaselines(ids []string) error {
+func (b *indexerImpl) DeleteBaselines(ids []string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessBaseline")
 	batch := b.index.NewBatch()
 	for _, id := range ids {

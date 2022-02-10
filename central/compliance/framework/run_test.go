@@ -47,9 +47,11 @@ var (
 		},
 	}
 
-	testMachineConfigs = []string{
-		"config1",
-		"config2",
+	testMachineConfigs = map[string][]string{
+		"standard": {
+			"config1",
+			"config2",
+		},
 	}
 
 	testDomain = newComplianceDomain(testCluster, testNodes, testDeployments, testPods, testMachineConfigs)
@@ -61,7 +63,7 @@ func TestEmptyRun(t *testing.T) {
 	run, err := newComplianceRun()
 	require.NoError(t, err)
 
-	err = run.Run(context.Background(), testDomain, nil)
+	err = run.Run(context.Background(), "standard", testDomain, nil)
 	assert.NoError(t, err)
 }
 
@@ -102,7 +104,7 @@ func TestOKRun(t *testing.T) {
 	run, err := newComplianceRun(clusterCheck, nodeCheck, deploymentCheck)
 	require.NoError(t, err)
 
-	err = run.Run(context.Background(), testDomain, nil)
+	err = run.Run(context.Background(), "standard", testDomain, nil)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedNodeIDs, seenNodeIDs)
@@ -124,7 +126,7 @@ func TestRunWithContextError(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		assert.Error(t, run.Run(ctx, testDomain, nil))
+		assert.Error(t, run.Run(ctx, "standard", testDomain, nil))
 	}()
 
 	cancel()
@@ -149,7 +151,7 @@ func TestRunWithTerminate(t *testing.T) {
 	require.NoError(t, err)
 
 	go func() {
-		assert.Error(t, run.Run(context.Background(), testDomain, nil))
+		assert.Error(t, run.Run(context.Background(), "standard", testDomain, nil))
 	}()
 
 	run.Terminate(errors.New("terminating run"))

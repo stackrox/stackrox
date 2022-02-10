@@ -1,6 +1,7 @@
 package enricher
 
 import (
+	"context"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -14,6 +15,10 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 // FetchOption determines what attempts should be made to retrieve the metadata
 type FetchOption int
 
@@ -24,10 +29,6 @@ const (
 	IgnoreExistingImages
 	ForceRefetch
 	ForceRefetchScansOnly
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
@@ -90,13 +91,16 @@ type cveSuppressor interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
+type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
+
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cves cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache,
-	scanCache expiringcache.Cache, healthReporter integrationhealth.Reporter) ImageEnricher {
+func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
+	imageGetter imageGetter, healthReporter integrationhealth.Reporter) ImageEnricher {
 	enricher := &enricherImpl{
-		cves:         cves,
-		integrations: is,
+		cvesSuppressor:   cvesSuppressor,
+		cvesSuppressorV2: cvesSuppressorV2,
+		integrations:     is,
 
 		// number of consecutive errors per registry or scanner to ascertain health of the integration
 		errorsPerRegistry:         make(map[registryTypes.ImageRegistry]int32, len(is.RegistrySet().GetAll())),
@@ -106,8 +110,9 @@ func New(cves cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem,
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
 
+		imageGetter: imageGetter,
+
 		asyncRateLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
-		scanCache:        scanCache,
 
 		metrics: newMetrics(subsystem),
 	}

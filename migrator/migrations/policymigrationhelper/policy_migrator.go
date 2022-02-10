@@ -37,6 +37,8 @@ type PolicyChanges struct {
 type PolicyUpdates struct {
 	// PolicySections is the new policy sections
 	PolicySections []*storage.PolicySection
+	// MitreVectors is the new MITRE ATT&CK section
+	MitreVectors []*storage.Policy_MitreAttackVectors
 	// ExclusionsToAdd is a list of exclusions to insert (or append) to policy
 	ExclusionsToAdd []*storage.Exclusion
 	// ExclusionsToRemove is a list of exclusions to remove from policy
@@ -75,6 +77,11 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	// If policy section is to be updated, just clear the old one for the new
 	if u.PolicySections != nil {
 		policy.PolicySections = u.PolicySections
+	}
+
+	// If policy mitre is to be updated, just clear the old one for the new
+	if u.MitreVectors != nil {
+		policy.MitreAttackVectors = u.MitreVectors
 	}
 
 	// Check if policy should be enabled or disabled
@@ -189,6 +196,13 @@ func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 }
 
 func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, error) {
+	if beforePolicy == nil {
+		return PolicyUpdates{}, errors.New("policy to be migrated must not be nil")
+	}
+	if afterPolicy == nil {
+		return PolicyUpdates{}, errors.New("policy to be migrated does not have valid target, but found nil target")
+	}
+
 	// Clone policies because we mutate them.
 	beforePolicy = beforePolicy.Clone()
 	afterPolicy = afterPolicy.Clone()
@@ -206,6 +220,13 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	}
 	beforePolicy.PolicySections = nil
 	afterPolicy.PolicySections = nil
+
+	// MITRE section
+	if !reflect.DeepEqual(beforePolicy.GetMitreAttackVectors(), afterPolicy.GetMitreAttackVectors()) {
+		updates.MitreVectors = afterPolicy.MitreAttackVectors
+	}
+	beforePolicy.MitreAttackVectors = nil
+	afterPolicy.MitreAttackVectors = nil
 
 	// Name
 	if beforePolicy.GetName() != afterPolicy.GetName() {

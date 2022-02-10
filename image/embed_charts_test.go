@@ -1,13 +1,18 @@
 package image
 
 import (
+	"fmt"
 	"io/fs"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
@@ -58,12 +63,60 @@ func (s *embedTestSuite) TestChartTemplatesAvailable() {
 	s.Require().NoError(err, "failed to load secured cluster services chart")
 }
 
-func (s *embedTestSuite) TestLoadChart() {
-	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.RHACSMetaValues())
-	s.Require().NoError(err)
-	s.Equal("stackrox-central-services", chart.Name())
+func (s *embedTestSuite) TestLoadChartForFlavor() {
+	testCases := []defaults.ImageFlavor{
+		flavorUtils.MakeImageFlavorForTest(s.T()),
+		defaults.DevelopmentBuildImageFlavor(),
+		defaults.StackRoxIOReleaseImageFlavor(),
+		defaults.RHACSReleaseImageFlavor(),
+	}
 
-	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.RHACSMetaValues())
+	for _, flavor := range testCases {
+		testName := fmt.Sprintf("Image Flavor %s", flavor.MainRegistry)
+		s.Run(testName, func() {
+			chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.GetMetaValuesForFlavor(flavor))
+			s.Require().NoError(err)
+			s.Equal("stackrox-central-services", chart.Name())
+
+			chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.GetMetaValuesForFlavor(flavor))
+			s.Require().NoError(err)
+			s.Equal("stackrox-secured-cluster-services", chart.Name())
+		})
+	}
+}
+
+func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
+	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
+	metaVals.FeatureFlags = nil
+
+	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
+	s.Require().NoError(err)
+	s.NotEmpty(chart.Files)
+
+	for _, f := range chart.Files {
+		if f.Name == "feature-flag-values.yaml" {
+			s.Fail("Found feature-flag-values.yaml in release build but should be ignored.")
+		}
+	}
+}
+
+// This test will be removed after the scanner integration is finished. It is critical to check that no scanner manifests are contained within
+// secured cluster.
+func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() {
+	s.envIsolator.Setenv(features.LocalImageScanning.Name(), "false")
+
+	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
+	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
 	s.Require().NoError(err)
 	s.Equal("stackrox-secured-cluster-services", chart.Name())
+	s.NotEmpty(chart.Templates)
+
+	var foundScannerTpls []string
+	for _, tpl := range chart.Templates {
+		if strings.Contains(tpl.Name, "scanner") {
+			foundScannerTpls = append(foundScannerTpls, tpl.Name)
+		}
+	}
+
+	s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster chart", foundScannerTpls)
 }

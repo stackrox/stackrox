@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"reflect"
 
 	"github.com/gogo/protobuf/types"
@@ -25,6 +25,7 @@ var (
 			reflect.TypeOf((*storage.ComplianceControlResult)(nil)),
 			reflect.TypeOf((*storage.CVE)(nil)),
 			reflect.TypeOf((*storage.Deployment)(nil)),
+			reflect.TypeOf((*storage.FalsePositiveRequest)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
 			reflect.TypeOf((*storage.ImageComponent)(nil)),
@@ -40,13 +41,17 @@ var (
 			reflect.TypeOf((*storage.Notifier)(nil)),
 			reflect.TypeOf((*storage.PermissionSet)(nil)),
 			reflect.TypeOf((*storage.Pod)(nil)),
+			reflect.TypeOf((*storage.RequestComment)(nil)),
 			reflect.TypeOf((*storage.Risk)(nil)),
 			reflect.TypeOf((*storage.Role)(nil)),
 			reflect.TypeOf((*storage.Secret)(nil)),
 			reflect.TypeOf((*storage.ServiceAccount)(nil)),
 			reflect.TypeOf((*storage.SimpleAccessScope)(nil)),
+			reflect.TypeOf((*storage.SlimUser)(nil)),
 			reflect.TypeOf((*storage.Subject)(nil)),
 			reflect.TypeOf((*storage.TokenMetadata)(nil)),
+			reflect.TypeOf((*storage.VulnerabilityRequest_Scope)(nil)),
+			reflect.TypeOf((*storage.VulnerabilityRequest_CVEs)(nil)),
 
 			reflect.TypeOf((*v1.ComplianceRunScheduleInfo)(nil)),
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),
@@ -93,8 +98,12 @@ var (
 			},
 		},
 		InputTypes: []reflect.Type{
+			reflect.TypeOf((*inputtypes.FalsePositiveVulnRequest)(nil)),
 			reflect.TypeOf((*inputtypes.SortOption)(nil)),
 			reflect.TypeOf((*inputtypes.Pagination)(nil)),
+			reflect.TypeOf((*inputtypes.VulnReqGlobalScope)(nil)),
+			reflect.TypeOf((*inputtypes.VulnReqImageScope)(nil)),
+			reflect.TypeOf((*inputtypes.VulnReqScope)(nil)),
 			reflect.TypeOf((*analystnotes.ProcessNoteKey)(nil)),
 		},
 	}
@@ -103,7 +112,7 @@ var (
 func main() {
 	w := &bytes.Buffer{}
 	codegen.GenerateResolvers(walkParameters, w)
-	err := ioutil.WriteFile("generated.go", w.Bytes(), 0644)
+	err := os.WriteFile("generated.go", w.Bytes(), 0644)
 	if err != nil {
 		panic(err)
 	}

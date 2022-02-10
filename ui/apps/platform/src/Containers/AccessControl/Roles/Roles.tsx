@@ -182,7 +182,7 @@ function Roles(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityName, { action: 'update' }));
+        history.push(getEntityPath(entityType, entityName, { action: 'edit' }));
     }
 
     function handleCancel() {
@@ -236,7 +236,7 @@ function Roles(): ReactElement {
             {alertGroups}
             {counterFetching !== 0 ? (
                 <Bullseye>
-                    <Spinner />
+                    <Spinner isSVG />
                 </Bullseye>
             ) : isList ? (
                 <RolesList

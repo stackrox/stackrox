@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	graph "github.com/stackrox/rox/pkg/dackbox/graph"
-	reflect "reflect"
 )
 
-// MockProvider is a mock of Provider interface
+// MockProvider is a mock of Provider interface.
 type MockProvider struct {
 	ctrl     *gomock.Controller
 	recorder *MockProviderMockRecorder
 }
 
-// MockProviderMockRecorder is the mock recorder for MockProvider
+// MockProviderMockRecorder is the mock recorder for MockProvider.
 type MockProviderMockRecorder struct {
 	mock *MockProvider
 }
 
-// NewMockProvider creates a new mock instance
+// NewMockProvider creates a new mock instance.
 func NewMockProvider(ctrl *gomock.Controller) *MockProvider {
 	mock := &MockProvider{ctrl: ctrl}
 	mock.recorder = &MockProviderMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 	return m.recorder
 }
 
-// NewGraphView mocks base method
+// NewGraphView mocks base method.
 func (m *MockProvider) NewGraphView() graph.DiscardableRGraph {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewGraphView")
@@ -41,7 +42,7 @@ func (m *MockProvider) NewGraphView() graph.DiscardableRGraph {
 	return ret0
 }
 
-// NewGraphView indicates an expected call of NewGraphView
+// NewGraphView indicates an expected call of NewGraphView.
 func (mr *MockProviderMockRecorder) NewGraphView() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewGraphView", reflect.TypeOf((*MockProvider)(nil).NewGraphView))

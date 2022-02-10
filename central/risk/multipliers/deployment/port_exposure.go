@@ -47,7 +47,7 @@ func (s *reachabilityMultiplier) Score(_ context.Context, deployment *storage.De
 
 func exposureValue(exposure storage.PortConfig_ExposureLevel) float32 {
 	switch exposure {
-	case storage.PortConfig_EXTERNAL:
+	case storage.PortConfig_EXTERNAL, storage.PortConfig_ROUTE:
 		return 3
 	case storage.PortConfig_NODE, storage.PortConfig_HOST:
 		return 2
@@ -66,7 +66,7 @@ func exposureString(exposure storage.PortConfig_ExposureLevel) string {
 		return "on every node running the deployment"
 	case storage.PortConfig_NODE:
 		return "on node interfaces"
-	case storage.PortConfig_EXTERNAL:
+	case storage.PortConfig_EXTERNAL, storage.PortConfig_ROUTE:
 		return "to external clients"
 	default:
 		return "in an unknown manner"

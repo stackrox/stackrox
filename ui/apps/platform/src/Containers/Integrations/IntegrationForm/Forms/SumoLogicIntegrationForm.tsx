@@ -1,10 +1,11 @@
 import React, { ReactElement } from 'react';
-import { Form, PageSection, Switch, TextInput } from '@patternfly/react-core';
+import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import merge from 'lodash/merge';
 import * as yup from 'yup';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -12,7 +13,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type SumoLogicIntegration = {
@@ -77,7 +77,7 @@ function SumoLogicIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
@@ -116,17 +116,13 @@ function SumoLogicIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Disable TLS Certificate Validation (Insecure)"
-                        fieldId="sumologic.skipTLSVerify"
-                        errors={errors}
-                    >
-                        <Switch
+                    <FormLabelGroup label="" fieldId="sumologic.skipTLSVerify" errors={errors}>
+                        <Checkbox
+                            label="Disable TLS certificate validation (insecure)"
                             id="sumologic.skipTLSVerify"
-                            name="sumologic.skipTLSVerify"
-                            aria-label="disable tls certificate validation"
                             isChecked={values.sumologic.skipTLSVerify}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>

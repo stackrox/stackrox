@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -40,7 +40,7 @@ func (cli *Client) NetworkInspectWithRaw(ctx context.Context, networkID string, 
 	}
 	defer ensureReaderClosed(resp)
 
-	body, err := ioutil.ReadAll(resp.body)
+	body, err := io.ReadAll(resp.body)
 	if err != nil {
 		return networkResource, nil, err
 	}

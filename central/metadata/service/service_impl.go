@@ -48,7 +48,7 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		LicenseStatus: v1.Metadata_VALID,
 	}
 	// Only return the version to logged in users, not anonymous users.
-	if authn.IdentityFromContext(ctx) != nil {
+	if authn.IdentityFromContextOrNil(ctx) != nil {
 		metadata.Version = version.GetMainVersion()
 	}
 	return metadata, nil

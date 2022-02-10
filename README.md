@@ -49,11 +49,11 @@ The following tools are necessary to test code and build image(s):
 * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
 * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
 * Docker (make sure you `docker login` to your company [DockerHub account](https://hub.docker.com/settings/security))
-* rocksdb (use `brew install rocksdb` on a Mac)
+* rocksdb (Follow [guide](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/227344410/Tools+languages+XCode+Docker+Brew+Java+Go#Tools%2Flanguages%3AXCode%2CDocker%2CBrew%2CJava%2CGo-InstallRocksDB) on Confluence to install)
 * xcode command line tools (macOS only)
 * [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
   You can obtain it with `brew install bats` or `npm install -g bats`.
-
+* [oc OpenShift](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/) cli tool
 
 ##### xcode - macOS only
 
@@ -101,19 +101,16 @@ $ go env -w GOPRIVATE=github.com/stackrox
 $ cd $GOPATH
 $ mkdir -p src/github.com/stackrox
 $ cd src/github.com/stackrox
-$ git clone git@github.com:stackrox/rox.git
+$ git clone git@github.com:stackrox/stackrox.git
 ```
 
 #### Local development
 
 To sweeten your experience, install [the workflow scripts](#productivity) beforehand.
 
+First install RocksDB using the guide in Confluence. For [Mac](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/227344410/Tools+languages+XCode+Docker+Brew+Java+Go#Tools%2Flanguages%3AXCode%2CDocker%2CBrew%2CJava%2CGo-InstallRocksDB) or [Linux](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/2404155411/Tools+languages#Tools%2Flanguages-InstallRocksDBdependencies)
 ```bash
-# Install rocksdb, central's main database
-# It is necessary because of several CGO bindings
-$ brew install rocksdb
-
-$ cd $GOPATH/src/github.com/stackrox/rox
+$ cd $GOPATH/src/github.com/stackrox/stackrox
 $ make install-dev-tools
 $ make image
 ```
@@ -121,14 +118,14 @@ $ make image
 Now, you need to bring up a Kubernetes cluster *yourself* before proceeding.
 Development can either happen in GCP or locally with
 [Docker Desktop](https://docs.docker.com/docker-for-mac/#kubernetes) or [Minikube](https://minikube.sigs.k8s.io/docs/start/).
+Note that Docker Desktop is more suited for macOS development, because the cluster will have access to images built with `make image` locally without additional configuration. Also, the collector has better support for Docker Desktop than Minikube where drivers may not be available.
 
 ```bash
-# To mount local StackRox binaries into your pods, enable hotreload:
-# Note however that this will break the linter: https://stack-rox.atlassian.net/browse/ROX-6562
-$ export HOTRELOAD=true
-
 # To keep the StackRox central's rocksdb state between restarts, set:
 $ export STORAGE=pvc
+
+# To save time on rebuilds by skipping UI builds, set:
+$ export SKIP_UI_BUILD=1
 
 # When you deploy locally make sure your kube context points to the desired kubernetes cluster,
 # for example Docker Desktop.
@@ -143,7 +140,8 @@ $ ./deploy/k8s/deploy-local.sh
 $ logmein
 ```
 
-See the [deployment guide](#how-to-deploy) for further reading.
+See the [deployment guide](#how-to-deploy) for further reading. To read more about the environment variables see the
+[deploy/README.md](https://github.com/stackrox/stackrox/blob/master/deploy/README.md#env-variables).
 
 #### Common Makefile Targets
 
@@ -363,5 +361,5 @@ bash openshift/central.sh
 </details>
 
 
-[circleci-badge]: https://circleci.com/gh/stackrox/rox.svg?&style=shield&circle-token=140f88ea9dfd594ff68b71eaf1d4407c4331833d
-[circleci-link]:  https://circleci.com/gh/stackrox/workflows/rox/tree/master
+[circleci-badge]: https://circleci.com/gh/stackrox/stackrox.svg?&style=shield&circle-token=eb5a0b87a6253b4c060d011bbfed4a2f1f516746
+[circleci-link]:  https://circleci.com/gh/stackrox/workflows/stackrox/tree/master

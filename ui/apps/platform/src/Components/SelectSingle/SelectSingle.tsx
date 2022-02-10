@@ -2,10 +2,11 @@ import React, { ReactElement, useState } from 'react';
 import { Select, SelectVariant } from '@patternfly/react-core';
 
 export type SelectSingleProps = {
+    toggleIcon?: ReactElement;
     id: string;
     value: string;
     handleSelect: (name: string, value: string) => void;
-    isDisabled: boolean;
+    isDisabled?: boolean;
     children: ReactElement[];
     direction?: 'up' | 'down';
     isCreatable?: boolean;
@@ -14,10 +15,11 @@ export type SelectSingleProps = {
 };
 
 function SelectSingle({
+    toggleIcon,
     id,
     value,
     handleSelect,
-    isDisabled,
+    isDisabled = false,
     children,
     direction = 'down',
     isCreatable = false,
@@ -37,6 +39,7 @@ function SelectSingle({
     return (
         <Select
             variant={isTypeahead}
+            toggleIcon={toggleIcon}
             id={id}
             isDisabled={isDisabled}
             isOpen={isOpen}

@@ -21,7 +21,7 @@ echo "Using API_ENDPOINT $API_ENDPOINT"
 FAILURES=0
 
 roxctl_cmd() {
-  roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@"
+  roxctl --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@"
 }
 
 test_roxctl_cmd() {

@@ -71,6 +71,28 @@
         ]
       }
     },
+    "/v1/clusters-env/cluster-defaults": {
+      "get": {
+        "operationId": "ClustersService_GetClusterDefaults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ClusterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "ClustersService"
+        ]
+      }
+    },
     "/v1/clusters-env/kernel-support-available": {
       "get": {
         "operationId": "ClustersService_GetKernelSupportAvailable",
@@ -438,7 +460,8 @@
           "type": "boolean"
         },
         "helmConfig": {
-          "$ref": "#/definitions/storageCompleteClusterConfig"
+          "$ref": "#/definitions/storageCompleteClusterConfig",
+          "description": "The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed."
         },
         "mostRecentSensorId": {
           "$ref": "#/definitions/storageSensorDeploymentIdentification",
@@ -453,6 +476,9 @@
         },
         "initBundleId": {
           "type": "string"
+        },
+        "managedBy": {
+          "$ref": "#/definitions/storageManagerType"
         }
       }
     },
@@ -633,6 +659,16 @@
         }
       }
     },
+    "storageManagerType": {
+      "type": "string",
+      "enum": [
+        "MANAGER_TYPE_UNKNOWN",
+        "MANAGER_TYPE_MANUAL",
+        "MANAGER_TYPE_HELM_CHART",
+        "MANAGER_TYPE_KUBERNETES_OPERATOR"
+      ],
+      "default": "MANAGER_TYPE_UNKNOWN"
+    },
     "storageOrchestratorMetadata": {
       "type": "object",
       "properties": {
@@ -693,6 +729,9 @@
           "type": "string"
         },
         "appServiceaccountId": {
+          "type": "string"
+        },
+        "k8sNodeName": {
           "type": "string"
         }
       },

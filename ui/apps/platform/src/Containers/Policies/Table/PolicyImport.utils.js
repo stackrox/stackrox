@@ -60,7 +60,7 @@ export function isDuplicateResolved(resolutionObj) {
  *
  * @param   {array}  policyErrors  Array< { type: string, value: string } >
  *
- * @return  {string}               each array and value, joined by "and"
+ * @return  {array}               each array and value, joined by "and"
  */
 export function getErrorMessages(policyErrors) {
     const errorMessages = policyErrors.map((err) => {

@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -73,10 +74,22 @@ func ForSeverity() QueryBuilder {
 
 func wrapForVulnMgmt(f queryBuilderFunc) QueryBuilder {
 	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
-		return append(f(group), &query.FieldQuery{
-			Field:  search.CVESuppressed.String(),
-			Values: []string{"false"},
-		})
+		if features.VulnRiskManagement.Enabled() {
+			return append(f(group),
+				&query.FieldQuery{
+					Field:  search.CVESuppressed.String(),
+					Values: []string{"false"},
+				},
+				&query.FieldQuery{
+					Field:  search.VulnerabilityState.String(),
+					Values: []string{storage.VulnerabilityState_OBSERVED.String()},
+				})
+		}
+		return append(f(group),
+			&query.FieldQuery{
+				Field:  search.CVESuppressed.String(),
+				Values: []string{"false"},
+			})
 	})
 }
 
@@ -110,15 +123,19 @@ func ForWriteableHostMount() QueryBuilder {
 	})
 }
 
+// ForFixedBy returns a query builder specific to the FixedBy field. It's a regular regex field,
+// except that for historic reasons, .* is special-cased and translated to .+.
+func ForFixedBy() QueryBuilder {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.FixedBy, mapFixedByValue),
+		}
+	})
+}
+
 func mapFixedByValue(s string) string {
 	if s == ".*" {
 		s = ".+"
 	}
 	return valueToStringRegex(s)
-}
-
-// ForFixedBy returns a query builder specific to the FixedBy field. It's a regular regex field,
-// except that for historic reasons, .* is special-cased and translated to .+.
-func ForFixedBy() QueryBuilder {
-	return &fieldLabelQueryBuilder{fieldLabel: search.FixedBy, valueMapFunc: mapFixedByValue}
 }

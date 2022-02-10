@@ -103,9 +103,17 @@ func createNode(entity networkgraph.Entity) *node {
 	}
 }
 
+var (
+	externallyExposedExposureLevels = map[storage.PortConfig_ExposureLevel]struct{}{
+		storage.PortConfig_NODE:     {},
+		storage.PortConfig_ROUTE:    {},
+		storage.PortConfig_EXTERNAL: {},
+	}
+)
+
 func (n *node) populateExposureInfo(perPort bool) {
 	for _, deploymentPort := range n.deployment.GetPorts() {
-		if deploymentPort.GetExposure() != storage.PortConfig_NODE && deploymentPort.GetExposure() != storage.PortConfig_EXTERNAL {
+		if _, isExternal := externallyExposedExposureLevels[deploymentPort.GetExposure()]; !isExternal {
 			continue
 		}
 

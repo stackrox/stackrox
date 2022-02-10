@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { useFormikContext, FormikValues } from 'formik';
-import get from 'lodash.get';
+import get from 'lodash/get';
 
 import FormLabel from '../FormLabel';
 import FormErrorMessage from '../FormErrorMessage';

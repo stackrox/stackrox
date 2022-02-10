@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
@@ -48,7 +48,7 @@ func (s *ComplianceResultsBuilderTestSuite) decompressEvidence(chunk *compliance
 		err := gr.Close()
 		s.Require().NoError(err)
 	}()
-	decompresedBytes, err := ioutil.ReadAll(gr)
+	decompresedBytes, err := io.ReadAll(gr)
 	s.Require().NoError(err)
 	var result complianceCompress.ResultWrapper
 	err = json.Unmarshal(decompresedBytes, &result)

@@ -18,6 +18,7 @@ import { FieldArray, FormikProvider } from 'formik';
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -25,7 +26,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
@@ -158,10 +158,15 @@ function JiraIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('notifier.jira.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
                         <FormLabelGroup
@@ -198,18 +203,18 @@ function JiraIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        {!isCreating && (
+                        {!isCreating && isEditable && (
                             <FormLabelGroup
                                 label=""
                                 fieldId="updatePassword"
-                                helperText="Leave this off to use the currently stored credentials."
+                                helperText="Enable this option to replace currently stored credentials (if any)"
                                 errors={errors}
                             >
                                 <Checkbox
                                     label="Update password"
                                     id="updatePassword"
                                     isChecked={values.updatePassword}
-                                    onChange={onChange}
+                                    onChange={onUpdateCredentialsChange}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
@@ -436,7 +441,6 @@ function JiraIntegrationForm({
             )}
         </>
     );
-    return <div>Jira form</div>;
 }
 
 export default JiraIntegrationForm;

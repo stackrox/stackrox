@@ -448,9 +448,12 @@
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
+        },
+        "state": {
+          "$ref": "#/definitions/storageVulnerabilityState"
         }
       },
-      "title": "TODO: Remove when migration is in place\nNext Tag: 20"
+      "title": "Next Tag: 21"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -631,6 +634,16 @@
         "CRITICAL_VULNERABILITY_SEVERITY"
       ],
       "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "storageVulnerabilityState": {
+      "type": "string",
+      "enum": [
+        "OBSERVED",
+        "DEFERRED",
+        "FALSE_POSITIVE"
+      ],
+      "default": "OBSERVED",
+      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed."
     },
     "v1ListNodesResponse": {
       "type": "object",

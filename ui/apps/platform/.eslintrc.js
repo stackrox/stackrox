@@ -79,7 +79,7 @@ const commonRules = {
 const commonReactRules = {
     'react/display-name': 'off',
     'react/jsx-props-no-spreading': 'off',
-    'react/static-property-placement': ['warn', 'static public field'],
+    'react/static-property-placement': ['error', 'static public field'],
     'react/prop-types': [
         'error',
         {
@@ -114,21 +114,11 @@ const commonReactRules = {
             forbid: ['data-test-id'],
         },
     ],
-    'react/no-array-index-key': 'warn', // TODO: eventually switch this rule to error
     'react-hooks/exhaustive-deps': 'warn',
 
     // DEPRECATED in favor of label-has-associated-control
     // https://github.com/evcohen/eslint-plugin-jsx-a11y/blob/master/docs/rules/label-has-for.md#rule-details
     'jsx-a11y/label-has-for': 'off',
-    'jsx-a11y/control-has-associated-label': [
-        'warn',
-        {
-            ignoreElements: ['input', 'textarea'], // rule does not consider label htmlFor attribute
-            labelAttributes: ['label'],
-            controlComponents: ['Dot', 'Labeled'],
-            depth: 3,
-        },
-    ],
 
     // Reconfigure for using react-router Link
     'jsx-a11y/anchor-is-valid': [
@@ -156,6 +146,12 @@ const commonTypeScriptRules = {
             readonly: 'array',
         },
     ],
+
+    /*
+     * @typescript-eslint/eslint-plugin 5 removes the following rule from recommended.
+     * Simulate future upgrade and delete the override after upgrade to react-scripts 5.
+     */
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
 
     /*
      * Turn off rules from recommended-requiring-type-checking because of
@@ -208,16 +204,6 @@ module.exports = {
             },
             rules: {
                 ...commonRules,
-            },
-        },
-        {
-            files: ['.storybook/*.js'],
-            env: {
-                node: true,
-            },
-            rules: {
-                ...commonRules,
-                ...commonReactRules,
             },
         },
         {

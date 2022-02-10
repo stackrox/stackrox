@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/mitre"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,6 +32,33 @@ func TestMitre(t *testing.T) {
 				"Please add MITRE ATT&CK to the policy (Ref: https://attack.mitre.org/matrices/enterprise/). "+
 				"If MITRE ATT&CK is not applicable, add the policy to 'pkg/defaults/policies/mitre_exception_list'",
 				policy.GetId())
+		}
+	}
+}
+
+func TestMitreIDsAreValid(t *testing.T) {
+	policies, err := DefaultPolicies()
+	require.NoError(t, err)
+
+	mitreBundle, err := mitre.GetMitreBundle()
+	require.NoError(t, err)
+	vectors := mitre.FlattenMitreMatrices(mitreBundle.GetMatrices()...)
+
+	tactics := make(map[string]struct{})
+	techniques := make(map[string]struct{})
+	for _, vector := range vectors {
+		tactics[vector.GetTactic().GetId()] = struct{}{}
+		for _, technique := range vector.GetTechniques() {
+			techniques[technique.GetId()] = struct{}{}
+		}
+	}
+
+	for _, policy := range policies {
+		for _, vector := range policy.GetMitreAttackVectors() {
+			assert.NotNil(t, tactics[vector.GetTactic()], "MITRE Tactic %s in policy %s is invalid", vector.GetTactic(), policy.GetName())
+			for _, technique := range vector.GetTechniques() {
+				assert.NotNil(t, techniques[technique], "MITRE Technique %s in policy %s is invalid", technique, policy.GetName())
+			}
 		}
 	}
 }
