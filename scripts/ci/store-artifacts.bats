@@ -45,7 +45,7 @@ function setup() {
 @test "stores to a different destination" {
     run store_artifacts /tmp different
     assert_success
-    assert_output --partial "Destination: ${GS_URL}/ggg"
+    assert_output --partial "Destination: ${GS_URL}/different"
 }
 
 @test "stores to unique destinations" {
