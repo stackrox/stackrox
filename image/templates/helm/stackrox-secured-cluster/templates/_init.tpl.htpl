@@ -34,8 +34,11 @@
     $.Values, we apply some bootstrap defaults.
    */}}
 {{ $rox := deepCopy $values }}
-{{/* TODO(do-not-merge): use scanner config shape */}}
-{{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml)) }}
+
+{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
+{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
+
+{{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
 {{ $_ = set $ "_rox" $rox }}
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
