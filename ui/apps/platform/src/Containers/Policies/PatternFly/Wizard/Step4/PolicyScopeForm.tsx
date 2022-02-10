@@ -58,7 +58,7 @@ function PolicyScopeForm() {
     }
 
     function deleteExclusionDeploymentScope(index) {
-        const newScope = scope.filter((_, i) => i !== index);
+        const newScope = excludedDeploymentScopes.filter((_, i) => i !== index);
         setFieldValue('excludedDeploymentScopes', newScope);
     }
 
