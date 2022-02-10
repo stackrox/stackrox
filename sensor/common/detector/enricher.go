@@ -189,7 +189,7 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 		img := container.GetImage()
 		// Ensure the container image has its namespace populated prior to scanning.
 		img.Namespace = deployment.GetNamespace()
-		e.runImageScanAsync(imageChan, idx, container.GetImage())
+		e.runImageScanAsync(imageChan, idx, img)
 	}
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	for i := 0; i < len(deployment.GetContainers()); i++ {
