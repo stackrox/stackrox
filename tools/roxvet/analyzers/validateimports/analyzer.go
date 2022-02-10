@@ -187,6 +187,10 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/utils", "pkg/fileutils", "pkg/buildinfo", "pkg/fsutils", "pkg/sliceutils")
 	}
 
+	if validImportRoot == "tools" {
+		allowedPackages = append(allowedPackages, "central/globaldb", "central/metrics")
+	}
+
 	if validImportRoot == "sensor/kubernetes" {
 		allowedPackages = append(allowedPackages, "sensor/common")
 	}

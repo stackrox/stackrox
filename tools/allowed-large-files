@@ -31,3 +31,4 @@ scale/mocksensor/image_names.go
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
+central/alert/datastore/internal/store/postgres/store.go

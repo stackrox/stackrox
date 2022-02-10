@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option cc_enable_arenas = true;
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message TestSingleKeyStruct {
+    enum Enum {
+      ENUM0 = 0;
+      ENUM1 = 1;
+      ENUM2 = 2;
+    }
+    string key                   = 1 [(gogoproto.moretags) = 'sql:"pk,index=hash"'];
+    string name                  = 15 [(gogoproto.moretags) = 'sql:"unique"'];
+    repeated string string_slice = 2;
+
+    bool bool                    = 3;
+    // repeated bool bool_slice: currently unsupported
+
+    uint64 uint64                = 4;
+    // repeated uint64 uint64_slice: currently unsupported
+
+    int64 int64                  = 5;
+    // repeated int64 int64_slice: currently unsupported
+
+    float float                   = 6;
+    // repeated float float_slice: currently unsupported
+
+    map<string, string> labels          = 7;
+    google.protobuf.Timestamp timestamp = 8;
+
+    Enum enum                           = 9;
+    repeated Enum enums                 = 10;
+
+    message Embedded {
+      string embedded = 1;
+      message Embedded2 {
+        string embedded = 2;
+      }
+    }
+    Embedded embedded = 11;
+
+    message Nested {
+      string nested = 1;
+      message Nested2 {
+        string nested2 = 2;
+      }
+      Nested2 nested2 = 2;
+    }
+    repeated Nested nested = 12;
+
+    message OneOfNested {
+      string nested = 1;
+      message Nested2 {
+        string nested2 = 2;
+      }
+      Nested2 nested2 = 2;
+    }
+    oneof oneof {
+      string oneofstring      = 13;
+      OneOfNested oneofnested = 14;
+    }
+}
+
+message TestMultiKeyStruct {
+  enum Enum {
+    ENUM0 = 0;
+    ENUM1 = 1;
+    ENUM2 = 2;
+  }
+  string key1                  = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string key2                  = 2 [(gogoproto.moretags) = 'sql:"pk"'];
+
+  repeated string string_slice = 3;
+
+  bool bool                    = 4;
+  // repeated bool bool_slice: currently unsupported
+
+  uint64 uint64                = 5;
+  // repeated uint64 uint64_slice: currently unsupported
+
+  int64 int64                  = 6;
+  // repeated int64 int64_slice: currently unsupported
+
+  float float                   = 7;
+  // repeated float float_slice: currently unsupported
+
+  map<string, string> labels          = 8;
+  google.protobuf.Timestamp timestamp = 9;
+
+  Enum enum                           = 10;
+  repeated Enum enums                 = 11;
+
+  message Embedded {
+    string embedded = 1;
+    message Embedded2 {
+      string embedded = 2;
+    }
+  }
+  Embedded embedded = 12;
+
+  message Nested {
+    string nested = 1;
+    message Nested2 {
+      string nested2 = 2;
+    }
+  }
+  repeated Nested nested = 13;
+
+  message OneOfNested {
+    string nested = 1;
+    message Nested2 {
+      string nested2 = 2;
+    }
+  }
+  oneof oneof {
+    string oneofstring      = 14;
+    OneOfNested oneofnested = 15;
+  }
+}
