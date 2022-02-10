@@ -27,7 +27,7 @@ func newCertRefresher(requestCertificates requestCertificatesFunc, timeout time.
 		repository:          repository,
 	}
 	refresher.createTicker = func() concurrency.RetryTicker {
-		return concurrency.NewRetryTicker(refresher.RefreshCertificates, timeout, backoff)
+		return concurrency.NewRetryTicker(refresher.refreshCertificates, timeout, backoff)
 	}
 	return refresher
 }
@@ -65,9 +65,9 @@ func (r *certRefresherImpl) Stop() {
 	}
 }
 
-// RefreshCertificates determines refreshes the certificate secrets if needed, and returns the time
+// refreshCertificates determines refreshes the certificate secrets if needed, and returns the time
 // until the next refresh.
-func (r *certRefresherImpl) RefreshCertificates(ctx context.Context) (timeToNextRefresh time.Duration, err error) {
+func (r *certRefresherImpl) refreshCertificates(ctx context.Context) (timeToNextRefresh time.Duration, err error) {
 	timeToNextRefresh, err = r.ensureCertificatesAreFresh(ctx)
 	if err != nil {
 		log.Errorf("refreshing %s: %s", certsDescription, err)

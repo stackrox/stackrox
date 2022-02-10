@@ -68,7 +68,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesImmediateRefreshSuccess() {
 		storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 
 	s.dependenciesMock.On("Start").Once().Run(func(args mock.Arguments) {
-		timeToNextRefresh, err := s.refresher.RefreshCertificates(ctx)
+		timeToNextRefresh, err := s.refresher.refreshCertificates(ctx)
 		s.Require().NoError(err)
 		s.InDelta(time.Until(certRenewalTime).Seconds(), timeToNextRefresh.Seconds(), 1)
 		doneSignal.Signal()
@@ -99,7 +99,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsFailure() {
 	doneSignal := concurrency.NewErrorSignal()
 
 	s.dependenciesMock.On("Start").Once().Run(func(args mock.Arguments) {
-		_, err := s.refresher.RefreshCertificates(ctx)
+		_, err := s.refresher.refreshCertificates(ctx)
 		s.Error(err)
 		doneSignal.Signal()
 	})
@@ -119,7 +119,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetTimeToRefreshFailureRecov
 	doneSignal := concurrency.NewErrorSignal()
 
 	s.dependenciesMock.On("Start").Once().Run(func(args mock.Arguments) {
-		_, err := s.refresher.RefreshCertificates(ctx)
+		_, err := s.refresher.refreshCertificates(ctx)
 		s.Error(err)
 	})
 	certificates := (*storage.TypedServiceCertificateSet)(nil)
@@ -144,7 +144,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesFailure()
 	doneSignal := concurrency.NewErrorSignal()
 
 	s.dependenciesMock.On("Start").Once().Run(func(args mock.Arguments) {
-		_, err := s.refresher.RefreshCertificates(ctx)
+		_, err := s.refresher.refreshCertificates(ctx)
 		s.Error(err)
 		doneSignal.Signal()
 	})
@@ -167,7 +167,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseF
 	doneSignal := concurrency.NewErrorSignal()
 
 	s.dependenciesMock.On("Start").Once().Run(func(args mock.Arguments) {
-		_, err := s.refresher.RefreshCertificates(ctx)
+		_, err := s.refresher.refreshCertificates(ctx)
 		s.Error(err)
 		doneSignal.Signal()
 	})
@@ -196,7 +196,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesPutCertsFailure() {
 	doneSignal := concurrency.NewErrorSignal()
 
 	s.dependenciesMock.On("Start").Once().Run(func(args mock.Arguments) {
-		_, err := s.refresher.RefreshCertificates(ctx)
+		_, err := s.refresher.refreshCertificates(ctx)
 		s.Error(err)
 		doneSignal.Signal()
 	})
