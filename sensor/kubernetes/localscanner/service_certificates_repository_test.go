@@ -27,7 +27,20 @@ var (
 	errForced          = errors.New("forced error")
 	serviceType        = storage.ServiceType_SCANNER_SERVICE
 	anotherServiceType = storage.ServiceType_SENSOR_SERVICE
-	sensorDeployment   = &appsApiv1.Deployment{
+	serviceCertificate = &storage.TypedServiceCertificate{
+		ServiceType: serviceType,
+		Cert: &storage.ServiceCertificate{
+			CertPem: make([]byte, 0),
+			KeyPem:  make([]byte, 1),
+		},
+	}
+	certificates = &storage.TypedServiceCertificateSet{
+		CaPem: make([]byte, 2),
+		ServiceCerts: []*storage.TypedServiceCertificate{
+			serviceCertificate,
+		},
+	}
+	sensorDeployment = &appsApiv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sensor-deployment",
 			Namespace: namespace,
@@ -60,7 +73,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 				cancelGetCtx()
 			}
 
-			certificates, err := tc.fixture.repo.GetServiceCertificates(getCtx)
+			certificates, err := tc.fixture.repo.getServiceCertificates(getCtx)
 			if tc.expectedErr == nil {
 				s.Equal(tc.fixture.certificates, certificates)
 			}
@@ -103,7 +116,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 			clientSet := fake.NewSimpleClientset(secret1, secret2)
 			secretsClient := clientSet.CoreV1().Secrets(namespace)
 			repo := newTestRepo(secrets, secretsClient)
-			_, err := repo.GetServiceCertificates(context.Background())
+			_, err := repo.getServiceCertificates(context.Background())
 			if tc.expectError {
 				s.Error(err)
 			} else {
@@ -130,7 +143,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 				cancelPutCtx()
 			}
 
-			err := tc.fixture.repo.PutServiceCertificates(putCtx, tc.fixture.certificates)
+			err := tc.fixture.repo.putServiceCertificates(putCtx, tc.fixture.certificates)
 
 			s.checkExpectedError(tc.expectedErr, err)
 		})
@@ -140,7 +153,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataFailure() {
 	fixture := s.newFixtureAdvancedOpts("", true)
 
-	_, err := fixture.repo.GetServiceCertificates(context.Background())
+	_, err := fixture.repo.getServiceCertificates(context.Background())
 
 	s.ErrorIs(err, ErrMissingSecretData)
 }
@@ -171,7 +184,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
 			fixture := s.newFixtureAdvancedOpts("", false, tc.missingSecretDataKey)
-			certificates, err := fixture.repo.GetServiceCertificates(context.Background())
+			certificates, err := fixture.repo.getServiceCertificates(context.Background())
 			tc.setExpectedCertsFunc(fixture.certificates)
 
 			s.NoError(err)
@@ -183,15 +196,33 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutUnknownServiceTypeFailure() {
 	fixture := s.newFixture("")
 	s.getFirstServiceCertificate(fixture.certificates).ServiceType = anotherServiceType
-	err := fixture.repo.PutServiceCertificates(context.Background(), fixture.certificates)
+	err := fixture.repo.putServiceCertificates(context.Background(), fixture.certificates)
 	s.Error(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutMissingServiceTypeSuccess() {
 	fixture := s.newFixture("")
 	fixture.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
-	err := fixture.repo.PutServiceCertificates(context.Background(), fixture.certificates)
+	err := fixture.repo.putServiceCertificates(context.Background(), fixture.certificates)
 	s.NoError(err)
+}
+
+func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsNoCertificatesSuccess() {
+	clientSet := fake.NewSimpleClientset(sensorDeployment)
+	secretsClient := clientSet.CoreV1().Secrets(namespace)
+	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+
+	s.NoError(repo.createSecrets(context.Background(), nil))
+}
+
+func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	clientSet := fake.NewSimpleClientset(sensorDeployment)
+	secretsClient := clientSet.CoreV1().Secrets(namespace)
+	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+
+	s.Error(repo.createSecrets(ctx, certificates.Clone()))
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) checkExpectedError(expectedErr, err error) {
@@ -222,19 +253,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(verbToError string)
 
 func (s *serviceCertificatesRepoSecretsImplSuite) newFixtureAdvancedOpts(verbToError string, emptySecretData bool,
 	missingSecretDataKeys ...string) *certSecretsRepoFixture {
-	serviceCertificate := &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: make([]byte, 0),
-			KeyPem:  make([]byte, 1),
-		},
-	}
-	certificates := &storage.TypedServiceCertificateSet{
-		CaPem: make([]byte, 2),
-		ServiceCerts: []*storage.TypedServiceCertificate{
-			serviceCertificate,
-		},
-	}
+	certificates := certificates.Clone()
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            fmt.Sprintf("%s-secret", serviceType),
@@ -285,9 +304,9 @@ func sensorOwnerReference() []metav1.OwnerReference {
 func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 	secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
 
-	secretsSpec := make(map[storage.ServiceType]ServiceCertSecretSpec)
+	secretsSpec := make(map[storage.ServiceType]serviceCertSecretSpec)
 	for serviceType, secret := range secrets {
-		secretsSpec[serviceType] = ServiceCertSecretSpec{
+		secretsSpec[serviceType] = serviceCertSecretSpec{
 			secretName:          secret.Name,
 			caCertFileName:      mtls.CACertFileName,
 			serviceCertFileName: mtls.ServiceCertFileName,

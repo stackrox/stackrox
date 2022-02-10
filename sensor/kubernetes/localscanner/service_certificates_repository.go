@@ -33,28 +33,28 @@ var (
 
 // serviceCertificatesRepoSecretsImpl is a ServiceCertificatesRepo that uses k8s secrets for persistence.
 type serviceCertificatesRepoSecretsImpl struct {
-	secrets        map[storage.ServiceType]ServiceCertSecretSpec
+	secrets        map[storage.ServiceType]serviceCertSecretSpec
 	ownerReference metav1.OwnerReference
 	namespace      string
 	secretsClient  corev1.SecretInterface
 }
 
-// ServiceCertSecretSpec species the name of the secret where certificates for a service are stored, and
+// serviceCertSecretSpec species the name of the secret where certificates for a service are stored, and
 // the secret data keys where each certificate file is stored.
-type ServiceCertSecretSpec struct {
+type serviceCertSecretSpec struct {
 	secretName          string
 	caCertFileName      string
 	serviceCertFileName string
 	serviceKeyFileName  string
 }
 
-// NewServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
-// scanner and scanner DB in k8s secrets with the secret name and secret data path specified in ServiceCertSecretSpec.
-func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
+// newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
+// scanner and scanner DB in k8s secrets with the secret name and secret data path specified in serviceCertSecretSpec.
+func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
 
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets: map[storage.ServiceType]ServiceCertSecretSpec{
+		secrets: map[storage.ServiceType]serviceCertSecretSpec{
 			storage.ServiceType_SCANNER_SERVICE: {
 				secretName:          "scanner-slim-tls",
 				caCertFileName:      mtls.CACertFileName,
@@ -74,13 +74,13 @@ func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 	}
 }
 
-// GetServiceCertificates behaves as follows in case of missing data in the secrets:
+// getServiceCertificates behaves as follows in case of missing data in the secrets:
 // - Fails with ErrMissingSecretData in case any secret has no data.
 // - If the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate.
 //   for that secret will contain a zero value.
 // - Fails with ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
 // - Fails ErrSensorDoesNotOwnCertSecrets in case sensor deployment is not the sole owner of all secrets.
-func (r *serviceCertificatesRepoSecretsImpl) GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
+func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 	for serviceType, secretSpec := range r.secrets {
@@ -106,7 +106,7 @@ func (r *serviceCertificatesRepoSecretsImpl) GetServiceCertificates(ctx context.
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.Context, serviceType storage.ServiceType,
-	secretSpec ServiceCertSecretSpec) (cert *storage.TypedServiceCertificate, ca []byte, err error) {
+	secretSpec serviceCertSecretSpec) (cert *storage.TypedServiceCertificate, ca []byte, err error) {
 	secret, getErr := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
 	if getErr != nil {
 		return nil, nil, getErr
@@ -139,12 +139,12 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	}, secretData[secretSpec.caCertFileName], nil
 }
 
-// PutServiceCertificates is idempotent but not atomic in sense that on error some secrets might be persisted
+// putServiceCertificates is idempotent but not atomic in sense that on error some secrets might be persisted
 // while others are not.
 // Edge cases:
 // - Fails for certificates with a service type that doesn't appear in r.secrets, as we don't know where to store them.
 // - Not all services types in r.secrets are required to appear in certificates, missing service types are just skipped.
-func (r *serviceCertificatesRepoSecretsImpl) PutServiceCertificates(ctx context.Context,
+func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.Context,
 	certificates *storage.TypedServiceCertificateSet) error {
 	caPem := certificates.GetCaPem()
 	for _, cert := range certificates.GetServiceCerts() {
@@ -193,10 +193,11 @@ type patchSecretDataByteMap struct {
 	Value map[string][]byte `json:"value"`
 }
 
-// CreateSecrets ensures the k8s secrets where we store the certificates are created.
+// createSecrets ensures the k8s secrets for initialCertificates are created.
 // In case a secret doesn't exist this creates it setting sensorDeployment as owner, with initialCertificates stored
 // in the secret data.
-func (r *serviceCertificatesRepoSecretsImpl) CreateSecrets(ctx context.Context,
+// This only creates secrets for the service types that appear in initialCertificates.
+func (r *serviceCertificatesRepoSecretsImpl) createSecrets(ctx context.Context,
 	initialCertificates *storage.TypedServiceCertificateSet) error {
 
 	var createErr error
@@ -221,7 +222,7 @@ func (r *serviceCertificatesRepoSecretsImpl) CreateSecrets(ctx context.Context,
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, caPem []byte,
-	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) (*v1.Secret, error) {
+	certificate *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) (*v1.Secret, error) {
 
 	secret, err := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
 	if k8sErrors.IsNotFound(err) {
@@ -257,7 +258,7 @@ func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, c
 	return secret, nil
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) secretDataForCertificate(secretSpec ServiceCertSecretSpec, caPem []byte,
+func (r *serviceCertificatesRepoSecretsImpl) secretDataForCertificate(secretSpec serviceCertSecretSpec, caPem []byte,
 	cert *storage.TypedServiceCertificate) map[string][]byte {
 	return map[string][]byte{
 		secretSpec.caCertFileName:      caPem,
