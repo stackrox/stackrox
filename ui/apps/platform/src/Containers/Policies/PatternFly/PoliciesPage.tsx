@@ -5,6 +5,7 @@ import usePermissions from 'hooks/usePermissions';
 import { policiesBasePathPatternFly } from 'routePaths';
 import { SearchFilter } from 'types/search';
 
+import NotFoundMessage from 'Components/NotFoundMessage';
 import { getSearchStringForFilter, parsePoliciesSearchString } from './policies.utils';
 import PoliciesTablePage from './Table/PoliciesTablePage';
 import PolicyPage from './PolicyPage';
@@ -41,7 +42,7 @@ function PoliciesPage() {
     }
 
     if (!hasReadAccessForPolicy) {
-        return <div>TODO</div>;
+        return <NotFoundMessage title="404: We couldn't find that page" />;
     }
 
     if (pageAction || policyId) {
