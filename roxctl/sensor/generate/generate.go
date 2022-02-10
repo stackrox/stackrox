@@ -3,7 +3,6 @@ package generate
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -30,13 +29,13 @@ const (
 	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
 	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
 
-	warningDeprecatedAdmControllerCreateSet = `WARNING: The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
+	warningDeprecatedAdmControllerCreateSet = `The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-listen-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
 	errorDeprecatedAdmControllerCreateSet = `It is illegal to specify both the --create-admission-controller and --admission-controller-listen-on-creates flags.
 Please use --admission-controller-listen-on-creates exclusively in all invocations.`
 
-	warningDeprecatedAdmControllerEnableSet = `WARNING: The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
+	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
 	errorDeprecatedAdmControllerEnableSet = `It is illegal to specify both the --admission-controller-enabled and --admission-controller-enforce-on-creates flags.
@@ -76,21 +75,21 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-		fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerCreateSet)
+		s.env.Logger().ErrfLn(errorDeprecatedAdmControllerCreateSet)
 		return errors.New("Specified deprecated flag --create-admission-controller and new flag --admission-controller-listen-on-creates at the same time")
 	}
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
-		fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerCreateSet)
+		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerCreateSet)
 	}
 
 	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-		fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerEnableSet)
+		s.env.Logger().ErrfLn(errorDeprecatedAdmControllerEnableSet)
 		return errors.New("Specified deprecated flag --admission-controller-enabled and new flag --admission-controller-enforce-on-creates at the same time")
 	}
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
-		fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerEnableSet)
+		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
 	}
 
 	s.getBundleFn = util.GetBundle
@@ -181,15 +180,14 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 			s.env.Logger().WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
 		}
 	} else if s.cluster.GetSlimCollector() {
-		fmt.Fprintln(os.Stderr, infoDefaultingToSlimCollector)
+		s.env.Logger().InfofLn(infoDefaultingToSlimCollector)
 	} else {
-		fmt.Fprintln(os.Stderr, infoDefaultingToComprehensiveCollector)
+		s.env.Logger().InfofLn(infoDefaultingToComprehensiveCollector)
 	}
 
 	if env.Error != nil {
-		fmt.Fprintf(os.Stderr, `WARNING: Sensor bundle has been created successfully, but it was not possible to retrieve Central's
-  runtime environment information: %v.
-`, env.Error)
+		s.env.Logger().WarnfLn(`Sensor bundle has been created successfully, but it was not possible to retrieve Central's
+  runtime environment information: %v.`, env.Error)
 	}
 	return nil
 }

@@ -1,9 +1,6 @@
 package generate
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,9 +11,9 @@ import (
 )
 
 const (
-	errorAdmCntrlNotSupportedOnOpenShift3x  = `ERROR: The --admission-controller-listen-on-events flag is not supported for OpenShift 3.11. Set --openshift-version=4 to indicate that you are deploying on OpenShift 4.x in order to use this flag.`
-	errorAuditLogsNotSupportedOnOpenShift3x = `ERROR: The --disable-audit-logs flag is not supported for OpenShift 3.11. Set --openshift-version=4 to indicate that you are deploying on OpenShift 4.x in order to use this flag.`
-	noteOpenShift3xCompatibilityMode        = `NOTE: Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 to take advantage of OpenShift 4.x features.`
+	errorAdmCntrlNotSupportedOnOpenShift3x  = `The --admission-controller-listen-on-events flag is not supported for OpenShift 3.11. Set --openshift-version=4 to indicate that you are deploying on OpenShift 4.x in order to use this flag.`
+	errorAuditLogsNotSupportedOnOpenShift3x = `The --disable-audit-logs flag is not supported for OpenShift 3.11. Set --openshift-version=4 to indicate that you are deploying on OpenShift 4.x in order to use this flag.`
+	noteOpenShift3xCompatibilityMode        = `Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 to take advantage of OpenShift 4.x features.`
 )
 
 type sensorGenerateOpenShiftCommand struct {
@@ -31,7 +28,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 	s.cluster.Type = storage.ClusterType_OPENSHIFT_CLUSTER
 	switch s.openshiftVersion {
 	case 0:
-		fmt.Fprintf(os.Stderr, "%s\n\n", noteOpenShift3xCompatibilityMode)
+		s.env.Logger().InfofLn(noteOpenShift3xCompatibilityMode)
 	case 3:
 	case 4:
 		s.cluster.Type = storage.ClusterType_OPENSHIFT4_CLUSTER
@@ -44,7 +41,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 	} else if *s.admissionControllerEvents && s.cluster.Type == storage.ClusterType_OPENSHIFT_CLUSTER {
 		// The below `Validate` call would also catch this, but catching it here allows us to print more
 		// CLI-relevant error messages that reference flag names.
-		fmt.Fprintf(os.Stderr, "%s\n\n", errorAdmCntrlNotSupportedOnOpenShift3x)
+		s.env.Logger().ErrfLn(errorAdmCntrlNotSupportedOnOpenShift3x)
 		return errors.New("incompatible flag settings")
 	}
 	s.cluster.AdmissionControllerEvents = *s.admissionControllerEvents
@@ -54,7 +51,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 	if s.disableAuditLogCollection == nil {
 		s.disableAuditLogCollection = pointers.Bool(s.cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER)
 	} else if !*s.disableAuditLogCollection && s.cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER {
-		fmt.Fprintf(os.Stderr, "%s\n\n", errorAuditLogsNotSupportedOnOpenShift3x)
+		s.env.Logger().ErrfLn(errorAuditLogsNotSupportedOnOpenShift3x)
 		return errors.New("incompatible flag settings")
 	}
 

@@ -117,14 +117,6 @@ func (s *sensorGenerateTestSuite) createMockedCommand(kernelSupport bool, postCl
 	return out, errOut, closeF, cmd, mock
 }
 
-// Create cluster:
-//   2) Return validation errors
-// Get bundle:
-//	 1) Show warnings / info messages
-//   2) Return error
-// Flag combinations:
-//   1) Show different warnings or errors depending on the flag combinations
-
 func (s *sensorGenerateTestSuite) SetupTest() {
 	testbuildinfo.SetForTest(s.T())
 	testutils.SetExampleVersion(s.T())
