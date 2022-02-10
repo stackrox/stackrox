@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
@@ -107,6 +108,7 @@ function PoliciesTable({
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
+    const history = useHistory();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
     >([]);
@@ -152,6 +154,13 @@ function PoliciesTable({
     function onSort(e, index, direction) {
         setActiveSortIndex(index);
         setActiveSortDirection(direction);
+    }
+
+    function onEditPolicy(id: string) {
+        history.replace({
+            pathname: `${policiesBasePath}/${id}`,
+            search: 'action=edit',
+        });
     }
 
     const selectedIds = getSelectedIds();
@@ -380,6 +389,10 @@ function PoliciesTable({
                                                 title: 'Disable policy',
                                                 onClick: () => disablePoliciesHandler([id]),
                                             },
+                                      {
+                                          title: 'Edit policy',
+                                          onClick: () => onEditPolicy(id),
+                                      },
                                       exportPolicyAction,
                                       {
                                           isSeparator: true,
