@@ -52,22 +52,22 @@ type indexerImpl struct {
 	db *pgxpool.Pool
 }
 
-func (b *indexerImpl) Add{{.Type}}(deployment *storage.{{.Type}}) error {
+func (b *indexerImpl) Add{{.Singular}}(deployment *storage.{{.Type}}) error {
 	// Added as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) Add{{.Type}}s(_ []*storage.{{.Type}}) error {
+func (b *indexerImpl) Add{{.Singular}}s(_ []*storage.{{.Type}}) error {
 	// Added as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) Delete{{.Type}}(id string) error {
+func (b *indexerImpl) Delete{{.Singular}}(id string) error {
 	// Removed as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) Delete{{.Type}}s(_ []string) error {
+func (b *indexerImpl) Delete{{.Singular}}s(_ []string) error {
 	// Added as a part of normal DB op
 	return nil
 }
@@ -160,6 +160,7 @@ func main() {
 		props.SearchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,
+			"Singular":       props.Singular,
 			"Table":          props.Table,
 			"SearchCategory": props.SearchCategory,
 			"OptionsPath":    path.Join(packagenames.Rox, props.OptionsPath),

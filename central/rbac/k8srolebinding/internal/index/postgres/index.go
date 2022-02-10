@@ -34,22 +34,22 @@ type indexerImpl struct {
 	db *pgxpool.Pool
 }
 
-func (b *indexerImpl) AddK8SRoleBinding(deployment *storage.K8SRoleBinding) error {
+func (b *indexerImpl) AddK8sRoleBinding(deployment *storage.K8SRoleBinding) error {
 	// Added as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) AddK8SRoleBindings(_ []*storage.K8SRoleBinding) error {
+func (b *indexerImpl) AddK8sRoleBindings(_ []*storage.K8SRoleBinding) error {
 	// Added as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) DeleteK8SRoleBinding(id string) error {
+func (b *indexerImpl) DeleteK8sRoleBinding(id string) error {
 	// Removed as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) DeleteK8SRoleBindings(_ []string) error {
+func (b *indexerImpl) DeleteK8sRoleBindings(_ []string) error {
 	// Added as a part of normal DB op
 	return nil
 }

@@ -76,11 +76,9 @@ func New(db *pgxpool.Pool) Store {
 		}
 	}
 
-	//
 	return &storeImpl{
 		db: db,
 	}
-	//
 }
 
 // Count returns the number of objects in the store
