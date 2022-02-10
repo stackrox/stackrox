@@ -102,7 +102,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 			secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret1, anotherServiceType: secret2}
 			clientSet := fake.NewSimpleClientset(secret1, secret2)
 			secretsClient := clientSet.CoreV1().Secrets(namespace)
-			repo := newTestRepo(secrets, sensorDeployment, secretsClient)
+			repo := newTestRepo(secrets, secretsClient)
 			_, err := repo.GetServiceCertificates(context.Background())
 			if tc.expectError {
 				s.Error(err)
@@ -258,7 +258,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixtureAdvancedOpts(verbToE
 	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(verbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &v1.Secret{}, errForced
 	})
-	repo := newTestRepo(secrets, sensorDeployment, secretsClient)
+	repo := newTestRepo(secrets, secretsClient)
 	return &certSecretsRepoFixture{
 		repo:          repo,
 		secretsClient: secretsClient,
@@ -283,7 +283,6 @@ func sensorOwnerReference() []metav1.OwnerReference {
 }
 
 func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
-	sensorDeployment *appsApiv1.Deployment,
 	secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
 
 	secretsSpec := make(map[storage.ServiceType]ServiceCertSecretSpec)
@@ -297,8 +296,9 @@ func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 	}
 
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets:          secretsSpec,
-		sensorDeployment: sensorDeployment,
-		secretsClient:    secretsClient,
+		secrets:        secretsSpec,
+		ownerReference: sensorOwnerReference()[0],
+		namespace:      namespace,
+		secretsClient:  secretsClient,
 	}
 }

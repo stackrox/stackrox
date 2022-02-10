@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	appsApiv1 "k8s.io/api/apps/v1"
+	"github.com/stackrox/rox/pkg/mtls"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,9 +33,10 @@ var (
 
 // serviceCertificatesRepoSecretsImpl is a ServiceCertificatesRepo that uses k8s secrets for persistence.
 type serviceCertificatesRepoSecretsImpl struct {
-	secrets          map[storage.ServiceType]ServiceCertSecretSpec
-	sensorDeployment *appsApiv1.Deployment
-	secretsClient    corev1.SecretInterface
+	secrets        map[storage.ServiceType]ServiceCertSecretSpec
+	ownerReference metav1.OwnerReference
+	namespace      string
+	secretsClient  corev1.SecretInterface
 }
 
 // ServiceCertSecretSpec species the name of the secret where certificates for a service are stored, and
@@ -48,25 +50,28 @@ type ServiceCertSecretSpec struct {
 
 // NewServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
 // scanner and scanner DB in k8s secrets with the secret name and secret data path specified in ServiceCertSecretSpec.
-// Returns ErrSensorDoesNotOwnCertSecrets in case some secret doesn't have sensorDeployment as owner.
-// In case some secret does not exist then it creates it in same namespace as sensorDeployment, and with
-// sensorDeployment as owner, populating the secret data with the corresponding certificates in initialCerts.
-func NewServiceCertificatesRepo(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec,
-	sensorDeployment *appsApiv1.Deployment, initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
-	secretsClient corev1.SecretInterface) (*serviceCertificatesRepoSecretsImpl, error) {
-	repo := &serviceCertificatesRepoSecretsImpl{
-		secrets: map[storage.ServiceType]ServiceCertSecretSpec{
-			storage.ServiceType_SCANNER_SERVICE:    scannerSpec,
-			storage.ServiceType_SCANNER_DB_SERVICE: scannerDBSpec,
-		},
-		sensorDeployment: sensorDeployment,
-		secretsClient:    secretsClient,
-	}
-	if err := repo.setupSecrets(ctx, sensorDeployment, initialCertsSupplier); err != nil {
-		return nil, errors.Wrap(err, "setting up secrets")
-	}
+func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
+	secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
 
-	return repo, nil
+	return &serviceCertificatesRepoSecretsImpl{
+		secrets: map[storage.ServiceType]ServiceCertSecretSpec{
+			storage.ServiceType_SCANNER_SERVICE: {
+				secretName:          "scanner-slim-tls",
+				caCertFileName:      mtls.CACertFileName,
+				serviceCertFileName: mtls.ServiceCertFileName,
+				serviceKeyFileName:  mtls.ServiceKeyFileName,
+			},
+			storage.ServiceType_SCANNER_DB_SERVICE: {
+				secretName:          "scanner-db-slim-tls",
+				caCertFileName:      mtls.CACertFileName,
+				serviceCertFileName: mtls.ServiceCertFileName,
+				serviceKeyFileName:  mtls.ServiceKeyFileName,
+			},
+		},
+		ownerReference: ownerReference,
+		namespace:      namespace,
+		secretsClient:  secretsClient,
+	}
 }
 
 // GetServiceCertificates behaves as follows in case of missing data in the secrets:
@@ -113,11 +118,10 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	}
 
 	ownerRef := ownerReferences[0]
-	sensorDeploymentGVK := r.sensorDeployment.GroupVersionKind()
-	if !(ownerRef.APIVersion == sensorDeploymentGVK.GroupVersion().String() &&
-		ownerRef.Kind == sensorDeploymentGVK.Kind &&
-		ownerRef.Name == r.sensorDeployment.GetName() &&
-		ownerRef.UID == r.sensorDeployment.GetUID()) {
+	if !(ownerRef.APIVersion == r.ownerReference.APIVersion &&
+		ownerRef.Kind == r.ownerReference.Kind &&
+		ownerRef.Name == r.ownerReference.Name &&
+		ownerRef.UID == r.ownerReference.UID) {
 		return nil, nil, ErrSensorDoesNotOwnCertSecrets
 	}
 
@@ -165,14 +169,11 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificate(ctx context.C
 		// we don't know how to persist this.
 		return errors.Errorf("unkown service type %q", cert.GetServiceType())
 	}
-	secretData, err := r.secretDataForCertificate(caPem, cert)
-	if err != nil {
-		return errors.Wrapf(err, errForServiceFormat, cert.GetServiceType())
-	}
+
 	patch := []patchSecretDataByteMap{{
 		Op:    "replace",
 		Path:  "/data",
-		Value: secretData,
+		Value: r.secretDataForCertificate(secretSpec, caPem, cert),
 	}}
 	patchBytes, marshallingErr := json.Marshal(patch)
 	if marshallingErr != nil {
@@ -192,60 +193,56 @@ type patchSecretDataByteMap struct {
 	Value map[string][]byte `json:"value"`
 }
 
-// setupSecrets setups the k8s secrets where we store the certificates.
-// - In case a secret doesn't have sensorDeployment as owner, this returns ErrSensorDoesNotOwnCertSecrets.
-// - In case a secret doesn't exist this creates it setting sensorDeployment as owner, with cert stored
-// 	 in the secret data.
-func (r *serviceCertificatesRepoSecretsImpl) setupSecrets(ctx context.Context, sensorDeployment *appsApiv1.Deployment,
-	initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error)) error {
-	for serviceType, secretSpec := range r.secrets {
-		_, err := r.setupSecret(ctx, serviceType, initialCertsSupplier, sensorDeployment, secretSpec.secretName)
-		if err != nil {
-			return errors.Wrapf(err, errForServiceFormat, serviceType)
+// CreateSecrets ensures the k8s secrets where we store the certificates are created.
+// In case a secret doesn't exist this creates it setting sensorDeployment as owner, with initialCertificates stored
+// in the secret data.
+func (r *serviceCertificatesRepoSecretsImpl) CreateSecrets(ctx context.Context,
+	initialCertificates *storage.TypedServiceCertificateSet) error {
+
+	var createErr error
+	for _, certificate := range initialCertificates.GetServiceCerts() {
+		secretSpec, ok := r.secrets[certificate.GetServiceType()]
+		if !ok {
+			err := errors.Errorf("unkown service type %q", certificate.GetServiceType())
+			createErr = multierror.Append(createErr, err)
+		} else {
+			_, createSecretErr := r.createSecret(ctx, initialCertificates.GetCaPem(), certificate, secretSpec)
+			if createSecretErr != nil {
+				err := errors.Wrapf(createSecretErr, errForServiceFormat, certificate.GetServiceType())
+				createErr = multierror.Append(createErr, err)
+			}
+		}
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
 	}
 
-	return nil
+	return createErr
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) setupSecret(ctx context.Context,
-	serviceType storage.ServiceType,
-	initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error),
-	sensorDeployment *appsApiv1.Deployment, secretName string) (*v1.Secret, error) {
-	secret, err := r.secretsClient.Get(ctx, secretName, metav1.GetOptions{})
+func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, caPem []byte,
+	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) (*v1.Secret, error) {
 
+	secret, err := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
 	if k8sErrors.IsNotFound(err) {
-		initialCerts, getInitialCertsErr := initialCertsSupplier(ctx)
-		if getInitialCertsErr != nil {
-			return nil, getInitialCertsErr
-		}
-		cert, getCertErr := r.certificateForService(initialCerts, serviceType)
-		if getCertErr != nil {
-			return nil, getCertErr
-		}
-		secretData, dataForCertErr := r.secretDataForCertificate(initialCerts.GetCaPem(), cert)
-		if dataForCertErr != nil {
-			return nil, dataForCertErr
-		}
-		sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
 		blockOwnerDeletion := false
 		isController := false
 		newSecret, createErr := r.secretsClient.Create(ctx, &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: sensorDeployment.GetNamespace(),
+				Name:      secretSpec.secretName,
+				Namespace: r.namespace,
 				OwnerReferences: []metav1.OwnerReference{
 					{
-						APIVersion:         sensorDeploymentGVK.GroupVersion().String(),
-						Kind:               sensorDeploymentGVK.Kind,
-						Name:               sensorDeployment.GetName(),
-						UID:                sensorDeployment.GetUID(),
+						APIVersion:         r.ownerReference.APIVersion,
+						Kind:               r.ownerReference.Kind,
+						Name:               r.ownerReference.Name,
+						UID:                r.ownerReference.UID,
 						BlockOwnerDeletion: &blockOwnerDeletion,
 						Controller:         &isController,
 					},
 				},
 			},
-			Data: secretData,
+			Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
 		}, metav1.CreateOptions{})
 		if createErr != nil {
 			return nil, createErr
@@ -257,38 +254,14 @@ func (r *serviceCertificatesRepoSecretsImpl) setupSecret(ctx context.Context,
 		return nil, err
 	}
 
-	ownerReferences := secret.GetOwnerReferences()
-	if len(ownerReferences) != 1 {
-		return nil, ErrSensorDoesNotOwnCertSecrets
-	}
-
-	ownerRef := ownerReferences[0]
-	if ownerRef.UID != sensorDeployment.GetUID() {
-		return nil, ErrSensorDoesNotOwnCertSecrets
-	}
-
 	return secret, nil
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) certificateForService(certs *storage.TypedServiceCertificateSet,
-	serviceType storage.ServiceType) (*storage.TypedServiceCertificate, error) {
-	for _, cert := range certs.GetServiceCerts() {
-		if cert.GetServiceType() == serviceType {
-			return cert, nil
-		}
-	}
-	return nil, errors.Errorf("no certificate found for service type %q", serviceType)
-}
-
-func (r *serviceCertificatesRepoSecretsImpl) secretDataForCertificate(caPem []byte,
-	cert *storage.TypedServiceCertificate) (map[string][]byte, error) {
-	secretSpec, ok := r.secrets[cert.GetServiceType()]
-	if !ok {
-		return nil, errors.Errorf("unkown service type %q", cert.GetServiceType())
-	}
+func (r *serviceCertificatesRepoSecretsImpl) secretDataForCertificate(secretSpec ServiceCertSecretSpec, caPem []byte,
+	cert *storage.TypedServiceCertificate) map[string][]byte {
 	return map[string][]byte{
 		secretSpec.caCertFileName:      caPem,
 		secretSpec.serviceCertFileName: cert.GetCert().GetCertPem(),
 		secretSpec.serviceKeyFileName:  cert.GetCert().GetKeyPem(),
-	}, nil
+	}
 }
