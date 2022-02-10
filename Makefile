@@ -477,7 +477,7 @@ shell-unit-tests:
 	@echo "+ $@"
 	@mkdir -p shell-test-output
 	set -o pipefail ; \
-	bats -t $(shell git ls-files -- '*_test.bats') | tee shell-test-output/test.log
+	bats --print-output-on-failure --verbose-run --recursive scripts | tee shell-test-output/test.log
 
 .PHONY: ui-build
 ui-build:

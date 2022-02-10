@@ -4,9 +4,7 @@ set -euo pipefail
 
 # A secure store for CI artifacts
 
-set +u
-SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-set -u
+set +u; SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"; set -u
 
 source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
@@ -36,6 +34,7 @@ store_artifacts() {
     fi
 
     if [[ -d "$path" ]] && [[ -z "$(ls -A "$path")" ]]; then
+        # skip empty dirs because gsutil considers this an error
         echo INFO: "$path" is empty, nothing to upload
         exit 0
     fi
@@ -45,6 +44,7 @@ store_artifacts() {
     local gs_destination
     gs_destination=$(get_unique_gs_destination "${destination}")
 
+    info "Writing to $gs_destination"
     gsutil -m cp -r "$path" "$gs_destination"
 }
 
