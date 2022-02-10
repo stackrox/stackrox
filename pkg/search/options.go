@@ -251,6 +251,10 @@ var (
 	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
 	UserName                    = newFieldLabel("User Name")
+
+	// Test Search Fields
+	TestKey  = newFieldLabel("Test Key")
+	TestName = newFieldLabel("Test Name")
 )
 
 func newFieldLabel(s string) FieldLabel {

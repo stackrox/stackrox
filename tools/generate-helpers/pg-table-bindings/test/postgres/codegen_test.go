@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,6 +30,7 @@ func TestStore(t *testing.T) {
 
 	singleKey := &storage.TestSingleKeyStruct{
 		Key: "key1",
+		Name: "name",
 	}
 	dep, exists, err := store.Get(singleKey.GetKey())
 	assert.NoError(t, err)
@@ -40,4 +42,24 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, singleKey, dep)
+
+	index := NewIndexer(pool)
+
+	q := search.NewQueryBuilder().AddExactMatches(search.TestKey, "key1").ProtoQuery()
+	results, err := index.Search(q)
+	assert.NoError(t, err)
+	assert.Len(t, results, 1)
+
+	count, err := index.Count(q)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, count)
+
+	q = search.NewQueryBuilder().AddExactMatches(search.TestKey, "nomatch").ProtoQuery()
+	results, err = index.Search(q)
+	assert.NoError(t, err)
+	assert.Len(t, results, 0)
+
+	count, err = index.Count(q)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, count)
 }

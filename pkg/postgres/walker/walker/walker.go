@@ -86,6 +86,7 @@ func getSearchOptions(searchTag string) SearchField {
 	fields := strings.Split(searchTag, ",")
 	return SearchField{
 		FieldName: fields[0],
+		Enabled:   true,
 	}
 }
 

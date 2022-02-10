@@ -15,8 +15,9 @@ message TestSingleKeyStruct {
       ENUM1 = 1;
       ENUM2 = 2;
     }
-    string key                   = 1 [(gogoproto.moretags) = 'sql:"pk,index=hash"'];
-    string name                  = 15 [(gogoproto.moretags) = 'sql:"unique"'];
+
+    string key                   = 1 [(gogoproto.moretags) = 'sql:"pk,index=hash" search:"Test Key"'];
+    string name                  = 15 [(gogoproto.moretags) = 'sql:"unique" search:"Test Name"'];
     repeated string string_slice = 2;
 
     bool bool                    = 3;
@@ -73,7 +74,7 @@ message TestMultiKeyStruct {
     ENUM1 = 1;
     ENUM2 = 2;
   }
-  string key1                  = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string key1                  = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Test Key"'];
   string key2                  = 2 [(gogoproto.moretags) = 'sql:"pk"'];
 
   repeated string string_slice = 3;
@@ -87,7 +88,7 @@ message TestMultiKeyStruct {
   int64 int64                  = 6;
   // repeated int64 int64_slice: currently unsupported
 
-  float float                   = 7;
+  float float                   = 7 [(gogoproto.moretags) = 'sql:"pk" search:"Test Key"'];
   // repeated float float_slice: currently unsupported
 
   map<string, string> labels          = 8;
