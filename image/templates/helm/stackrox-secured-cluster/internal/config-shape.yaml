@@ -147,29 +147,3 @@ meta:
     extraAPIResources: null # [string]
 system:
   createSCCs: null # bool
-scanner:
-  mode: null # string
-  disable: null # bool
-  replicas: null # int
-  logLevel: null # string
-  nodeSelector: null # string | dict
-  dbNodeSelector: null # string | dict
-  tolerations: null # [dict]
-  dbTolerations: null # [dict]
-  autoscaling:
-    disable: null # bool
-    minReplicas: null # int
-    maxReplicas: null # int
-  resources: null # string | dict
-  dbResources: null # string | dict
-  dbPassword:
-    value: null # string
-    generate: null # bool
-  serviceTLS:
-    cert: null # string
-    key: null # string
-    generate: null # bool
-  dbServiceTLS:
-    cert: null # string
-    key: null # string
-    generate: null # bool
