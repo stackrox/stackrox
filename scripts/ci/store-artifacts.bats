@@ -63,14 +63,15 @@ function setup() {
 # shellcheck disable=SC2034
 
 make_fake_CI_env() {
-    export CI=true
-    export OPENSHIFT_CI=true
-    export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX=dummy
-    export REPO_NAME="stackrox"
-    export BUILD_ID="theBuildId"
-    export JOB_NAME="job-name"
-    export PULL_PULL_SHA="12345"
-    export PATH="$BATS_RUN_TMPDIR:$PATH"
+    source "${BATS_TEST_DIRNAME}/lib.sh"
+    ci_export CI true
+    ci_export OPENSHIFT_CI true
+    ci_export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX dummy
+    ci_export REPO_NAME "stackrox"
+    ci_export BUILD_ID "theBuildId"
+    ci_export JOB_NAME "job-name"
+    ci_export PULL_PULL_SHA "12345"
+    ci_export PATH "$BATS_RUN_TMPDIR:$PATH"
 }
 
 mock_gcloud() {
