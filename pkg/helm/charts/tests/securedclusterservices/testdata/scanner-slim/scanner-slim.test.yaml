@@ -14,12 +14,19 @@ tests:
     .secrets["scanner-slim-db-tls"] | assertThat(. == null)
 
 - name: "scanner is disabled should not be installed"
-  values:
-    scanner:
-      disbale: false
+  set:
+    scanner.disable: true
   expect: |
     .deployments["scanner-slim"] | assertThat(. == null)
     .deployments["scanner-db-slim"] | assertThat(. == null)
+
+- name: "scanner is enabled on non-openshift cluster should fail"
+  set:
+    env.openshift: false
+    scanner.disable: false
+  expectError: true
+  expect: |
+    .error | assertThat(contains("Local scanner was enabled but is only supported on OpenShift 4."))
 
 - name: "scanner can override image config"
   expect: |
