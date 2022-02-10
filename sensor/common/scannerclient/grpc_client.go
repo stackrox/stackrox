@@ -61,13 +61,13 @@ func newGRPCClient(endpoint string) (*client, error) {
 func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*imageData, error) {
 	reg, err := getRegistry(image)
 	if err != nil {
-		return nil, errors.Wrapf(err, "determining image registry for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+		return nil, errors.Wrap(err, "determining image registry")
 	}
 
 	metadata, err := reg.Metadata(types.ToImage(image))
 	if err != nil {
-		log.Debugf("Failed to get image metadata: %v", err)
-		return nil, errors.Wrapf(err, "getting image metadata for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+		log.Debugf("Failed to metadata for image %s in namespace %s: %v", image.GetName().GetFullName(), image.GetNamespace(), err)
+		return nil, errors.Wrap(err, "getting image metadata")
 	}
 
 	log.Debugf("Retrieved metadata for image %s in namespace %s: %v", image.GetName().GetFullName(), image.GetNamespace(), metadata)
