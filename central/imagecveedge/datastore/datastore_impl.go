@@ -69,14 +69,14 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVEE
 	return edge, true, nil
 }
 
-func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+func (ds *datastoreImpl) UpdateVulnerabilityStates(ctx context.Context, edgeStates map[string]map[string]storage.VulnerabilityState) error {
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := ds.storage.UpdateVulnState(cve, images, state); err != nil {
+	if err := ds.storage.UpdateVulnState(edgeStates); err != nil {
 		return err
 	}
 	return nil

@@ -112,15 +112,15 @@ func (mr *MockStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
 }
 
 // UpdateVulnState mocks base method.
-func (m *MockStore) UpdateVulnState(cve string, images []string, state storage.VulnerabilityState) error {
+func (m *MockStore) UpdateVulnState(edgeStates map[string]map[string]storage.VulnerabilityState) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVulnState", cve, images, state)
+	ret := m.ctrl.Call(m, "UpdateVulnState", edgeStates)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateVulnState indicates an expected call of UpdateVulnState.
-func (mr *MockStoreMockRecorder) UpdateVulnState(cve, images, state interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateVulnState(edgeStates interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnState", reflect.TypeOf((*MockStore)(nil).UpdateVulnState), cve, images, state)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnState", reflect.TypeOf((*MockStore)(nil).UpdateVulnState), edgeStates)
 }
