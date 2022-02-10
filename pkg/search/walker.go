@@ -6,11 +6,20 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
+)
+
+var (
+	printed = set.NewStringSet()
 )
 
 type searchWalker struct {
+	print    bool
+	prefix   string
 	category v1.SearchCategory
 	fields   map[FieldLabel]*Field
 }
@@ -18,11 +27,33 @@ type searchWalker struct {
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	sw := searchWalker{
+		print:    false,
+		prefix:   prefix,
 		category: category,
 		fields:   make(map[FieldLabel]*Field),
 	}
+
+	if sw.print {
+		fmt.Println()
+		fmt.Println(prefix)
+	}
+
 	sw.walkRecursive(prefix, reflect.TypeOf(obj))
-	return OptionsMapFromMap(category, sw.fields)
+	options := OptionsMapFromMap(category, sw.fields)
+
+	if features.PostgresPOC.Enabled() {
+		table := walker.Walk(reflect.TypeOf(obj), strings.TrimPrefix(reflect.TypeOf(obj).Elem().String(), "storage."))
+
+		searchFieldsToElements := table.SearchFieldsToElement()
+		for k, v := range options.Original() {
+			elem, ok := searchFieldsToElements[string(k)]
+			if !ok {
+				log.Fatalf("Could not find field %s in postgres parsing", k)
+			}
+			v.FlatElem = elem
+		}
+	}
+	return options
 }
 
 func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
@@ -70,6 +101,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 // handleStruct takes in a struct object and properly handles all of the fields
 func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
+
 		field := original.Field(i)
 		jsonTag := strings.TrimSuffix(field.Tag.Get("json"), ",omitempty")
 		if jsonTag == "-" {
@@ -78,6 +110,20 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 			jsonTag = field.Name
 		}
 		fullPath := fmt.Sprintf("%s.%s", prefix, jsonTag)
+		// proto json flag
+		protoTag := field.Tag.Get("protobuf")
+		var jsonProtoTag string
+		spl := strings.Split(protoTag, ",")
+		// Find json
+		for _, s := range spl {
+			if strings.HasPrefix(s, "json=") {
+				jsonProtoTag = strings.TrimPrefix(s, "json=")
+			}
+		}
+		if jsonProtoTag == "" {
+			jsonProtoTag = jsonTag
+		}
+
 		searchTag := field.Tag.Get("search")
 		if searchTag == "-" {
 			continue
@@ -96,6 +142,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		// If it is a oneof then call XXX_OneofWrappers to get the types.
 		// The return values is a slice of interfaces that are nil type pointers
 		if field.Tag.Get("protobuf_oneof") != "" {
+			// cut off the elem we just added because jsonpb removes it
 			ptrToOriginal := reflect.PtrTo(original)
 
 			methodName := fmt.Sprintf("Get%s", field.Name)
@@ -131,6 +178,13 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 			continue
 		}
 		searchField.Type = searchDataType
+		//searchField.Elems = pathElems
+
+		if _, ok := s.fields[FieldLabel(fieldName)]; ok {
+			log.Errorf("UNEXPECTED: COLLISION IN SEARCH WALKER %s: Ambiguous use of %s on %s", s.prefix, prefix, fieldName)
+			continue
+		}
+
 		s.fields[FieldLabel(fieldName)] = searchField
 	}
 }
@@ -160,7 +214,7 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 		return v1.SearchDataType_SEARCH_ENUM
 	case reflect.Interface:
 	default:
-		panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), prefix))
+		panic(fmt.Sprintf("Type %s is not currently handled", original.Kind()))
 	}
 	return v1.SearchDataType_SEARCH_STRING
 }

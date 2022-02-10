@@ -59,7 +59,6 @@ func panicOnTimeout(action string, do func(), timeout time.Duration) {
 //go:noinline
 func panicOnTimeoutMarked(action string, do func(), timeout time.Duration, nowNanos int64) {
 	do()
-	panicIfTooMuchTimeElapsed(action, time.Unix(0, nowNanos), timeout, 3)
 }
 
 // Mutex is a watchdog-enabled version of sync.Mutex.
@@ -70,13 +69,12 @@ type Mutex struct {
 
 // Lock acquires the lock on the mutex.
 func (m *Mutex) Lock() {
-	panicOnTimeout("Mutex.Lock", m.Mutex.Lock, lockTimeout)
+	m.Mutex.Lock()
 	m.acquireTime = time.Now()
 }
 
 // Unlock releases an acquired lock on the mutex.
 func (m *Mutex) Unlock() {
-	panicIfTooMuchTimeElapsed("Mutex.Unlock", m.acquireTime, lockTimeout, 1)
 	m.Mutex.Unlock()
 }
 
@@ -88,17 +86,17 @@ type RWMutex struct {
 
 // RLock acquires a reader lock on the mutex.
 func (m *RWMutex) RLock() {
-	panicOnTimeout("RWMutex.RLock", m.RWMutex.RLock, lockTimeout)
+	m.RWMutex.RLock()
 }
 
 // Lock acquires a writer (exclusive) lock on the mutex.
 func (m *RWMutex) Lock() {
-	panicOnTimeout("RWMutex.Lock", m.RWMutex.Lock, lockTimeout)
+	m.RWMutex.Lock()
 	m.acquireTime = time.Now()
 }
 
 // Unlock releases an acquired writer (exclusive) lock on the mutex.
 func (m *RWMutex) Unlock() {
-	panicIfTooMuchTimeElapsed("RWMutex.Unlock", m.acquireTime, lockTimeout, 1)
+	//panicIfTooMuchTimeElapsed("RWMutex.Unlock", m.acquireTime, lockTimeout, 1)
 	m.RWMutex.Unlock()
 }

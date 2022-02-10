@@ -101,7 +101,7 @@ var (
 						},
 					},
 					{
-						FieldName: "Volume Name",
+						FieldName: "Volume ProtoJSONName",
 						Values: []*storage.PolicyValue{
 							{
 								Value: "name",

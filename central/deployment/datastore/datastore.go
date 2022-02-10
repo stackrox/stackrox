@@ -4,15 +4,18 @@ import (
 	"context"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/analystnotes"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
+	pgSearcher "github.com/stackrox/rox/central/deployment/datastore/internal/search/postgres"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
+	pgStore "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -77,7 +80,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 		deploymentIndexer,
 		imageCVEEdgeIndexer.New(bleveIndex))
 
-	ds := newDatastoreImpl(storage, processTagsStore, deploymentIndexer, searcher, images, baselines, networkFlows, risks,
+	ds := newDatastoreImpl(storage, processTagsStore, searcher, images, baselines, networkFlows, risks,
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
@@ -91,4 +94,19 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
 	storage := dackBoxStore.New(dacky, keyFence)
 	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+}
+
+// New creates a deployment datastore based on dackbox
+func NewPostgres(db *pgxpool.Pool, processTagsStore processtagsstore.Store, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
+	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
+
+	storage := cache.NewCachedStore(pgStore.NewFullStore(db))
+	searcher := pgSearcher.New(db, storage)
+
+	ds := newDatastoreImpl(storage, processTagsStore, searcher, images, baselines, networkFlows, risks,
+		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+
+	ds.initializeRanker()
+	return ds
 }

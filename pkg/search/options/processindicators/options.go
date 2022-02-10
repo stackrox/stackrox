@@ -12,5 +12,6 @@ var (
 	ProcessPrefix = "process_indicator"
 
 	// OptionsMap defines the options for process indicators
-	OptionsMap = search.Walk(v1.SearchCategory_PROCESS_INDICATORS, ProcessPrefix, (*storage.ProcessIndicator)(nil))
+	OptionsMap = search.Walk(v1.SearchCategory_PROCESS_INDICATORS, ProcessPrefix, (*storage.ProcessIndicator)(nil)).Merge(
+		search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
 )

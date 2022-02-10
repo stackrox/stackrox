@@ -5,13 +5,13 @@ import (
 )
 
 const (
-	rox    = "github.com/stackrox/rox"
-	roxPkg = rox + "/pkg"
+	Rox    = "github.com/stackrox/rox"
+	roxPkg = Rox + "/pkg"
 )
 
 // PrefixRox prefixes the import path of StackRox to the given packageName
 func PrefixRox(packageName string) string {
-	return path.Join(rox, packageName)
+	return path.Join(Rox, packageName)
 }
 
 // PrefixRoxPkg prefixes the import path of StackRox pkg to the given packageName.

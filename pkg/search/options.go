@@ -15,6 +15,8 @@ type FieldLabel string
 var (
 	FieldLabelSet = set.NewStringSet()
 
+	AlertID = newFieldLabel("Alert ID")
+
 	// DocID is a special value for document identifier in the Bleve index.
 	// Every document we put in the index has identifier. In most cases we simply get this identifier from
 	// entity.GetId(), unless the getter is overridden in the call to blevebindings-wrapper with --id-func argument.

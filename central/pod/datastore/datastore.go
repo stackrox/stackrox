@@ -3,16 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/central/pod/index"
-	"github.com/stackrox/rox/central/pod/store/cache"
-	"github.com/stackrox/rox/central/pod/store/rocksdb"
+	"github.com/stackrox/rox/central/pod/store"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -32,10 +29,7 @@ type DataStore interface {
 	GetPodIDs() ([]string, error)
 }
 
-// NewRocksDB creates a pod datastore based on RocksDB
-func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store := cache.NewCachedStore(rocksdb.New(db))
-	indexer := index.New(bleveIndex)
-	searcher := search.New(store, indexer)
+// New creates a pod datastore based on RocksDB
+func New(store store.Store, indexer index.Indexer, searcher search.Searcher, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
 }

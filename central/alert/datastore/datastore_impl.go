@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -185,6 +186,8 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 	return nil
 }
 
+// TODO good opportunity here to mark alerts stale but just updating the state and resolved at, independent of the
+// whole object that we never need to fetch
 func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStale")
 
@@ -409,6 +412,9 @@ func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 }
 
 func (ds *datastoreImpl) fullReindex() error {
+	if features.PostgresPOC.Enabled() {
+		return nil
+	}
 	log.Info("[STARTUP] Reindexing all alerts")
 
 	alertIDs, err := ds.storage.GetIDs()

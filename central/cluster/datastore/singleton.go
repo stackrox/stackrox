@@ -3,6 +3,9 @@ package datastore
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
+	pgIndex "github.com/stackrox/rox/central/cluster/index/postgres"
+	"github.com/stackrox/rox/central/cluster/store"
+	pgStore "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterRocksDB "github.com/stackrox/rox/central/cluster/store/cluster/rocksdb"
 	healthRocksDB "github.com/stackrox/rox/central/cluster/store/cluster_health_status/rocksdb"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -19,6 +22,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -30,11 +34,19 @@ var (
 )
 
 func initialize() {
-	clusterStorage, err := clusterRocksDB.New(globaldb.GetRocksDB())
-	utils.CrashOnError(err)
+	var clusterStorage store.ClusterStore
+	var indexer index.Indexer
+	var err error
+	if features.PostgresPOC.Enabled() {
+		clusterStorage = pgStore.New(globaldb.GetPostgresDB())
+		indexer = pgIndex.NewIndexer(globaldb.GetPostgresDB())
+	} else {
+		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())
+		utils.CrashOnError(err)
+		indexer = index.New(globalindex.GetGlobalTmpIndex())
+	}
 	clusterHealthStorage, err := healthRocksDB.New(globaldb.GetRocksDB())
 	utils.CrashOnError(err)
-	indexer := index.New(globalindex.GetGlobalTmpIndex())
 
 	ad, err = New(clusterStorage,
 		clusterHealthStorage,

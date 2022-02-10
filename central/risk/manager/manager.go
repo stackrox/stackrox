@@ -128,6 +128,7 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 
 	risk := e.deploymentScorer.Score(allAccessCtx, deployment, imageRisks)
 	if risk == nil {
+		log.Infof("risk is nil from scorer: %+v", deployment.GetName())
 		return
 	}
 

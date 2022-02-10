@@ -22,7 +22,7 @@ message ProcessBaselineKey {
 }
 
 message ProcessBaseline {
-    string                   id                = 1;
+    string                   id                = 1 [(gogoproto.moretags) = "sql:\"pk\""];
     ProcessBaselineKey       key               = 2;
 
     repeated BaselineElement elements          = 3;

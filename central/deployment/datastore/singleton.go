@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -25,20 +26,34 @@ var (
 )
 
 func initialize() {
-	ad = New(dackbox.GetGlobalDackBox(),
-		dackbox.GetKeyFence(),
-		processtagsstore.New(globaldb.GetGlobalDB()),
-		globalindex.GetGlobalIndex(),
-		globalindex.GetProcessIndex(),
-		imageDatastore.Singleton(),
-		pbDS.Singleton(),
-		nfDS.Singleton(),
-		riskDS.Singleton(),
-		cache.DeletedDeploymentCacheSingleton(),
-		filter.Singleton(),
-		ranking.ClusterRanker(),
-		ranking.NamespaceRanker(),
-		ranking.DeploymentRanker())
+	if features.PostgresPOC.Enabled() {
+		ad = NewPostgres(globaldb.GetPostgresDB(),
+			processtagsstore.New(globaldb.GetGlobalDB()),
+			imageDatastore.Singleton(),
+			pbDS.Singleton(),
+			nfDS.Singleton(),
+			riskDS.Singleton(),
+			cache.DeletedDeploymentCacheSingleton(),
+			filter.Singleton(),
+			ranking.ClusterRanker(),
+			ranking.NamespaceRanker(),
+			ranking.DeploymentRanker())
+	} else {
+		ad = New(dackbox.GetGlobalDackBox(),
+			dackbox.GetKeyFence(),
+			processtagsstore.New(globaldb.GetGlobalDB()),
+			globalindex.GetGlobalIndex(),
+			globalindex.GetProcessIndex(),
+			imageDatastore.Singleton(),
+			pbDS.Singleton(),
+			nfDS.Singleton(),
+			riskDS.Singleton(),
+			cache.DeletedDeploymentCacheSingleton(),
+			filter.Singleton(),
+			ranking.ClusterRanker(),
+			ranking.NamespaceRanker(),
+			ranking.DeploymentRanker())
+	}
 }
 
 // Singleton provides the interface for non-service external interaction.

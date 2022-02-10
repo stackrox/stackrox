@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -27,6 +28,9 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) buildIndex() error {
+	if features.PostgresPOC.Enabled() {
+		return nil
+	}
 	log.Info("[STARTUP] Indexing risk")
 	var risks []*storage.Risk
 	err := d.storage.Walk(func(risk *storage.Risk) error {
@@ -122,7 +126,9 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 	}
 
 	risk.Id = id
+
 	if err := d.storage.Upsert(risk); err != nil {
+		log.Errorf("Risk: %+v", err)
 		return err
 	}
 	upsertRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId(), risk.GetScore())

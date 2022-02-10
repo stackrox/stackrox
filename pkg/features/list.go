@@ -27,6 +27,8 @@ var (
 	// ActiveVulnManagement enables detection of active vulnerabilities
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", true)
 
+	PostgresPOC = registerFeature("Enable Postgres POC", "ROX_POSTGRES_POC", true)
+
 	// VulnRiskManagement enables the vulnerability risk management workflow that allows accepting risk for vulnerabilities.
 	VulnRiskManagement = registerFeature("Enable Vulnerability Risk Management workflow", "ROX_VULN_RISK_MANAGEMENT", true)
 

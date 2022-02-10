@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -221,6 +222,9 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 		return sac.ErrResourceAccessDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
+	if features.PostgresPOC.Enabled() {
+		return ds.searcher.Delete(ctx, q)
+	}
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return err
@@ -359,6 +363,9 @@ func (ds *datastoreImpl) fullReindex() error {
 }
 
 func (ds *datastoreImpl) buildIndex() error {
+	if features.PostgresPOC.Enabled() {
+		return nil
+	}
 	defer debug.FreeOSMemory()
 
 	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()

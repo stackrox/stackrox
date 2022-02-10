@@ -22,6 +22,7 @@ type Searcher interface {
 
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	Delete(ctx context.Context, q *v1.Query) error
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

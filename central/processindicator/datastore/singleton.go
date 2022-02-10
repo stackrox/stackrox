@@ -7,10 +7,14 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator/index"
+	pgIndex "github.com/stackrox/rox/central/processindicator/index/postgres"
 	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
+	"github.com/stackrox/rox/central/processindicator/store"
+	pgStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 	"github.com/stackrox/rox/central/processindicator/store/rocksdb"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -30,9 +34,16 @@ var (
 )
 
 func initialize() {
-	storage := rocksdb.New(globaldb.GetRocksDB())
+	var storage store.Store
+	var indexer index.Indexer
+	if features.PostgresPOC.Enabled() {
+		storage = pgStore.New(globaldb.GetPostgresDB())
+		indexer = pgIndex.NewIndexer(globaldb.GetPostgresDB())
+	} else {
+		storage = rocksdb.New(globaldb.GetRocksDB())
+		indexer = index.New(globalindex.GetProcessIndex())
+	}
 	commentsStorage := commentsstore.New(globaldb.GetGlobalDB())
-	indexer := index.New(globalindex.GetProcessIndex())
 	searcher := search.New(storage, indexer)
 
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)

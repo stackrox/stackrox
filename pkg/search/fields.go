@@ -1,15 +1,20 @@
 package search
 
-import v1 "github.com/stackrox/rox/generated/api/v1"
+import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
+)
 
 // Field describes a search field
 type Field struct {
+	//Elems     []PathElem
 	FieldPath string
 	Type      v1.SearchDataType
 	Store     bool
 	Hidden    bool
 	Category  v1.SearchCategory
 	Analyzer  string
+	FlatElem  walker.Element
 }
 
 // GetFieldPath returns the field path

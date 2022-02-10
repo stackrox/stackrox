@@ -46,8 +46,6 @@ type DataStore interface {
 }
 
 func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	indexer := imageIndexer.New(bleveIndex)
-
 	searcher := search.New(storage,
 		dacky,
 		cveIndexer.New(bleveIndex),
@@ -58,7 +56,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		deploymentIndexer.New(bleveIndex, nil),
 		imageCVEEdgeIndexer.New(bleveIndex),
 	)
-	ds := newDatastoreImpl(storage, indexer, searcher, risks, imageRanker, imageComponentRanker)
+	ds := newDatastoreImpl(storage, searcher, risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()
 
 	return ds
