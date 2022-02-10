@@ -21,10 +21,12 @@ import {
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { CaretDownIcon, CheckCircleIcon } from '@patternfly/react-icons';
 import orderBy from 'lodash/orderBy';
+import pluralize from 'pluralize';
 
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
 import ButtonLink from 'Components/PatternFly/ButtonLink';
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
@@ -80,7 +82,7 @@ type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
     policies?: ListPolicy[];
     hasWriteAccessForPolicy: boolean;
-    deletePoliciesHandler: (ids) => void;
+    deletePoliciesHandler: (ids: string[]) => Promise<void>;
     exportPoliciesHandler: (ids, onClearAll?) => void;
     enablePoliciesHandler: (ids) => void;
     disablePoliciesHandler: (ids) => void;
@@ -110,6 +112,10 @@ function PoliciesTable({
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
     >([]);
+
+    const [deletingIds, setDeletingIds] = useState<string[]>([]);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(0);
     // sort direction of the currently active column
@@ -184,6 +190,18 @@ function PoliciesTable({
         }
         setRows(sortedPolicies);
     }, [policies, activeSortIndex, activeSortDirection]);
+
+    function onConfirmDeletePolicy() {
+        setIsDeleting(true);
+        deletePoliciesHandler(deletingIds).finally(() => {
+            setDeletingIds([]);
+            setIsDeleting(false);
+        });
+    }
+
+    function onCancelDeletePolicy() {
+        setDeletingIds([]);
+    }
 
     // TODO: https://stack-rox.atlassian.net/browse/ROX-8613
     // isDisabled={!hasSelections}
@@ -280,7 +298,7 @@ function PoliciesTable({
                                             component="button"
                                             isDisabled={numDeletable === 0}
                                             onClick={() =>
-                                                deletePoliciesHandler(
+                                                setDeletingIds(
                                                     selectedPolicies
                                                         .filter(({ isDefault }) => !isDefault)
                                                         .map(({ id }) => id)
@@ -386,7 +404,7 @@ function PoliciesTable({
                                       },
                                       {
                                           title: 'Delete policy',
-                                          onClick: () => deletePoliciesHandler([id]),
+                                          onClick: () => setDeletingIds([id]),
                                           disabled: isDefault,
                                       },
                                   ]
@@ -462,6 +480,17 @@ function PoliciesTable({
                     </Tbody>
                 </TableComposable>
             </PageSection>
+            <ConfirmationModal
+                ariaLabel="Confirm delete"
+                confirmText="Delete"
+                isLoading={isDeleting}
+                isOpen={deletingIds.length !== 0}
+                onConfirm={onConfirmDeletePolicy}
+                onCancel={onCancelDeletePolicy}
+            >
+                Are you sure you want to delete {deletingIds.length}&nbsp;
+                {pluralize('policy', deletingIds.length)}?
+            </ConfirmationModal>
         </>
     );
 }
