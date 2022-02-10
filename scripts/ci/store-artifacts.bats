@@ -64,7 +64,7 @@ function setup() {
 
 make_env() {
     source "${BATS_TEST_DIRNAME}/lib.sh"
-    if ! is_ci; then
+    if ! is_CI; then
         CI=true
         OPENSHIFT_CI=true
         GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX=dummy
