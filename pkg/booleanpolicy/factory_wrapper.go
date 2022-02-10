@@ -2,7 +2,6 @@ package booleanpolicy
 
 import (
 	"errors"
-	"math/rand"
 	"time"
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
@@ -25,7 +24,7 @@ type evaluatorWrapper struct {
 }
 
 func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Result, bool) {
-	if e.regoEvaluator == nil || rand.Intn(100) > 0 {
+	if e.regoEvaluator == nil {
 		return e.legacyEvaluator.Evaluate(obj)
 	}
 	start := time.Now()
@@ -33,8 +32,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	regoDone := time.Now()
 	legacyResult, legacyMatched := e.legacyEvaluator.Evaluate(obj)
 	legacyDone := time.Now()
-	log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
-	if regoMatched != legacyMatched {
+	if regoDone.Sub(start) > time.Millisecond || regoMatched != legacyMatched {
 		objValue, _ := obj.GetFullValue()
 		log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
 		log.Errorf("Got different values for OPA and legacy. OPA matched: %v; legacy matched: %v;"+
