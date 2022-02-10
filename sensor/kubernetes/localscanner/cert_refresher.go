@@ -20,6 +20,7 @@ var (
 // Once started, the certRefresher will periodically refresh the certificates before expiration.
 func newCertRefresher(requestCertificates requestCertificatesFunc, timeout time.Duration,
 	backoff wait.Backoff, repository ServiceCertificatesRepo) *certRefresherImpl {
+
 	refresher := &certRefresherImpl{
 		requestCertificates: requestCertificates,
 		getCertsRenewalTime: GetCertsRenewalTime,
