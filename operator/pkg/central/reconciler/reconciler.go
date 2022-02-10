@@ -9,6 +9,7 @@ import (
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
+	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -23,7 +24,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithExtraWatch(
 			&source.Kind{Type: &platform.SecuredCluster{}},
 			handleSiblingCentrals(mgr),
-			createAndDeleteOnly{}),
+			utils.CreateAndDeleteOnlyPredicate{}),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(mgr.GetClient())),
