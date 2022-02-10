@@ -175,12 +175,12 @@ type suppliersMock struct {
 	mock.Mock
 }
 
-func (m *suppliersMock) supplyCertificateRefresher(requestCertificates requestCertificatesFunc, timeout time.Duration, backoff wait.Backoff, repository ServiceCertificatesRepo) CertificateRefresher {
+func (m *suppliersMock) supplyCertificateRefresher(requestCertificates requestCertificatesFunc, timeout time.Duration, backoff wait.Backoff, repository serviceCertificatesRepo) CertificateRefresher {
 	args := m.Called(requestCertificates, timeout, backoff, repository)
 	return args.Get(0).(CertificateRefresher)
 }
 
-func (m *suppliersMock) supplyServiceCertificatesRepoSupplier(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec, sensorDeployment *appsApiv1.Deployment, initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error), secretsClient v1.SecretInterface) (ServiceCertificatesRepo, error) {
+func (m *suppliersMock) supplyServiceCertificatesRepoSupplier(ctx context.Context, scannerSpec, scannerDBSpec ServiceCertSecretSpec, sensorDeployment *appsApiv1.Deployment, initialCertsSupplier func(context.Context) (*storage.TypedServiceCertificateSet, error), secretsClient v1.SecretInterface) (serviceCertificatesRepo, error) {
 	args := m.Called(ctx, scannerSpec, scannerDBSpec, sensorDeployment, initialCertsSupplier, secretsClient)
-	return args.Get(0).(ServiceCertificatesRepo), args.Error(1)
+	return args.Get(0).(serviceCertificatesRepo), args.Error(1)
 }
