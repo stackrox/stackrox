@@ -75,7 +75,8 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 		return nil, errors.Wrapf(err, "getting image metadata for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
 	}
 
-	log.Debugf("Retrieved metadata for image %s in namespace %s", image.GetName().GetFullName(), image.GetNamespace())
+	// TODO: Switch to debug, but for now process signals are really bothering me
+	log.Infof("Retrieved metadata for image %s in namespace %s", image.GetName().GetFullName(), image.GetNamespace())
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
