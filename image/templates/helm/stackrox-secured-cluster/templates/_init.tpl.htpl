@@ -260,7 +260,6 @@
 
 [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
 {{/*
-  #TODO(ROX-8672): Add setup and defaulting logic to secured cluster chart
    Scanner setup
   */}}
 {{- if ne ._rox.env.openshift 4 }}
