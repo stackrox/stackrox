@@ -1,9 +1,11 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
+import { policiesBasePathPatternFly } from 'routePaths';
+import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
@@ -104,9 +106,12 @@ function PolicyPage({
                 .catch((error) => {
                     setPolicy(initialPolicy);
                     setPolicyError(
-                        <Alert title="Request failure for policy" variant="danger" isInline>
-                            {getAxiosErrorMessage(error)}
-                        </Alert>
+                        <NotFoundMessage
+                            title="404: We couldn't find that page"
+                            message={getAxiosErrorMessage(error)}
+                            actionText="Go to Policies"
+                            url={policiesBasePathPatternFly}
+                        />
                     );
                 })
                 .finally(() => {
