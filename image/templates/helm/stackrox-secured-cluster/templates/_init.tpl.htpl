@@ -35,10 +35,17 @@
    */}}
 {{ $rox := deepCopy $values }}
 
-{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
 
-{{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
+{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
+
+{{/* Only merge scanner config shapes if feature flag is enabled */}}
+[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+  {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
+  {{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
+[< else >]
+  {{ $_ := include "srox.mergeInto" (list $rox $configShape) }}
+[< end >]
+
 {{ $_ = set $ "_rox" $rox }}
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
