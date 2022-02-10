@@ -25,7 +25,7 @@ type evaluatorWrapper struct {
 }
 
 func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Result, bool) {
-	if e.regoEvaluator == nil {
+	if e.regoEvaluator == nil || rand.Intn(100) > 0 {
 		return e.legacyEvaluator.Evaluate(obj)
 	}
 	start := time.Now()
@@ -33,9 +33,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	regoDone := time.Now()
 	legacyResult, legacyMatched := e.legacyEvaluator.Evaluate(obj)
 	legacyDone := time.Now()
-	if rand.Intn(100) < 1 {
-		log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
-	}
+	log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
 	if regoMatched != legacyMatched {
 		objValue, _ := obj.GetFullValue()
 		log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
