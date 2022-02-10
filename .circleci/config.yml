@@ -2195,14 +2195,6 @@ jobs:
           name: Run Shell unit tests
           command: make shell-unit-tests
 
-      - run:
-          name: Generate Shell unit test JUnit report
-          command: |
-            if [[ -f shell-test-output/test.log ]]; then
-              tap-junit < shell-test-output/test.log > shell-test-output/report.xml
-            fi
-          when: always
-
       - store-test-results-and-artifacts:
           path: shell-test-output
 

@@ -476,8 +476,7 @@ go-unit-tests: build-prep test-prep
 shell-unit-tests:
 	@echo "+ $@"
 	@mkdir -p shell-test-output
-	set -o pipefail ; \
-	bats --print-output-on-failure --verbose-run --recursive scripts | tee shell-test-output/test.log
+	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output scripts
 
 .PHONY: ui-build
 ui-build:
