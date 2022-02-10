@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, FlexItem } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Policy } from 'types/policy.proto';
 import PolicySection from './PolicySection';
 
-import './PolicyCriteriaForm.css';
+import './BooleanPolicyLogicSection.css';
 
 type BooleanPolicyLogicSectionProps = {
     readOnly?: boolean;
@@ -40,8 +40,17 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         readOnly={readOnly}
                     />
                     {sectionIndex !== values.policySections.length - 1 && (
-                        <Flex alignSelf={{ default: 'alignSelfCenter' }}>
-                            <FlexItem>or</FlexItem>
+                        <Flex
+                            alignSelf={{ default: 'alignSelfCenter' }}
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            direction={{ default: 'column' }}
+                            flexWrap={{ default: 'nowrap' }}
+                            spaceItems={{ default: 'spaceItemsNone' }}
+                            className="pf-u-h-100"
+                        >
+                            <div className="or-divider" />
+                            OR
+                            <div className="or-divider" />
                         </Flex>
                     )}
                 </React.Fragment>

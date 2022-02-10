@@ -102,8 +102,8 @@ function PolicyScopeForm() {
     }, []);
 
     return (
-        <Flex direction={{ default: 'column' }}>
-            <FlexItem flex={{ default: 'flex_1' }}>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
+            <FlexItem flex={{ default: 'flex_1' }} className="pf-u-p-lg">
                 <Title headingLevel="h2">Policy scope</Title>
                 <div className="pf-u-mt-sm">
                     Create scopes to restrict or exclude your policy from entities within your
@@ -111,7 +111,7 @@ function PolicyScopeForm() {
                 </div>
             </FlexItem>
             <Divider component="div" />
-            <Flex direction={{ default: 'column' }}>
+            <Flex direction={{ default: 'column' }} className="pf-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Restrict by scope</Title>
@@ -129,7 +129,7 @@ function PolicyScopeForm() {
                 </Flex>
                 <FlexItem>
                     <Grid hasGutter>
-                        {scope.map((_, index) => (
+                        {scope?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem span={4} rowSpan={4} key={index}>
                                 <PolicyScopeCard
@@ -146,7 +146,7 @@ function PolicyScopeForm() {
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <Flex direction={{ default: 'column' }}>
+            <Flex direction={{ default: 'column' }} className="pf-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Exclude by scope</Title>
@@ -169,7 +169,7 @@ function PolicyScopeForm() {
                 </Flex>
                 <FlexItem>
                     <Grid hasGutter>
-                        {excludedDeploymentScopes.map((_, index) => (
+                        {excludedDeploymentScopes?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem span={4} rowSpan={4} key={index}>
                                 <PolicyScopeCard
@@ -187,7 +187,7 @@ function PolicyScopeForm() {
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <Flex direction={{ default: 'column' }}>
+            <Flex direction={{ default: 'column' }} className="pf-u-p-lg">
                 <FlexItem flex={{ default: 'flex_1' }}>
                     <Title headingLevel="h3">Exclude images</Title>
                     <div className="pf-u-mt-sm">
@@ -214,7 +214,7 @@ function PolicyScopeForm() {
                                 onClear={() => setFieldValue('excludedImageNames', [])}
                                 placeholderText="Select images to exclude"
                             >
-                                {images.map((image) => (
+                                {images?.map((image) => (
                                     <SelectOption key={image.name} value={image.name}>
                                         {image.name}
                                     </SelectOption>

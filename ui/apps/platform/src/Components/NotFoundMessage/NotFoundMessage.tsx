@@ -1,6 +1,14 @@
 import React, { ReactElement } from 'react';
-import { Title, Button, EmptyState, EmptyStateBody, Bullseye } from '@patternfly/react-core';
-import { Link } from 'react-router-dom';
+import {
+    Bullseye,
+    Button,
+    ButtonVariant,
+    EmptyState,
+    EmptyStateBody,
+    Title,
+} from '@patternfly/react-core';
+
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 
 export type NotFoundMessageProps = {
     title: string;
@@ -28,13 +36,9 @@ const NotFoundMessage = ({
                 {message && <EmptyStateBody>{message}</EmptyStateBody>}
                 {isButtonVisible && <Button variant="primary">{actionText}</Button>}
                 {isLinkVisible && (
-                    <Button
-                        variant="link"
-                        isInline
-                        component={(props) => <Link {...props} to={url} />}
-                    >
+                    <ButtonLink variant={ButtonVariant.link} isInline to={url}>
                         {actionText}
-                    </Button>
+                    </ButtonLink>
                 )}
             </EmptyState>
         </Bullseye>

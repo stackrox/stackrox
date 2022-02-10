@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, ButtonVariant, Spinner } from '@patternfly/react-core';
+import { ButtonVariant, Spinner } from '@patternfly/react-core';
 
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import { getEntityPath } from 'Containers/AccessControl/accessControlPaths';
 import useFetchScopes from 'hooks/useFetchScopes';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -30,13 +30,9 @@ function ScopeName({ scopeId }: ScopeNameProps): ReactElement {
     const url = getEntityPath('ACCESS_SCOPE', scopeId);
 
     return (
-        <Button
-            variant={ButtonVariant.link}
-            isInline
-            component={(props) => <Link {...props} to={url} />}
-        >
+        <ButtonLink variant={ButtonVariant.link} isInline to={url}>
             {fullScope?.name || scopeId}
-        </Button>
+        </ButtonLink>
     );
 }
 

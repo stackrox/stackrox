@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, ReactElement } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import {
     Alert,
     AlertVariant,
     Bullseye,
-    Button,
     ButtonVariant,
     PageSection,
     PageSectionVariants,
@@ -20,6 +19,7 @@ import {
 
 import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
+import ButtonLink from 'Components/PatternFly/ButtonLink';
 import { searchCategories } from 'constants/entityTypes';
 import usePermissions from 'hooks/usePermissions';
 import useSearchOptions from 'hooks/useSearchOptions';
@@ -124,18 +124,13 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                         </ToolbarItem>
                         {canWriteReports && (
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                <Button
+                                <ButtonLink
                                     variant={ButtonVariant.primary}
                                     isInline
-                                    component={(props) => (
-                                        <Link
-                                            {...props}
-                                            to={`${vulnManagementReportsPath}?action=create`}
-                                        />
-                                    )}
+                                    to={`${vulnManagementReportsPath}?action=create`}
                                 >
                                     Create report
-                                </Button>
+                                </ButtonLink>
                             </ToolbarItem>
                         )}
                     </ToolbarContent>

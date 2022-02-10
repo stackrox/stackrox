@@ -24,17 +24,25 @@ const (
 
 var (
 	log          = logging.LoggerForModule()
-	instance     ProbeSources
+	instance     probeSources
 	instanceInit sync.Once
 )
 
-// ProbeSources contains the list of activated probe sources.
-type ProbeSources struct {
+//go:generate mockgen-wrapper
+
+// ProbeSources interface provides the availability of the probes packages.
+type ProbeSources interface {
+	AnyAvailable(ctx context.Context) (bool, error)
+	CopyAsSlice() []probeupload.ProbeSource
+}
+
+// probeSources contains the list of activated probe sources.
+type probeSources struct {
 	probeSources []probeupload.ProbeSource
 }
 
 // CopyAsSlice retrieves the activated probe sources as a slice backed by newly allocated memory.
-func (s ProbeSources) CopyAsSlice() []probeupload.ProbeSource {
+func (s *probeSources) CopyAsSlice() []probeupload.ProbeSource {
 	probeSources := make([]probeupload.ProbeSource, len(s.probeSources))
 	copy(probeSources, s.probeSources)
 	return probeSources
@@ -43,7 +51,7 @@ func (s ProbeSources) CopyAsSlice() []probeupload.ProbeSource {
 // AnyAvailable implements a simple heuristic for the availability of kernel probes.
 // It returns true if any of the activated probe sources is available in the sense
 // that it does support the transmitting of (some) kernel probes.
-func (s *ProbeSources) AnyAvailable(ctx context.Context) (bool, error) {
+func (s *probeSources) AnyAvailable(ctx context.Context) (bool, error) {
 	var finalErr error
 
 	for _, source := range s.probeSources {
@@ -60,7 +68,7 @@ func (s *ProbeSources) AnyAvailable(ctx context.Context) (bool, error) {
 	return false, finalErr
 }
 
-func (s *ProbeSources) initializeStandardSources(probeUploadManager probeUploadManager.Manager, licenseMgr licenseManager.LicenseManager) {
+func (s *probeSources) initializeStandardSources(probeUploadManager probeUploadManager.Manager, licenseMgr licenseManager.LicenseManager) {
 	s.probeSources = make([]probeupload.ProbeSource, 0, 2)
 	s.probeSources = append(s.probeSources, probeUploadManager)
 	if env.OfflineModeEnv.BooleanSetting() {
@@ -96,5 +104,5 @@ func Singleton() ProbeSources {
 	instanceInit.Do(func() {
 		instance.initializeStandardSources(probeUploadManager.Singleton(), licenseSingletons.ManagerSingleton())
 	})
-	return instance
+	return &instance
 }

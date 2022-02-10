@@ -68,7 +68,6 @@ type DataStore interface {
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
 	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error)
-	GetClusterDefaults(ctx context.Context) (*storage.Cluster, error)
 }
 
 // New returns an instance of DataStore.

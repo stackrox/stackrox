@@ -210,25 +210,20 @@ function IntegrationsTable({
                                             if (column.Header === 'Name') {
                                                 return (
                                                     <Td key="name">
-                                                        <Button
+                                                        <ButtonLink
                                                             variant={ButtonVariant.link}
                                                             isInline
-                                                            component={(props) => (
-                                                                <Link
-                                                                    {...props}
-                                                                    to={getPathToViewDetails(
-                                                                        source,
-                                                                        type,
-                                                                        id
-                                                                    )}
-                                                                />
+                                                            to={getPathToViewDetails(
+                                                                source,
+                                                                type,
+                                                                id
                                                             )}
                                                         >
                                                             <TableCellValue
                                                                 row={integration}
                                                                 column={column}
                                                             />
-                                                        </Button>
+                                                        </ButtonLink>
                                                     </Td>
                                                 );
                                             }

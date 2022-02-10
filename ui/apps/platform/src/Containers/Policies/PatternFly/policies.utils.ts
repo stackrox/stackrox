@@ -18,7 +18,7 @@ import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
-    return action === 'clone' || action === 'create' || action === 'edit';
+    return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
 }
 
 function isParsedQs(s: unknown): s is ParsedQs {

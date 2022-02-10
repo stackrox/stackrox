@@ -63,6 +63,7 @@ describe('Import policy', () => {
 
             const trSelector = `tbody tr:contains("${importedPolicyName}")`;
             doPolicyRowAction(trSelector, 'Delete policy');
+            cy.get(selectors.confirmationModal.deleteButton).click();
             cy.get(`${selectors.toast.title}:contains("Successfully deleted policy")`);
         });
     });

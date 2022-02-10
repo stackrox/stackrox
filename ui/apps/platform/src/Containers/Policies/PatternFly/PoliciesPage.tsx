@@ -23,7 +23,8 @@ function PoliciesPage() {
      * /main/policies?s[Lifecycle State]=RUNTIME&s[Severity]=CRITICAL_SEVERITY
      */
     const history = useHistory();
-    const { search } = useLocation();
+    const location = useLocation();
+    const { search } = location;
     const { pageAction, searchFilter } = parsePoliciesSearchString(search);
     const { policyId } = useParams();
 

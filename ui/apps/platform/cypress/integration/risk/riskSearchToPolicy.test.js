@@ -1,5 +1,6 @@
 import { selectors as riskSelectors, url as riskUrl } from '../../constants/RiskPage';
 import { selectors as policySelectors, url as policiesUrl } from '../../constants/PoliciesPage';
+import { hasFeatureFlag } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
 
 describe('Risk search to new policy', () => {
@@ -15,6 +16,12 @@ describe('Risk search to new policy', () => {
         });
         cy.get(policySelectors.nextButton).click();
     };
+
+    before(function beforeHook() {
+        if (hasFeatureFlag('ROX_POLICIES_PATTERNFLY')) {
+            this.skip();
+        }
+    });
 
     it('should create a policy with a multiselect field, like Add Capabilities', () => {
         navigateToPolicy(`${riskUrl}?s[Add%20Capabilities]=NET_BIND_SERVICE`);

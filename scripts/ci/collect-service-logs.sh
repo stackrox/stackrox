@@ -28,6 +28,11 @@ main() {
         exit 1
     fi
 
+    if ! kubectl get ns "${namespace}"; then
+        echo "Skipping missing namespace"
+        exit 0
+    fi
+
     if [ $# -gt 1 ]; then
         log_dir="$2"
     else

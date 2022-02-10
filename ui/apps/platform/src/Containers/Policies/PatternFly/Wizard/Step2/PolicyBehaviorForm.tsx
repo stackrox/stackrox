@@ -28,6 +28,8 @@ import {
 } from '../../policies.utils';
 import DownloadCLIDropdown from './DownloadCLIDropdown';
 
+import './PolicyBehaviorForm.css';
+
 function PolicyBehaviorForm() {
     const { values, setFieldValue, setValues } = useFormikContext<Policy>();
     const hasEnforcementActions =
@@ -108,218 +110,241 @@ function PolicyBehaviorForm() {
     const hasRuntime = values.lifecycleStages.includes('RUNTIME');
 
     return (
-        <div>
-            <Title headingLevel="h2">Policy behavior</Title>
-            <div className="pf-u-mt-sm">
-                Select which stage of a container lifecycle this policy applies. Event sources can
-                only be chosen for policies that apply at runtime.
-            </div>
-            <Alert variant="info" isInline title="Info" className="pf-u-mt-md pf-u-mb-md">
-                <div className="pf-u-mb-sm">
-                    Build-time policies apply to image fields such as CVEs and Dockerfile
-                    instructions.
+        <Flex
+            direction={{ default: 'column' }}
+            spaceItems={{ default: 'spaceItemsNone' }}
+            flexWrap={{ default: 'nowrap' }}
+        >
+            <Flex
+                direction={{ default: 'column' }}
+                spaceItems={{ default: 'spaceItemsNone' }}
+                className="pf-u-p-lg"
+            >
+                <Title headingLevel="h2">Policy behavior</Title>
+                <div className="pf-u-mt-sm">
+                    Select which stage of a container lifecycle this policy applies. Event sources
+                    can only be chosen for policies that apply at runtime.
                 </div>
-                <div className="pf-u-mb-sm">
-                    Deploy-time policies can include all build-time policy criteria but they can
-                    also include data form your cluster configurations, such as running in
-                    privileged mode or mounting the Docker socket.
-                </div>
-                <div>
-                    Runtime policies can include all build-time and deploy-time policy criteria but
-                    they can also include data about process executions during runtime.
-                </div>
-            </Alert>
-            <Form>
-                <FormGroup
-                    helperText="Choose lifecycle stage to which your policy is applicable. You can select more than one stage."
-                    fieldId="policy-lifecycle-stage"
-                    label="Lifecycle stages"
-                    isRequired
-                >
-                    <Flex direction={{ default: 'row' }} className="pf-u-pb-sm">
-                        <Checkbox
-                            label="Build"
-                            isChecked={hasBuild}
-                            id="policy-lifecycle-stage-build"
-                            onChange={(isChecked) => {
-                                onChangeLifecycleStage('BUILD', isChecked);
-                            }}
-                        />
-                        <Checkbox
-                            label="Deploy"
-                            isChecked={hasDeploy}
-                            id="policy-lifecycle-stage-deploy"
-                            onChange={(isChecked) => {
-                                onChangeLifecycleStage('DEPLOY', isChecked);
-                            }}
-                        />
-                        <Checkbox
-                            label="Runtime"
-                            isChecked={hasRuntime}
-                            id="policy-lifecycle-stage-runtime"
-                            onChange={(isChecked) => {
-                                onChangeLifecycleStage('RUNTIME', isChecked);
-                            }}
-                        />
+                <Alert variant="info" isInline title="Info" className="pf-u-my-md">
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                    >
+                        <div>
+                            Build-time policies apply to image fields such as CVEs and Dockerfile
+                            instructions.
+                        </div>
+                        <div>
+                            Deploy-time policies can include all build-time policy criteria but they
+                            can also include data form your cluster configurations, such as running
+                            in privileged mode or mounting the Docker socket.
+                        </div>
+                        <div>
+                            Runtime policies can include all build-time and deploy-time policy
+                            criteria but they can also include data about process executions during
+                            runtime.
+                        </div>
                     </Flex>
-                </FormGroup>
-                <FormGroup
-                    fieldId="policy-event-source"
-                    label="Event sources (Runtime lifecycle only)"
-                    className="pf-u-mb-lg"
-                >
-                    <Flex direction={{ default: 'row' }}>
-                        <Radio
-                            label="Deployment"
-                            isChecked={values.eventSource === 'DEPLOYMENT_EVENT'}
-                            id="policy-event-source-deployment"
-                            name="eventSource"
-                            onChange={() => setFieldValue('eventSource', 'DEPLOYMENT_EVENT')}
-                            isDisabled={!hasRuntime}
-                        />
-                        <Radio
-                            label="Audit logs"
-                            isChecked={values.eventSource === 'AUDIT_LOG_EVENT'}
-                            id="policy-event-source-audit-logs"
-                            name="eventSource"
-                            onChange={onChangeAuditLogEventSource}
-                            isDisabled={!hasRuntime}
-                        />
-                    </Flex>
-                </FormGroup>
-            </Form>
+                </Alert>
+                <Form>
+                    <FormGroup
+                        helperText="Choose lifecycle stage to which your policy is applicable. You can select more than one stage."
+                        fieldId="policy-lifecycle-stage"
+                        label="Lifecycle stages"
+                        isRequired
+                    >
+                        <Flex direction={{ default: 'row' }} className="pf-u-pb-sm">
+                            <Checkbox
+                                label="Build"
+                                isChecked={hasBuild}
+                                id="policy-lifecycle-stage-build"
+                                onChange={(isChecked) => {
+                                    onChangeLifecycleStage('BUILD', isChecked);
+                                }}
+                            />
+                            <Checkbox
+                                label="Deploy"
+                                isChecked={hasDeploy}
+                                id="policy-lifecycle-stage-deploy"
+                                onChange={(isChecked) => {
+                                    onChangeLifecycleStage('DEPLOY', isChecked);
+                                }}
+                            />
+                            <Checkbox
+                                label="Runtime"
+                                isChecked={hasRuntime}
+                                id="policy-lifecycle-stage-runtime"
+                                onChange={(isChecked) => {
+                                    onChangeLifecycleStage('RUNTIME', isChecked);
+                                }}
+                            />
+                        </Flex>
+                    </FormGroup>
+                    <FormGroup
+                        fieldId="policy-event-source"
+                        label="Event sources (Runtime lifecycle only)"
+                    >
+                        <Flex direction={{ default: 'row' }}>
+                            <Radio
+                                label="Deployment"
+                                isChecked={values.eventSource === 'DEPLOYMENT_EVENT'}
+                                id="policy-event-source-deployment"
+                                name="eventSource"
+                                onChange={() => setFieldValue('eventSource', 'DEPLOYMENT_EVENT')}
+                                isDisabled={!hasRuntime}
+                            />
+                            <Radio
+                                label="Audit logs"
+                                isChecked={values.eventSource === 'AUDIT_LOG_EVENT'}
+                                id="policy-event-source-audit-logs"
+                                name="eventSource"
+                                onChange={onChangeAuditLogEventSource}
+                                isDisabled={!hasRuntime}
+                            />
+                        </Flex>
+                    </FormGroup>
+                </Form>
+            </Flex>
             <Divider component="div" />
-            <Title headingLevel="h2" className="pf-u-mt-md">
-                Response method
-            </Title>
-            <div className="pf-u-mb-md pf-u-mt-sm">
-                Select a method to address violations of this policy.
-            </div>
-            <Form>
-                <FormGroup
-                    fieldId="policy-response-method"
-                    className="pf-u-mb-lg"
-                    helperText={responseMethodHelperText}
-                >
-                    <Flex direction={{ default: 'row' }}>
-                        <Radio
-                            label="Inform"
-                            isChecked={!showEnforcement}
-                            id="policy-response-inform"
-                            name="inform"
-                            onChange={() => {
-                                setShowEnforcement(false);
-                                setFieldValue('enforcementActions', [], false); // do not validate, because code changes the value
-                            }}
-                        />
-                        <Radio
-                            label="Inform and enforce"
-                            isChecked={showEnforcement}
-                            id="policy-response-inform-enforce"
-                            name="enforce"
-                            onChange={() => setShowEnforcement(true)}
-                        />
-                    </Flex>
-                </FormGroup>
-            </Form>
-            {showEnforcement && (
-                <>
-                    <Title headingLevel="h2" className="pf-u-mt-md">
-                        Configure enforcement behavior
-                    </Title>
-                    <div className="pf-u-mb-lg pf-u-mt-sm">
-                        Based on the fields selected in your policy configuration, you may choose to
-                        apply enforcement at the following stages.
-                    </div>
-                    <Grid hasGutter>
-                        <GridItem span={4}>
-                            <Card className="pf-u-h-100">
-                                <CardHeader>
-                                    <CardTitle>Build</CardTitle>
-                                    <CardActions>
-                                        <Switch
-                                            isChecked={hasEnforcementActionForLifecycleStage(
-                                                'BUILD',
-                                                values.enforcementActions
-                                            )}
-                                            isDisabled={!hasBuild}
-                                            onChange={(isChecked) => {
-                                                onChangeEnforcementActions('BUILD', isChecked);
-                                            }}
-                                            label="Enforce on Build"
-                                        />
-                                    </CardActions>
-                                </CardHeader>
-                                <CardBody>
-                                    If enabled, ACS will fail your CI builds when images match the
-                                    conditions of this policy. Download the CLI to get started.
-                                    <Flex
-                                        justifyContent={{ default: 'justifyContentCenter' }}
-                                        className="pf-u-pt-md"
-                                    >
-                                        <DownloadCLIDropdown hasBuild={hasBuild} />
-                                    </Flex>
-                                </CardBody>
-                            </Card>
-                        </GridItem>
-                        <GridItem span={4}>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Deploy</CardTitle>
-                                    <CardActions>
-                                        <Switch
-                                            isChecked={hasEnforcementActionForLifecycleStage(
-                                                'DEPLOY',
-                                                values.enforcementActions
-                                            )}
-                                            isDisabled={!hasDeploy}
-                                            onChange={(isChecked) => {
-                                                onChangeEnforcementActions('DEPLOY', isChecked);
-                                            }}
-                                            label="Enforce on Deploy"
-                                        />
-                                    </CardActions>
-                                </CardHeader>
-                                <CardBody>
-                                    If enabled, ACS will automatically block creation of deployments
-                                    that match the conditions of this policy. In clusters with the
-                                    ACS admissions controller enabled, the Kubernetes API server
-                                    will block noncompliant deployments to prevent pods from being
-                                    scheduled.
-                                </CardBody>
-                            </Card>
-                        </GridItem>
-                        <GridItem span={4}>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Runtime</CardTitle>
-                                    <CardActions>
-                                        <Switch
-                                            isChecked={hasEnforcementActionForLifecycleStage(
-                                                'RUNTIME',
-                                                values.enforcementActions
-                                            )}
-                                            isDisabled={!hasRuntime}
-                                            onChange={(isChecked) => {
-                                                onChangeEnforcementActions('RUNTIME', isChecked);
-                                            }}
-                                            label="Enforce on Runtime"
-                                        />
-                                    </CardActions>
-                                </CardHeader>
-                                <CardBody>
-                                    If enabled, ACS will either kill the offending pod or block the
-                                    action taken on the pod. Executions within a pod that match the
-                                    conditions of the policy will result in the pod being killed.
-                                    Actions taken through the API server that math policy criteria
-                                    will be blocked.
-                                </CardBody>
-                            </Card>
-                        </GridItem>
-                    </Grid>
-                </>
-            )}
-        </div>
+            <Flex
+                direction={{ default: 'column' }}
+                spaceItems={{ default: 'spaceItemsNone' }}
+                className="pf-u-p-lg"
+            >
+                <Title headingLevel="h2">Response method</Title>
+                <div className="pf-u-mb-md pf-u-mt-sm">
+                    Select a method to address violations of this policy.
+                </div>
+                <Form>
+                    <FormGroup
+                        fieldId="policy-response-method"
+                        className="pf-u-mb-lg"
+                        helperText={responseMethodHelperText}
+                    >
+                        <Flex direction={{ default: 'row' }}>
+                            <Radio
+                                label="Inform"
+                                isChecked={!showEnforcement}
+                                id="policy-response-inform"
+                                name="inform"
+                                onChange={() => {
+                                    setShowEnforcement(false);
+                                    setFieldValue('enforcementActions', [], false); // do not validate, because code changes the value
+                                }}
+                            />
+                            <Radio
+                                label="Inform and enforce"
+                                isChecked={showEnforcement}
+                                id="policy-response-inform-enforce"
+                                name="enforce"
+                                onChange={() => setShowEnforcement(true)}
+                            />
+                        </Flex>
+                    </FormGroup>
+                </Form>
+                {showEnforcement && (
+                    <>
+                        <Title headingLevel="h2" className="pf-u-mt-md">
+                            Configure enforcement behavior
+                        </Title>
+                        <div className="pf-u-mb-lg pf-u-mt-sm">
+                            Based on the fields selected in your policy configuration, you may
+                            choose to apply enforcement at the following stages.
+                        </div>
+                        <Grid hasGutter>
+                            <GridItem span={4}>
+                                <Card className="pf-u-h-100 policy-enforcement-card">
+                                    <CardHeader>
+                                        <CardTitle>Build</CardTitle>
+                                        <CardActions>
+                                            <Switch
+                                                isChecked={hasEnforcementActionForLifecycleStage(
+                                                    'BUILD',
+                                                    values.enforcementActions
+                                                )}
+                                                isDisabled={!hasBuild}
+                                                onChange={(isChecked) => {
+                                                    onChangeEnforcementActions('BUILD', isChecked);
+                                                }}
+                                                label="Enforce on Build"
+                                            />
+                                        </CardActions>
+                                    </CardHeader>
+                                    <CardBody>
+                                        If enabled, ACS will fail your CI builds when images match
+                                        the conditions of this policy. Download the CLI to get
+                                        started.
+                                        <Flex
+                                            justifyContent={{ default: 'justifyContentCenter' }}
+                                            className="pf-u-pt-md"
+                                        >
+                                            <DownloadCLIDropdown hasBuild={hasBuild} />
+                                        </Flex>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                            <GridItem span={4}>
+                                <Card className="policy-enforcement-card">
+                                    <CardHeader>
+                                        <CardTitle>Deploy</CardTitle>
+                                        <CardActions>
+                                            <Switch
+                                                isChecked={hasEnforcementActionForLifecycleStage(
+                                                    'DEPLOY',
+                                                    values.enforcementActions
+                                                )}
+                                                isDisabled={!hasDeploy}
+                                                onChange={(isChecked) => {
+                                                    onChangeEnforcementActions('DEPLOY', isChecked);
+                                                }}
+                                                label="Enforce on Deploy"
+                                            />
+                                        </CardActions>
+                                    </CardHeader>
+                                    <CardBody>
+                                        If enabled, ACS will automatically block creation of
+                                        deployments that match the conditions of this policy. In
+                                        clusters with the ACS admissions controller enabled, the
+                                        Kubernetes API server will block noncompliant deployments to
+                                        prevent pods from being scheduled.
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                            <GridItem span={4}>
+                                <Card className="policy-enforcement-card">
+                                    <CardHeader>
+                                        <CardTitle>Runtime</CardTitle>
+                                        <CardActions>
+                                            <Switch
+                                                isChecked={hasEnforcementActionForLifecycleStage(
+                                                    'RUNTIME',
+                                                    values.enforcementActions
+                                                )}
+                                                isDisabled={!hasRuntime}
+                                                onChange={(isChecked) => {
+                                                    onChangeEnforcementActions(
+                                                        'RUNTIME',
+                                                        isChecked
+                                                    );
+                                                }}
+                                                label="Enforce on Runtime"
+                                            />
+                                        </CardActions>
+                                    </CardHeader>
+                                    <CardBody>
+                                        If enabled, ACS will either kill the offending pod or block
+                                        the action taken on the pod. Executions within a pod that
+                                        match the conditions of the policy will result in the pod
+                                        being killed. Actions taken through the API server that math
+                                        policy criteria will be blocked.
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                        </Grid>
+                    </>
+                )}
+            </Flex>
+        </Flex>
     );
 }
 

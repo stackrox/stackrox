@@ -83,15 +83,10 @@ function GenerateDiagnosticBundle(): ReactElement {
             <Button
                 variant="link"
                 isInline
-                component={(props) => (
-                    // eslint-disable-next-line jsx-a11y/anchor-has-content
-                    <a
-                        {...props}
-                        href="/docs/product/rhacs/latest/configuration/generate-diagnostic-bundle.html"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    />
-                )}
+                component="a"
+                href="/docs/product/rhacs/latest/configuration/generate-diagnostic-bundle.html"
+                target="_blank"
+                rel="noopener noreferrer"
             >
                 <Flex
                     alignItems={{ default: 'alignItemsCenter' }}

@@ -50,7 +50,6 @@ function PolicyCategoriesSelectField(): ReactElement {
             helperText="Select policy categories you want to apply to this policy"
             fieldId="policy-categories"
             label="Categories"
-            className="pf-u-pt-md"
             isRequired
         >
             <Select
