@@ -30,7 +30,7 @@ func TestT(t *testing.T) {
 	pool := setup()
 
 	// tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource
-	//ids := pgx.Identifier([]string{"processindicator"})
+	// ids := pgx.Identifier([]string{"processindicator"})
 	//vals, err := pool.CopyFrom(context.Background(), ids, []string{"id", "deploymentid", "serialized"}, pgx.CopyFromRows([][]interface{}{
 	//	{
 	//		"id1",

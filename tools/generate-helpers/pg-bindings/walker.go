@@ -110,7 +110,7 @@ func getPostgresOptions(tag string) *PostgresOptions {
 		case "":
 		default:
 			// ignore for just right now
-			//panic(fmt.Sprintf("unknown case: %s", field))
+			// panic(fmt.Sprintf("unknown case: %s", field))
 		}
 	}
 	return opts

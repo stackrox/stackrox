@@ -127,14 +127,14 @@ func main() {
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", fmt.Sprintf("the search category to index under (supported - %s)", renderSearchCategories()))
 	utils.Must(c.MarkFlagRequired("search-category"))
 
-	//c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/rox/generated/storage", "the package of the object being indexed")
+	// c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/rox/generated/storage", "the package of the object being indexed")
 	//
 	//c.Flags().StringVar(&props.Object, "object", "", "the (Go) name of the object being indexed")
 	//utils.Must(c.MarkFlagRequired("object"))
 	//
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
 	//
-	//c.Flags().StringVar(&props.Plural, "plural", "", "the plural name of the object (optional; appends 's' to singular by default")
+	// c.Flags().StringVar(&props.Plural, "plural", "", "the plural name of the object (optional; appends 's' to singular by default")
 	//
 	//c.Flags().StringVar(&props.IDFunc, "id-func", "GetId", "the method to invoke on the proto object to get an id out")
 	//
@@ -143,7 +143,7 @@ func main() {
 	//
 	c.Flags().BoolVar(&props.WriteOptions, "write-options", true, "enable writing out the options map")
 	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
-	//c.Flags().StringVar(&props.Tag, "tag", "", "use the specified json tag")
+	// c.Flags().StringVar(&props.Tag, "tag", "", "use the specified json tag")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := fmt.Sprintf("storage.%s", props.Type)

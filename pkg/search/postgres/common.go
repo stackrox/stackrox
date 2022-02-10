@@ -109,7 +109,7 @@ func newQueryTree(table string) *queryTree {
 	return qt
 }
 
-//func (q *queryTree) addElems(elems []searchPkg.PathElem) {
+// func (q *queryTree) addElems(elems []searchPkg.PathElem) {
 //	currTree := q
 //	for _, e := range elems {
 //		var ok bool
@@ -368,7 +368,7 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, se
 	selQuery := generateSelectFields(table, tree, q, optionsMap, selectType)
 
 	// Building the where clause is the hardest part
-	//printTree(tree, "")
+	// printTree(tree, "")
 	queryEntry, err := compileBaseQuery(table, q, optionsMap)
 	if err != nil {
 		return nil, err

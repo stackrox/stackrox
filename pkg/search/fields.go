@@ -7,7 +7,7 @@ import (
 
 // Field describes a search field
 type Field struct {
-	//Elems     []PathElem
+	// Elems     []PathElem
 	FieldPath string
 	Type      v1.SearchDataType
 	Store     bool

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	_ "embed"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
@@ -15,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
 	"golang.org/x/tools/imports"
-	_ "embed"
 )
 
 //go:embed store.go.tpl
@@ -87,7 +87,7 @@ func main() {
 			"Type":       props.Type,
 			"Bucket":     props.Table,
 			"NoKeyField": props.NoKeyField,
-			//"UniqKeyFunc": props.UniqKeyFunc,
+			// "UniqKeyFunc": props.UniqKeyFunc,
 			"Table": props.Table,
 
 			"FlatInsertion":            singleInsert,

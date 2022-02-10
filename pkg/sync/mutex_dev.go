@@ -97,6 +97,6 @@ func (m *RWMutex) Lock() {
 
 // Unlock releases an acquired writer (exclusive) lock on the mutex.
 func (m *RWMutex) Unlock() {
-	//panicIfTooMuchTimeElapsed("RWMutex.Unlock", m.acquireTime, lockTimeout, 1)
+	// panicIfTooMuchTimeElapsed("RWMutex.Unlock", m.acquireTime, lockTimeout, 1)
 	m.RWMutex.Unlock()
 }

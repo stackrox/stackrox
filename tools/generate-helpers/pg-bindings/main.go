@@ -480,7 +480,7 @@ func main() {
 			"Bucket":     props.Table,
 			"NoKeyField": props.NoKeyField,
 			"KeyFunc":    props.KeyFunc,
-			//"UniqKeyFunc": props.UniqKeyFunc,
+			// "UniqKeyFunc": props.UniqKeyFunc,
 			"Table":                   props.Table,
 			"TableCreationQuery":      tableCreationQuery,
 			"InsertionQuery":          insertionQuery,

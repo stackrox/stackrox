@@ -5,10 +5,10 @@ import (
 )
 
 func TestWalker(t *testing.T) {
-	//Walk(reflect.TypeOf((*storage.Deployment)(nil)))
+	// Walk(reflect.TypeOf((*storage.Deployment)(nil)))
 	//table := Walk(reflect.TypeOf((*storage.Deployment)(nil)))
 
-	//table.Print("", true)
+	// table.Print("", true)
 	//searchPrint(table)
 	//createTables(table)
 	//insertObject(table, nil, 0)

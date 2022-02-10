@@ -58,7 +58,7 @@ func convertEnumSliceToIntArray(i interface{}) []int32 {
 func TestSliceConversion(t *testing.T) {
 	stages := []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY}
 
-	//l := int(storage.LifecycleStage_BUILD)
+	// l := int(storage.LifecycleStage_BUILD)
 
 	lol := convertEnumSliceToIntArray(stages)
 	fmt.Println(lol)
@@ -213,7 +213,7 @@ func BenchmarkGets(b *testing.B) {
 		}
 	}
 	//
-	//for _, r := range results {
+	// for _, r := range results {
 	//	fmt.Printf("result: %+v\n", r.GetId())
 	//}
 }
