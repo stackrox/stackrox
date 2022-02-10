@@ -8,6 +8,7 @@ set -euo pipefail
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 source "$TEST_ROOT/scripts/lib.sh"
+source "$TEST_ROOT/scripts/ci/lib.sh"
 
 get_central_basic_auth_creds() {
     info "Getting central basic auth creds"
@@ -16,6 +17,9 @@ get_central_basic_auth_creds() {
     require_environment "DEPLOY_DIR"
 
     source "$TEST_ROOT/scripts/k8s/export-basic-auth-creds.sh" "$DEPLOY_DIR"
+
+    ci_export "ROX_USERNAME" "$ROX_USERNAME"
+    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
 
 setup_client_CA_auth_provider() {
@@ -200,15 +204,18 @@ wait_for_api() {
     done
     echo
     if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-        kubectl -n stackrox get pod
         echo "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
+        echo "port-forwards:"
+        pgrep port-forward
+        echo "pods:"
+        kubectl -n stackrox get pod
         exit 1
     fi
     set -e
 
-    export API_HOSTNAME="${API_HOSTNAME}"
-    export API_PORT="${API_PORT}"
-    export API_ENDPOINT="${API_ENDPOINT}"
+    ci_export API_HOSTNAME "${API_HOSTNAME}"
+    ci_export API_PORT "${API_PORT}"
+    ci_export API_ENDPOINT "${API_ENDPOINT}"
 }
 
 restore_56_1_backup() {
@@ -221,3 +228,13 @@ restore_56_1_backup() {
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    if [[ "$#" -lt 1 ]]; then
+        usage
+        die "When invoked at the command line a method is required."
+    fi
+    fn="$1"
+    shift
+    "$fn" "$*"
+fi

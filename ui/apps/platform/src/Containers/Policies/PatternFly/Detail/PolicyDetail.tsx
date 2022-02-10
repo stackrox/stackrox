@@ -22,6 +22,7 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
@@ -50,6 +51,7 @@ function PolicyDetail({
     const [isRequesting, setIsRequesting] = useState(false);
     const [requestError, setRequestError] = useState<ReactElement | null>(null);
     const [isActionsOpen, setIsActionsOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
     const { toasts, addToast, removeToast } = useToasts();
 
@@ -116,13 +118,13 @@ function PolicyDetail({
             });
     }
 
-    function onDeletePolicy() {
+    function onConfirmDeletePolicy() {
         setRequestError(null);
         setIsRequesting(true);
         deletePolicy(id)
             .then(() => {
                 // Route change causes policy table page to request policies.
-                history.replace(policiesBasePath);
+                history.goBack();
             })
             .catch((error) => {
                 setRequestError(
@@ -140,7 +142,12 @@ function PolicyDetail({
             })
             .finally(() => {
                 setIsRequesting(false);
+                setIsDeleteOpen(false);
             });
+    }
+
+    function onCancelDeletePolicy() {
+        setIsDeleteOpen(false);
     }
 
     return (
@@ -213,7 +220,7 @@ function PolicyDetail({
                                                   key="Delete policy"
                                                   component="button"
                                                   isDisabled={isDefault}
-                                                  onClick={onDeletePolicy}
+                                                  onClick={() => setIsDeleteOpen(true)}
                                               >
                                                   Delete policy
                                               </DropdownItem>,
@@ -260,6 +267,16 @@ function PolicyDetail({
                     ))}
                 </AlertGroup>
             </PageSection>
+            <ConfirmationModal
+                ariaLabel="Confirm delete"
+                confirmText="Delete"
+                isLoading={isRequesting}
+                isOpen={isDeleteOpen}
+                onConfirm={onConfirmDeletePolicy}
+                onCancel={onCancelDeletePolicy}
+            >
+                Are you sure you want to delete this policy?
+            </ConfirmationModal>
         </>
     );
 }

@@ -1,3 +1,5 @@
+import scopeSelectors from '../helpers/scopeSelectors';
+
 export const url = '/main/policies-pf';
 
 export const selectors = {
@@ -40,4 +42,7 @@ export const selectors = {
         titleText: '.pf-c-modal-box__title-text:contains("Import policy JSON")',
         policyNames: '[data-testid="policies-imported"] div',
     },
+    confirmationModal: scopeSelectors('[aria-label="Confirm delete"]', {
+        deleteButton: 'button:contains("Delete")',
+    }),
 };
