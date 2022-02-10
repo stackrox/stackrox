@@ -72,6 +72,10 @@ func ValidateRole(role *storage.Role) error {
 		err := errors.New("role permission_set_id field must be set")
 		multiErr = multierror.Append(multiErr, err)
 	}
+	if role.GetAccessScopeId() == "" {
+		err := errors.New("role access_scope_id field must be set")
+		multiErr = multierror.Append(multiErr, err)
+	}
 	return multiErr
 }
 

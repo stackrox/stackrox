@@ -20,11 +20,11 @@ func TestValidateRole(t *testing.T) {
 			},
 		},
 		"role must reference an existing permission set": constructRole("role with no permission set", "", ""),
+		"empty access scope reference is not allowed":    constructRole("role with no access scope", GeneratePermissionSetID(), ""),
 	}
 
 	testCasesGood := map[string]*storage.Role{
 		"valid name, permissionSetId and accessScopeId": constructRole("new valid role", GeneratePermissionSetID(), GenerateAccessScopeID()),
-		"empty access scope reference is allowed":       constructRole("role with no access scope", GeneratePermissionSetID(), ""),
 	}
 
 	for desc, role := range testCasesGood {

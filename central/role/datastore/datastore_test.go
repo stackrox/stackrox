@@ -568,12 +568,7 @@ func (s *roleDataStoreTestSuite) TestGetAndResolveRole() {
 	s.Nil(resolvedRole)
 
 	err = s.dataStore.AddRole(s.hasWriteCtx, noScopeRole)
-	s.NoError(err)
-	resolvedRole, err = s.dataStore.GetAndResolveRole(s.hasReadCtx, noScopeRole.GetName())
-	s.NoError(err, "no error if the role does not reference a scope")
-	s.Equal(noScopeRole.GetName(), resolvedRole.GetRoleName())
-	s.Equal(s.existingPermissionSet.GetResourceToAccess(), resolvedRole.GetPermissions())
-	s.Nil(resolvedRole.GetAccessScope())
+	s.Error(err)
 
 	resolvedRole, err = s.dataStore.GetAndResolveRole(s.hasReadCtx, s.existingRole.GetName())
 	s.NoError(err)
