@@ -2,7 +2,6 @@ package scannerclient
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -30,13 +29,8 @@ func newGRPCClient(endpoint string) (*client, error) {
 		return nil, nil
 	}
 
-	parts := strings.SplitN(endpoint, "://", 2)
-	if parts[0] != "https" {
-		if len(parts) != 1 {
-			return nil, errors.Errorf("creating client unsupported scheme %s", parts[0])
-		}
-
-		endpoint = fmt.Sprintf("https://%s", endpoint)
+	if hasScheme := strings.Contains(endpoint, "://"); hasScheme {
+		return nil, errors.Errorf("Scanner endpoint should not specify a scheme: %s", endpoint)
 	}
 
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
