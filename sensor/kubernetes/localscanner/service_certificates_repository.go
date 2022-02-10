@@ -226,22 +226,11 @@ func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, c
 
 	secret, err := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
 	if k8sErrors.IsNotFound(err) {
-		blockOwnerDeletion := false
-		isController := false
 		newSecret, createErr := r.secretsClient.Create(ctx, &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretSpec.secretName,
-				Namespace: r.namespace,
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion:         r.ownerReference.APIVersion,
-						Kind:               r.ownerReference.Kind,
-						Name:               r.ownerReference.Name,
-						UID:                r.ownerReference.UID,
-						BlockOwnerDeletion: &blockOwnerDeletion,
-						Controller:         &isController,
-					},
-				},
+				Name:            secretSpec.secretName,
+				Namespace:       r.namespace,
+				OwnerReferences: []metav1.OwnerReference{r.ownerReference},
 			},
 			Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
 		}, metav1.CreateOptions{})
