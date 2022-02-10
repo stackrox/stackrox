@@ -1,9 +1,11 @@
 package booleanpolicy
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
@@ -34,9 +36,11 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	legacyDone := time.Now()
 	if regoDone.Sub(start) > time.Millisecond || regoMatched != legacyMatched {
 		objValue, _ := obj.GetFullValue()
+		m, _ := json.MarshalIndent(objValue, " ", " ")
 		log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
-		log.Errorf("Got different values for OPA and legacy. OPA matched: %v; legacy matched: %v;"+
-			" opa result %+v; legacy result: %+v; query was %+v, obj is %+v", regoMatched, legacyMatched, regoResult, legacyResult, e.q, objValue)
+		log.Errorf("OPA matched: %v\n; legacy matched: %v\n;"+
+			" opa result %+v\n\n; legacy result: %+v\n\n; query was %s\n\n, obj is %s",
+			regoMatched, legacyMatched, regoResult, legacyResult, spew.Sdump(e.q), string(m))
 	}
 	return legacyResult, legacyMatched
 }
