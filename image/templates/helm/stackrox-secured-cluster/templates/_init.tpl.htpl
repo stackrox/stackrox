@@ -38,7 +38,7 @@
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
 
-{{/* Only merge scanner config shapes if feature flag is enabled */}}
+{{/* Only merge scanner config shapes if feature flag is enabled and kubectl output is disabled */}}
 [< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
   {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
   {{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
@@ -265,12 +265,13 @@
    Local scanner setup.
   */}}
 
+{{/* Local scanner defaulting */}}
 {{ if kindIs "invalid" $._rox.scanner.disable }}
   {{ if eq ._rox.env.openshift 4 }}
-    {{/* Enable local scanner on OpenShift 4 cluster by default if no user setting was provided */}}
+    {{/* Enable local scanner on OpenShift by default */}}
     {{ $_ := set $._rox.scanner "disable" false }}
   {{ else }}
-    {{/* Disable local scanner on OpenShift 4 cluster by default if no user setting was provided */}}
+    {{/* Disable local scanner on non OpenShift4 clusters by default */}}
     {{ $_ := set $._rox.scanner "disable" true }}
   {{ end }}
 {{ end }}
