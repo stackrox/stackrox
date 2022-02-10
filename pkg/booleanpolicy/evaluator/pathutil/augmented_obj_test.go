@@ -23,7 +23,6 @@ func TestAugmentedObj(t *testing.T) {
 			map[string]interface{}{"B": "B0"},
 			map[string]interface{}{"B": "B1"},
 		},
-		"NestedIgnored": map[string]interface{}{"D": ""},
 	}, fullValue)
 
 	augmentedIntObj := NewAugmentedObj(intObj)
@@ -61,7 +60,6 @@ func TestAugmentedObj(t *testing.T) {
 				"AugmentedVal": "NESTEDAUGMENT",
 			},
 		},
-		"NestedIgnored": map[string]interface{}{"D": ""},
 		"MapObj": map[string]interface{}{
 			"AugmentedMap": map[string]interface{}{"mapKey": "augment"},
 		},

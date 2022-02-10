@@ -33,7 +33,7 @@ type objWithString struct {
 }
 
 type objWithMap struct {
-	AugmentedMap map[string]string
+	AugmentedMap map[string]string `policy:"AugmentedMap"`
 }
 
 func TestAugmentedObjMeta(t *testing.T) {

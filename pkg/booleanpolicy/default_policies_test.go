@@ -1410,7 +1410,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
 						match := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
-							return processMatcher.MatchDeploymentWithProcess(nil, deployment, suite.getImagesForDeployment(deployment), process, false)
+							return processMatcher.MatchDeploymentWithProcess(cache, deployment, suite.getImagesForDeployment(deployment), process, false)
 						})
 						require.NoError(t, err)
 						if expectedProcesses.Contains(process.GetId()) {

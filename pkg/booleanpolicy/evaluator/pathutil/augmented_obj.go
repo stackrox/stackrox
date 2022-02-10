@@ -3,10 +3,12 @@ package pathutil
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -37,45 +39,47 @@ func (t *augmentTree) getValue() *reflect.Value {
 }
 
 // convertValue converts a reflect.Value into an object that can be stuck into a map[string]interface{}.
-func convertValue(val reflect.Value) (interface{}, error) {
+func convertValue(val reflect.Value) (converted interface{}, isTerminalType bool, err error) {
 	kind := val.Kind()
 	if kind == reflect.Chan || kind == reflect.Func || kind == reflect.UnsafePointer {
-		return nil, fmt.Errorf("kind %s is not supported", kind)
+		return nil, false, fmt.Errorf("kind %s is not supported", kind)
 	}
 	// Built-in type -- return the value as is.
 	if kind <= reflect.Complex128 || kind == reflect.String {
-		return val.Interface(), nil
+		return val.Interface(), true, nil
 	}
 	if kind == reflect.Struct {
 		out := make(map[string]interface{})
 		err := convertStruct(val, &out)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
-		return out, nil
+		return out, false, nil
 	}
 	if kind == reflect.Ptr {
 		// If it's a nil pointer, explicitly set it to `nil` in the output map.
 		if val.IsNil() {
-			return nil, nil
+			return nil, true, nil
 		}
 		return convertValue(val.Elem())
 	}
 	if kind == reflect.Array || kind == reflect.Slice {
 		out := make([]interface{}, 0, val.Len())
+		valIsTerminalType := true
 		for i := 0; i < val.Len(); i++ {
-			converted, err := convertValue(val.Index(i))
+			converted, terminal, err := convertValue(val.Index(i))
 			if err != nil {
-				return nil, fmt.Errorf("invalid value at index %d: %w", i, err)
+				return nil, false, fmt.Errorf("invalid value at index %d: %w", i, err)
 			}
+			valIsTerminalType = terminal
 			out = append(out, converted)
 		}
-		return out, nil
+		return out, valIsTerminalType, nil
 	}
 	if kind == reflect.Map {
 		keyType := val.Type().Key()
 		if keyKind := keyType.Kind(); keyKind != reflect.String {
-			return nil, fmt.Errorf("unsupported key type for map: %s", keyKind)
+			return nil, false, fmt.Errorf("unsupported key type for map: %s", keyKind)
 		}
 		out := make(map[string]interface{})
 		mapIter := val.MapRange()
@@ -83,23 +87,23 @@ func convertValue(val reflect.Value) (interface{}, error) {
 			key := mapIter.Key()
 			keyAsString := key.Convert(stringType).Interface().(string)
 			mapValue := mapIter.Value()
-			convertedMapValue, err := convertValue(mapValue)
+			convertedMapValue, _, err := convertValue(mapValue)
 			if err != nil {
-				return nil, fmt.Errorf("unsupported map value for key %s: %w", keyAsString, err)
+				return nil, false, fmt.Errorf("unsupported map value for key %s: %w", keyAsString, err)
 			}
 			out[keyAsString] = convertedMapValue
 		}
-		return out, nil
+		return out, false, nil
 	}
 	if kind == reflect.Interface {
 		if val.IsNil() {
-			return nil, nil
+			return nil, true, nil
 		}
 		return convertValue(val.Elem())
 	}
 	// This should never be hit, since the if conditions above are exhaustive.
 	// However, if a new Go version adds a new type, we could hit this.
-	return nil, utils.Should(fmt.Errorf("unsupported kind: %v", kind))
+	return nil, false, utils.Should(fmt.Errorf("unsupported kind: %v", kind))
 }
 
 func convertStruct(val reflect.Value, out *map[string]interface{}) error {
@@ -116,9 +120,29 @@ func convertStruct(val reflect.Value, out *map[string]interface{}) error {
 		if !field.IsExported() {
 			continue
 		}
-		converted, err := convertValue(fieldVal)
+		// Ignored proto field
+		if strings.HasPrefix(field.Name, "XXX_") {
+			continue
+		}
+		// Get the search tags for the field.
+		searchTag, _ := stringutils.Split2(field.Tag.Get("search"), ",")
+		policyTag, shouldIgnore, _, err := parsePolicyTag(field.Tag.Get("policy"))
+		if err != nil {
+			return err
+		}
+		if searchTag == "-" || shouldIgnore {
+			continue
+		}
+
+		converted, isTerminalType, err := convertValue(fieldVal)
 		if err != nil {
 			return fmt.Errorf("converting field %s: %w", field.Name, err)
+		}
+		if isTerminalType {
+			// Don't add a base value unless it's tagged.
+			if searchTag == "" && policyTag == "" {
+				continue
+			}
 		}
 		(*out)[field.Name] = converted
 	}
@@ -185,7 +209,7 @@ func (t *augmentTree) populateFromValueFromThisNodeOnly(stepsSoFar []Step, out *
 	if err != nil {
 		return err
 	}
-	convertedValue, err := convertValue(val)
+	convertedValue, _, err := convertValue(val)
 	if err != nil {
 		return err
 	}
