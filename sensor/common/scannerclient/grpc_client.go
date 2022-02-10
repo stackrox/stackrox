@@ -86,11 +86,11 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 		},
 	})
 	if err != nil {
-		log.Debugf("Unable to get image components from scanner for image %s in namespace %s: %v", name, namespace, err)
+		log.Debugf("Unable to get image components from local Scanner for image %s in namespace %s: %v", name, namespace, err)
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Got image components from scanner for image %s in namespace %s", name, namespace)
+	log.Debugf("Got image components from local Scanner for image %s in namespace %s", name, namespace)
 
 	return &imageData{
 		Metadata:                   metadata,
