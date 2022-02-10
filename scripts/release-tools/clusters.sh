@@ -2,12 +2,7 @@
 
 DEFAULT_KUBECONFIG="$HOME/.kube/config"
 
-MENU_OPTIONS=(
-  "Merge kubeconfigs"
-  "Generate Slack message for cluster '${cluster_name}'"
-  "Create new RC OpenShift cluster '${cluster_name}'"
-  "Quit"
-)
+MENU_OPTIONS=()
 
 main() {
   local action="${1}"
@@ -18,6 +13,12 @@ main() {
     exec_option "$action" "$cluster_prefix"
     exit 0
   fi
+  MENU_OPTIONS=(
+    "Merge kubeconfigs"
+    "Generate Slack message for cluster '${cluster_name}'"
+    "Create new RC OpenShift cluster '${cluster_name}'"
+    "Quit"
+  )
   RED='\033[0;31m'
   NC='\033[0m' # No Color
   echo -e "${RED}WARNING:${NC} some of these scripts may be outdated, bleeding-edge, or not working. Read the code before you run them to be on the safe side."
