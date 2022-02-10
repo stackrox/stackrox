@@ -92,4 +92,4 @@ tests:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT4_CLUSTER")
     envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
-    .securitycontextconstraints | assertThat(length == 3)
+    .securitycontextconstraints | assertThat(length == 4)

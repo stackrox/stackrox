@@ -34,23 +34,16 @@
     $.Values, we apply some bootstrap defaults.
    */}}
 {{ $rox := deepCopy $values }}
+{{/* TODO(do-not-merge): use scanner config shape */}}
 {{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml)) }}
 {{ $_ = set $ "_rox" $rox }}
-
-[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-{{/*
-  #TODO(ROX-8672): Add setup and defaulting logic to secured cluster chart
-    Scanner setup
-  */}}
-{{ $_ := set $._rox "scanner" (dict "disable" true) }}
-[<- end >]
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
 {{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
 {{ $_ = set $._rox "_configFP" $configFP }}
 
 {{/* Global state (accessed from sub-templates) */}}
-{{ $state := dict "notes" list "warnings" list "referencedImages" dict }}
+{{ $state := dict "notes" list "warnings" list "referencedImages" dict "generated" dict }}
 {{ $_ = set $._rox "_state" $state }}
 
 {{/*
@@ -193,7 +186,6 @@
 {{ if and (eq $._rox.env.openshift 3) $._rox.admissionControl.listenOnEvents }}
   {{ include "srox.fail" "'admissionControl.listenOnEvents' is set to true, but the chart is being deployed in OpenShift 3.x compatibility mode, which does not work with this feature. Set 'env.openshift' to '4' in order to enable OpenShift 4.x features." }}
 {{ end }}
-
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
 {{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
@@ -245,6 +237,9 @@
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
+{{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
+
+{{ include "srox.initGlobalPrefix" (list $) }}
 
 {{/* ManagedBy related settings */}}
 {{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here
@@ -252,6 +247,22 @@
 {{- if not ._rox.helmManaged }}
   {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
 {{- end }}
+
+[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+{{/*
+  #TODO(ROX-8672): Add setup and defaulting logic to secured cluster chart
+   Scanner setup
+  */}}
+{{- if ne ._rox.env.openshift 4 }}
+  {{ $_ := set $._rox "scanner" (dict "disable" true) }}
+{{ else }}
+  {{ $_ := set $._rox.scanner "disable" false }}
+  {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
+  {{ $_ = set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
+  {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
+{{ end }}
+
+[<- end >]
 
 {{/*
     Post-processing steps.

@@ -1,19 +1,13 @@
+server:
+  visibleSchemas:
+  - openshift-4.1.0
+  availableSchemas:
+  - openshift-4.1.0
 values:
-  ca:
-    cert: ""
-    key: ""
   scanner:
-    serviceTLS:
-      cert: ""
-      key: ""
-    dbServiceTLS:
-      cert: ""
-      key: ""
+    mode: slim
 tests:
 - name: "scanner with default settings in slim mode"
-  values:
-    scanner:
-      mode: slim
   expect: |
     .deployments["scanner-slim"].spec.template.spec.containers[0].image | contains("slim")
     .deployments["scanner-slim-db"].spec.template.spec.containers[0].image | contains("slim")
