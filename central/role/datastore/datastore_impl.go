@@ -419,10 +419,8 @@ func (ds *dataStoreImpl) verifyRoleReferencesExist(role *storage.Role) error {
 			return errors.Wrapf(errorhelpers.ErrInvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
 		}
 	}
-	if role.GetAccessScopeId() != "" {
-		if err := ds.verifyAccessScopeIDExists(role.GetAccessScopeId()); err != nil {
-			return errors.Wrapf(errorhelpers.ErrInvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
-		}
+	if err := ds.verifyAccessScopeIDExists(role.GetAccessScopeId()); err != nil {
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
 	}
 	return nil
 }
@@ -550,9 +548,6 @@ func (ds *dataStoreImpl) getRolePermissionSetOrError(role *storage.Role) (*stora
 // Finds the access scope associated with the given role. If a stored role
 // references an access scope it must exist.
 func (ds *dataStoreImpl) getRoleAccessScopeOrError(role *storage.Role) (*storage.SimpleAccessScope, error) {
-	if role.GetAccessScopeId() == "" {
-		return nil, nil
-	}
 	accessScope, found, err := ds.accessScopeStorage.Get(role.GetAccessScopeId())
 	if err != nil {
 		return nil, err
