@@ -260,7 +260,7 @@
 
 [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
 {{/*
-   Scanner setup
+   Scanner setup.
   */}}
 {{- if ne ._rox.env.openshift 4 }}
   {{ $_ := set $._rox "scanner" (dict "disable" true) }}
