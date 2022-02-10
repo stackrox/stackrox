@@ -29,8 +29,16 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
             </Flex>
             <Divider component="div" />
             <Flex>
-                <Flex spaceItems={{ default: 'spaceItemsNone' }}>
-                    <FlexItem className="pf-u-p-lg" grow={{ default: 'grow' }}>
+                <Flex
+                    spaceItems={{ default: 'spaceItemsNone' }}
+                    flexWrap={{ default: 'nowrap' }}
+                    fullWidth={{ default: 'fullWidth' }}
+                >
+                    <FlexItem
+                        className="pf-u-p-lg"
+                        grow={{ default: 'grow' }}
+                        flex={{ default: 'flex_1' }}
+                    >
                         <PolicyMetadataFormSection />
                     </FlexItem>
                     <Divider component="div" isVertical />
