@@ -83,10 +83,13 @@ func ensureCertificatesAreFresh(ctx context.Context,
 		return 0, putErr
 	}
 
-	log.Infof("successfully refreshed %v", certsDescription)
-
 	// recoverFromErr to so the ticker knows this is an error, and it retries with backoff.
-	return getTimeToRefresh(getCertsRenewalTime, certificates, false)
+	timeToNextRefresh, err = getTimeToRefresh(getCertsRenewalTime, certificates, false)
+	if err == nil {
+		log.Infof("successfully refreshed %v", certsDescription)
+	}
+
+	return timeToNextRefresh, err
 }
 
 func getTimeToRefresh(getCertsRenewalTime getCertsRenewalTimeFunc,
