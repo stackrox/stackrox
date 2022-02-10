@@ -7,6 +7,7 @@ type ConfirmationModalProps = {
     onConfirm: () => void;
     onCancel: () => void;
     isOpen: boolean;
+    isLoading?: boolean; // if modal remains open until finally block of request promise
     children: ReactNode;
 };
 
@@ -16,6 +17,7 @@ function ConfirmationModal({
     onConfirm,
     onCancel,
     isOpen,
+    isLoading,
     children,
 }: ConfirmationModalProps): ReactElement {
     return (
@@ -23,10 +25,16 @@ function ConfirmationModal({
             isOpen={isOpen}
             variant={ModalVariant.small}
             actions={[
-                <Button key="confirm" variant={ButtonVariant.danger} onClick={onConfirm}>
+                <Button
+                    key="confirm"
+                    variant={ButtonVariant.danger}
+                    onClick={onConfirm}
+                    isDisabled={isLoading}
+                    isLoading={isLoading}
+                >
                     {confirmText}
                 </Button>,
-                <Button key="cancel" variant="link" onClick={onCancel}>
+                <Button key="cancel" variant="link" onClick={onCancel} isDisabled={isLoading}>
                     Cancel
                 </Button>,
             ]}
