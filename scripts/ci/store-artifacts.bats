@@ -11,7 +11,7 @@ load "${bats_helpers_root}/bats-assert/load.bash"
 
 function setup() {
     source "${BATS_TEST_DIRNAME}/store-artifacts.sh"
-    make_fake_CI_env
+    make_env
     mock_gcloud
     mock_gsutil
 }
@@ -39,39 +39,46 @@ function setup() {
 @test "stores" {
     run store_artifacts /tmp
     assert_success
-    assert_output --partial "Destination: gs://roxci-artifacts/stackrox/12345/theBuildId-job-name/tmp"
+    assert_output --partial "Destination: ${GS_URL}/tmp"
 }
 
 @test "stores to a different destination" {
     run store_artifacts /tmp different
     assert_success
-    assert_output --partial "Destination: gs://roxci-artifacts/stackrox/12345/theBuildId-job-name/ggg"
+    assert_output --partial "Destination: ${GS_URL}/ggg"
 }
 
 @test "stores to unique destinations" {
     run store_artifacts /tmp unique
     assert_success
-    assert_output --partial "Destination: gs://roxci-artifacts/stackrox/12345/theBuildId-job-name/unique-2"
+    assert_output --partial "Destination: ${GS_URL}/unique-2"
 }
 
 @test "stores to unique destinations with many existing" {
     run store_artifacts /tmp many
     assert_success
-    assert_output --partial "Destination: gs://roxci-artifacts/stackrox/12345/theBuildId-job-name/many-10"
+    assert_output --partial "Destination: ${GS_URL}/many-10"
 }
 
 # shellcheck disable=SC2034
 
-make_fake_CI_env() {
+make_env() {
     source "${BATS_TEST_DIRNAME}/lib.sh"
-    ci_export CI true
-    ci_export OPENSHIFT_CI true
-    ci_export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX dummy
-    ci_export REPO_NAME "stackrox"
-    ci_export BUILD_ID "theBuildId"
-    ci_export JOB_NAME "job-name"
-    ci_export PULL_PULL_SHA "12345"
-    ci_export PATH "$BATS_RUN_TMPDIR:$PATH"
+    if ! is_ci; then
+        CI=true
+        OPENSHIFT_CI=true
+        GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX=dummy
+        REPO_NAME="stackrox"
+        BUILD_ID="theBuildId"
+        JOB_NAME="job-name"
+        PULL_PULL_SHA="12345"
+    fi
+    if is_OPENSHIFT_CI; then
+        GS_URL="gs://roxci-artifacts/${REPO_NAME}/${PULL_PULL_SHA:-${PULL_BASE_SHA}}/${BUILD_ID}-${JOB_NAME}"
+    elif is_CIRCLECI; then
+        GS_URL="gs://roxci-artifacts/${CIRCLE_PROJECT_REPONAME}/${CIRCLE_WORKFLOW_ID}/${CIRCLE_BUILD_NUM}-${CIRCLE_JOB}"
+    fi
+    PATH="$BATS_RUN_TMPDIR:$PATH"
 }
 
 mock_gcloud() {
