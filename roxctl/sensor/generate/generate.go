@@ -48,14 +48,14 @@ type sensorGenerateCommand struct {
 	// properties bound to cobra flags
 	continueIfExists bool
 	createUpgraderSA bool
-	istioVersion string
-	outputDir string
-	slimCollectorP *bool
-	timeout time.Duration
+	istioVersion     string
+	outputDir        string
+	slimCollectorP   *bool
+	timeout          time.Duration
 
 	// injected or constructed values
-	cluster storage.Cluster
-	env environment.Environment
+	cluster     storage.Cluster
+	env         environment.Environment
 	getBundleFn util.GetBundleFn
 }
 
@@ -205,11 +205,9 @@ func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.Cluste
 	return response.GetCluster().GetId(), nil
 }
 
-
-
 // Command defines the sensor generate command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-	generateCmd := &sensorGenerateCommand{ env: cliEnvironment, cluster: defaultCluster() }
+	generateCmd := &sensorGenerateCommand{env: cliEnvironment, cluster: defaultCluster()}
 	c := &cobra.Command{
 		Use: "generate",
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
@@ -259,5 +257,3 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	return c
 }
-
-

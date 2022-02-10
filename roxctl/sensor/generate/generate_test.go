@@ -36,7 +36,7 @@ type mockClustersServiceServer struct {
 	getClusterCalled bool
 }
 
-type postClusterF func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
+type postClusterFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
 
 func (m *mockClustersServiceServer) GetKernelSupportAvailable(ctx context.Context, in *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
 	return &v1.KernelSupportAvailableResponse{
@@ -78,7 +78,7 @@ type closeFunction = func()
 
 // createGRPCMockClustersService will create an in-memory gRPC server serving mockClustersServiceServer
 // NOTE: Ensure that you ALWAYS call the closeFunction to clean up the test setup
-func (s *sensorGenerateTestSuite) createGRPCMockClustersService(kernelSupport bool, postClusterF postClusterF) (*grpc.ClientConn, closeFunction, *mockClustersServiceServer) {
+func (s *sensorGenerateTestSuite) createGRPCMockClustersService(kernelSupport bool, postClusterF postClusterFn) (*grpc.ClientConn, closeFunction, *mockClustersServiceServer) {
 	// create an in-memory listener that does not require exposing any ports on the host
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
@@ -109,7 +109,7 @@ func (s *sensorGenerateTestSuite) newTestMockEnvironmentWithConn(conn *grpc.Clie
 	return mocks.NewEnvWithConn(conn, s.T())
 }
 
-func (s *sensorGenerateTestSuite) createMockedCommand(kernelSupport bool, postClusterF postClusterF) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
+func (s *sensorGenerateTestSuite) createMockedCommand(kernelSupport bool, postClusterF postClusterFn) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
 	var out, errOut *bytes.Buffer
 	conn, closeF, mock := s.createGRPCMockClustersService(kernelSupport, postClusterF)
 	cmd := s.cmd
@@ -126,21 +126,24 @@ var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration
 	return nil
 }
 
-var storeClusterFake = func(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+// postClusterFake base fake function for service.PostCluster that returns the same cluster with fake id
+func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	cluster.Id = "test-id"
 	return &v1.ClusterResponse{
 		Cluster: cluster,
 	}, nil
 }
 
-var legacyPostClusterFake = func(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+// postClusterLegacyCentralFake fake legacy central function for service.PostCluster that returns validation error if main is empty
+func postClusterLegacyCentralFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	if cluster.MainImage == "" {
 		return nil, status.Error(codes.Internal, "Cluster Validation error: invalid main image '': invalid reference format")
 	}
-	return storeClusterFake(cluster)
+	return postClusterFake(cluster)
 }
 
-var clusterExistsFn = func(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+// postClusterAlreadyExistsFake fake function for service.PostCluster that always returns error codes.AlreadyExists
+func postClusterAlreadyExistsFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	return nil, status.Error(codes.AlreadyExists, "Cluster Exists")
 }
 
@@ -159,46 +162,46 @@ func getMainImageFromBuildFlag() string {
 func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 	testCases := map[string]struct {
 		// cluster setup
-		continueIfExistsFlag       bool
-		clusterName                string
-		postClusterF               postClusterF
+		continueIfExistsFlag bool
+		clusterName          string
+		postClusterF         postClusterFn
 
 		// expectations
-		expectedErrorMessage       string
-		expectedCallToGetClusters  bool
-		expectedCallBundleDownload bool
+		expectErrorMessage      string
+		expectGetClustersCalled bool
+		expectBundleDownloaded  bool
 	}{
-		"Throw error is cluster exists": {
-			continueIfExistsFlag:       false,
-			postClusterF:               clusterExistsFn,
-			clusterName:                "test-cluster",
-			expectedErrorMessage:       "error creating cluster",
-			expectedCallToGetClusters:  false,
-			expectedCallBundleDownload: false,
+		"Throw error if cluster exists": {
+			continueIfExistsFlag:    false,
+			postClusterF:            postClusterAlreadyExistsFake,
+			clusterName:             "test-cluster",
+			expectErrorMessage:      "error creating cluster",
+			expectGetClustersCalled: false,
+			expectBundleDownloaded:  false,
 		},
 		"Should fetch bundle and download zip file if --continue-if-exists=true": {
-			continueIfExistsFlag:       true,
-			postClusterF:               clusterExistsFn,
-			clusterName:                "test-cluster",
-			expectedErrorMessage:       "",
-			expectedCallToGetClusters:  true,
-			expectedCallBundleDownload: true,
+			continueIfExistsFlag:    true,
+			postClusterF:            postClusterAlreadyExistsFake,
+			clusterName:             "test-cluster",
+			expectErrorMessage:      "",
+			expectGetClustersCalled: true,
+			expectBundleDownloaded:  true,
 		},
 		"Should get clusters and fail with error finding preexisting cluster": {
-			continueIfExistsFlag:       true,
-			postClusterF:               clusterExistsFn,
-			clusterName:                "non-existing",
-			expectedErrorMessage:       "error finding preexisting cluster with name non-existing",
-			expectedCallToGetClusters:  true,
-			expectedCallBundleDownload: false,
+			continueIfExistsFlag:    true,
+			postClusterF:            postClusterAlreadyExistsFake,
+			clusterName:             "non-existing",
+			expectErrorMessage:      "error finding preexisting cluster with name non-existing",
+			expectGetClustersCalled: true,
+			expectBundleDownloaded:  false,
 		},
 		"If cluster doesn't exist, GetClusters API shouldn't be called": {
-			continueIfExistsFlag:       true,
-			postClusterF:               storeClusterFake,
-			clusterName:                "test-cluster",
-			expectedErrorMessage:       "",
-			expectedCallToGetClusters:  false,
-			expectedCallBundleDownload: true,
+			continueIfExistsFlag:    true,
+			postClusterF:            postClusterFake,
+			clusterName:             "test-cluster",
+			expectErrorMessage:      "",
+			expectGetClustersCalled: false,
+			expectBundleDownloaded:  true,
 		},
 	}
 
@@ -206,6 +209,8 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 		s.Run(name, func() {
 			_, _, closeF, generateCmd, mock := s.createMockedCommand(true, testCase.postClusterF)
 			defer closeF()
+
+			// Setup generateCmd
 			generateCmd.timeout = time.Duration(5) * time.Second
 			generateCmd.continueIfExists = testCase.continueIfExistsFlag
 			generateCmd.cluster.Name = testCase.clusterName
@@ -215,38 +220,41 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 				return nil
 			}
 
+			// Create cluster
 			err := generateCmd.fullClusterCreation()
-			if testCase.expectedErrorMessage != "" {
-				s.Require().Error(err, testCase.expectedErrorMessage)
+
+			// Assertions
+			if testCase.expectErrorMessage != "" {
+				s.Require().Error(err, testCase.expectErrorMessage)
 			} else {
 				s.Require().NoError(err)
 			}
 
-			s.Assert().Equal(testCase.expectedCallToGetClusters, mock.getClusterCalled)
-			s.Assert().Equal(testCase.expectedCallBundleDownload, getBundleCalled)
+			s.Assert().Equal(testCase.expectGetClustersCalled, mock.getClusterCalled)
+			s.Assert().Equal(testCase.expectBundleDownloaded, getBundleCalled)
 		})
 	}
 }
 
 func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
 	testCases := map[string]struct {
-		postClusterF postClusterF
+		postClusterF postClusterFn
 
 		// expected
-		expectedClustersSent       int
-		expectedClustersMainImages []string
-		expectedWarning            *expectedWarning
+		expectClustersSent int
+		expectMainImages   []string
+		expectWarning      *expectedWarning
 	}{
-		"legacy central: PostCluster called twice": {
-			postClusterF:               legacyPostClusterFake,
-			expectedClustersSent:       2,
-			expectedClustersMainImages: []string{"", getMainImageFromBuildFlag()},
-			expectedWarning:            &expectedWarning{"Running older version of central"},
+		"Legacy central: PostCluster is called twice": {
+			postClusterF:       postClusterLegacyCentralFake,
+			expectClustersSent: 2,
+			expectMainImages:   []string{"", getMainImageFromBuildFlag()},
+			expectWarning:      &expectedWarning{"Running older version of central"},
 		},
-		"new central: PostCluster called once without MainImage": {
-			postClusterF:               storeClusterFake,
-			expectedClustersSent:       1,
-			expectedClustersMainImages: []string{""},
+		"New central: PostCluster is called once with empty MainImage": {
+			postClusterF:       postClusterFake,
+			expectClustersSent: 1,
+			expectMainImages:   []string{""},
 		},
 	}
 
@@ -254,17 +262,23 @@ func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
 		s.Run(name, func() {
 			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(true, testCase.postClusterF)
 			defer closeF()
+
+			// Setup generateCmd
 			generateCmd.timeout = time.Duration(5) * time.Second
 			generateCmd.getBundleFn = emptyGetBundle
+
+			// Create cluster
 			err := generateCmd.fullClusterCreation()
+
+			// Assertions
 			s.Require().NoError(err)
 
-			if testCase.expectedWarning != nil {
-				s.Assert().Contains(errOut.String(), testCase.expectedWarning.messageTemplate)
+			if testCase.expectWarning != nil {
+				s.Assert().Contains(errOut.String(), testCase.expectWarning.messageTemplate)
 			}
 
-			s.Assert().Len(mock.clusterSent, testCase.expectedClustersSent)
-			for i, mainImage := range testCase.expectedClustersMainImages {
+			s.Assert().Len(mock.clusterSent, testCase.expectClustersSent)
+			for i, mainImage := range testCase.expectMainImages {
 				s.Assert().Equal(mock.clusterSent[i].MainImage, mainImage)
 			}
 		})
@@ -285,11 +299,11 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 		warning        *expectedWarning
 		expectSlimMode bool
 	}{
-		"no flags and kernel support in central: default to slim collector": {
+		"No flags and kernel support in central: default to slim collector": {
 			serverHasKernelSupport: true,
 			expectSlimMode:         true,
 		},
-		"no flags and no kernel support in central: default to full collector": {
+		"No flags and no kernel support in central: default to full collector": {
 			serverHasKernelSupport: false,
 			expectSlimMode:         false,
 		},
@@ -306,15 +320,17 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 		},
 		"--slim-collector=false: collector full": {
 			serverHasKernelSupport: true,
-			slimCollectorFlag:      &slimFlag{true},
-			expectSlimMode:         true,
+			slimCollectorFlag:      &slimFlag{false},
+			expectSlimMode:         false,
 		},
 	}
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(testCase.serverHasKernelSupport, storeClusterFake)
+			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(testCase.serverHasKernelSupport, postClusterFake)
 			defer closeF()
+
+			// Setup generateCmd
 			if testCase.slimCollectorFlag != nil {
 				generateCmd.slimCollectorP = &testCase.slimCollectorFlag.value
 			}
@@ -325,7 +341,10 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 				return nil
 			}
 
+			// Create cluster
 			err := generateCmd.fullClusterCreation()
+
+			// Assertions
 			s.Require().NoError(err)
 
 			if testCase.warning != nil {

@@ -19,7 +19,7 @@ const (
 type sensorGenerateOpenShiftCommand struct {
 	*sensorGenerateCommand
 
-	openshiftVersion int
+	openshiftVersion          int
 	admissionControllerEvents *bool
 	disableAuditLogCollection *bool
 }
