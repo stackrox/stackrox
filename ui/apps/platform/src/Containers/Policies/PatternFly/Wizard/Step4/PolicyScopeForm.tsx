@@ -150,10 +150,12 @@ function PolicyScopeForm() {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Exclude by scope</Title>
                         <div className="pf-u-mt-sm">
-                            Use Exclude by scope to exclude entities from your policy. You can add
-                            multiple scopes and also use regular expressions (RE2 syntax) for
-                            namespaces and labels. However, you can&apos;t use regular expressions
-                            for selecting deployments.
+                            Use Exclude by scope to exclude entities from your policy. It only
+                            applies to check running deployments (the Deploy lifecycle stage) or
+                            runtime activities (the Run lifecycle stage). You can add multiple
+                            scopes and also use regular expressions (RE2 syntax) for namespaces and
+                            labels. However, you can&apos;t use regular expressions for selecting
+                            deployments.
                         </div>
                     </FlexItem>
                     <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>

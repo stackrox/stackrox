@@ -154,8 +154,11 @@ function ReviewPolicyForm({
                         <Title headingLevel="h2">Preview violations</Title>
                         <div className="pf-u-mb-md pf-u-mt-sm">
                             The policy settings you have selected will generate violations for the
-                            following deployments. Before you save the policy, verify that the
-                            violations seem accurate.
+                            following deployments for Build or Deploy lifecycle stages. However,
+                            this preview does not display violations for Runtime lifecycle stage.
+                        </div>
+                        <div className="pf-u-mb-md">
+                            Before you save the policy, verify that the violations seem accurate.
                         </div>
                         {isRunningDryRun ? (
                             <Flex justifyContent={{ default: 'justifyContentCenter' }}>
