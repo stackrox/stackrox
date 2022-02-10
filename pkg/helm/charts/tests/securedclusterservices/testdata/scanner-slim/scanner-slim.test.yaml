@@ -9,9 +9,20 @@ values:
 tests:
 - name: "scanner with default settings in slim mode"
   expect: |
-    .deployments["scanner-slim"].spec.template.spec.containers[0].image | contains("slim")
-    .deployments["scanner-slim-db"].spec.template.spec.containers[0].image | contains("slim")
+    container(.deployments["scanner-slim"]; "scanner").image | contains("slim")
+    container(.deployments["scanner-slim-db"]; "db").image | contains("slim")
     .deployments["scanner"] | assertThat(. == null)
     .deployments["scanner-db"] | assertThat(. == null)
     .secrets["scanner-slim-tls"] | assertThat(. == null)
     .secrets["scanner-slim-db-tls"] | assertThat(. == null)
+
+- name: "scanner can override image config"
+  values:
+    image:
+      scanner:
+        fullRef: "custom.io/scanner:1.2.3"
+      scannerDb:
+        fullRef: "custom.io/scanner-db:1.2.3"
+  expect: |
+    container(.deployments["scanner-slim"]; "scanner") | assertThat(.image == "custom.io/scanner:1.2.3")
+    container(.deployments["scanner-slim-db"]; "db") | assertThat(.image == "custom.io/scanner-db:1.2.3")
