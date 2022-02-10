@@ -15,32 +15,18 @@ var (
 	certsDescription = "local scanner credentials"
 )
 
-// newCertRefresher returns a new certRefresher that uses `requestCertificates` to fetch certificates,
+// newCertificatesRefresher returns a new retry ticker that uses `requestCertificates` to fetch certificates,
 // with the timeout and backoff strategy specified, and the specified repository for persistence.
-// Once started, the certRefresher will periodically refresh the certificates before expiration.
-func newCertRefresher(requestCertificates requestCertificatesFunc, timeout time.Duration,
-	backoff wait.Backoff, repository ServiceCertificatesRepo) *certRefresherImpl {
-
-	refresher := &certRefresherImpl{
-		requestCertificates: requestCertificates,
-		getCertsRenewalTime: GetCertsRenewalTime,
-		repository:          repository,
-	}
-	refresher.createTicker = func() concurrency.RetryTicker {
-		return concurrency.NewRetryTicker(refresher.refreshCertificates, timeout, backoff)
-	}
-	return refresher
-}
-
-type certRefresherImpl struct {
-	requestCertificates requestCertificatesFunc
-	getCertsRenewalTime func(certificates *storage.TypedServiceCertificateSet) (time.Time, error)
-	repository          ServiceCertificatesRepo
-	createTicker        func() concurrency.RetryTicker
-	ticker              concurrency.RetryTicker
+// Once started, the ticker will periodically refresh the certificates before expiration.
+func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repository ServiceCertificatesRepo,
+	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
+	return concurrency.NewRetryTicker(func(ctx context.Context) (timeToNextTick time.Duration, err error) {
+		return refreshCertificates(ctx, requestCertificates, GetCertsRenewalTime, repository)
+	}, timeout, backoff)
 }
 
 type requestCertificatesFunc func(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
+type getCertsRenewalTimeFunc func(certificates *storage.TypedServiceCertificateSet) (time.Time, error)
 
 // ServiceCertificatesRepo is in charge of persisting and retrieving a set of service certificates, thus implementing
 // the [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for *storage.TypedServiceCertificateSet.
@@ -51,24 +37,14 @@ type ServiceCertificatesRepo interface {
 	PutServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
 }
 
-func (r *certRefresherImpl) Start() error {
-	r.Stop()
-	r.ticker = r.createTicker()
-	return r.ticker.Start()
-}
-
-func (r *certRefresherImpl) Stop() {
-	if r.ticker != nil {
-		r.ticker.Stop()
-		// so ticker is stopped once
-		r.ticker = nil
-	}
-}
-
 // refreshCertificates determines refreshes the certificate secrets if needed, and returns the time
 // until the next refresh.
-func (r *certRefresherImpl) refreshCertificates(ctx context.Context) (timeToNextRefresh time.Duration, err error) {
-	timeToNextRefresh, err = r.ensureCertificatesAreFresh(ctx)
+func refreshCertificates(ctx context.Context,
+	requestCertificates requestCertificatesFunc,
+	getCertsRenewalTime getCertsRenewalTimeFunc,
+	repository ServiceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
+
+	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, requestCertificates, getCertsRenewalTime, repository)
 	if err != nil {
 		log.Errorf("refreshing %s: %s", certsDescription, err)
 		return 0, err
@@ -78,19 +54,23 @@ func (r *certRefresherImpl) refreshCertificates(ctx context.Context) (timeToNext
 	return timeToNextRefresh, err
 }
 
-func (r *certRefresherImpl) ensureCertificatesAreFresh(ctx context.Context) (timeToNextRefresh time.Duration, err error) {
-	certificates, fetchErr := r.repository.GetServiceCertificates(ctx)
+func ensureCertificatesAreFresh(ctx context.Context,
+	requestCertificates requestCertificatesFunc,
+	getCertsRenewalTime getCertsRenewalTimeFunc,
+	repository ServiceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
+
+	certificates, fetchErr := repository.GetServiceCertificates(ctx)
 	if fetchErr != nil {
 		return 0, fetchErr
 	}
 
 	// recoverFromErr to true in order to refresh the certificates immediately if we cannot parse them.
-	timeToNextRefresh, _ = r.getTimeToRefresh(certificates, true)
+	timeToNextRefresh, _ = getTimeToRefresh(getCertsRenewalTime, certificates, true)
 	if timeToNextRefresh > 0 {
 		return timeToNextRefresh, nil
 	}
 
-	response, requestErr := r.requestCertificates(ctx)
+	response, requestErr := requestCertificates(ctx)
 	if requestErr != nil {
 		return 0, requestErr
 	}
@@ -99,25 +79,26 @@ func (r *certRefresherImpl) ensureCertificatesAreFresh(ctx context.Context) (tim
 	}
 	certificates = response.GetCertificates()
 
-	if putErr := r.repository.PutServiceCertificates(ctx, certificates); putErr != nil {
+	if putErr := repository.PutServiceCertificates(ctx, certificates); putErr != nil {
 		return 0, putErr
 	}
 
 	log.Infof("successfully refreshed %v", certsDescription)
 
 	// recoverFromErr to so the ticker knows this is an error, and it retries with backoff.
-	return r.getTimeToRefresh(certificates, false)
+	return getTimeToRefresh(getCertsRenewalTime, certificates, false)
 }
 
-func (r *certRefresherImpl) getTimeToRefresh(certificates *storage.TypedServiceCertificateSet, recoverFromErr bool) (time.Duration, error) {
-	renewalTime, err := r.getCertsRenewalTime(certificates)
+func getTimeToRefresh(getCertsRenewalTime getCertsRenewalTimeFunc,
+	certificates *storage.TypedServiceCertificateSet, recoverFromErr bool) (time.Duration, error) {
+
+	renewalTime, err := getCertsRenewalTime(certificates)
 	if err != nil {
 		log.Errorf("error getting local scanner certificate expiration, will refresh certificates immediately: %s", err)
 		if recoverFromErr {
 			return 0, nil
 		}
 		return 0, err
-
 	}
 
 	return time.Until(renewalTime), nil
