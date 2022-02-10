@@ -52,7 +52,6 @@ image:
     repository: null # string
     tag: null # string
     fullRef: null # string
-    pullPolicy: null # string
   scannerDb:
     registry: null # string
     name: null # string

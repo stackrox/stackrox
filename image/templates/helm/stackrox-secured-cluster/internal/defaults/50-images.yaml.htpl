@@ -92,9 +92,9 @@ image:
     fullRef: {{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}
   collector:
     fullRef: {{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}
-  scanner: #TODO(do-not-merge): Add image pull policy
+  scanner:
     fullRef: {{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}
-  scannerDb: #TODO(do-not-merge): Add image pull policy
+  scannerDb:
     fullRef: {{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}
 collector:
   imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
