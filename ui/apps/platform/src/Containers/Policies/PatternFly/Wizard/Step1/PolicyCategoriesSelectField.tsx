@@ -45,13 +45,11 @@ function PolicyCategoriesSelectField(): ReactElement {
         };
     }, []);
 
+    // So wizard footer does not overlap select menu, display 3 categories with scrollbar.
+    const maxHeight = '377%'; // (3 * 40px + 2 * 8px) / 36px
+
     return (
-        <FormGroup
-            helperText="Select policy categories you want to apply to this policy"
-            fieldId="policy-categories"
-            label="Categories"
-            isRequired
-        >
+        <FormGroup fieldId="policy-categories" label="Categories" isRequired>
             <Select
                 variant={SelectVariant.typeaheadMulti}
                 name={field.name}
@@ -63,6 +61,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                 onCreateOption={onCreateCategory}
                 onClear={clearSelection}
                 isCreatable
+                maxHeight={maxHeight}
             >
                 {policyCategories.map((category) => (
                     <SelectOption key={category} value={category} />

@@ -14,12 +14,7 @@ function PolicyMetadataFormSection(): ReactElement {
         <Form>
             <Field name="name">
                 {({ field }) => (
-                    <FormGroup
-                        helperText="Provide a descriptive and unique policy name"
-                        fieldId="policy-name"
-                        label="Name"
-                        isRequired
-                    >
+                    <FormGroup fieldId="policy-name" label="Name" isRequired>
                         <TextInput
                             id={field.name}
                             name={field.name}
@@ -30,12 +25,7 @@ function PolicyMetadataFormSection(): ReactElement {
                     </FormGroup>
                 )}
             </Field>
-            <FormGroup
-                helperText="Select a severity level for this policy"
-                fieldId="policy-severity"
-                label="Severity"
-                isRequired
-            >
+            <FormGroup fieldId="policy-severity" label="Severity" isRequired>
                 <Flex direction={{ default: 'row' }}>
                     <Field name="severity" type="radio" value="LOW_SEVERITY">
                         {({ field }) => (
