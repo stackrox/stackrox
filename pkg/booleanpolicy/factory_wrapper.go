@@ -1,7 +1,6 @@
 package booleanpolicy
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -34,13 +33,12 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	regoDone := time.Now()
 	legacyResult, legacyMatched := e.legacyEvaluator.Evaluate(obj)
 	legacyDone := time.Now()
-	if regoDone.Sub(start) > time.Millisecond || regoMatched != legacyMatched {
+	if regoDone.Sub(start) > 10*time.Millisecond || regoMatched != legacyMatched {
 		objValue, _ := obj.GetFullValue()
-		m, _ := json.MarshalIndent(objValue, " ", " ")
 		log.Infof("Rego took %s; legacy took %s", regoDone.Sub(start), legacyDone.Sub(regoDone))
 		log.Errorf("OPA matched: %v\n; legacy matched: %v\n;"+
-			" opa result %+v\n\n; legacy result: %+v\n\n; query was %s\n\n, obj is %s",
-			regoMatched, legacyMatched, regoResult, legacyResult, spew.Sdump(e.q), string(m))
+			" opa result %+v\n\n; legacy result: %+v\n\n; query was %s\n\n, obj name is %v",
+			regoMatched, legacyMatched, regoResult, legacyResult, spew.Sdump(e.q), objValue["Name"])
 	}
 	return legacyResult, legacyMatched
 }

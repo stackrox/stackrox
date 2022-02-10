@@ -112,9 +112,18 @@ type detectorImpl struct {
 	admissionCacheNeedsFlush bool
 }
 
+const (
+	numParallelDeploymentDetectors = 10
+	numParallelAuditLogDetectors   = 10
+)
+
 func (d *detectorImpl) Start() error {
-	go d.runDetector()
-	go d.runAuditLogEventDetector()
+	for i := 0; i < numParallelDeploymentDetectors; i++ {
+		go d.runDetector()
+	}
+	for i := 0; i < numParallelAuditLogDetectors; i++ {
+		go d.runAuditLogEventDetector()
+	}
 	go d.serializeDeployTimeOutput()
 	return nil
 }
