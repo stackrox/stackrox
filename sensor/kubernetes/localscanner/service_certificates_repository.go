@@ -73,25 +73,31 @@ func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 	}
 }
 
-// getServiceCertificates behaves as follows in case of missing data in the secrets:
-// - Fails with ErrMissingSecretData in case any secret has no data.
+// getServiceCertificates behaves as follows in case of errors:
+// - Fails as soon as the context is cancelled.
+// - Otherwise, fails with ErrUnexpectedSecretsOwner in case the owner specified in the constructor is not the sole owner of all secrets.
+// - Otherwise, fails with ErrMissingSecretData in case any secret has no data.
+// - Otherwise, fails with ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
+// - Otherwise, fails with any k8s API error.
 // - If the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate.
 //   for that secret will contain a zero value.
-// - Fails with ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
-// - Fails ErrUnexpectedSecretsOwner in case the owner specified in the constructor is not the sole owner of all secrets.
 func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+
+	errors := make(map[error]bool)
 	for serviceType, secretSpec := range r.secrets {
 		certificate, ca, err := r.getServiceCertificate(ctx, serviceType, secretSpec)
 		if err != nil {
-			return nil, err
+			errors[err] = true
+			continue
 		}
 		if certificates.GetCaPem() == nil {
 			certificates.CaPem = ca
 		} else {
 			if !bytes.Equal(certificates.GetCaPem(), ca) {
-				return nil, ErrDifferentCAForDifferentServiceTypes
+				errors[ErrDifferentCAForDifferentServiceTypes] = true
+				continue
 			}
 		}
 		certificates.ServiceCerts = append(certificates.ServiceCerts, certificate)
@@ -99,6 +105,20 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
+	}
+
+	// TODO: if this works abstract as "highestPriorityError" func
+	if _, ok := errors[ErrUnexpectedSecretsOwner]; ok {
+		return nil, ErrUnexpectedSecretsOwner
+	}
+	if _, ok := errors[ErrMissingSecretData]; ok {
+		return nil, ErrMissingSecretData
+	}
+	if _, ok := errors[ErrDifferentCAForDifferentServiceTypes]; ok {
+		return nil, ErrDifferentCAForDifferentServiceTypes
+	}
+	for err := range errors {
+		return nil, err
 	}
 
 	return certificates, nil
