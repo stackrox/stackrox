@@ -26,7 +26,6 @@ type PolicyScopeCardProps = {
     name: string;
     clusters: Cluster[];
     deployments?: ListDeployment[];
-    index: number;
     onDelete: () => void;
     hasAuditLogEventSource: boolean;
 };
@@ -36,7 +35,6 @@ function PolicyScopeCard({
     name,
     clusters,
     deployments = [],
-    index,
     onDelete,
     hasAuditLogEventSource = false,
 }: PolicyScopeCardProps): React.ReactElement {
