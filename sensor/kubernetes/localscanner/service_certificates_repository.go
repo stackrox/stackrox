@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	// ErrSensorDoesNotOwnCertSecrets indicates that this repository should not be updating the certificates in
-	// the secrets because the owner of the secrets is not the deployment for sensor.
-	ErrSensorDoesNotOwnCertSecrets = errors.New("sensor deployment does not own certificate secrets")
+	// ErrUnexpectedSecretsOwner indicates that this repository should not be updating the certificates in
+	// the secrets they do not have the expected owner.
+	ErrUnexpectedSecretsOwner = errors.New("unexpected owner for certificate secrets")
 
 	// ErrDifferentCAForDifferentServiceTypes indicates that different service types have different values
 	// for CA stored in their secrets.
@@ -49,7 +49,7 @@ type serviceCertSecretSpec struct {
 }
 
 // newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
-// scanner and scanner DB in k8s secrets with the secret name and secret data path specified in serviceCertSecretSpec.
+// scanner and scanner DB in k8s secrets that are expected to have ownerReference as the only owner reference.
 func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
 
@@ -79,7 +79,7 @@ func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 // - If the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate.
 //   for that secret will contain a zero value.
 // - Fails with ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
-// - Fails ErrSensorDoesNotOwnCertSecrets in case sensor deployment is not the sole owner of all secrets.
+// - Fails ErrUnexpectedSecretsOwner in case sensor deployment is not the sole owner of all secrets.
 func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
@@ -114,7 +114,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 
 	ownerReferences := secret.GetOwnerReferences()
 	if len(ownerReferences) != 1 {
-		return nil, nil, ErrSensorDoesNotOwnCertSecrets
+		return nil, nil, ErrUnexpectedSecretsOwner
 	}
 
 	ownerRef := ownerReferences[0]
@@ -122,7 +122,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 		ownerRef.Kind == r.ownerReference.Kind &&
 		ownerRef.Name == r.ownerReference.Name &&
 		ownerRef.UID == r.ownerReference.UID) {
-		return nil, nil, ErrSensorDoesNotOwnCertSecrets
+		return nil, nil, ErrUnexpectedSecretsOwner
 	}
 
 	secretData := secret.Data
@@ -194,8 +194,8 @@ type patchSecretDataByteMap struct {
 }
 
 // createSecrets ensures the k8s secrets for initialCertificates are created.
-// In case a secret doesn't exist this creates it setting sensorDeployment as owner, with initialCertificates stored
-// in the secret data.
+// In case a secret doesn't exist it creates that secret, setting sensorDeployment as owner,
+// with initialCertificates stored in the secret data.
 // This only creates secrets for the service types that appear in initialCertificates.
 func (r *serviceCertificatesRepoSecretsImpl) createSecrets(ctx context.Context,
 	initialCertificates *storage.TypedServiceCertificateSet) error {
