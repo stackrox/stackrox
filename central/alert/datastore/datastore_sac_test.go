@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	//alertUnrestrictedReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	// alertUnrestrictedReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 	//	sac.AllowFixedScopes(
 	//		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 	//		sac.ResourceScopeKeys(resources.Alert)))
@@ -126,7 +126,7 @@ var (
 			sac.ResourceScopeKeys(resources.Alert),
 			sac.ClusterScopeKeys(cluster2),
 			sac.NamespaceScopeKeys(namespaceB, namespaceC)))
-	//alertMixedClusterNamespaceReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	// alertMixedClusterNamespaceReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 	//	sac.OneStepSCC{
 	//		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
 	//			sac.ResourceScopeKey(resources.Alert.Resource): sac.OneStepSCC{
