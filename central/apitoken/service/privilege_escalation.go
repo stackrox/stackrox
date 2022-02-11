@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 )
 
-const defaultScopeName = ""
+const defaultScopeId = ""
 
 // This function ensures that no APIToken with permissions more than principal's can be created.
 // For each requested tuple (access scope, resource, accessLevel) we check that either:
@@ -18,16 +18,16 @@ func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.Resolve
 	// Group roles by access scope.
 	userRolesByScope := make(map[string][]permissions.ResolvedRole)
 	for _, userRole := range userRoles {
-		scopeName := userRole.GetAccessScope().GetName()
-		userRolesByScope[scopeName] = append(userRolesByScope[scopeName], userRole)
+		scopeId := userRole.GetAccessScope().GetId()
+		userRolesByScope[scopeId] = append(userRolesByScope[scopeId], userRole)
 	}
 
 	// Verify that for each tuple (access scope, resource, accessLevel) we have enough permissions.
 	var multiErr error
 	for _, requestedRole := range requestedRoles {
-		scopeName := requestedRole.GetAccessScope().GetName()
-		applicablePermissions := utils.NewUnionPermissions(append(userRolesByScope[scopeName], userRolesByScope[defaultScopeName]...))
-		err := comparePermissions(requestedRole.GetPermissions(), applicablePermissions, scopeName)
+		scopeId := requestedRole.GetAccessScope().GetId()
+		applicablePermissions := utils.NewUnionPermissions(append(userRolesByScope[scopeId], userRolesByScope[defaultScopeId]...))
+		err := comparePermissions(requestedRole.GetPermissions(), applicablePermissions, requestedRole.GetAccessScope().GetName())
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		}
