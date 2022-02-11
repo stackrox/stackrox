@@ -181,6 +181,10 @@ export function fetchKernelSupportAvailable(): Promise<boolean> {
     });
 }
 
+/*
+ * Get default images for new clusters that depend on the Central configuration.
+ * Also get kernelSupportAvailable for slimCollector property.
+ */
 export function getClusterDefaults(): Promise<ClusterDefaultsResponse> {
     return axios.get<ClusterDefaultsResponse>(clusterDefaultsUrl).then((response) => {
         return response.data;
