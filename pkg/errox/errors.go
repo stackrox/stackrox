@@ -48,7 +48,6 @@ var (
 	// service. This is a programming error.
 	NoAuthzConfigured = makeSentinel("service authorization is misconfigured")
 
-
 	// When adding a new error please update the translators in this package (gRPC, etc.).
 )
 
