@@ -24,6 +24,7 @@ var (
 // Once started, the ticker will periodically refresh the certificates before expiration.
 func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repository serviceCertificatesRepo,
 	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
+
 	return concurrency.NewRetryTicker(func(ctx context.Context) (timeToNextTick time.Duration, err error) {
 		return refreshCertificates(ctx, requestCertificates, GetCertsRenewalTime, repository)
 	}, timeout, backoff)
@@ -43,10 +44,8 @@ type serviceCertificatesRepo interface {
 
 // refreshCertificates determines refreshes the certificate secrets if needed, and returns the time
 // until the next refresh.
-func refreshCertificates(ctx context.Context,
-	requestCertificates requestCertificatesFunc,
-	getCertsRenewalTime getCertsRenewalTimeFunc,
-	repository serviceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
+func refreshCertificates(ctx context.Context, requestCertificates requestCertificatesFunc,
+	getCertsRenewalTime getCertsRenewalTimeFunc, repository serviceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
 
 	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, requestCertificates, getCertsRenewalTime, repository)
 	if err != nil {
@@ -83,7 +82,7 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 		return 0, putErr
 	}
 
-	// recoverFromErr to so the ticker knows this is an error, and it retries with backoff.
+	// recoverFromErr=false so the ticker knows this is an error, and it retries with backoff.
 	timeToNextRefresh, err := getTimeToRefreshFromCertificates(getCertsRenewalTime, certificates, false)
 	if err == nil {
 		log.Infof("successfully refreshed %v", certsDescription)
@@ -97,14 +96,15 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 
 	certificates, getCertsErr := repository.getServiceCertificates(ctx)
 	if getCertsErr == ErrDifferentCAForDifferentServiceTypes || getCertsErr == ErrMissingSecretData {
-		log.Errorf("local scanner certificates are in an inconsistent state, will refresh certificates immediately: %s", getCertsErr)
+		log.Errorf("local scanner certificates are in an inconsistent state, " +
+			"will refresh certificates immediately: %s", getCertsErr)
 		return 0, nil
 	}
 	if getCertsErr != nil {
 		return 0, getCertsErr
 	}
 
-	// recoverFromErr to true in order to refresh the certificates immediately if we cannot parse them.
+	// recoverFromErr=true in order to refresh the certificates immediately if we cannot parse them.
 	return getTimeToRefreshFromCertificates(getCertsRenewalTime, certificates, true)
 }
 
@@ -114,7 +114,8 @@ func getTimeToRefreshFromCertificates(getCertsRenewalTime getCertsRenewalTimeFun
 	renewalTime, err := getCertsRenewalTime(certificates)
 	if err != nil {
 		if recoverFromErr {
-			log.Errorf("error getting local scanner certificate expiration, will refresh certificates immediately: %s", err)
+			log.Errorf("error getting local scanner certificate expiration, " +
+				"will refresh certificates immediately: %s", err)
 			return 0, nil
 		}
 		return 0, err
