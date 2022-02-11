@@ -1,7 +1,6 @@
 [<- if .KubectlOutput >]
 templates/cluster-config.yaml
 templates/openshift-monitoring.yaml
-templates/_injected-ca-bundle.tpl
 templates/00-injected-ca-bundle.yaml
 internal/cluster-config.yaml.tpl
 sensor-chart-upgrade.md
