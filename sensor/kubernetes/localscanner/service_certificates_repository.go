@@ -38,7 +38,7 @@ type serviceCertificatesRepoSecretsImpl struct {
 	secretsClient  corev1.SecretInterface
 }
 
-// serviceCertSecretSpec species the name of the secret where certificates for a service are stored, and
+// serviceCertSecretSpec specifies the name of the secret where certificates for a service are stored, and
 // the secret data keys where each certificate file is stored.
 type serviceCertSecretSpec struct {
 	secretName          string
@@ -73,30 +73,28 @@ func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 	}
 }
 
-// getServiceCertificates behaves as follows in case of errors:
-// - Fails as soon as the context is cancelled.
-// - Otherwise, fails with ErrUnexpectedSecretsOwner in case the owner specified in the constructor is not the sole owner of all secrets.
-// - Otherwise, fails with ErrMissingSecretData in case any secret has no data.
-// - Otherwise, fails with ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
-// - Otherwise, fails with any k8s API error.
-// - If the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate.
-//   for that secret will contain a zero value.
+// getServiceCertificates fails as soon as the context is cancelled. Otherwise it returns a multierror that can contain
+// the following errors:
+// - ErrUnexpectedSecretsOwner in case the owner specified in the constructor is not the sole owner of all secrets.
+// - ErrMissingSecretData in case any secret has no data.
+// - ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
+// If the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate.
+// for that secret will contain a zero value.
 func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
-
-	errors := make(map[error]bool)
+	var getErr error
 	for serviceType, secretSpec := range r.secrets {
 		certificate, ca, err := r.getServiceCertificate(ctx, serviceType, secretSpec)
 		if err != nil {
-			errors[err] = true
+			getErr = multierror.Append(getErr, err)
 			continue
 		}
 		if certificates.GetCaPem() == nil {
 			certificates.CaPem = ca
 		} else {
 			if !bytes.Equal(certificates.GetCaPem(), ca) {
-				errors[ErrDifferentCAForDifferentServiceTypes] = true
+				getErr = multierror.Append(getErr, ErrDifferentCAForDifferentServiceTypes)
 				continue
 			}
 		}
@@ -107,18 +105,8 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 		}
 	}
 
-	// TODO: if this works abstract as "highestPriorityError" func
-	if _, ok := errors[ErrUnexpectedSecretsOwner]; ok {
-		return nil, ErrUnexpectedSecretsOwner
-	}
-	if _, ok := errors[ErrMissingSecretData]; ok {
-		return nil, ErrMissingSecretData
-	}
-	if _, ok := errors[ErrDifferentCAForDifferentServiceTypes]; ok {
-		return nil, ErrDifferentCAForDifferentServiceTypes
-	}
-	for err := range errors {
-		return nil, err
+	if getErr != nil {
+		return nil, getErr
 	}
 
 	return certificates, nil
@@ -126,6 +114,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 
 func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.Context, serviceType storage.ServiceType,
 	secretSpec serviceCertSecretSpec) (cert *storage.TypedServiceCertificate, ca []byte, err error) {
+
 	secret, getErr := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
 	if getErr != nil {
 		return nil, nil, getErr
@@ -165,10 +154,13 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 // - Not all services types in r.secrets are required to appear in certificates, missing service types are just skipped.
 func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.Context,
 	certificates *storage.TypedServiceCertificateSet) error {
+
 	caPem := certificates.GetCaPem()
+	var putErr error
 	for _, cert := range certificates.GetServiceCerts() {
 		if err := r.putServiceCertificate(ctx, caPem, cert); err != nil {
-			return err
+			putErr = multierror.Append(putErr, err)
+			continue
 		}
 
 		// on context cancellation abort putting other secrets.
@@ -177,7 +169,7 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.
 		}
 	}
 
-	return nil
+	return putErr
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificate(ctx context.Context, caPem []byte,
@@ -242,6 +234,7 @@ func (r *serviceCertificatesRepoSecretsImpl) createSecrets(ctx context.Context,
 
 func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, caPem []byte,
 	certificate *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) (*v1.Secret, error) {
+
 	return r.secretsClient.Create(ctx, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            secretSpec.secretName,
@@ -254,6 +247,7 @@ func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, c
 
 func (r *serviceCertificatesRepoSecretsImpl) secretDataForCertificate(secretSpec serviceCertSecretSpec, caPem []byte,
 	cert *storage.TypedServiceCertificate) map[string][]byte {
+
 	return map[string][]byte{
 		secretSpec.caCertFileName:      caPem,
 		secretSpec.serviceCertFileName: cert.GetCert().GetCertPem(),
