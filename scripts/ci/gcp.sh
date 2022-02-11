@@ -16,12 +16,12 @@ setup_gcp() {
     ensure_CI
 
     local service_account
-    if is_CIRCLECI; then
-        require_environment "GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
-        service_account="${GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX}"
-    elif is_OPENSHIFT_CI; then
+    if is_OPENSHIFT_CI; then
         require_environment "GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX"
         service_account="${GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX}"
+    elif is_CIRCLECI; then
+        require_environment "GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
+        service_account="${GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX}"
     else
         die "Support is missing for this CI environment"
     fi

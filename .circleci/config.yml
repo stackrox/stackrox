@@ -2133,8 +2133,6 @@ commands:
             cci-export OPENSHIFT_CI true
             cci-export ARTIFACT_DIR "/tmp/artifact_dir"
             mkdir -p "$ARTIFACT_DIR"
-            # Clear Circle CI Env
-            while read var; do cci-export $var ""; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
 
 jobs:
   ###

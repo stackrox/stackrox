@@ -76,16 +76,7 @@ get_unique_gs_destination() {
 set_gs_path_vars() {
     GS_URL="gs://roxci-artifacts"
 
-    if is_CIRCLECI; then
-        require_environment "CIRCLE_PROJECT_REPONAME"
-        require_environment "CIRCLE_WORKFLOW_ID"
-        require_environment "CIRCLE_BUILD_NUM"
-        require_environment "CIRCLE_JOB"
-
-        WORKFLOW_SUBDIR="${CIRCLE_PROJECT_REPONAME}/${CIRCLE_WORKFLOW_ID}"
-        JOB_SUBDIR="${CIRCLE_BUILD_NUM}-${CIRCLE_JOB}"
-        GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
-    elif is_OPENSHIFT_CI; then
+    if is_OPENSHIFT_CI; then
         require_environment "REPO_NAME"
         require_environment "BUILD_ID"
         require_environment "JOB_NAME"
@@ -95,6 +86,15 @@ set_gs_path_vars() {
         local workflow_id="${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
         WORKFLOW_SUBDIR="${REPO_NAME}/${workflow_id}"
         JOB_SUBDIR="${BUILD_ID}-${JOB_NAME}"
+        GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
+    elif is_CIRCLECI; then
+        require_environment "CIRCLE_PROJECT_REPONAME"
+        require_environment "CIRCLE_WORKFLOW_ID"
+        require_environment "CIRCLE_BUILD_NUM"
+        require_environment "CIRCLE_JOB"
+
+        WORKFLOW_SUBDIR="${CIRCLE_PROJECT_REPONAME}/${CIRCLE_WORKFLOW_ID}"
+        JOB_SUBDIR="${CIRCLE_BUILD_NUM}-${CIRCLE_JOB}"
         GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
     else
         die "Support is missing for this CI environment"
@@ -128,11 +128,11 @@ make_artifacts_help() {
     local browser_job_url="$browser_url/$WORKFLOW_SUBDIR/$JOB_SUBDIR"
 
     local help_file
-    if is_CIRCLECI; then
-        help_file="/tmp/howto-locate-artifacts.html"
-    elif is_OPENSHIFT_CI; then
+    if is_OPENSHIFT_CI; then
         require_environment "ARTIFACT_DIR"
         help_file="$ARTIFACT_DIR/howto-locate-artifacts.html"
+    elif is_CIRCLECI; then
+        help_file="/tmp/howto-locate-artifacts.html"
     else
         die "This is an unsupported environment"
     fi
