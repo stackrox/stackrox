@@ -10,9 +10,6 @@
 {{ $centralCfg := $._rox.central }}
 
 {{/* Image settings */}}
-{{ if kindIs "invalid" $centralCfg.image.tag }}
-  {{ $_ := set $centralCfg.image "tag" $.Chart.AppVersion }}
-{{ end }}
 {{ include "srox.configureImage" (list $ $centralCfg.image) }}
 
 {{/* Admin password */}}
