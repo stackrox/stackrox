@@ -31,19 +31,6 @@ func Not(predicate K8sObjectPredicateFunc) K8sObjectPredicateFunc {
 	}
 }
 
-// All returns a predicate which returns true if all given predicates return
-// true.
-func All(predicates ...K8sObjectPredicateFunc) K8sObjectPredicateFunc {
-	return func(object k8sutil.Object) bool {
-		for _, predicate := range predicates {
-			if !predicate(object) {
-				return false
-			}
-		}
-		return true
-	}
-}
-
 // CertObjectPredicate takes the given obj, and returns `true` if the object corresponds to a cert.
 func CertObjectPredicate(obj k8sutil.Object) bool {
 	_, exists := image.SensorCertObjectRefs[k8sobjects.RefOf(obj)]
@@ -54,10 +41,4 @@ func CertObjectPredicate(obj k8sutil.Object) bool {
 // if the object corresponds to an additional ca secret.
 func AdditionalCASecretPredicate(obj k8sutil.Object) bool {
 	return k8sobjects.RefOf(obj) == image.AdditionalCASensorSecretRef
-}
-
-// InjectedCABundleConfigMapPredicate takes the given obj, and returns `true`
-// if the object corresponds to an additional ca secret.
-func InjectedCABundleConfigMapPredicate(obj k8sutil.Object) bool {
-	return k8sobjects.RefOf(obj) == image.InjectedCABundleConfigMapRef
 }

@@ -137,8 +137,7 @@ func (i *Image) GetSecuredClusterServicesChartTemplate() (*helmTemplate.ChartTem
 }
 
 var (
-	secretGVK    = schema.GroupVersionKind{Version: "v1", Kind: "Secret"}
-	configMapGVK = schema.GroupVersionKind{Version: "v1", Kind: "ConfigMap"}
+	secretGVK = schema.GroupVersionKind{Version: "v1", Kind: "Secret"}
 	// SensorCertObjectRefs are the objects in the sensor bundle that represents tls certs.
 	SensorCertObjectRefs = map[k8sobjects.ObjectRef]struct{}{
 		{GVK: secretGVK, Name: "sensor-tls", Namespace: namespaces.StackRox}:            {},
@@ -149,12 +148,6 @@ var (
 	AdditionalCASensorSecretRef = k8sobjects.ObjectRef{
 		GVK:       secretGVK,
 		Name:      "additional-ca-sensor",
-		Namespace: namespaces.StackRox,
-	}
-	// InjectedCABundleConfigMapRef is the object in the sensor bundle that represents injected ca certs.
-	InjectedCABundleConfigMapRef = k8sobjects.ObjectRef{
-		GVK:       configMapGVK,
-		Name:      "injected-cabundle-stackrox-secured-cluster-services",
 		Namespace: namespaces.StackRox,
 	}
 )

@@ -67,15 +67,6 @@ metadata:
   name: additional-ca-sensor
   namespace: stackrox
 type: Opaque`
-
-	injectedCABundleYAML = `apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/name: stackrox
-    "config.openshift.io/inject-trusted-cabundle": "true"
-  name: injected-cabundle-stackrox-secured-cluster-services
-  namespace: stackrox`
 )
 
 func mustGetObjFromYAML(t *testing.T, yaml string) k8sutil.Object {
@@ -89,8 +80,7 @@ func TestFilterToOnlyCertObjects(t *testing.T) {
 	sensorTLS := mustGetObjFromYAML(t, sensorTLSSecretYAML)
 	centralTLS := mustGetObjFromYAML(t, centralTLSSecretYAML)
 	additionalCA := mustGetObjFromYAML(t, additionalCASensorYAML)
-	injectedCA := mustGetObjFromYAML(t, injectedCABundleYAML)
-	filtered := []k8sutil.Object{serviceAccount, sensorTLS, centralTLS, additionalCA, injectedCA}
+	filtered := []k8sutil.Object{serviceAccount, sensorTLS, centralTLS, additionalCA}
 	Filter(&filtered, CertObjectPredicate)
 	assert.Equal(t, []k8sutil.Object{sensorTLS}, filtered)
 }
@@ -105,23 +95,12 @@ func TestFilterAdditionalCASecretObjects(t *testing.T) {
 	assert.Equal(t, []k8sutil.Object{additionalCA}, filtered)
 }
 
-func TestFilterOutExcludedObjects(t *testing.T) {
+func TestFilterNotAdditionalCASecretObjects(t *testing.T) {
 	serviceAccount := mustGetObjFromYAML(t, serviceAccountYAML)
 	sensorTLS := mustGetObjFromYAML(t, sensorTLSSecretYAML)
 	centralTLS := mustGetObjFromYAML(t, centralTLSSecretYAML)
 	additionalCA := mustGetObjFromYAML(t, additionalCASensorYAML)
-	injectedCA := mustGetObjFromYAML(t, injectedCABundleYAML)
-	filtered := []k8sutil.Object{serviceAccount, sensorTLS, centralTLS, additionalCA, injectedCA}
-	Filter(&filtered, All(Not(AdditionalCASecretPredicate), Not(InjectedCABundleConfigMapPredicate)))
+	filtered := []k8sutil.Object{serviceAccount, sensorTLS, centralTLS, additionalCA}
+	Filter(&filtered, Not(AdditionalCASecretPredicate))
 	assert.Equal(t, []k8sutil.Object{serviceAccount, sensorTLS, centralTLS}, filtered)
-}
-
-func TestFilterInjectedCABundleConfigMapObjects(t *testing.T) {
-	serviceAccount := mustGetObjFromYAML(t, serviceAccountYAML)
-	sensorTLS := mustGetObjFromYAML(t, sensorTLSSecretYAML)
-	centralTLS := mustGetObjFromYAML(t, centralTLSSecretYAML)
-	injectedCA := mustGetObjFromYAML(t, injectedCABundleYAML)
-	filtered := []k8sutil.Object{serviceAccount, sensorTLS, centralTLS, injectedCA}
-	Filter(&filtered, InjectedCABundleConfigMapPredicate)
-	assert.Equal(t, []k8sutil.Object{injectedCA}, filtered)
 }

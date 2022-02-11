@@ -46,11 +46,8 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sutil.Object, e
 		return nil, errors.Errorf("the following un-ignored files in the bundle have been neglected: %s", neglectedFiles.ElementsString(", "))
 	}
 
-	// Remove the additional-ca-sensor secret and injected-cabundle configMap.
-	common.Filter(&allObjects,
-		common.All(
-			common.Not(common.AdditionalCASecretPredicate),
-			common.Not(common.InjectedCABundleConfigMapPredicate)))
+	// Remove the additional-ca-sensor secret.
+	common.Filter(&allObjects, common.Not(common.AdditionalCASecretPredicate))
 
 	if err := validateMetadata(allObjects); err != nil {
 		return nil, err
