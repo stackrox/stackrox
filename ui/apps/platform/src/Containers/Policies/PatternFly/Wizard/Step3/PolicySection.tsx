@@ -45,7 +45,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
     }
 
     return (
-        <Card isFlat isCompact className={`${!readOnly ? 'pf-u-w-66' : ''} pf-u-h-100`}>
+        <Card isFlat isCompact className="policy-section-card">
             <CardHeader className="policy-section-card-header pf-u-p-0">
                 <CardTitle className="pf-u-display-flex pf-u-align-self-stretch">
                     <Flex

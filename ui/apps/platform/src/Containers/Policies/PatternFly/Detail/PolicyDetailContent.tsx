@@ -65,7 +65,9 @@ function PolicyDetailContent({
                                 Policy criteria
                             </Title>
                             <Divider component="div" />
-                            <BooleanPolicyLogicSection readOnly />
+                            <div>
+                                <BooleanPolicyLogicSection readOnly />
+                            </div>
                         </>
                     )}
                 </Formik>

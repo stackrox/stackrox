@@ -43,13 +43,13 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         <Flex
                             alignSelf={{ default: 'alignSelfCenter' }}
                             alignItems={{ default: 'alignItemsCenter' }}
-                            direction={{ default: 'column' }}
+                            direction={{ default: 'row', lg: 'column' }}
                             flexWrap={{ default: 'nowrap' }}
-                            spaceItems={{ default: 'spaceItemsNone' }}
-                            className="pf-u-h-100"
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                            className="or-divider-container"
                         >
                             <div className="or-divider" />
-                            OR
+                            <div className="pf-u-align-self-center">OR</div>
                             <div className="or-divider" />
                         </Flex>
                     )}
