@@ -7,7 +7,6 @@ import {
     AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
-    ButtonVariant,
     Dropdown,
     DropdownItem,
     DropdownSeparator,
@@ -23,7 +22,6 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
@@ -67,6 +65,19 @@ function PolicyDetail({
         setIsActionsOpen(isOpen);
     }
 
+    function onEditPolicy() {
+        history.push({
+            pathname: `${policiesBasePath}/${id}`,
+            search: 'action=edit',
+        });
+    }
+
+    function onClonePolicy() {
+        history.push({
+            pathname: `${policiesBasePath}/${id}`,
+            search: 'action=clone',
+        });
+    }
     function onExportPolicy() {
         setIsRequesting(true);
         exportPolicies([id])
@@ -175,23 +186,19 @@ function PolicyDetail({
                                 dropdownItems={
                                     hasWriteAccessForPolicy
                                         ? [
-                                              <DropdownItem key="Edit policy">
-                                                  <ButtonLink
-                                                      variant={ButtonVariant.link}
-                                                      isInline
-                                                      to={`${policiesBasePath}/${id}?action=edit`}
-                                                  >
-                                                      Edit policy
-                                                  </ButtonLink>
+                                              <DropdownItem
+                                                  key="Edit policy"
+                                                  component="button"
+                                                  onClick={onEditPolicy}
+                                              >
+                                                  Edit policy
                                               </DropdownItem>,
-                                              <DropdownItem key="Clone policy">
-                                                  <ButtonLink
-                                                      variant={ButtonVariant.link}
-                                                      isInline
-                                                      to={`${policiesBasePath}/${id}?action=clone`}
-                                                  >
-                                                      Clone policy
-                                                  </ButtonLink>
+                                              <DropdownItem
+                                                  key="Clone policy"
+                                                  component="button"
+                                                  onClick={onClonePolicy}
+                                              >
+                                                  Clone policy
                                               </DropdownItem>,
                                               <DropdownItem
                                                   key="Export policy to JSON"
