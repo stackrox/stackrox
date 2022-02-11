@@ -60,12 +60,12 @@ func ValidateRole(role *storage.Role) error {
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		err := errors.Errorf("role name=%q: globalAccess should not be set, but is set to %s", role.GetName(), role.GetGlobalAccess())
+		err := errors.New("role global_access field must be 'NO_ACCESS' or unset")
 		multiErr = multierror.Append(multiErr, err)
 	}
 
 	if len(role.GetResourceToAccess()) != 0 {
-		err := errors.Errorf("role name=%q: must not have resourceToAccess, use a permission set instead", role.GetName())
+		err := errors.New("role must not set resource_to_access field")
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if role.GetPermissionSetId() == "" {

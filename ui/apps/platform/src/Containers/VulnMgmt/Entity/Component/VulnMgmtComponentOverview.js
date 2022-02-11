@@ -61,8 +61,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     if (hasDeploymentAsAncestor) {
         metadataKeyValuePairs.push({
             key: 'Active status',
-            // TODO: allow other states like Inactive through, once they can be determined with precision
-            value: activeState?.state === 'Active' ? activeState.state : 'Undetermined',
+            value: activeState?.state ?? 'Undetermined',
         });
     }
 

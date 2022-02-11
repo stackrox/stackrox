@@ -63,7 +63,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     onChange={onEditSectionName}
                                 />
                             ) : (
-                                <div className="pf-u-py-sm">{sectionName || 'New Section'}</div>
+                                <div className="pf-u-py-sm">{sectionName}</div>
                             )}
                         </FlexItem>
                     </Flex>

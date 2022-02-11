@@ -42,14 +42,20 @@ const validationSchemaStep2: yup.ObjectSchema<PolicyStep2> = yup.object().shape(
     // Schema omits enforcementActions, because code (not user) changes the value.
 });
 
+// TODO validation apparently fails when sectionName is empty string, but why?
+/*
 type PolicyStep3 = Pick<Policy, 'policySections'>;
 
 const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape({
+*/
+const validationSchemaStep3 = yup.object().shape({
     policySections: yup
         .array()
         .of(
             yup.object().shape({
-                sectionName: yup.string().trim().required(),
+                /*
+                sectionName: yup.string().defined(),
+                */
                 policyGroups: yup
                     .array()
                     .of(
