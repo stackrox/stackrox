@@ -85,6 +85,11 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 	var getErr error
 	for serviceType, secretSpec := range r.secrets {
+		// on context cancellation abort getting other secrets.
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		certificate, ca, err := r.getServiceCertificate(ctx, serviceType, secretSpec)
 		if err != nil {
 			getErr = multierror.Append(getErr, err)
@@ -99,10 +104,6 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 			}
 		}
 		certificates.ServiceCerts = append(certificates.ServiceCerts, certificate)
-		// on context cancellation abort getting other secrets.
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
 	}
 
 	if getErr != nil {
@@ -154,14 +155,20 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.
 	caPem := certificates.GetCaPem()
 	var putErr error
 	for _, cert := range certificates.GetServiceCerts() {
-		if err := r.putServiceCertificate(ctx, caPem, cert); err != nil {
-			putErr = multierror.Append(putErr, err)
-			continue
-		}
-
 		// on context cancellation abort putting other secrets.
 		if ctx.Err() != nil {
 			return ctx.Err()
+		}
+
+		secretSpec, ok := r.secrets[cert.GetServiceType()]
+		if !ok {
+			// we don't know how to persist this.
+			err := errors.Errorf("unkown service type %q", cert.GetServiceType())
+			putErr = multierror.Append(putErr, err)
+			continue
+		}
+		if err := r.putServiceCertificate(ctx, caPem, cert, secretSpec); err != nil {
+			putErr = multierror.Append(putErr, err)
 		}
 	}
 
@@ -169,14 +176,7 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificate(ctx context.Context, caPem []byte,
-	cert *storage.TypedServiceCertificate) error {
-
-	secretSpec, ok := r.secrets[cert.GetServiceType()]
-	if !ok {
-		// we don't know how to persist this.
-		return errors.Errorf("unkown service type %q", cert.GetServiceType())
-	}
-
+	cert *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) error {
 	patch := []patchSecretDataByteMap{{
 		Op:    "replace",
 		Path:  "/data",
@@ -209,19 +209,19 @@ func (r *serviceCertificatesRepoSecretsImpl) createSecrets(ctx context.Context,
 
 	var createErr error
 	for _, certificate := range initialCertificates.GetServiceCerts() {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		secretSpec, ok := r.secrets[certificate.GetServiceType()]
 		if !ok {
 			err := errors.Errorf("unkown service type %q", certificate.GetServiceType())
 			createErr = multierror.Append(createErr, err)
-		} else {
-			_, createSecretErr := r.createSecret(ctx, initialCertificates.GetCaPem(), certificate, secretSpec)
-			if createSecretErr != nil {
-				err := errors.Wrapf(createSecretErr, errForServiceFormat, certificate.GetServiceType())
-				createErr = multierror.Append(createErr, err)
-			}
+			continue
 		}
-		if ctx.Err() != nil {
-			return ctx.Err()
+		if _, createSecretErr := r.createSecret(ctx, initialCertificates.GetCaPem(), certificate, secretSpec); createSecretErr != nil {
+			err := errors.Wrapf(createSecretErr, errForServiceFormat, certificate.GetServiceType())
+			createErr = multierror.Append(createErr, err)
 		}
 	}
 
