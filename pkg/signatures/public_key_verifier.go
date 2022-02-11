@@ -35,6 +35,8 @@ type publicKeyVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
 }
 
+var _ SignatureVerifier = (*publicKeyVerifier)(nil)
+
 // newPublicKeyVerifier creates a public key verifier with the given configuration. The provided public keys
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed or the base64 decoding failed.
