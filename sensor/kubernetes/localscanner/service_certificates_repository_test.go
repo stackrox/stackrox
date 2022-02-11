@@ -62,7 +62,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 		fixture     *certSecretsRepoFixture
 	}{
 		"successful get": {expectedErr: nil, fixture: s.newFixture("")},
-		"failed get":     {expectedErr: errForced, fixture: s.newFixture("get")},
+		"failed get due to k8s API error":     {expectedErr: errForced, fixture: s.newFixture("get")},
 		"cancelled get":  {expectedErr: context.Canceled, fixture: s.newFixture("")},
 	}
 	for tcName, tc := range testCases {
@@ -74,6 +74,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 			}
 
 			certificates, err := tc.fixture.repo.getServiceCertificates(getCtx)
+
 			if tc.expectedErr == nil {
 				s.Equal(tc.fixture.certificates, certificates)
 			}
@@ -84,11 +85,11 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 	testCases := map[string]struct {
-		expectError  bool
+		expectedErr  error
 		secondCASize int
 	}{
-		"same CAs successful get":  {expectError: false, secondCASize: 0},
-		"different CAs failed get": {expectError: true, secondCASize: 1},
+		"same CAs successful get":  {expectedErr: nil, secondCASize: 0},
+		"different CAs failed get": {expectedErr: ErrDifferentCAForDifferentServiceTypes, secondCASize: 1},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -116,12 +117,10 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 			clientSet := fake.NewSimpleClientset(secret1, secret2)
 			secretsClient := clientSet.CoreV1().Secrets(namespace)
 			repo := newTestRepo(secrets, secretsClient)
+
 			_, err := repo.getServiceCertificates(context.Background())
-			if tc.expectError {
-				s.Error(err)
-			} else {
-				s.NoError(err)
-			}
+
+			s.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }
@@ -132,7 +131,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 		fixture     *certSecretsRepoFixture
 	}{
 		"successful put": {expectedErr: nil, fixture: s.newFixture("")},
-		"failed put":     {expectedErr: errForced, fixture: s.newFixture("patch")},
+		"failed put due to k8s API error":     {expectedErr: errForced, fixture: s.newFixture("patch")},
 		"cancelled put":  {expectedErr: context.Canceled, fixture: s.newFixture("")},
 	}
 	for tcName, tc := range testCases {
@@ -184,10 +183,11 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
 			fixture := s.newFixtureAdvancedOpts("", false, tc.missingSecretDataKey)
-			certificates, err := fixture.repo.getServiceCertificates(context.Background())
-			tc.setExpectedCertsFunc(fixture.certificates)
 
-			s.NoError(err)
+			certificates, err := fixture.repo.getServiceCertificates(context.Background())
+
+			s.Require().NoError(err)
+			tc.setExpectedCertsFunc(fixture.certificates)
 			s.Equal(fixture.certificates, certificates)
 		})
 	}
@@ -196,14 +196,18 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutUnknownServiceTypeFailure() {
 	fixture := s.newFixture("")
 	s.getFirstServiceCertificate(fixture.certificates).ServiceType = anotherServiceType
+
 	err := fixture.repo.putServiceCertificates(context.Background(), fixture.certificates)
+
 	s.Error(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutMissingServiceTypeSuccess() {
 	fixture := s.newFixture("")
 	fixture.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+
 	err := fixture.repo.putServiceCertificates(context.Background(), fixture.certificates)
+
 	s.NoError(err)
 }
 
@@ -220,6 +224,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure
 	cancel()
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
+
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
 	s.Error(repo.createSecrets(ctx, certificates.Clone()))
