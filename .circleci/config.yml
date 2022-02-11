@@ -2451,6 +2451,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
@@ -3491,6 +3492,7 @@ jobs:
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
@@ -3649,6 +3651,7 @@ jobs:
       - ROX_VULN_REPORTING: true
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
@@ -3718,6 +3721,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
@@ -3747,6 +3751,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
@@ -3891,6 +3896,7 @@ jobs:
       - SENSOR_HELM_DEPLOY: true
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - check-label-exists-or-skip:
@@ -3916,6 +3922,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - check-label-exists-or-skip:
@@ -3942,6 +3949,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
@@ -4034,6 +4042,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
@@ -4143,6 +4152,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
 
     steps:
@@ -4185,6 +4195,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
 
     steps:
@@ -4416,6 +4427,7 @@ jobs:
       IS_RACE_BUILD: "true"
       ROX_VULN_RISK_MANAGEMENT: "true"
       ROX_VULN_REPORTING: "true"
+      ROX_VERIFY_IMAGE_SIGNATURE: "true"
 
 
     steps:
@@ -4758,6 +4770,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
 
     steps:
@@ -4803,6 +4816,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
