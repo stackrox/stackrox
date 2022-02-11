@@ -2,10 +2,10 @@ package localscanner
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/suite"
