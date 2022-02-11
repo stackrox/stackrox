@@ -78,6 +78,7 @@ function PolicyDetail({
             search: 'action=clone',
         });
     }
+
     function onExportPolicy() {
         setIsRequesting(true);
         exportPolicies([id])
