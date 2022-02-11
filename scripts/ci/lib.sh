@@ -114,3 +114,12 @@ get_central_diagnostics() {
     roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir "${output_dir}" --insecure-skip-tls-verify
     ls -l "${output_dir}"
 }
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    if [[ "$#" -lt 1 ]]; then
+        die "When invoked at the command line a method is required."
+    fi
+    fn="$1"
+    shift
+    "$fn" "$*"
+fi

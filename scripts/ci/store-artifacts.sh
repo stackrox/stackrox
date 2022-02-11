@@ -157,14 +157,7 @@ make_artifacts_help() {
         <a href="$browser_job_url?authuser=2">authuser=2</a><br>
 EOH
 
-    cat <<- EOSH
-
-
-        See the artifacts tab for how to access these artifacts
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-EOSH
+    info "Artifacts are stored in a GCS bucket ($GS_URL)"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
