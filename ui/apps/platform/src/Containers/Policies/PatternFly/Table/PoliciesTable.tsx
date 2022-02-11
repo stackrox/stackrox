@@ -157,7 +157,7 @@ function PoliciesTable({
     }
 
     function onEditPolicy(id: string) {
-        history.replace({
+        history.push({
             pathname: `${policiesBasePath}/${id}`,
             search: 'action=edit',
         });
