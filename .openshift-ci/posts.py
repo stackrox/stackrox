@@ -16,6 +16,12 @@ class NullPost:
 class PostClusterTest:
     API_TIMEOUT = 5 * 60
     COLLECT_TIMEOUT = 5 * 60
+    STORE_TIMEOUT = 5 * 60
+    K8S_LOG_DIR="/tmp/k8s-service-logs"
+    COLLECTOR_METRICS_DIR="/tmp/collector-metrics"
+    DEBUG_OUTPUT="debug-dump"
+    DIAGNOSTIC_OUTPUT="diagnostic-bundle"
+    CENTRAL_DATA_OUTPUT="central-data"
 
     def __init__(self):
         self.exitstatus = 0
@@ -31,12 +37,13 @@ class PostClusterTest:
 
     def run(self):
         self.wait_for_central_api()
-        self.collect_cluster_api_data()
-        self.collect_infrastructure_logs()
+        self.collect_service_logs()
         self.collect_collector_metrics()
         self.get_central_debug_dump()
         self.get_central_diagnostics()
         self.grab_central_data()
+        self.fixup_artifacts_content_type()
+        self.make_artifacts_help()
         if self.exitstatus != 0:
             for args in self.failed_commands:
                 print(f"Post failure in: {args}")
@@ -48,41 +55,71 @@ class PostClusterTest:
             timeout=PostClusterTest.API_TIMEOUT,
         )
 
-    def collect_cluster_api_data(self):
+    def collect_service_logs(self):
         for namespace in self.k8s_namespaces + self.openshift_namespaces:
             self._run_with_best_effort(
-                ["scripts/ci/collect-service-logs.sh", namespace],
+                ["scripts/ci/collect-service-logs.sh", namespace, PostClusterTest.K8S_LOG_DIR],
                 timeout=PostClusterTest.COLLECT_TIMEOUT,
             )
-
-    def collect_infrastructure_logs(self):
         self._run_with_best_effort(
-            ["scripts/ci/collect-infrastructure-logs.sh"],
+            ["scripts/ci/collect-infrastructure-logs.sh", PostClusterTest.K8S_LOG_DIR],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
+        )
+        self._run_with_best_effort(
+            ["scripts/ci/store-artifacts.sh", "store_artifacts", PostClusterTest.K8S_LOG_DIR],
+            timeout=PostClusterTest.STORE_TIMEOUT,
         )
 
     def collect_collector_metrics(self):
         self._run_with_best_effort(
-            ["scripts/ci/collect-collector-metrics.sh", "stackrox"],
+            ["scripts/ci/collect-collector-metrics.sh", "stackrox", PostClusterTest.COLLECTOR_METRICS_DIR],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
+        )
+        self._run_with_best_effort(
+            ["scripts/ci/store-artifacts.sh", "store_artifacts", PostClusterTest.COLLECTOR_METRICS_DIR],
+            timeout=PostClusterTest.STORE_TIMEOUT,
         )
 
     def get_central_debug_dump(self):
         self._run_with_best_effort(
-            ["scripts/ci/lib.sh", "get_central_debug_dump", "debug-dump"],
+            ["scripts/ci/lib.sh", "get_central_debug_dump", PostClusterTest.DEBUG_OUTPUT],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
+        )
+        self._run_with_best_effort(
+            ["scripts/ci/store-artifacts.sh", "store_artifacts", PostClusterTest.DEBUG_OUTPUT],
+            timeout=PostClusterTest.STORE_TIMEOUT,
         )
 
     def get_central_diagnostics(self):
         self._run_with_best_effort(
-            ["scripts/ci/lib.sh", "get_central_diagnostics", "diagnostic-bundle"],
+            ["scripts/ci/lib.sh", "get_central_diagnostics", PostClusterTest.DIAGNOSTIC_OUTPUT],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
+        )
+        self._run_with_best_effort(
+            ["scripts/ci/store-artifacts.sh", "store_artifacts", PostClusterTest.DIAGNOSTIC_OUTPUT],
+            timeout=PostClusterTest.STORE_TIMEOUT,
         )
 
     def grab_central_data(self):
         self._run_with_best_effort(
-            ["scripts/grab-data-from-central.sh", "central-data"],
+            ["scripts/grab-data-from-central.sh", PostClusterTest.CENTRAL_DATA_OUTPUT],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
+        )
+        self._run_with_best_effort(
+            ["scripts/ci/store-artifacts.sh", "store_artifacts", PostClusterTest.CENTRAL_DATA_OUTPUT],
+            timeout=PostClusterTest.STORE_TIMEOUT,
+        )
+
+    def fixup_artifacts_content_type(self):
+        self._run_with_best_effort(
+            ["scripts/ci/store-artifacts.sh", "fixup_artifacts_content_type"],
+            timeout=PostClusterTest.STORE_TIMEOUT,
+        )
+
+    def make_artifacts_help(self):
+        self._run_with_best_effort(
+            ["scripts/ci/store-artifacts.sh", "make_artifacts_help"],
+            timeout=PostClusterTest.STORE_TIMEOUT,
         )
 
     def _run_with_best_effort(self, args: List[str], timeout: int):

@@ -2128,7 +2128,11 @@ commands:
             cci-export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
             cci-export BUILD_ID "$CIRCLE_BUILD_NUM"
             cci-export JOB_NAME "$CIRCLE_JOB"
+            cci-export REPO_NAME "$CIRCLE_PROJECT_REPONAME"
+            cci-export PULL_PULL_SHA "$CIRCLE_SHA1"
             cci-export OPENSHIFT_CI true
+            cci-export ARTIFACT_DIR "/tmp/artifact_dir"
+            mkdir -p "$ARTIFACT_DIR"
             # Clear Circle CI Env
             while read var; do cci-export $var ""; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
 
@@ -4833,6 +4837,9 @@ jobs:
           name: Run the OpenShift CI upgrade test hook
           command: |
             .openshift-ci/gke_upgrade_test.py
+      - store_artifacts:
+          path: /tmp/artifact_dir/howto-locate-artifacts.html
+          destination: howto-locate-artifacts.html
 
 workflows:
   version: 2

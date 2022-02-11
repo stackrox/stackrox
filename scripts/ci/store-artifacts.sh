@@ -127,7 +127,17 @@ make_artifacts_help() {
     local browser_url="https://console.cloud.google.com/storage/browser/roxci-artifacts"
     local browser_job_url="$browser_url/$WORKFLOW_SUBDIR/$JOB_SUBDIR"
 
-    cat > /tmp/howto-locate-artifacts.html <<- EOH
+    local help_file
+    if is_CIRCLECI; then
+        help_file="/tmp/howto-locate-artifacts.html"
+    elif is_OPENSHIFT_CI; then
+        require_environment "ARTIFACT_DIR"
+        help_file="$ARTIFACT_DIR/howto-locate-artifacts.html"
+    else
+        die "This is an unsupported environment"
+    fi
+
+    cat > "$help_file" <<- EOH
         Artifacts are stored in a GCS bucket ($GS_URL). There are at least two options for access:
 
         <h3>gsutil cp</h3>
@@ -156,3 +166,12 @@ EOH
 
 EOSH
 }
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    if [[ "$#" -lt 1 ]]; then
+        die "When invoked at the command line a method is required."
+    fi
+    fn="$1"
+    shift
+    "$fn" "$*"
+fi
