@@ -29,6 +29,8 @@ var (
 	errNoImageSHA            = errors.New("no image SHA found")
 	errInvalidHashAlgo       = errors.New("invalid hash algorithm used")
 	errNoKeysToVerifyAgainst = errors.New("no keys to verify against")
+	errHashCreation          = errors.New("creating hash")
+	errCorruptedSignature    = errors.New("corrupted signature")
 )
 
 type publicKeyVerifier struct {
@@ -78,12 +80,15 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 	// The hash is required for claim verification.
 	hash, err := gcrv1.NewHash(imgSHA)
 	if err != nil {
-		return nil, gcrv1.Hash{}, errors.Wrap(err, "creating hash")
+		return nil, gcrv1.Hash{}, fmt.Errorf("%w: %s", errHashCreation, err.Error())
 	}
 
+	// Theoretically, this should never happen, as gcrv1.NewHash _currently_ doesn't support any other hash algorithm.
+	// See: https://github.com/google/go-containerregistry/blob/main/pkg/v1/hash.go#L78
+	// We should keep this check although, in case there are changes in the library.
 	if hash.Algorithm != sha256Algo {
-		return nil, gcrv1.Hash{}, fmt.Errorf("%w: invalid hasing algorithm %s used, only SHA256 is supported",
-			errInvalidHashAlgo, hash.Algorithm)
+		return nil, gcrv1.Hash{}, errox.Newf(errInvalidHashAlgo,
+			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm)
 	}
 
 	// Each signature contains the base64 encoded version of it and the associated payload.
@@ -97,7 +102,9 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 
 		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig)
 		if err != nil {
-			return nil, gcrv1.Hash{}, errors.Wrap(err, "creating OCI signatures")
+			// Theoretically, this error should never happen, as the only error currently occurs when using options,
+			// which we do not use _yet_. When introducing support for rekor bundles, this could potentially error.
+			return nil, gcrv1.Hash{}, fmt.Errorf("%w: %s", errCorruptedSignature, err.Error())
 		}
 		signatures = append(signatures, sig)
 	}
@@ -122,10 +129,7 @@ func (c *publicKeyVerifier) VerifySignature(ctx context.Context, image *storage.
 
 	sigs, hash, err := retrieveVerificationDataFromImage(image)
 	if err != nil {
-		if errors.Is(err, errInvalidHashAlgo) {
-			return storage.ImageSignatureVerificationResult_INVALID_SIGNATURE_ALGO, err
-		}
-		return storage.ImageSignatureVerificationResult_CORRUPTED_SIGNATURE, err
+		return getVerificationResultStatusFromErr(err), err
 	}
 
 	var allVerifyErrs error
@@ -155,4 +159,18 @@ func (c *publicKeyVerifier) VerifySignature(ctx context.Context, image *storage.
 	}
 
 	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, allVerifyErrs
+}
+
+// getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.
+// This is done in an effort to return appropriate status codes to the client triggering the signature verification.
+func getVerificationResultStatusFromErr(err error) storage.ImageSignatureVerificationResult_Status {
+	if errors.Is(err, errInvalidHashAlgo) {
+		return storage.ImageSignatureVerificationResult_INVALID_SIGNATURE_ALGO
+	}
+
+	if errors.Is(err, errCorruptedSignature) {
+		return storage.ImageSignatureVerificationResult_CORRUPTED_SIGNATURE
+	}
+
+	return storage.ImageSignatureVerificationResult_GENERIC_ERROR
 }
