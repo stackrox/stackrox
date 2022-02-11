@@ -3,6 +3,7 @@
 DEFAULT_KUBECONFIG="$HOME/.kube/config"
 
 MENU_OPTIONS=()
+ARTIFACTS_DIR="artifacts"
 
 main() {
   local action="${1}"
@@ -15,6 +16,7 @@ main() {
   fi
   MENU_OPTIONS=(
     "Merge kubeconfigs"
+    "Remove kubeconfigs for non-existing clusters"
     "Generate Slack message for cluster '${cluster_name}'"
     "Create new RC OpenShift cluster '${cluster_name}'"
     "Quit"
@@ -41,10 +43,15 @@ exec_option() {
         ;;
     "${MENU_OPTIONS[1]}"|2)
         [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        generate_slack_message "$cluster_prefix"
+        cleanup_artifacts "$DEFAULT_KUBECONFIG"
         exit 0
         ;;
     "${MENU_OPTIONS[2]}"|3)
+        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
+        generate_slack_message "$cluster_prefix"
+        exit 0
+        ;;
+    "${MENU_OPTIONS[3]}"|4)
         [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
         create_rc_openshift_cluster "$cluster_prefix"
         exit 0
@@ -76,9 +83,9 @@ create_rc_openshift_cluster() {
   # ensure cluster exists
   infractl get "${CLUSTER_NAME}" || die "cluster '${CLUSTER_NAME}' not found"
   # fetch artifacts
-  infractl artifacts "${CLUSTER_NAME}" -d "artifacts/${CLUSTER_NAME}" > /dev/null 2>&1
+  infractl artifacts "${CLUSTER_NAME}" -d "${ARTIFACTS_DIR}/${CLUSTER_NAME}" > /dev/null 2>&1
 
-  while ! test -d "artifacts/${CLUSTER_NAME}"; do
+  while ! test -d "${ARTIFACTS_DIR}/${CLUSTER_NAME}"; do
     echo "Wainting until artifacts download"
     sleep 5
   done
@@ -87,7 +94,7 @@ create_rc_openshift_cluster() {
   export KUBECONFIG="$DEFAULT_KUBECONFIG"
   kubectl config use-context "ctx-${CLUSTER_NAME}" || die "cannot switch kubectl context to ctx-${CLUSTER_NAME}"
 
-  . "artifacts/${CLUSTER_NAME}/dotenv"
+  . "${ARTIFACTS_DIR}/${CLUSTER_NAME}/dotenv"
   oc login --username="$OPENSHIFT_CONSOLE_USERNAME" --password="$OPENSHIFT_CONSOLE_PASSWORD"
 
   export MAIN_TAG="${RELEASE}.0-rc.${RC_NUMBER}"
@@ -103,6 +110,24 @@ create_rc_openshift_cluster() {
   oc -n stackrox set image deploy/admission-control "admission-control=docker.io/stackrox/main:${MAIN_TAG}"
 
   oc -n stackrox get deploy,pods -o wide
+}
+
+cleanup_artifacts() {
+  local kubeconfig_location="${1:-"$DEFAULT_KUBECONFIG"}"
+  local dead_clusters=()
+  readarray -d '' ALL_ARTIFACTS < <(find ${ARTIFACTS_DIR} -maxdepth 1 -mindepth 1 -type d -print0)
+  for path in "${ALL_ARTIFACTS[@]}"; do
+    local cluster_name
+    cluster_name="$(basename "$path")"
+    echo "Checking cluster '$cluster_name'"
+    if ! infractl artifacts "$cluster_name" -d "${ARTIFACTS_DIR}/${cluster_name}" > /dev/null 2>&1 ; then
+      echo "Cluster '$cluster_name' is gone - removing artifacts"
+      dead_clusters+=("$cluster_name")
+    else
+      echo "Cluster '$cluster_name' is still running"
+    fi
+  done
+  rm -rf "${dead_clusters[@]}"
 }
 
 merge_kubeconfigs() {
@@ -129,17 +154,17 @@ merge_kubeconfigs() {
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
   CLUSTER_NAME="${DIR_PREFIX}-${RELEASE//./-}-rc${RC_NUMBER}"
-  DIR="artifacts/${CLUSTER_NAME}"
+  DIR="${ARTIFACTS_DIR}/${CLUSTER_NAME}"
   [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
 
   # KUBECONFIGS_STR contains list of paths (concatenated with ':') to kubeconfig files
   KUBECONFIGS_STR=""
 
   # rename context to ctx-$clustername
-  readarray -d '' ARTIFACTS_KUBE < <(find artifacts -type f -name kubeconfig -print0)
+  readarray -d '' ARTIFACTS_KUBE < <(find ${ARTIFACTS_DIR} -type f -name kubeconfig -print0)
   for kube_rel_path in "${ARTIFACTS_KUBE[@]}"; do
     cluster="$(basename "$(dirname "$kube_rel_path")")"
-    if ! infractl artifacts "$cluster" -d "artifacts/${cluster}" > /dev/null 2>&1 ; then
+    if ! infractl artifacts "$cluster" -d "${ARTIFACTS_DIR}/${cluster}" > /dev/null 2>&1 ; then
       echo "Skipping cluster: '$cluster' - cannot download artifacts"
       continue
     fi
@@ -189,7 +214,7 @@ generate_slack_message() {
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
 
-  DIR="artifacts/$DIR_PREFIX-${RELEASE//./-}-rc${RC_NUMBER}"
+  DIR="${ARTIFACTS_DIR}/$DIR_PREFIX-${RELEASE//./-}-rc${RC_NUMBER}"
   [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
 
   . "${DIR}/dotenv"
