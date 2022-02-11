@@ -77,7 +77,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 			if tc.expectedErr == nil {
 				s.Equal(tc.fixture.certificates, certificates)
 			}
-			s.checkExpectedError(tc.expectedErr, err)
+			s.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }
@@ -145,7 +145,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 
 			err := tc.fixture.repo.putServiceCertificates(putCtx, tc.fixture.certificates)
 
-			s.checkExpectedError(tc.expectedErr, err)
+			s.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }
@@ -223,15 +223,6 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
 	s.Error(repo.createSecrets(ctx, certificates.Clone()))
-}
-
-func (s *serviceCertificatesRepoSecretsImplSuite) checkExpectedError(expectedErr, err error) {
-	if expectedErr != errForced {
-		s.Equal(expectedErr, err)
-	} else {
-		// multierror wraps errForced
-		s.Error(err)
-	}
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) getFirstServiceCertificate(
