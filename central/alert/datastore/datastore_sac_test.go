@@ -36,10 +36,10 @@ const (
 )
 
 var (
-	alertUnrestrictedReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Alert)))
+	//alertUnrestrictedReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	//	sac.AllowFixedScopes(
+	//		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+	//		sac.ResourceScopeKeys(resources.Alert)))
 	alertUnrestrictedReadWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -126,15 +126,15 @@ var (
 			sac.ResourceScopeKeys(resources.Alert),
 			sac.ClusterScopeKeys(cluster2),
 			sac.NamespaceScopeKeys(namespaceB, namespaceC)))
-	alertMixedClusterNamespaceReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.OneStepSCC{
-			sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-				sac.ResourceScopeKey(resources.Alert.Resource): sac.OneStepSCC{
-					sac.ClusterScopeKey(cluster1): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceA)),
-					sac.ClusterScopeKey(cluster2): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceB)),
-				},
-			},
-		})
+	//alertMixedClusterNamespaceReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	//	sac.OneStepSCC{
+	//		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
+	//			sac.ResourceScopeKey(resources.Alert.Resource): sac.OneStepSCC{
+	//				sac.ClusterScopeKey(cluster1): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceA)),
+	//				sac.ClusterScopeKey(cluster2): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceB)),
+	//			},
+	//		},
+	//	})
 )
 
 func createTestAlert(alertID string, clusterID string, namespace string) *storage.Alert {
