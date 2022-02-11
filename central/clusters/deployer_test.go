@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
@@ -120,6 +121,7 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 	var cases = map[string]struct {
 		cluster                  *storage.Cluster
 		expectedError            bool
+		expectedErrorMessage     string
 		expectedMain             string
 		expectedCollectorFullRef string
 		expectedCollectorSlimRef string
@@ -255,19 +257,35 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
 			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 		},
+		/*		"test-invalid collector": {
+					cluster:                  makeTestCluster("quay.io/rhacs/customname", "this is not an imag !!"),
+					expectedMain:             fmt.Sprintf("quay.io/rhacs/customname:%s", flavor.MainImageTag),
+					expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+					expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+				},
+				"test-invalid main": {
+					cluster:                  makeTestCluster("this is not an image #@!", ""),
+					expectedMain:             fmt.Sprintf("quay.io/rhacs/customname:%s", flavor.MainImageTag),
+					expectedCollectorFullRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorImageName, flavor.CollectorImageTag),
+					expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
+				},*/
 
 		// Expected fail cases
 		"expectedError: empty main image": {
-			cluster:       makeTestCluster("", ""),
-			expectedError: true,
+			cluster:              makeTestCluster("", ""),
+			expectedError:        true,
+			expectedErrorMessage: fmt.Sprintf("generating main image from cluster value (%s)", ""),
+			// FIXME: Do this by matching a substring for now and fix this in the follow up jira issue
 		},
 		"expectedError: invalid main image": {
-			cluster:       makeTestCluster("this is not an image #@!", ""),
-			expectedError: true,
+			cluster:              makeTestCluster("this is not an image #@!", ""),
+			expectedError:        true,
+			expectedErrorMessage: fmt.Sprintf("generating main image from cluster value (%s)", "this is not an image #@!"),
 		},
 		"expectedError: invalid collector image": {
-			cluster:       makeTestCluster("stackrox.io/main", "this is not an image #@!"),
-			expectedError: true,
+			cluster:              makeTestCluster("stackrox.io/main", "this is not an image #@!"),
+			expectedError:        true,
+			expectedErrorMessage: fmt.Sprintf("generating collector image from cluster value (%s)", "this is not an image #@!"),
 		},
 	}
 
@@ -276,6 +294,8 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			fields, err := FieldsFromClusterAndRenderOpts(c.cluster, &flavor, RenderOptions{})
 			if c.expectedError {
 				s.Error(err)
+				s.ErrorIs(err, errors.New(c.expectedErrorMessage), "Expected Error does not match")
+				fmt.Printf("Found error: %s", err)
 			} else {
 				s.NoError(err)
 				s.Equal(c.expectedMain, getMain(fields), "Main image does not match")
