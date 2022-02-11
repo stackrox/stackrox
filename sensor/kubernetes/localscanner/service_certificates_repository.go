@@ -125,11 +125,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 		return nil, nil, ErrUnexpectedSecretsOwner
 	}
 
-	ownerRef := ownerReferences[0]
-	if !(ownerRef.APIVersion == r.ownerReference.APIVersion &&
-		ownerRef.Kind == r.ownerReference.Kind &&
-		ownerRef.Name == r.ownerReference.Name &&
-		ownerRef.UID == r.ownerReference.UID) {
+	if ownerReferences[0].UID != r.ownerReference.UID {
 		return nil, nil, ErrUnexpectedSecretsOwner
 	}
 
