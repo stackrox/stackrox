@@ -30,7 +30,7 @@ setup_gcp() {
 
     if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "stackrox-ci" ]]; then
         echo "Current project is already set to stackrox-ci. Assuming configuration already applied."
-        exit 0
+        return
     fi
     gcloud auth activate-service-account --key-file <(echo "$service_account")
     gcloud auth list

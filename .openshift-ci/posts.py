@@ -167,6 +167,7 @@ class PostClusterTest:
             )
 
     def _run_with_best_effort(self, args: List[str], timeout: int):
+        print(f"Running post command: {args}")
         try:
             subprocess.run(
                 args,
