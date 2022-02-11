@@ -262,7 +262,6 @@ teardown_gke_cluster() {
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
-        usage
         die "When invoked at the command line a method is required."
     fi
     fn="$1"
