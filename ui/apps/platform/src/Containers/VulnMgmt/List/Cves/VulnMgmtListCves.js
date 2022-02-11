@@ -116,19 +116,18 @@ export function getCveTableColumns(workflowState) {
                             </div>
                         );
                     }
-                    // TODO: uncomment the following case,  once Inactive can be determined with precision
-                    // case 'Inactive': {
-                    //     return <div className="mx-auto">{activeStatus}</div>;
-                    // }
+                    case 'Inactive': {
+                        return <div className="mx-auto">{activeStatus}</div>;
+                    }
                     case 'Undetermined':
                     default: {
                         return <div className="mx-auto">Undetermined</div>;
                     }
                 }
             },
-            id: cveSortFields.FIXABLE,
+            id: cveSortFields.ACTIVE,
             accessor: 'isActive',
-            sortField: cveSortFields.FIXABLE,
+            sortField: cveSortFields.ACTIVE,
             sortable: false,
         },
         {
