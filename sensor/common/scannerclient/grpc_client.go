@@ -35,6 +35,7 @@ func newGRPCClient(endpoint string) (*client, error) {
 
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
+		GRPCOnly:      true,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize Scanner TLS config")
