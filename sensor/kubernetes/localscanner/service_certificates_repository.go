@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	v1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -144,16 +145,18 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	}, secretData[secretSpec.caCertFileName], nil
 }
 
-// putServiceCertificates is idempotent but not atomic in sense that on error some secrets might be persisted
+// ensureServiceCertificates ensures the services for certificates exists, and that they contain the certificates
+// in their data.
+// This operation is idempotent but not atomic in sense that on error some secrets might be created and updated,
 // while others are not.
-// Edge cases:
-// - Fails for certificates with a service type that doesn't appear in r.secrets, as we don't know where to store them.
-// - Not all services types in r.secrets are required to appear in certificates, missing service types are just skipped.
-func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.Context,
+// Each missing secret is created with the owner specified in the constructor as owner.
+// This only creates secrets for the service types that appear in certificates, missing service types are just skipped.
+// Fails for certificates with a service type that doesn't appear in r.secrets, as we don't know where to store them.
+func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx context.Context,
 	certificates *storage.TypedServiceCertificateSet) error {
 
 	caPem := certificates.GetCaPem()
-	var putErr error
+	var serviceErrors error
 	for _, cert := range certificates.GetServiceCerts() {
 		// on context cancellation abort putting other secrets.
 		if ctx.Err() != nil {
@@ -164,18 +167,28 @@ func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificates(ctx context.
 		if !ok {
 			// we don't know how to persist this.
 			err := errors.Errorf("unkown service type %q", cert.GetServiceType())
-			putErr = multierror.Append(putErr, err)
+			serviceErrors = multierror.Append(serviceErrors, err)
 			continue
 		}
-		if err := r.putServiceCertificate(ctx, caPem, cert, secretSpec); err != nil {
-			putErr = multierror.Append(putErr, err)
+		if err := r.ensureServiceCertificate(ctx, caPem, cert, secretSpec); err != nil {
+			serviceErrors = multierror.Append(serviceErrors, err)
 		}
 	}
 
-	return putErr
+	return serviceErrors
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) putServiceCertificate(ctx context.Context, caPem []byte,
+func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificate(ctx context.Context, caPem []byte,
+	cert *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) error {
+	patchErr := r.patchServiceCertificate(ctx, caPem, cert, secretSpec)
+	if k8sErrors.IsNotFound(patchErr) {
+		_, createErr := r.createSecret(ctx, caPem, cert, secretSpec)
+		return createErr
+	}
+	return patchErr
+}
+
+func (r *serviceCertificatesRepoSecretsImpl) patchServiceCertificate(ctx context.Context, caPem []byte,
 	cert *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) error {
 	patch := []patchSecretDataByteMap{{
 		Op:    "replace",
@@ -198,34 +211,6 @@ type patchSecretDataByteMap struct {
 	Op    string            `json:"op"`
 	Path  string            `json:"path"`
 	Value map[string][]byte `json:"value"`
-}
-
-// createSecrets creates the k8s secrets for initialCertificates.
-// Each secret is created with the owner specified in the constructor as owner, and with initialCertificates stored
-// in the secret data.
-// This only creates secrets for the service types that appear in initialCertificates.
-func (r *serviceCertificatesRepoSecretsImpl) createSecrets(ctx context.Context,
-	initialCertificates *storage.TypedServiceCertificateSet) error {
-
-	var createErr error
-	for _, certificate := range initialCertificates.GetServiceCerts() {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-
-		secretSpec, ok := r.secrets[certificate.GetServiceType()]
-		if !ok {
-			err := errors.Errorf("unkown service type %q", certificate.GetServiceType())
-			createErr = multierror.Append(createErr, err)
-			continue
-		}
-		if _, createSecretErr := r.createSecret(ctx, initialCertificates.GetCaPem(), certificate, secretSpec); createSecretErr != nil {
-			err := errors.Wrapf(createSecretErr, errForServiceFormat, certificate.GetServiceType())
-			createErr = multierror.Append(createErr, err)
-		}
-	}
-
-	return createErr
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, caPem []byte,

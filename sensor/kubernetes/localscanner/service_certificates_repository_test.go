@@ -148,7 +148,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 				cancelPutCtx()
 			}
 
-			err := tc.fixture.repo.putServiceCertificates(putCtx, tc.fixture.certificates)
+			err := tc.fixture.repo.ensureServiceCertificates(putCtx, tc.fixture.certificates)
 
 			s.ErrorIs(err, tc.expectedErr)
 		})
@@ -203,7 +203,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPutUnknownServiceTypeFailu
 	fixture := s.newFixture(certSecretsRepoFixtureSpec{})
 	s.getFirstServiceCertificate(fixture.certificates).ServiceType = anotherServiceType
 
-	err := fixture.repo.putServiceCertificates(context.Background(), fixture.certificates)
+	err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
 
 	s.Error(err)
 }
@@ -212,7 +212,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPutMissingServiceTypeSucce
 	fixture := s.newFixture(certSecretsRepoFixtureSpec{})
 	fixture.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 
-	err := fixture.repo.putServiceCertificates(context.Background(), fixture.certificates)
+	err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
 
 	s.NoError(err)
 }
@@ -222,7 +222,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsNoCertificate
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	s.NoError(repo.createSecrets(context.Background(), nil))
+	s.NoError(repo.ensureServiceCertificates(context.Background(), nil))
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure() {
@@ -233,7 +233,17 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure
 
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	s.Error(repo.createSecrets(ctx, certificates.Clone()))
+	s.Error(repo.ensureServiceCertificates(ctx, certificates.Clone()))
+}
+
+func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificateMissingSecretSuccess() {
+	clientSet := fake.NewSimpleClientset(sensorDeployment)
+	secretsClient := clientSet.CoreV1().Secrets(namespace)
+	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+
+	err := repo.ensureServiceCertificates(context.Background(), certificates)
+
+	s.NoError(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) getFirstServiceCertificate(
