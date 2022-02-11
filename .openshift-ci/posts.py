@@ -9,7 +9,7 @@ from typing import List
 
 
 class NullPost:
-    def run(self):
+    def run(self, test_output_dirs=None):
         pass
 
 
