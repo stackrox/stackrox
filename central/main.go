@@ -338,7 +338,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
-		signatureIntegrationService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
@@ -353,6 +352,10 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister,
 			reportConfigurationService.Singleton(),
 			reportService.Singleton())
+	}
+
+	if features.ImageSignatureVerification.Enabled() {
+		servicesToRegister = append(servicesToRegister, signatureIntegrationService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
