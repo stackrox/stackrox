@@ -82,13 +82,13 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 		return 0, putErr
 	}
 
-	// recoverFromErr=false so the ticker knows this is an error, and it retries with backoff.
-	timeToNextRefresh, err := getTimeToRefreshFromCertificates(getCertsRenewalTime, certificates, false)
-	if err == nil {
-		log.Infof("successfully refreshed %v", certsDescription)
+	renewalTime, err := getCertsRenewalTime(certificates)
+	if err != nil {
+		// send the error to the ticker, so it retries with backoff.
+		return 0, err
 	}
-
-	return timeToNextRefresh, err
+	log.Infof("successfully refreshed %v", certsDescription)
+	return time.Until(renewalTime), nil
 }
 
 func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsRenewalTimeFunc,
@@ -96,7 +96,7 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 
 	certificates, getCertsErr := repository.getServiceCertificates(ctx)
 	if getCertsErr == ErrDifferentCAForDifferentServiceTypes || getCertsErr == ErrMissingSecretData {
-		log.Errorf("local scanner certificates are in an inconsistent state, " +
+		log.Errorf("local scanner certificates are in an inconsistent state, "+
 			"will refresh certificates immediately: %s", getCertsErr)
 		return 0, nil
 	}
@@ -104,22 +104,12 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 		return 0, getCertsErr
 	}
 
-	// recoverFromErr=true in order to refresh the certificates immediately if we cannot parse them.
-	return getTimeToRefreshFromCertificates(getCertsRenewalTime, certificates, true)
-}
-
-func getTimeToRefreshFromCertificates(getCertsRenewalTime getCertsRenewalTimeFunc,
-	certificates *storage.TypedServiceCertificateSet, recoverFromErr bool) (time.Duration, error) {
-
 	renewalTime, err := getCertsRenewalTime(certificates)
 	if err != nil {
-		if recoverFromErr {
-			log.Errorf("error getting local scanner certificate expiration, " +
-				"will refresh certificates immediately: %s", err)
-			return 0, nil
-		}
-		return 0, err
+		// recover by refreshing the certificates immediately.
+		log.Errorf("error getting local scanner certificate expiration, "+
+			"will refresh certificates immediately: %s", err)
+		return 0, nil
 	}
-
 	return time.Until(renewalTime), nil
 }
