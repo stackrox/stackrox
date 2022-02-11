@@ -61,9 +61,9 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 		expectedErr error
 		fixture     *certSecretsRepoFixture
 	}{
-		"successful get": {nil, s.newFixture("")},
-		"failed get":     {errForced, s.newFixture("get")},
-		"cancelled get":  {context.Canceled, s.newFixture("")},
+		"successful get": {expectedErr: nil, fixture: s.newFixture("")},
+		"failed get":     {expectedErr: errForced, fixture: s.newFixture("get")},
+		"cancelled get":  {expectedErr: context.Canceled, fixture: s.newFixture("")},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -87,8 +87,8 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 		expectError  bool
 		secondCASize int
 	}{
-		"same CAs successful get":  {false, 0},
-		"different CAs failed get": {true, 1},
+		"same CAs successful get":  {expectError: false, secondCASize: 0},
+		"different CAs failed get": {expectError: true, secondCASize: 1},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -131,9 +131,9 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 		expectedErr error
 		fixture     *certSecretsRepoFixture
 	}{
-		"successful put": {nil, s.newFixture("")},
-		"failed put":     {errForced, s.newFixture("patch")},
-		"cancelled put":  {context.Canceled, s.newFixture("")},
+		"successful put": {expectedErr: nil, fixture: s.newFixture("")},
+		"failed put":     {expectedErr: errForced, fixture: s.newFixture("patch")},
+		"cancelled put":  {expectedErr: context.Canceled, fixture: s.newFixture("")},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
