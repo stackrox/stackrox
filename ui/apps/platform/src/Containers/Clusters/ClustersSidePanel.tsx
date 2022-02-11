@@ -17,7 +17,7 @@ import {
     getClusterById,
     saveCluster,
     downloadClusterYaml,
-    fetchKernelSupportAvailable,
+    getClusterDefaults,
 } from 'services/ClustersService';
 
 import ClusterEditForm from './ClusterEditForm';
@@ -29,16 +29,7 @@ import {
     wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
-import { Cluster, ClusterManagerType } from './clusterTypes';
-
-function fetchCentralEnv() {
-    return fetchKernelSupportAvailable().then((kernelSupportAvailable) => {
-        return {
-            kernelSupportAvailable,
-            successfullyFetched: true,
-        };
-    });
-}
+import { CentralEnv, Cluster, ClusterManagerType } from './clusterTypes';
 
 const requiredKeys = ['name', 'type', 'mainImage', 'centralApiEndpoint'];
 
@@ -63,19 +54,10 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const metadata = useMetadata();
 
     const defaultCluster = cloneDeep(newClusterDefault);
-    const envAwareClusterDefault = {
-        ...defaultCluster,
-        mainImage: metadata.releaseBuild ? 'stackrox.io/main' : 'stackrox/main',
-        collectorImage: metadata.releaseBuild
-            ? 'collector.stackrox.io/collector'
-            : 'stackrox/collector',
-    };
 
     const { isDarkMode } = useTheme();
-    const [selectedCluster, setSelectedCluster] = useState<Partial<Cluster> | null>(
-        envAwareClusterDefault
-    );
-    const [centralEnv, setCentralEnv] = useState(centralEnvDefault);
+    const [selectedCluster, setSelectedCluster] = useState<Partial<Cluster> | null>(defaultCluster);
+    const [centralEnv, setCentralEnv] = useState<CentralEnv>(centralEnvDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [loadingCounter, setLoadingCounter] = useState(0);
     const [messageState, setMessageState] = useState<MessageState | null>(null);
@@ -89,7 +71,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     function unselectCluster() {
         setSubmissionError('');
         setSelectedClusterId('');
-        setSelectedCluster(envAwareClusterDefault);
+        setSelectedCluster(defaultCluster);
         setMessageState(null);
         setIsBlocked(false);
         setWizardStep(wizardSteps.FORM);
@@ -107,13 +89,25 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
             const clusterIdToRetrieve = selectedClusterId;
 
             setLoadingCounter((prev) => prev + 1);
-            fetchCentralEnv()
-                .then((freshCentralEnv) => {
-                    setCentralEnv(freshCentralEnv);
+            getClusterDefaults()
+                .then((clusterDefaults) => {
+                    const {
+                        mainImageRepository: mainImage,
+                        collectorImageRepository: collectorImage,
+                        kernelSupportAvailable,
+                    } = clusterDefaults;
+
+                    setCentralEnv({
+                        kernelSupportAvailable,
+                        successfullyFetched: true,
+                    });
+
                     if (clusterIdToRetrieve === 'new') {
                         const updatedCluster = {
                             ...selectedCluster,
-                            slimCollector: freshCentralEnv.kernelSupportAvailable,
+                            mainImage,
+                            collectorImage,
+                            slimCollector: kernelSupportAvailable,
                         };
                         setSelectedCluster(updatedCluster);
                     }
