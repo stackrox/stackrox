@@ -3775,7 +3775,7 @@ jobs:
       - run:
           name: Upgrade tests
           command: |
-            ./tests/upgrade/run.sh
+            ./tests/upgrade/run.sh /tmp/upgrade-test-logs
 
       - ci-artifacts/store:
           path: /tmp/upgrade-test-logs
