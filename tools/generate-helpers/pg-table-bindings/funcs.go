@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"text/template"
 	"unicode"
@@ -61,18 +60,9 @@ func upperCamelCase(s string) string {
 	return strings.Join(words, "")
 }
 
-func elemComma(idx int, slice interface{}) string {
-	enumSlice := reflect.ValueOf(slice)
-	enumSliceLen := enumSlice.Len()
-	if idx == enumSliceLen-1 {
-		return ""
-	}
-	return ","
-}
-
-func valueExpansion(new, starting int64) string {
+func valueExpansion(size int) string {
 	var all []string
-	for i := starting; i < starting+new; i++ {
+	for i := 0; i < size; i++ {
 		all = append(all, fmt.Sprintf("$%d", i+1))
 	}
 	return strings.Join(all, ", ")
@@ -81,6 +71,5 @@ func valueExpansion(new, starting int64) string {
 var funcMap = template.FuncMap{
 	"lowerCamelCase": lowerCamelCase,
 	"upperCamelCase": upperCamelCase,
-	"elemComma":      elemComma,
 	"valueExpansion": valueExpansion,
 }

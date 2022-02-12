@@ -53,10 +53,4 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, deployment, dep)
-
-	err = store.Delete(deployment.GetId())
-	dep, exists, err = store.Get(deployment.GetId())
-	assert.NoError(t, err)
-	assert.False(t, exists)
-	assert.Nil(t, dep)
 }

@@ -62,7 +62,6 @@ func createTableDeployments(db *pgxpool.Pool) {
 
 	table := `
 create table if not exists deployments (
-
     Id varchar,
     Name varchar,
     Hash numeric,
@@ -91,7 +90,6 @@ create table if not exists deployments (
     StateTimestamp numeric,
     RiskScore numeric,
     ProcessTags text[],
-
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -115,13 +113,11 @@ func createTableDeploymentsRequirements(db *pgxpool.Pool) {
 	table := `
 create table if not exists deployments_Requirements (
     parent_Id varchar,
-
     idx numeric,
     Key varchar,
     Op integer,
     Values text[],
-
-    PRIMARY KEY(parent_Id,idx),
+    PRIMARY KEY(parent_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES deployments(Id) ON DELETE CASCADE
 )
 `
@@ -140,7 +136,6 @@ func createTableDeploymentsContainers(db *pgxpool.Pool) {
 	table := `
 create table if not exists deployments_Containers (
     parent_Id varchar,
-
     idx numeric,
     Id varchar,
     Config_Command text[],
@@ -172,8 +167,7 @@ create table if not exists deployments_Containers (
     Name varchar,
     LivenessProbe_Defined bool,
     ReadinessProbe_Defined bool,
-
-    PRIMARY KEY(parent_Id,idx),
+    PRIMARY KEY(parent_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES deployments(Id) ON DELETE CASCADE
 )
 `
@@ -197,13 +191,11 @@ func createTableDeploymentsContainersEnv(db *pgxpool.Pool) {
 create table if not exists deployments_Containers_Env (
     parent_parent_Id varchar,
     parent_idx numeric,
-
     idx numeric,
     Key varchar,
     Value varchar,
     EnvVarSource integer,
-
-    PRIMARY KEY(parent_parent_Id,parent_idx,idx),
+    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES deployments_Containers(parent_Id, idx) ON DELETE CASCADE
 )
 `
@@ -223,7 +215,6 @@ func createTableDeploymentsContainersVolumes(db *pgxpool.Pool) {
 create table if not exists deployments_Containers_Volumes (
     parent_parent_Id varchar,
     parent_idx numeric,
-
     idx numeric,
     Name varchar,
     Source varchar,
@@ -231,8 +222,7 @@ create table if not exists deployments_Containers_Volumes (
     ReadOnly bool,
     Type varchar,
     MountPropagation integer,
-
-    PRIMARY KEY(parent_parent_Id,parent_idx,idx),
+    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES deployments_Containers(parent_Id, idx) ON DELETE CASCADE
 )
 `
@@ -252,15 +242,13 @@ func createTableDeploymentsContainersPorts(db *pgxpool.Pool) {
 create table if not exists deployments_Containers_Ports (
     parent_parent_Id varchar,
     parent_idx numeric,
-
     idx numeric,
     Name varchar,
     ContainerPort numeric,
     Protocol varchar,
     Exposure integer,
     ExposedPort numeric,
-
-    PRIMARY KEY(parent_parent_Id,parent_idx,idx),
+    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES deployments_Containers(parent_Id, idx) ON DELETE CASCADE
 )
 `
@@ -282,7 +270,6 @@ create table if not exists deployments_Containers_Ports_ExposureInfos (
     parent_parent_parent_Id varchar,
     parent_parent_idx numeric,
     parent_idx numeric,
-
     idx numeric,
     Level integer,
     ServiceName varchar,
@@ -292,8 +279,7 @@ create table if not exists deployments_Containers_Ports_ExposureInfos (
     NodePort numeric,
     ExternalIps text[],
     ExternalHostnames text[],
-
-    PRIMARY KEY(parent_parent_parent_Id,parent_parent_idx,parent_idx,idx),
+    PRIMARY KEY(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_parent_Id, parent_parent_idx, parent_idx) REFERENCES deployments_Containers_Ports(parent_parent_Id, parent_idx, idx) ON DELETE CASCADE
 )
 `
@@ -313,12 +299,10 @@ func createTableDeploymentsContainersSecrets(db *pgxpool.Pool) {
 create table if not exists deployments_Containers_Secrets (
     parent_parent_Id varchar,
     parent_idx numeric,
-
     idx numeric,
     Name varchar,
     Path varchar,
-
-    PRIMARY KEY(parent_parent_Id,parent_idx,idx),
+    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES deployments_Containers(parent_Id, idx) ON DELETE CASCADE
 )
 `
@@ -337,14 +321,12 @@ func createTableDeploymentsTolerations(db *pgxpool.Pool) {
 	table := `
 create table if not exists deployments_Tolerations (
     parent_Id varchar,
-
     idx numeric,
     Key varchar,
     Operator integer,
     Value varchar,
     TaintEffect integer,
-
-    PRIMARY KEY(parent_Id,idx),
+    PRIMARY KEY(parent_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES deployments(Id) ON DELETE CASCADE
 )
 `
@@ -363,15 +345,13 @@ func createTableDeploymentsPorts(db *pgxpool.Pool) {
 	table := `
 create table if not exists deployments_Ports (
     parent_Id varchar,
-
     idx numeric,
     Name varchar,
     ContainerPort numeric,
     Protocol varchar,
     Exposure integer,
     ExposedPort numeric,
-
-    PRIMARY KEY(parent_Id,idx),
+    PRIMARY KEY(parent_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES deployments(Id) ON DELETE CASCADE
 )
 `
@@ -392,7 +372,6 @@ func createTableDeploymentsPortsExposureInfos(db *pgxpool.Pool) {
 create table if not exists deployments_Ports_ExposureInfos (
     parent_parent_Id varchar,
     parent_idx numeric,
-
     idx numeric,
     Level integer,
     ServiceName varchar,
@@ -402,8 +381,7 @@ create table if not exists deployments_Ports_ExposureInfos (
     NodePort numeric,
     ExternalIps text[],
     ExternalHostnames text[],
-
-    PRIMARY KEY(parent_parent_Id,parent_idx,idx),
+    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES deployments_Ports(parent_Id, idx) ON DELETE CASCADE
 )
 `
@@ -455,10 +433,8 @@ func insertIntoDeployments(db *pgxpool.Pool, obj *storage.Deployment) error {
 		obj.GetProcessTags(),
 		serialized,
 	}
-	fieldStr := "( Id, Name, Hash, Type, Namespace, NamespaceId, OrchestratorComponent, Replicas, Labels, PodLabels, LabelSelector_MatchLabels, Created, ClusterId, ClusterName, Annotations, Priority, Inactive, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, AutomountServiceAccountToken, HostNetwork, HostPid, HostIpc, RuntimeClass, StateTimestamp, RiskScore, ProcessTags, serialized)"
-	conflictStr := "Id = EXCLUDED.Id, Name = EXCLUDED.Name, Hash = EXCLUDED.Hash, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Replicas = EXCLUDED.Replicas, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, LabelSelector_MatchLabels = EXCLUDED.LabelSelector_MatchLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, Inactive = EXCLUDED.Inactive, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, AutomountServiceAccountToken = EXCLUDED.AutomountServiceAccountToken, HostNetwork = EXCLUDED.HostNetwork, HostPid = EXCLUDED.HostPid, HostIpc = EXCLUDED.HostIpc, RuntimeClass = EXCLUDED.RuntimeClass, StateTimestamp = EXCLUDED.StateTimestamp, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags, serialized = EXCLUDED.serialized"
 
-	finalStr := "INSERT INTO deployments" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29) ON CONFLICT( Id) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments (Id, Name, Hash, Type, Namespace, NamespaceId, OrchestratorComponent, Replicas, Labels, PodLabels, LabelSelector_MatchLabels, Created, ClusterId, ClusterName, Annotations, Priority, Inactive, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, AutomountServiceAccountToken, HostNetwork, HostPid, HostIpc, RuntimeClass, StateTimestamp, RiskScore, ProcessTags, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Hash = EXCLUDED.Hash, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Replicas = EXCLUDED.Replicas, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, LabelSelector_MatchLabels = EXCLUDED.LabelSelector_MatchLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, Inactive = EXCLUDED.Inactive, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, AutomountServiceAccountToken = EXCLUDED.AutomountServiceAccountToken, HostNetwork = EXCLUDED.HostNetwork, HostPid = EXCLUDED.HostPid, HostIpc = EXCLUDED.HostIpc, RuntimeClass = EXCLUDED.RuntimeClass, StateTimestamp = EXCLUDED.StateTimestamp, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags, serialized = EXCLUDED.serialized"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -524,10 +500,8 @@ func insertIntoDeploymentsRequirements(db *pgxpool.Pool, obj *storage.LabelSelec
 		obj.GetOp(),
 		obj.GetValues(),
 	}
-	fieldStr := "(parent_Id, idx, Key, Op, Values)"
-	conflictStr := "parent_Id = EXCLUDED.parent_Id,idx = EXCLUDED.idx, Key = EXCLUDED.Key, Op = EXCLUDED.Op, Values = EXCLUDED.Values"
 
-	finalStr := "INSERT INTO deployments_Requirements" + fieldStr + " VALUES($1, $2, $3, $4, $5) ON CONFLICT( parent_Id,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Requirements (parent_Id, idx, Key, Op, Values) VALUES($1, $2, $3, $4, $5) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Op = EXCLUDED.Op, Values = EXCLUDED.Values"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -574,10 +548,8 @@ func insertIntoDeploymentsContainers(db *pgxpool.Pool, obj *storage.Container, p
 		obj.GetLivenessProbe().GetDefined(),
 		obj.GetReadinessProbe().GetDefined(),
 	}
-	fieldStr := "(parent_Id, idx, Id, Config_Command, Config_Args, Config_Directory, Config_User, Config_Uid, Config_AppArmorProfile, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, SecurityContext_Privileged, SecurityContext_Selinux_User, SecurityContext_Selinux_Role, SecurityContext_Selinux_Type, SecurityContext_Selinux_Level, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, SecurityContext_SeccompProfile_Type, SecurityContext_SeccompProfile_LocalhostProfile, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit, Name, LivenessProbe_Defined, ReadinessProbe_Defined)"
-	conflictStr := "parent_Id = EXCLUDED.parent_Id,idx = EXCLUDED.idx, Id = EXCLUDED.Id, Config_Command = EXCLUDED.Config_Command, Config_Args = EXCLUDED.Config_Args, Config_Directory = EXCLUDED.Config_Directory, Config_User = EXCLUDED.Config_User, Config_Uid = EXCLUDED.Config_Uid, Config_AppArmorProfile = EXCLUDED.Config_AppArmorProfile, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_NotPullable = EXCLUDED.Image_NotPullable, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_Selinux_User = EXCLUDED.SecurityContext_Selinux_User, SecurityContext_Selinux_Role = EXCLUDED.SecurityContext_Selinux_Role, SecurityContext_Selinux_Type = EXCLUDED.SecurityContext_Selinux_Type, SecurityContext_Selinux_Level = EXCLUDED.SecurityContext_Selinux_Level, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, SecurityContext_SeccompProfile_Type = EXCLUDED.SecurityContext_SeccompProfile_Type, SecurityContext_SeccompProfile_LocalhostProfile = EXCLUDED.SecurityContext_SeccompProfile_LocalhostProfile, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit, Name = EXCLUDED.Name, LivenessProbe_Defined = EXCLUDED.LivenessProbe_Defined, ReadinessProbe_Defined = EXCLUDED.ReadinessProbe_Defined"
 
-	finalStr := "INSERT INTO deployments_Containers" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32) ON CONFLICT( parent_Id,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Containers (parent_Id, idx, Id, Config_Command, Config_Args, Config_Directory, Config_User, Config_Uid, Config_AppArmorProfile, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, SecurityContext_Privileged, SecurityContext_Selinux_User, SecurityContext_Selinux_Role, SecurityContext_Selinux_Type, SecurityContext_Selinux_Level, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, SecurityContext_SeccompProfile_Type, SecurityContext_SeccompProfile_LocalhostProfile, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit, Name, LivenessProbe_Defined, ReadinessProbe_Defined) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, Config_Command = EXCLUDED.Config_Command, Config_Args = EXCLUDED.Config_Args, Config_Directory = EXCLUDED.Config_Directory, Config_User = EXCLUDED.Config_User, Config_Uid = EXCLUDED.Config_Uid, Config_AppArmorProfile = EXCLUDED.Config_AppArmorProfile, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_NotPullable = EXCLUDED.Image_NotPullable, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_Selinux_User = EXCLUDED.SecurityContext_Selinux_User, SecurityContext_Selinux_Role = EXCLUDED.SecurityContext_Selinux_Role, SecurityContext_Selinux_Type = EXCLUDED.SecurityContext_Selinux_Type, SecurityContext_Selinux_Level = EXCLUDED.SecurityContext_Selinux_Level, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, SecurityContext_SeccompProfile_Type = EXCLUDED.SecurityContext_SeccompProfile_Type, SecurityContext_SeccompProfile_LocalhostProfile = EXCLUDED.SecurityContext_SeccompProfile_LocalhostProfile, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit, Name = EXCLUDED.Name, LivenessProbe_Defined = EXCLUDED.LivenessProbe_Defined, ReadinessProbe_Defined = EXCLUDED.ReadinessProbe_Defined"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -644,10 +616,8 @@ func insertIntoDeploymentsContainersEnv(db *pgxpool.Pool, obj *storage.Container
 		obj.GetValue(),
 		obj.GetEnvVarSource(),
 	}
-	fieldStr := "(parent_parent_Id, parent_idx, idx, Key, Value, EnvVarSource)"
-	conflictStr := "parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx,idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
 
-	finalStr := "INSERT INTO deployments_Containers_Env" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT( parent_parent_Id,  parent_idx,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Containers_Env (parent_parent_Id, parent_idx, idx, Key, Value, EnvVarSource) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -671,10 +641,8 @@ func insertIntoDeploymentsContainersVolumes(db *pgxpool.Pool, obj *storage.Volum
 		obj.GetType(),
 		obj.GetMountPropagation(),
 	}
-	fieldStr := "(parent_parent_Id, parent_idx, idx, Name, Source, Destination, ReadOnly, Type, MountPropagation)"
-	conflictStr := "parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx,idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type, MountPropagation = EXCLUDED.MountPropagation"
 
-	finalStr := "INSERT INTO deployments_Containers_Volumes" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT( parent_parent_Id,  parent_idx,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Containers_Volumes (parent_parent_Id, parent_idx, idx, Name, Source, Destination, ReadOnly, Type, MountPropagation) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type, MountPropagation = EXCLUDED.MountPropagation"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -697,10 +665,8 @@ func insertIntoDeploymentsContainersPorts(db *pgxpool.Pool, obj *storage.PortCon
 		obj.GetExposure(),
 		obj.GetExposedPort(),
 	}
-	fieldStr := "(parent_parent_Id, parent_idx, idx, Name, ContainerPort, Protocol, Exposure, ExposedPort)"
-	conflictStr := "parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx,idx = EXCLUDED.idx, Name = EXCLUDED.Name, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure, ExposedPort = EXCLUDED.ExposedPort"
 
-	finalStr := "INSERT INTO deployments_Containers_Ports" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT( parent_parent_Id,  parent_idx,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Containers_Ports (parent_parent_Id, parent_idx, idx, Name, ContainerPort, Protocol, Exposure, ExposedPort) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure, ExposedPort = EXCLUDED.ExposedPort"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -740,10 +706,8 @@ func insertIntoDeploymentsContainersPortsExposureInfos(db *pgxpool.Pool, obj *st
 		obj.GetExternalIps(),
 		obj.GetExternalHostnames(),
 	}
-	fieldStr := "(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx, Level, ServiceName, ServiceId, ServiceClusterIp, ServicePort, NodePort, ExternalIps, ExternalHostnames)"
-	conflictStr := "parent_parent_parent_Id = EXCLUDED.parent_parent_parent_Id, parent_parent_idx = EXCLUDED.parent_parent_idx, parent_idx = EXCLUDED.parent_idx,idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServiceId = EXCLUDED.ServiceId, ServiceClusterIp = EXCLUDED.ServiceClusterIp, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
 
-	finalStr := "INSERT INTO deployments_Containers_Ports_ExposureInfos" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT( parent_parent_parent_Id,  parent_parent_idx,  parent_idx,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Containers_Ports_ExposureInfos (parent_parent_parent_Id, parent_parent_idx, parent_idx, idx, Level, ServiceName, ServiceId, ServiceClusterIp, ServicePort, NodePort, ExternalIps, ExternalHostnames) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx) DO UPDATE SET parent_parent_parent_Id = EXCLUDED.parent_parent_parent_Id, parent_parent_idx = EXCLUDED.parent_parent_idx, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServiceId = EXCLUDED.ServiceId, ServiceClusterIp = EXCLUDED.ServiceClusterIp, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -763,10 +727,8 @@ func insertIntoDeploymentsContainersSecrets(db *pgxpool.Pool, obj *storage.Embed
 		obj.GetName(),
 		obj.GetPath(),
 	}
-	fieldStr := "(parent_parent_Id, parent_idx, idx, Name, Path)"
-	conflictStr := "parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx,idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
 
-	finalStr := "INSERT INTO deployments_Containers_Secrets" + fieldStr + " VALUES($1, $2, $3, $4, $5) ON CONFLICT( parent_parent_Id,  parent_idx,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Containers_Secrets (parent_parent_Id, parent_idx, idx, Name, Path) VALUES($1, $2, $3, $4, $5) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -787,10 +749,8 @@ func insertIntoDeploymentsTolerations(db *pgxpool.Pool, obj *storage.Toleration,
 		obj.GetValue(),
 		obj.GetTaintEffect(),
 	}
-	fieldStr := "(parent_Id, idx, Key, Operator, Value, TaintEffect)"
-	conflictStr := "parent_Id = EXCLUDED.parent_Id,idx = EXCLUDED.idx, Key = EXCLUDED.Key, Operator = EXCLUDED.Operator, Value = EXCLUDED.Value, TaintEffect = EXCLUDED.TaintEffect"
 
-	finalStr := "INSERT INTO deployments_Tolerations" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT( parent_Id,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Tolerations (parent_Id, idx, Key, Operator, Value, TaintEffect) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Operator = EXCLUDED.Operator, Value = EXCLUDED.Value, TaintEffect = EXCLUDED.TaintEffect"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -812,10 +772,8 @@ func insertIntoDeploymentsPorts(db *pgxpool.Pool, obj *storage.PortConfig, paren
 		obj.GetExposure(),
 		obj.GetExposedPort(),
 	}
-	fieldStr := "(parent_Id, idx, Name, ContainerPort, Protocol, Exposure, ExposedPort)"
-	conflictStr := "parent_Id = EXCLUDED.parent_Id,idx = EXCLUDED.idx, Name = EXCLUDED.Name, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure, ExposedPort = EXCLUDED.ExposedPort"
 
-	finalStr := "INSERT INTO deployments_Ports" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT( parent_Id,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Ports (parent_Id, idx, Name, ContainerPort, Protocol, Exposure, ExposedPort) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure, ExposedPort = EXCLUDED.ExposedPort"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -854,10 +812,8 @@ func insertIntoDeploymentsPortsExposureInfos(db *pgxpool.Pool, obj *storage.Port
 		obj.GetExternalIps(),
 		obj.GetExternalHostnames(),
 	}
-	fieldStr := "(parent_parent_Id, parent_idx, idx, Level, ServiceName, ServiceId, ServiceClusterIp, ServicePort, NodePort, ExternalIps, ExternalHostnames)"
-	conflictStr := "parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx,idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServiceId = EXCLUDED.ServiceId, ServiceClusterIp = EXCLUDED.ServiceClusterIp, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
 
-	finalStr := "INSERT INTO deployments_Ports_ExposureInfos" + fieldStr + " VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT( parent_parent_Id,  parent_idx,  idx) DO UPDATE SET " + conflictStr
+	finalStr := "INSERT INTO deployments_Ports_ExposureInfos (parent_parent_Id, parent_idx, idx, Level, ServiceName, ServiceId, ServiceClusterIp, ServicePort, NodePort, ExternalIps, ExternalHostnames) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServiceId = EXCLUDED.ServiceId, ServiceClusterIp = EXCLUDED.ServiceClusterIp, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err

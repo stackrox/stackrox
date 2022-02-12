@@ -118,7 +118,9 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			Search:       searchOpts,
 			Type:         structField.Type.String(),
 			Options:      opts,
-			ObjectGetter: ctx.Getter(structField.Name),
+			ObjectGetter: ObjectGetter{
+				value:    ctx.Getter(structField.Name),
+			},
 			ColumnName:   ctx.Column(structField.Name),
 		}
 		if dt, ok := simpleFieldsMap[structField.Type.Kind()]; ok {
@@ -155,7 +157,10 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			idxField := Field{
 				Schema:       childSchema,
 				Name:         "idx",
-				ObjectGetter: "idx",
+				ObjectGetter: ObjectGetter{
+					variable: true,
+					value:    "idx",
+				},
 				ColumnName:   "idx",
 				Type:         "int",
 				Options: PostgresOptions{
@@ -213,7 +218,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				for _, f := range actualOneOfFields {
 					typ := reflect.TypeOf(f)
 					if typ.Implements(oneofInterface) {
-						handleStruct(ctx.childContext(field.Name), schema, typ.Elem())
+						handleStruct(ctx, schema, typ.Elem())
 					}
 				}
 				continue

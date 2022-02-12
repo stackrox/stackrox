@@ -1,7 +1,9 @@
 {{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}$idx, {{end}}{{$pk.Name|lowerCamelCase}}{{end}}{{end}}
+{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.Name}} = ${{add $idx 1}}{{end}}{{end}}
-{{define "idxGetter"}}{{ if ne . "idx"}}obj.{{.}}{{else}}idx{{end}}{{end}}
+{{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
+{{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
+{{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
 
 {{- $ := . }}
 {{- $pks := .Schema.LocalPrimaryKeys }}
@@ -82,19 +84,13 @@ func createTable{{$schema.Table|upperCamelCase}}(db *pgxpool.Pool) {
 
     table := `
 create table if not exists {{$schema.Table}} (
-{{- range $idx, $field := $schema.ParentKeys }}
+{{- range $idx, $field := $schema.ResolvedFields }}
     {{$field.ColumnName}} {{$field.SQLType}},
-{{- end}}
-{{range $idx, $field := $schema.Fields}}
-    {{$field.ColumnName}} {{$field.SQLType}},
-{{- end}}
-{{if not $schema.ParentSchema}}
-    serialized bytea,
 {{- end}}
     {{- $pks := $schema.ResolvedPrimaryKeys }}
-    PRIMARY KEY({{range $idx, $field := $pks}}{{if $idx}},{{- end}}{{$field.ColumnName}}{{end}}){{ if $schema.ParentSchema }},
-   {{- $pks := $schema.ParentKeys }}
-    CONSTRAINT fk_parent_table FOREIGN KEY ({{range $idx, $field := $pks}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{- end}}) REFERENCES {{$schema.ParentSchema.Table}}({{range $idx, $field := $pks}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}) ON DELETE CASCADE
+    PRIMARY KEY({{template "commaSeparatedColumns" $pks}}){{ if $schema.ParentSchema }},
+    {{- $pks := $schema.ParentKeys }}
+    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$schema.ParentSchema.Table}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
     {{- end }}
 )
 `
@@ -128,23 +124,11 @@ func {{ template "insertFunctionName" $schema }}(db *pgxpool.Pool, obj {{$schema
 
     values := []interface{} {
         // parent primary keys start
-        {{ range $idx, $field := $schema.ParentKeys }}
-        {{$field.Name}},{{end}}
-
-        {{- range $idx, $field := $schema.Fields }}
-        {{template "idxGetter" $field.ObjectGetter}},
-        {{- end}}
-        {{if not $schema.ParentSchema }}serialized,{{end}}
+        {{ range $idx, $field := $schema.ResolvedFields }}
+        {{$field.Getter "obj"}},{{end}}
     }
-    fieldStr := "({{ range $idx, $field := $schema.ParentKeys }}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{if $schema.ParentKeys}},{{end}} {{ range $idx, $field := $schema.Fields }}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{if not $schema.ParentSchema }}, serialized{{end}})"
-    conflictStr := "{{ range $idx, $field := $schema.ParentKeys }}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{if $schema.ParentKeys}},{{end}}{{ range $idx, $field := $schema.Fields }}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{if not $schema.ParentSchema }}, serialized = EXCLUDED.serialized{{end}}"
 
-    {{- $numValues := ( add ( len $schema.ParentKeys ) ( len $schema.Fields ) ) }}
-    {{if not $schema.ParentSchema }}
-    {{- $numValues = (add $numValues 1) }}
-    {{- end}}
-
-    finalStr := "INSERT INTO {{$schema.Table}}" + fieldStr + " VALUES({{ valueExpansion $numValues 0 }}) ON CONFLICT({{range $idx, $field := $schema.ResolvedPrimaryKeys}}{{if $idx}}, {{end}} {{$field.ColumnName}}{{end}}) DO UPDATE SET " + conflictStr
+    finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedColumns" $schema.ResolvedFields }}) VALUES({{ valueExpansion (len $schema.ResolvedFields) }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}) DO UPDATE SET {{template "updateExclusions" $schema.ResolvedFields}}"
     _, err := db.Exec(context.Background(), finalStr, values...)
     if err != nil {
         return err
@@ -156,13 +140,13 @@ func {{ template "insertFunctionName" $schema }}(db *pgxpool.Pool, obj {{$schema
 
     {{range $idx, $child := $schema.Children}}
     for childIdx, child := range obj.{{$child.ObjectGetter}} {
-        if err := {{ template "insertFunctionName" $child }}(db, child{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{template "idxGetter" $field.ObjectGetter}}{{end}}, childIdx); err != nil {
+        if err := {{ template "insertFunctionName" $child }}(db, child{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
             return err
         }
     }
 
     query = "delete from {{$child.Table}} where {{ range $idx, $field := $child.ParentKeys }}{{if $idx}} AND {{end}}{{$field.ColumnName}} = ${{add $idx 1}}{{end}} AND idx >= ${{add (len $child.ParentKeys) 1}}"
-    _, err = db.Exec(context.Background(), query, {{ range $idx, $field := $schema.ParentKeys }}{{$field.Name}}, {{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}{{template "idxGetter" $field.ObjectGetter}}, {{end}} len(obj.{{$child.ObjectGetter}}))
+    _, err = db.Exec(context.Background(), query, {{ range $idx, $field := $schema.ParentKeys }}{{$field.Name}}, {{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}} len(obj.{{$child.ObjectGetter}}))
     if err != nil {
         return err
     }
@@ -188,13 +172,13 @@ func New(db *pgxpool.Pool) Store {
     }
 }
 
-func (s *storeImpl) Upsert(obj *storage.Deployment) error {
+func (s *storeImpl) Upsert(obj *{{.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.Type}}")
 
 	return {{ template "insertFunctionName" .Schema }}(s.db, obj)
 }
 
-func (s *storeImpl) UpsertMany(objs []*storage.Deployment) error {
+func (s *storeImpl) UpsertMany(objs []*{{.Type}}) error {
 	for _, obj := range objs {
 		if err := {{ template "insertFunctionName" .Schema }}(s.db, obj); err != nil {
 			return err
@@ -322,7 +306,7 @@ func (s *storeImpl) GetMany(ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, erro
 		if err := proto.Unmarshal(data, &msg); err != nil {
 		    return nil, nil, err
 		}
-		foundSet[msg.{{$singlePK.ObjectGetter|upperCamelCase}}()] = struct{}{}
+		foundSet[{{$singlePK.Getter "msg"}}] = struct{}{}
 		elems = append(elems, &msg)
 	}
 	missingIndices := make([]int, 0, len(ids)-len(foundSet))
@@ -367,7 +351,6 @@ func (s *storeImpl) Walk(fn func(obj *{{.Type}}) error) error {
 	}
 	return nil
 }
-
 
 //// Stubs for satisfying legacy interfaces
 

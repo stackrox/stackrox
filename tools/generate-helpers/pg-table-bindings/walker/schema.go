@@ -25,7 +25,7 @@ func (s *Schema) AddFieldWithType(field Field, dt DataType) {
 func (s *Schema) Print() {
 	fmt.Println(s.Table)
 	for _, f := range s.Fields {
-		fmt.Printf("  name=%s columnName=%s getter=%s datatype=%s\n", f.Name, f.ColumnName, f.ObjectGetter, f.DataType)
+		fmt.Printf("  name=%s columnName=%s getter=%+v datatype=%s\n", f.Name, f.ColumnName, f.ObjectGetter, f.DataType)
 	}
 	fmt.Println()
 	for _, c := range s.Children {
@@ -35,6 +35,37 @@ func (s *Schema) Print() {
 
 func parent(name string) string {
 	return "parent_" + name
+}
+
+func (s *Schema) ResolvedFields() []Field {
+	var pks []Field
+	if s.ParentSchema != nil {
+		pks = s.ParentSchema.ResolvedPrimaryKeys()
+	}
+	for idx := range pks {
+		pk := &pks[idx]
+		pk.Reference = pk.ColumnName
+		pk.Name = parent(pk.Name)
+		pk.ObjectGetter = ObjectGetter{
+			variable: true,
+			value:    pk.Name,
+		}
+		pk.ColumnName = parent(pk.ColumnName)
+	}
+	pks = append(pks, s.Fields...)
+	if s.ParentSchema == nil {
+		pks = append(pks, Field{
+			Schema:       s,
+			Name:         "serialized",
+			ObjectGetter: ObjectGetter{
+				variable: true,
+				value: "serialized",
+			},
+			ColumnName:   "serialized",
+			SQLType:      "bytea",
+		})
+	}
+	return pks
 }
 
 func (s *Schema) ParentKeys() []Field {
@@ -81,10 +112,6 @@ type SearchField struct {
 	Enabled   bool
 }
 
-type IndexConfig struct {
-	Using string
-}
-
 type PrimaryKey struct {
 	LocalKey  string
 	ParentKey string
@@ -97,10 +124,15 @@ type PostgresOptions struct {
 	Unique     bool
 }
 
+type ObjectGetter struct {
+	variable bool
+	value   string
+}
+
 type Field struct {
 	Schema       *Schema
 	Name         string
-	ObjectGetter string
+	ObjectGetter ObjectGetter
 	ColumnName   string
 	Reference    string
 	Type         string
@@ -108,4 +140,12 @@ type Field struct {
 	SQLType      string
 	Options      PostgresOptions
 	Search       SearchField
+}
+
+func (f Field) Getter(prefix string) string {
+	value := f.ObjectGetter.value
+	if f.ObjectGetter.variable {
+		return value
+	}
+	return prefix + "." + value
 }
