@@ -5,16 +5,20 @@ import (
 )
 
 type Schema struct {
-	Table 				string
-	ParentTable 	    *Schema
-	Fields 				[]*Field
-	FieldsBySearchField map[string]*Field
-	Children 			[]*Schema
-	Relationships 		[]Relationship
+	Table               string
+	ParentSchema        *Schema
+	Fields              []Field
+	FieldsBySearchField map[string]Field
+	Children            []*Schema
+	Relationships       []Relationship
+	Type                string
+	ObjectGetter        string
+	ForeignKeys         []Field
 }
 
-func (s *Schema) AddFieldWithType(field *Field, dt DataType) {
+func (s *Schema) AddFieldWithType(field Field, dt DataType) {
 	field.DataType = dt
+	field.SQLType = DataTypeToSQLType(dt)
 	s.Fields = append(s.Fields, field)
 }
 
@@ -29,13 +33,52 @@ func (s *Schema) Print() {
 	}
 }
 
-type Relationship struct {}
+func parent(name string) string {
+	return "parent_" + name
+}
+
+func (s *Schema) ParentKeys() []Field {
+	if s.ParentSchema == nil {
+		return nil
+	}
+	pks := s.ParentSchema.ResolvedPrimaryKeys()
+	for idx := range pks {
+		pk := &pks[idx]
+		pk.Reference = pk.ColumnName
+		pk.Name = parent(pk.Name)
+		pk.ColumnName = parent(pk.ColumnName)
+	}
+	return pks
+}
+
+func (s *Schema) ResolvedPrimaryKeys() []Field {
+	pks := s.ParentKeys()
+	for _, f := range s.Fields {
+		if f.Options.PrimaryKey {
+			pks = append(pks, f)
+		}
+	}
+	return pks
+}
+
+func (s *Schema) LocalPrimaryKeys() []Field {
+	var pks []Field
+	for _, f := range s.Fields {
+		if f.Options.PrimaryKey {
+			pks = append(pks, f)
+		}
+	}
+	return pks
+}
+
+type Relationship struct{}
 
 type SearchField struct {
 	FieldName string
 	Analyzer  string
 	Hidden    bool
 	Store     bool
+	Enabled   bool
 }
 
 type IndexConfig struct {
@@ -54,31 +97,14 @@ type PostgresOptions struct {
 }
 
 type Field struct {
-	Schema 		 *Schema
-	Name 		 string
+	Schema       *Schema
+	Name         string
 	ObjectGetter string
 	ColumnName   string
+	Reference    string
+	Type         string
 	DataType     DataType
-	Options     *PostgresOptions
-	Search	    *SearchField
+	SQLType      string
+	Options      PostgresOptions
+	Search       SearchField
 }
-
-
-
-
-
-/*
-	FieldType              reflect.Type
-	IndirectFieldType      reflect.Type
-	StructField            reflect.StructField
-	Tag                    reflect.StructTag
-	TagSettings            map[string]string
-	Schema                 *Schema
-	EmbeddedSchema         *Schema
-	OwnerSchema            *Schema
-	ReflectValueOf         func(reflect.Value) reflect.Value
-	ValueOf                func(reflect.Value) (value interface{}, zero bool)
-	Set                    func(reflect.Value, interface{}) error
-	IgnoreMigration        bool
- */
-

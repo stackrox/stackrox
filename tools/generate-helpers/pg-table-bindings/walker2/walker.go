@@ -16,7 +16,7 @@ var (
 
 type context struct {
 	getter string
-	column  string
+	column string
 }
 
 func (c context) Getter(name string) string {
@@ -45,6 +45,7 @@ func (c context) childContext(name string) context {
 func Walk(obj reflect.Type, table string) *Schema {
 	schema := &Schema{
 		Table: table,
+		Type:  obj.String(),
 	}
 	handleStruct(context{}, schema, obj.Elem())
 	return schema
@@ -52,7 +53,7 @@ func Walk(obj reflect.Type, table string) *Schema {
 
 const defaultIndex = "btree"
 
-func getPostgresOptions(tag string) *PostgresOptions {
+func getPostgresOptions(tag string) PostgresOptions {
 	var opts PostgresOptions
 
 	for _, field := range strings.Split(tag, ",") {
@@ -61,7 +62,7 @@ func getPostgresOptions(tag string) *PostgresOptions {
 			opts.Ignored = true
 		case strings.HasPrefix(field, "index"):
 			if strings.Contains(field, "=") {
-				opts.Index = stringutils.GetAfter(field, "=")
+				opts.Index = stringutils.GetAfter(field, "=d")
 			} else {
 				opts.Index = defaultIndex
 			}
@@ -75,23 +76,23 @@ func getPostgresOptions(tag string) *PostgresOptions {
 			panic(fmt.Sprintf("unknown case: %s", field))
 		}
 	}
-	return &opts
+	return opts
 }
 
-func getSearchOptions(searchTag string) *SearchField {
+func getSearchOptions(searchTag string) SearchField {
 	if searchTag == "-" || searchTag == "" {
-		return nil
+		return SearchField{}
 	}
 	fields := strings.Split(searchTag, ",")
-	return &SearchField{
+	return SearchField{
 		FieldName: fields[0],
 	}
 }
 
-var simpleFieldsMap = map[reflect.Kind] DataType {
-	reflect.Map: 	MAP,
+var simpleFieldsMap = map[reflect.Kind]DataType{
+	reflect.Map:    MAP,
 	reflect.String: STRING,
-	reflect.Bool: 	BOOL,
+	reflect.Bool:   BOOL,
 }
 
 func TableName(parent, child string) string {
@@ -111,10 +112,11 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		}
 		searchOpts := getSearchOptions(structField.Tag.Get("search"))
 
-		field := &Field{
-			Schema: 	  schema,
-			Name: 		  structField.Name,
-			Search: 	  searchOpts,
+		field := Field{
+			Schema:       schema,
+			Name:         structField.Name,
+			Search:       searchOpts,
+			Type:         structField.Type.String(),
 			Options:      opts,
 			ObjectGetter: ctx.Getter(structField.Name),
 			ColumnName:   ctx.Column(structField.Name),
@@ -145,9 +147,27 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			}
 
 			childSchema := &Schema{
-				ParentTable: schema,
-				Table: TableName(schema.Table, field.Name),
+				ParentSchema: schema,
+				Table:        TableName(schema.Table, field.Name),
+				Type:         elemType.String(),
+				ObjectGetter: ctx.Getter(field.Name),
 			}
+			idxField := Field{
+				Schema:       childSchema,
+				Name:         "idx",
+				ObjectGetter: "idx",
+				ColumnName:   "idx",
+				Type:         "int",
+				Options: PostgresOptions{
+					Ignored:    false,
+					Index:      "btree",
+					PrimaryKey: true,
+				},
+			}
+			childSchema.AddFieldWithType(idxField, NUMERIC)
+
+			// Take all the primary keys of the parent and copy them into the child schema
+			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 
 			handleStruct(context{}, childSchema, structField.Type.Elem().Elem())
