@@ -62,7 +62,7 @@ func getPostgresOptions(tag string) PostgresOptions {
 			opts.Ignored = true
 		case strings.HasPrefix(field, "index"):
 			if strings.Contains(field, "=") {
-				opts.Index = stringutils.GetAfter(field, "=d")
+				opts.Index = stringutils.GetAfter(field, "=")
 			} else {
 				opts.Index = defaultIndex
 			}
@@ -113,15 +113,15 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		searchOpts := getSearchOptions(structField.Tag.Get("search"))
 
 		field := Field{
-			Schema:       schema,
-			Name:         structField.Name,
-			Search:       searchOpts,
-			Type:         structField.Type.String(),
-			Options:      opts,
+			Schema:  schema,
+			Name:    structField.Name,
+			Search:  searchOpts,
+			Type:    structField.Type.String(),
+			Options: opts,
 			ObjectGetter: ObjectGetter{
-				value:    ctx.Getter(structField.Name),
+				value: ctx.Getter(structField.Name),
 			},
-			ColumnName:   ctx.Column(structField.Name),
+			ColumnName: ctx.Column(structField.Name),
 		}
 		if dt, ok := simpleFieldsMap[structField.Type.Kind()]; ok {
 			schema.AddFieldWithType(field, dt)
@@ -155,14 +155,14 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				ObjectGetter: ctx.Getter(field.Name),
 			}
 			idxField := Field{
-				Schema:       childSchema,
-				Name:         "idx",
+				Schema: childSchema,
+				Name:   "idx",
 				ObjectGetter: ObjectGetter{
 					variable: true,
 					value:    "idx",
 				},
-				ColumnName:   "idx",
-				Type:         "int",
+				ColumnName: "idx",
+				Type:       "int",
 				Options: PostgresOptions{
 					Ignored:    false,
 					Index:      "btree",

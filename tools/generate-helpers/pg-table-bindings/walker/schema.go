@@ -4,6 +4,18 @@ import (
 	"fmt"
 )
 
+var (
+	serializedField = Field{
+		Name: "serialized",
+		ObjectGetter: ObjectGetter{
+			variable: true,
+			value:    "serialized",
+		},
+		ColumnName: "serialized",
+		SQLType:    "bytea",
+	}
+)
+
 type Schema struct {
 	Table               string
 	ParentSchema        *Schema
@@ -54,16 +66,7 @@ func (s *Schema) ResolvedFields() []Field {
 	}
 	pks = append(pks, s.Fields...)
 	if s.ParentSchema == nil {
-		pks = append(pks, Field{
-			Schema:       s,
-			Name:         "serialized",
-			ObjectGetter: ObjectGetter{
-				variable: true,
-				value: "serialized",
-			},
-			ColumnName:   "serialized",
-			SQLType:      "bytea",
-		})
+		pks = append(pks, serializedField)
 	}
 	return pks
 }
@@ -126,7 +129,7 @@ type PostgresOptions struct {
 
 type ObjectGetter struct {
 	variable bool
-	value   string
+	value    string
 }
 
 type Field struct {

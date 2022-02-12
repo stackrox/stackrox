@@ -63,6 +63,7 @@ func createTableSinglekey(db *pgxpool.Pool) {
 	table := `
 create table if not exists singlekey (
     Key varchar,
+    Name varchar UNIQUE,
     StringSlice text[],
     Bool bool,
     Uint64 numeric,
@@ -75,6 +76,7 @@ create table if not exists singlekey (
     Embedded_Embedded varchar,
     Oneofstring varchar,
     Oneofnested_Nested varchar,
+    Oneofnested_Nested2_Nested2 varchar,
     serialized bytea,
     PRIMARY KEY(Key)
 )
@@ -83,6 +85,16 @@ create table if not exists singlekey (
 	_, err := db.Exec(context.Background(), table)
 	if err != nil {
 		panic("error creating table: " + table)
+	}
+
+	indexes := []string{
+
+		"create index if not exists singlekey_Key on singlekey using hash(Key)",
+	}
+	for _, index := range indexes {
+		if _, err := db.Exec(context.Background(), index); err != nil {
+			panic(err)
+		}
 	}
 
 	createTableSinglekeyNested(db)
@@ -97,6 +109,7 @@ create table if not exists singlekey_Nested (
     parent_Key varchar,
     idx numeric,
     Nested varchar,
+    Nested2_Nested2 varchar,
     PRIMARY KEY(parent_Key, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_Key) REFERENCES singlekey(Key) ON DELETE CASCADE
 )
@@ -105,6 +118,16 @@ create table if not exists singlekey_Nested (
 	_, err := db.Exec(context.Background(), table)
 	if err != nil {
 		panic("error creating table: " + table)
+	}
+
+	indexes := []string{
+
+		"create index if not exists singlekeyNested_idx on singlekey_Nested using btree(idx)",
+	}
+	for _, index := range indexes {
+		if _, err := db.Exec(context.Background(), index); err != nil {
+			panic(err)
+		}
 	}
 
 }
@@ -120,6 +143,7 @@ func insertIntoSinglekey(db *pgxpool.Pool, obj *storage.TestSingleKeyStruct) err
 		// parent primary keys start
 
 		obj.GetKey(),
+		obj.GetName(),
 		obj.GetStringSlice(),
 		obj.GetBool(),
 		obj.GetUint64(),
@@ -132,10 +156,11 @@ func insertIntoSinglekey(db *pgxpool.Pool, obj *storage.TestSingleKeyStruct) err
 		obj.GetEmbedded().GetEmbedded(),
 		obj.GetOneofstring(),
 		obj.GetOneofnested().GetNested(),
+		obj.GetOneofnested().GetNested2().GetNested2(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO singlekey (Key, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO singlekey (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, Oneofnested_Nested2_Nested2, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, Oneofnested_Nested2_Nested2 = EXCLUDED.Oneofnested_Nested2_Nested2, serialized = EXCLUDED.serialized"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -165,9 +190,10 @@ func insertIntoSinglekeyNested(db *pgxpool.Pool, obj *storage.TestSingleKeyStruc
 		parent_Key,
 		idx,
 		obj.GetNested(),
+		obj.GetNested2().GetNested2(),
 	}
 
-	finalStr := "INSERT INTO singlekey_Nested (parent_Key, idx, Nested) VALUES($1, $2, $3) ON CONFLICT(parent_Key, idx) DO UPDATE SET parent_Key = EXCLUDED.parent_Key, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested"
+	finalStr := "INSERT INTO singlekey_Nested (parent_Key, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4) ON CONFLICT(parent_Key, idx) DO UPDATE SET parent_Key = EXCLUDED.parent_Key, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -181,8 +207,6 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "storage.TestSingleKeyStruct")
 
 	createTableSinglekey(db)
-
-	// TBD(index creation)
 
 	return &storeImpl{
 		db: db,

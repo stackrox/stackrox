@@ -62,7 +62,7 @@ create table if not exists multikey (
     Int64 numeric,
     Float numeric,
     Labels jsonb,
-    Timestmap timestamp,
+    Timestamp timestamp,
     Enum integer,
     Enums int[],
     Embedded_Embedded varchar,
@@ -76,6 +76,13 @@ create table if not exists multikey (
 	_, err := db.Exec(context.Background(), table)
 	if err != nil {
 		panic("error creating table: " + table)
+	}
+
+	indexes := []string{}
+	for _, index := range indexes {
+		if _, err := db.Exec(context.Background(), index); err != nil {
+			panic(err)
+		}
 	}
 
 	createTableMultikeyNested(db)
@@ -101,6 +108,16 @@ create table if not exists multikey_Nested (
 		panic("error creating table: " + table)
 	}
 
+	indexes := []string{
+
+		"create index if not exists multikeyNested_idx on multikey_Nested using btree(idx)",
+	}
+	for _, index := range indexes {
+		if _, err := db.Exec(context.Background(), index); err != nil {
+			panic(err)
+		}
+	}
+
 }
 
 func insertIntoMultikey(db *pgxpool.Pool, obj *storage.TestMultiKeyStruct) error {
@@ -121,7 +138,7 @@ func insertIntoMultikey(db *pgxpool.Pool, obj *storage.TestMultiKeyStruct) error
 		obj.GetInt64(),
 		obj.GetFloat(),
 		obj.GetLabels(),
-		obj.GetTimestmap(),
+		obj.GetTimestamp(),
 		obj.GetEnum(),
 		obj.GetEnums(),
 		obj.GetEmbedded().GetEmbedded(),
@@ -130,7 +147,7 @@ func insertIntoMultikey(db *pgxpool.Pool, obj *storage.TestMultiKeyStruct) error
 		serialized,
 	}
 
-	finalStr := "INSERT INTO multikey (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestmap, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestmap = EXCLUDED.Timestmap, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO multikey (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
 	_, err := db.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -177,8 +194,6 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "storage.TestMultiKeyStruct")
 
 	createTableMultikey(db)
-
-	// TBD(index creation)
 
 	return &storeImpl{
 		db: db,

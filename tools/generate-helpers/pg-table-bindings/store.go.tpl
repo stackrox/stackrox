@@ -76,19 +76,21 @@ type storeImpl struct {
     db *pgxpool.Pool
 }
 
+{{- define "createFunctionName"}}createTable{{.Table|upperCamelCase}}
+{{- end}}
+
 {{- define "createTable"}}
 {{- $schema := . }}
-func createTable{{$schema.Table|upperCamelCase}}(db *pgxpool.Pool) {
+func {{template "createFunctionName" $schema}}(db *pgxpool.Pool) {
     // hack for testing, remove
     db.Exec(context.Background(), "DROP TABLE {{$schema.Table}} CASCADE")
 
     table := `
 create table if not exists {{$schema.Table}} (
 {{- range $idx, $field := $schema.ResolvedFields }}
-    {{$field.ColumnName}} {{$field.SQLType}},
+    {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
-    {{- $pks := $schema.ResolvedPrimaryKeys }}
-    PRIMARY KEY({{template "commaSeparatedColumns" $pks}}){{ if $schema.ParentSchema }},
+    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}){{ if $schema.ParentSchema }},
     {{- $pks := $schema.ParentKeys }}
     CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$schema.ParentSchema.Table}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
     {{- end }}
@@ -99,13 +101,24 @@ create table if not exists {{$schema.Table}} (
     if err != nil {
         panic("error creating table: " + table)
     }
+
+    indexes := []string {
+    {{range $idx, $field := $schema.Fields}}
+        {{if $field.Options.Index}}"create index if not exists {{$schema.Table|lowerCamelCase}}_{{$field.ColumnName}} on {{$schema.Table}} using {{$field.Options.Index}}({{$field.ColumnName}})",{{end}}
+    {{end}}
+    }
+    for _, index := range indexes {
+       if _, err := db.Exec(context.Background(), index); err != nil {
+           panic(err)
+        }
+    }
+
     {{range $idx, $child := $schema.Children}}
-    createTable{{$child.Table|upperCamelCase}}(db)
+    {{template "createFunctionName" $child}}(db)
     {{- end}}
 }
 {{range $idx, $child := $schema.Children}}{{template "createTable" $child}}{{end}}
 {{end}}
-
 {{- template "createTable" .Schema}}
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
@@ -163,9 +176,7 @@ func {{ template "insertFunctionName" $schema }}(db *pgxpool.Pool, obj {{$schema
 func New(db *pgxpool.Pool) Store {
     globaldb.RegisterTable(table, "{{.Type}}")
 
-    createTable{{.Schema.Table|upperCamelCase}}(db)
-
-    // TBD(index creation)
+    {{template "createFunctionName" .Schema}}(db)
 
     return &storeImpl{
         db: db,

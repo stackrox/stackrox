@@ -15,7 +15,8 @@ message TestSingleKeyStruct {
       ENUM1 = 1;
       ENUM2 = 2;
     }
-    string key                   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string key                   = 1 [(gogoproto.moretags) = 'sql:"pk,index=hash"'];
+    string name                  = 15 [(gogoproto.moretags) = 'sql:"unique"'];
     repeated string string_slice = 2;
 
     bool bool                    = 3;
