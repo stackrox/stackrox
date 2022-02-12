@@ -14,11 +14,11 @@ import (
 	"github.com/spf13/cobra"
 	_ "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
-	walker "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker2"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
 	"golang.org/x/tools/imports"
 )
 
-//go:embed store2.go.tpl
+//go:embed store.go.tpl
 var storeFile string
 
 type properties struct {

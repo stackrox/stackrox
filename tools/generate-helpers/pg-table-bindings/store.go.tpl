@@ -1,9 +1,10 @@
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Field|lowerCamelCase}} {{$pk.RawFieldType}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Field|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.Field}} = ${{add $idx 1}}{{end}}{{end}}
+{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
+{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}$idx, {{end}}{{$pk.Name|lowerCamelCase}}{{end}}{{end}}
+{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.Name}} = ${{add $idx 1}}{{end}}{{end}}
+{{define "idxGetter"}}{{ if ne . "idx"}}obj.{{.}}{{else}}idx{{end}}{{end}}
 
 {{- $ := . }}
-{{- $pks := $.TopLevelTable.PrimaryKeyElements }}
+{{- $pks := .Schema.LocalPrimaryKeys }}
 
 {{- $singlePK := dict.nil }}
 {{- if eq (len $pks) 1 }}
@@ -13,95 +14,196 @@
 package postgres
 
 import (
-	"bytes"
-	"context"
-	"reflect"
-	"time"
+    "context"
+    "fmt"
+    "time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jackc/pgx/v4"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
+    "github.com/gogo/protobuf/proto"
+    "github.com/jackc/pgx/v4/pgxpool"
+    "github.com/jackc/pgx/v4"
+    "github.com/stackrox/rox/central/globaldb"
+    "github.com/stackrox/rox/central/metrics"
+    "github.com/stackrox/rox/generated/storage"
+    "github.com/stackrox/rox/pkg/logging"
+    ops "github.com/stackrox/rox/pkg/metrics"
+    "github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
-		countStmt = "SELECT COUNT(*) FROM {{.Table}}"
-		existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
+        countStmt = "SELECT COUNT(*) FROM {{.Table}}"
+        existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
 
-		getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
-		deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
-		walkStmt = "SELECT serialized FROM {{.Table}}"
+        getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
+        deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
+        walkStmt = "SELECT serialized FROM {{.Table}}"
 
 {{- if $singlePK }}
-        getIDsStmt = "SELECT {{$singlePK.Field}} FROM {{.Table}}"
-		getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.Field}} = ANY($1::text[])"
-		deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.Field}} = ANY($1::text[])"
-{{- else }}
-    {{- range $_, $pk := $pks }}
-        deleteBy{{$pk.Field|upperCamelCase}}Stmt = "DELETE FROM {{$.Table}} WHERE {{$pk.Field}} = $1"
-    {{- end }}
+        getIDsStmt = "SELECT {{$singlePK.Name}} FROM {{.Table}}"
+        getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.Name}} = ANY($1::text[])"
+
+        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.Name}} = ANY($1::text[])"
 {{- end }}
 )
 
 var (
-	log = logging.LoggerForModule()
+    log = logging.LoggerForModule()
 
-	table = "{{.Table}}"
+    table = "{{.Table}}"
 )
 
 type Store interface {
-	Count() (int, error)
-	Exists({{template "paramList" $pks}}) (bool, error)
-	Get({{template "paramList" $pks}}) (*storage.{{.Type}}, bool, error)
-    Upsert(obj *storage.{{.Type}}) error
-    UpsertMany(objs []*storage.{{.Type}}) error
+    Count() (int, error)
+    Exists({{template "paramList" $pks}}) (bool, error)
+    Get({{template "paramList" $pks}}) (*{{.Type}}, bool, error)
+    Upsert(obj *{{.Type}}) error
+    UpsertMany(objs []*{{.Type}}) error
     Delete({{template "paramList" $pks}}) error
 
 {{- if $singlePK }}
-	GetIDs() ([]{{$singlePK.RawFieldType}}, error)
-    GetMany(ids []{{$singlePK.RawFieldType}}) ([]*storage.{{.Type}}, []int, error)
-	DeleteMany(ids []{{$singlePK.RawFieldType}}) error
-{{- else }}
-{{- range $_, $pk := $pks }}
-	DeleteBy{{$pk.Field|upperCamelCase}}({{$pk.Field|lowerCamelCase}} {{$pk.RawFieldType}}) error
-{{- end }}
+    GetIDs() ([]{{$singlePK.Type}}, error)
+    GetMany(ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
+    DeleteMany(ids []{{$singlePK.Type}}) error
 {{- end }}
 
-	Walk(fn func(obj *storage.{{.Type}}) error) error
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+    Walk(fn func(obj *{{.Type}}) error) error
+    AckKeysIndexed(keys ...string) error
+    GetKeysToIndex() ([]string, error)
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+    db *pgxpool.Pool
 }
+
+{{- define "createTable"}}
+{{- $schema := . }}
+func createTable{{$schema.Table|upperCamelCase}}(db *pgxpool.Pool) {
+    // hack for testing, remove
+    db.Exec(context.Background(), "DROP TABLE {{$schema.Table}} CASCADE")
+
+    table := `
+create table if not exists {{$schema.Table}} (
+{{- range $idx, $field := $schema.ParentKeys }}
+    {{$field.ColumnName}} {{$field.SQLType}},
+{{- end}}
+{{range $idx, $field := $schema.Fields}}
+    {{$field.ColumnName}} {{$field.SQLType}}{{if ne $idx (len $schema.Fields) }},{{end}}
+{{- end}}
+{{if not $schema.ParentSchema}}
+serialized bytea,
+{{- end}}
+    {{- $pks := $schema.ResolvedPrimaryKeys }}
+    PRIMARY KEY({{range $idx, $field := $pks}}{{if $idx}},{{- end}}{{$field.ColumnName}}{{end}}){{ if $schema.ParentSchema }},
+   {{- $pks := $schema.ParentKeys }}
+    CONSTRAINT fk_parent_table FOREIGN KEY ({{range $idx, $field := $pks}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{- end}}) REFERENCES {{$schema.ParentSchema.Table}}({{range $idx, $field := $pks}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}) ON DELETE CASCADE
+    {{- end }}
+)
+`
+
+    _, err := db.Exec(context.Background(), table)
+    if err != nil {
+        panic("error creating table: " + table)
+    }
+    {{range $idx, $child := $schema.Children}}
+    createTable{{$child.Table|upperCamelCase}}(db)
+    {{- end}}
+}
+{{range $idx, $child := $schema.Children}}{{template "createTable" $child}}{{end}}
+{{end}}
+
+{{- template "createTable" .Schema}}
+
+{{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
+{{- end}}
+
+{{- define "insertObject"}}
+{{- $schema := . }}
+
+func {{ template "insertFunctionName" $schema }}(db *pgxpool.Pool, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.ParentSchema}}, idx int{{end}}) error {
+    {{if not $schema.ParentSchema }}
+    serialized, marshalErr := obj.Marshal()
+    if marshalErr != nil {
+        return marshalErr
+    }
+    {{end}}
+
+    values := []interface{} {
+        // parent primary keys start
+        {{ range $idx, $field := $schema.ParentKeys }}
+        {{$field.Name}},{{end}}
+
+        {{- range $idx, $field := $schema.Fields }}
+        {{template "idxGetter" $field.ObjectGetter}},
+        {{- end}}
+        {{if not $schema.ParentSchema }}serialized,{{end}}
+    }
+    fieldStr := "({{ range $idx, $field := $schema.ParentKeys }}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{if $schema.ParentKeys}},{{end}} {{ range $idx, $field := $schema.Fields }}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{if not $schema.ParentSchema }}, serialized{{end}})"
+    conflictStr := "{{ range $idx, $field := $schema.ParentKeys }}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{if $schema.ParentKeys}},{{end}}{{ range $idx, $field := $schema.Fields }}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{if not $schema.ParentSchema }}, serialized = EXCLUDED.serialized{{end}}"
+
+    {{- $numValues := ( add ( len $schema.ParentKeys ) ( len $schema.Fields ) ) }}
+    {{if not $schema.ParentSchema }}
+    {{- $numValues = (add $numValues 1) }}
+    {{- end}}
+
+    finalStr := "INSERT INTO {{$schema.Table}}" + fieldStr + " VALUES({{ valueExpansion $numValues 0 }}) ON CONFLICT({{range $idx, $field := $schema.ResolvedPrimaryKeys}}{{if $idx}}, {{end}} {{$field.ColumnName}}{{end}}) DO UPDATE SET " + conflictStr
+    _, err := db.Exec(context.Background(), finalStr, values...)
+    if err != nil {
+        return err
+    }
+
+    {{if $schema.Children}}
+    var query string
+    {{end}}
+
+    {{range $idx, $child := $schema.Children}}
+    for childIdx, child := range obj.{{$child.ObjectGetter}} {
+        if err := {{ template "insertFunctionName" $child }}(db, child{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{template "idxGetter" $field.ObjectGetter}}{{end}}, childIdx); err != nil {
+            return err
+        }
+    }
+
+    query = "delete from {{$child.Table}} where {{ range $idx, $field := $child.ParentKeys }}{{if $idx}} AND {{end}}{{$field.ColumnName}} = ${{add $idx 1}}{{end}} AND idx >= ${{add (len $child.ParentKeys) 1}}"
+    _, err = db.Exec(context.Background(), query, {{ range $idx, $field := $schema.ParentKeys }}{{$field.Name}}, {{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}{{template "idxGetter" $field.ObjectGetter}}, {{end}} len(obj.{{$child.ObjectGetter}}))
+    if err != nil {
+        return err
+    }
+    // delete from {{$child.Table}} where <pks> and idx >= <val>,  len(obj.{{$child.ObjectGetter}})
+
+    {{- end}}
+    return nil
+}
+{{range $idx, $child := $schema.Children}}{{ template "insertObject" $child }}{{end}}
+{{- end}}
+
+{{ template "insertObject" .Schema }}
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "{{.Type}}")
+    globaldb.RegisterTable(table, "{{.Type}}")
 
-	for _, table := range []string {
-		{{range .FlatTableCreationQueries}}"{{.}}",
-		{{end}}
-	} {
-		_, err := db.Exec(context.Background(), table)
-		if err != nil {
-			panic("error creating table: " + table)
+    createTable{{.Schema.Table|upperCamelCase}}(db)
+
+    // TBD(index creation)
+
+    return &storeImpl{
+        db: db,
+    }
+}
+
+func (s *storeImpl) Upsert(obj *storage.Deployment) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.Type}}")
+
+	return {{ template "insertFunctionName" .Schema }}(s.db, obj)
+}
+
+func (s *storeImpl) UpsertMany(objs []*storage.Deployment) error {
+	for _, obj := range objs {
+		if err := {{ template "insertFunctionName" .Schema }}(s.db, obj); err != nil {
+			return err
 		}
 	}
-
-	return &storeImpl{
-		db: db,
-	}
+	return nil
 }
+
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count() (int, error) {
@@ -128,7 +230,7 @@ func (s *storeImpl) Exists({{template "paramList" $pks}}) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get({{template "paramList" $pks}}) (*storage.{{.Type}}, bool, error) {
+func (s *storeImpl) Get({{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.Type}}")
 
 	conn, release := s.acquireConn(ops.Get, "{{.Type}}")
@@ -140,63 +242,11 @@ func (s *storeImpl) Get({{template "paramList" $pks}}) (*storage.{{.Type}}, bool
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.{{.Type}}
-	buf := bytes.NewBuffer(data)
-	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "{{.Type}}")
-	if err := jsonpb.Unmarshal(buf, &msg); err != nil {
-		return nil, false, err
+	var msg {{.Type}}
+	if err := proto.Unmarshal(data, &msg); err != nil {
+        return nil, false, err
 	}
 	return &msg, true, nil
-}
-
-func convertEnumSliceToIntArray(i interface{}) []int32 {
-	enumSlice := reflect.ValueOf(i)
-	enumSliceLen := enumSlice.Len()
-	resultSlice := make([]int32, 0, enumSliceLen)
-	for i := 0; i < enumSlice.Len(); i++ {
-		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
-	}
-	return resultSlice
-}
-
-func nilOrStringTimestamp(t *types.Timestamp) *string {
-  if t == nil {
-    return nil
-  }
-  s := t.String()
-  return &s
-}
-
-// Upsert inserts the object into the DB
-func (s *storeImpl) Upsert(obj0 *storage.{{.Type}}) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "{{.Type}}")
-
-	t := time.Now()
-	serialized, err := obj0.Marshal()
-	if err != nil {
-		return err
-	}
-	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "{{.Type}}")
-	conn, release := s.acquireConn(ops.Add, "{{.Type}}")
-	defer release()
-
-	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-    doRollback := true
-	defer func() {
-		if doRollback {
-			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
-				log.Errorf("error rolling backing: %v", err)
-			}
-		}
-	}()
-
-	{{.FlatInsertion}}
-
-    doRollback = false
-	return tx.Commit(context.Background())
 }
 
 func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
@@ -207,35 +257,6 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	}
 	return conn, conn.Release
 }
-
-// UpsertMany batches objects into the DB
-func (s *storeImpl) UpsertMany(objs []*storage.{{.Type}}) error {
-	if len(objs) == 0 {
-		return nil
-	}
-
-	batch := &pgx.Batch{}
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "{{.Type}}")
-	for _, obj0 := range objs {
-		t := time.Now()
-		serialized, err := marshaler.MarshalToString(obj0)
-		if err != nil {
-			return err
-		}
-		metrics.SetJSONPBOperationDurationTime(t, "Marshal", "{{.Type}}")
-		{{.FlatMultiInsert}}
-	}
-
-	conn, release := s.acquireConn(ops.AddMany, "{{.Type}}")
-	defer release()
-
-	results := conn.SendBatch(context.Background(), batch)
-	if err := results.Close(); err != nil {
-		return err
-	}
-	return nil
-}
-
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete({{template "paramList" $pks}}) error {
@@ -253,7 +274,7 @@ func (s *storeImpl) Delete({{template "paramList" $pks}}) error {
 {{- if $singlePK }}
 
 // GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]{{$singlePK.RawFieldType}}, error) {
+func (s *storeImpl) GetIDs() ([]{{$singlePK.Type}}, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
 
 	rows, err := s.db.Query(context.Background(), getIDsStmt)
@@ -261,9 +282,9 @@ func (s *storeImpl) GetIDs() ([]{{$singlePK.RawFieldType}}, error) {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
-	var ids []{{$singlePK.RawFieldType}}
+	var ids []{{$singlePK.Type}}
 	for rows.Next() {
-		var id {{$singlePK.RawFieldType}}
+		var id {{$singlePK.Type}}
 		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
@@ -273,7 +294,7 @@ func (s *storeImpl) GetIDs() ([]{{$singlePK.RawFieldType}}, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ids []{{$singlePK.RawFieldType}}) ([]*storage.{{.Type}}, []int, error) {
+func (s *storeImpl) GetMany(ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.Type}}")
 
 	conn, release := s.acquireConn(ops.GetMany, "{{.Type}}")
@@ -291,21 +312,18 @@ func (s *storeImpl) GetMany(ids []{{$singlePK.RawFieldType}}) ([]*storage.{{.Typ
 		return nil, nil, err
 	}
 	defer rows.Close()
-	elems := make([]*storage.{{.Type}}, 0, len(ids))
-	foundSet := make(map[{{$singlePK.RawFieldType}}]struct{})
+	elems := make([]*{{.Type}}, 0, len(ids))
+	foundSet := make(map[{{$singlePK.Type}}]struct{})
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		var msg storage.{{.Type}}
-		buf := bytes.NewBuffer(data)
-		t := time.Now()
-		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
-			return nil, nil, err
+		var msg {{.Type}}
+		if err := proto.Unmarshal(data, &msg); err != nil {
+		    return nil, nil, err
 		}
-		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "{{.Type}}")
-		foundSet[msg.Get{{$singlePK.Field|upperCamelCase}}()] = struct{}{}
+		foundSet[msg.{{$singlePK.ObjectGetter|upperCamelCase}}()] = struct{}{}
 		elems = append(elems, &msg)
 	}
 	missingIndices := make([]int, 0, len(ids)-len(foundSet))
@@ -318,7 +336,7 @@ func (s *storeImpl) GetMany(ids []{{$singlePK.RawFieldType}}) ([]*storage.{{.Typ
 }
 
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ids []{{$singlePK.RawFieldType}}) error {
+func (s *storeImpl) DeleteMany(ids []{{$singlePK.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.Type}}")
 
 	conn, release := s.acquireConn(ops.RemoveMany, "{{.Type}}")
@@ -328,24 +346,10 @@ func (s *storeImpl) DeleteMany(ids []{{$singlePK.RawFieldType}}) error {
 	}
 	return nil
 }
-
-{{- else }}
-{{- range $_, $pk := $pks }}
-func (s *storeImpl) DeleteBy{{$pk.Field|upperCamelCase}}({{$pk.Field|lowerCamelCase}} {{$pk.RawFieldType}}) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{$.Type}}")
-
-	conn, release := s.acquireConn(ops.RemoveMany, "{{$.Type}}")
-	defer release()
-	if _, err := conn.Exec(context.Background(), deleteBy{{$pk.Field|upperCamelCase}}Stmt, {{$pk.Field|lowerCamelCase}}); err != nil {
-		return err
-	}
-	return nil
-}
-{{- end }}
 {{- end }}
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(fn func(obj *storage.{{.Type}}) error) error {
+func (s *storeImpl) Walk(fn func(obj *{{.Type}}) error) error {
 	rows, err := s.db.Query(context.Background(), walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
@@ -356,15 +360,17 @@ func (s *storeImpl) Walk(fn func(obj *storage.{{.Type}}) error) error {
 		if err := rows.Scan(&data); err != nil {
 			return err
 		}
-		var msg storage.{{.Type}}
-		buf := bytes.NewReader(data)
-		if err := jsonpb.Unmarshal(buf, &msg); err != nil {
-			return err
+		var msg {{.Type}}
+		if err := proto.Unmarshal(data, &msg); err != nil {
+		    return err
 		}
 		return fn(&msg)
 	}
 	return nil
 }
+
+
+//// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
 func (s *storeImpl) AckKeysIndexed(keys ...string) error {
