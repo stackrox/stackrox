@@ -1,7 +1,6 @@
 package walker
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -10,16 +9,7 @@ import (
 
 func TestWalker(t *testing.T) {
 	schema := Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
-
-	fmt.Println(schema)
-
-	//table := Walk(reflect.TypeOf((*storage.Deployment)(nil)))
-
-	//table.Print("", true)
-	//searchPrint(table)
-	//createTables(table)
-	//insertObject(table, nil, 0)
-	//generateInsertFunctions(table)
+	schema.Print()
 }
 
 /*

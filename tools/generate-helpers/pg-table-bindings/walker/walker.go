@@ -2,256 +2,54 @@ package walker
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
-type Table struct {
-	Parent       *Table
-	TopLevel     bool
-	Field        string
-	RawFieldType string
-	Elems        []Element
-	Embedded     []*Table
-	Children     []*Table
-	OneOf        bool
-	SearchField  string
+var (
+	timestampType = reflect.TypeOf(&types.Timestamp{})
+)
+
+type context struct {
+	getter string
+	column string
 }
 
-func (t *Table) Elements() []Element {
-	var elems []Element
-	for _, elem := range t.Elems {
-		if !elem.IsSearchable() {
-			continue
-		}
-		elems = append(elems, elem)
+func (c context) Getter(name string) string {
+	get := fmt.Sprintf("Get%s()", name)
+	if c.getter == "" {
+		return get
 	}
-	for _, child := range t.Embedded {
-		childPairs := child.Elements()
-		elems = append(elems, childPairs...)
-	}
-	return elems
+	return c.getter + "." + get
 }
 
-func (p *Table) SearchFieldsToElement() map[string]Element {
-	m := make(map[string]Element)
-	for _, elem := range p.Elements() {
-		if elem.IsSearchable() {
-			if _, ok := m[elem.SearchField]; !ok {
-				m[elem.SearchField] = elem
-			}
-		}
+func (c context) Column(name string) string {
+	if c.column == "" {
+		return name
 	}
-	for _, child := range p.Embedded {
-		for k, v := range child.SearchFieldsToElement() {
-			if _, ok := m[k]; !ok {
-				m[k] = v
-			}
-		}
-	}
-	for _, child := range p.Children {
-		for k, v := range child.SearchFieldsToElement() {
-			m[k] = v
-		}
-	}
-	return m
+	return c.column + "_" + name
 }
 
-func (p *Table) GetInsertComposer(level int) *InsertComposer {
-	ic := &InsertComposer{
-		Table: p.TableName(),
+func (c context) childContext(name string) context {
+	return context{
+		getter: c.Getter(name),
+		column: c.Column(name),
 	}
-
-	for _, elem := range p.Elements() {
-		ic.AddSQL(elem.SQLPath())
-		ic.AddExcluded(elem.SQLPath())
-		getterPath := fmt.Sprintf("obj%d.", level) + elem.GetterPath()
-		if elem.DataType == DATETIME {
-			getterPath = fmt.Sprintf("nilOrStringTimestamp(%s)", getterPath)
-		} else if elem.DataType == INT_ARRAY {
-			getterPath = fmt.Sprintf("convertEnumSliceToIntArray(%s)", getterPath)
-		}
-		ic.AddGetters(getterPath)
-	}
-	return ic
-}
-
-func (p *Table) AbsGetterPath() string {
-	if p.Field == "" {
-		return ""
-	}
-	getter := fmt.Sprintf("Get%s()", p.Field)
-	if p.Parent == nil {
-		return getter
-	}
-	if p.Parent.TopLevel {
-		return getter
-	}
-	if getterPath := p.Parent.GetterPath(); getterPath != "" {
-		return getterPath + "." + getter
-	}
-	return getter
-}
-
-func (p *Table) GetterPath() string {
-	if p.Field == "" || p.TopLevel {
-		return ""
-	}
-	getter := fmt.Sprintf("Get%s()", p.Field)
-	if p.Parent == nil {
-		return getter
-	}
-	if p.OneOf {
-		return p.Parent.GetterPath()
-	}
-	if getterPath := p.Parent.GetterPath(); getterPath != "" {
-		return getterPath + "." + getter
-	}
-	return getter
-}
-
-func (p *Table) PrimaryKeyElements() []Element {
-	// This means top level
-	if p.Parent == nil {
-		var pks []Element
-		for _, elem := range p.Elems {
-			if elem.Options.PrimaryKey {
-				pks = append(pks, elem)
-			}
-		}
-		return pks
-	}
-	if !p.TopLevel {
-		return p.Parent.PrimaryKeyElements()
-	}
-	parentKeys := p.Parent.PrimaryKeyElements()
-	for i := range parentKeys {
-		parentKeys[i].Field = "parent_" + parentKeys[i].Field
-	}
-
-	parentKeys = append(parentKeys, Element{
-		DataType: INTEGER,
-		Field:    "idx",
-		Parent:   p,
-	})
-	return parentKeys
-}
-
-func (p *Table) TableName() string {
-	if p.Parent == nil {
-		return p.RawFieldType
-	}
-	if !p.TopLevel {
-		return p.Parent.TableName()
-	}
-	if parentPath := p.Parent.TableName(); parentPath != "" {
-		return parentPath + "_" + p.Field
-	}
-	return p.RawFieldType
-}
-
-func (p *Table) SQLPath() string {
-	if p.Parent == nil {
-		return p.Field
-	}
-	if p.TopLevel {
-		return ""
-	}
-	if parentPath := p.Parent.SQLPath(); parentPath != "" {
-		return parentPath + "_" + p.Field
-	}
-	return p.Field
-}
-
-func (s Table) Print(indent string, searchOnly bool) {
-	fmt.Println(indent, s.Field, s.RawFieldType, s.OneOf)
-	fmt.Println(indent, "  ", "fields:")
-	for _, elem := range s.Elems {
-		if !searchOnly || elem.IsSearchable() {
-			fmt.Println(indent, "    ", elem.Field, elem.DataType.String(), elem.RawFieldType)
-		}
-	}
-	if len(s.Embedded) > 0 {
-		fmt.Println(indent, "embedded:")
-	}
-	for _, child := range s.Embedded {
-		child.Print("    ", searchOnly)
-	}
-	if len(s.Children) > 0 {
-		fmt.Println(indent, "tables:")
-	}
-	for _, table := range s.Children {
-		table.Print("    ", searchOnly)
-	}
-	fmt.Println()
-}
-
-type Element struct {
-	Parent       *Table
-	DataType     DataType
-	Field        string
-	RawFieldType string
-	Slice        bool
-	SearchField  string
-	Options      PostgresOptions
-}
-
-func (e Element) TableName() string {
-	return e.Parent.TableName()
-}
-
-func (e Element) IsSearchable() bool {
-	return e.SearchField != ""
-}
-
-func (e Element) TablePrefixed() string {
-	return fmt.Sprintf("%s.%s", e.Parent.TableName(), e.SQLPath())
-}
-
-func (e Element) GetterPath() string {
-	getter := fmt.Sprintf("Get%s()", e.Field)
-	if e.Parent.TopLevel {
-		return getter
-	}
-	if getterPath := e.Parent.GetterPath(); getterPath != "" {
-		return e.Parent.GetterPath() + "." + getter
-	}
-	return getter
-}
-
-func (e Element) SQLPath() string {
-	if parentPath := e.Parent.SQLPath(); parentPath != "" {
-		return parentPath + "_" + e.Field
-	}
-	return e.Field
-}
-
-type SQLWalker struct {
-	table string
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(obj reflect.Type, table string) *Table {
-	typ := obj.Elem()
-	parent := &Table{
-		RawFieldType: table,
-		TopLevel:     true,
+func Walk(obj reflect.Type, table string) *Schema {
+	schema := &Schema{
+		Table: table,
+		Type:  obj.String(),
 	}
-	walker := SQLWalker{}
-	walker.handleStruct(parent, typ)
-
-	// Validate there is a pk
-	if len(parent.PrimaryKeyElements()) == 0 {
-		log.Printf("table %s needs PK", table)
-	}
-
-	return parent
+	handleStruct(context{}, schema, obj.Elem())
+	return schema
 }
-
 
 const defaultIndex = "btree"
 
@@ -264,13 +62,15 @@ func getPostgresOptions(tag string) PostgresOptions {
 			opts.Ignored = true
 		case strings.HasPrefix(field, "index"):
 			if strings.Contains(field, "=") {
-				opts.Index = stringutils.GetAfter(field, "=")
+				opts.Index = stringutils.GetAfter(field, "=d")
 			} else {
 				opts.Index = defaultIndex
 			}
 		case field == "pk":
 			opts.PrimaryKey = true
 		case field == "":
+		case field == "unique":
+
 		default:
 			// ignore for just right now
 			panic(fmt.Sprintf("unknown case: %s", field))
@@ -279,126 +79,117 @@ func getPostgresOptions(tag string) PostgresOptions {
 	return opts
 }
 
-func hasSearchField(tag string) bool {
-	return tag != "" && tag != "-"
+func getSearchOptions(searchTag string) SearchField {
+	if searchTag == "-" || searchTag == "" {
+		return SearchField{}
+	}
+	fields := strings.Split(searchTag, ",")
+	return SearchField{
+		FieldName: fields[0],
+	}
+}
+
+var simpleFieldsMap = map[reflect.Kind]DataType{
+	reflect.Map:    MAP,
+	reflect.String: STRING,
+	reflect.Bool:   BOOL,
+}
+
+func TableName(parent, child string) string {
+	return fmt.Sprintf("%s_%s", parent, child)
 }
 
 // handleStruct takes in a struct object and properly handles all of the fields
-func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
+func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
-		field := original.Field(i)
-		if strings.HasPrefix(field.Name, "XXX") {
+		structField := original.Field(i)
+		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(field.Tag.Get("sql"))
+		opts := getPostgresOptions(structField.Tag.Get("sql"))
 		if opts.Ignored {
 			continue
 		}
+		searchOpts := getSearchOptions(structField.Tag.Get("search"))
 
-		var searchField string
-		searchTag := field.Tag.Get("search")
-		if searchTag == "-" {
-			continue
-		} else if searchTag != "" {
-			fields := strings.Split(searchTag, ",")
-			searchField = fields[0]
-		} else if opts.PrimaryKey {
-			searchField = field.Name
-		}
-		elem := Element{
-			Parent:       parent,
-			Field:        field.Name,
-			RawFieldType: field.Type.String(),
-			SearchField:  searchField,
+		field := Field{
+			Schema:       schema,
+			Name:         structField.Name,
+			Search:       searchOpts,
+			Type:         structField.Type.String(),
 			Options:      opts,
+			ObjectGetter: ctx.Getter(structField.Name),
+			ColumnName:   ctx.Column(structField.Name),
 		}
-		switch field.Type.Kind() {
+		if dt, ok := simpleFieldsMap[structField.Type.Kind()]; ok {
+			schema.AddFieldWithType(field, dt)
+			continue
+		}
+
+		switch structField.Type.Kind() {
 		case reflect.Ptr:
-			if field.Type.String() == "*types.Timestamp" {
-				elem.DataType = DATETIME
-				parent.Elems = append(parent.Elems, elem)
+			if structField.Type == timestampType {
+				schema.AddFieldWithType(field, DATETIME)
 				continue
 			}
-			child := &Table{
-				Parent:       parent,
-				Field:        field.Name,
-				RawFieldType: field.Type.String(),
-			}
-			parent.Embedded = append(parent.Embedded, child)
 
-			s.handleStruct(child, field.Type.Elem())
+			handleStruct(ctx.childContext(field.Name), schema, structField.Type.Elem())
 		case reflect.Slice:
-			elemType := field.Type.Elem()
+			elemType := structField.Type.Elem()
 
 			switch elemType.Kind() {
 			case reflect.String:
-				parent.Elems = append(parent.Elems, Element{
-					Parent:      parent,
-					DataType:    STRING_ARRAY,
-					Field:       field.Name,
-					Slice:       true,
-					SearchField: searchField,
-				})
+				schema.AddFieldWithType(field, STRING_ARRAY)
 				continue
 			case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
-				parent.Elems = append(parent.Elems, Element{
-					Parent:      parent,
-					DataType:    INT_ARRAY,
-					Field:       field.Name,
-					Slice:       true,
-					SearchField: searchField,
-				})
+				schema.AddFieldWithType(field, INT_ARRAY)
 				continue
 			}
 
-			table := &Table{
-				Parent:       parent,
-				Field:        field.Name,
-				RawFieldType: field.Type.String(),
-				TopLevel:     true,
+			childSchema := &Schema{
+				ParentSchema: schema,
+				Table:        TableName(schema.Table, field.Name),
+				Type:         elemType.String(),
+				ObjectGetter: ctx.Getter(field.Name),
 			}
-			parent.Children = append(parent.Children, table)
+			idxField := Field{
+				Schema:       childSchema,
+				Name:         "idx",
+				ObjectGetter: "idx",
+				ColumnName:   "idx",
+				Type:         "int",
+				Options: PostgresOptions{
+					Ignored:    false,
+					Index:      "btree",
+					PrimaryKey: true,
+				},
+			}
+			childSchema.AddFieldWithType(idxField, NUMERIC)
 
-			s.handleStruct(table, field.Type.Elem().Elem())
+			// Take all the primary keys of the parent and copy them into the child schema
+			// with references to the parent so we that we can create
+			schema.Children = append(schema.Children, childSchema)
+
+			handleStruct(context{}, childSchema, structField.Type.Elem().Elem())
 			continue
 		case reflect.Struct:
-			child := &Table{
-				Parent:       parent,
-				Field:        field.Name,
-				RawFieldType: field.Type.String(),
-			}
-			parent.Embedded = append(parent.Embedded, child)
-			s.handleStruct(child, field.Type)
-		case reflect.Map:
-			elem.DataType = MAP
-			parent.Elems = append(parent.Elems, elem)
-			continue
-		case reflect.String:
-			elem.DataType = STRING
-			parent.Elems = append(parent.Elems, elem)
-			continue
-		case reflect.Bool:
-			elem.DataType = BOOL
-			parent.Elems = append(parent.Elems, elem)
-			continue
+			handleStruct(ctx.childContext(field.Name), schema, structField.Type)
 		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
-			enum, ok := reflect.Zero(field.Type).Interface().(protoreflect.ProtoEnum)
+			enum, ok := reflect.Zero(structField.Type).Interface().(protoreflect.ProtoEnum)
 			if !ok {
-				elem.DataType = NUMERIC
-				parent.Elems = append(parent.Elems, elem)
+				schema.AddFieldWithType(field, NUMERIC)
 				continue
 			}
 			_, err := protoreflect.GetEnumDescriptor(enum)
 			if err != nil {
 				panic(err)
 			}
-			elem.DataType = ENUM
-			parent.Elems = append(parent.Elems, elem)
+			schema.AddFieldWithType(field, ENUM)
 			continue
 		case reflect.Interface:
 			// If it is a oneof then call XXX_OneofWrappers to get the types.
 			// The return values is a slice of interfaces that are nil type pointers
-			if field.Tag.Get("protobuf_oneof") != "" {
+			if structField.Tag.Get("protobuf_oneof") != "" {
 				ptrToOriginal := reflect.PtrTo(original)
 
 				methodName := fmt.Sprintf("Get%s", field.Name)
@@ -422,14 +213,7 @@ func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
 				for _, f := range actualOneOfFields {
 					typ := reflect.TypeOf(f)
 					if typ.Implements(oneofInterface) {
-						child := &Table{
-							Parent:       parent,
-							Field:        field.Name,
-							RawFieldType: field.Type.String(),
-							OneOf:        true,
-						}
-						parent.Embedded = append(parent.Embedded, child)
-						s.handleStruct(child, typ.Elem())
+						handleStruct(ctx.childContext(field.Name), schema, typ.Elem())
 					}
 				}
 				continue
