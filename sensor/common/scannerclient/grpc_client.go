@@ -35,6 +35,7 @@ func newGRPCClient(endpoint string) (*client, error) {
 
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
+		GRPCOnly:      true,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize Scanner TLS config")
@@ -101,9 +102,11 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 func getRegistry(img *storage.ContainerImage) (registryTypes.Registry, error) {
 	reg := img.GetName().GetRegistry()
 	regs := registry.Singleton().GetAllInNamespace(img.GetNamespace())
-	for _, r := range regs.GetAll() {
-		if r.Name() == reg {
-			return r, nil
+	if regs != nil {
+		for _, r := range regs.GetAll() {
+			if r.Name() == reg {
+				return r, nil
+			}
 		}
 	}
 

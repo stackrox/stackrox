@@ -66,14 +66,14 @@ function PolicyDetail({
     }
 
     function onEditPolicy() {
-        history.replace({
+        history.push({
             pathname: `${policiesBasePath}/${id}`,
             search: 'action=edit',
         });
     }
 
     function onClonePolicy() {
-        history.replace({
+        history.push({
             pathname: `${policiesBasePath}/${id}`,
             search: 'action=clone',
         });

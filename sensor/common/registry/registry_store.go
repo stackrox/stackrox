@@ -96,7 +96,7 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 	return nil
 }
 
-// GetAllInNamespace returns all the registries within a given namespace.
+// GetAllInNamespace returns all the registries within a given namespace (nil if there aren't any).
 func (rs *Store) GetAllInNamespace(namespace string) registries.Set {
 	rs.mutex.RLock()
 	defer rs.mutex.RUnlock()
