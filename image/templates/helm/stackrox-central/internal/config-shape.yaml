@@ -81,7 +81,6 @@ customize:
     podAnnotations: {} # dict
     envVars: {} # dict
   scanner:
-    mode: string # null
     labels: {} # dict
     annotations: {} # dict
     podLabels: {} # dict

@@ -265,6 +265,11 @@
    Local scanner setup.
   */}}
 
+{{/* Disable scanner always in kubectl outputs */}}
+[< if .KubectlOutput ->]
+  {{ $_ := set $._rox.scanner "disable" true }}
+[< end >]
+
 {{/* Disable local scanner on non-OpenShift 4 clusters by default*/}}
 {{ if ne ._rox.env.openshift 4 }}
   {{ if eq $._rox.scanner.disable false }}
