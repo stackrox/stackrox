@@ -86,10 +86,10 @@ create table if not exists {{$schema.Table}} (
     {{$field.ColumnName}} {{$field.SQLType}},
 {{- end}}
 {{range $idx, $field := $schema.Fields}}
-    {{$field.ColumnName}} {{$field.SQLType}}{{if ne $idx (len $schema.Fields) }},{{end}}
+    {{$field.ColumnName}} {{$field.SQLType}},
 {{- end}}
 {{if not $schema.ParentSchema}}
-serialized bytea,
+    serialized bytea,
 {{- end}}
     {{- $pks := $schema.ResolvedPrimaryKeys }}
     PRIMARY KEY({{range $idx, $field := $pks}}{{if $idx}},{{- end}}{{$field.ColumnName}}{{end}}){{ if $schema.ParentSchema }},
@@ -166,7 +166,6 @@ func {{ template "insertFunctionName" $schema }}(db *pgxpool.Pool, obj {{$schema
     if err != nil {
         return err
     }
-    // delete from {{$child.Table}} where <pks> and idx >= <val>,  len(obj.{{$child.ObjectGetter}})
 
     {{- end}}
     return nil

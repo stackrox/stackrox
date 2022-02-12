@@ -45,6 +45,15 @@ func TestStore(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, deployment, dep)
 
+	assert.Len(t, deployment.Containers, 2)
+	deployment.Containers = deployment.Containers[:1]
+	assert.NoError(t, store.Upsert(deployment))
+
+	dep, exists, err = store.Get(deployment.GetId())
+	assert.NoError(t, err)
+	assert.True(t, exists)
+	assert.Equal(t, deployment, dep)
+
 	err = store.Delete(deployment.GetId())
 	dep, exists, err = store.Get(deployment.GetId())
 	assert.NoError(t, err)

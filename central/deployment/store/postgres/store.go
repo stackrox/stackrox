@@ -92,7 +92,7 @@ create table if not exists deployments (
     RiskScore numeric,
     ProcessTags text[],
 
-serialized bytea,
+    serialized bytea,
     PRIMARY KEY(Id)
 )
 `
@@ -477,7 +477,6 @@ func insertIntoDeployments(db *pgxpool.Pool, obj *storage.Deployment) error {
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Requirements where <pks> and idx >= <val>,  len(obj.GetLabelSelector().GetRequirements())
 	for childIdx, child := range obj.GetContainers() {
 		if err := insertIntoDeploymentsContainers(db, child, obj.GetId(), childIdx); err != nil {
 			return err
@@ -489,7 +488,6 @@ func insertIntoDeployments(db *pgxpool.Pool, obj *storage.Deployment) error {
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Containers where <pks> and idx >= <val>,  len(obj.GetContainers())
 	for childIdx, child := range obj.GetTolerations() {
 		if err := insertIntoDeploymentsTolerations(db, child, obj.GetId(), childIdx); err != nil {
 			return err
@@ -501,7 +499,6 @@ func insertIntoDeployments(db *pgxpool.Pool, obj *storage.Deployment) error {
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Tolerations where <pks> and idx >= <val>,  len(obj.GetTolerations())
 	for childIdx, child := range obj.GetPorts() {
 		if err := insertIntoDeploymentsPorts(db, child, obj.GetId(), childIdx); err != nil {
 			return err
@@ -513,7 +510,6 @@ func insertIntoDeployments(db *pgxpool.Pool, obj *storage.Deployment) error {
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Ports where <pks> and idx >= <val>,  len(obj.GetPorts())
 	return nil
 }
 
@@ -600,7 +596,6 @@ func insertIntoDeploymentsContainers(db *pgxpool.Pool, obj *storage.Container, p
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Containers_Env where <pks> and idx >= <val>,  len(obj.GetConfig().GetEnv())
 	for childIdx, child := range obj.GetVolumes() {
 		if err := insertIntoDeploymentsContainersVolumes(db, child, parent_Id, idx, childIdx); err != nil {
 			return err
@@ -612,7 +607,6 @@ func insertIntoDeploymentsContainers(db *pgxpool.Pool, obj *storage.Container, p
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Containers_Volumes where <pks> and idx >= <val>,  len(obj.GetVolumes())
 	for childIdx, child := range obj.GetPorts() {
 		if err := insertIntoDeploymentsContainersPorts(db, child, parent_Id, idx, childIdx); err != nil {
 			return err
@@ -624,7 +618,6 @@ func insertIntoDeploymentsContainers(db *pgxpool.Pool, obj *storage.Container, p
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Containers_Ports where <pks> and idx >= <val>,  len(obj.GetPorts())
 	for childIdx, child := range obj.GetSecrets() {
 		if err := insertIntoDeploymentsContainersSecrets(db, child, parent_Id, idx, childIdx); err != nil {
 			return err
@@ -636,7 +629,6 @@ func insertIntoDeploymentsContainers(db *pgxpool.Pool, obj *storage.Container, p
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Containers_Secrets where <pks> and idx >= <val>,  len(obj.GetSecrets())
 	return nil
 }
 
@@ -727,7 +719,6 @@ func insertIntoDeploymentsContainersPorts(db *pgxpool.Pool, obj *storage.PortCon
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Containers_Ports_ExposureInfos where <pks> and idx >= <val>,  len(obj.GetExposureInfos())
 	return nil
 }
 
@@ -843,7 +834,6 @@ func insertIntoDeploymentsPorts(db *pgxpool.Pool, obj *storage.PortConfig, paren
 	if err != nil {
 		return err
 	}
-	// delete from deployments_Ports_ExposureInfos where <pks> and idx >= <val>,  len(obj.GetExposureInfos())
 	return nil
 }
 

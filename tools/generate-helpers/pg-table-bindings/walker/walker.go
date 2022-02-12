@@ -68,9 +68,9 @@ func getPostgresOptions(tag string) PostgresOptions {
 			}
 		case field == "pk":
 			opts.PrimaryKey = true
-		case field == "":
 		case field == "unique":
-
+			opts.Unique = true
+		case field == "":
 		default:
 			// ignore for just right now
 			panic(fmt.Sprintf("unknown case: %s", field))

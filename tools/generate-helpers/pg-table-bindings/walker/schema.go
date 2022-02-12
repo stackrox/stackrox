@@ -94,6 +94,7 @@ type PostgresOptions struct {
 	Ignored    bool
 	Index      string
 	PrimaryKey bool
+	Unique     bool
 }
 
 type Field struct {
