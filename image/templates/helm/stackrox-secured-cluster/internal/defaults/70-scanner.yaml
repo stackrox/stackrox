@@ -1,4 +1,5 @@
 scanner:
+  disable: true
   replicas: 3
   logLevel: INFO
   mode: slim

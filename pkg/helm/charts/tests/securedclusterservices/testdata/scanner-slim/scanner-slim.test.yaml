@@ -5,6 +5,8 @@ server:
   - openshift-4.1.0
 tests:
 - name: "scanner with default settings in slim mode"
+  set:
+    scanner.disable: false
   expect: |
     container(.deployments["scanner-slim"]; "scanner").image | contains("slim")
     container(.deployments["scanner-slim-db"]; "db").image | contains("slim")
@@ -12,15 +14,14 @@ tests:
     .deployments["scanner-db"] | assertThat(. == null)
     .secrets["scanner-slim-tls"] | assertThat(. == null)
     .secrets["scanner-slim-db-tls"] | assertThat(. == null)
+    .securitycontextconstraints | keys | sort | assertThat(. == ["stackrox-admission-control", "stackrox-collector", "stackrox-scanner-slim", "stackrox-sensor"])
 
-- name: "scanner is disabled should not be installed"
-  set:
-    scanner.disable: true
+- name: "scanner is disabled should not be installed by default"
   expect: |
     .deployments["scanner-slim"] | assertThat(. == null)
     .deployments["scanner-db-slim"] | assertThat(. == null)
 
-- name: "scanner is enabled on non-openshift cluster should fail"
+- name: "scanner is enabled on non-openshift 4 cluster should fail"
   set:
     env.openshift: false
     scanner.disable: false

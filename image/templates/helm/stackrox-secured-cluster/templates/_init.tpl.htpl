@@ -265,17 +265,6 @@
    Local scanner setup.
   */}}
 
-{{/* Local scanner defaulting */}}
-{{ if kindIs "invalid" $._rox.scanner.disable }}
-  {{ if eq ._rox.env.openshift 4 }}
-    {{/* Enable local scanner on OpenShift by default */}}
-    {{ $_ := set $._rox.scanner "disable" false }}
-  {{ else }}
-    {{/* Disable local scanner on non OpenShift4 clusters by default */}}
-    {{ $_ := set $._rox.scanner "disable" true }}
-  {{ end }}
-{{ end }}
-
 {{/* Disable local scanner on non-OpenShift 4 clusters by default*/}}
 {{ if ne ._rox.env.openshift 4 }}
   {{ if eq $._rox.scanner.disable false }}
