@@ -64,7 +64,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesImmediateRefresh() {
 				storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 
 			s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(storedCertificates, nil)
-			s.dependenciesMock.On("putServiceCertificates", mock.Anything,
+			s.dependenciesMock.On("ensureServiceCertificates", mock.Anything,
 				issueCertsResponse.GetCertificates()).Once().Return(nil)
 
 			s.dependenciesMock.On("getCertsRenewalTime", storedCertificates).Once().Return(
@@ -160,14 +160,14 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseF
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
-func (s *certRefresherSuite) TestRefreshCertificatesPutCertsFailure() {
+func (s *certRefresherSuite) TestRefreshCertificatesEnsureCertsFailure() {
 	certificates := (*storage.TypedServiceCertificateSet)(nil)
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
 	issueCertsResponse := testIssueCertsResponse(2,
 		storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(issueCertsResponse, nil)
-	s.dependenciesMock.On("putServiceCertificates", mock.Anything,
+	s.dependenciesMock.On("ensureServiceCertificates", mock.Anything,
 		issueCertsResponse.GetCertificates()).Once().Return(errCertRefresherForced)
 
 	_, err := s.refreshCertificates()
@@ -219,7 +219,7 @@ func (m *dependenciesMock) getServiceCertificates(ctx context.Context) (*storage
 	return args.Get(0).(*storage.TypedServiceCertificateSet), args.Error(1)
 }
 
-func (m *dependenciesMock) putServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error {
+func (m *dependenciesMock) ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error {
 	return m.Called(ctx, certificates).Error(0)
 }
 

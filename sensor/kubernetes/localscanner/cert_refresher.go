@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -34,8 +35,8 @@ type getCertsRenewalTimeFunc func(certificates *storage.TypedServiceCertificateS
 type serviceCertificatesRepo interface {
 	// getServiceCertificates retrieves the certificates from permanent storage.
 	getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
-	// putServiceCertificates persists the certificates on permanent storage.
-	putServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
+	// ensureServiceCertificates persists the certificates on permanent storage.
+	ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
 }
 
 // refreshCertificates determines refreshes the certificate secrets if needed, and returns the time
@@ -45,6 +46,11 @@ func refreshCertificates(ctx context.Context, requestCertificates requestCertifi
 
 	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, requestCertificates, getCertsRenewalTime, repository)
 	if err != nil {
+		if errors.Is(err, ErrUnexpectedSecretsOwner) {
+			log.Errorf("stopping automatic refresh of %s: %s", certsDescription, err)
+			return 0, concurrency.ErrNonRecoverable
+		}
+
 		log.Errorf("refreshing %s: %s", certsDescription, err)
 		return 0, err
 	}
@@ -74,7 +80,7 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 	}
 	certificates := response.GetCertificates()
 
-	if putErr := repository.putServiceCertificates(ctx, certificates); putErr != nil {
+	if putErr := repository.ensureServiceCertificates(ctx, certificates); putErr != nil {
 		return 0, putErr
 	}
 
@@ -93,6 +99,11 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 	certificates, getCertsErr := repository.getServiceCertificates(ctx)
 	if getCertsErr == ErrDifferentCAForDifferentServiceTypes || getCertsErr == ErrMissingSecretData {
 		log.Errorf("local scanner certificates are in an inconsistent state, "+
+			"will refresh certificates immediately: %s", getCertsErr)
+		return 0, nil
+	}
+	if k8sErrors.IsNotFound(getCertsErr) {
+		log.Warnf("local scanner certificates are missing, "+
 			"will refresh certificates immediately: %s", getCertsErr)
 		return 0, nil
 	}
