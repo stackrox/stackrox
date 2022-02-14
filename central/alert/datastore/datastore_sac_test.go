@@ -30,16 +30,17 @@ import (
 const (
 	cluster1   = "cluster1"
 	cluster2   = "cluster2"
+	cluster3   = "cluster3"
 	namespaceA = "namespaceA"
 	namespaceB = "namespaceB"
 	namespaceC = "namespaceC"
 )
 
 var (
-	// alertUnrestrictedReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-	//	sac.AllowFixedScopes(
-	//		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-	//		sac.ResourceScopeKeys(resources.Alert)))
+	alertUnrestrictedReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Alert)))
 	alertUnrestrictedReadWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -126,36 +127,22 @@ var (
 			sac.ResourceScopeKeys(resources.Alert),
 			sac.ClusterScopeKeys(cluster2),
 			sac.NamespaceScopeKeys(namespaceB, namespaceC)))
-	// alertMixedClusterNamespaceReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-	//	sac.OneStepSCC{
-	//		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-	//			sac.ResourceScopeKey(resources.Alert.Resource): sac.OneStepSCC{
-	//				sac.ClusterScopeKey(cluster1): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceA)),
-	//				sac.ClusterScopeKey(cluster2): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceB)),
-	//			},
-	//		},
-	//	})
-)
-
-func createTestAlert(alertID string, clusterID string, namespace string) *storage.Alert {
-	alert := storage.Alert{
-		Id:             alertID,
-		LifecycleStage: storage.LifecycleStage_DEPLOY,
-		State:          storage.ViolationState_ATTEMPTED,
-		Entity: &storage.Alert_Deployment_{
-			Deployment: &storage.Alert_Deployment{
-				Id:          strings.Join([]string{clusterID, namespace}, "::"),
-				Name:        strings.Join([]string{clusterID, namespace}, "::"),
-				Type:        "TestDeployment",
-				ClusterId:   clusterID,
-				ClusterName: clusterID,
-				Namespace:   namespace,
-				NamespaceId: namespace,
+	alertCluster3ReadWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Alert),
+			sac.ClusterScopeKeys(cluster3)))
+	alertMixedClusterNamespaceReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.OneStepSCC{
+			sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
+				sac.ResourceScopeKey(resources.Alert.Resource): sac.OneStepSCC{
+					sac.ClusterScopeKey(cluster1): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceA)),
+					sac.ClusterScopeKey(cluster2): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceB)),
+					sac.ClusterScopeKey(cluster3): sac.AllowFixedScopes(sac.NamespaceScopeKeys(namespaceC)),
+				},
 			},
-		},
-	}
-	return &alert
-}
+		})
+)
 
 func TestAlertDatastoreSAC(t *testing.T) {
 	suite.Run(t, new(alertDatastoreSACTestSuite))
@@ -202,8 +189,151 @@ func (s *alertDatastoreSACTestSuite) TearDownSuite() {
 	s.NoError(err)
 }
 
-func (s *alertDatastoreSACTestSuite) SetupTest() {
+type searchTestCase struct {
+	ctx                 context.Context
+	expectedResultCount int
+	expectedResultMap   map[string]map[string]int
 }
+
+var (
+	searchTestCases = map[string]searchTestCase{
+		"Scope:[cluster1]": {
+			ctx:                 alertCluster1ReadWriteCtx,
+			expectedResultCount: 13,
+			expectedResultMap: map[string]map[string]int{
+				cluster1: {
+					namespaceA: 8,
+					namespaceB: 5,
+				},
+			},
+		},
+		"Scope:[cluster1::namespaceA]": {
+			ctx:                 alertCluster1NamespaceAReadWriteCtx,
+			expectedResultCount: 8,
+			expectedResultMap: map[string]map[string]int{
+				cluster1: {
+					namespaceA: 8,
+				},
+			},
+		},
+		"Scope:[cluster1::namespaceB]": {
+			ctx:                 alertCluster1NamespaceBReadWriteCtx,
+			expectedResultCount: 5,
+			expectedResultMap: map[string]map[string]int{
+				cluster1: {
+					namespaceB: 5,
+				},
+			},
+		},
+		"Scope:[cluster1::namespaceC]": {
+			ctx:                 alertCluster1NamespaceCReadWriteCtx,
+			expectedResultCount: 0,
+			expectedResultMap:   map[string]map[string]int{},
+		},
+		"Scope:[cluster1::namespaceA,cluster1::namespaceB]": {
+			ctx:                 alertCluster1NamespacesABReadWriteCtx,
+			expectedResultCount: 13,
+			expectedResultMap: map[string]map[string]int{
+				cluster1: {
+					namespaceA: 8,
+					namespaceB: 5,
+				},
+			},
+		},
+		"Scope:[cluster1::namespaceA,cluster1::namespaceC]": {
+			ctx:                 alertCluster1NamespacesACReadWriteCtx,
+			expectedResultCount: 8,
+			expectedResultMap: map[string]map[string]int{
+				cluster1: {
+					namespaceA: 8,
+				},
+			},
+		},
+		"Scope:[cluster1::namespaceB,cluster1::namespaceC]": {
+			ctx:                 alertCluster1NamespacesBCReadWriteCtx,
+			expectedResultCount: 5,
+			expectedResultMap: map[string]map[string]int{
+				cluster1: {
+					namespaceB: 5,
+				},
+			},
+		},
+		"Scope:[cluster2]": {
+			ctx:                 alertCluster2ReadWriteCtx,
+			expectedResultCount: 5,
+			expectedResultMap: map[string]map[string]int{
+				cluster2: {
+					namespaceB: 3,
+					namespaceC: 2,
+				},
+			},
+		},
+		"Scope:[cluster2:namespaceA]": {
+			ctx:                 alertCluster2NamespaceAReadWriteCtx,
+			expectedResultCount: 0,
+			expectedResultMap:   map[string]map[string]int{},
+		},
+		"Scope:[cluster2:namespaceB]": {
+			ctx:                 alertCluster2NamespaceBReadWriteCtx,
+			expectedResultCount: 3,
+			expectedResultMap: map[string]map[string]int{
+				cluster2: {
+					namespaceB: 3,
+				},
+			},
+		},
+		"Scope:[cluster2:namespaceC]": {
+			ctx:                 alertCluster2NamespaceCReadWriteCtx,
+			expectedResultCount: 2,
+			expectedResultMap: map[string]map[string]int{
+				cluster2: {
+					namespaceC: 2,
+				},
+			},
+		},
+		"Scope:[cluster2::namespaceA,cluster2::namespaceB]": {
+			ctx:                 alertCluster2NamespacesABReadWriteCtx,
+			expectedResultCount: 3,
+			expectedResultMap: map[string]map[string]int{
+				cluster2: {
+					namespaceB: 3,
+				},
+			},
+		},
+		"Scope:[cluster2::namespaceA,cluster2::namespaceC]": {
+			ctx:                 alertCluster2NamespacesACReadWriteCtx,
+			expectedResultCount: 2,
+			expectedResultMap: map[string]map[string]int{
+				cluster2: {
+					namespaceC: 2,
+				},
+			},
+		},
+		"Scope:[cluster2::namespaceB,cluster2::namespaceC]": {
+			ctx:                 alertCluster2NamespacesBCReadWriteCtx,
+			expectedResultCount: 5,
+			expectedResultMap: map[string]map[string]int{
+				cluster2: {
+					namespaceB: 3,
+					namespaceC: 2,
+				},
+			},
+		},
+		"Scope:[cluster3]": {
+			ctx:                 alertCluster3ReadWriteCtx,
+			expectedResultCount: 0,
+			expectedResultMap:   map[string]map[string]int{},
+		},
+		"Scope:[cluster1::namespaceA,cluster2::namespaceB,cluster3::namespaceC]": {
+			ctx:                 alertMixedClusterNamespaceReadCtx,
+			expectedResultCount: 11,
+			expectedResultMap: map[string]map[string]int{
+				cluster1: {namespaceA: 8},
+				cluster2: {namespaceB: 3},
+			},
+		},
+	}
+)
 
 func (s *alertDatastoreSACTestSuite) TestUpsertDeleteAlertAllowed() {
 	ctx := alertUnrestrictedReadWriteCtx
@@ -226,7 +356,7 @@ func (s *alertDatastoreSACTestSuite) TestUpsertDeleteAlertDenied() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestUnrestrictedSearch() {
-	ctx := alertUnrestrictedReadWriteCtx
+	ctx := alertUnrestrictedReadCtx
 	alertIDs := s.injectTestDataset()
 	defer s.cleanAlerts(alertIDs)
 	searchResults, err := s.datastore.Search(ctx, nil)
@@ -234,186 +364,168 @@ func (s *alertDatastoreSACTestSuite) TestUnrestrictedSearch() {
 	s.NoError(err)
 }
 
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl1() {
-	ctx := alertCluster1ReadWriteCtx
+func (s *alertDatastoreSACTestSuite) TestScopedSearch() {
 	alertIDs := s.injectTestDataset()
 	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(13, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(2, len(resultCounts[cluster1]))
-	s.Equal(8, resultCounts[cluster1][namespaceA])
-	s.Equal(5, resultCounts[cluster1][namespaceB])
+	for name, testcase := range searchTestCases {
+		s.Run(name, func() {
+			searchResult, err := s.datastore.Search(testcase.ctx, nil)
+			s.NoError(err)
+			s.Equal(testcase.expectedResultCount, len(searchResult))
+			resultCounts := countResultsPerClusterAndNamespace(searchResult)
+			// Check the cluster/namespace distribution of results is the expected one.
+			s.Equal(len(testcase.expectedResultMap), len(resultCounts))
+			if len(testcase.expectedResultMap) > 0 {
+				for clusterID, subMap := range testcase.expectedResultMap {
+					_, clusterFound := resultCounts[clusterID]
+					s.True(clusterFound)
+					if clusterFound {
+						for namespace, count := range subMap {
+							_, namespaceFound := resultCounts[clusterID][namespace]
+							s.True(namespaceFound)
+							s.Equal(count, resultCounts[clusterID][namespace])
+						}
+					}
+				}
+			}
+		})
+	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl1NsA() {
-	ctx := alertCluster1NamespaceAReadWriteCtx
+func (s *alertDatastoreSACTestSuite) TestScopedSearchAlerts() {
 	alertIDs := s.injectTestDataset()
 	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(8, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(1, len(resultCounts[cluster1]))
-	s.Equal(8, resultCounts[cluster1][namespaceA])
+	for name, testcase := range searchTestCases {
+		s.Run(name, func() {
+			searchResult, err := s.datastore.SearchAlerts(testcase.ctx, nil)
+			s.NoError(err)
+			s.Equal(testcase.expectedResultCount, len(searchResult))
+			resultCounts := countSearchAlertsResultsPerClusterAndNamespace(searchResult)
+			// Check the cluster/namespace distribution of results is the expected one.
+			s.Equal(len(testcase.expectedResultMap), len(resultCounts))
+			if len(testcase.expectedResultMap) > 0 {
+				for clusterID, subMap := range testcase.expectedResultMap {
+					_, clusterFound := resultCounts[clusterID]
+					s.True(clusterFound)
+					if clusterFound {
+						for namespace, count := range subMap {
+							_, namespaceFound := resultCounts[clusterID][namespace]
+							s.True(namespaceFound)
+							s.Equal(count, resultCounts[clusterID][namespace])
+						}
+					}
+				}
+			}
+		})
+	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl1NsB() {
-	ctx := alertCluster1NamespaceBReadWriteCtx
+func (s *alertDatastoreSACTestSuite) TestScopedSearchRawAlerts() {
 	alertIDs := s.injectTestDataset()
 	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(5, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(1, len(resultCounts[cluster1]))
-	s.Equal(5, resultCounts[cluster1][namespaceB])
+	for name, testcase := range searchTestCases {
+		s.Run(name, func() {
+			searchResult, err := s.datastore.SearchRawAlerts(testcase.ctx, nil)
+			s.NoError(err)
+			s.Equal(testcase.expectedResultCount, len(searchResult))
+			resultCounts := countSearchRawAlertsResultsPerClusterAndNamespace(searchResult)
+			// Check the cluster/namespace distribution of results is the expected one.
+			s.Equal(len(testcase.expectedResultMap), len(resultCounts))
+			if len(testcase.expectedResultMap) > 0 {
+				for clusterID, subMap := range testcase.expectedResultMap {
+					_, clusterFound := resultCounts[clusterID]
+					s.True(clusterFound)
+					if clusterFound {
+						for namespace, count := range subMap {
+							_, namespaceFound := resultCounts[clusterID][namespace]
+							s.True(namespaceFound)
+							s.Equal(count, resultCounts[clusterID][namespace])
+						}
+					}
+				}
+			}
+		})
+	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl1NsC() {
-	ctx := alertCluster1NamespaceCReadWriteCtx
+func (s *alertDatastoreSACTestSuite) TestScopedSearchListAlerts() {
 	alertIDs := s.injectTestDataset()
 	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(0, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(0, len(resultCounts))
+	for name, testcase := range searchTestCases {
+		s.Run(name, func() {
+			searchResult, err := s.datastore.SearchListAlerts(testcase.ctx, nil)
+			s.NoError(err)
+			s.Equal(testcase.expectedResultCount, len(searchResult))
+			resultCounts := countListAlertsResultsPerClusterAndNamespace(searchResult)
+			// Check the cluster/namespace distribution of results is the expected one.
+			s.Equal(len(testcase.expectedResultMap), len(resultCounts))
+			if len(testcase.expectedResultMap) > 0 {
+				for clusterID, subMap := range testcase.expectedResultMap {
+					_, clusterFound := resultCounts[clusterID]
+					s.True(clusterFound)
+					if clusterFound {
+						for namespace, count := range subMap {
+							_, namespaceFound := resultCounts[clusterID][namespace]
+							s.True(namespaceFound)
+							s.Equal(count, resultCounts[clusterID][namespace])
+						}
+					}
+				}
+			}
+		})
+	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl1NsAB() {
-	ctx := alertCluster1NamespacesABReadWriteCtx
+func (s *alertDatastoreSACTestSuite) TestScopedListAlerts() {
 	alertIDs := s.injectTestDataset()
 	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(13, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(2, len(resultCounts[cluster1]))
-	s.Equal(8, resultCounts[cluster1][namespaceA])
-	s.Equal(5, resultCounts[cluster1][namespaceB])
+	for name, testcase := range searchTestCases {
+		s.Run(name, func() {
+			searchResult, err := s.datastore.ListAlerts(testcase.ctx, nil)
+			s.NoError(err)
+			s.Equal(testcase.expectedResultCount, len(searchResult))
+			resultCounts := countListAlertsResultsPerClusterAndNamespace(searchResult)
+			// Check the cluster/namespace distribution of results is the expected one.
+			s.Equal(len(testcase.expectedResultMap), len(resultCounts))
+			if len(testcase.expectedResultMap) > 0 {
+				for clusterID, subMap := range testcase.expectedResultMap {
+					_, clusterFound := resultCounts[clusterID]
+					s.True(clusterFound)
+					if clusterFound {
+						for namespace, count := range subMap {
+							_, namespaceFound := resultCounts[clusterID][namespace]
+							s.True(namespaceFound)
+							s.Equal(count, resultCounts[clusterID][namespace])
+						}
+					}
+				}
+			}
+		})
+	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl1NsAC() {
-	ctx := alertCluster1NamespacesACReadWriteCtx
+func (s *alertDatastoreSACTestSuite) TestScopedCount() {
 	alertIDs := s.injectTestDataset()
 	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(8, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(1, len(resultCounts[cluster1]))
-	s.Equal(8, resultCounts[cluster1][namespaceA])
+	for name, testcase := range searchTestCases {
+		s.Run(name, func() {
+			searchResult, err := s.datastore.Count(testcase.ctx, nil)
+			s.NoError(err)
+			s.Equal(testcase.expectedResultCount, searchResult)
+		})
+	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl1NsBC() {
-	ctx := alertCluster1NamespacesBCReadWriteCtx
+func (s *alertDatastoreSACTestSuite) TestScopedCountAlerts() {
 	alertIDs := s.injectTestDataset()
 	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(5, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(1, len(resultCounts[cluster1]))
-	s.Equal(5, resultCounts[cluster1][namespaceB])
-}
-
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl2() {
-	ctx := alertCluster2ReadWriteCtx
-	alertIDs := s.injectTestDataset()
-	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(5, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(2, len(resultCounts[cluster2]))
-	s.Equal(3, resultCounts[cluster2][namespaceB])
-	s.Equal(2, resultCounts[cluster2][namespaceC])
-}
-
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl2NsA() {
-	ctx := alertCluster2NamespaceAReadWriteCtx
-	alertIDs := s.injectTestDataset()
-	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(0, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(0, len(resultCounts))
-}
-
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl2NsB() {
-	ctx := alertCluster2NamespaceBReadWriteCtx
-	alertIDs := s.injectTestDataset()
-	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(3, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(1, len(resultCounts[cluster2]))
-	s.Equal(3, resultCounts[cluster2][namespaceB])
-}
-
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl2NsC() {
-	ctx := alertCluster2NamespaceCReadWriteCtx
-	alertIDs := s.injectTestDataset()
-	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(2, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(1, len(resultCounts[cluster2]))
-	s.Equal(2, resultCounts[cluster2][namespaceC])
-}
-
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl2NsAB() {
-	ctx := alertCluster2NamespacesABReadWriteCtx
-	alertIDs := s.injectTestDataset()
-	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(3, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(1, len(resultCounts[cluster2]))
-	s.Equal(3, resultCounts[cluster2][namespaceB])
-}
-
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl2NsAC() {
-	ctx := alertCluster2NamespacesACReadWriteCtx
-	alertIDs := s.injectTestDataset()
-	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(2, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(1, len(resultCounts[cluster2]))
-	s.Equal(2, resultCounts[cluster2][namespaceC])
-}
-
-func (s *alertDatastoreSACTestSuite) TestScopedSearchCl2NsBC() {
-	ctx := alertCluster2NamespacesBCReadWriteCtx
-	alertIDs := s.injectTestDataset()
-	defer s.cleanAlerts(alertIDs)
-	searchResults, err := s.datastore.Search(ctx, nil)
-	s.NoError(err)
-	s.Equal(5, len(searchResults))
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.Equal(1, len(resultCounts))
-	s.Equal(2, len(resultCounts[cluster2]))
-	s.Equal(3, resultCounts[cluster2][namespaceB])
-	s.Equal(2, resultCounts[cluster2][namespaceC])
+	for name, testcase := range searchTestCases {
+		s.Run(name, func() {
+			searchResult, err := s.datastore.CountAlerts(testcase.ctx)
+			s.NoError(err)
+			s.Equal(testcase.expectedResultCount, searchResult)
+		})
+	}
 }
 
 func countResultsPerClusterAndNamespace(results []searchPkg.Result) map[string]map[string]int {
@@ -442,9 +554,105 @@ func countResultsPerClusterAndNamespace(results []searchPkg.Result) map[string]m
 	return resultCounts
 }
 
+func countSearchAlertsResultsPerClusterAndNamespace(results []*v1.SearchResult) map[string]map[string]int {
+	resultCounts := make(map[string]map[string]int, 0)
+	clusterIDField, _ := mappings.OptionsMap.Get(searchPkg.ClusterID.String())
+	namespaceField, _ := mappings.OptionsMap.Get(searchPkg.Namespace.String())
+	for _, result := range results {
+		var clusterID string
+		var namespace string
+		for k, v := range result.GetFieldToMatches() {
+			if k == clusterIDField.GetFieldPath() {
+				if v != nil && len(v.Values) > 0 {
+					clusterID = v.Values[0]
+				}
+			}
+			if k == namespaceField.GetFieldPath() {
+				if v != nil && len(v.Values) > 0 {
+					namespace = v.Values[0]
+				}
+			}
+		}
+		if _, clusterExists := resultCounts[clusterID]; !clusterExists {
+			resultCounts[clusterID] = make(map[string]int, 0)
+		}
+		if _, namespaceExists := resultCounts[clusterID][namespace]; !namespaceExists {
+			resultCounts[clusterID][namespace] = 0
+		}
+		resultCounts[clusterID][namespace]++
+	}
+	return resultCounts
+}
+
+func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert) map[string]map[string]int {
+	resultCounts := make(map[string]map[string]int, 0)
+	for _, result := range results {
+		var clusterID string
+		var namespace string
+		switch entity := result.Entity.(type) {
+		case *storage.Alert_Deployment_:
+			if entity.Deployment != nil {
+				clusterID = entity.Deployment.GetClusterId()
+				namespace = entity.Deployment.GetNamespace()
+			}
+		}
+		if _, clusterExists := resultCounts[clusterID]; !clusterExists {
+			resultCounts[clusterID] = make(map[string]int, 0)
+		}
+		if _, namespaceExists := resultCounts[clusterID][namespace]; !namespaceExists {
+			resultCounts[clusterID][namespace] = 0
+		}
+		resultCounts[clusterID][namespace]++
+	}
+	return resultCounts
+}
+
+func countListAlertsResultsPerClusterAndNamespace(results []*storage.ListAlert) map[string]map[string]int {
+	resultCounts := make(map[string]map[string]int, 0)
+	for _, result := range results {
+		var clusterID string
+		var namespace string
+		switch entity := result.Entity.(type) {
+		case *storage.ListAlert_Deployment:
+			if entity.Deployment != nil {
+				clusterID = entity.Deployment.GetClusterId()
+				namespace = entity.Deployment.GetNamespace()
+			}
+		}
+		if _, clusterExists := resultCounts[clusterID]; !clusterExists {
+			resultCounts[clusterID] = make(map[string]int, 0)
+		}
+		if _, namespaceExists := resultCounts[clusterID][namespace]; !namespaceExists {
+			resultCounts[clusterID][namespace] = 0
+		}
+		resultCounts[clusterID][namespace]++
+	}
+	return resultCounts
+}
+
 func (s *alertDatastoreSACTestSuite) cleanAlerts(alertIDs []string) {
 	err := s.datastore.DeleteAlerts(alertUnrestrictedReadWriteCtx, alertIDs...)
 	s.NoError(err)
+}
+
+func createTestAlert(alertID string, clusterID string, namespace string) *storage.Alert {
+	alert := storage.Alert{
+		Id:             alertID,
+		LifecycleStage: storage.LifecycleStage_DEPLOY,
+		State:          storage.ViolationState_ACTIVE,
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:          strings.Join([]string{clusterID, namespace}, "::"),
+				Name:        strings.Join([]string{clusterID, namespace}, "::"),
+				Type:        "TestDeployment",
+				ClusterId:   clusterID,
+				ClusterName: clusterID,
+				Namespace:   namespace,
+				NamespaceId: namespace,
+			},
+		},
+	}
+	return &alert
 }
 
 func (s *alertDatastoreSACTestSuite) injectAlert(clusterID string, namespace string) string {
