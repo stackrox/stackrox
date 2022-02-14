@@ -16,6 +16,8 @@ luname() {
 
 tmp_roxctl="tmp/roxctl-bats/bin"
 
+any_version='[0-9]+\.[0-9]+\.'
+
 # roxctl-development-cmd prints the path to roxctl built with GOTAGS=''. It builds the binary if needed
 roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
@@ -61,8 +63,10 @@ helm_template_central() {
 
 assert_helm_template_central_registry() {
   local out_dir="${1}"; shift;
+  local registry_slug="${1}"; shift;
+  local version_regex="${1}"; shift;
   helm_template_central "$out_dir"
-  assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$@"
+  assert_components_registry "$out_dir/rendered/stackrox-central-services/templates" "$registry_slug" "$version_regex" "$@"
 }
 
 wait_20s_for() {
@@ -86,14 +90,15 @@ assert_bundle_registry() {
 assert_components_registry() {
   local dir="$1"
   local registry_slug="$2"
-  shift; shift;
+  local version_regex="$3"
+  shift; shift; shift;
 
   # The expect-based tests may be slow and flaky, so let's add timeouts to this assertion
   wait_20s_for "$dir" "test" "-d" || fail "ERROR: not a directory: '$dir'"
   (( $# < 1 )) && fail "ERROR: 0 components provided"
 
   for component in "${@}"; do
-    regex="$(registry_regex "$registry_slug" "$component")"
+    regex="$(registry_version_regex "$registry_slug" "$component" "$version_regex")"
     case $component in
       main)
         wait_20s_for "${dir}/01-central-12-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/01-central-12-deployment.yaml'"
@@ -125,10 +130,10 @@ assert_file_exist() {
   fi
 }
 
-registry_regex() {
+registry_version_regex() {
   local registry_slug="$1"
   local component="$2"
-  local version='[0-9]+\.[0-9]+\.'
+  local version="${3:-$any_version}"
 
   case $registry_slug in
     docker.io)
@@ -158,8 +163,8 @@ registry_regex() {
 # Parameters:
 # $1 - path to roxctl binary
 # $2 - orchestrator (k8s, openshift)
-# $3 - registry-slug for expected main registry (see 'registry_regex()' for the list of currently supported registry-slugs)
-# $4 - registry-slug for expected scanner and scanner-db registries (see 'registry_regex()' for the list of currently supported registry-slugs)
+# $3 - registry-slug for expected main registry (see 'registry_version_regex()' for the list of currently supported registry-slugs)
+# $4 - registry-slug for expected scanner and scanner-db registries (see 'registry_version_regex()' for the list of currently supported registry-slugs)
 # $@ - open-ended list of other parameters that should be passed into 'roxctl central generate'
 run_image_defaults_registry_test() {
   local roxctl_bin="$1"; shift;
@@ -172,8 +177,8 @@ run_image_defaults_registry_test() {
 
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$out_dir"
   assert_success
-  assert_components_registry "$out_dir/central" "$expected_main_registry" 'main'
-  assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/central" "$expected_main_registry" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" "$any_version" 'scanner' 'scanner-db'
 }
 
 # run_no_rhacs_flag_test asserts that 'roxctl central generate' fails when presented with `--rhacs` parameter
