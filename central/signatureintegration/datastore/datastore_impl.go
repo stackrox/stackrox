@@ -52,7 +52,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 		return nil, err
 	}
 	if integration.GetId() != "" {
-		return nil, errox.Newf(errox.InvalidArgs, "id should be empty when it's %q", integration.GetId())
+		return nil, errox.Newf(errox.InvalidArgs, "id should be empty but %q provided", integration.GetId())
 	}
 
 	// Protect against TOCTOU race condition.
