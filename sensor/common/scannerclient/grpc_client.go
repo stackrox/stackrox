@@ -76,7 +76,7 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 
 	//cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
-		Image: image.GetId(),
+		Image:    image.GetId(),
 		Registry: &scannerV1.RegistryData{
 			//Url:      cfg.URL,
 			//Username: cfg.Username,

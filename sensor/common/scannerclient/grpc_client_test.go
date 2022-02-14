@@ -40,9 +40,9 @@ func (s *grpcSuite) TestClient() {
 	_, err = client.GetImageAnalysis(context.Background(), &storage.ContainerImage{
 		Namespace: "stackrox",
 		Name: &storage.ImageName{
-			Tag: "latest",
+			Tag:      "latest",
 			Registry: "docker.io/stackrox",
-			Remote: "main",
+			Remote:   "main",
 			FullName: "docker.io/main:latest",
 		},
 	})

@@ -4,6 +4,6 @@
 package buildinfo
 
 const (
-	releaseBuild = true
+	releaseBuild = false
 	buildFlavor  = "development"
 )
