@@ -167,7 +167,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 		postClusterF         postClusterFn
 
 		// expectations
-		expectErrorMessage      string
+		expectError             bool
 		expectGetClustersCalled bool
 		expectBundleDownloaded  bool
 	}{
@@ -175,7 +175,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			continueIfExistsFlag:    false,
 			postClusterF:            postClusterAlreadyExistsFake,
 			clusterName:             "test-cluster",
-			expectErrorMessage:      "error creating cluster",
+			expectError:             true,
 			expectGetClustersCalled: false,
 			expectBundleDownloaded:  false,
 		},
@@ -183,7 +183,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			continueIfExistsFlag:    true,
 			postClusterF:            postClusterAlreadyExistsFake,
 			clusterName:             "test-cluster",
-			expectErrorMessage:      "",
+			expectError:             false,
 			expectGetClustersCalled: true,
 			expectBundleDownloaded:  true,
 		},
@@ -191,7 +191,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			continueIfExistsFlag:    true,
 			postClusterF:            postClusterAlreadyExistsFake,
 			clusterName:             "non-existing",
-			expectErrorMessage:      "error finding preexisting cluster with name non-existing",
+			expectError:             true,
 			expectGetClustersCalled: true,
 			expectBundleDownloaded:  false,
 		},
@@ -199,7 +199,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			continueIfExistsFlag:    true,
 			postClusterF:            postClusterFake,
 			clusterName:             "test-cluster",
-			expectErrorMessage:      "",
+			expectError:             false,
 			expectGetClustersCalled: false,
 			expectBundleDownloaded:  true,
 		},
@@ -224,8 +224,8 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			err := generateCmd.fullClusterCreation()
 
 			// Assertions
-			if testCase.expectErrorMessage != "" {
-				s.Require().Error(err, testCase.expectErrorMessage)
+			if testCase.expectError {
+				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
 			}
@@ -255,6 +255,7 @@ func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
 			postClusterF:       postClusterFake,
 			expectClustersSent: 1,
 			expectMainImages:   []string{""},
+			expectWarning:      nil,
 		},
 	}
 
@@ -301,15 +302,20 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 	}{
 		"No flags and kernel support in central: default to slim collector": {
 			serverHasKernelSupport: true,
+			slimCollectorFlag:      nil,
+			warning:                nil,
 			expectSlimMode:         true,
 		},
 		"No flags and no kernel support in central: default to full collector": {
 			serverHasKernelSupport: false,
+			slimCollectorFlag:      nil,
+			warning:                nil,
 			expectSlimMode:         false,
 		},
 		"--slim-collector=true and support in central: slim collector": {
 			serverHasKernelSupport: true,
 			slimCollectorFlag:      &slimFlag{true},
+			warning:                nil,
 			expectSlimMode:         true,
 		},
 		"--slim-collector=true and no kernel support in central: slim collector + warning": {
@@ -321,6 +327,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 		"--slim-collector=false: collector full": {
 			serverHasKernelSupport: true,
 			slimCollectorFlag:      &slimFlag{false},
+			warning:                nil,
 			expectSlimMode:         false,
 		},
 	}
@@ -351,7 +358,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 				s.Assert().Contains(errOut.String(), testCase.warning.messageTemplate)
 			}
 
-			s.Assert().Len(mock.clusterSent, 1)
+			s.Require().Len(mock.clusterSent, 1)
 			s.Assert().Equal(mock.clusterSent[0].SlimCollector, testCase.expectSlimMode)
 			s.Assert().Equal(*slimCollectorRequested, testCase.expectSlimMode)
 		})

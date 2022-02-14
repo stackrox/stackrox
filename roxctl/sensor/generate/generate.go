@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -32,16 +33,14 @@ const (
 	warningDeprecatedAdmControllerCreateSet = `The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-listen-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
-	errorDeprecatedAdmControllerCreateSet = `It is illegal to specify both the --create-admission-controller and --admission-controller-listen-on-creates flags.
-Please use --admission-controller-listen-on-creates exclusively in all invocations.`
-
 	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
-	errorDeprecatedAdmControllerEnableSet = `It is illegal to specify both the --admission-controller-enabled and --admission-controller-enforce-on-creates flags.
-Please use --admission-controller-enforce-on-creates exclusively in all invocations.`
+	errorDeprecatedFlag = "Specified deprecated flag %s and new flag %s at the same time"
 
 	warningRunningAgainstLegacyCentral = "Running older version of central. Can't rely on central configuration to determine default values. Using %s as main registry."
+
+	warningCentralEnvironmentError = "Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v."
 )
 
 type sensorGenerateCommand struct {
@@ -75,8 +74,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-		s.env.Logger().ErrfLn(errorDeprecatedAdmControllerCreateSet)
-		return errors.New("Specified deprecated flag --create-admission-controller and new flag --admission-controller-listen-on-creates at the same time")
+		return errox.Newf(errox.InvalidArgs, errorDeprecatedFlag, "--create-admission-controller", "--admission-controller-listen-on-creates")
 	}
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerCreateSet)
@@ -85,8 +83,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-		s.env.Logger().ErrfLn(errorDeprecatedAdmControllerEnableSet)
-		return errors.New("Specified deprecated flag --admission-controller-enabled and new flag --admission-controller-enforce-on-creates at the same time")
+		return errox.Newf(errox.InvalidArgs, errorDeprecatedFlag, "--admission-controller-enabled", "--admission-controller-enforce-on-creates")
 	}
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
@@ -158,7 +155,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 				}
 			}
 			if id == "" {
-				return fmt.Errorf("error finding preexisting cluster with name %q", s.cluster.GetName())
+				return errox.Newf(errox.NotFound, "error finding preexisting cluster with name %q", s.cluster.GetName())
 			}
 		} else {
 			return errors.Wrap(err, "error creating cluster")
@@ -186,8 +183,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	}
 
 	if env.Error != nil {
-		s.env.Logger().WarnfLn(`Sensor bundle has been created successfully, but it was not possible to retrieve Central's
-  runtime environment information: %v.`, env.Error)
+		s.env.Logger().WarnfLn(warningCentralEnvironmentError, env.Error)
 	}
 	return nil
 }
@@ -197,7 +193,6 @@ func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.Cluste
 		s.cluster.DynamicConfig.AdmissionControllerConfig = nil
 	}
 
-	// Call detection and return the returned alerts.
 	response, err := svc.PostCluster(ctx, &s.cluster)
 	if err != nil {
 		return "", err
