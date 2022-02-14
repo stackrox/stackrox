@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
-	defaultRoles "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -278,25 +277,8 @@ func (c *authorizerDataCache) getEffectiveAccessScopeFromCache(id string) *effec
 	return c.effectiveAccessScopesByID[id]
 }
 
-// AccessScopeExcludeAll has empty rules and hence excludes all
-// scoped resources. Global resources must be unaffected.
-var AccessScopeExcludeAll = &storage.SimpleAccessScope{
-	Id:          defaultRoles.EnsureValidAccessScopeID("denyall"),
-	Name:        "Deny All",
-	Description: "No access to scoped resources",
-	Rules:       &storage.SimpleAccessScope_Rules{},
-}
-
-// AccessScopeIncludeAll has empty rules and hence excludes all
-// scoped resources. Global resources must be unaffected.
-var AccessScopeIncludeAll = &storage.SimpleAccessScope{
-	Id:          defaultRoles.EnsureValidAccessScopeID("unrestricted"),
-	Name:        "Unrestricted",
-	Description: "Access to all clusters and namespaces",
-}
-
 // DefaultScopesIDs is a string set containing the names of all default (built-in) Roles.
-var DefaultScopesIDs = set.NewFrozenStringSet(AccessScopeIncludeAll.Id, AccessScopeExcludeAll.Id)
+var DefaultScopesIDs = set.NewFrozenStringSet(permissions.AccessScopeIncludeAll.Id, permissions.AccessScopeExcludeAll.Id)
 
 // IsDefaultAccessScope checks if a given access scope id corresponds to a
 // default access scope.
@@ -305,10 +287,10 @@ func IsDefaultAccessScope(id string) bool {
 }
 
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
-	if accessScope == nil || accessScope.Id == AccessScopeExcludeAll.Id {
+	if accessScope == nil || accessScope.Id == permissions.AccessScopeExcludeAll.Id {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
-	if accessScope.Id == AccessScopeIncludeAll.Id {
+	if accessScope.Id == permissions.AccessScopeIncludeAll.Id {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
 	eas, err := effectiveaccessscope.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)

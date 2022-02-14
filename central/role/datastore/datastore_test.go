@@ -9,8 +9,8 @@ import (
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
-	"github.com/stackrox/rox/central/sac/authorizer"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -340,7 +340,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	badPermissionSet := getInvalidPermissionSet("permissionset.new", "new invalid permissionset")
 	mimicPermissionSet := getValidPermissionSet("permissionset.new", "existing permissionset")
 	clonePermissionSet := getValidPermissionSet("permissionset.existing", "new existing permissionset")
-	updatedAdminPermissionSet := getValidPermissionSet(role.EnsureValidAccessScopeID("admin"), role.Admin)
+	updatedAdminPermissionSet := getValidPermissionSet(permissions.EnsureValidAccessScopeID("admin"), role.Admin)
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, badPermissionSet)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid permission set for Add*() yields an error")
@@ -391,14 +391,14 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 func getValidAccessScope(id string, name string) *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
-		Id:   role.EnsureValidAccessScopeID(id),
+		Id:   permissions.EnsureValidAccessScopeID(id),
 		Name: name,
 	}
 }
 
 func getInvalidAccessScope(id string, name string) *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
-		Id:   role.EnsureValidAccessScopeID(id),
+		Id:   permissions.EnsureValidAccessScopeID(id),
 		Name: name,
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
@@ -479,7 +479,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	badScope := getInvalidAccessScope("scope.new", "new invalid scope")
 	mimicScope := getValidAccessScope("scope.new", "existing scope")
 	cloneScope := getValidAccessScope("scope.existing", "new existing scope")
-	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall", authorizer.AccessScopeExcludeAll.GetName())
+	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall", permissions.AccessScopeExcludeAll.GetName())
 
 	err := s.dataStore.AddAccessScope(s.hasWriteCtx, badScope)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid scope for Add*() yields an error")

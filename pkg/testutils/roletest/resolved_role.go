@@ -16,11 +16,11 @@ func NewResolvedRole(roleName string, permissions map[string]storage.Access, acc
 
 // NewResolvedRoleWithGlobalScope creates an instance of ResolvedRole with
 // global access scope.
-func NewResolvedRoleWithGlobalScope(roleName string, permissions map[string]storage.Access) permissions.ResolvedRole {
+func NewResolvedRoleWithGlobalScope(roleName string, perms map[string]storage.Access) permissions.ResolvedRole {
 	return &resolvedRoleImpl{
 		roleName:    roleName,
-		permissions: permissions,
-		accessScope: nil,
+		permissions: perms,
+		accessScope: permissions.AccessScopeIncludeAll,
 	}
 }
 

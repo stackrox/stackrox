@@ -264,7 +264,7 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 	if scope.GetId() != "" {
 		return nil, errorhelpers.NewErrInvalidArgs("setting id field is not allowed")
 	}
-	scope.Id = role.GenerateAccessScopeID()
+	scope.Id = permissions.GenerateAccessScopeID()
 
 	// Store the augmented access scope; report back on error. Note the access
 	// scope is referenced by its name because that's what the caller knows.

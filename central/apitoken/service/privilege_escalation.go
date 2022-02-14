@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 )
 
-const defaultScopeID = ""
+const defaultScopeID = permissions.AccessScopeIncludeAll.Id
 
 // This function ensures that no APIToken with permissions more than principal's can be created.
 // For each requested tuple (access scope, resource, accessLevel) we check that either:

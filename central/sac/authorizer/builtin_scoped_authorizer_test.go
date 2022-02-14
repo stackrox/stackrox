@@ -65,7 +65,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		},
 		{
 			name:      "allow cluster modification (e.g., creation) with permissions even if it does not exist yet",
-			roles:     []permissions.ResolvedRole{role(clusterEdit, AccessScopeIncludeAll)},
+			roles:     []permissions.ResolvedRole{role(clusterEdit, permissions.AccessScopeIncludeAll)},
 			scopeKeys: scopeKeys(storage.Access_READ_WRITE_ACCESS, resources.Cluster.Resource, "unknown ID", ""),
 			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow, sac.Allow},
 		},
@@ -97,7 +97,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		},
 		{
 			name:      "allow read from anything when scope unrestricted",
-			roles:     []permissions.ResolvedRole{role(allResourcesView, AccessScopeIncludeAll)},
+			roles:     []permissions.ResolvedRole{role(allResourcesView, permissions.AccessScopeIncludeAll)},
 			scopeKeys: readCluster("unknown ID"),
 			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow},
 		},
@@ -115,7 +115,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		},
 		{
 			name:      "deny read from anything when scope deny all",
-			roles:     []permissions.ResolvedRole{role(allResourcesView, AccessScopeExcludeAll)},
+			roles:     []permissions.ResolvedRole{role(allResourcesView, permissions.AccessScopeExcludeAll)},
 			scopeKeys: readCluster(firstCluster.ID),
 			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
 		},

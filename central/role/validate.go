@@ -18,11 +18,6 @@ const (
 	// permission set for readability, e.g.,
 	//     "io.stackrox.authz.permissionset.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
 	permissionSetIDPrefix = "io.stackrox.authz.permissionset."
-
-	// accessScopeIDPrefix should be prepended to every human-hostile ID of an
-	// access scope for readability, e.g.,
-	//     "io.stackrox.authz.accessscope.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
-	accessScopeIDPrefix = "io.stackrox.authz.accessscope."
 )
 
 // GeneratePermissionSetID returns a random valid permission set ID.
@@ -36,19 +31,6 @@ func EnsureValidPermissionSetID(id string) string {
 		return id
 	}
 	return permissionSetIDPrefix + id
-}
-
-// GenerateAccessScopeID returns a random valid access scope ID.
-func GenerateAccessScopeID() string {
-	return accessScopeIDPrefix + uuid.NewV4().String()
-}
-
-// EnsureValidAccessScopeID converts id to the correct format if necessary.
-func EnsureValidAccessScopeID(id string) string {
-	if strings.HasPrefix(id, accessScopeIDPrefix) {
-		return id
-	}
-	return accessScopeIDPrefix + id
 }
 
 // ValidateRole checks whether the supplied protobuf message is a valid role.
@@ -105,8 +87,8 @@ func ValidatePermissionSet(ps *storage.PermissionSet) error {
 func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
 	var multiErr error
 
-	if !strings.HasPrefix(scope.GetId(), accessScopeIDPrefix) {
-		multiErr = multierror.Append(multiErr, errors.Errorf("id field must be in '%s*' format", accessScopeIDPrefix))
+	if err := permissions.ValidateAccessScopeID(scope); err != nil {
+		multiErr = multierror.Append(multiErr, err)
 	}
 	if scope.GetName() == "" {
 		multiErr = multierror.Append(multiErr, errors.New("name field must be set"))
