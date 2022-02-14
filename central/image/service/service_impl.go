@@ -258,7 +258,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // GetImageVulnerabilitiesInternal retrieves the vulnerabilities related to the image
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
-// TODO(ross): Implement me.
+// TODO(ROX-9281): Implement me.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	return nil, nil
 }

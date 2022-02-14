@@ -18,7 +18,7 @@ var (
 )
 
 // ScanImage runs the pipeline required to scan an image with a local Scanner.
-// TODO: add retries for rate-limiting.
+// TODO(ROX-9281): add retries for rate-limiting.
 func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, image *storage.ContainerImage) (*storage.Image, error) {
 	scannerClient := GRPCClientSingleton()
 	if scannerClient == nil {
