@@ -17,6 +17,20 @@ import (
 
 const testDir = "testdata/helmtest"
 
+func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
+	testbuildinfo.SetForTest(t)
+	testutils.SetVersion(t, testutils.GetExampleVersion(t))
+	helmChartTestUtils.RunHelmTestSuite(t, testDir, image.SecuredClusterServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
+		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
+			values.ClusterName = "test"
+			values.ImageTag = "custom-main"
+			values.CollectorFullImageTag = "custom-collector-full"
+			values.CollectorSlimImageTag = "custom-collector-slim"
+		},
+		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
+	})
+}
+
 func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)
 	// having a function as value allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'

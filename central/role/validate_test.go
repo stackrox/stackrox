@@ -211,7 +211,7 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		}, {
 			name: "multiple errors",
 			scope: &storage.SimpleAccessScope{
-				Id:   mockGoodID,
+				Id:   mockBadID,
 				Name: mockName,
 				Rules: &storage.SimpleAccessScope_Rules{
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
@@ -220,7 +220,7 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 						{Requirements: []*storage.SetBasedLabelSelector_Requirement{
 							{Key: "valid", Op: 42, Values: []string{"value"}},
 						}}}}},
-			expectedNumberOfErrors: 2,
+			expectedNumberOfErrors: 3,
 		}, {
 			name: "invalid selectors",
 			scope: &storage.SimpleAccessScope{
@@ -254,7 +254,7 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 			err := ValidateSimpleAccessScope(tc.scope)
 			var target *multierror.Error
 			if errors.As(err, &target) {
-				assert.Equal(t, target.Len(), tc.expectedNumberOfErrors)
+				assert.Equal(t, tc.expectedNumberOfErrors, target.Len())
 			} else {
 				assert.Zero(t, tc.expectedNumberOfErrors)
 				assert.NoError(t, err)
