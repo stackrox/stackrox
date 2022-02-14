@@ -47,4 +47,5 @@ export type ResourceName =
     | 'VulnerabilityManagementRequests'
     | 'VulnerabilityManagementApprovals'
     | 'VulnerabilityReports'
-    | 'WatchedImage';
+    | 'WatchedImage'
+    | 'SignatureIntegration';

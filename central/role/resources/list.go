@@ -55,7 +55,7 @@ var (
 	SensorUpgradeConfig              = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
 	ServiceIdentity                  = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
-	SignatureIntegration             = newResourceMetadata("SignatureIntegration", permissions.GlobalScope)
+	SignatureIntegration             = newResourceMetadataWithFeatureFlag("SignatureIntegration", permissions.GlobalScope, features.ImageSignatureVerification)
 	User                             = newResourceMetadata("User", permissions.GlobalScope)
 	VulnerabilityManagementRequests  = newResourceMetadataWithFeatureFlag("VulnerabilityManagementRequests", permissions.GlobalScope, features.VulnRiskManagement)
 	VulnerabilityManagementApprovals = newResourceMetadataWithFeatureFlag("VulnerabilityManagementApprovals", permissions.GlobalScope, features.VulnRiskManagement)
