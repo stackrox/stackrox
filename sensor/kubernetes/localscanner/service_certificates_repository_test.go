@@ -61,12 +61,12 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGet() {
 		expectedErr error
 		fixture     *certSecretsRepoFixture
 	}{
-		"successful get": {expectedErr: nil, fixture: s.newFixture(certSecretsRepoFixtureSpec{})},
+		"successful get": {expectedErr: nil, fixture: s.newFixture(certSecretsRepoFixtureConfig{})},
 		"failed get due to k8s API error": {
 			expectedErr: errForced,
-			fixture:     s.newFixture(certSecretsRepoFixtureSpec{k8sAPIVerbToError: "get"}),
+			fixture:     s.newFixture(certSecretsRepoFixtureConfig{k8sAPIVerbToError: "get"}),
 		},
-		"cancelled get": {expectedErr: context.Canceled, fixture: s.newFixture(certSecretsRepoFixtureSpec{})},
+		"cancelled get": {expectedErr: context.Canceled, fixture: s.newFixture(certSecretsRepoFixtureConfig{})},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -133,12 +133,12 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 		expectedErr error
 		fixture     *certSecretsRepoFixture
 	}{
-		"successful put": {expectedErr: nil, fixture: s.newFixture(certSecretsRepoFixtureSpec{})},
+		"successful put": {expectedErr: nil, fixture: s.newFixture(certSecretsRepoFixtureConfig{})},
 		"failed put due to k8s API error": {
 			expectedErr: errForced,
-			fixture:     s.newFixture(certSecretsRepoFixtureSpec{k8sAPIVerbToError: "patch"}),
+			fixture:     s.newFixture(certSecretsRepoFixtureConfig{k8sAPIVerbToError: "patch"}),
 		},
-		"cancelled put": {expectedErr: context.Canceled, fixture: s.newFixture(certSecretsRepoFixtureSpec{})},
+		"cancelled put": {expectedErr: context.Canceled, fixture: s.newFixture(certSecretsRepoFixtureConfig{})},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -156,7 +156,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPut() {
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataFailure() {
-	fixture := s.newFixture(certSecretsRepoFixtureSpec{emptySecretData: true})
+	fixture := s.newFixture(certSecretsRepoFixtureConfig{emptySecretData: true})
 
 	_, err := fixture.repo.getServiceCertificates(context.Background())
 
@@ -188,7 +188,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
-			fixture := s.newFixture(certSecretsRepoFixtureSpec{missingSecretDataKeys: []string{tc.missingSecretDataKey}})
+			fixture := s.newFixture(certSecretsRepoFixtureConfig{missingSecretDataKeys: []string{tc.missingSecretDataKey}})
 
 			certificates, err := fixture.repo.getServiceCertificates(context.Background())
 
@@ -200,7 +200,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutUnknownServiceTypeFailure() {
-	fixture := s.newFixture(certSecretsRepoFixtureSpec{})
+	fixture := s.newFixture(certSecretsRepoFixtureConfig{})
 	s.getFirstServiceCertificate(fixture.certificates).ServiceType = anotherServiceType
 
 	err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
@@ -209,7 +209,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPutUnknownServiceTypeFailu
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPutMissingServiceTypeSuccess() {
-	fixture := s.newFixture(certSecretsRepoFixtureSpec{})
+	fixture := s.newFixture(certSecretsRepoFixtureConfig{})
 	fixture.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 
 	err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
@@ -267,7 +267,7 @@ type certSecretsRepoFixture struct {
 // - The certificates used to initialize the data of the aforementioned secret.
 // - A repository that uses that secrets client, sensorDeployment as owner, and with a single serviceCertSecretSpec
 //   for the aforementioned secret in its secrets.
-func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(spec certSecretsRepoFixtureSpec) *certSecretsRepoFixture {
+func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(spec certSecretsRepoFixtureConfig) *certSecretsRepoFixture {
 	certificates := certificates.Clone()
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -300,7 +300,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(spec certSecretsRep
 	}
 }
 
-type certSecretsRepoFixtureSpec struct {
+type certSecretsRepoFixtureConfig struct {
 	// HTTP verb of the k8s API should for which all operations will fail in the fake k8s client set.
 	// Use the zero value so all operations work.
 	k8sAPIVerbToError string
