@@ -260,7 +260,7 @@
   {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
 {{- end }}
 
-[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+[< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
 {{/*
    Local scanner setup.
   */}}
