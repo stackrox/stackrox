@@ -81,7 +81,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesImmediateRefresh() {
 				s.Require().NoError(err)
 				s.InDelta(time.Until(tc.newCertsRenewalTime).Seconds(), timeToNextRefresh.Seconds(), 1)
 			} else {
-				s.Require().Error(err)
+				s.Require().ErrorIs(err, tc.newCertsRenewalTimeErr)
 			}
 
 			s.dependenciesMock.AssertExpectations(s.T())
@@ -108,7 +108,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsFailure() {
 
 	_, err := s.refreshCertificates()
 
-	s.Error(err)
+	s.ErrorIs(err, errCertRefresherForced)
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
@@ -123,7 +123,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetTimeToRefreshFailureRecov
 
 	_, err := s.refreshCertificates()
 
-	s.Error(err)
+	s.ErrorIs(err, errCertRefresherForced)
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
@@ -136,7 +136,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesFailure()
 
 	_, err := s.refreshCertificates()
 
-	s.Error(err)
+	s.ErrorIs(err, errCertRefresherForced)
 
 	s.dependenciesMock.AssertExpectations(s.T())
 }
@@ -155,7 +155,8 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseF
 
 	_, err := s.refreshCertificates()
 
-	s.Error(err)
+	s.Require().Error(err)
+	s.Regexp(errCertRefresherForced.Error(), err.Error())
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
@@ -171,7 +172,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesPutCertsFailure() {
 
 	_, err := s.refreshCertificates()
 
-	s.Error(err)
+	s.ErrorIs(err, errCertRefresherForced)
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
