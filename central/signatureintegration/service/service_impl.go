@@ -70,7 +70,7 @@ func (s *serviceImpl) ListSignatureIntegrations(ctx context.Context, _ *v1.Empty
 func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.ResourceByID) (*storage.SignatureIntegration, error) {
 	integration, found, err := s.datastore.GetSignatureIntegration(ctx, id.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve signature integration %q", id.GetId())
+		return nil, errors.Wrap(err, "failed to retrieve signature integration")
 	}
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "failed to retrieve signature integration %q", id.GetId())
@@ -98,7 +98,7 @@ func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *
 func (s *serviceImpl) DeleteSignatureIntegration(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
 	err := s.datastore.RemoveSignatureIntegration(ctx, id.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to delete signature integration %q", id.GetId())
+		return nil, errors.Wrap(err, "failed to delete signature integration")
 	}
 	return &v1.Empty{}, nil
 }
