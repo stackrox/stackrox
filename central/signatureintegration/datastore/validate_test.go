@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateSignatureIntegration(t *testing.T) {
-	goodName := "Sheer Heart Attack"
-	goodID := "io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13"
-	badID := "Killer Queen"
-	badEmptyCosignConfig := &storage.SignatureVerificationConfig_CosignVerification{
+var (
+	goodName             = "Sheer Heart Attack"
+	goodID               = "io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13"
+	badID                = "Killer Queen"
+	badEmptyCosignConfig = &storage.SignatureVerificationConfig_CosignVerification{
 		CosignVerification: &storage.CosignPublicKeyVerification{},
 	}
-	badPEMEncodingCosignConfig := &storage.SignatureVerificationConfig_CosignVerification{
+	badPEMEncodingCosignConfig = &storage.SignatureVerificationConfig_CosignVerification{
 		CosignVerification: &storage.CosignPublicKeyVerification{
 			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 				{
@@ -23,7 +23,7 @@ func TestValidateSignatureIntegration(t *testing.T) {
 			},
 		},
 	}
-	goodCosignConfig := &storage.SignatureVerificationConfig_CosignVerification{
+	goodCosignConfig = &storage.SignatureVerificationConfig_CosignVerification{
 		CosignVerification: &storage.CosignPublicKeyVerification{
 			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 				{
@@ -32,7 +32,7 @@ func TestValidateSignatureIntegration(t *testing.T) {
 			},
 		},
 	}
-	goodCosignConfigWithNamedKey := &storage.SignatureVerificationConfig_CosignVerification{
+	goodCosignConfigWithNamedKey = &storage.SignatureVerificationConfig_CosignVerification{
 		CosignVerification: &storage.CosignPublicKeyVerification{
 			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 				{
@@ -42,7 +42,9 @@ func TestValidateSignatureIntegration(t *testing.T) {
 			},
 		},
 	}
+)
 
+func TestValidateSignatureIntegration_Failure(t *testing.T) {
 	testCasesBad := map[string]*storage.SignatureIntegration{
 		"name field must be set": {
 			Id: goodID,
@@ -94,6 +96,15 @@ func TestValidateSignatureIntegration(t *testing.T) {
 		},
 	}
 
+	for desc, signatureIntegration := range testCasesBad {
+		t.Run(desc, func(t *testing.T) {
+			err := ValidateSignatureIntegration(signatureIntegration)
+			assert.Errorf(t, err, "signature integration: '%+v'", signatureIntegration)
+		})
+	}
+}
+
+func TestValidateSignatureIntegration_Success(t *testing.T) {
 	testCasesGood := map[string]*storage.SignatureIntegration{
 		"valid name, id and cosign config": {
 			Id:   goodID,
@@ -119,13 +130,6 @@ func TestValidateSignatureIntegration(t *testing.T) {
 		t.Run(desc, func(t *testing.T) {
 			err := ValidateSignatureIntegration(signatureIntegration)
 			assert.NoErrorf(t, err, "signature integration: '%+v'", signatureIntegration)
-		})
-	}
-
-	for desc, signatureIntegration := range testCasesBad {
-		t.Run(desc, func(t *testing.T) {
-			err := ValidateSignatureIntegration(signatureIntegration)
-			assert.Errorf(t, err, "signature integration: '%+v'", signatureIntegration)
 		})
 	}
 }
