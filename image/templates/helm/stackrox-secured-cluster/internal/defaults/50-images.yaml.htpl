@@ -50,7 +50,7 @@ image:
     {{- else }}
     _abbrevImageRef: {{ ._rox.image.main.repository }}
     {{- end }}
-    tag: {{ .Chart.AppVersion }}
+    tag: [< required "" .ImageTag >]
   collector:
     {{- if or ._rox.image.collector.tag ._rox.image.collector.fullRef }}
       {{- include "srox.warn" (list . "You have specified an explicit collector image tag. This will prevent the collector image from being updated correctly when upgrading to a newer version of this chart.") }}
