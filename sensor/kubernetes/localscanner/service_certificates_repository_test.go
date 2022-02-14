@@ -165,7 +165,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataFailure() {
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetUnexpectedSecretsOwnerFailure() {
-	fixture := s.newFixture(certSecretsRepoFixtureConfig{ownerRefUID: "wrong owner"})
+	fixture := s.newFixture(certSecretsRepoFixtureConfig{secretOwnerRefUID: "wrong owner"})
 
 	_, err := fixture.repo.getServiceCertificates(context.Background())
 
@@ -279,8 +279,8 @@ type certSecretsRepoFixture struct {
 func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsRepoFixtureConfig) *certSecretsRepoFixture {
 	certificates := certificates.Clone()
 	ownerRef := sensorOwnerReference()
-	if config.ownerRefUID != "" {
-		ownerRef[0].UID = types.UID(config.ownerRefUID)
+	if config.secretOwnerRefUID != "" {
+		ownerRef[0].UID = types.UID(config.secretOwnerRefUID)
 	}
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -321,8 +321,9 @@ type certSecretsRepoFixtureConfig struct {
 	emptySecretData bool
 	// These keys will be removed from the data keys of the secret used to initialize the fake k8s client set.
 	missingSecretDataKeys []string
-	// FIXME
-	ownerRefUID string
+	// If set to a non-zero value, then the UID of the owner of the secret used to initialize the fake k8s client
+	// set will take this value.
+	secretOwnerRefUID string
 }
 
 func sensorOwnerReference() []metav1.OwnerReference {
