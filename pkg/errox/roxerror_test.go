@@ -1,7 +1,6 @@
 package errox
 
 import (
-	"os"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -43,28 +42,4 @@ func TestRoxErrorIs(t *testing.T) {
 	assert.ErrorIs(t, errors.WithMessage(movieNotFound, "message"), fileNotFound)
 
 	assert.NotErrorIs(t, errors.WithMessage(googleNotFound, "message"), fileNotFound)
-}
-
-func TestErrorMessage(t *testing.T) {
-	{
-		err := NotFound
-		assert.Equal(t, "not found", err.Error())
-	}
-
-	{
-		mine := New(NotFound, "cannot load")
-		assert.Equal(t, "cannot load", mine.Error())
-	}
-
-	{
-		err := Newf(InvalidArgs, "custom %s", "message")
-		assert.Equal(t, "custom message", err.Error())
-		assert.ErrorIs(t, err, InvalidArgs)
-	}
-
-	{
-		err := New(os.ErrClosed, "not open")
-		assert.Equal(t, "not open", err.Error())
-		assert.ErrorIs(t, err, os.ErrClosed)
-	}
 }
