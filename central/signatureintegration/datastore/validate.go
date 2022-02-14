@@ -2,13 +2,11 @@ package datastore
 
 import (
 	"encoding/pem"
-	"fmt"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -48,8 +46,7 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 			}
 		default:
 			// Should theoretically never happen.
-			err := errox.NewErrInvariantViolation(fmt.Sprintf(
-				"invalid type for signature verification config: %T", cfg))
+			err := errors.Errorf("invalid type for signature verification config: %T", cfg)
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}
