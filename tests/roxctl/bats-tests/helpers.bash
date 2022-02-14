@@ -117,7 +117,7 @@ assert_components_registry() {
         assert_registry_version_file "${dir}/02-scanner-06-deployment.yaml" 0 "scanner" "$regex"
         ;;
       scanner-db)
-        assert_registry_version_file "${dir}/02-scanner-06-deployment.yaml" 0 "db" "$regex"
+        assert_registry_version_file "${dir}/02-scanner-06-deployment.yaml" 1 "db" "$regex"
         ;;
       *)
         fail "ERROR: unknown component: '$component'"
