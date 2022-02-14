@@ -13,6 +13,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	fakecorev1 "k8s.io/client-go/kubernetes/typed/core/v1/fake"
@@ -163,6 +164,14 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataFailure() {
 	s.ErrorIs(err, ErrMissingSecretData)
 }
 
+func (s *serviceCertificatesRepoSecretsImplSuite) TestGetUnexpectedSecretsOwnerFailure() {
+	fixture := s.newFixture(certSecretsRepoFixtureConfig{ownerRefUID: "wrong owner"})
+
+	_, err := fixture.repo.getServiceCertificates(context.Background())
+
+	s.ErrorIs(err, ErrUnexpectedSecretsOwner)
+}
+
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSuccess() {
 	testCases := map[string]struct {
 		missingSecretDataKey string
@@ -267,29 +276,33 @@ type certSecretsRepoFixture struct {
 // - The certificates used to initialize the data of the aforementioned secret.
 // - A repository that uses that secrets client, sensorDeployment as owner, and with a single serviceCertSecretSpec
 //   for the aforementioned secret in its secrets.
-func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(spec certSecretsRepoFixtureConfig) *certSecretsRepoFixture {
+func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsRepoFixtureConfig) *certSecretsRepoFixture {
 	certificates := certificates.Clone()
+	ownerRef := sensorOwnerReference()
+	if config.ownerRefUID != "" {
+		ownerRef[0].UID = types.UID(config.ownerRefUID)
+	}
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            fmt.Sprintf("%s-secret", serviceType),
 			Namespace:       namespace,
-			OwnerReferences: sensorOwnerReference(),
+			OwnerReferences: ownerRef,
 		},
 	}
-	if !spec.emptySecretData {
+	if !config.emptySecretData {
 		secret.Data = map[string][]byte{
 			mtls.CACertFileName:      certificates.GetCaPem(),
 			mtls.ServiceCertFileName: serviceCertificate.GetCert().GetCertPem(),
 			mtls.ServiceKeyFileName:  serviceCertificate.GetCert().GetKeyPem(),
 		}
 	}
-	for _, secretDataKey := range spec.missingSecretDataKeys {
+	for _, secretDataKey := range config.missingSecretDataKeys {
 		delete(secret.Data, secretDataKey)
 	}
 	secrets := map[storage.ServiceType]*v1.Secret{serviceType: secret}
 	clientSet := fake.NewSimpleClientset(sensorDeployment, secret)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
-	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(spec.k8sAPIVerbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
+	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(config.k8sAPIVerbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &v1.Secret{}, errForced
 	})
 	repo := newTestRepo(secrets, secretsClient)
@@ -308,6 +321,8 @@ type certSecretsRepoFixtureConfig struct {
 	emptySecretData bool
 	// These keys will be removed from the data keys of the secret used to initialize the fake k8s client set.
 	missingSecretDataKeys []string
+	// FIXME
+	ownerRefUID string
 }
 
 func sensorOwnerReference() []metav1.OwnerReference {
