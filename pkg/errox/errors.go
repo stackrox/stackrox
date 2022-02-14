@@ -1,9 +1,5 @@
 package errox
 
-import (
-	"fmt"
-)
-
 // Sentinel errors for generic error classes.
 //
 // Note that error messages are the only reliable indicator of the error type
@@ -53,30 +49,27 @@ var (
 
 // GenericNoValidRole wraps ErrNoValidRole with a generic error message.
 func GenericNoValidRole() error {
-	return fmt.Errorf("access for this user is not authorized: %w, please contact your system administrator",
-		NoValidRole)
-}
-
-func explain(err error, explanation string) error {
-	return fmt.Errorf("%w: %s", err, explanation)
+	return Newf(NoValidRole,
+		"access for this user is not authorized: %s")(NoValidRole.Error()).
+		Explain("please contact your system administrator")
 }
 
 // NewErrNotAuthorized wraps ErrNotAuthorized into an explanation.
 func NewErrNotAuthorized(explanation string) error {
-	return explain(NotAuthorized, explanation)
+	return NotAuthorized.Explain(explanation)
 }
 
 // NewErrNoCredentials wraps ErrNoCredentials into an explanation.
 func NewErrNoCredentials(explanation string) error {
-	return explain(NoCredentials, explanation)
+	return NoCredentials.Explain(explanation)
 }
 
 // NewErrInvariantViolation wraps ErrInvariantViolation into an explanation.
 func NewErrInvariantViolation(explanation string) error {
-	return explain(InvariantViolation, explanation)
+	return InvariantViolation.Explain(explanation)
 }
 
 // NewErrInvalidArgs wraps ErrInvalidArgs into an explanation.
 func NewErrInvalidArgs(explanation string) error {
-	return explain(InvalidArgs, explanation)
+	return InvalidArgs.Explain(explanation)
 }
