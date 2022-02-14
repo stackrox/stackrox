@@ -13,10 +13,6 @@ import (
 
 var (
 	certsDescription = "local scanner credentials"
-	// ErrDifferentCAForDifferentServiceTypes TODO replace by ROX-9128
-	ErrDifferentCAForDifferentServiceTypes = errors.New("found different CA PEM in secret Data for different service types")
-	// ErrMissingSecretData TODO replace by ROX-9128
-	ErrMissingSecretData = errors.New("missing secret data")
 )
 
 // newCertificatesRefresher returns a new retry ticker that uses `requestCertificates` to fetch certificates,

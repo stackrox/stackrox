@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	errForced = errors.New("forced")
+	errCertRefresherForced = errors.New("cert refresher forced error")
 )
 
 func TestCertRefresher(t *testing.T) {
@@ -54,7 +54,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesImmediateRefresh() {
 		newCertsRenewalTimeErr error
 	}{
 		"success":                  {newCertsRenewalTime: now.Add(24 * time.Hour), newCertsRenewalTimeErr: nil},
-		"new certificates invalid": {newCertsRenewalTime: time.UnixMilli(0), newCertsRenewalTimeErr: errForced},
+		"new certificates invalid": {newCertsRenewalTime: time.UnixMilli(0), newCertsRenewalTimeErr: errCertRefresherForced},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -104,7 +104,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRefreshLater() {
 
 func (s *certRefresherSuite) TestRefreshCertificatesGetCertsFailure() {
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(
-		(*storage.TypedServiceCertificateSet)(nil), errForced)
+		(*storage.TypedServiceCertificateSet)(nil), errCertRefresherForced)
 
 	_, err := s.refreshCertificates()
 
@@ -115,10 +115,10 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsFailure() {
 func (s *certRefresherSuite) TestRefreshCertificatesGetTimeToRefreshFailureRecovery() {
 	certificates := (*storage.TypedServiceCertificateSet)(nil)
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
-	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), errForced)
+	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), errCertRefresherForced)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Return(
 		// stop the test here, as we have already checked this recovers from the first getCertsRenewalTime error.
-		(*central.IssueLocalScannerCertsResponse)(nil), errForced).Once().Run(func(args mock.Arguments) {
+		(*central.IssueLocalScannerCertsResponse)(nil), errCertRefresherForced).Once().Run(func(args mock.Arguments) {
 	})
 
 	_, err := s.refreshCertificates()
@@ -132,7 +132,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesFailure()
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(
-		(*central.IssueLocalScannerCertsResponse)(nil), errForced)
+		(*central.IssueLocalScannerCertsResponse)(nil), errCertRefresherForced)
 
 	_, err := s.refreshCertificates()
 
@@ -148,7 +148,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseF
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(&central.IssueLocalScannerCertsResponse{
 		Response: &central.IssueLocalScannerCertsResponse_Error{
 			Error: &central.LocalScannerCertsIssueError{
-				Message: errForced.Error(),
+				Message: errCertRefresherForced.Error(),
 			},
 		},
 	}, nil)
@@ -167,7 +167,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesPutCertsFailure() {
 		storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(issueCertsResponse, nil)
 	s.dependenciesMock.On("putServiceCertificates", mock.Anything,
-		issueCertsResponse.GetCertificates()).Once().Return(errForced)
+		issueCertsResponse.GetCertificates()).Once().Return(errCertRefresherForced)
 
 	_, err := s.refreshCertificates()
 
