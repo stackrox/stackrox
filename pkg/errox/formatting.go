@@ -39,6 +39,15 @@ func Explain(err error, explanation string) error {
 	return fmt.Errorf("%w, %s", err, explanation)
 }
 
+// Explainf adds an explanation to the error and returns a new error. It appends
+// the provided formatted explanation to the original error message.
+//
+// Example:
+//     return Explainf(err, "all %s are busy", "workers")
+func Explainf(err error, format string, args ...interface{}) error {
+	return Explain(err, fmt.Sprintf(format, args...))
+}
+
 // New is a syntactic sugar for New(e, message).
 func (e *roxError) New(message string) *roxError {
 	return New(e, message)
@@ -52,4 +61,9 @@ func (e *roxError) Newf(format string) parameterizedError {
 // Explain is a syntactic sugar for Explain(e, message).
 func (e *roxError) Explain(explanation string) error {
 	return Explain(e, explanation)
+}
+
+// Explainf is a syntactic sugar for Explainf(e, format, args...).
+func (e *roxError) Explainf(format string, args ...interface{}) error {
+	return Explainf(e, format, args...)
 }

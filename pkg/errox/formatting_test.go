@@ -50,4 +50,8 @@ func TestExplain(t *testing.T) {
 		assert.Equal(t, "file already closed, Mercury retrograde",
 			Explain(os.ErrClosed, "Mercury retrograde").Error())
 	}
+	{
+		assert.Equal(t, "not found, your fault",
+			Explainf(NotFound, "%s fault", "your").Error())
+	}
 }
