@@ -182,7 +182,7 @@ create_cluster() {
 wait_for_cluster() {
     info "Waiting for a GKE cluster to stabilize"
 
-    while [[ $(kubectl -n kube-system get pod | tail +2 | wc -l) -lt 2 ]]; do
+    while [[ $(kubectl -n kube-system get pod | tail -n +2 | wc -l) -lt 2 ]]; do
         echo "Still waiting for kubernetes to create initial kube-system pods"
         sleep 1
     done
