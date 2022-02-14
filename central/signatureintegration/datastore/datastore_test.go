@@ -68,7 +68,13 @@ func (s *signatureDataStoreTestSuite) TestAddSignatureIntegration() {
 	s.ErrorIs(err, errox.AlreadyExists)
 	s.Nil(savedIntegration)
 
-	// 3. Need write permission to add new integration
+	// 3. ID should be absent
+	integration.Id = GenerateSignatureIntegrationID()
+	savedIntegration, err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, integration)
+	s.ErrorIs(err, errox.InvalidArgs)
+	s.Nil(savedIntegration)
+
+	// 4. Need write permission to add new integration
 	integration = newSignatureIntegration("name2")
 	savedIntegration, err = s.dataStore.AddSignatureIntegration(s.hasReadCtx, integration)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
@@ -117,6 +123,10 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegration() {
 	// 2. Need write permission to remove integration
 	err = s.dataStore.RemoveSignatureIntegration(s.hasReadCtx, "nonExistentRemoveId")
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	// 3. Removing non-existent id should return NotFound
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, "nonExistentRemoveId")
+	s.ErrorIs(err, errox.NotFound)
 }
 
 func (s *signatureDataStoreTestSuite) TestGetAllSignatureIntegrations() {
@@ -139,6 +149,7 @@ func (s *signatureDataStoreTestSuite) TestGetAllSignatureIntegrations() {
 	})
 	s.Equal(savedIntegration1.GetId(), integrations[0].GetId())
 	s.Equal(savedIntegration2.GetId(), integrations[1].GetId())
+
 	// 2. Need read permission to get signature integrations
 	integrations, err = s.dataStore.GetAllSignatureIntegrations(s.noAccessCtx)
 	s.NoError(err)

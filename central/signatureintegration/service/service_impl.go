@@ -56,6 +56,7 @@ func (s *serviceImpl) ListSignatureIntegrations(ctx context.Context, _ *v1.Empty
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve signature integrations")
 	}
+
 	// List integrations in the same order for consistency across requests.
 	// Names are unique, thus we don't have to use sort.SliceStable
 	sort.Slice(integrations, func(i, j int) bool {
@@ -80,7 +81,7 @@ func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.Resour
 func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedIntegration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
 	integration, err := s.datastore.AddSignatureIntegration(ctx, requestedIntegration)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create signature integration id=%q, name=%q", requestedIntegration.GetId(), requestedIntegration.GetName())
+		return nil, errors.Wrap(err, "failed to create signature integration")
 	}
 
 	return integration, nil
@@ -89,7 +90,7 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedInt
 func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*v1.Empty, error) {
 	err := s.datastore.UpdateSignatureIntegration(ctx, integration)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update signature integration id=%q, name=%q", integration.GetId(), integration.GetName())
+		return nil, errors.Wrap(err, "failed to update signature integration")
 	}
 	return &v1.Empty{}, nil
 }

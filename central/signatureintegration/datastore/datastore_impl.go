@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+const maxGenerateIDAttempts = 2
+
 var (
 	signatureSAC = sac.ForResource(resources.SignatureIntegration)
 	log          = logging.LoggerForModule()
@@ -87,7 +89,7 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if err := d.verifyIntegrationIDExists(integration); err != nil {
+	if err := d.verifyIntegrationIDExists(integration.GetId()); err != nil {
 		return err
 	}
 
@@ -102,27 +104,35 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
+	if err := d.verifyIntegrationIDExists(id); err != nil {
+		return err
+	}
+
 	return d.storage.Delete(id)
 }
 
-func (d *datastoreImpl) verifyIntegrationIDExists(integration *storage.SignatureIntegration) error {
-	_, found, err := d.storage.Get(integration.GetId())
+func (d *datastoreImpl) verifyIntegrationIDExists(id string) error {
+	_, found, err := d.storage.Get(id)
 	if err != nil {
 		return err
 	} else if !found {
-		return errox.Newf(errox.InvalidArgs, "signature integration id=%s, requested name=%q doesn't exist", integration.GetId(), integration.GetName())
+		return errox.Newf(errox.NotFound, "signature integration id=%s doesn't exist", id)
 	}
 	return nil
 }
 
 func (d *datastoreImpl) generateUniqueIntegrationID() (string, error) {
-	id := GenerateSignatureIntegrationID()
-	_, found, err := d.storage.Get(id)
-	if err != nil {
-		return "", err
-	} else if found {
-		log.Warnf("Clash on signature integration id %s", id)
-		return d.generateUniqueIntegrationID()
+	// We decided not to use unbounded loop to avoid risk of getting stack overflows.
+	for i := 0; i < maxGenerateIDAttempts; i++ {
+		id := GenerateSignatureIntegrationID()
+		_, found, err := d.storage.Get(id)
+		if err != nil {
+			return "", err
+		} else if found {
+			log.Warnf("Clash on signature integration id %s", id)
+			continue
+		}
+		return id, nil
 	}
-	return id, nil
+	return "", errox.New(errox.InvariantViolation, "could not generate unique signature integration id")
 }
