@@ -2,10 +2,10 @@ package concurrency
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -105,6 +105,23 @@ func TestRetryTickerStop(t *testing.T) {
 	stopErrSig.Signal()
 
 	// ensure `ticker.scheduleTick` does not schedule a new timer after stopping the ticker
+	time.Sleep(capTime)
+	assert.Nil(t, ticker.getTickTimer())
+}
+
+func TestRetryTickerStopsOnNonRecoverableErrors(t *testing.T) {
+	firsTickErrSig := NewErrorSignal()
+	ticker := newRetryTicker(t, func(ctx context.Context) (timeToNextTick time.Duration, err error) {
+		firsTickErrSig.Signal()
+		return capTime / 2, errors.Wrap(ErrNonRecoverable, "wrapping non recoverable error")
+	})
+	defer ticker.Stop()
+
+	require.NoError(t, ticker.Start())
+	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
+	require.True(t, ok, "timeout exceeded")
+
+	// ensure ticker is actually stopped
 	time.Sleep(capTime)
 	assert.Nil(t, ticker.getTickTimer())
 }
