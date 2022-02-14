@@ -31,6 +31,15 @@ scanner:
 
   logLevel: {{ ._rox.scanner.logLevel }}
 
-  # The max size of files in images that are extracted. The scanner intentionally avoids extracting any files
-  # larger than this to prevent DoS attacks. Leave commented to use a reasonable default.
+  # The scanner intentionally avoids extracting or analyzing any files
+  # larger than the following default sizes to prevent DoS attacks.
+  # Leave these commented to use a reasonable default.
+
+  # The max size of files in images that are extracted.
+  # Increasing this number increases memory pressure.
   # maxExtractableFileSizeMB: 200
+  # The max size of ELF executable files that are analyzed.
+  # Increasing this number may increase disk pressure.
+  # maxELFExecutableFileSizeMB: 800
+  # The max size of image file reader buffer. Image file data beyond this limit are overflowed to temporary files on disk.
+  # maxImageFileReaderBufferSizeMB: 100
