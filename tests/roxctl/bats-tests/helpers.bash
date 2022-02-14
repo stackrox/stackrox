@@ -79,12 +79,22 @@ wait_20s_for() {
   "${args[@]}" "$file"
 }
 
+
+assert_registry_version_file() {
+  local file="$1"
+  local doc_index="$2"
+  local component="$3"
+  local regex="$4"
+  wait_20s_for "$file" "test" "-f" || fail "ERROR: file missing: '$file'"
+  run yq e "select(documentIndex == $doc_index) | .spec.template.spec.containers[] | select(.name == \"${component}\").image" "${file}"
+  assert_output --regexp "$regex"
+}
+
 assert_bundle_registry() {
   local dir="$1"
   local component="$2"
   local regex="$3"
-  run yq e "select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == \"${component}\").image" "${dir}/${component}.yaml"
-  assert_output --regexp "$regex"
+  assert_registry_version_file "${dir}/${component}.yaml" 0 "$component" "$regex"
 }
 
 assert_components_registry() {
@@ -101,19 +111,13 @@ assert_components_registry() {
     regex="$(registry_version_regex "$registry_slug" "$component" "$version_regex")"
     case $component in
       main)
-        wait_20s_for "${dir}/01-central-12-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/01-central-12-deployment.yaml'"
-        run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "central").image' "${dir}/01-central-12-deployment.yaml"
-        assert_output --regexp "$regex"
+        assert_registry_version_file "${dir}/01-central-12-deployment.yaml" 0 "central" "$regex"
         ;;
       scanner)
-        wait_20s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
-        run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "scanner").image' "${dir}/02-scanner-06-deployment.yaml"
-        assert_output --regexp "$regex"
+        assert_registry_version_file "${dir}/02-scanner-06-deployment.yaml" 0 "scanner" "$regex"
         ;;
       scanner-db)
-        wait_20s_for "${dir}/02-scanner-06-deployment.yaml" "test" "-f" || fail "ERROR: file missing: '${dir}/02-scanner-06-deployment.yaml'"
-        run yq e 'select(documentIndex == 1) | .spec.template.spec.containers[] | select(.name == "db").image' "${dir}/02-scanner-06-deployment.yaml"
-        assert_output --regexp "$regex"
+        assert_registry_version_file "${dir}/02-scanner-06-deployment.yaml" 0 "db" "$regex"
         ;;
       *)
         fail "ERROR: unknown component: '$component'"

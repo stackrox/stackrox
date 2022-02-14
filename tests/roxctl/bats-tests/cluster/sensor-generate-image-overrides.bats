@@ -55,7 +55,6 @@ collector_slim_from_flavor() {
      esac
 }
 
-any_version="[0-9]+\.[0-9]+\."
 any_version_latest="${any_version}[0-9]+\-latest"
 any_version_slim="${any_version}[0-9]+\-slim"
 
