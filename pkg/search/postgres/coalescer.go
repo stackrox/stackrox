@@ -15,7 +15,11 @@ import (
 
 type tableQuery struct {
 	schema *walker.Schema
+
+	and []*v1.Query
+	or []*v1.Query
 }
+
 
 type coalescer struct {
 	queriesByTable map[string]*tableQuery
@@ -27,7 +31,46 @@ func newCoalescer() *coalescer {
 	}
 }
 
-func (c *coalescer) populatePathRecursive(tree *queryTree, q *v1.Query, optionsMap searchPkg.OptionsMap) error {
+func (c *coalescer) schemaFromField(q *v1.MatchFieldQuery, optionsMap searchPkg.OptionsMap) *tableQuery {
+	// Need to find base value
+	field, ok := optionsMap.Get(q.GetField())
+	if !ok {
+		return nil
+	}
+	schema := field.DatabaseField.Schema
+	table, ok := c.queriesByTable[schema.Table]
+	if !ok {
+		table = &tableQuery {
+			schema: schema,
+		}
+		c.queriesByTable[schema.Table] = table
+	}
+	return table
+}
+
+func (c *coalescer) getTableQueryFromBase(q *v1.Query, optionsMap searchPkg.OptionsMap) (*tableQuery, error) {
+	if q.GetBaseQuery() == nil {
+		return nil, nil
+	}
+	switch subBQ := q.GetBaseQuery().Query.(type) {
+	case *v1.BaseQuery_DocIdQuery:
+		// nothing to do here
+	case *v1.BaseQuery_MatchFieldQuery:
+		return c.schemaFromField(subBQ.MatchFieldQuery, optionsMap), nil
+	case *v1.BaseQuery_MatchNoneQuery:
+		// nothing to here either
+	case *v1.BaseQuery_MatchLinkedFieldsQuery:
+		// Need to split this
+		for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
+			return c.schemaFromField(q.GetField(), optionsMap)
+		}
+	default:
+		panic("unsupported")
+	}
+	return nil, nil
+}
+
+func (c *coalescer) populatePathRecursive(q *v1.Query, optionsMap searchPkg.OptionsMap) (*tableQuery, error) {
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
 		switch subBQ := q.GetBaseQuery().Query.(type) {
@@ -37,14 +80,17 @@ func (c *coalescer) populatePathRecursive(tree *queryTree, q *v1.Query, optionsM
 			// Need to find base value
 			field, ok := optionsMap.Get(subBQ.MatchFieldQuery.GetField())
 			if !ok {
-				return nil
+				return nil, nil
 			}
-			queries, ok := c.queriesByTable[field.DatabaseField.Schema.Table]
+			schema := field.DatabaseField.Schema
+			table, ok := c.queriesByTable[schema.Table]
 			if !ok {
-
+				table = &tableQuery {
+					schema: schema,
+				}
+				c.queriesByTable[schema.Table] = table
 			}
-
-			tree.AddTable(field.FlatElem.TableName())
+			return table, nil
 		case *v1.BaseQuery_MatchNoneQuery:
 			// nothing to here either
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
@@ -69,6 +115,7 @@ func (c *coalescer) populatePathRecursive(tree *queryTree, q *v1.Query, optionsM
 			populatePathRecursive(tree, dq, optionsMap)
 		}
 	case *v1.Query_BooleanQuery:
+		log.Fatalf("Boolean query not implemented: %+v", sub)
 		for _, cq := range sub.BooleanQuery.Must.Queries {
 			populatePathRecursive(tree, cq, optionsMap)
 		}
