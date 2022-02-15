@@ -82,12 +82,12 @@ type mockForStartConfig struct {
 	refresherStartErr error
 }
 
-func TestLocalScannerTLSIssuerStartSuccess(t *testing.T) {
+func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 	testCases := map[string]struct {
 		getCertsErr error
 	}{
 		"no error":            {getCertsErr: nil},
-		"missing secret data": {getCertsErr: ErrDifferentCAForDifferentServiceTypes},
+		"missing secret data": {getCertsErr: ErrMissingSecretData},
 		"inconsistent CAs":    {getCertsErr: ErrDifferentCAForDifferentServiceTypes},
 		"missing secret":      {getCertsErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "foo")},
 	}
@@ -95,10 +95,14 @@ func TestLocalScannerTLSIssuerStartSuccess(t *testing.T) {
 		t.Run(tcName, func(t *testing.T) {
 			fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
 			fixture.mockForStart(mockForStartConfig{getCertsErr: tc.getCertsErr})
+			fixture.refresher.On("Stop").Once()
+			fixture.requester.On("Stop").Once()
 
 			startErr := fixture.issuer.Start()
+			fixture.issuer.Stop(nil)
 
 			assert.NoError(t, startErr)
+			assert.Nil(t, fixture.issuer.refresher)
 			fixture.assertExpectations(t)
 		})
 	}
@@ -171,7 +175,51 @@ func TestLocalScannerTLSIssuerUnrecoverableGetCertsErrorStartFailure(t *testing.
 	fixture.assertExpectations(t)
 }
 
-// TODO sensor component interface methods
+func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	expectedResponse := &central.IssueLocalScannerCertsResponse{
+		RequestId: "requestID",
+	}
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{
+			IssueLocalScannerCertsResponse: expectedResponse,
+		},
+	}
+
+	go func() {
+		processErr := fixture.issuer.ProcessMessage(msg)
+		assert.NoError(t, processErr)
+	}()
+
+	select {
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	case response := <-fixture.issuer.msgFromCentralC:
+		assert.Equal(t, expectedResponse, response)
+	}
+}
+
+func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ReprocessDeployments{},
+	}
+
+	go func() {
+		processErr := fixture.issuer.ProcessMessage(msg)
+		assert.NoError(t, processErr)
+	}()
+
+	select {
+	case <-ctx.Done():
+	case <-fixture.issuer.msgFromCentralC:
+		assert.Fail(t, "unknown message is not ignored")
+	}
+}
 
 func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
 	objects := make([]runtime.Object, 0)
