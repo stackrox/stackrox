@@ -136,9 +136,6 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 	}
 }
 
-func TestPublicKeyVerifier_VerifySignature_EmptyKeys(t *testing.T) {
-}
-
 func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 	const b64CosignSignature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAY" +
 		"ZNkn8hkAnXI="
