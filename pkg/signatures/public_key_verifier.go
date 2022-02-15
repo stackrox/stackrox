@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"fmt"
 
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/hashicorp/go-multierror"
@@ -80,7 +79,7 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 	// The hash is required for claim verification.
 	hash, err := gcrv1.NewHash(imgSHA)
 	if err != nil {
-		return nil, gcrv1.Hash{}, fmt.Errorf("%w: %s", errHashCreation, err.Error())
+		return nil, gcrv1.Hash{}, errox.Newf(errHashCreation, err.Error())
 	}
 
 	// Theoretically, this should never happen, as gcrv1.NewHash _currently_ doesn't support any other hash algorithm.
@@ -104,7 +103,7 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 		if err != nil {
 			// Theoretically, this error should never happen, as the only error currently occurs when using options,
 			// which we do not use _yet_. When introducing support for rekor bundles, this could potentially error.
-			return nil, gcrv1.Hash{}, fmt.Errorf("%w: %s", errCorruptedSignature, err.Error())
+			return nil, gcrv1.Hash{}, errox.Newf(errCorruptedSignature, err.Error())
 		}
 		signatures = append(signatures, sig)
 	}
