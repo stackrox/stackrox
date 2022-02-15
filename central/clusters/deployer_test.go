@@ -2,7 +2,6 @@ package clusters
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -120,7 +119,6 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 
 	var cases = map[string]struct {
 		cluster                  *storage.Cluster
-		expectedError            bool
 		expectedErrorMessage     string
 		expectedMain             string
 		expectedCollectorFullRef string
@@ -263,17 +261,14 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 		// Expected fail cases
 		"expectedError: empty main image": {
 			cluster:              makeTestCluster("", ""),
-			expectedError:        true,
 			expectedErrorMessage: fmt.Sprintf("generating main image from cluster value (%s)", ""),
 		},
 		"expectedError: invalid main image": {
 			cluster:              makeTestCluster("this is not an image #@!", ""),
-			expectedError:        true,
 			expectedErrorMessage: fmt.Sprintf("generating main image from cluster value (%s)", "this is not an image #@!"),
 		},
 		"expectedError: invalid collector image": {
 			cluster:              makeTestCluster("stackrox.io/main", "this is not an image #@!"),
-			expectedError:        true,
 			expectedErrorMessage: fmt.Sprintf("generating collector image from cluster value (%s)", "this is not an image #@!"),
 		},
 	}
@@ -281,10 +276,9 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 	for name, c := range cases {
 		s.Run(name, func() {
 			fields, err := FieldsFromClusterAndRenderOpts(c.cluster, &flavor, RenderOptions{})
-			if c.expectedError {
+			if len(c.expectedErrorMessage) > 0 {
 				s.Error(err)
 				s.Contains(err.Error(), c.expectedErrorMessage)
-				fmt.Printf("Found error: %s", err)
 			} else {
 				s.NoError(err)
 				s.Equal(c.expectedMain, getMain(fields), "Main image does not match")
