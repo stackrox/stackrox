@@ -166,5 +166,5 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     fi
     fn="$1"
     shift
-    "$fn" "$*"
+    "$fn" "$@"
 fi
