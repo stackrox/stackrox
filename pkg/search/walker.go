@@ -8,6 +8,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
 )
 
 type searchWalker struct {
@@ -22,6 +24,19 @@ func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap
 		fields:   make(map[FieldLabel]*Field),
 	}
 	sw.walkRecursive(prefix, reflect.TypeOf(obj))
+
+	table := mapping.GetTableFromCategory(category)
+
+	dbSearchFields := walker.Walk(reflect.TypeOf(obj), table).FieldsBySearchField()
+	for label, field := range sw.fields {
+		f, ok := dbSearchFields[string(label)]
+		if !ok {
+			log.Infof("Missing: %v", label)
+			continue
+		}
+		field.DatabaseField = f
+	}
+
 	return OptionsMapFromMap(category, sw.fields)
 }
 

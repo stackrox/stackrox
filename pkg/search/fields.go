@@ -1,6 +1,9 @@
 package search
 
-import v1 "github.com/stackrox/rox/generated/api/v1"
+import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
+)
 
 // Field describes a search field
 type Field struct {
@@ -10,6 +13,8 @@ type Field struct {
 	Hidden    bool
 	Category  v1.SearchCategory
 	Analyzer  string
+
+	DatabaseField *walker.Field
 }
 
 // GetFieldPath returns the field path

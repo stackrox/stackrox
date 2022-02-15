@@ -20,12 +20,27 @@ type Schema struct {
 	Table               string
 	ParentSchema        *Schema
 	Fields              []Field
-	FieldsBySearchField map[string]Field
 	Children            []*Schema
 	Relationships       []Relationship
 	Type                string
 	ObjectGetter        string
 	ForeignKeys         []Field
+}
+
+func (s *Schema) FieldsBySearchField() map[string]*Field {
+	m := make(map[string]*Field)
+	for _, f := range s.Fields {
+		field := f
+		if f.Search.Enabled {
+			m[f.Search.FieldName] = &field
+		}
+	}
+	for _, child := range s.Children {
+		for k, v := range child.FieldsBySearchField() {
+			m[k] = v
+		}
+	}
+	return m
 }
 
 func (s *Schema) AddFieldWithType(field Field, dt DataType) {
