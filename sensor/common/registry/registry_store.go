@@ -6,9 +6,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 )
@@ -96,12 +98,27 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 	return nil
 }
 
-// GetAllInNamespace returns all the registries within a given namespace.
-// The second return indicates if any registry within the given namespace exists.
-func (rs *Store) GetAllInNamespace(namespace string) (regs registries.Set, exists bool) {
+// getRegistriesInNamespace returns all the registries within a given namespace.
+func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 	rs.mutex.RLock()
 	defer rs.mutex.RUnlock()
 
-	regs, exists = rs.store[namespace]
-	return regs, exists
+	return rs.store[namespace]
+}
+
+// GetRegistryForImage returns the relevant image registry for the given image.
+// An error is returned if the registry is unknown.
+func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
+	reg := image.GetRegistry()
+	ns := utils.ExtractOpenShiftProject(image)
+	regs := rs.getRegistriesInNamespace(ns)
+	if regs != nil {
+		for _, r := range regs.GetAll() {
+			if r.Name() == reg {
+				return r, nil
+			}
+		}
+	}
+
+	return nil, errors.Errorf("Unknown image registry: %q", reg)
 }

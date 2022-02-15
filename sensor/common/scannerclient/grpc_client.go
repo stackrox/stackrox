@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/mtls"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/sensor/common/registry"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
@@ -59,13 +59,13 @@ func newGRPCClient(endpoint string) (*client, error) {
 // 2. Request image analysis from Scanner, directly.
 // 3. Return image analysis results.
 func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*imageData, error) {
-	reg, err := getRegistry(image)
+	reg, err := registry.Singleton().GetRegistryForImage(image.GetName())
 	if err != nil {
 		return nil, errors.Wrap(err, "determining image registry")
 	}
 
 	name := image.GetName().GetFullName()
-	namespace := image.GetNamespace()
+	namespace := utils.ExtractOpenShiftProject(image.GetName())
 
 	metadata, err := reg.Metadata(types.ToImage(image))
 	if err != nil {
@@ -96,20 +96,6 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 		Metadata:                   metadata,
 		GetImageComponentsResponse: resp,
 	}, nil
-}
-
-func getRegistry(img *storage.ContainerImage) (registryTypes.Registry, error) {
-	reg := img.GetName().GetRegistry()
-	regs, exists := registry.Singleton().GetAllInNamespace(img.GetNamespace())
-	if exists {
-		for _, r := range regs.GetAll() {
-			if r.Name() == reg {
-				return r, nil
-			}
-		}
-	}
-
-	return nil, errors.Errorf("Unknown image registry: %q", reg)
 }
 
 func (c *client) Close() error {

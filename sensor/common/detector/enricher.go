@@ -164,10 +164,7 @@ func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, container
 func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 	for idx, container := range deployment.GetContainers() {
-		img := container.GetImage()
-		// Ensure the container image has its namespace populated prior to scanning.
-		img.Namespace = deployment.GetNamespace()
-		e.runImageScanAsync(imageChan, idx, img)
+		e.runImageScanAsync(imageChan, idx, container.GetImage())
 	}
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	for i := 0; i < len(deployment.GetContainers()); i++ {

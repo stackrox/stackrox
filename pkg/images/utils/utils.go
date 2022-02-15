@@ -175,6 +175,13 @@ func ExtractImageDigest(imageStr string) string {
 	return ""
 }
 
+// ExtractOpenShiftProject returns the name of the OpenShift project in which the given image is stored.
+// Images stored in the OpenShift Internal Registry are identified as: <registry>/<project>/<name>:<tag>.
+func ExtractOpenShiftProject(imgName *storage.ImageName) string {
+	// Use the image name's "remote" field, as it encapsulates <project>/<name>.
+	return stringutils.GetUpTo(imgName.GetRemote(), "/")
+}
+
 type nameHolder interface {
 	GetName() *storage.ImageName
 	GetId() string

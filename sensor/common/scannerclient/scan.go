@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -25,12 +26,14 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, image *
 		return nil, ErrNoLocalScanner
 	}
 
+	namespace := utils.ExtractOpenShiftProject(image.GetName())
+
 	imgData, err := scannerClient.GetImageAnalysis(ctx, image)
 	if err != nil {
-		return nil, errors.Wrapf(err, "scanning image %q in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+		return nil, errors.Wrapf(err, "scanning image %q in namespace %q", image.GetName().GetFullName(), namespace)
 	}
 	if imgData.GetStatus() != scannerV1.ScanStatus_SUCCEEDED {
-		return nil, errors.Wrapf(err, "scan failed for image %q in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+		return nil, errors.Wrapf(err, "scan failed for image %q in namespace %q", image.GetName().GetFullName(), namespace)
 	}
 
 	centralResp, err := centralClient.GetImageVulnerabilitiesInternal(ctx, &v1.GetImageVulnerabilitiesInternalRequest{
@@ -41,7 +44,7 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, image *
 		Notes:      imgData.GetNotes(),
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s in namespace %q", image.GetName().GetFullName(), namespace)
 	}
 
 	return centralResp.GetImage(), nil
