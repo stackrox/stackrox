@@ -108,7 +108,7 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
+	golang.org/x/net v0.0.0-20211209124913-491a49abca63
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
@@ -125,7 +125,7 @@ require (
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
 	k8s.io/api v0.22.2
-	k8s.io/apimachinery v0.22.2
+	k8s.io/apimachinery v0.22.6
 	k8s.io/apiserver v0.22.2
 	k8s.io/client-go v0.22.2
 	k8s.io/kubectl v0.22.2
