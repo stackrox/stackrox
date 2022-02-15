@@ -53,7 +53,7 @@ type serviceCertSecretSpec struct {
 // newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
 // scanner and scanner DB in k8s secrets that are expected to have ownerReference as the only owner reference.
 func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
+	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
 
 	return &serviceCertificatesRepoSecretsImpl{
 		secrets: map[storage.ServiceType]serviceCertSecretSpec{

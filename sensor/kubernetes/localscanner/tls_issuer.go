@@ -6,13 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	k8sErrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -23,7 +20,7 @@ var (
 	log = logging.LoggerForModule()
 
 	startTimeout          = 5 * time.Minute
-	processMessageTimeout = time.Second
+	processMessageTimeout = 5 * time.Second
 	certRefreshTimeout    = 5 * time.Minute
 	certRefreshBackoff    = wait.Backoff{
 		Duration: 5 * time.Second,
@@ -33,13 +30,6 @@ var (
 		Cap:      10 * time.Minute,
 	}
 	_ common.SensorComponent = (*localScannerTLSIssuerImpl)(nil)
-
-	// ErrUnexpectedSecretsOwner TODO replace by ROX-9128
-	ErrUnexpectedSecretsOwner = errors.New("unexpected owner for certificate secrets")
-	// ErrDifferentCAForDifferentServiceTypes TODO replace by ROX-9128
-	ErrDifferentCAForDifferentServiceTypes = errors.New("found different CA PEM in secret Data for different service types")
-	// ErrMissingSecretData TODO replace by ROX-9128
-	ErrMissingSecretData = errors.New("missing secret data")
 )
 
 // NewLocalScannerTLSIssuer creates a sensor component that will keep the local scanner certificates
@@ -82,34 +72,11 @@ type CertificateRequester interface {
 type certificateRefresherSupplier func(requestCertificates requestCertificatesFunc, repository serviceCertificatesRepo,
 	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
 
-// serviceCertificatesRepo TODO replace by ROX-9148
-type serviceCertificatesRepo interface {
-	getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
-	createSecrets(ctx context.Context, initialCertificates *storage.TypedServiceCertificateSet) error
-}
-
-// requestCertificatesFunc TODO replace by ROX-9148
-type requestCertificatesFunc func(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
-
-// newCertRefresher TODO replace by ROX-9148
-func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repository serviceCertificatesRepo,
-	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
-	return nil
-}
-
-// NewServiceCertificatesRepo TODO replace by ROX-9128
-func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
-	return nil
-}
-
 type serviceCertificatesRepoSupplier func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo
 
-// Start
-// - In case a secret doesn't have the expected owner, this logs a warning and returns nil.
-// - In case a secret doesn't exist this creates it setting the deployment for sensor as owner, and initializing
-//   its data with fresh fetched certificates.
+// Start launches a certificate refreshes that immediately checks the certificates, and that keeps them updated.
+// In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Info("starting local scanner TLS issuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
@@ -126,20 +93,25 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 
 	certsRepo := i.serviceCertificatesRepoSupplier(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-
-	if ensureSecretsErr := i.ensureSecrets(ctx, certsRepo); ensureSecretsErr != nil {
-		errors.Wrap(ensureSecretsErr, "ensuring secrets certificates are created")
+	_, getCertsErr := certsRepo.getServiceCertificates(ctx)
+	if errors.Is(getCertsErr, ErrUnexpectedSecretsOwner) {
+		log.Warn("local scanner certificates secrets are not owned by sensor deployment, " +
+			"sensor will not maintain those secrets up to date")
+		return nil
+	}
+	if getCertsErr != nil && !getCertsErrorIsRecoverable(getCertsErr) {
+		return errors.Wrap(getCertsErr, "checking certificate secrets ownership")
 	}
 
+	// i.refresher can recover from any err such that getCertsErrorIsRecoverable(err)
 	i.refresher = i.certificateRefresherSupplier(i.requester.RequestCertificates, certsRepo,
 		certRefreshTimeout, certRefreshBackoff)
-
 	i.requester.Start()
 	if refreshStartErr := i.refresher.Start(); refreshStartErr != nil {
 		return errors.Wrap(refreshStartErr, "starting certificate refresher")
 	}
-	log.Info("local scanner TLS issuer started.")
 
+	log.Info("local scanner TLS issuer started.")
 	return nil
 }
 
@@ -188,31 +160,6 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 	}
 }
 
-// initialCertsSupplier request the certificates at most once, and returns the memoized response to that single request.
-func (i *localScannerTLSIssuerImpl) initialCertsSupplier() func(context.Context) (*storage.TypedServiceCertificateSet, error) {
-	var (
-		requestOnce  sync.Once
-		certificates *storage.TypedServiceCertificateSet
-		requestErr   error
-	)
-	requestCertificates := i.requester.RequestCertificates
-	return func(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
-		requestOnce.Do(func() {
-			response, err := requestCertificates(ctx)
-			if err != nil {
-				requestErr = err
-				return
-			}
-			if response.GetError() != nil {
-				requestErr = errors.Errorf("central refused to issue certificates: %s", response.GetError().GetMessage())
-				return
-			}
-			certificates = response.GetCertificates()
-		})
-		return certificates, requestErr
-	}
-}
-
 func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Context) (*metav1.OwnerReference, error) {
 	if i.podOwnerName == "" {
 		return nil, errors.New("fetching sensor deployment: empty pod owner name")
@@ -248,28 +195,4 @@ func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Co
 		BlockOwnerDeletion: &blockOwnerDeletion,
 		Controller:         &isController,
 	}, nil
-}
-
-func (i *localScannerTLSIssuerImpl) ensureSecrets(ctx context.Context, certsRepo serviceCertificatesRepo) error {
-	certificates, err := certsRepo.getServiceCertificates(ctx)
-
-	if err == ErrUnexpectedSecretsOwner {
-		log.Warn("local scanner certificates secrets are not owned by sensor deployment, " +
-			"sensor will not keep those secrets up to date")
-		return nil
-	}
-
-	if k8sErrrors.IsNotFound(err) {
-		// FIXME one secret exists and the other does not
-		if createSecretsErr := certsRepo.createSecrets(ctx, certificates); createSecretsErr != nil {
-			return errors.Wrap(createSecretsErr, "creating certificates secrets")
-		}
-	}
-
-	if err == ErrDifferentCAForDifferentServiceTypes || err == ErrMissingSecretData {
-		// to be fixed on first refresh.
-		return nil
-	}
-
-	return err
 }

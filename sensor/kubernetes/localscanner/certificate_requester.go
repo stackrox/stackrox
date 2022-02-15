@@ -13,7 +13,8 @@ import (
 var (
 	// ErrCertificateRequesterStopped is returned by RequestCertificates when the certificate
 	// requester is not initialized.
-	ErrCertificateRequesterStopped = errors.New("stopped")
+	ErrCertificateRequesterStopped                      = errors.New("stopped")
+	_                              CertificateRequester = (*certificateRequesterImpl)(nil)
 )
 
 // NewCertificateRequester creates a new certificate requester that communicates through
