@@ -5,14 +5,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	appsApiv1 "k8s.io/api/apps/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -33,13 +36,13 @@ type localScannerTLSIssuerFixture struct {
 	issuer    *localScannerTLSIssuerImpl
 }
 
-func newLocalScannerTLSIssuerFixture(createSensorDeployment, createSensorReplicaSet bool) *localScannerTLSIssuerFixture {
+func newLocalScannerTLSIssuerFixture(k8sClientConfig testK8sClientConfig) *localScannerTLSIssuerFixture {
 	fixture := &localScannerTLSIssuerFixture{}
 	fixture.requester = &certificateRequesterMock{}
 	fixture.refresher = &certificateRefresherMock{}
 	fixture.repo = &certsRepoMock{}
 	fixture.supplier = &suppliersMock{}
-	fixture.k8sClient = testK8sClient(createSensorDeployment, createSensorReplicaSet)
+	fixture.k8sClient = testK8sClient(k8sClientConfig)
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	fixture.issuer = &localScannerTLSIssuerImpl{
@@ -63,29 +66,47 @@ func (f *localScannerTLSIssuerFixture) assertExpectations(t *testing.T) {
 }
 
 // mockForStart setups the mocks for the happy path of Start
-func (f *localScannerTLSIssuerFixture) mockForStart(refresherStartReturn error) {
+func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 	f.requester.On("Start").Once()
-	f.refresher.On("Start").Once().Return(refresherStartReturn)
-	f.repo.On("getServiceCertificates", mock.Anything).Once().Return((*storage.TypedServiceCertificateSet)(nil), nil)
+	f.refresher.On("Start").Once().Return(conf.refresherStartErr)
+	f.repo.On("getServiceCertificates", mock.Anything).Once().
+		Return((*storage.TypedServiceCertificateSet)(nil), conf.getCertsErr)
 	f.supplier.On("supplyServiceCertificatesRepoSupplier", mock.Anything,
 		mock.Anything, mock.Anything).Once().Return(f.repo, nil)
 	f.supplier.On("supplyCertificateRefresher", mock.Anything, f.repo,
 		certRefreshTimeout, certRefreshBackoff).Once().Return(f.refresher)
 }
 
+type mockForStartConfig struct {
+	getCertsErr       error
+	refresherStartErr error
+}
+
 func TestLocalScannerTLSIssuerStartSuccess(t *testing.T) {
-	fixture := newLocalScannerTLSIssuerFixture(true, true)
-	fixture.mockForStart(nil)
+	testCases := map[string]struct {
+		getCertsErr error
+	}{
+		"no error":            {getCertsErr: nil},
+		"missing secret data": {getCertsErr: ErrDifferentCAForDifferentServiceTypes},
+		"inconsistent CAs":    {getCertsErr: ErrDifferentCAForDifferentServiceTypes},
+		"missing secret":      {getCertsErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "foo")},
+	}
+	for tcName, tc := range testCases {
+		t.Run(tcName, func(t *testing.T) {
+			fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+			fixture.mockForStart(mockForStartConfig{getCertsErr: tc.getCertsErr})
 
-	startErr := fixture.issuer.Start()
+			startErr := fixture.issuer.Start()
 
-	assert.NoError(t, startErr)
-	fixture.assertExpectations(t)
+			assert.NoError(t, startErr)
+			fixture.assertExpectations(t)
+		})
+	}
 }
 
 func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
-	fixture := newLocalScannerTLSIssuerFixture(true, true)
-	fixture.mockForStart(errForced)
+	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	fixture.mockForStart(mockForStartConfig{refresherStartErr: errForced})
 
 	startErr := fixture.issuer.Start()
 
@@ -94,8 +115,8 @@ func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 }
 
 func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
-	fixture := newLocalScannerTLSIssuerFixture(true, true)
-	fixture.mockForStart(nil)
+	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	fixture.mockForStart(mockForStartConfig{})
 
 	startErr := fixture.issuer.Start()
 	secondStartErr := fixture.issuer.Start()
@@ -107,15 +128,14 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 
 func TestLocalScannerTLSIssuerFetchSensorDeploymentErrorStartFailure(t *testing.T) {
 	testCases := map[string]struct {
-		createSensorDeployment bool
-		createSensorReplicaset bool
+		k8sClientConfig testK8sClientConfig
 	}{
-		"sensor replica set missing":    {createSensorDeployment: true, createSensorReplicaset: false},
-		"sensor deployment set missing": {createSensorDeployment: false, createSensorReplicaset: false},
+		"sensor replica set missing":    {k8sClientConfig: testK8sClientConfig{skipSensorReplicaSet: true}},
+		"sensor deployment set missing": {k8sClientConfig: testK8sClientConfig{skipSensorDeployment: true}},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
-			fixture := newLocalScannerTLSIssuerFixture(tc.createSensorDeployment, tc.createSensorReplicaset)
+			fixture := newLocalScannerTLSIssuerFixture(tc.k8sClientConfig)
 
 			startErr := fixture.issuer.Start()
 
@@ -125,12 +145,37 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentErrorStartFailure(t *testing.
 	}
 }
 
+func TestLocalScannerTLSIssuerNoopOnUnexpectedSecretsOwner(t *testing.T) {
+	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	fixture.supplier.On("supplyServiceCertificatesRepoSupplier", mock.Anything,
+		mock.Anything, mock.Anything).Once().Return(fixture.repo, nil)
+	fixture.repo.On("getServiceCertificates", mock.Anything).Once().
+		Return((*storage.TypedServiceCertificateSet)(nil), errors.Wrap(ErrUnexpectedSecretsOwner, "forced error"))
+
+	startErr := fixture.issuer.Start()
+
+	assert.NoError(t, startErr)
+	fixture.assertExpectations(t)
+}
+
+func TestLocalScannerTLSIssuerUnrecoverableGetCertsErrorStartFailure(t *testing.T) {
+	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	fixture.supplier.On("supplyServiceCertificatesRepoSupplier", mock.Anything,
+		mock.Anything, mock.Anything).Once().Return(fixture.repo, nil)
+	fixture.repo.On("getServiceCertificates", mock.Anything).Once().
+		Return((*storage.TypedServiceCertificateSet)(nil), errForced)
+
+	startErr := fixture.issuer.Start()
+
+	assert.ErrorIs(t, startErr, errForced)
+	fixture.assertExpectations(t)
+}
+
 // TODO sensor component interface methods
 
-// if createSensorDeployment is false then createSensorReplicaSet is not treated as false.
-func testK8sClient(createSensorDeployment, createSensorReplicaSet bool) *fake.Clientset {
+func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
 	objects := make([]runtime.Object, 0)
-	if createSensorDeployment {
+	if !conf.skipSensorDeployment {
 		sensorDeployment := &appsApiv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      sensorDeploymentName,
@@ -138,7 +183,7 @@ func testK8sClient(createSensorDeployment, createSensorReplicaSet bool) *fake.Cl
 			},
 		}
 		objects = append(objects, sensorDeployment)
-		if createSensorReplicaSet {
+		if !conf.skipSensorReplicaSet {
 			sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
 			sensorReplicaSet := &appsApiv1.ReplicaSet{
 				ObjectMeta: metav1.ObjectMeta{
@@ -161,6 +206,13 @@ func testK8sClient(createSensorDeployment, createSensorReplicaSet bool) *fake.Cl
 	k8sClient := fake.NewSimpleClientset(objects...)
 
 	return k8sClient
+}
+
+type testK8sClientConfig struct {
+	// if true then no sensor deployment and no replica set will be added to the test client.
+	skipSensorDeployment bool
+	// if true then no sensor replica set will be added to the test client.
+	skipSensorReplicaSet bool
 }
 
 type certificateRequesterMock struct {
