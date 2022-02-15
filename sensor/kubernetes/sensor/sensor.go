@@ -164,7 +164,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	podOwnerName := os.Getenv("POD_OWNER_NAME")
-	if !features.LocalImageScanning.Enabled() {
+	if features.LocalImageScanning.Enabled() {
 		components = append(components, localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace, podOwnerName))
 	}
 
