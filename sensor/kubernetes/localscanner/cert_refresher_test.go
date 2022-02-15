@@ -8,8 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -82,6 +85,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesImmediateRefresh() {
 				s.InDelta(time.Until(tc.newCertsRenewalTime).Seconds(), timeToNextRefresh.Seconds(), 1)
 			} else {
 				s.Require().ErrorIs(err, tc.newCertsRenewalTimeErr)
+				s.NotErrorIs(err, concurrency.ErrNonRecoverable)
 			}
 
 			s.dependenciesMock.AssertExpectations(s.T())
@@ -102,13 +106,50 @@ func (s *certRefresherSuite) TestRefreshCertificatesRefreshLater() {
 	s.InDelta(time.Until(expectedRenewalTime).Seconds(), timeToNextRefresh.Seconds(), 1)
 }
 
-func (s *certRefresherSuite) TestRefreshCertificatesGetCertsFailure() {
+func (s *certRefresherSuite) TestRefreshCertificatesGetCertsInconsistentImmediateRefresh() {
+	testCases := map[string]struct {
+		recoverableErr error
+	}{
+		"refresh immediately on ErrDifferentCAForDifferentServiceTypes": {recoverableErr: ErrDifferentCAForDifferentServiceTypes},
+		"refresh immediately on ErrMissingSecretData":                   {recoverableErr: ErrMissingSecretData},
+		"refresh immediately on missing secrets":                        {recoverableErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "foo")},
+	}
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(
+				(*storage.TypedServiceCertificateSet)(nil), tc.recoverableErr)
+			s.dependenciesMock.On("requestCertificates", mock.Anything).Return(
+				// stop the test here, as we have already checked this recovers from the first getCertsRenewalTime error.
+				(*central.IssueLocalScannerCertsResponse)(nil), errCertRefresherForced).Once().Run(func(args mock.Arguments) {
+			})
+
+			_, err := s.refreshCertificates()
+
+			s.ErrorIs(err, errCertRefresherForced)
+			s.NotErrorIs(err, concurrency.ErrNonRecoverable)
+			s.dependenciesMock.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *certRefresherSuite) TestRefreshCertificatesGetCertsUnexpectedOwnerFailure() {
+	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(
+		(*storage.TypedServiceCertificateSet)(nil), concurrency.ErrNonRecoverable)
+
+	_, err := s.refreshCertificates()
+
+	s.ErrorIs(err, concurrency.ErrNonRecoverable)
+	s.dependenciesMock.AssertExpectations(s.T())
+}
+
+func (s *certRefresherSuite) TestRefreshCertificatesGetCertsOtherErrFailure() {
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(
 		(*storage.TypedServiceCertificateSet)(nil), errCertRefresherForced)
 
 	_, err := s.refreshCertificates()
 
 	s.ErrorIs(err, errCertRefresherForced)
+	s.NotErrorIs(err, concurrency.ErrNonRecoverable)
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
@@ -124,6 +165,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetTimeToRefreshFailureRecov
 	_, err := s.refreshCertificates()
 
 	s.ErrorIs(err, errCertRefresherForced)
+	s.NotErrorIs(err, concurrency.ErrNonRecoverable)
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
@@ -137,7 +179,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesFailure()
 	_, err := s.refreshCertificates()
 
 	s.ErrorIs(err, errCertRefresherForced)
-
+	s.NotErrorIs(err, concurrency.ErrNonRecoverable)
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
@@ -157,6 +199,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseF
 
 	s.Require().Error(err)
 	s.Regexp(errCertRefresherForced.Error(), err.Error())
+	s.NotErrorIs(err, concurrency.ErrNonRecoverable)
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
@@ -173,6 +216,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesEnsureCertsFailure() {
 	_, err := s.refreshCertificates()
 
 	s.ErrorIs(err, errCertRefresherForced)
+	s.NotErrorIs(err, concurrency.ErrNonRecoverable)
 	s.dependenciesMock.AssertExpectations(s.T())
 }
 
