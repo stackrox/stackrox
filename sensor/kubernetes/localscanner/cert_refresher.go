@@ -39,7 +39,7 @@ type serviceCertificatesRepo interface {
 	ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
 }
 
-// refreshCertificates determines refreshes the certificate secrets if needed, and returns the time
+// refreshCertificates refreshes the certificate secrets if needed, and returns the time
 // until the next refresh.
 func refreshCertificates(ctx context.Context, requestCertificates requestCertificatesFunc,
 	getCertsRenewalTime getCertsRenewalTimeFunc, repository serviceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
