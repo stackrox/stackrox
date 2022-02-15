@@ -61,6 +61,17 @@ helm_template_central() {
   assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"
 }
 
+helm_template_secured_cluster() {
+  local out_dir="${1}"
+  run helm template stackrox-central-services "$out_dir" \
+    -n stackrox \
+    --set imagePullSecrets.allowNone=true \
+    --output-dir="$out_dir/rendered"
+  assert_success
+  assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"
+  assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"
+}
+
 assert_helm_template_central_registry() {
   local out_dir="${1}"; shift;
   local registry_slug="${1}"; shift;
@@ -249,6 +260,12 @@ has_flag_collision_warning() {
 
 roxctl_authenticated() {
   roxctl-development --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@"
+}
+
+yaml_valid() {
+  assert_file_exist "$1"
+  run yq e "$1"
+  assert_success
 }
 
 generate_bundle() {
