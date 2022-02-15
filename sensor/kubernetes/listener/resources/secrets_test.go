@@ -82,10 +82,13 @@ func testOpenShiftRegistrySecret311(t *testing.T) {
 
 	_ = d.ProcessEvent(openshift311DockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
-	assert.Nil(t, regStore.GetAllInNamespace("random-ns"))
+	regs, exists := regStore.GetAllInNamespace("random-ns")
+	assert.Nil(t, regs)
+	assert.False(t, exists)
 
-	regs := regStore.GetAllInNamespace(openshift311DockerConfigSecret.GetNamespace())
+	regs, exists = regStore.GetAllInNamespace(openshift311DockerConfigSecret.GetNamespace())
 	assert.NotNil(t, regs)
+	assert.True(t, exists)
 	assert.Len(t, regs.GetAll(), 1)
 
 	expectedRegConfig := &types.Config{
@@ -112,10 +115,13 @@ func testOpenShiftRegistrySecret4x(t *testing.T) {
 
 	_ = d.ProcessEvent(openshift4xDockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
-	assert.Nil(t, regStore.GetAllInNamespace("random-ns"))
+	regs, exists := regStore.GetAllInNamespace("random-ns")
+	assert.Nil(t, regs)
+	assert.False(t, exists)
 
-	regs := regStore.GetAllInNamespace(openshift4xDockerConfigSecret.GetNamespace())
+	regs, exists = regStore.GetAllInNamespace(openshift4xDockerConfigSecret.GetNamespace())
 	assert.NotNil(t, regs)
+	assert.True(t, exists)
 	assert.Len(t, regs.GetAll(), 1)
 
 	expectedRegConfig := &types.Config{
