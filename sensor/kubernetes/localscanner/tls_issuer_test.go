@@ -33,13 +33,13 @@ type localScannerTLSIssuerFixture struct {
 	issuer    *localScannerTLSIssuerImpl
 }
 
-func newLocalScannerTLSIssuerFixture(withSensorDeployment, withReplicaSet bool) *localScannerTLSIssuerFixture {
+func newLocalScannerTLSIssuerFixture(createSensorDeployment, createSensorReplicaSet bool) *localScannerTLSIssuerFixture {
 	fixture := &localScannerTLSIssuerFixture{}
 	fixture.requester = &certificateRequesterMock{}
 	fixture.refresher = &certificateRefresherMock{}
 	fixture.repo = &certsRepoMock{}
 	fixture.supplier = &suppliersMock{}
-	fixture.k8sClient = testK8sClient(withSensorDeployment, withReplicaSet)
+	fixture.k8sClient = testK8sClient(createSensorDeployment, createSensorReplicaSet)
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	fixture.issuer = &localScannerTLSIssuerImpl{
@@ -62,6 +62,7 @@ func (f *localScannerTLSIssuerFixture) assertExpectations(t *testing.T) {
 	f.supplier.AssertExpectations(t)
 }
 
+// mockForStart setups the mocks for the happy path of Start
 func (f *localScannerTLSIssuerFixture) mockForStart(refresherStartReturn error) {
 	f.requester.On("Start").Once()
 	f.refresher.On("Start").Once().Return(refresherStartReturn)
@@ -104,13 +105,32 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 	fixture.assertExpectations(t)
 }
 
-// TODO fetch sensor deployment failures
+func TestLocalScannerTLSIssuerFetchSensorDeploymentErrorStartFailure(t *testing.T) {
+	testCases := map[string]struct {
+		createSensorDeployment bool
+		createSensorReplicaset bool
+	}{
+		"sensor replica set missing":    {createSensorDeployment: true, createSensorReplicaset: false},
+		"sensor deployment set missing": {createSensorDeployment: false, createSensorReplicaset: false},
+	}
+	for tcName, tc := range testCases {
+		t.Run(tcName, func(t *testing.T) {
+			fixture := newLocalScannerTLSIssuerFixture(tc.createSensorDeployment, tc.createSensorReplicaset)
+
+			startErr := fixture.issuer.Start()
+
+			assert.Error(t, startErr)
+			fixture.assertExpectations(t)
+		})
+	}
+}
+
 // TODO sensor component interface methods
 
-// if withSensorDeployment is false then withReplicaSet is not included
-func testK8sClient(withSensorDeployment, withReplicaSet bool) *fake.Clientset {
+// if createSensorDeployment is false then createSensorReplicaSet is not treated as false.
+func testK8sClient(createSensorDeployment, createSensorReplicaSet bool) *fake.Clientset {
 	objects := make([]runtime.Object, 0)
-	if withSensorDeployment {
+	if createSensorDeployment {
 		sensorDeployment := &appsApiv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      sensorDeploymentName,
@@ -118,7 +138,7 @@ func testK8sClient(withSensorDeployment, withReplicaSet bool) *fake.Clientset {
 			},
 		}
 		objects = append(objects, sensorDeployment)
-		if withReplicaSet {
+		if createSensorReplicaSet {
 			sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
 			sensorReplicaSet := &appsApiv1.ReplicaSet{
 				ObjectMeta: metav1.ObjectMeta{
@@ -136,7 +156,6 @@ func testK8sClient(withSensorDeployment, withReplicaSet bool) *fake.Clientset {
 			}
 			objects = append(objects, sensorReplicaSet)
 		}
-
 	}
 
 	k8sClient := fake.NewSimpleClientset(objects...)
