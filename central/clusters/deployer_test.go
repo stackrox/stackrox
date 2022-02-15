@@ -283,7 +283,7 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			fields, err := FieldsFromClusterAndRenderOpts(c.cluster, &flavor, RenderOptions{})
 			if c.expectedError {
 				s.Error(err)
-				s.True(strings.Contains(err.Error(), c.expectedErrorMessage))
+				s.Contains(err.Error(), c.expectedErrorMessage)
 				fmt.Printf("Found error: %s", err)
 			} else {
 				s.NoError(err)
