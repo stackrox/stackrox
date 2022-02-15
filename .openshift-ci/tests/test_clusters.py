@@ -6,7 +6,7 @@ import unittest
 
 from clusters import GKECluster
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-many-public-methods
 
 _dirname = os.path.dirname(__file__)
 
