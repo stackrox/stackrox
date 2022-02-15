@@ -270,15 +270,15 @@
   {{ $_ := set $._rox.scanner "disable" true }}
 [< end >]
 
-{{/* Disable local scanner on non-OpenShift 4 clusters by default*/}}
-{{ if ne ._rox.env.openshift 4 }}
+{{/* Disable local scanner on non-OpenShift clusters by default*/}}
+{{ if not ._rox.env.openshift }}
   {{ if eq $._rox.scanner.disable false }}
     {{ include "srox.fail" (printf "Local scanner was enabled but is only supported on OpenShift 4. Set scanner.disable=true to continue." ) }}
   {{ end }}
   {{ $_ := set $._rox.scanner "disable" true }}
 {{ end }}
 
-{{ if and (eq ._rox.env.openshift 4) (eq ._rox.scanner.disable false) }}
+{{ if and ._rox.env.openshift (eq ._rox.scanner.disable false) }}
   {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
   {{ $_ = set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
