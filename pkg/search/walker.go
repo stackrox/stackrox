@@ -160,10 +160,10 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 			panic(err)
 		}
 		enumregistry.Add(prefix, enumDesc)
-		return v1.SearchDataType_SEARCH_ENUM
+		return v1.SearchDataType_SEARCH_ENUMg
 	case reflect.Interface:
 		return v1.SearchDataType_SEARCH_STRING
 	}
-	// TODO(dhaus): Add unknown SearchDataType to the enum, move enum definition to go struct.
+	// TODO(ROX-9291): Add unknown SearchDataType to the enum, move enum definition to go struct.
 	return v1.SearchDataType(-1)
 }
