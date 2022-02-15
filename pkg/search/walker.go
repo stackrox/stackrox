@@ -160,7 +160,7 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 			panic(err)
 		}
 		enumregistry.Add(prefix, enumDesc)
-		return v1.SearchDataType_SEARCH_ENUMg
+		return v1.SearchDataType_SEARCH_ENUM
 	case reflect.Interface:
 		return v1.SearchDataType_SEARCH_STRING
 	}
