@@ -2128,9 +2128,11 @@ commands:
             cci-export GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX"
             cci-export BUILD_ID "$CIRCLE_BUILD_NUM"
             cci-export JOB_NAME "$CIRCLE_JOB"
+            cci-export REPO_NAME "$CIRCLE_PROJECT_REPONAME"
+            cci-export PULL_PULL_SHA "$CIRCLE_SHA1"
             cci-export OPENSHIFT_CI true
-            # Clear Circle CI Env
-            while read var; do cci-export $var ""; done < <(env | grep -e '^CIRCLE' | cut -d = -f 1)
+            cci-export ARTIFACT_DIR "/tmp/artifact_dir"
+            mkdir -p "$ARTIFACT_DIR"
 
 jobs:
   ###
@@ -2194,14 +2196,6 @@ jobs:
       - run:
           name: Run Shell unit tests
           command: make shell-unit-tests
-
-      - run:
-          name: Generate Shell unit test JUnit report
-          command: |
-            if [[ -f shell-test-output/test.log ]]; then
-              tap-junit < shell-test-output/test.log > shell-test-output/report.xml
-            fi
-          when: always
 
       - store-test-results-and-artifacts:
           path: shell-test-output
@@ -3784,7 +3778,7 @@ jobs:
       - run:
           name: Upgrade tests
           command: |
-            ./tests/upgrade/run.sh
+            ./tests/upgrade/run.sh /tmp/upgrade-test-logs
 
       - ci-artifacts/store:
           path: /tmp/upgrade-test-logs
@@ -4855,6 +4849,9 @@ jobs:
           name: Run the OpenShift CI upgrade test hook
           command: |
             .openshift-ci/gke_upgrade_test.py
+      - store_artifacts:
+          path: /tmp/artifact_dir/howto-locate-artifacts.html
+          destination: howto-locate-artifacts.html
 
 workflows:
   version: 2

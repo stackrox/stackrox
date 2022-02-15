@@ -49,7 +49,7 @@ test_e2e() {
     setup_proxy_tests
     run_proxy_tests
 
-    collect_and_check_stackrox_logs "initial_phase"
+    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_phase"
 
     info "E2E destructive tests"
     make -C tests destructive-tests
