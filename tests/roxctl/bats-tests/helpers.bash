@@ -108,7 +108,7 @@ assert_components_registry() {
   (( $# < 1 )) && fail "ERROR: 0 components provided"
 
   for component in "${@}"; do
-    regex="$(registry_version_regex "$registry_slug" "$component" "$version_regex")"
+    regex="$(image_reference_regex "$registry_slug" "$component" "$version_regex")"
     case $component in
       main)
         assert_registry_version_file "${dir}/01-central-12-deployment.yaml" 0 "central" "$regex"
@@ -134,7 +134,7 @@ assert_file_exist() {
   fi
 }
 
-registry_version_regex() {
+image_reference_regex() {
   local registry_slug="$1"
   local component="$2"
   local version="${3:-$any_version}"
@@ -167,8 +167,8 @@ registry_version_regex() {
 # Parameters:
 # $1 - path to roxctl binary
 # $2 - orchestrator (k8s, openshift)
-# $3 - registry-slug for expected main registry (see 'registry_version_regex()' for the list of currently supported registry-slugs)
-# $4 - registry-slug for expected scanner and scanner-db registries (see 'registry_version_regex()' for the list of currently supported registry-slugs)
+# $3 - registry-slug for expected main registry (see 'image_reference_regex()' for the list of currently supported registry-slugs)
+# $4 - registry-slug for expected scanner and scanner-db registries (see 'image_reference_regex()' for the list of currently supported registry-slugs)
 # $@ - open-ended list of other parameters that should be passed into 'roxctl central generate'
 run_image_defaults_registry_test() {
   local roxctl_bin="$1"; shift;
