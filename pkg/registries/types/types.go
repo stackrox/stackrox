@@ -19,6 +19,7 @@ type Registry interface {
 	Match(image *storage.ImageName) bool
 	Metadata(image *storage.Image) (*storage.ImageMetadata, error)
 	Test() error
+	Global() bool
 	Config() *Config
 	Name() string
 }

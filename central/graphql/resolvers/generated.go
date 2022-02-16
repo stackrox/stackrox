@@ -474,7 +474,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ContainerImage", []string{
 		"id: ID!",
 		"name: ImageName",
-		"namespace: String!",
 		"notPullable: Boolean!",
 	}))
 	utils.Must(builder.AddType("ContainerInstance", []string{
@@ -5003,11 +5002,6 @@ func (resolver *containerImageResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *containerImageResolver) Name(ctx context.Context) (*imageNameResolver, error) {
 	value := resolver.data.GetName()
 	return resolver.root.wrapImageName(value, true, nil)
-}
-
-func (resolver *containerImageResolver) Namespace(ctx context.Context) string {
-	value := resolver.data.GetNamespace()
-	return value
 }
 
 func (resolver *containerImageResolver) NotPullable(ctx context.Context) bool {

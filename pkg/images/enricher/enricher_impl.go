@@ -187,6 +187,9 @@ func getRef(image *storage.Image) string {
 }
 
 func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
+	if !registry.Global() {
+		return false, nil
+	}
 	if !registry.Match(image.GetName()) {
 		return false, nil
 	}

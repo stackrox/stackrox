@@ -472,6 +472,13 @@
         "type": {
           "type": "string"
         },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors."
+        },
         "categories": {
           "type": "array",
           "items": {
