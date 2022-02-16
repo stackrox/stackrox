@@ -17,8 +17,8 @@ setup() {
   out_dir="$(mktemp -d -u)"
 
   # debug
-  ls -la /go/src/github.com/stackrox/stackrox/image/templates/helm/ || true
-  ls -la /go/src/github.com/stackrox/stackrox/image/templates/helm/stackrox-secured-cluster  || true
+  tree -p -a -h -D -F -L 1 /go/src/github.com/stackrox/stackrox/
+  tree -p -a -h -D -F /go/src/github.com/stackrox/stackrox/image
 }
 
 teardown() {
