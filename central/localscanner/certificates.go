@@ -74,7 +74,6 @@ func generateServiceCertMap(serviceType storage.ServiceType, namespace string, c
 	fileMap := make(secretDataMap, numServiceCertDataEntries)
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
-		mtls.WithValidityExpiringInDays(),
 		mtls.WithNamespace(namespace),
 	}
 	if err := certgen.IssueServiceCert(fileMap, ca, subject, "", issueOpts...); err != nil {
