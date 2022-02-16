@@ -3546,11 +3546,10 @@ jobs:
           name: Run roxctl Bats tests that require a running cluster
           command: |
             source tests/e2e/run.sh
-            # Bats tests involving roxctl helm output require template files to exist under '/go/src/github.com/stackrox/stackrox/image/templates'
-            # However, we have the code in '/go/src/github.com/stackrox/rox/image/templates'
-            if [[ -d /go/src/github.com/stackrox/stackrox ]]; then
-              tree -p -a -h -D -F -L 3 /go/src/github.com/stackrox/stackrox
-            else
+            # When running bats tests involving roxctl helm output with '--debug' flag,
+            # roxctl would use template files directly from '/go/src/github.com/stackrox/stackrox/image/templates'
+            # However, we have the code in '/go/src/github.com/stackrox/rox/image/templates', so we need to create a link
+            if [[ ! -e /go/src/github.com/stackrox/stackrox ]]; then
               ln -Ffvs /go/src/github.com/stackrox/rox /go/src/github.com/stackrox/stackrox
             fi
 
