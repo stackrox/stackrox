@@ -306,15 +306,6 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 	return errorList.ToError()
 }
 
-func (s *serviceImpl) clusterExists(name string, clusters []*storage.Cluster) bool {
-	for _, c := range clusters {
-		if name == c.GetName() {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context, updateRequest *v1.UpdateImageIntegrationRequest) error {
 	if updateRequest.GetUpdatePassword() {
 		return nil
