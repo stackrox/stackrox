@@ -110,6 +110,7 @@ func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 // An error is returned if the registry is unknown.
 func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
 	reg := image.GetRegistry()
+
 	ns := utils.ExtractOpenShiftProject(image)
 	regs := rs.getRegistriesInNamespace(ns)
 	if regs != nil {

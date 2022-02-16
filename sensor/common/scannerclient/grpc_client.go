@@ -2,6 +2,7 @@ package scannerclient
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -59,16 +60,17 @@ func newGRPCClient(endpoint string) (*client, error) {
 // 1. Retrieve image metadata.
 // 2. Request image analysis from Scanner, directly.
 // 3. Return image analysis results.
-func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*imageData, error) {
-	reg, err := registry.Singleton().GetRegistryForImage(image.GetName())
+func (c *client) GetImageAnalysis(ctx context.Context, ci *storage.ContainerImage) (*imageData, error) {
+	reg, err := registry.Singleton().GetRegistryForImage(ci.GetName())
 	if err != nil {
 		return nil, errors.Wrap(err, "determining image registry")
 	}
 
-	name := image.GetName().GetFullName()
-	namespace := utils.ExtractOpenShiftProject(image.GetName())
+	name := ci.GetName().GetFullName()
+	namespace := utils.ExtractOpenShiftProject(ci.GetName())
 
-	metadata, err := reg.Metadata(types.ToImage(image))
+	image := types.ToImage(ci)
+	metadata, err := reg.Metadata(image)
 	if err != nil {
 		log.Debugf("Failed to get metadata for image %s in namespace %s: %v", name, namespace, err)
 		return nil, errors.Wrap(err, "getting image metadata")
@@ -78,7 +80,7 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
-		Image: image.GetId(),
+		Image: fmt.Sprintf("%s:%s", ci.GetName().GetRemote(), utils.Reference(image)),
 		Registry: &scannerV1.RegistryData{
 			Url:      cfg.URL,
 			Username: cfg.Username,

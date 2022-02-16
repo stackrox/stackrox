@@ -48,7 +48,7 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 }
 
 // GenerateImageNameFromString generated an ImageName from a common string format and returns an error if there was an
-// issure parsing it.
+// issue parsing it.
 func GenerateImageNameFromString(imageStr string) (*storage.ImageName, reference.Reference, error) {
 	name := &storage.ImageName{
 		FullName: imageStr,
