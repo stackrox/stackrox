@@ -504,6 +504,32 @@ executors:
           password: $QUAY_RHACS_ENG_RO_PASSWORD
     working_directory: /go/src/github.com/stackrox/rox
 
+  stackrox-build:
+    parameters:
+      resource_class:
+        type: string
+        default: medium
+    resource_class: << parameters.resource_class >>
+    docker:
+      - image: quay.io/rhacs-eng/apollo-ci:snapshot-stackrox-build-0.3.28-11-gce6b68a436
+        auth:
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
+    working_directory: /go/src/github.com/stackrox/stackrox
+
+  stackrox-build-plus-tooling:
+    parameters:
+      resource_class:
+        type: string
+        default: medium
+    resource_class: << parameters.resource_class >>
+    docker:
+      - image: quay.io/rhacs-eng/apollo-ci:snapshot-stackrox-build--tooling--circle-ci-0.3.28-15-g45aa4516b7
+        auth:
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
+    working_directory: /go/src/github.com/stackrox/stackrox
+
 commands:
   collect-k8s-logs:
     description: "Collect k8s logs and metrics"
@@ -2550,7 +2576,7 @@ jobs:
             - CI_TAG
 
   pre-build-ui:
-    executor: custom
+    executor: stackrox-build-plus-tooling
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
@@ -2602,7 +2628,7 @@ jobs:
       - cleanup-clusters-on-fail
 
   pre-build-cli:
-    executor: custom
+    executor: stackrox-build-plus-tooling
     resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
@@ -4853,6 +4879,27 @@ jobs:
           path: /tmp/artifact_dir/howto-locate-artifacts.html
           destination: howto-locate-artifacts.html
 
+  # Mimic an OpenShift CI `binary_build_commands` step
+  openshift-ci-binary-build-commands:
+    executor: stackrox-build
+    resource_class: large
+    steps:
+      - checkout
+      - run:
+          name: make main-build-nodeps
+          command: |
+            make main-build-nodeps
+          background: true
+      - run:
+          name: make cli
+          command: |
+            make cli
+          background: true
+      - run:
+          name: make -C ui build
+          command: |
+            make -C ui build
+
 workflows:
   version: 2
 
@@ -5124,9 +5171,18 @@ workflows:
           - quay-rhacs-eng-readonly
           filters:
             branches:
-              only: /.*RS-454.*/
+              only: /.*osci.*/
           requires:
             - build
+
+      - openshift-ci-binary-build-commands:
+          context:
+          - quay-rhacs-eng-readonly
+          filters:
+            branches:
+              only: /.*osci.*/
+          requires:
+            - pre-create-tag
 
       - retrigger-master-workflow:
           context: custom-executor-pull
