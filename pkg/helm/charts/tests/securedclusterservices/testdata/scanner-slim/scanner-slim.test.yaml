@@ -27,13 +27,13 @@ tests:
     .deployments["scanner-slim"] | assertThat(. == null)
     .deployments["scanner-db-slim"] | assertThat(. == null)
 
-- name: "scanner is enabled on non-openshift 4 cluster should fail"
+- name: "scanner is enabled on non-openshift cluster should fail"
   set:
     env.openshift: false
     scanner.disable: false
   expectError: true
   expect: |
-    .error | assertThat(contains("Local scanner was enabled but is only supported on OpenShift 4."))
+    .error | assertThat(contains("Local scanner was enabled but is only supported on OpenShift."))
 
 - name: "scanner can override image config"
   set:
