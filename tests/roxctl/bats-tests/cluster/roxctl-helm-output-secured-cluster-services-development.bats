@@ -15,8 +15,6 @@ setup() {
   # Cluster name must be unique
   CLUSTER_NAME="CLUSTER-bats-$BATS_SUITE_TEST_NUMBER-$(date '+%Y%m%d%H%M%S')"
   out_dir="$(mktemp -d -u)"
-  # 'roxctl helm output secured-cluster-services' relies on GOPATH to find templates
-  assert_file_exist "$GOPATH/src/github.com/stackrox/stackrox/image/templates/helm/stackrox-secured-cluster" || fail "Unbale to find templates. May it be a wrong GOPATH='$GOPATH'?"
 }
 
 teardown() {
@@ -24,7 +22,8 @@ teardown() {
 }
 
 @test "roxctl-development helm output secured-cluster-services should use docker.io registry" {
-  run roxctl-development helm output secured-cluster-services --remove --debug --output-dir "$out_dir"
+  # Running this with --debug flag would cause reading the helm templates from "$GOPATH/src/github.com/stackrox/stackrox/image/templates/helm/stackrox-secured-cluster"
+  run roxctl-development helm output secured-cluster-services --remove --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
@@ -77,7 +76,7 @@ teardown() {
 
 
 @test "roxctl-development helm output secured-cluster-services --image-defaults=development_build should use docker.io registry" {
-  run roxctl-development helm output secured-cluster-services --image-defaults=development_build --remove --debug --output-dir "$out_dir"
+  run roxctl-development helm output secured-cluster-services --image-defaults=development_build --remove --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
@@ -121,7 +120,7 @@ teardown() {
 }
 
 @test "roxctl-development helm output secured-cluster-services --image-defaults=stackrox.io should use stackrox.io registry" {
-  run roxctl-development helm output secured-cluster-services --image-defaults=stackrox.io --remove --debug --output-dir "$out_dir"
+  run roxctl-development helm output secured-cluster-services --image-defaults=stackrox.io --remove --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
