@@ -166,8 +166,8 @@ func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 
 func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 	cases := map[string]struct {
-		imgID          string
-		err            error
+		imgID string
+		err   error
 	}{
 		"no image SHA": {
 			err: errNoImageSHA,
