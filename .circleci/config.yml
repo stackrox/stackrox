@@ -3404,7 +3404,7 @@ jobs:
     - *loginToGCR
     - create-openshift-4-cluster:
         cluster-name: operator-oc4-6
-        openshift-version: ocp/stable-4.6
+        openshift-version: ocp/4.6.54
 
     - run:
         name: Validate Kubeconfig
