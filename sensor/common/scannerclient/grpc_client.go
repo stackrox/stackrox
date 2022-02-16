@@ -29,16 +29,9 @@ func newGRPCClient(endpoint string) (*client, error) {
 		return nil, nil
 	}
 
-	parts := strings.SplitN(endpoint, "://", 2)
-	switch parts[0] {
-	case "http", "https":
-		break
-	default:
-		if len(parts) == 1 {
-			// There is no scheme defined, which is ok.
-			break
-		}
-		return nil, errors.Errorf("Scanner endpoint has unsupported scheme %s", parts[0])
+	endpoint = strings.TrimPrefix(endpoint, "https://")
+	if strings.Contains(endpoint, "://") {
+		return nil, errors.Errorf("Scanner endpoint has unsupported scheme: %s", endpoint)
 	}
 
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
