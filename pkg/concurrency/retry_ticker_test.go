@@ -153,6 +153,6 @@ func newRetryTicker(t *testing.T, doFunc tickFunc) *retryTickerImpl {
 func assertTickerEventuallyStops(t *testing.T, ticker *retryTickerImpl) {
 	ok := PollWithTimeout(func() bool {
 		return ticker.getTickTimer() == nil
-	}, 10 * time.Millisecond, capTime)
+	}, 10*time.Millisecond, capTime)
 	assert.True(t, ok, "ticker should eventually stop")
 }
