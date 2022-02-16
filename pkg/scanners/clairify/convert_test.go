@@ -212,7 +212,7 @@ func TestConvertNodeVulnerabilities(t *testing.T) {
 }
 
 func TestConvertFeatures(t *testing.T) {
-	// metadata is based on the fixute used below.
+	// metadata is based on the fixture used below.
 	metadata := &storage.ImageMetadata{
 		V1: &storage.V1Metadata{
 			Digest: "sha256:idk",

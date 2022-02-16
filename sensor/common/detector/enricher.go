@@ -72,7 +72,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, ci *storage.
 
 type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error)
 
-func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage, f scanFunc) (*v1.ScanImageInternalResponse, error) {
+func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage, scan scanFunc) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -85,7 +85,7 @@ outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
 		timeSpentInBackoffSoFar := eb.GetElapsedTime()
-		scannedImage, err := f(ctx, svc, ci)
+		scannedImage, err := scan(ctx, svc, ci)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate-limited, backoff and try again.
