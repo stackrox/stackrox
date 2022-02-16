@@ -167,13 +167,9 @@ func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 	cases := map[string]struct {
 		imgID          string
-		b64Sig         string
-		b564SigPayload string
-		v              *publicKeyVerifier
 		err            error
 	}{
 		"no image SHA": {
-			v:   &publicKeyVerifier{},
 			err: errNoImageSHA,
 		},
 		"hash creation failed": {
@@ -186,6 +182,8 @@ func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			img, err := generateImageWithCosignSignature("docker.io/nginx:latest", "", "")
 			require.NoError(t, err, "error creating image")
+			// Since we have no Image Metadata, the Image ID will be returned as SHA. This way we can test for invalid
+			// SHA / no SHA.
 			img.Id = c.imgID
 			_, _, err = retrieveVerificationDataFromImage(img)
 			assert.Error(t, err)
