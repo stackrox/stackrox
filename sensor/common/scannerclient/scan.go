@@ -12,7 +12,7 @@ import (
 
 var (
 	// ErrNoLocalScanner indicates there is no Secured Cluster-local Scanner.
-	ErrNoLocalScanner = errors.New("No local Scanner integrated")
+	ErrNoLocalScanner = errors.New("No local Scanner connection")
 
 	log = logging.LoggerForModule()
 )

@@ -22,8 +22,8 @@ type client struct {
 	conn   *grpc.ClientConn
 }
 
-// newGRPCClient creates a new Scanner client.
-func newGRPCClient(endpoint string) (*client, error) {
+// dial Scanner and return a new client.
+func dial(endpoint string) (*client, error) {
 	if endpoint == "" {
 		log.Info("No Scanner connection desired")
 		return nil, nil

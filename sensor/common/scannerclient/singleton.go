@@ -16,7 +16,7 @@ var (
 func GRPCClientSingleton() *client {
 	once.Do(func() {
 		var err error
-		scannerClient, err = newGRPCClient(env.ScannerEndpoint.Setting())
+		scannerClient, err = dial(env.ScannerEndpoint.Setting())
 		_ = utils.Should(err)
 	})
 	return scannerClient
