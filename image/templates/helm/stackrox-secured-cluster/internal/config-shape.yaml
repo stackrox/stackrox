@@ -46,6 +46,17 @@ image:
     tag: null # string
     fullRef: null # string
     pullPolicy: null # string
+  scanner:
+    registry: null # string
+    name: null # string
+    repository: null # string
+    tag: null # string
+    fullRef: null # string
+  scannerDb:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
 env:
   openshift: null # bool
   istio: null # bool

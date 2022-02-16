@@ -1,2 +1,0 @@
-# TODO: remove, this file is only here because empty dirs are not embedded by go:embed.
-# Also go:embed treats directories only containing `_*` and `.*` as empty.
