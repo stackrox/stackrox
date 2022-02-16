@@ -178,10 +178,12 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 	}
 }
 
-func (s *serviceImpl) saveImage(img *storage.Image) {
+func (s *serviceImpl) saveImage(img *storage.Image) error {
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
+		return err
 	}
+	return nil
 }
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
@@ -248,7 +250,9 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	// Save the image
 	img.Id = utils.GetImageID(img)
 	if img.GetId() != "" {
-		s.saveImage(img)
+		if err := s.saveImage(img); err != nil {
+			return nil, err
+		}
 	}
 	if !request.GetIncludeSnoozed() {
 		utils.FilterSuppressedCVEsNoClone(img)
