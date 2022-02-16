@@ -8,7 +8,7 @@ type UseFormModalProps<T> = {
     initialValues: T;
     validationSchema;
     onSendRequest: (values: T) => Promise<FormResponseMessage>;
-    onCompleteRequest: () => void;
+    onCompleteRequest: (any) => void;
     onCancel: () => void;
 };
 
@@ -40,16 +40,25 @@ function useFormModal<T>({
         setMessage(null);
         formik
             .submitForm()
-            .then(() => {
+            .then((response) => {
                 formik.resetForm();
-                onCompleteRequest();
+                onCompleteRequest(response);
             })
             .catch((response) => {
-                const error = new Error(response.message);
+                const extractedMessage = response?.response?.data?.message || response?.message;
+                const error = new Error(extractedMessage);
                 setMessage({
                     message: getAxiosErrorMessage(error),
                     isError: true,
                 });
+
+                // TODO: factor out and increase robustness of the following
+                //       scroll to error behavior
+                const container = document.querySelector('.pf-c-modal-box__body'); // PF modal body element
+                const alertEl = document.getElementById('form-message-alert'); // PF alert message element
+                if (container && alertEl) {
+                    container.scrollTop = alertEl.offsetTop - container.scrollTop;
+                }
             });
     }
 
