@@ -14,7 +14,7 @@ message ImageIntegration {
     string type                                  = 3;
     // Accidentally skipped or accidentally deleted?
     reserved 4;
-    // Previously, repeated clusters.
+    // Previously, repeated string clusters.
     reserved 5;
     repeated ImageIntegrationCategory categories = 6;
 

@@ -44,7 +44,7 @@ func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.G
 
 	integrationSlice := integrations[:0]
 	for _, integration := range integrations {
-		if len(request.GetCluster()) != 0 {
+		if request.GetCluster() != "" {
 			continue
 		}
 		if request.GetName() != "" && request.GetName() != integration.GetName() {
