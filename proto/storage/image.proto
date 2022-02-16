@@ -95,8 +95,13 @@ message ImageSignatureVerificationResult {
         INVALID_SIGNATURE_ALGO = 3;
         // CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding.
         CORRUPTED_SIGNATURE    = 4;
+        // GENERIC_ERROR is set when an error occurred during verification that cannot be associated with a specific
+        // status.
+        GENERIC_ERROR          = 5;
     }
     Status status                               = 3;
+    // description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
+    string description                          = 4 ;
 }
 
 // Next Tag: 13

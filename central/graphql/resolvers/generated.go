@@ -689,6 +689,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"results: [ImageSignatureVerificationResult]!",
 	}))
 	utils.Must(builder.AddType("ImageSignatureVerificationResult", []string{
+		"description: String!",
 		"status: ImageSignatureVerificationResult_Status!",
 		"verificationTime: Time",
 		"verifierId: String!",
@@ -6737,6 +6738,11 @@ func (resolver *Resolver) wrapImageSignatureVerificationResults(values []*storag
 		output[i] = &imageSignatureVerificationResultResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *imageSignatureVerificationResultResolver) Description(ctx context.Context) string {
+	value := resolver.data.GetDescription()
+	return value
 }
 
 func (resolver *imageSignatureVerificationResultResolver) Status(ctx context.Context) string {
