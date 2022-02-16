@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
@@ -15,18 +14,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const numberOfIDs = 3000
+const numberOfClusters = 200
 
 const sqlTemplate = `SELECT count(*) FROM test WHERE
 	c_id = 0
- {{- range $cid := $.C }}
-	OR (c_id = {{$cid}} {{if $.N}} AND n_id IN (
-		{{- range $index, $n := $.N}}{{if $index}},{{end}}{{$n}}{{end}}){{ end -}})
+ {{- range $i, $c := $.C }}
+	OR (c_id = {{$c.ID}} {{if $c.N}} AND n_id IN (
+		{{- range $index, $n := $c.N}}{{if $index}},{{end}}{{$n}}{{end}}){{ end -}})
  {{- end }};
 `
 
+type C struct {
+	ID int
+	N  []int
+}
+
 type filter struct {
-	C, N []int
+	C []C
 }
 
 func BenchmarkTestPG(b *testing.B) {
@@ -35,7 +39,59 @@ func BenchmarkTestPG(b *testing.B) {
 	conn, err := pgDB.Acquire(context.Background())
 	require.NoError(b, err)
 
-	cids, nids := prepareIDs()
+	tag, err := conn.Exec(context.Background(), `DROP TABLE IF EXISTS eas;`)
+	require.NoError(b, err)
+	createTableSql := `
+	CREATE TABLE IF NOT EXISTS eas (
+	                     id SERIAL UNIQUE NOT NULL PRIMARY KEY,
+	                     c_id INT NOT NULL,
+	                     n_id INT NOT NULL,
+	                     role INT NOT NULL
+	);
+	CREATE INDEX IF NOT EXISTS  eas_index ON eas (c_id, n_id);
+	CREATE INDEX IF NOT EXISTS  eas_c_index ON eas (c_id);
+	CREATE INDEX IF NOT EXISTS  eas_name_index ON eas (role);`
+	_, err = conn.Exec(context.Background(), createTableSql)
+	require.NoError(b, err)
+	println(tag.String())
+
+	var numbers []int
+	for i := 0; i <= numberOfClusters; i += 5 {
+		numbers = append(numbers, i)
+	}
+	for _, numberOfClusters := range numbers {
+		filter := prepareIDs(numberOfClusters)
+		for _, c := range filter.C {
+			for _, n := range c.N {
+				_, err := conn.Exec(context.Background(), "INSERT INTO eas (c_id, n_id, role) VALUES ($1, $2, $3)", c.ID, n, numberOfClusters)
+				require.NoError(b, err)
+			}
+		}
+	}
+	println("Generated role table")
+	for _, numberOfClusters := range numbers {
+		// prerun -- generate query and get expected count
+		query := fmt.Sprintf(`SELECT count(*) FROM test INNER JOIN eas ON (eas.c_id = test.c_id AND eas.n_id = test.n_id) WHERE eas.role = %d`, numberOfClusters)
+		require.NoError(b, err)
+		count := execute(b, conn, query)
+		b.Run(fmt.Sprintf("eas role single numberOfClusters=%d count=%d query_len=%d", numberOfClusters, count, len(query)), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				execute(b, conn, query)
+			}
+		})
+	}
+
+	for _, numberOfClusters := range numbers {
+		// prerun -- generate query and get expected count
+		query := fmt.Sprintf(`SELECT count(*) FROM test INNER JOIN eas ON (eas.c_id = test.c_id AND eas.n_id = test.n_id) WHERE eas.role IN (%d,%d,%d)`, numberOfClusters-2, numberOfClusters-1, numberOfClusters)
+		require.NoError(b, err)
+		count := execute(b, conn, query)
+		b.Run(fmt.Sprintf("eas role 3 numberOfClusters=%d count=%d query_len=%d", numberOfClusters, count, len(query)), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				execute(b, conn, query)
+			}
+		})
+	}
 
 	q := "SELECT count(*) FROM test"
 	count := execute(b, conn, q)
@@ -45,36 +101,31 @@ func BenchmarkTestPG(b *testing.B) {
 		}
 	})
 
-	for numberOfCids := 1022; numberOfCids < numberOfIDs; numberOfCids = (numberOfCids + 1) * 2 {
-		for numberOfNids := 0; numberOfNids < numberOfIDs; numberOfNids = (numberOfNids + 1) * 2 {
-			// prerun -- generate query and get expected count
-			query, err := generateQuery(cids[:numberOfCids], nids[:numberOfNids])
-			require.NoError(b, err)
-			count := execute(b, conn, query)
-			b.Run(fmt.Sprintf("c=%d\tn=%d\tcount=%d", numberOfCids, numberOfNids, count), func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					execute(b, conn, query)
-				}
-			})
-		}
+	for _, numberOfClusters := range numbers {
+		// prerun -- generate query and get expected count
+		query, err := generateQuery(prepareIDs(numberOfClusters))
+		require.NoError(b, err)
+		count := execute(b, conn, query)
+		b.Run(fmt.Sprintf("where numberOfClusters=%d count=%d query_len=%d", numberOfClusters, count, len(query)), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				execute(b, conn, query)
+			}
+		})
 	}
 }
 
-func prepareIDs() ([]int, []int) {
-	cids := make([]int, numberOfIDs)
-	nids := make([]int, numberOfIDs)
-	for i := 0; i < numberOfIDs; i++ {
-		cids[i] = i
-		nids[i] = numberOfIDs + i
+func prepareIDs(numberOfClusters int) filter {
+	f := filter{
+		C: make([]C, 0, numberOfClusters),
 	}
-
-	rand.Shuffle(len(cids), func(i, j int) {
-		cids[i], cids[j] = cids[j], cids[i]
-	})
-	rand.Shuffle(len(nids), func(i, j int) {
-		nids[i], nids[j] = nids[j], nids[i]
-	})
-	return cids, nids
+	for i := 0; i < numberOfClusters; i++ {
+		nids := make([]int, 0, i)
+		for j := 0; j < i; j++ {
+			nids = append(nids, j)
+		}
+		f.C = append(f.C, C{ID: i, N: nids})
+	}
+	return f
 }
 
 func execute(t *testing.B, conn *pgxpool.Conn, query string) int64 {
@@ -89,15 +140,12 @@ func execute(t *testing.B, conn *pgxpool.Conn, query string) int64 {
 	return count
 }
 
-func generateQuery(cids []int, nids []int) (string, error) {
+func generateQuery(filter filter) (string, error) {
 	tmpl := template.Must(template.New("tmpl").Funcs(template.FuncMap{
 		"IntsJoin": intsJoin,
 	}).Parse(sqlTemplate))
 	var query bytes.Buffer
-	err := tmpl.Execute(&query, filter{
-		C: cids,
-		N: nids,
-	})
+	err := tmpl.Execute(&query, filter)
 	return query.String(), err
 }
 

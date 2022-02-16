@@ -69,7 +69,7 @@ func pgInitialize(source string) {
 			time.Sleep(3 * time.Second)
 		}))
 		if err != nil {
-			panic(err)
+			//panic(err)
 		}
 		go startMonitoringPostgresDB(pgDB)
 	})
@@ -90,7 +90,7 @@ func startMonitoringPostgresDB(db *pgxpool.Pool) {
 
 		rows, err := db.Query(context.Background(), "select total_exec_time, mean_exec_time, calls, substr(query, 1, 300) from pg_stat_statements where calls > 5 order by total_exec_time desc limit 50 ;")
 		if err != nil {
-			log.Errorf("Error getting pg stat statements: %v", err)
+			//log.Errorf("Error getting pg stat statements: %v", err)
 			continue
 		}
 		for rows.Next() {
