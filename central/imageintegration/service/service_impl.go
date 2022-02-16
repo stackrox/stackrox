@@ -290,17 +290,6 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		errorList.AddStrings("integrations require a category")
 	}
 
-	clustersRequested := request.GetClusters()
-	existingClusters, err := s.clusterDatastore.GetClusters(ctx)
-	if err != nil {
-		return err
-	}
-	for _, req := range clustersRequested {
-		if !s.clusterExists(req, existingClusters) {
-			errorList.AddStringf("cluster %s does not exist", req)
-		}
-	}
-
 	// Validate if there is a name. If there isn't, then skip the DB name check by returning the accumulated errors
 	if request.GetName() == "" {
 		errorList.AddString("name for integration is required")

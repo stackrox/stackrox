@@ -33,10 +33,6 @@ func (f fakeRegistry) Test() error {
 	return nil
 }
 
-func (f fakeRegistry) Global() bool {
-	return false
-}
-
 func (f fakeRegistry) Config() *types.Config {
 	return f.config
 }

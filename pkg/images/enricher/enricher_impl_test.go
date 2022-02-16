@@ -44,10 +44,6 @@ func (f *fakeRegistryScanner) Metadata(image *storage.Image) (*storage.ImageMeta
 	return &storage.ImageMetadata{}, nil
 }
 
-func (f *fakeRegistryScanner) Global() bool {
-	return true
-}
-
 func (f *fakeRegistryScanner) Config() *types.Config {
 	return nil
 }

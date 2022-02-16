@@ -12,8 +12,10 @@ message ImageIntegration {
     string id                                    = 1;
     string name                                  = 2;
     string type                                  = 3;
-    // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
-    repeated string clusters                     = 5;
+    // Accidentally skipped or accidentally deleted?
+    reserved 4;
+    // Previously, repeated clusters.
+    reserved 5;
     repeated ImageIntegrationCategory categories = 6;
 
     oneof IntegrationConfig {
