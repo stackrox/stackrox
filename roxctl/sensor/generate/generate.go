@@ -52,6 +52,9 @@ type sensorGenerateCommand struct {
 	slimCollectorP   *bool
 	timeout          time.Duration
 
+	// injected by defaults
+	kernelSupportAvailable bool
+
 	// injected or constructed values
 	cluster     storage.Cluster
 	env         environment.Environment
@@ -100,6 +103,50 @@ func (s *sensorGenerateCommand) isLegacyValidationError(err error) bool {
 		status.Convert(err).Message() == "Cluster Validation error: invalid main image '': invalid reference format"
 }
 
+func (s *sensorGenerateCommand) determineClusterSlimCollector() {
+	// Here we only set the cluster property, which will be persisted by central.
+	// This is not directly related to fetching the bundle.
+	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
+	if s.slimCollectorP != nil {
+		s.cluster.SlimCollector = *s.slimCollectorP
+	} else {
+		s.cluster.SlimCollector = s.kernelSupportAvailable
+	}
+}
+
+func getFlavorFromReleaseBuild() defaults.ImageFlavor {
+	if buildinfo.ReleaseBuild {
+		return defaults.RHACSReleaseImageFlavor()
+	} else {
+		return defaults.DevelopmentBuildImageFlavor()
+	}
+}
+
+func (s *sensorGenerateCommand) clusterSetupFromCentralDefaults(ctx context.Context, service v1.ClustersServiceClient) error {
+	clusterDefault, err := service.GetClusterDefaults(ctx, &v1.Empty{})
+	if err != nil {
+		return err
+	}
+	s.kernelSupportAvailable = clusterDefault.KernelSupportAvailable
+	if s.cluster.MainImage == "" {
+		s.cluster.MainImage = clusterDefault.GetMainImageRepository()
+	}
+	return nil
+}
+
+func (s *sensorGenerateCommand) legacyClusterSetup(context context.Context, service v1.ClustersServiceClient) error {
+	centralEnv := util.RetrieveCentralEnvOrDefault(context, service)
+	s.kernelSupportAvailable = centralEnv.KernelSupportAvailable
+
+	flavor := getFlavorFromReleaseBuild()
+	s.env.Logger().WarnfLn(warningRunningAgainstLegacyCentral, flavor.MainRegistry)
+	if s.cluster.MainImage == "" {
+		s.cluster.MainImage = flavor.MainImageNoTag()
+	}
+
+	return centralEnv.Error
+}
+
 func (s *sensorGenerateCommand) fullClusterCreation() error {
 	conn, err := s.env.GRPCConnection()
 	if err != nil {
@@ -110,34 +157,19 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
-	env := util.RetrieveCentralEnvOrDefault(ctx, service)
-	// Here we only set the cluster property, which will be persisted by central.
-	// This is not directly related to fetching the bundle.
-	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
-	if s.slimCollectorP != nil {
-		s.cluster.SlimCollector = *s.slimCollectorP
-	} else {
-		s.cluster.SlimCollector = env.KernelSupportAvailable
+	var envError error
+	err = s.clusterSetupFromCentralDefaults(ctx, service)
+	if err != nil {
+		if status.Code(err) == codes.Unimplemented {
+			envError = s.legacyClusterSetup(ctx, service)
+		} else {
+			return errors.Wrap(err, "failed to fetch cluster defaults")
+		}
 	}
+
+	s.determineClusterSlimCollector()
 
 	id, err := s.createCluster(ctx, service)
-
-	// Backward compatibility: if the central hasn't accepted the provided cluster
-	// then fill default values as RHACS.
-	if s.isLegacyValidationError(err) {
-		var flavor defaults.ImageFlavor
-		if buildinfo.ReleaseBuild {
-			flavor = defaults.RHACSReleaseImageFlavor()
-		} else {
-			flavor = defaults.DevelopmentBuildImageFlavor()
-		}
-
-		s.env.Logger().WarnfLn(warningRunningAgainstLegacyCentral, flavor.MainRegistry)
-
-		s.cluster.MainImage = flavor.MainImageNoTag()
-		id, err = s.createCluster(ctx, service)
-	}
-
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
 	// then return an error
 	if err != nil {
@@ -173,7 +205,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	}
 
 	if s.slimCollectorP != nil {
-		if s.cluster.SlimCollector && !env.KernelSupportAvailable {
+		if s.cluster.SlimCollector && !s.kernelSupportAvailable {
 			s.env.Logger().WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
 		}
 	} else if s.cluster.GetSlimCollector() {
@@ -182,8 +214,8 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		s.env.Logger().InfofLn(infoDefaultingToComprehensiveCollector)
 	}
 
-	if env.Error != nil {
-		s.env.Logger().WarnfLn(warningCentralEnvironmentError, env.Error)
+	if envError != nil {
+		s.env.Logger().WarnfLn(warningCentralEnvironmentError, envError)
 	}
 	return nil
 }
