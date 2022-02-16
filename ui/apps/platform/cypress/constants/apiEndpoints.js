@@ -274,6 +274,7 @@ export const integration = {
 
 export const report = {
     configurations: '/v1/report/configurations*',
+    configurationsCount: '/v1/report-configurations-count*',
 };
 
 export const riskAcceptance = {
