@@ -498,7 +498,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	utils.Must(builder.AddType("CosignSignature", []string{
-		"rawSignatureBase64Enc: String!",
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
@@ -690,6 +689,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"results: [ImageSignatureVerificationResult]!",
 	}))
 	utils.Must(builder.AddType("ImageSignatureVerificationResult", []string{
+		"description: String!",
 		"status: ImageSignatureVerificationResult_Status!",
 		"verificationTime: Time",
 		"verifierId: String!",
@@ -5193,8 +5193,13 @@ func (resolver *Resolver) wrapCosignSignatures(values []*storage.CosignSignature
 	return output, nil
 }
 
-func (resolver *cosignSignatureResolver) RawSignatureBase64Enc(ctx context.Context) string {
-	value := resolver.data.GetRawSignatureBase64Enc()
+func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
+	value := resolver.data.GetRawSignature()
+	return value
+}
+
+func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
+	value := resolver.data.GetSignaturePayload()
 	return value
 }
 
@@ -6733,6 +6738,11 @@ func (resolver *Resolver) wrapImageSignatureVerificationResults(values []*storag
 		output[i] = &imageSignatureVerificationResultResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *imageSignatureVerificationResultResolver) Description(ctx context.Context) string {
+	value := resolver.data.GetDescription()
+	return value
 }
 
 func (resolver *imageSignatureVerificationResultResolver) Status(ctx context.Context) string {
