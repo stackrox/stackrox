@@ -58,10 +58,6 @@ function NotifierSelection({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastAddedNotifierId]);
 
-    function triggerRefresh(newId: string) {
-        setLastAddedNotifierId(newId);
-    }
-
     function onToggleEmailNotifierModal() {
         setIsEmailNotifierModalOpen((current) => !current);
     }
@@ -131,7 +127,7 @@ function NotifierSelection({
             </FormLabelGroup>
             <EmailNotifierFormModal
                 isOpen={isEmailNotifierModalOpen}
-                updateNotifierList={triggerRefresh}
+                updateNotifierList={setLastAddedNotifierId}
                 onToggleEmailNotifierModal={onToggleEmailNotifierModal}
             />
         </>
