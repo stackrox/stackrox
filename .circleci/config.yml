@@ -498,7 +498,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:snapshot-0.3.28-35-g0e8825745a # TODO(do not merge): After upstream PR is merged, cut a tag and update this
+      - image: quay.io/rhacs-eng/apollo-ci:snapshot-0.3.28-37-g37ecab401f # TODO(do not merge): After upstream PR is merged, cut a tag and update this
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
