@@ -95,7 +95,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesImmediateRefresh() {
 
 func (s *certRefresherSuite) TestRefreshCertificatesRefreshLater() {
 	now := time.Now()
-	certificates := (*storage.TypedServiceCertificateSet)(nil)
+	var certificates *storage.TypedServiceCertificateSet
 	expectedRenewalTime := now.Add(time.Hour)
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(expectedRenewalTime, nil)
@@ -154,7 +154,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsOtherErrFailure() {
 }
 
 func (s *certRefresherSuite) TestRefreshCertificatesGetTimeToRefreshFailureRecovery() {
-	certificates := (*storage.TypedServiceCertificateSet)(nil)
+	var certificates *storage.TypedServiceCertificateSet
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), errCertRefresherForced)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Return(
@@ -170,7 +170,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetTimeToRefreshFailureRecov
 }
 
 func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesFailure() {
-	certificates := (*storage.TypedServiceCertificateSet)(nil)
+	var certificates *storage.TypedServiceCertificateSet
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(
@@ -184,7 +184,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesFailure()
 }
 
 func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseFailure() {
-	certificates := (*storage.TypedServiceCertificateSet)(nil)
+	var certificates *storage.TypedServiceCertificateSet
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(&central.IssueLocalScannerCertsResponse{
@@ -204,7 +204,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseF
 }
 
 func (s *certRefresherSuite) TestRefreshCertificatesEnsureCertsFailure() {
-	certificates := (*storage.TypedServiceCertificateSet)(nil)
+	var certificates *storage.TypedServiceCertificateSet
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
 	issueCertsResponse := testIssueCertsResponse(2,

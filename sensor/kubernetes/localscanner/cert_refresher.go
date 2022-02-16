@@ -103,7 +103,7 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 		return 0, nil
 	}
 	if k8sErrors.IsNotFound(getCertsErr) {
-		log.Warnf("local scanner certificates are missing, "+
+		log.Warnf("local scanner certificates not found, "+
 			"will refresh certificates immediately: %s", getCertsErr)
 		return 0, nil
 	}
