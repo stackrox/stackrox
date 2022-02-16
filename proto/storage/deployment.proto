@@ -60,8 +60,6 @@ message ContainerImage {
     string    id           = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName name         = 1;
     bool      not_pullable = 10;
-
-    string    namespace    = 11;
 }
 
 message Container {

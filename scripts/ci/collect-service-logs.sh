@@ -17,7 +17,7 @@ set -eu
 # - Logs are saved under /tmp/k8s-service-logs/ or DIR if passed
 
 usage() {
-    echo "./scripts/ci/collect-service-logs.sh <namespace>"
+    echo "./scripts/ci/collect-service-logs.sh <namespace> [<output-dir>]"
     echo "e.g. ./scripts/ci/collect-service-logs.sh stackrox"
 }
 

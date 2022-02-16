@@ -26,10 +26,10 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, image *
 
 	imgData, err := scannerClient.GetImageAnalysis(ctx, image)
 	if err != nil {
-		return nil, errors.Wrapf(err, "scanning image %q in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+		return nil, errors.Wrapf(err, "scanning image %s", image.GetName().GetFullName())
 	}
 	if imgData.GetStatus() != scannerV1.ScanStatus_SUCCEEDED {
-		return nil, errors.Wrapf(err, "scan failed for image %q in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+		return nil, errors.Wrapf(err, "scan failed for image %s", image.GetName().GetFullName())
 	}
 
 	centralResp, err := centralClient.GetImageVulnerabilitiesInternal(ctx, &v1.GetImageVulnerabilitiesInternalRequest{
@@ -40,7 +40,7 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, image *
 		Notes:      imgData.GetNotes(),
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s in namespace %q", image.GetName().GetFullName(), image.GetNamespace())
+		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s", image.GetName().GetFullName())
 	}
 
 	return centralResp.GetImage(), nil

@@ -16,6 +16,12 @@ source "$TEST_ROOT/tests/e2e/lib.sh"
 test_upgrade() {
     info "Starting test"
 
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: test_upgrade <log-output-dir>"
+    fi
+
+    local log_output_dir="$1"
+
     REPO_FOR_TIME_TRAVEL="/tmp/rox-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
     QUAY_REPO="rhacs-eng"
@@ -55,7 +61,7 @@ test_upgrade() {
     test_sensor_bundle
     test_upgrader
     remove_existing_stackrox_resources
-    test_upgrade_paths
+    test_upgrade_paths "$log_output_dir"
 }
 
 preamble() {
@@ -300,6 +306,12 @@ rollback_sensor_via_upgrader() {
 test_upgrade_paths() {
     info "Testing various upgrade paths"
 
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: test_upgrade <log-output-dir>"
+    fi
+
+    local log_output_dir="$1"
+
     EARLIER_SHA="9f82d2713cfec4b5c876d8dc0149f6d9cd70d349"
     EARLIER_TAG="3.63.x-163-g2c4fe1563c"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
@@ -336,20 +348,20 @@ test_upgrade_paths() {
 
     validate_upgrade "upgrade after rollback" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
-    collect_and_check_stackrox_logs "00_initial_check"
+    collect_and_check_stackrox_logs "$log_output_dir" "00_initial_check"
 
     validate_db_backup_and_restore
     wait_for_api
 
     validate_upgrade "after DB backup and restore (pre bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-    collect_and_check_stackrox_logs "01_pre_bounce"
+    collect_and_check_stackrox_logs "$log_output_dir" "01_pre_bounce"
 
     info "Bouncing central"
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
 
     validate_upgrade "after DB backup and restore (post bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-    collect_and_check_stackrox_logs "02_post_bounce"
+    collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce"
 
     info "Fetching a sensor bundle for cluster 'remote'"
     rm -rf sensor-remote
@@ -370,7 +382,7 @@ test_upgrade_paths() {
     info "Running smoke tests"
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test
 
-    collect_and_check_stackrox_logs "03_final"
+    collect_and_check_stackrox_logs "$log_output_dir" "03_final"
 }
 
 deploy_earlier_central() {

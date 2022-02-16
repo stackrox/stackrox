@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/mtls"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/sensor/common/registry"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
@@ -29,13 +29,13 @@ func newGRPCClient(endpoint string) (*client, error) {
 		return nil, nil
 	}
 
-	if hasScheme := strings.Contains(endpoint, "://"); hasScheme {
-		return nil, errors.Errorf("Scanner endpoint should not specify a scheme: %s", endpoint)
+	endpoint = strings.TrimPrefix(endpoint, "https://")
+	if strings.Contains(endpoint, "://") {
+		return nil, errors.Errorf("Scanner endpoint has unsupported scheme: %s", endpoint)
 	}
 
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
-		GRPCOnly:      true,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize Scanner TLS config")
@@ -46,7 +46,7 @@ func newGRPCClient(endpoint string) (*client, error) {
 		return nil, errors.Wrap(err, "failed to connect to Scanner")
 	}
 
-	log.Infof("Connected to Scanner at %s", endpoint)
+	log.Infof("Connecting to Scanner at %s", endpoint)
 
 	return &client{
 		client: scannerV1.NewImageScanServiceClient(conn),
@@ -59,16 +59,17 @@ func newGRPCClient(endpoint string) (*client, error) {
 // 1. Retrieve image metadata.
 // 2. Request image analysis from Scanner, directly.
 // 3. Return image analysis results.
-func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerImage) (*imageData, error) {
-	reg, err := getRegistry(image)
+func (c *client) GetImageAnalysis(ctx context.Context, ci *storage.ContainerImage) (*imageData, error) {
+	reg, err := registry.Singleton().GetRegistryForImage(ci.GetName())
 	if err != nil {
 		return nil, errors.Wrap(err, "determining image registry")
 	}
 
-	name := image.GetName().GetFullName()
-	namespace := image.GetNamespace()
+	name := ci.GetName().GetFullName()
+	namespace := utils.ExtractOpenShiftProject(ci.GetName())
 
-	metadata, err := reg.Metadata(types.ToImage(image))
+	image := types.ToImage(ci)
+	metadata, err := reg.Metadata(image)
 	if err != nil {
 		log.Debugf("Failed to get metadata for image %s in namespace %s: %v", name, namespace, err)
 		return nil, errors.Wrap(err, "getting image metadata")
@@ -78,7 +79,7 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
-		Image: image.GetId(),
+		Image: utils.GetFullyQualifiedFullName(image),
 		Registry: &scannerV1.RegistryData{
 			Url:      cfg.URL,
 			Username: cfg.Username,
@@ -97,20 +98,6 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.ContainerI
 		Metadata:                   metadata,
 		GetImageComponentsResponse: resp,
 	}, nil
-}
-
-func getRegistry(img *storage.ContainerImage) (registryTypes.Registry, error) {
-	reg := img.GetName().GetRegistry()
-	regs := registry.Singleton().GetAllInNamespace(img.GetNamespace())
-	if regs != nil {
-		for _, r := range regs.GetAll() {
-			if r.Name() == reg {
-				return r, nil
-			}
-		}
-	}
-
-	return nil, errors.Errorf("Unknown image registry: %q", reg)
 }
 
 func (c *client) Close() error {
