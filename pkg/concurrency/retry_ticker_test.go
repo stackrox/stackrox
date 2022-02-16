@@ -105,8 +105,7 @@ func TestRetryTickerStop(t *testing.T) {
 	stopErrSig.Signal()
 
 	// ensure `ticker.scheduleTick` does not schedule a new timer after stopping the ticker
-	time.Sleep(capTime)
-	assert.Nil(t, ticker.getTickTimer())
+	assertTickerEventuallyStops(t, ticker)
 }
 
 func TestRetryTickerStopsOnNonRecoverableErrors(t *testing.T) {
@@ -121,9 +120,7 @@ func TestRetryTickerStopsOnNonRecoverableErrors(t *testing.T) {
 	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
 	require.True(t, ok, "timeout exceeded")
 
-	// ensure ticker is actually stopped
-	time.Sleep(capTime)
-	assert.Nil(t, ticker.getTickTimer())
+	assertTickerEventuallyStops(t, ticker)
 }
 
 func TestRetryTickerStartWhileStarterFailure(t *testing.T) {
@@ -151,4 +148,11 @@ func newRetryTicker(t *testing.T, doFunc tickFunc) *retryTickerImpl {
 	ticker := NewRetryTicker(doFunc, longTime, backoff)
 	require.IsType(t, &retryTickerImpl{}, ticker)
 	return ticker.(*retryTickerImpl)
+}
+
+func assertTickerEventuallyStops(t *testing.T, ticker *retryTickerImpl) {
+	ok := PollWithTimeout(func() bool {
+		return ticker.getTickTimer() == nil
+	}, 10 * time.Millisecond, capTime)
+	assert.True(t, ok, "ticker should eventually stop")
 }
