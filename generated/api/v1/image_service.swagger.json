@@ -653,8 +653,13 @@
     "storageCosignSignature": {
       "type": "object",
       "properties": {
-        "rawSignatureBase64Enc": {
-          "type": "string"
+        "rawSignature": {
+          "type": "string",
+          "format": "byte"
+        },
+        "signaturePayload": {
+          "type": "string",
+          "format": "byte"
         }
       }
     },
