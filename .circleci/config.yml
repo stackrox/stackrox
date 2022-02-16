@@ -1087,7 +1087,7 @@ commands:
       - run:
           name: Destroy OpenShift 4 cluster
           environment:
-            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.18-35-gdd80648215-snapshot
           command: |
             if [ ! -d "$PWD/<< parameters.cluster-name >>" ]; then
               echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
@@ -2103,7 +2103,7 @@ commands:
       - run:
           name: Create OpenShift 4 cluster
           environment:
-          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
+          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.18-35-gdd80648215-snapshot
           - GCP_PROJECT: stackrox-ci
           command: |
             mkdir $PWD/<< parameters.cluster-name >>
