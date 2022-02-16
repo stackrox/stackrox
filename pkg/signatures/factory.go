@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
@@ -30,7 +30,7 @@ func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (Signatur
 	}
 }
 
-// VerifyAgainstSignatureIntegration is a wrapper that will verify the rawSignature with SignatureVerifier's created
+// VerifyAgainstSignatureIntegration is a wrapper that will verify an image signature with SignatureVerifier's created
 // based off of the configuration within the storage.SignatureIntegration.
 // It will return an error if the creation of SignatureVerifier's fails or the verification of the signature fails.
 func VerifyAgainstSignatureIntegration(ctx context.Context, integration storage.SignatureIntegration, image *storage.Image) ([]storage.ImageSignatureVerificationResult, error) {
@@ -44,7 +44,7 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration storage.
 	}
 
 	var results []storage.ImageSignatureVerificationResult
-	errList := errorhelpers.NewErrorList("verifying signatures")
+	var allVerifyErrs error
 	for _, verifier := range verifiers {
 		res, err := verifier.VerifySignature(ctx, image)
 		// We do not currently support specifying which specific method within an image signature integration should
@@ -59,14 +59,15 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration storage.
 				},
 			}, nil
 		}
+		// Right now, we will duplicate the verification result for each SignatureVerifier contained within an image
+		// signature, ensuring all errors are properly returned to the caller.
 		results = append(results, storage.ImageSignatureVerificationResult{
-			VerificationTime:     protoconv.ConvertTimeToTimestamp(time.Now()),
-			VerifierId:           integration.GetId(),
-			Status:               res,
+			VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
+			VerifierId:       integration.GetId(),
+			Status:           res,
+			Description:      err.Error(),
 		})
-		errList.AddError(err)
+		allVerifyErrs = multierror.Append(err)
 	}
-	// Create a list of verification results, retaining the errors for each specific verification method within an
-	// image signature integration.
-	return results, errList.ToError()
+	return results, allVerifyErrs
 }
