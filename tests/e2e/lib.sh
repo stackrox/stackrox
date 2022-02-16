@@ -120,11 +120,11 @@ check_stackrox_logs() {
 }
 
 collect_and_check_stackrox_logs() {
-    if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: collect_and_check_stackrox_logs <test_stage>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: collect_and_check_stackrox_logs <output-dir> <test_stage>"
     fi
 
-    local dir="/tmp/upgrade-test-logs/$1"
+    local dir="$1/$2"
 
     info "Will collect stackrox logs to $dir and check them"
 
@@ -236,5 +236,5 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     fi
     fn="$1"
     shift
-    "$fn" "$*"
+    "$fn" "$@"
 fi
