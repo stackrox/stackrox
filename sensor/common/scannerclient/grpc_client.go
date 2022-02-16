@@ -2,7 +2,6 @@ package scannerclient
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -80,7 +79,7 @@ func (c *client) GetImageAnalysis(ctx context.Context, ci *storage.ContainerImag
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
-		Image: fmt.Sprintf("%s:%s", ci.GetName().GetRemote(), utils.Reference(image)),
+		Image: utils.GetFullyQualifiedFullName(image),
 		Registry: &scannerV1.RegistryData{
 			Url:      cfg.URL,
 			Username: cfg.Username,
