@@ -32,23 +32,13 @@ teardown() {
   assert_success
   yaml_valid "$out_dir/ca-config.yaml"
 
-  # curl -sSLk \
-  #   -u "admin:$ROX_PASSWORD" \
-  #   -X POST \
-  #   "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
-  #   -d '{"name":"deploy-'$CLUSTER'"}' | jq '.helmValuesBundle' -r | base64 --decode > "$out_dir/init-bundle.yaml"
-  # assert_success
-  # yaml_valid "$out_dir/init-bundle.yaml"
-
   roxctl_authenticated central init-bundles generate "bundle-${CLUSTER_NAME}" --output "$out_dir/cluster-init-bundle.yaml"
   assert_success
   yaml_valid "$out_dir/cluster-init-bundle.yaml"
 
   helm_args+=(
     -f "$out_dir/cluster-init-bundle.yaml"
-    -f "$out_dir/feature-flag-values.yaml"
     -f "$out_dir/ca-config.yaml"
-    -f "$out_dir/values.yaml"
     --set "clusterName=${CLUSTER_NAME}"
     --set "imagePullSecrets.allowNone=true"
   )
@@ -91,9 +81,7 @@ teardown() {
 
   helm_args+=(
     -f "$out_dir/cluster-init-bundle.yaml"
-    -f "$out_dir/feature-flag-values.yaml"
     -f "$out_dir/ca-config.yaml"
-    -f "$out_dir/values.yaml"
     --set "clusterName=${CLUSTER_NAME}"
     --set "imagePullSecrets.allowNone=true"
   )
@@ -135,9 +123,7 @@ teardown() {
 
   helm_args+=(
     -f "$out_dir/cluster-init-bundle.yaml"
-    -f "$out_dir/feature-flag-values.yaml"
     -f "$out_dir/ca-config.yaml"
-    -f "$out_dir/values.yaml"
     --set "clusterName=${CLUSTER_NAME}"
     --set "imagePullSecrets.allowNone=true"
   )
@@ -153,7 +139,7 @@ teardown() {
   assert_file_exist "$out_dir/rendered/stackrox-secured-cluster-services/templates/sensor.yaml"
 
   run yq e 'select(documentIndex == 0) | .spec.template.spec.containers[] | select(.name == "collector").image' "$out_dir/rendered/stackrox-secured-cluster-services/templates/collector.yaml"
-  assert_output --regexp 'collector.stackrox.io/collector:[0-9]+\.[0-9]+\.'
+  assert_output --regexp 'collector.stackrox.io/collector-slim:[0-9]+\.[0-9]+\.'
 
 
   run yq e 'select(documentIndex == 1) | .spec.template.spec.containers[] | select(.name == "admission-control").image' "$out_dir/rendered/stackrox-secured-cluster-services/templates/admission-controller.yaml"
