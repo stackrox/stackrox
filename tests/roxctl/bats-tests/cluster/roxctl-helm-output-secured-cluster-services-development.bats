@@ -15,10 +15,8 @@ setup() {
   # Cluster name must be unique
   CLUSTER_NAME="CLUSTER-bats-$BATS_SUITE_TEST_NUMBER-$(date '+%Y%m%d%H%M%S')"
   out_dir="$(mktemp -d -u)"
-
-  # debug
-  tree -p -a -h -D -F -L 1 /go/src/github.com/stackrox/stackrox/
-  tree -p -a -h -D -F /go/src/github.com/stackrox/stackrox/image
+  # 'roxctl helm output secured-cluster-services' relies on GOPATH to find templates
+  assert_file_exist "$GOPATH/src/github.com/stackrox/stackrox/image/templates/helm/stackrox-secured-cluster" || fail "Unbale to find templates. May it be a wrong GOPATH='$GOPATH'?"
 }
 
 teardown() {
