@@ -105,10 +105,10 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 // secured cluster.
 func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 	testCases := map[string]struct {
-	kubectlOutput                 bool
-	enableLocalScannerFeatureFlag bool
-	expectScannerFilesExist       bool
-} {
+		kubectlOutput                 bool
+		enableLocalScannerFeatureFlag bool
+		expectScannerFilesExist       bool
+	} {
 		"with feature flag is disabled should not contain scanner manifests": {
 			enableLocalScannerFeatureFlag: false,
 			expectScannerFilesExist: false,
