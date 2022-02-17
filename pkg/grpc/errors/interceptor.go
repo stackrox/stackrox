@@ -7,9 +7,14 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // PanicOnInvariantViolationUnaryInterceptor panics on ErrInvariantViolation.
@@ -35,13 +40,21 @@ func PanicOnInvariantViolationStreamInterceptor(srv interface{}, ss grpc.ServerS
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.
 func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
-	return resp, ErrToGrpcStatus(err).Err()
+	grpcStatus := ErrToGrpcStatus(err)
+	if grpcStatus.Code() == codes.Internal {
+		log.Errorf("Internal error occured: %+v", err)
+	}
+	return resp, grpcStatus.Err()
 }
 
 // ErrorToGrpcCodeStreamInterceptor translates common errors defined in errorhelpers to GRPC codes.
 func ErrorToGrpcCodeStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	err := handler(srv, ss)
-	return ErrToGrpcStatus(err).Err()
+	grpcStatus := ErrToGrpcStatus(err)
+	if grpcStatus.Code() == codes.Internal {
+		log.Errorf("Internal error occured: %+v", err)
+	}
+	return grpcStatus.Err()
 }
 
 // unwrapGRPCStatus unwraps the `err` chain to find an error

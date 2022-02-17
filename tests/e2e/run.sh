@@ -239,7 +239,7 @@ run_proxy_tests() {
             failures+=("$p")
 
         if (( direct )); then
-            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
+            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null && \
             failures+=("${p},force-http1")
         else
             roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
@@ -252,7 +252,7 @@ run_proxy_tests() {
             failures+=("${p},tls-autosense")
 
             # Incompatible plaintext configuration should fail
-            roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
+            roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null && \
             failures+=("${p},incompatible-tls")
         fi
 

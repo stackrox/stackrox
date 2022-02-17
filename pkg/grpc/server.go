@@ -144,8 +144,8 @@ func (a *apiImpl) Register(services ...APIService) {
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u := []grpc.UnaryServerInterceptor{
-		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_errors.ErrorToGrpcCodeInterceptor,
+		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.UnaryServerInterceptor,
 		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
@@ -183,9 +183,9 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s := []grpc.StreamServerInterceptor{
+		grpc_errors.ErrorToGrpcCodeStreamInterceptor,
 		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.StreamServerInterceptor,
-		grpc_errors.ErrorToGrpcCodeStreamInterceptor,
 		contextutil.StreamServerInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
