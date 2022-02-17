@@ -63,7 +63,7 @@ func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 }
 
 func (h *handlerImpl) reprocessDeployments(req *central.ReprocessDeployment) error {
-	log.Debug("Received request to reprocess deployments from Central")
+	log.Errorf("Received request to reprocess deployments from Central")
 
 	select {
 	case <-h.stopSig.Done():
@@ -75,7 +75,7 @@ func (h *handlerImpl) reprocessDeployments(req *central.ReprocessDeployment) err
 }
 
 func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) error {
-	log.Debug("Received request to invalidate image caches")
+	log.Errorf("Received request to invalidate image caches")
 
 	select {
 	case <-h.stopSig.Done():

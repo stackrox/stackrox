@@ -143,6 +143,15 @@ func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.Res
 		return nil, err
 	}
 
+	msg := ""
+	for _, r := range risk.GetResults() {
+		if r.GetName() == "Image Vulnerabilities" {
+			for _, f := range r.GetFactors() {
+				msg += f.GetMessage()
+			}
+		}
+	}
+	log.Errorf("Got risk for deployment %s and img vuln msg: %s", deployment.GetName(), msg)
 	return &v1.GetDeploymentWithRiskResponse{
 		Deployment: deployment,
 		Risk:       risk,
