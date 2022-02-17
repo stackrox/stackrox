@@ -96,13 +96,6 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	return nil
 }
 
-func (s *sensorGenerateCommand) isLegacyValidationError(err error) bool {
-	return err != nil &&
-		status.Code(err) == codes.Internal &&
-		s.cluster.MainImage == "" &&
-		status.Convert(err).Message() == "Cluster Validation error: invalid main image '': invalid reference format"
-}
-
 func (s *sensorGenerateCommand) determineClusterSlimCollector() {
 	// Here we only set the cluster property, which will be persisted by central.
 	// This is not directly related to fetching the bundle.

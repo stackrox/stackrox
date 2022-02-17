@@ -10,9 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -29,8 +27,8 @@ type mockClustersServiceServer struct {
 
 	// injected behavior
 	getKernelSupportInjectedFn getKernelSupportFn
-	getDefaultsInjectedFn getDefaultsFn
-	postClusterInjectedFn postClusterFn
+	getDefaultsInjectedFn      getDefaultsFn
+	postClusterInjectedFn      postClusterFn
 
 	// spy properties
 	clusterSent      []storage.Cluster
@@ -117,11 +115,6 @@ func (s *sensorGenerateTestSuite) newTestMockEnvironmentWithConn(conn *grpc.Clie
 	return mocks.NewEnvWithConn(conn, s.T())
 }
 
-type mockDefaults struct {
-	kernelSupport bool
-	mainImage     string
-}
-
 func (s *sensorGenerateTestSuite) createMockedCommand(getDefaultsF getDefaultsFn, postClusterF postClusterFn) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
 	var out, errOut *bytes.Buffer
 	conn, closeF, mock := s.createGRPCMockClustersService(getDefaultsF, postClusterF)
@@ -170,29 +163,9 @@ func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	}, nil
 }
 
-// postClusterLegacyCentralFake fake legacy central function for service.PostCluster that returns validation error if main is empty
-func postClusterLegacyCentralFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
-	if cluster.MainImage == "" {
-		return nil, status.Error(codes.Internal, "Cluster Validation error: invalid main image '': invalid reference format")
-	}
-	return postClusterFake(cluster)
-}
-
 // postClusterAlreadyExistsFake fake function for service.PostCluster that always returns error codes.AlreadyExists
 func postClusterAlreadyExistsFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	return nil, status.Error(codes.AlreadyExists, "Cluster Exists")
-}
-
-// getMainImageFromBuildFlag is necessary because we run tests both in release and non-release mode.
-// roxctl will select different images based on the build type if communicating with a legacy central
-func getMainImageFromBuildFlag() string {
-	var flavor defaults.ImageFlavor
-	if buildinfo.ReleaseBuild {
-		flavor = defaults.RHACSReleaseImageFlavor()
-	} else {
-		flavor = defaults.DevelopmentBuildImageFlavor()
-	}
-	return flavor.MainImageNoTag()
 }
 
 func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
