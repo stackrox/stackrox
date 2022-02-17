@@ -147,13 +147,13 @@ func legacyKernelSupport(flag bool) func() (*v1.KernelSupportAvailableResponse, 
 	}
 }
 
-func defaultsUnimplemented() func() (*v1.ClusterDefaultsResponse, error) {
+func getDefaultsUnimplemented() func() (*v1.ClusterDefaultsResponse, error) {
 	return func() (*v1.ClusterDefaultsResponse, error) {
 		return nil, status.Error(codes.Unimplemented, "GetClusterDefaults unimplemented")
 	}
 }
 
-func defaultsFake(kernelSupport bool, mainImage string) func() (*v1.ClusterDefaultsResponse, error) {
+func getDefaultsFake(kernelSupport bool, mainImage string) func() (*v1.ClusterDefaultsResponse, error) {
 	return func() (*v1.ClusterDefaultsResponse, error) {
 		return &v1.ClusterDefaultsResponse{
 			MainImageRepository:    mainImage,
@@ -243,7 +243,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, _, closeF, generateCmd, mock := s.createMockedCommand(defaultsFake(true, "example.io/main"), testCase.postClusterF)
+			_, _, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(true, "example.io/main"), testCase.postClusterF)
 			defer closeF()
 
 			// Setup generateCmd
@@ -282,22 +282,22 @@ func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
 		expectPostedClusterMainImage string
 	}{
 		"New Central without override: use main image default": {
-			getDefaultsF:                 defaultsFake(true, "example.io/main"),
+			getDefaultsF:                 getDefaultsFake(true, "example.io/main"),
 			mainImageOverride:            "",
 			expectPostedClusterMainImage: "example.io/main",
 		},
 		"New Central with override: use main image provided": {
-			getDefaultsF:                 defaultsFake(true, "example.io/main"),
+			getDefaultsF:                 getDefaultsFake(true, "example.io/main"),
 			mainImageOverride:            "some.registry.io/stackrox/main",
 			expectPostedClusterMainImage: "some.registry.io/stackrox/main",
 		},
 		"Legacy Central without override: derive main image from release flag": {
-			getDefaultsF:                 defaultsUnimplemented(),
+			getDefaultsF:                 getDefaultsUnimplemented(),
 			mainImageOverride:            "",
 			expectPostedClusterMainImage: flavorInTest.MainImageNoTag(),
 		},
 		"Legacy Central with override: use main image provided": {
-			getDefaultsF:                 defaultsUnimplemented(),
+			getDefaultsF:                 getDefaultsUnimplemented(),
 			mainImageOverride:            "some.registry.io/stackrox/main",
 			expectPostedClusterMainImage: "some.registry.io/stackrox/main",
 		},
@@ -372,7 +372,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(defaultsFake(testCase.serverHasKernelSupport, "example.io/main"), postClusterFake)
+			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(testCase.serverHasKernelSupport, "example.io/main"), postClusterFake)
 			defer closeF()
 
 			// Setup generateCmd
