@@ -110,6 +110,8 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{refresherStartErr: errForced})
+	fixture.refresher.On("Stop").Once()
+	fixture.requester.On("Stop").Once()
 
 	startErr := fixture.issuer.Start()
 
@@ -120,6 +122,8 @@ func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{})
+	fixture.refresher.On("Stop").Once()
+	fixture.requester.On("Stop").Once()
 
 	startErr := fixture.issuer.Start()
 	secondStartErr := fixture.issuer.Start()
@@ -131,6 +135,8 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 
 func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *testing.T) {
 	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{skipSensorReplicaSet: true})
+	fixture.refresher.On("Stop").Once()
+	fixture.requester.On("Stop").Once()
 
 	startErr := fixture.issuer.Start()
 
@@ -144,6 +150,8 @@ func TestLocalScannerTLSIssuerNoopOnUnexpectedSecretsOwner(t *testing.T) {
 		mock.Anything, mock.Anything).Once().Return(fixture.repo, nil)
 	fixture.repo.On("getServiceCertificates", mock.Anything).Once().
 		Return((*storage.TypedServiceCertificateSet)(nil), errors.Wrap(ErrUnexpectedSecretsOwner, "forced error"))
+	fixture.refresher.On("Stop").Once()
+	fixture.requester.On("Stop").Once()
 
 	startErr := fixture.issuer.Start()
 
@@ -157,6 +165,8 @@ func TestLocalScannerTLSIssuerUnrecoverableGetCertsErrorStartFailure(t *testing.
 		mock.Anything, mock.Anything).Once().Return(fixture.repo, nil)
 	fixture.repo.On("getServiceCertificates", mock.Anything).Once().
 		Return((*storage.TypedServiceCertificateSet)(nil), errForced)
+	fixture.refresher.On("Stop").Once()
+	fixture.requester.On("Stop").Once()
 
 	startErr := fixture.issuer.Start()
 

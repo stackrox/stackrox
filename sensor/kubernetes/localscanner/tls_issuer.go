@@ -85,12 +85,12 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	defer cancel()
 
 	if i.refresher != nil {
-		return errors.New("already started")
+		return i.abortStart(errors.New("already started"))
 	}
 
 	sensorOwnerReference, fetchSensorDeploymentErr := i.fetchSensorDeploymentOwnerRef(ctx)
 	if fetchSensorDeploymentErr != nil {
-		return errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment")
+		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
 	}
 
 	certsRepo := i.serviceCertificatesRepoSupplier(*sensorOwnerReference, i.sensorNamespace,
@@ -99,10 +99,10 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	if errors.Is(getCertsErr, ErrUnexpectedSecretsOwner) {
 		log.Warn("local scanner certificates secrets are not owned by sensor deployment, " +
 			"sensor will not maintain those secrets up to date")
-		return nil
+		return i.abortStart(nil)
 	}
 	if getCertsErr != nil && !getCertsErrorIsRecoverable(getCertsErr) {
-		return errors.Wrap(getCertsErr, "checking certificate secrets ownership")
+		return i.abortStart(errors.Wrap(getCertsErr, "checking certificate secrets ownership"))
 	}
 
 	// i.refresher can recover from any err such that getCertsErrorIsRecoverable(err)
@@ -110,11 +110,19 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		certRefreshTimeout, certRefreshBackoff)
 	i.requester.Start()
 	if refreshStartErr := i.refresher.Start(); refreshStartErr != nil {
-		return errors.Wrap(refreshStartErr, "starting certificate refresher")
+		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate refresher"))
 	}
 
 	log.Info("local scanner TLS issuer started.")
 	return nil
+}
+
+func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
+	if err != nil {
+		log.Errorf("local scanner TLS issuer start aborted due to error: %s", err)
+	}
+	i.Stop(err)
+	return err
 }
 
 func (i *localScannerTLSIssuerImpl) Stop(err error) {
