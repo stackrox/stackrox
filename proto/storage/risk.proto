@@ -10,14 +10,14 @@ package storage;
 message Risk {
     string id                       = 1;
     RiskSubject subject             = 2;
-    float score                     = 3 [(gogoproto.moretags) = "search:\"Risk Score,store,hidden\""];
+    float score                     = 3 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
 
     message Result {
         message Factor {
             string message          = 1;
             string url              = 2;
         }
-        string name                 = 1 [(gogoproto.moretags) = "search:\"Risk Indicator,store,hidden\""];
+        string name                 = 1 [(gogoproto.moretags) = "search:\"Risk Indicator,hidden\""];
         repeated Factor factors     = 2;
         float score                 = 3;
     }
@@ -27,8 +27,8 @@ message Risk {
 message RiskSubject {
     string id                   = 1;
     string namespace            = 2 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string cluster_id           = 3 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
-    RiskSubjectType type        = 4 [(gogoproto.moretags) = "search:\"Risk Subject Type,store,hidden\""];
+    string cluster_id           = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
+    RiskSubjectType type        = 4 [(gogoproto.moretags) = "search:\"Risk Subject Type,hidden\""];
 }
 
 // Next tag: 9
