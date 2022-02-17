@@ -24,7 +24,6 @@ import (
 var (
 	sensorNamespace      = "stackrox-ns"
 	sensorReplicasetName = "sensor-replicaset"
-	sensorDeploymentName = "sensor-deployment"
 )
 
 type localScannerTLSIssuerFixture struct {
@@ -130,23 +129,13 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 	fixture.assertExpectations(t)
 }
 
-func TestLocalScannerTLSIssuerFetchSensorDeploymentErrorStartFailure(t *testing.T) {
-	testCases := map[string]struct {
-		k8sClientConfig testK8sClientConfig
-	}{
-		"sensor replica set missing":    {k8sClientConfig: testK8sClientConfig{skipSensorReplicaSet: true}},
-		"sensor deployment set missing": {k8sClientConfig: testK8sClientConfig{skipSensorDeployment: true}},
-	}
-	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
-			fixture := newLocalScannerTLSIssuerFixture(tc.k8sClientConfig)
+func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *testing.T) {
+	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{skipSensorReplicaSet: true})
 
-			startErr := fixture.issuer.Start()
+	startErr := fixture.issuer.Start()
 
-			assert.Error(t, startErr)
-			fixture.assertExpectations(t)
-		})
-	}
+	assert.Error(t, startErr)
+	fixture.assertExpectations(t)
 }
 
 func TestLocalScannerTLSIssuerNoopOnUnexpectedSecretsOwner(t *testing.T) {
@@ -223,32 +212,23 @@ func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 
 func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
 	objects := make([]runtime.Object, 0)
-	if !conf.skipSensorDeployment {
-		sensorDeployment := &appsApiv1.Deployment{
+	if !conf.skipSensorReplicaSet {
+		sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
+		sensorReplicaSet := &appsApiv1.ReplicaSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      sensorDeploymentName,
+				Name:      sensorReplicasetName,
 				Namespace: sensorNamespace,
-			},
-		}
-		objects = append(objects, sensorDeployment)
-		if !conf.skipSensorReplicaSet {
-			sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
-			sensorReplicaSet := &appsApiv1.ReplicaSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      sensorReplicasetName,
-					Namespace: sensorNamespace,
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: sensorDeploymentGVK.GroupVersion().String(),
-							Kind:       sensorDeploymentGVK.Kind,
-							Name:       sensorDeployment.GetName(),
-							UID:        sensorDeployment.GetUID(),
-						},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: sensorDeploymentGVK.GroupVersion().String(),
+						Kind:       sensorDeploymentGVK.Kind,
+						Name:       sensorDeployment.GetName(),
+						UID:        sensorDeployment.GetUID(),
 					},
 				},
-			}
-			objects = append(objects, sensorReplicaSet)
+			},
 		}
+		objects = append(objects, sensorReplicaSet)
 	}
 
 	k8sClient := fake.NewSimpleClientset(objects...)
@@ -257,8 +237,6 @@ func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
 }
 
 type testK8sClientConfig struct {
-	// if true then no sensor deployment and no replica set will be added to the test client.
-	skipSensorDeployment bool
 	// if true then no sensor replica set will be added to the test client.
 	skipSensorReplicaSet bool
 }

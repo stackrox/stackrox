@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	appsApiv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -178,21 +179,13 @@ func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Co
 			ownerReplicaSet.GetName(), replicaSetOwners)
 	}
 	replicaSetOwner := replicaSetOwners[0]
-
-	deploymentClient := i.k8sClient.AppsV1().Deployments(i.sensorNamespace)
-	sensorDeployment, getSensorDeploymentErr := deploymentClient.Get(ctx, replicaSetOwner.Name, metav1.GetOptions{})
-	if getSensorDeploymentErr != nil {
-		return nil, errors.Wrap(getReplicaSetErr, "fetching sensor deployment")
-	}
-
-	sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
 	blockOwnerDeletion := false
 	isController := false
 	return &metav1.OwnerReference{
-		APIVersion:         sensorDeploymentGVK.GroupVersion().String(),
-		Kind:               sensorDeploymentGVK.Kind,
-		Name:               sensorDeployment.GetName(),
-		UID:                sensorDeployment.GetUID(),
+		APIVersion:         appsApiv1.SchemeGroupVersion.String(),
+		Kind:               "Deployment",
+		Name:               replicaSetOwner.Name,
+		UID:                replicaSetOwner.UID,
 		BlockOwnerDeletion: &blockOwnerDeletion,
 		Controller:         &isController,
 	}, nil
