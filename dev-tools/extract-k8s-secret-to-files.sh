@@ -12,15 +12,6 @@ if [[ "$#" -ne 2 ]]; then
     exit 1
 fi
 
-if [[ -z "$namespace" ]]; then
-  echo "namespace required"
-  exit 1
-fi
-if [[ -z "$secret_name" ]]; then
-  echo "secret name required"
-  exit 1
-fi
-
 certs=$(kubectl -n "$namespace" get secrets "$secret_name" -o json | jq -r '.data | keys[]')
 
 for item in $(echo "$certs" | tr "\n" "\t");
