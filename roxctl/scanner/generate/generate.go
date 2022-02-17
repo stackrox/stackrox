@@ -36,7 +36,7 @@ func Command() *cobra.Command {
 				return errors.Wrap(err, "could not marshal scanner params")
 			}
 			timeout := flags.Timeout(c)
-			return zipdownload.GetZip(zipdownload.GetZipOptions{
+			err = zipdownload.GetZip(zipdownload.GetZipOptions{
 				Path:       "/api/extensions/scanner/zip",
 				Method:     http.MethodPost,
 				Body:       body,
@@ -45,6 +45,7 @@ func Command() *cobra.Command {
 				ExpandZip:  true,
 				OutputDir:  opts.OutputDir,
 			})
+			return errors.Wrap(err, "could not get scanner zip")
 		},
 	}
 

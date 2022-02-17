@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -17,7 +17,7 @@ var (
 )
 
 func unsupportedOutputFormatError(format string, supportedFormats []string) error {
-	return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("unsupported output format used: %q. Choose one of %s",
+	return errox.NewErrInvalidArgs(fmt.Sprintf("unsupported output format used: %q. Choose one of %s",
 		format, strings.Join(supportedFormats, " | ")))
 }
 
@@ -63,14 +63,14 @@ func NewObjectPrinterFactory(defaultOutputFormat string, customPrinterFactories 
 		if _, ok := factoryMap[supportedFormatString]; !ok {
 			factoryMap[supportedFormatString] = factory
 		} else {
-			return nil, errorhelpers.NewErrInvariantViolation(fmt.Sprintf("tried to register two printer "+
+			return nil, errox.NewErrInvariantViolation(fmt.Sprintf("tried to register two printer "+
 				"factories which support the same output formats %q: %T and %T",
 				supportedFormatString, factory, factoryMap[supportedFormatString]))
 		}
 	}
 
 	if len(factoryMap) == 0 {
-		return nil, errorhelpers.NewErrInvariantViolation(fmt.Sprintf("no custom printer factory added. You must specify at least one "+
+		return nil, errox.NewErrInvariantViolation(fmt.Sprintf("no custom printer factory added. You must specify at least one "+
 			"custom printer factory that supports the %q output format", defaultOutputFormat))
 	}
 

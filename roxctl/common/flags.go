@@ -20,7 +20,7 @@ import (
 func GetGRPCConnection() (*grpc.ClientConn, error) {
 	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
 	}
 
 	tlsOpts, err := tlsConfigOptsForCentral()

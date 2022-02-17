@@ -98,7 +98,7 @@ func addAuthToRequest(req *http.Request) error {
 func getURL(path string) (string, error) {
 	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "could not get endpoint")
 	}
 	scheme := "https"
 	if usePlaintext {

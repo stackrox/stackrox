@@ -137,7 +137,7 @@ func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command, f *prin
 	if !i.json {
 		p, err := f.CreatePrinter()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not create printer for image check result")
 		}
 		i.objectPrinter = p
 		i.standardizedOutputFormat = f.IsStandardizedFormat()
@@ -173,7 +173,7 @@ func (i *imageCheckCommand) CheckImage() error {
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}))
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "checking image failed after %d retries", i.retryCount)
 	}
 	return nil
 }
@@ -250,7 +250,7 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 func legacyPrint(alerts []*storage.Alert, failViolations bool, numBuildBreakingPolicies int, out io.Writer) error {
 	err := report.JSON(out, alerts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create legacy JSON report")
 	}
 	if failViolations && numBuildBreakingPolicies != 0 {
 		return errors.New("Violated a policy with CI enforcement set")
