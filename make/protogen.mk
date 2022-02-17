@@ -100,7 +100,7 @@ GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/
 # Here, we instruct protoc-gen-go to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "github.com/stackrox/rox/generated/<path>".
 ROX_M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
-# Here, we instruct protoc-gen-go to import the go source for proto file github.com/scanner/proto/<path>/*.proto to
+# Here, we instruct protoc-gen-go to import the go source for proto file github.com/stackrox/scanner/proto/<path>/*.proto to
 # "github.com/stackrox/scanner/generated/<path>".
 SCANNER_M_ARGS = $(foreach proto,$(ALL_SCANNER_PROTOS_REL),M$(proto)=github.com/stackrox/scanner/generated/$(patsubst %/,%,$(dir $(proto))))
 # Combine the *_M_ARGS.

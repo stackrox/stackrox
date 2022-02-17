@@ -22,8 +22,8 @@ type client struct {
 	conn   *grpc.ClientConn
 }
 
-// newGRPCClient creates a new Scanner client.
-func newGRPCClient(endpoint string) (*client, error) {
+// dial Scanner and return a new client.
+func dial(endpoint string) (*client, error) {
 	if endpoint == "" {
 		log.Info("No Scanner connection desired")
 		return nil, nil
@@ -66,16 +66,15 @@ func (c *client) GetImageAnalysis(ctx context.Context, ci *storage.ContainerImag
 	}
 
 	name := ci.GetName().GetFullName()
-	namespace := utils.ExtractOpenShiftProject(ci.GetName())
 
 	image := types.ToImage(ci)
 	metadata, err := reg.Metadata(image)
 	if err != nil {
-		log.Debugf("Failed to get metadata for image %s in namespace %s: %v", name, namespace, err)
+		log.Debugf("Failed to get metadata for image %s: %v", name, err)
 		return nil, errors.Wrap(err, "getting image metadata")
 	}
 
-	log.Debugf("Retrieved metadata for image %s in namespace %s: %v", name, namespace, metadata)
+	log.Debugf("Retrieved metadata for image %s: %v", name, metadata)
 
 	cfg := reg.Config()
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
@@ -88,11 +87,11 @@ func (c *client) GetImageAnalysis(ctx context.Context, ci *storage.ContainerImag
 		},
 	})
 	if err != nil {
-		log.Debugf("Unable to get image components from local Scanner for image %s in namespace %s: %v", name, namespace, err)
+		log.Debugf("Unable to get image components from local Scanner for image %s: %v", name, err)
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Got image components from local Scanner for image %s in namespace %s", name, namespace)
+	log.Debugf("Got image components from local Scanner for image %s", name)
 
 	return &imageData{
 		Metadata:                   metadata,
