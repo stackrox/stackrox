@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -141,36 +140,6 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 	startErr := fixture.issuer.Start()
 
 	assert.Error(t, startErr)
-	fixture.assertExpectations(t)
-}
-
-func TestLocalScannerTLSIssuerNoopOnUnexpectedSecretsOwner(t *testing.T) {
-	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
-	fixture.supplier.On("supplyServiceCertificatesRepoSupplier", mock.Anything,
-		mock.Anything, mock.Anything).Once().Return(fixture.repo, nil)
-	fixture.repo.On("getServiceCertificates", mock.Anything).Once().
-		Return((*storage.TypedServiceCertificateSet)(nil), errors.Wrap(ErrUnexpectedSecretsOwner, "forced error"))
-	fixture.refresher.On("Stop").Once()
-	fixture.requester.On("Stop").Once()
-
-	startErr := fixture.issuer.Start()
-
-	assert.NoError(t, startErr)
-	fixture.assertExpectations(t)
-}
-
-func TestLocalScannerTLSIssuerUnrecoverableGetCertsErrorStartFailure(t *testing.T) {
-	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
-	fixture.supplier.On("supplyServiceCertificatesRepoSupplier", mock.Anything,
-		mock.Anything, mock.Anything).Once().Return(fixture.repo, nil)
-	fixture.repo.On("getServiceCertificates", mock.Anything).Once().
-		Return((*storage.TypedServiceCertificateSet)(nil), errForced)
-	fixture.refresher.On("Stop").Once()
-	fixture.requester.On("Stop").Once()
-
-	startErr := fixture.issuer.Start()
-
-	assert.ErrorIs(t, startErr, errForced)
 	fixture.assertExpectations(t)
 }
 

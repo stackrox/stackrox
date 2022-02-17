@@ -11,16 +11,25 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	appsApiv1 "k8s.io/api/apps/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/util/retry"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	startTimeout          = 5 * time.Minute
+	startTimeout                         = 6 * time.Minute
+	fetchSensorDeploymentOwnerRefBackoff = wait.Backoff{
+		Duration: 10 * time.Millisecond,
+		Factor:   3,
+		Jitter:   0.1,
+		Steps:    10,
+		Cap:      100 * time.Minute,
+	}
 	processMessageTimeout = 5 * time.Second
 	certRefreshTimeout    = 5 * time.Minute
 	certRefreshBackoff    = wait.Backoff{
@@ -88,26 +97,16 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.New("already started"))
 	}
 
-	sensorOwnerReference, fetchSensorDeploymentErr := i.fetchSensorDeploymentOwnerRef(ctx)
+	sensorOwnerReference, fetchSensorDeploymentErr := i.fetchSensorDeploymentOwnerRef(ctx, fetchSensorDeploymentOwnerRefBackoff)
 	if fetchSensorDeploymentErr != nil {
 		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
 	}
 
 	certsRepo := i.serviceCertificatesRepoSupplier(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	_, getCertsErr := certsRepo.getServiceCertificates(ctx)
-	if errors.Is(getCertsErr, ErrUnexpectedSecretsOwner) {
-		log.Warn("local scanner certificates secrets are not owned by sensor deployment, " +
-			"sensor will not maintain those secrets up to date")
-		return i.abortStart(nil)
-	}
-	if getCertsErr != nil && !getCertsErrorIsRecoverable(getCertsErr) {
-		return i.abortStart(errors.Wrap(getCertsErr, "checking certificate secrets ownership"))
-	}
-
-	// i.refresher can recover from any err such that getCertsErrorIsRecoverable(err)
 	i.refresher = i.certificateRefresherSupplier(i.requester.RequestCertificates, certsRepo,
 		certRefreshTimeout, certRefreshBackoff)
+
 	i.requester.Start()
 	if refreshStartErr := i.refresher.Start(); refreshStartErr != nil {
 		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate refresher"))
@@ -170,13 +169,22 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 	}
 }
 
-func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Context) (*metav1.OwnerReference, error) {
+func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Context,
+	backoff wait.Backoff) (*metav1.OwnerReference, error) {
+
 	if i.podOwnerName == "" {
 		return nil, errors.New("fetching sensor deployment: empty pod owner name")
 	}
 
 	replicaSetClient := i.k8sClient.AppsV1().ReplicaSets(i.sensorNamespace)
-	ownerReplicaSet, getReplicaSetErr := replicaSetClient.Get(ctx, i.podOwnerName, metav1.GetOptions{})
+	var ownerReplicaSet *appsApiv1.ReplicaSet
+	getReplicaSetErr := retry.OnError(backoff, func(err error) bool {
+		return !k8sErrors.IsNotFound(err)
+	}, func() error {
+		replicaSet, getReplicaSetErr := replicaSetClient.Get(ctx, i.podOwnerName, metav1.GetOptions{})
+		ownerReplicaSet = replicaSet
+		return getReplicaSetErr
+	})
 	if getReplicaSetErr != nil {
 		return nil, errors.Wrap(getReplicaSetErr, "fetching owner replica set")
 	}
