@@ -166,8 +166,8 @@ the instructions below.
 
 -   [Docker](https://www.docker.com/)
 -   [Node.js](https://nodejs.org/en/) version compatible with the `"engine"`
-    requirements in the [package.json](./package.json) file (it's highly
-    recommended to use an LTS version, if you're managing multiple versions of
+    requirements in the [package.json](./package.json) file (It's highly
+    recommended to use the latest LTS version. If you're managing multiple versions of
     Node.js on your machine, consider using
     [nvm](https://github.com/creationix/nvm))
 -   [Yarn](https://yarnpkg.com/en/) v1.x
@@ -198,7 +198,7 @@ _Note: Similar instructions apply when using
    Roxbot comment for a PR branch). Alternatively, you can specify the image tag
    you want to deploy by setting the `MAIN_IMAGE_TAG` env var. If
    `yarn deploy-local` fails, see this
-   [Knowledge Base article for debugging instructions](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/883229760/Troubleshooting+local+deployment+of+StackRox).
+   [Knowledge Base article for debugging instructions](https://github.com/stackrox/dev-docs/blob/main/docs/troubleshooting/Troubleshooting-local-deployment.md).
 
 1. **Start** - Start your local dev server by running `yarn start`.
 
@@ -210,7 +210,7 @@ repo, and repeat the steps above._
 
 To develop the front-end platform locally, but use a remote Central, please
 refer to the detailed instructions in the how-to article
-[Use remote Central for local front-end dev](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/1405911069/Use+remote+Central+for+local+front-end+dev)
+[Use remote Central for local front-end dev](https://github.com/stackrox/dev-docs/blob/main/docs/knowledge-base/%5BFE%5D%20Use-remote-Central-for-local-front-end-dev.md)
 
 ### IDEs
 
