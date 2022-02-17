@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -120,7 +121,7 @@ func GenerateImageFromStringWithOverride(imageStr, registryOverride string) (*st
 }
 
 // GetSHA returns the SHA of the image if it exists
-func GetSHA(img *storage.Image) string {
+func GetSHA(img types.ImageWithMetadata) string {
 	if img.GetId() != "" {
 		return img.GetId()
 	}

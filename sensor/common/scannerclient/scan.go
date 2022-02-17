@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -33,9 +34,9 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, image *
 	}
 
 	centralResp, err := centralClient.GetImageVulnerabilitiesInternal(ctx, &v1.GetImageVulnerabilitiesInternalRequest{
-		ImageId:    image.GetId(),
+		ImageId:    utils.GetSHA(imgData),
 		ImageName:  image.GetName(),
-		Metadata:   imgData.Metadata,
+		Metadata:   imgData.GetMetadata(),
 		Components: imgData.GetComponents(),
 		Notes:      imgData.GetNotes(),
 	})

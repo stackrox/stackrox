@@ -94,7 +94,7 @@ func (c *client) GetImageAnalysis(ctx context.Context, ci *storage.ContainerImag
 	log.Debugf("Got image components from local Scanner for image %s", name)
 
 	return &imageData{
-		Metadata:                   metadata,
+		metadata:                   metadata,
 		GetImageComponentsResponse: resp,
 	}, nil
 }
