@@ -78,7 +78,7 @@ type serviceCertificatesRepoSupplier func(ownerReference metav1.OwnerReference, 
 
 // Start launches a certificate refreshes that immediately checks the certificates, and that keeps them updated.
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
-// In case this component was already started it fail immediately.
+// In case this component was already started it fails immediately.
 func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Info("starting local scanner TLS issuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
