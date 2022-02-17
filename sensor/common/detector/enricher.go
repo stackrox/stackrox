@@ -110,10 +110,11 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	scannedImage, err := scanWithRetries(ctx, svc, ci, scanImage)
 
 	if features.LocalImageScanning.Enabled() {
+		img := scannedImage.GetImage()
 		// scanImage may return without error even if it was unable to find the image.
 		// Check the metadata and scan here: if Central cannot retrieve the metadata nor scan,
 		// perhaps the image is stored in an internal registry which Sensor can reach.
-		if err == nil && scannedImage.GetImage().GetMetadata() == nil {
+		if err == nil && img.GetMetadata() == nil && img.GetScan() == nil {
 			scannedImage, err = scanWithRetries(ctx, svc, ci, scanImageLocal)
 		}
 	}
