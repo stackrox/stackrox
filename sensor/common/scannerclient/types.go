@@ -14,6 +14,7 @@ type imageData struct {
 	*scannerV1.GetImageComponentsResponse
 }
 
+//nolint:revive
 func (i *imageData) GetId() string {
 	return i.id
 }
