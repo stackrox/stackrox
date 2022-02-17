@@ -210,7 +210,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 
 	// print the JSON object in the dedicated format via a printer.ObjectPrinter
 	if err := i.objectPrinter.Print(policySummary, i.env.ColorWriter()); err != nil {
-		return err
+		return errors.Wrap(err, "could not print policy summary")
 	}
 
 	// conditionally print errors when the output format is a "non-RFC/standardized" one
@@ -240,7 +240,7 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 
 	response, err := svc.DetectBuildTime(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not check build-time alerts")
 	}
 
 	return response.GetAlerts(), err

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
 )
 
@@ -44,7 +44,7 @@ func (j *JSONPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error)
 		return printers.NewJSONPrinter(printers.WithJSONEscapeHTML(j.EscapeHTMLCharacters),
 			printers.WithJSONCompact(j.Compact)), nil
 	default:
-		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
+		return nil, errox.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
 			"JSON printer: %q", format))
 	}
 }

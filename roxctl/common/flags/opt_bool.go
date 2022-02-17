@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
 
@@ -26,7 +27,7 @@ func (v optBool) Set(strVal string) error {
 	}
 	b, err := strconv.ParseBool(strVal)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "invalid boolean value: %q", strVal)
 	}
 	*v.boolp = &b
 	return nil

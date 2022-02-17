@@ -26,7 +26,7 @@ const (
 func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string) error {
 	reader, err := zip.NewReader(contents, contentsLength)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not read from zip")
 	}
 
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
@@ -111,7 +111,7 @@ func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string) er
 func GetZip(opts GetZipOptions) error {
 	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not download zip")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 

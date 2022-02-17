@@ -50,7 +50,15 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 
 	if !flags.UseDirectGRPC() {
 		opts.DialTLS = func(ctx context.Context, endpoint string, tlsClientConf *tls.Config, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-			return http1DowngradeClient.ConnectViaProxy(ctx, endpoint, tlsClientConf, http1DowngradeClient.ForceDowngrade(flags.ForceHTTP1()), http1DowngradeClient.ExtraH2ALPNs(alpn.PureGRPCALPNString), http1DowngradeClient.DialOpts(opts...))
+			proxy, proxyErr := http1DowngradeClient.ConnectViaProxy(
+				ctx,
+				endpoint,
+				tlsClientConf,
+				http1DowngradeClient.ForceDowngrade(flags.ForceHTTP1()),
+				http1DowngradeClient.ExtraH2ALPNs(alpn.PureGRPCALPNString),
+				http1DowngradeClient.DialOpts(opts...),
+			)
+			return proxy, errors.Wrap(proxyErr, "could not connect via proxy")
 		}
 	} else if flags.ForceHTTP1() {
 		return nil, errors.New("cannot force HTTP/1 mode if direct gRPC is enabled")

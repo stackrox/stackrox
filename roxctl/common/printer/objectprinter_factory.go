@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
@@ -110,7 +112,8 @@ func (o *ObjectPrinterFactory) CreatePrinter() (ObjectPrinter, error) {
 	for supportedFormats, printerFactory := range o.RegisteredPrinterFactories {
 		// only invoke factory when output format is a supported format
 		if strings.Contains(supportedFormats, o.OutputFormat) {
-			return printerFactory.CreatePrinter(o.OutputFormat)
+			printer, err := printerFactory.CreatePrinter(o.OutputFormat)
+			return printer, errors.Wrapf(err, "could not create printer: %q", o.OutputFormat)
 		}
 	}
 
@@ -121,13 +124,17 @@ func (o *ObjectPrinterFactory) CreatePrinter() (ObjectPrinter, error) {
 // validate will validate whether the given output format can be satisfied by the registered CustomPrinterFactory. It also
 // verifies whether each registered CustomPrinterFactory is able to create a ObjectPrinter with the current configuration
 func (o *ObjectPrinterFactory) validate() error {
+	var errs *multierror.Error
 	for _, printerFactory := range o.RegisteredPrinterFactories {
 		if err := printerFactory.validate(); err != nil {
-			return err
+			errs = multierror.Append(errs, err)
 		}
 	}
+	if err := o.validateOutputFormat(); err != nil {
+		errs = multierror.Append(errs, err)
+	}
 
-	return o.validateOutputFormat()
+	return errors.Wrap(errs.ErrorOrNil(), "invalid printer configuration")
 }
 
 // validateOutputFormat will verify whether the currently set OutputFormat is supported by a registered

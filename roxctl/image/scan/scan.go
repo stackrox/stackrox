@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -197,11 +198,12 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
 	defer cancel()
 
-	return svc.ScanImage(ctx, &v1.ScanImageRequest{
+	image, err := svc.ScanImage(ctx, &v1.ScanImageRequest{
 		ImageName:      i.image,
 		Force:          i.force,
 		IncludeSnoozed: i.includeSnoozed,
 	})
+	return image, errors.Wrapf(err, "could not scan image: %q", i.image)
 }
 
 // printImageResult print the storage.ImageScan results, either in legacy output format or
@@ -218,7 +220,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	}
 
 	if err := i.printer.Print(cveSummary, i.env.ColorWriter()); err != nil {
-		return err
+		return errors.Wrap(err, "could not print CVE summary")
 	}
 
 	if !i.standardizedFormat {
@@ -261,7 +263,7 @@ func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer)
 		}
 		jsonResult, err := marshaller.MarshalToString(imageResult)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not marshal image result")
 		}
 
 		fmt.Fprintln(out, jsonResult)

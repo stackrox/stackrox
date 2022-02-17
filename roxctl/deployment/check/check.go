@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -154,7 +155,7 @@ func (d *deploymentCheckCommand) Check() error {
 func (d *deploymentCheckCommand) checkDeployment() error {
 	deploymentFileContents, err := os.ReadFile(d.file)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not read deployment file: %q", d.file)
 	}
 
 	alerts, err := d.getAlerts(string(deploymentFileContents))
@@ -181,7 +182,7 @@ func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Al
 		PolicyCategories: d.policyCategories,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not check deploy-time alerts")
 	}
 
 	var alerts []*storage.Alert
@@ -205,7 +206,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 	}
 
 	if err := d.printer.Print(policySummary, d.env.ColorWriter()); err != nil {
-		return err
+		return errors.Wrap(err, "could not print policy summary")
 	}
 
 	amountBreakingPolicies := policySummary.GetTotalAmountOfBreakingPolicies()

@@ -59,7 +59,7 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "http request failed")
 	}
 	if resp.StatusCode != 200 {
 		defer utils.IgnoreError(resp.Body.Close)
@@ -116,7 +116,7 @@ func newHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.R
 	}
 	req, err := http.NewRequest(method, reqURL, body)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not create HTTP request")
 	}
 	if flags.ForceHTTP1() {
 		req.ProtoMajor, req.ProtoMinor, req.Proto = 1, 1, "HTTP/1.1"
