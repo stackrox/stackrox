@@ -12,6 +12,7 @@ div.or-divider {
 @media (min-width: 992px) {
     div.or-divider-container {
         height: 100%;
+        width: auto;
     }
 
     div.or-divider {
