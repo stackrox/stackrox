@@ -154,10 +154,7 @@ assert_bundle_registry() {
 
 component_image() {
   case "$1" in
-      admission-controller)
-        echo "main"
-        ;;
-      sensor)
+      admission-controller|sensor)
         echo "main"
         ;;
       *)
