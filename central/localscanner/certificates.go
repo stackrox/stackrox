@@ -74,6 +74,9 @@ func generateServiceCertMap(serviceType storage.ServiceType, namespace string, c
 	fileMap := make(secretDataMap, numServiceCertDataEntries)
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
+		// TODO(ROX-9128): restore after we make sure clients can reliably reconnect
+		// after certificate rotation, as part of ROX-8577.
+		// mtls.WithValidityExpiringInDays(),
 		mtls.WithNamespace(namespace),
 	}
 	if err := certgen.IssueServiceCert(fileMap, ca, subject, "", issueOpts...); err != nil {
