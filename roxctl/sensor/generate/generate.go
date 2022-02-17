@@ -110,9 +110,8 @@ func (s *sensorGenerateCommand) determineClusterSlimCollector() {
 func getFlavorFromReleaseBuild() defaults.ImageFlavor {
 	if buildinfo.ReleaseBuild {
 		return defaults.RHACSReleaseImageFlavor()
-	} else {
-		return defaults.DevelopmentBuildImageFlavor()
 	}
+	return defaults.DevelopmentBuildImageFlavor()
 }
 
 func (s *sensorGenerateCommand) clusterSetupFromCentralDefaults(ctx context.Context, service v1.ClustersServiceClient) error {
