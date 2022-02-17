@@ -411,7 +411,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 		}, nil
 	}
 
-	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+	if err := s.saveImage(img); err != nil {
 		return nil, errors.Errorf("failed to store image: %v", err)
 	}
 
