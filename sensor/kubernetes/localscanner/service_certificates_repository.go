@@ -29,6 +29,8 @@ var (
 	ErrMissingSecretData = errors.New("missing secret data")
 
 	errForServiceFormat = "for service type %q"
+
+	_ serviceCertificatesRepo = (*serviceCertificatesRepoSecretsImpl)(nil)
 )
 
 // serviceCertificatesRepoSecretsImpl is a ServiceCertificatesRepo that uses k8s secrets for persistence.

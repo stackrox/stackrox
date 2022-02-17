@@ -289,7 +289,7 @@
 # # pod annotations, and container environment variables for workloads.
 # # The configuration is hierarchical, in the sense that metadata that is defined at a more
 # # generic scope (e.g., for all objects) can be overridden by metadata defined at a narrower
-# # scope (e.g., only for the central deployment).
+# # scope (e.g., only for the sensor deployment).
 # customize:
 #   # Extra metadata for all objects.
 #   labels:

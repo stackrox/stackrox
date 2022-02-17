@@ -26,7 +26,7 @@ import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
-import AccessScopeForm from './AccessScopeForm';
+import AccessScopeFormWrapper from './AccessScopeFormWrapper';
 import AccessScopesList from './AccessScopesList';
 
 import './AccessScopes.css';
@@ -192,7 +192,7 @@ function AccessScopes(): ReactElement {
                     url={getEntityPath(entityType)}
                 />
             ) : (
-                <AccessScopeForm
+                <AccessScopeFormWrapper
                     isActionable={!accessScope || !getIsDefaultAccessScopeId(entityId)}
                     action={action}
                     accessScope={accessScope ?? accessScopeNew}
