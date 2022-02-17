@@ -28,7 +28,7 @@ var (
 		Factor:   3,
 		Jitter:   0.1,
 		Steps:    10,
-		Cap:      100 * time.Minute,
+		Cap:      startTimeout,
 	}
 	processMessageTimeout = 5 * time.Second
 	certRefreshTimeout    = 5 * time.Minute
