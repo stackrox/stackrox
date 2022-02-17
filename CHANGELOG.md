@@ -8,6 +8,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Increased default Scanner memory limit from 3000 MiB to 4GiB.
 - API changes/deprecations:
   - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaults (GET /v1/cluster-defaults)` instead.
+  - The following features will be deprecated in two release cycles:
+    - The external authorization plugin for scoped access control has been replaced with in-product scoped access control.
+    - The Anchore scanner integration will be removed. Please use the ACS Scanner instead.
+    - Alert and process comments will be removed.
 
 - Improved accuracy of active component and vulnerability and presented it with higher confidence.
   - Analyzed dependencies between OS components and detected derived active components.
