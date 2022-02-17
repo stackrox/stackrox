@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
+	"helm.sh/helm/v3/pkg/chart"
 )
 
 func init() {
@@ -102,21 +103,57 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 
 // This test will be removed after the scanner integration is finished. It is critical to check that no scanner manifests are contained within
 // secured cluster.
-func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() {
+func (s *embedTestSuite) TestLoadSecuredClusterWithScanner() {
 	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
 
-	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
-	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
-	s.Require().NoError(err)
-	s.Equal("stackrox-secured-cluster-services", chart.Name())
-	s.NotEmpty(chart.Templates)
-
-	var foundScannerTpls []string
-	for _, tpl := range chart.Templates {
-		if strings.Contains(tpl.Name, "scanner") {
-			foundScannerTpls = append(foundScannerTpls, tpl.Name)
-		}
+	testCases := map[string]struct {
+	getHelmTemplates              func() []*chart.File
+	kubectlOutput                 bool
+	enableLocalScannerFeatureFlag bool
+	expectScannerFilesExist       bool
+} {
+		"with feature flag is disabled should not contain scanner ": {
+			enableLocalScannerFeatureFlag: false,
+			expectScannerFilesExist: false,
+		},
+		"with feature flag enabled contains scanner manifests ": {
+			enableLocalScannerFeatureFlag: true,
+			expectScannerFilesExist: true,
+		},
+		"in kubectl output and feature flag enabled does not contain scanner manifests": {
+			kubectlOutput: true,
+			enableLocalScannerFeatureFlag: true,
+			expectScannerFilesExist: false,
+		},
+		"in kubectl output contain scanner manifests": {
+			kubectlOutput: true,
+			expectScannerFilesExist: false,
+		},
 	}
 
-	s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster chart", foundScannerTpls)
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+			metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
+			metaVals.KubectlOutput = testCase.kubectlOutput
+			metaVals.FeatureFlags[features.LocalImageScanning.EnvVar()] = testCase.enableLocalScannerFeatureFlag
+
+			chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
+			s.Require().NoError(err)
+			s.NotEmpty(chart.Templates)
+
+			var foundScannerTpls []string
+			for _, tpl := range chart.Templates {
+				if strings.Contains(tpl.Name, "scanner") {
+					foundScannerTpls = append(foundScannerTpls, tpl.Name)
+				}
+			}
+
+			if testCase.expectScannerFilesExist {
+				s.NotEmpty(foundScannerTpls, "Did not found any scanner manifests but expected them.")
+			} else {
+				s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster chart", foundScannerTpls)
+			}
+		})
+	}
+
 }
