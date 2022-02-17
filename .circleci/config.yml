@@ -3546,13 +3546,6 @@ jobs:
           name: Run roxctl Bats tests that require a running cluster
           command: |
             source tests/e2e/run.sh
-            # When running bats tests involving roxctl helm output with '--debug' flag,
-            # roxctl would use template files directly from '/go/src/github.com/stackrox/stackrox/image/templates'
-            # However, we have the code in '/go/src/github.com/stackrox/rox/image/templates', so we need to create a link
-            if [[ ! -e /go/src/github.com/stackrox/stackrox ]]; then
-              ln -Ffvs /go/src/github.com/stackrox/rox /go/src/github.com/stackrox/stackrox
-            fi
-
             # Bats tests from the 'cluster' folder require running central
             MAIN_TAG=$(make --quiet tag) \
               run_roxctl_bats_tests "roxctl-test-output" "cluster"

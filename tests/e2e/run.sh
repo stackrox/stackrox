@@ -126,7 +126,7 @@ run_roxctl_bats_tests() {
     # TODO(RS-449): Move expect installation to the CI image
     if is_CI; then
       if ! command -v expect >/dev/null 2>&1; then
-        sudo apt-get update && sudo apt-get install --no-install-recommends -y expect tree
+        sudo apt-get update && sudo apt-get install --no-install-recommends -y expect
       fi
     fi
     info "Running Bats e2e tests on development roxctl"
