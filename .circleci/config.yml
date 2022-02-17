@@ -3391,7 +3391,7 @@ jobs:
     - checkout
     - check-to-run:
         label: ci-openshift-4-operator-tests
-        run-on-master: false
+        run-on-master: true
         run-on-tags: true
         changed-path: '^operator/'
     - check-backend-changes
@@ -4300,7 +4300,7 @@ jobs:
     - checkout
     - check-to-run:
         label: ci-openshift-4-operator-tests  # drive all openshift-4*-operator-e2e-tests from a single label
-        run-on-master: false
+        run-on-master: true
         run-on-tags: true
         changed-path: '^operator/'
     - check-backend-changes
