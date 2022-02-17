@@ -6,6 +6,12 @@ set -eo pipefail
 namespace="$1"
 secret_name="$2"
 
+if [[ "$#" -ne 2 ]]; then
+    echo "Expected 2 args, but found $#"
+    echo "Usage: $0 [namespace] [secret name]"
+    exit 1
+fi
+
 if [[ -z "$namespace" ]]; then
   echo "namespace required"
   exit 1
