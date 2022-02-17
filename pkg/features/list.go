@@ -44,4 +44,7 @@ var (
 
 	// ImageSignatureVerification enables image signature verification.
 	ImageSignatureVerification = registerFeature("Enable Image Signature Verification workflow", "ROX_VERIFY_IMAGE_SIGNATURE", false)
+
+	// PostgresDatastore enables Postgres datastore.
+	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
 )

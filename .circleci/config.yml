@@ -1087,7 +1087,7 @@ commands:
       - run:
           name: Destroy OpenShift 4 cluster
           environment:
-            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.18-35-gdd80648215-snapshot
           command: |
             if [ ! -d "$PWD/<< parameters.cluster-name >>" ]; then
               echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
@@ -2103,7 +2103,7 @@ commands:
       - run:
           name: Create OpenShift 4 cluster
           environment:
-          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.17
+          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.18-35-gdd80648215-snapshot
           - GCP_PROJECT: stackrox-ci
           command: |
             mkdir $PWD/<< parameters.cluster-name >>
@@ -3391,7 +3391,7 @@ jobs:
     - checkout
     - check-to-run:
         label: ci-openshift-4-operator-tests
-        run-on-master: false
+        run-on-master: true
         run-on-tags: true
         changed-path: '^operator/'
     - check-backend-changes
@@ -3404,7 +3404,7 @@ jobs:
     - *loginToGCR
     - create-openshift-4-cluster:
         cluster-name: operator-oc4-6
-        openshift-version: ocp/stable-4.6
+        openshift-version: ocp/4.6.54
 
     - run:
         name: Validate Kubeconfig
@@ -4300,7 +4300,7 @@ jobs:
     - checkout
     - check-to-run:
         label: ci-openshift-4-operator-tests  # drive all openshift-4*-operator-e2e-tests from a single label
-        run-on-master: false
+        run-on-master: true
         run-on-tags: true
         changed-path: '^operator/'
     - check-backend-changes
