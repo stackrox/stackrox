@@ -16,7 +16,7 @@ certs=$(kubectl -n "$namespace" get secrets "$secret_name" -o json | jq -r '.dat
 
 for item in $(echo "$certs" | tr "\n" "\t");
 do
-  echo "Written data to $item"
   content=$(kubectl -n "$namespace" get secrets "$secret_name" -o json | jq -r --arg key "$item" '.data[$key]')
   echo "$content" | base64 --decode > "$item"
+  echo "Written data to $item"
 done
