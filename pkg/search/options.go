@@ -218,7 +218,6 @@ var (
 	// Risk Search Fields
 	RiskScore       = newFieldLabel("Risk Score")
 	RiskSubjectType = newFieldLabel("Risk Subject Type")
-	RiskIndicator   = newFieldLabel("Risk Indicator")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 
