@@ -108,22 +108,22 @@ func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 		kubectlOutput                 bool
 		enableLocalScannerFeatureFlag bool
 		expectScannerFilesExist       bool
-	} {
+	}{
 		"with feature flag is disabled should not contain scanner manifests": {
 			enableLocalScannerFeatureFlag: false,
-			expectScannerFilesExist: false,
+			expectScannerFilesExist:       false,
 		},
 		"with feature flag enabled contains scanner manifests ": {
 			enableLocalScannerFeatureFlag: true,
-			expectScannerFilesExist: true,
+			expectScannerFilesExist:       true,
 		},
 		"in kubectl output and feature flag enabled does not contain scanner manifests": {
-			kubectlOutput: true,
+			kubectlOutput:                 true,
 			enableLocalScannerFeatureFlag: true,
-			expectScannerFilesExist: false,
+			expectScannerFilesExist:       false,
 		},
 		"in kubectl output contains scanner manifests": {
-			kubectlOutput: true,
+			kubectlOutput:           true,
 			expectScannerFilesExist: false,
 		},
 	}
