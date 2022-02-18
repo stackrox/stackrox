@@ -1,6 +1,7 @@
 **/go.sum
 .circleci/config.yml
 CHANGELOG.md
+central/alert/datastore/internal/store/postgres/store.go
 central/cluster/datastore/datastore_impl_test.go
 central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
@@ -31,4 +32,3 @@ scale/mocksensor/image_names.go
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
-central/alert/datastore/internal/store/postgres/store.go
