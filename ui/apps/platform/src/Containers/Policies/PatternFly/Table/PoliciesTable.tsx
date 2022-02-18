@@ -163,6 +163,13 @@ function PoliciesTable({
         });
     }
 
+    function onClonePolicy(id: string) {
+        history.replace({
+            pathname: `${policiesBasePath}/${id}`,
+            search: 'action=clone',
+        });
+    }
+
     const selectedIds = getSelectedIds();
     const selectedPolicies = policies.filter(({ id }) => selectedIds.includes(id));
     let numEnabled = 0;
@@ -380,6 +387,14 @@ function PoliciesTable({
                             };
                             const actionItems = hasWriteAccessForPolicy
                                 ? [
+                                      {
+                                          title: 'Edit policy',
+                                          onClick: () => onEditPolicy(id),
+                                      },
+                                      {
+                                          title: 'Clone policy',
+                                          onClick: () => onClonePolicy(id),
+                                      },
                                       disabled
                                           ? {
                                                 title: 'Enable policy',
@@ -389,10 +404,6 @@ function PoliciesTable({
                                                 title: 'Disable policy',
                                                 onClick: () => disablePoliciesHandler([id]),
                                             },
-                                      {
-                                          title: 'Edit policy',
-                                          onClick: () => onEditPolicy(id),
-                                      },
                                       exportPolicyAction,
                                       {
                                           isSeparator: true,
