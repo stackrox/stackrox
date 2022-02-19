@@ -6,6 +6,7 @@ import (
 
 	pkgErrors "github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -15,7 +16,6 @@ import (
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"github.com/stackrox/rox/operator/pkg/types"
 )
 
 type secretReconcilerTestSuite struct {
