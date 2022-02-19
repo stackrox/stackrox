@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
@@ -51,7 +52,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 	cases := map[string]secretReconciliationTestCase{
 		"If no central-htpasswd secret exists and no plaintext secret reference was specified, a password should be automatically generated": {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"central-htpasswd": func(t *testing.T, data secretDataMap) {
+				"central-htpasswd": func(t *testing.T, data types.SecretDataMap) {
 					plaintextPW := string(data[adminPasswordKey])
 					require.NotEmpty(t, plaintextPW)
 
@@ -94,7 +95,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 			},
 			Existing: []*v1.Secret{plaintextPasswordSecret},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"central-htpasswd": func(t *testing.T, data secretDataMap) {
+				"central-htpasswd": func(t *testing.T, data types.SecretDataMap) {
 					htpasswdBytes := data[htpasswdKey]
 					hf, err := htpasswd.ReadHashFile(bytes.NewReader(htpasswdBytes))
 					require.NoError(t, err)
@@ -114,7 +115,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 			},
 			Existing: []*v1.Secret{plaintextPasswordSecret},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"central-htpasswd": func(t *testing.T, data secretDataMap) {
+				"central-htpasswd": func(t *testing.T, data types.SecretDataMap) {
 					require.NotNil(t, data)
 				},
 			},

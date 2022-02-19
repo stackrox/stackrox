@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -16,7 +17,7 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func verifyCentralCert(t *testing.T, data secretDataMap) {
+func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
 	assert.NoError(t, certgen.VerifyServiceCert(data, ca, storage.ServiceType_CENTRAL_SERVICE, ""))
@@ -34,7 +35,7 @@ func verifySecuredClusterServiceCert(serviceType storage.ServiceType) secretVeri
 }
 
 func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) secretVerifyFunc {
-	return func(t *testing.T, data secretDataMap) {
+	return func(t *testing.T, data types.SecretDataMap) {
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
 
@@ -46,7 +47,7 @@ func TestCreateCentralTLS(t *testing.T) {
 	testCA, err := certgen.GenerateCA()
 	require.NoError(t, err)
 
-	centralFileMap := make(secretDataMap)
+	centralFileMap := make(types.SecretDataMap)
 	certgen.AddCAToFileMap(centralFileMap, testCA)
 	require.NoError(t, certgen.IssueCentralCert(centralFileMap, testCA))
 	jwtKey, err := certgen.GenerateJWTSigningKey()
@@ -61,7 +62,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		Data: centralFileMap,
 	}
 
-	scannerFileMap := make(secretDataMap)
+	scannerFileMap := make(types.SecretDataMap)
 	certgen.AddCACertToFileMap(scannerFileMap, testCA)
 	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerSubject, ""))
 
@@ -73,7 +74,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		Data: scannerFileMap,
 	}
 
-	scannerDBFileMap := make(secretDataMap)
+	scannerDBFileMap := make(types.SecretDataMap)
 	certgen.AddCACertToFileMap(scannerDBFileMap, testCA)
 	require.NoError(t, certgen.IssueServiceCert(scannerDBFileMap, testCA, mtls.ScannerDBSubject, ""))
 
