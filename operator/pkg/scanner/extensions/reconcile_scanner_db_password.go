@@ -9,6 +9,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	centralExtensions "github.com/stackrox/rox/operator/pkg/central/extensions"
+	"github.com/stackrox/rox/operator/pkg/common/extensions/testutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,7 +24,7 @@ func ReconcileScannerDBPasswordExtension(client ctrlClient.Client) extensions.Re
 	return centralExtensions.WrapExtension(reconcileScannerDBPassword, client)
 }
 
-func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(statusFunc testutils.UpdateStatusFunc), log logr.Logger) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
 		SecretReconciliation: commonExtensions.NewSecretReconciliation(ctx, client, c),
 		centralObj:           c,
