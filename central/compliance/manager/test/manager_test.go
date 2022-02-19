@@ -116,7 +116,7 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 		{ClusterID: "cluster2", StandardID: "standard1"},
 		{ClusterID: "cluster2", StandardID: "standard2"},
 	})
-	// Test with readOnly Ctx
+	// Test with readOnly ctx
 	s.mockClusterStore.EXPECT().GetClusters(s.readOnlyCtx).Return([]*storage.Cluster{
 		{Id: "cluster1"},
 		{Id: "cluster2"},
