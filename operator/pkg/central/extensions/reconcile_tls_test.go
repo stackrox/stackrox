@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/common/extensions/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
@@ -24,15 +25,15 @@ func verifyCentralCert(t *testing.T, data secretDataMap) {
 	assert.NoError(t, err)
 }
 
-func verifyCentralServiceCert(serviceType storage.ServiceType) secretVerifyFunc {
+func verifyCentralServiceCert(serviceType storage.ServiceType) testutils.SecretVerifyFunc {
 	return verifyServiceCert(serviceType, "")
 }
 
-func verifySecuredClusterServiceCert(serviceType storage.ServiceType) secretVerifyFunc {
+func verifySecuredClusterServiceCert(serviceType storage.ServiceType) testutils.SecretVerifyFunc {
 	return verifyServiceCert(serviceType, services.ServiceTypeToSlugName(serviceType)+"-")
 }
 
-func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) secretVerifyFunc {
+func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) testutils.SecretVerifyFunc {
 	return func(t *testing.T, data secretDataMap) {
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
@@ -84,10 +85,10 @@ func TestCreateCentralTLS(t *testing.T) {
 		Data: scannerDBFileMap,
 	}
 
-	cases := map[string]secretReconciliationTestCase{
+	cases := map[string]testutils.SecretReconciliationTestCase{
 		"When no secrets exist and scanner is disabled, a managed central-tls secret should be created": {
 			Spec: basicSpecWithScanner(false),
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExpectedCreatedSecrets: map[string]testutils.SecretVerifyFunc{
 				"central-tls": verifyCentralCert,
 			},
 		},
@@ -99,7 +100,7 @@ func TestCreateCentralTLS(t *testing.T) {
 					Namespace: testNamespace,
 				},
 			}},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExpectedCreatedSecrets: map[string]testutils.SecretVerifyFunc{
 				"central-tls":           verifyCentralCert,
 				"admission-control-tls": verifySecuredClusterServiceCert(storage.ServiceType_ADMISSION_CONTROL_SERVICE),
 				"collector-tls":         verifySecuredClusterServiceCert(storage.ServiceType_COLLECTOR_SERVICE),
@@ -108,7 +109,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		},
 		"When no secrets exist and scanner is enabled, all managed secrets should be created": {
 			Spec: basicSpecWithScanner(true),
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExpectedCreatedSecrets: map[string]testutils.SecretVerifyFunc{
 				"central-tls":    verifyCentralCert,
 				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
 				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
@@ -121,7 +122,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		"When a valid unmanaged central-tls secret exists and scanner is enabled, managed secrets should be created for scanner": {
 			Spec:     basicSpecWithScanner(true),
 			Existing: []*v1.Secret{existingCentral},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExpectedCreatedSecrets: map[string]testutils.SecretVerifyFunc{
 				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
 				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 			},
@@ -142,7 +143,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			testSecretReconciliation(t, reconcileCentralTLS, c)
+			testutils.TestSecretReconciliation(t, reconcileCentralTLS, c)
 		})
 	}
 }

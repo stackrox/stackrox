@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	centralExtensions "github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/pkg/renderer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -19,7 +20,7 @@ const (
 // ReconcileScannerDBPasswordExtension returns an extension that takes care of creating the scanner-db-password
 // secret ahead of time.
 func ReconcileScannerDBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileScannerDBPassword, client)
+	return centralExtensions.WrapExtension(reconcileScannerDBPassword, client)
 }
 
 func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
@@ -46,15 +47,15 @@ func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
 	return nil
 }
 
-func (r *reconcileScannerDBPasswordExtensionRun) validateScannerDBPasswordData(data secretDataMap, _ bool) error {
+func (r *reconcileScannerDBPasswordExtensionRun) validateScannerDBPasswordData(data commonExtensions.SecretDataMap, _ bool) error {
 	if len(data[scannerDBPasswordKey]) == 0 {
 		return errors.Errorf("scanner-db-password secret must contain a non-empty %q entry", scannerDBPasswordKey)
 	}
 	return nil
 }
 
-func (r *reconcileScannerDBPasswordExtensionRun) generateScannerDBPasswordData() (secretDataMap, error) {
-	data := secretDataMap{
+func (r *reconcileScannerDBPasswordExtensionRun) generateScannerDBPasswordData() (commonExtensions.SecretDataMap, error) {
+	data := commonExtensions.SecretDataMap{
 		scannerDBPasswordKey: []byte(renderer.CreatePassword()),
 	}
 	return data, nil

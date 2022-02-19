@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	"github.com/stackrox/rox/operator/pkg/common/extensions/testutils"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -24,10 +25,10 @@ const (
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
 func ReconcileCentralTLSExtensions(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralTLS, client)
+	return WrapExtension(reconcileCentralTLS, client)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(testutils.UpdateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliation: commonExtensions.NewSecretReconciliation(ctx, client, c),
 		centralObj:           c,

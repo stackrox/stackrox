@@ -7,6 +7,7 @@ import (
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/common/extensions/testutils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,13 +16,11 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
-type updateStatusFunc func(*platform.CentralStatus) bool
-
 var (
 	errUnexpectedGVK = errors.New("invoked reconciliation extension for object with unexpected GVK")
 )
 
-func wrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client) extensions.ReconcileExtension {
+func WrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, statusUpdater func(statusFunc testutils.UpdateStatusFunc), log logr.Logger) error, client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != platform.CentralGVK {
 			log.Error(errUnexpectedGVK, "unable to reconcile central TLS secrets", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
@@ -34,7 +33,7 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 			return errors.Wrap(err, "converting object to Central")
 		}
 
-		wrappedStatusUpdater := func(typedUpdateStatus updateStatusFunc) {
+		wrappedStatusUpdater := func(typedUpdateStatus testutils.UpdateStatusFunc) {
 			statusUpdater(func(uSt *unstructured.Unstructured) bool {
 				var status platform.CentralStatus
 				_ = runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status)

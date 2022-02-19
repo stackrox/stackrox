@@ -10,6 +10,7 @@ import (
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/common/extensions/testutils"
 	utils "github.com/stackrox/rox/operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,10 +32,10 @@ var (
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
 func ReconcilePVCExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcilePVC, client)
+	return WrapExtension(reconcilePVC, client)
 }
 
-func reconcilePVC(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+func reconcilePVC(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc testutils.UpdateStatusFunc), log logr.Logger) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:        ctx,
 		namespace:  central.GetNamespace(),
