@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	coreV1 "k8s.io/api/core/v1"
@@ -13,13 +14,10 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// SecretDataMap represents data stored as part of a secret.
-type SecretDataMap = map[string][]byte
-
 // validateSecretDataFunc validates a secret to determine if the generation should run. The boolean parameter is true if the
 // secret is managed by the running operator.
-type validateSecretDataFunc func(data SecretDataMap, isControllerOwned bool) error
-type generateSecretDataFunc func() (SecretDataMap, error)
+type validateSecretDataFunc func(types.SecretDataMap, bool) error
+type generateSecretDataFunc func() (types.SecretDataMap, error)
 
 type k8sObject interface {
 	metav1.Object

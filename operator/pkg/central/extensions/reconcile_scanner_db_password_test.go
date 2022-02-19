@@ -3,6 +3,7 @@ package extensions
 import (
 	"testing"
 
+	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,7 @@ func TestReconcileScannerDBPassword(t *testing.T) {
 	existingScannerDBPassword := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "scanner-db-password",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Data: map[string][]byte{
 			"password": []byte("foobar"),
@@ -26,7 +27,7 @@ func TestReconcileScannerDBPassword(t *testing.T) {
 	existingMalformedScannerDBPassword := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "scanner-db-password",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Data: map[string][]byte{
 			"no-password": []byte("foobar"),

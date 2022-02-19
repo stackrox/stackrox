@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
@@ -55,7 +56,7 @@ func TestCreateCentralTLS(t *testing.T) {
 	existingCentral := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "central-tls",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Data: centralFileMap,
 	}
@@ -67,7 +68,7 @@ func TestCreateCentralTLS(t *testing.T) {
 	existingScanner := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "scanner-tls",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Data: scannerFileMap,
 	}
@@ -79,7 +80,7 @@ func TestCreateCentralTLS(t *testing.T) {
 	existingScannerDB := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "scanner-db-tls",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Data: scannerDBFileMap,
 	}
@@ -96,7 +97,7 @@ func TestCreateCentralTLS(t *testing.T) {
 			Other: []ctrlClient.Object{&platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secured-cluster-services",
-					Namespace: testNamespace,
+					Namespace: testutils.TestNamespace,
 				},
 			}},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
