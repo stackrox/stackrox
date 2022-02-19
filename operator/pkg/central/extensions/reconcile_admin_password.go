@@ -63,7 +63,7 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret() 
 
 	passwordSecret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: r.passwordSecretName}
-	if err := r.GetClient().Get(r.ctx, key, passwordSecret); err != nil {
+	if err := r.Client().Get(r.ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve admin password secret %q", r.passwordSecretName)
 	}
 

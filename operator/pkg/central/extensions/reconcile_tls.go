@@ -190,7 +190,7 @@ func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix 
 func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent() (bool, error) {
 	list := &platform.SecuredClusterList{}
 	namespace := r.centralObj.GetNamespace()
-	if err := r.Client.List(r.ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
+	if err := r.Client().List(r.ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
 		return false, errors.Wrapf(err, "cannot list securedclusters in namespace %q", namespace)
 	}
 	return len(list.Items) > 0, nil

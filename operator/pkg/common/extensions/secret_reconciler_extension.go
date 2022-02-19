@@ -28,7 +28,7 @@ type k8sObject interface {
 func NewSecretReconciliationExtension(ctx context.Context, client ctrlClient.Client, obj k8sObject) *SecretReconciliationExtension {
 	return &SecretReconciliationExtension{
 		ctx:    ctx,
-		Client: client,
+		client: client,
 		obj:    obj,
 	}
 }
@@ -42,7 +42,7 @@ type SecretReconciliationExtension struct {
 
 // Client returns the client of the extension
 func (r *SecretReconciliationExtension) Client() ctrlClient.Client {
-	return r.Client
+	return r.client
 }
 
 // Namespace returns the namespace of the object the secret is owned by
@@ -57,7 +57,7 @@ func (r *SecretReconciliationExtension) Namespace() string {
 func (r *SecretReconciliationExtension) ReconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.Namespace(), Name: name}
-	if err := r.Client.Get(r.ctx, key, secret); err != nil {
+	if err := r.Client().Get(r.ctx, key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
 		}
@@ -68,7 +68,7 @@ func (r *SecretReconciliationExtension) ReconcileSecret(name string, shouldExist
 			return nil
 		}
 
-		if err := utils.DeleteExact(r.ctx, r.Client, secret); err != nil && !apiErrors.IsNotFound(err) {
+		if err := utils.DeleteExact(r.ctx, r.Client(), secret); err != nil && !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "deleting %s secret", name)
 		}
 		return nil
@@ -112,12 +112,12 @@ func (r *SecretReconciliationExtension) ReconcileSecret(name string, shouldExist
 	}
 
 	if secret == nil {
-		if err := r.Client.Create(r.ctx, newSecret); err != nil {
+		if err := r.Client().Create(r.ctx, newSecret); err != nil {
 			return errors.Wrapf(err, "creating new %s secret", name)
 		}
 	} else {
 		newSecret.ResourceVersion = secret.ResourceVersion
-		if err := r.Client.Update(r.ctx, newSecret); err != nil {
+		if err := r.Client().Update(r.ctx, newSecret); err != nil {
 			return errors.Wrapf(err, "updating %s secret because existing instance failed validation", secret.Name)
 		}
 	}
