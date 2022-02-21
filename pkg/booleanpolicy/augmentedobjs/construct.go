@@ -208,5 +208,30 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 			return nil, utils.Should(err)
 		}
 	}
+
+	// Since policies query for component and version as a single compound field, we simulate it by creating a
+	// "composite" component and version field.
+	verified := false
+	for _, result := range image.GetSignatureVerificationData().GetResults() {
+		if result.GetVerifierId() != "" && result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+			verified = true
+			break
+		}
+	}
+	/*if verifier == "" {
+		return obj, nil
+	}*/
+
+	// Since policies query for image verification status as a single boolean field, we add it to the image here.
+	err := obj.AddPlainObjAt(
+		&imageSignatureVerification{
+			Status: verified,
+		},
+		pathutil.FieldStep(imageSignatureVerifiedKey),
+	)
+	if err != nil {
+		return nil, utils.Should(err)
+	}
+
 	return obj, nil
 }

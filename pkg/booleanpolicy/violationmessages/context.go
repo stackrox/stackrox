@@ -14,7 +14,7 @@ type ContextQueryFields map[storage.LifecycleStage]set.FrozenStringSet
 var (
 	ImageContextFields = newContextFields(
 		nil,
-		[]string{augmentedobjs.ContainerNameCustomTag})
+		[]string{augmentedobjs.ContainerNameCustomTag, augmentedobjs.ImageSignatureVerifiedCustomTag})
 	VulnContextFields = newContextFields(
 		[]string{search.CVE.String(), search.CVSS.String(), search.Severity.String(), augmentedobjs.ComponentAndVersionCustomTag},
 		[]string{augmentedobjs.ContainerNameCustomTag, search.CVE.String(), search.CVSS.String(), search.Severity.String(), augmentedobjs.ComponentAndVersionCustomTag})

@@ -156,6 +156,16 @@ func imageWithOS(os string) *storage.Image {
 	}
 }
 
+func imageWithSignatureVerificationResults(name string, results []*storage.ImageSignatureVerificationResult) *storage.Image {
+	return &storage.Image{
+		Id:   uuid.NewV4().String(),
+		Name: &storage.ImageName{FullName: name, Remote: "ASFASF"},
+		SignatureVerificationData: &storage.ImageSignatureVerificationData{
+			Results: results,
+		},
+	}
+}
+
 func deploymentWithImageAnyID(img *storage.Image) *storage.Deployment {
 	return deploymentWithImage(uuid.NewV4().String(), img)
 }
@@ -2087,6 +2097,65 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 					imgMatched.Add(img.Scan.OperatingSystem)
 					require.Len(t, violations.AlertViolations, 1)
 					assert.Equal(t, fmt.Sprintf("Image has base OS '%s'", img.Scan.OperatingSystem), violations.AlertViolations[0].GetMessage())
+				}
+			}
+			assert.ElementsMatch(t, imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
+	var images = []*storage.Image{
+		imageWithSignatureVerificationResults("verified_image", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "verifier0",
+			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+		}}),
+		imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "verifier1",
+			Status:     storage.ImageSignatureVerificationResult_UNSET,
+		}}),
+		imageWithSignatureVerificationResults("some_verified_image", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "verifier2",
+			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+		}, {
+			VerifierId: "verifier3",
+			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+		}}),
+	}
+
+	for _, testCase := range []struct {
+		value           string
+		expectedMatches []string
+	}{
+		{
+			value:           "true",
+			expectedMatches: []string{"verified_image", "some_verified_image"},
+		},
+		{
+			value:           "false",
+			expectedMatches: []string{"unverified_image"},
+		},
+	} {
+		c := testCase
+
+		suite.T().Run(fmt.Sprintf("ImageMatcher %+v", c), func(t *testing.T) {
+			imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageSignatureVerified, c.value, false))
+			require.NoError(t, err)
+			imgMatched := set.NewStringSet()
+			for _, img := range images {
+				violations, err := imgMatcher.MatchImage(nil, img)
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					imgMatched.Add(img.GetName().GetFullName())
+					require.Len(t, violations.AlertViolations, 1)
+					status := "unverified"
+					for _, r := range img.GetSignatureVerificationData().GetResults() {
+						if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+							status = "verified"
+							break
+						}
+					}
+					assert.Equal(t, fmt.Sprintf("Image signature is %s", status), violations.AlertViolations[0].GetMessage())
 				}
 			}
 			assert.ElementsMatch(t, imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
