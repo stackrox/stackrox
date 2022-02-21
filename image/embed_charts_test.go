@@ -31,7 +31,7 @@ func TestManager(t *testing.T) {
 type embedTestSuite struct {
 	suite.Suite
 
-	image       *Image
+	image *Image
 }
 
 func (s *embedTestSuite) SetupTest() {
