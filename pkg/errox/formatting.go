@@ -1,69 +1,59 @@
 package errox
 
-import "fmt"
+import (
+	"strings"
+	"text/template"
+)
 
-type parameterizedError func(args ...interface{}) *roxError
-
-// New creates an error based on another error, e.g., an existing sentinel
-// error, but with the personalized error message. Essentially, it allows to
-// preserve the error base error in the chain but hide its message.
+// New creates an error based on the existing roxError, but with the
+// personalized error message. Essentially, it allows for preserving the error
+// base error in the chain but hide its message.
 //
 // Example:
-//     myPackageError := errox.New(errox.NotFound, "file not found")
-//     myPackageError.Error() == "file not found" // true
-//     errors.Is(myPackageError, errox.NotFound)  // true
-func New(base error, message string) *roxError {
-	return &roxError{message, base}
+//     var ErrRecordNotFound := errox.NotFound.New("record not found")
+//     ErrRecordNotFound.Error() == "record not found" // true
+//     errors.Is(ErrRecordNotFound, errox.NotFound)    // true
+func (e *roxError) New(message string) *roxError {
+	return &roxError{message, e}
 }
 
-// Newf helps creating a parameterized error, based on another error, e.g.,
-// an existing sentinel error. The provided format specifier defines the
-// expected arguments of the returned function.
-//
+// Template helps creating a parameterized error message. The template text
+// defines the expected argument of the returned function.
 // Example:
-//     myPackageError := errox.Newf(errox.NotFound, "file '%s' not found")
-//     myPackageError("sh").Error() == "file 'sh' not found" // true
-//     errors.Is(myPackageError, errox.NotFound)             // true
-func Newf(base error, format string) parameterizedError {
-	return func(args ...interface{}) *roxError {
-		return New(base, fmt.Sprintf(format, args...))
+//     var ErrFileNotFound = errox.NotFound.Template("file '{{.}}' not found")
+//     ErrFileNotFound("sh").Error() == "file 'sh' not found" // true
+//     errors.Is(ErrFileNotFound, errox.NotFound)             // true
+func (e *roxError) Template(text string) func(arg interface{}) *roxError {
+	t := template.Must(template.New(text).Parse(text))
+	return func(arg interface{}) *roxError {
+		b := strings.Builder{}
+		if err := t.Execute(&b, arg); err != nil {
+			return e
+		}
+		return e.New(b.String())
 	}
 }
 
-// Explain adds an explanation to the error and returns a new error. It appends
-// the provided explanation to the original error message.
+var causeTemplate = template.Must(template.New("ErrorCause").Parse(
+	"{{.Error}}: {{.Cause}}"))
+
+// CausedBy adds a cause to the roxError. The resulting message is a combination
+// of the rox error and the cause following a colon.
 //
 // Example:
-//     return Explain(err, "all workers are busy")
-func Explain(err error, explanation string) error {
-	return fmt.Errorf("%w, %s", err, explanation)
-}
-
-// Explainf adds an explanation to the error and returns a new error. It appends
-// the provided formatted explanation to the original error message.
-//
-// Example:
-//     return Explainf(err, "all %s are busy", "workers")
-func Explainf(err error, format string, args ...interface{}) error {
-	return Explain(err, fmt.Sprintf(format, args...))
-}
-
-// New is a syntactic sugar for New(e, message).
-func (e *roxError) New(message string) *roxError {
-	return New(e, message)
-}
-
-// Newf is a syntactic sugar for Newf(e, message).
-func (e *roxError) Newf(format string) parameterizedError {
-	return Newf(e, format)
-}
-
-// Explain is a syntactic sugar for Explain(e, message).
-func (e *roxError) Explain(explanation string) error {
-	return Explain(e, explanation)
-}
-
-// Explainf is a syntactic sugar for Explainf(e, format, args...).
-func (e *roxError) Explainf(format string, args ...interface{}) error {
-	return Explainf(e, format, args...)
+//     return errox.InvalidArgument.CausedBy(err)
+// or
+//     return errox.InvalidArgument.CausedBy("unknown parameter")
+func (e *roxError) CausedBy(cause interface{}) error {
+	var b strings.Builder
+	if err := causeTemplate.Execute(&b, struct {
+		Error *roxError
+		Cause interface{}
+	}{
+		Error: e,
+		Cause: cause,
+	}); err != nil {
+		return e
+	}
+	return e.New(b.String())
 }
