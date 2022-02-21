@@ -24,7 +24,7 @@ type k8sObject interface {
 	schema.ObjectKind
 }
 
-// NewSecretReconciliationExtension creates a new SecretReconciliationExtension
+// NewSecretReconciliationExtension creates a new SecretReconciliationExtension.
 func NewSecretReconciliationExtension(ctx context.Context, client ctrlClient.Client, obj k8sObject) *SecretReconciliationExtension {
 	return &SecretReconciliationExtension{
 		ctx:    ctx,
