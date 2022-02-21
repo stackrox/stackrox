@@ -317,7 +317,7 @@ non-standard environments:
 |`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
 |`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |
 [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-|`scanner.disable`| Allows to enable a scanner deployed with Secured Cluster to scan images stored in cluster local registries. Currently only supported on OpenShift clusters. | `true` |
+|`scanner.disable`| Scan images stored in the cluster's local registries. This variable is only available for the OpenShift Container Platform. | `true` |
 [<- end >]
 
 ### Default resources
