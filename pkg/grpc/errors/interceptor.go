@@ -65,9 +65,6 @@ func logErrorIfInternal(err error) {
 func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
 	grpcStatus := ErrToGrpcStatus(err)
-	if grpcStatus.Code() == codes.Internal {
-		log.Errorf("Internal error occured: %+v", err)
-	}
 	return resp, grpcStatus.Err()
 }
 
@@ -75,9 +72,6 @@ func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, info *grpc
 func ErrorToGrpcCodeStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	err := handler(srv, ss)
 	grpcStatus := ErrToGrpcStatus(err)
-	if grpcStatus.Code() == codes.Internal {
-		log.Errorf("Internal error occured: %+v", err)
-	}
 	return grpcStatus.Err()
 }
 

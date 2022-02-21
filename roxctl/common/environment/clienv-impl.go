@@ -4,7 +4,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
@@ -33,8 +32,7 @@ func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTT
 
 // GRPCConnection returns the common.GetGRPCConnection
 func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	connection, err := common.GetGRPCConnection()
-	return connection, errors.Wrap(err, "could not establish gRPC connection")
+	return common.GetGRPCConnection()
 }
 
 // InputOutput returns the IO associated with the CLI Environment which holds all relevant input / output streams

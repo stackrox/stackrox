@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -81,7 +80,7 @@ func (cmd *centralDebugLogLevelCommand) getLogLevel() error {
 	client := v1.NewDebugServiceClient(conn)
 	logResponse, err := client.GetLogLevel(ctx, &v1.GetLogLevelRequest{Modules: cmd.modules})
 	if err != nil {
-		return errors.Wrap(err, "could not get log level")
+		return err
 	}
 
 	cmd.printGetLogLevelResponse(logResponse)
@@ -122,7 +121,7 @@ func (cmd *centralDebugLogLevelCommand) setLogLevel() error {
 
 	_, err = client.SetLogLevel(ctx, &v1.LogLevelRequest{Level: cmd.level, Modules: cmd.modules})
 	if err != nil {
-		return errors.Wrap(err, "could not set log level")
+		return err
 	}
 
 	cmd.env.Logger().PrintfLn("Successfully set log level")
