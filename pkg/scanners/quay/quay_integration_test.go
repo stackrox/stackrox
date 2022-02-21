@@ -18,6 +18,7 @@ const (
 )
 
 func TestQuayIntegrationSuite(t *testing.T) {
+	t.Skip("See ROX-9448 for re-enabling")
 	suite.Run(t, new(QuayIntegrationSuite))
 }
 
