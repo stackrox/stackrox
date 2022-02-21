@@ -71,3 +71,22 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 	}
 	return results, allVerifyErrs
 }
+
+// VerifyAgainstSignatureIntegrations is a wrapper that will verify an image signature against a list of
+// storage.SignatureIntegration using VerifyAgainstSignatureIntegration.
+// It will return a map of integrations and their related results and any error that may have occurred.
+func VerifyAgainstSignatureIntegrations(ctx context.Context, integrations []*storage.SignatureIntegration,
+	image *storage.Image) (map[*storage.SignatureIntegration][]storage.ImageSignatureVerificationResult, error) {
+	results := make(map[*storage.SignatureIntegration][]storage.ImageSignatureVerificationResult, len(integrations))
+
+	var allVerifyErrs error
+
+	for _, integration := range integrations {
+		verificationResults, err := VerifyAgainstSignatureIntegration(ctx, integration, image)
+		results[integration] = verificationResults
+		if err != nil {
+			allVerifyErrs = multierror.Append(allVerifyErrs, err)
+		}
+	}
+	return results, allVerifyErrs
+}
