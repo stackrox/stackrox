@@ -43,6 +43,9 @@ type enricherImpl struct {
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
 
+	signatureLimiter *rate.Limiter
+	signatureCache   expiringcache.Cache
+
 	imageGetter imageGetter
 
 	asyncRateLimiter *rate.Limiter

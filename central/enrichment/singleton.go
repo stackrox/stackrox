@@ -29,11 +29,17 @@ var (
 	metadataCache     expiringcache.Cache
 
 	imageCacheExpiryDuration = 4 * time.Hour
+
+	imageSignatureCacheOnce sync.Once
+	imageSignatureCache     expiringcache.Cache
+
+	imageSignatureCacheExpiryDuration = 4 * time.Hour
 )
 
 func initialize() {
 	ie = imageEnricher.New(cveDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
-		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton())
+		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
+		ImageSignatureCacheSingleton())
 	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
@@ -58,6 +64,13 @@ func ImageMetadataCacheSingleton() expiringcache.Cache {
 		metadataCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration, expiringcache.UpdateExpirationOnGets)
 	})
 	return metadataCache
+}
+
+func ImageSignatureCacheSingleton() expiringcache.Cache {
+	imageSignatureCacheOnce.Do(func() {
+		imageSignatureCache = expiringcache.NewExpiringCache(imageSignatureCacheExpiryDuration, expiringcache.UpdateExpirationOnGets)
+	})
+	return imageSignatureCache
 }
 
 // NodeEnricherSingleton provides the singleton NodeEnricher to use.
