@@ -45,18 +45,12 @@ var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 // It will return an error if the provided public keys could not be parsed.
 func newPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*publicKeyVerifier, error) {
 	publicKeys := config.GetPublicKeys()
-	pemEncPublicKeys := make([]string, 0, len(publicKeys))
+	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
-		pemEncPublicKeys = append(pemEncPublicKeys, publicKey.GetPublicKeyPemEnc())
-	}
-
-	parsedKeys := make([]crypto.PublicKey, 0, len(pemEncPublicKeys))
-	for _, pemKey := range pemEncPublicKeys {
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
-		keyBlock, rest := pem.Decode([]byte(pemKey))
+		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
 		if keyBlock == nil || keyBlock.Type != PublicKeyType || len(rest) > 0 {
-			return nil, errox.NewErrInvariantViolation(
-				"failed to decode PEM block containing public key")
+			return nil, errox.Newf(errox.InvariantViolation, "failed to decode PEM block containing public key %q", publicKey.GetName())
 		}
 
 		parsedKey, err := x509.ParsePKIXPublicKey(keyBlock.Bytes)
