@@ -57,9 +57,10 @@ func TestNewPublicKeyVerifier(t *testing.T) {
 }
 
 func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
-	const b64PublicKey = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFMDRzb0" +
-		"FvTnlnUmhheXRDdHlnUGN3c1ArNkVpbgpZb0R2L0JKeDFUOVdtdHNBTmgySHBsUlI2NkZibSszT2pGdWFoMkloRnVmUGhEbDZhODVJM3ltV" +
-		"ll3PT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+	const pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
+		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
+		"YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==\n" +
+		"-----END PUBLIC KEY-----"
 	const b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
 		"kAnXI="
 	const b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
@@ -73,7 +74,7 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "publicKey",
-				PublicKeyPemEnc: b64PublicKey,
+				PublicKeyPemEnc: pemPublicKey,
 			},
 		},
 	})
@@ -89,9 +90,10 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 }
 
 func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
-	const b64NonMatchingPubKey = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0" +
-		"FFV2kzdFN4dkJIN1MvV1VtdjQwOG5LUHhOU0p4NgordzdjOUZ0RlNrNmNveHgyVlViUHkvWDNVUzNjWGZrL3pWQStHN05iWEdCWWhBR2FPc" +
-		"3BzNVpLamtRPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+	const pemNonMatchingPubKey = "-----BEGIN PUBLIC KEY-----\n" +
+		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6\n" +
+		"+w7c9FtFSk6coxx2VUbPy/X3US3cXfk/zVA+G7NbXGBYhAGaOsps5ZKjkQ==\n" +
+		"-----END PUBLIC KEY-----"
 	const b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
 		"kAnXI="
 	const b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
@@ -105,7 +107,7 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "Non matching key",
-				PublicKeyPemEnc: b64NonMatchingPubKey,
+				PublicKeyPemEnc: pemNonMatchingPubKey,
 			},
 		},
 	})
