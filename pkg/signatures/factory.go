@@ -33,7 +33,7 @@ func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (Signatur
 // VerifyAgainstSignatureIntegration is a wrapper that will verify an image signature with SignatureVerifier's created
 // based off of the configuration within the storage.SignatureIntegration.
 // It will return an error if the creation of SignatureVerifier's fails or the verification of the signature fails.
-func VerifyAgainstSignatureIntegration(ctx context.Context, integration storage.SignatureIntegration, image *storage.Image) ([]storage.ImageSignatureVerificationResult, error) {
+func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration, image *storage.Image) ([]storage.ImageSignatureVerificationResult, error) {
 	verifiers := make([]SignatureVerifier, 0, len(integration.GetSignatureVerificationConfigs()))
 	for _, config := range integration.GetSignatureVerificationConfigs() {
 		verifier, err := NewSignatureVerifier(config)
@@ -50,7 +50,7 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration storage.
 		// We do not currently support specifying which specific method within an image signature integration should
 		// be successful. Hence, short-circuit on the first successfully verified signature within an image signature
 		// integration.
-		if err == nil {
+		if res == storage.ImageSignatureVerificationResult_VERIFIED {
 			return []storage.ImageSignatureVerificationResult{
 				{
 					VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
@@ -67,7 +67,7 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration storage.
 			Status:           res,
 			Description:      err.Error(),
 		})
-		allVerifyErrs = multierror.Append(err)
+		allVerifyErrs = multierror.Append(allVerifyErrs, err)
 	}
 	return results, allVerifyErrs
 }

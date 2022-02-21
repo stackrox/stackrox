@@ -10,7 +10,6 @@ import (
 )
 
 func TestVerifyAgainstSignatureIntegration(t *testing.T) {
-	// Static values used for testing.
 	const (
 		// b64MatchingPubKey matches the b64Signature.
 		b64MatchingPubKey = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFM" +
@@ -57,12 +56,12 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		integration storage.SignatureIntegration
+		integration *storage.SignatureIntegration
 		results     []storage.ImageSignatureVerificationResult
 		failure     bool
 	}{
 		"successful verification": {
-			integration: storage.SignatureIntegration{
+			integration: &storage.SignatureIntegration{
 				Id: "successful",
 				SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
 					successfulCosignConfig,
@@ -76,7 +75,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 			},
 		},
 		"failing verification": {
-			integration: storage.SignatureIntegration{
+			integration: &storage.SignatureIntegration{
 				Id: "failure",
 				SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
 					failingCosignConfig,
@@ -87,12 +86,12 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 				{
 					VerifierId:  "failure",
 					Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-					Description: "failing",
+					Description: "1 error occurred:\n\t* failed to verify signature\n\n",
 				},
 			},
 		},
 		"mix of failing and successful verification": {
-			integration: storage.SignatureIntegration{
+			integration: &storage.SignatureIntegration{
 				Id: "success-failure",
 				SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
 					failingCosignConfig, successfulCosignConfig,
@@ -106,7 +105,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 			},
 		},
 		"multiple failing verification results": {
-			integration: storage.SignatureIntegration{
+			integration: &storage.SignatureIntegration{
 				Id: "multiple-failures",
 				SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
 					failingCosignConfig, failingCosignConfig,
@@ -115,14 +114,14 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 			failure: true,
 			results: []storage.ImageSignatureVerificationResult{
 				{
-					VerifierId: "multiple-failures",
-					Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-					Description: "failing",
+					VerifierId:  "multiple-failures",
+					Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+					Description: "1 error occurred:\n\t* failed to verify signature\n\n",
 				},
 				{
-					VerifierId: "multiple-failures",
-					Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-					Description: "failing",
+					VerifierId:  "multiple-failures",
+					Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+					Description: "1 error occurred:\n\t* failed to verify signature\n\n",
 				},
 			},
 		},
@@ -141,9 +140,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 			for i, res := range c.results {
 				assert.Equal(t, res.VerifierId, results[i].VerifierId)
 				assert.Equal(t, res.Status, results[i].Status)
-				if res.Description != "" {
-					assert.NotEmpty(t, results[i].Description)
-				}
+				assert.Equal(t, res.Description, results[i].Description)
 			}
 		})
 	}
