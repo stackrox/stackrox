@@ -70,6 +70,12 @@ export const validationSchema = yup.object().shape({
             .array()
             .of(yup.string())
             .test('valid-emails-test', '', (emails, { createError }) => {
+                if (!emails?.length) {
+                    return createError({
+                        message: 'At least one email is required',
+                        path: 'emailConfig.mailingLists',
+                    });
+                }
                 let isValid = true;
 
                 emails?.forEach((email) => {
