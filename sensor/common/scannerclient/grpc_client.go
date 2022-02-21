@@ -23,7 +23,7 @@ type client struct {
 }
 
 // dial Scanner and return a new client.
-// dial is non-blocking.
+// dial is non-blocking and returns a non-nil error upon configuration error.
 func dial(endpoint string) (*client, error) {
 	if endpoint == "" {
 		return nil, errors.New("Invalid Scanner endpoint (empty)")
