@@ -26,7 +26,7 @@ type secretReconcilerExtensionTestSuite struct {
 	centralObj *platform.Central
 	client     ctrlClient.Client
 
-	reconcileExt *SecretReconciliationExtension
+	reconcileExt *SecretReconciliation
 }
 
 func TestSecretReconcilerExtension(t *testing.T) {
@@ -81,7 +81,7 @@ func (s *secretReconcilerExtensionTestSuite) SetupTest() {
 
 	s.client = fake.NewClientBuilder().WithObjects(existingSecret, existingOwnedSecret).Build()
 
-	s.reconcileExt = NewSecretReconciliationExtension(context.Background(), s.client, s.centralObj)
+	s.reconcileExt = NewSecretReconciliation(context.Background(), s.client, s.centralObj)
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNothing() {

@@ -29,15 +29,15 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client) extensions.Reconcil
 
 func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
-		SecretReconciliationExtension: commonExtensions.NewSecretReconciliationExtension(ctx, client, c),
-		centralObj:                    c,
-		ctx:                           ctx,
+		SecretReconciliation: commonExtensions.NewSecretReconciliation(ctx, client, c),
+		centralObj:           c,
+		ctx:                  ctx,
 	}
 	return run.Execute()
 }
 
 type createCentralTLSExtensionRun struct {
-	*commonExtensions.SecretReconciliationExtension
+	*commonExtensions.SecretReconciliation
 
 	ca         mtls.CA
 	centralObj *platform.Central

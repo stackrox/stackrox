@@ -33,16 +33,16 @@ func ReconcileAdminPasswordExtension(client ctrlClient.Client) extensions.Reconc
 
 func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileAdminPasswordExtensionRun{
-		SecretReconciliationExtension: commonExtensions.NewSecretReconciliationExtension(ctx, client, c),
-		statusUpdater:                 statusUpdater,
-		centralObj:                    c,
-		ctx:                           ctx,
+		SecretReconciliation: commonExtensions.NewSecretReconciliation(ctx, client, c),
+		statusUpdater:        statusUpdater,
+		centralObj:           c,
+		ctx:                  ctx,
 	}
 	return run.Execute()
 }
 
 type reconcileAdminPasswordExtensionRun struct {
-	*commonExtensions.SecretReconciliationExtension
+	*commonExtensions.SecretReconciliation
 	statusUpdater func(updateStatusFunc)
 	ctx           context.Context
 

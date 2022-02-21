@@ -24,37 +24,40 @@ type k8sObject interface {
 	schema.ObjectKind
 }
 
-// NewSecretReconciliationExtension creates a new SecretReconciliationExtension.
-func NewSecretReconciliationExtension(ctx context.Context, client ctrlClient.Client, obj k8sObject) *SecretReconciliationExtension {
-	return &SecretReconciliationExtension{
+// NewSecretReconciliation creates a new SecretReconciliation. It takes a context and controller client.
+// The obj is the object which is owner object (i.e. a custom resource).
+func NewSecretReconciliation(ctx context.Context, client ctrlClient.Client, obj k8sObject) *SecretReconciliation {
+	return &SecretReconciliation{
 		ctx:    ctx,
 		client: client,
 		obj:    obj,
 	}
 }
 
-// SecretReconciliationExtension reconciles a secret.
-type SecretReconciliationExtension struct {
+// SecretReconciliation reconciles a secret.
+type SecretReconciliation struct {
 	ctx    context.Context
 	client ctrlClient.Client
 	obj    k8sObject
 }
 
 // Client returns the controller-runtime client used by the extension.
-func (r *SecretReconciliationExtension) Client() ctrlClient.Client {
+func (r *SecretReconciliation) Client() ctrlClient.Client {
 	return r.client
 }
 
 // Namespace returns the namespace of the object the secret is owned by
-func (r *SecretReconciliationExtension) Namespace() string {
+func (r *SecretReconciliation) Namespace() string {
 	return r.obj.GetNamespace()
 }
 
-// ReconcileSecret reconciles a secret with the given name. If the validateSecretDataFunc returns true the generateSecretDataFunc
-// is called to return the secret data.
-// fixExisting is set if an already existing secret should be fixed. This is not always the case, i.e. if a password or certificate
-// often should not be overwritten.
-func (r *SecretReconciliationExtension) ReconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
+// ReconcileSecret reconciles a secret with the given name, by making sure its existence matches "shouldExist" value.
+// If the validateSecretDataFunc returns an error, then this function calls generateSecretDataFunc to get new secret data and updates the secret to "fix" it.
+// If fixExisting is set to false, an already existing secret will never be overwritten. This is useful only when
+// changing an invalid secret can bring more harm than good.
+// In this case this function will return an error if "validate" rejects the secret.
+// Also note that (regardless of the value of "fixExisting") this function will never touch a secret which is not owned by the object passed to the constructor.
+func (r *SecretReconciliation) ReconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.Namespace(), Name: name}
 	if err := r.Client().Get(r.ctx, key, secret); err != nil {
