@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	appsApiv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,6 +24,7 @@ import (
 var (
 	sensorNamespace      = "stackrox-ns"
 	sensorReplicasetName = "sensor-replicaset"
+	sensorPodName        = "sensor-pod"
 )
 
 type localScannerTLSIssuerFixture struct {
@@ -45,7 +47,7 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig testK8sClientConfig) *local
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	fixture.issuer = &localScannerTLSIssuerImpl{
 		sensorNamespace:                 sensorNamespace,
-		podOwnerName:                    sensorReplicasetName,
+		sensorPodName:                   sensorPodName,
 		k8sClient:                       fixture.k8sClient,
 		msgToCentralC:                   msgToCentralC,
 		msgFromCentralC:                 msgFromCentralC,
@@ -133,14 +135,24 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 }
 
 func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *testing.T) {
-	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{skipSensorReplicaSet: true})
-	fixture.refresher.On("Stop").Once()
-	fixture.requester.On("Stop").Once()
+	testCases := map[string]struct {
+		testK8sClientConfig testK8sClientConfig
+	}{
+		"sensor replica set missing": {testK8sClientConfig: testK8sClientConfig{skipSensorReplicaSet: true}},
+		"sensor pod missing":         {testK8sClientConfig: testK8sClientConfig{skipSensorPod: true}},
+	}
+	for tcName, tc := range testCases {
+		t.Run(tcName, func(t *testing.T) {
+			fixture := newLocalScannerTLSIssuerFixture(tc.testK8sClientConfig)
+			fixture.refresher.On("Stop").Once()
+			fixture.requester.On("Stop").Once()
 
-	startErr := fixture.issuer.Start()
+			startErr := fixture.issuer.Start()
 
-	assert.Error(t, startErr)
-	fixture.assertExpectations(t)
+			assert.Error(t, startErr)
+			fixture.assertExpectations(t)
+		})
+	}
 }
 
 func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
@@ -208,6 +220,25 @@ func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
 			},
 		}
 		objects = append(objects, sensorReplicaSet)
+
+		if !conf.skipSensorPod {
+			sensorReplicaSetGVK := sensorReplicaSet.GroupVersionKind()
+			sensorPod := &v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      sensorPodName,
+					Namespace: sensorNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: sensorReplicaSetGVK.GroupVersion().String(),
+							Kind:       sensorReplicaSet.Kind,
+							Name:       sensorReplicaSet.GetName(),
+							UID:        sensorReplicaSet.GetUID(),
+						},
+					},
+				},
+			}
+			objects = append(objects, sensorPod)
+		}
 	}
 
 	k8sClient := fake.NewSimpleClientset(objects...)
@@ -216,8 +247,10 @@ func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
 }
 
 type testK8sClientConfig struct {
-	// if true then no sensor replica set will be added to the test client.
+	// if true then no sensor replica set and no sensor pod will be added to the test client.
 	skipSensorReplicaSet bool
+	// if true then no sensor pod set will be added to the test client.
+	skipSensorPod bool
 }
 
 type certificateRequesterMock struct {
