@@ -196,8 +196,8 @@ func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Co
 	blockOwnerDeletion := false
 	isController := false
 	return &metav1.OwnerReference{
-		APIVersion:         appsApiv1.SchemeGroupVersion.String(),
-		Kind:               "Deployment",
+		APIVersion:         replicaSetOwner.APIVersion,
+		Kind:               replicaSetOwner.Kind,
 		Name:               replicaSetOwner.Name,
 		UID:                replicaSetOwner.UID,
 		BlockOwnerDeletion: &blockOwnerDeletion,
