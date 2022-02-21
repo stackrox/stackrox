@@ -25,8 +25,7 @@ type client struct {
 // dial Scanner and return a new client.
 func dial(endpoint string) (*client, error) {
 	if endpoint == "" {
-		log.Info("No Scanner connection desired")
-		return nil, nil
+		return nil, errors.New("Invalid Scanner endpoint (empty)")
 	}
 
 	endpoint = strings.TrimPrefix(endpoint, "https://")
@@ -46,13 +45,15 @@ func dial(endpoint string) (*client, error) {
 		return nil, errors.Wrap(err, "failed to connect to Scanner")
 	}
 
-	log.Infof("Connecting to Scanner at %s", endpoint)
+	log.Infof("Dialing Scanner at %s", endpoint)
 
 	return &client{
 		client: scannerV1.NewImageScanServiceClient(conn),
 		conn:   conn,
 	}, nil
 }
+
+func ()
 
 // GetImageAnalysis retrieves the image analysis results for the given image.
 // The steps are as follows:

@@ -1,16 +1,9 @@
 import * as api from '../../../constants/apiEndpoints';
 import { url, selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { getHelperElementByLabel, getInputByLabel } from '../../../helpers/formHelpers';
 
 describe('Vulnmanagement reports', () => {
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_VULN_REPORTING')) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     describe('creating a report', () => {
@@ -30,6 +23,9 @@ describe('Vulnmanagement reports', () => {
             cy.intercept('GET', api.report.configurations, { reportConfigs: [] }).as(
                 'getReportConfigurations'
             );
+            cy.intercept('GET', api.report.configurationsCount, { count: 0 }).as(
+                'getReportConfigurationsCount'
+            );
             cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
             cy.intercept('GET', api.integrations.notifiers, notifiers).as('getNotifiers');
             cy.intercept('GET', api.accessScopes.list, resourcesScopes).as('getResourceScopes');
@@ -41,11 +37,8 @@ describe('Vulnmanagement reports', () => {
             cy.get(selectors.vulnManagementExpandedReportingNavLink).click({ force: true });
             cy.url().should('contain', url.reporting.list);
 
-            // navigate by button
             cy.wait('@getReportConfigurations');
-
-            // TODO: change this 2nd wait to await the report count API endpoint, after it is available
-            cy.wait('@getReportConfigurations');
+            cy.wait('@getReportConfigurationsCount');
 
             cy.wait('@searchOptions');
 

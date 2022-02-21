@@ -13,8 +13,13 @@ var (
 	SensorEndpoint = RegisterSetting("ROX_SENSOR_ENDPOINT", WithDefault("sensor.stackrox.svc:443"))
 
 	// ScannerEndpoint is used to communicate the scanner endpoint to other services in the same cluster.
+	// This is typically used for Sensor to communicate with a local Scanner-slim's HTTP server.
+	ScannerEndpoint = RegisterSetting("ROX_SCANNER_ENDPOINT", WithDefault("scanner-slim.stackrox.svc:8080"))
+
+	// ScannerGRPCEndpoint is used to communicate the scanner endpoint to other services in the same cluster.
 	// This is typically used for Sensor to communicate with a local Scanner-slim's gRPC server.
-	// There is no default, as Scanner-slim is not deployed in all environments.
-	// This should only be set if there is a Scanner-slim deployed to the same cluster as Sensor.
-	ScannerEndpoint = RegisterSetting("ROX_SCANNER_GRPC_ENDPOINT")
+	ScannerGRPCEndpoint = RegisterSetting("ROX_SCANNER_GRPC_ENDPOINT", WithDefault("scanner-slim.stackrox.svc:8443"))
+
+	// UseLocalScanner is used to specify if Sensor should attempt to scan images via a local Scanner.
+	UseLocalScanner = RegisterBooleanSetting("ROX_USE_LOCAL_SCANNER", false)
 )

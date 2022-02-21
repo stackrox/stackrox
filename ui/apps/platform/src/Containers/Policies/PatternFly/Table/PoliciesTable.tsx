@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
@@ -109,6 +110,7 @@ function PoliciesTable({
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
+    const history = useHistory();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
     >([]);
@@ -158,6 +160,20 @@ function PoliciesTable({
     function onSort(e, index, direction) {
         setActiveSortIndex(index);
         setActiveSortDirection(direction);
+    }
+
+    function onEditPolicy(id: string) {
+        history.push({
+            pathname: `${policiesBasePath}/${id}`,
+            search: 'action=edit',
+        });
+    }
+
+    function onClonePolicy(id: string) {
+        history.replace({
+            pathname: `${policiesBasePath}/${id}`,
+            search: 'action=clone',
+        });
     }
 
     const selectedIds = getSelectedIds();
@@ -389,6 +405,14 @@ function PoliciesTable({
                             };
                             const actionItems = hasWriteAccessForPolicy
                                 ? [
+                                      {
+                                          title: 'Edit policy',
+                                          onClick: () => onEditPolicy(id),
+                                      },
+                                      {
+                                          title: 'Clone policy',
+                                          onClick: () => onClonePolicy(id),
+                                      },
                                       disabled
                                           ? {
                                                 title: 'Enable policy',
