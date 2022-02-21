@@ -37,6 +37,30 @@ func PanicOnInvariantViolationStreamInterceptor(srv interface{}, ss grpc.ServerS
 	return err
 }
 
+// LogInternalErrorInterceptor logs internal errors.
+// Note: this interceptor should ONLY be used in dev builds because Internal is the default code,
+// so all errors that have not been assigned a class will appear in the log.
+func LogInternalErrorInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	resp, err := handler(ctx, req)
+	logErrorIfInternal(err)
+	return resp, err
+}
+
+// LogInternalErrorStreamInterceptor logs internal errors.
+// Note: this interceptor should ONLY be used in dev builds because Internal is the default code,
+// so all errors that have not been assigned a class will appear in the log.
+func LogInternalErrorStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	err := handler(srv, ss)
+	logErrorIfInternal(err)
+	return err
+}
+
+func logErrorIfInternal(err error) {
+	if grpcStatus := ErrToGrpcStatus(err); grpcStatus.Code() == codes.Internal {
+		log.Errorf("Internal error occurred: %+v", err)
+	}
+}
+
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.
 func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
