@@ -122,7 +122,7 @@ export const basePathToLabelMap = {
     [productDocsPath]: 'Help Center',
     [clustersBasePath]: 'Clusters',
     [policiesBasePath]: 'System Policies',
-    [policiesBasePathPatternFly]: 'Policies',
+    [policiesBasePath]: 'Policies',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
     [accessControlBasePathV2]: 'Access Control',
