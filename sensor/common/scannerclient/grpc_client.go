@@ -23,6 +23,7 @@ type client struct {
 }
 
 // dial Scanner and return a new client.
+// dial is non-blocking.
 func dial(endpoint string) (*client, error) {
 	if endpoint == "" {
 		return nil, errors.New("Invalid Scanner endpoint (empty)")
@@ -40,6 +41,8 @@ func dial(endpoint string) (*client, error) {
 		return nil, errors.Wrap(err, "failed to initialize Scanner TLS config")
 	}
 
+	// This is non-blocking. If we ever want this to block,
+	// then add the grpc.WithBlock() DialOption.
 	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to Scanner")
