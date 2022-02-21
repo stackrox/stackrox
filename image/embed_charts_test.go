@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
@@ -32,18 +31,12 @@ func TestManager(t *testing.T) {
 type embedTestSuite struct {
 	suite.Suite
 
-	envIsolator *envisolator.EnvIsolator
 	image       *Image
 }
 
 func (s *embedTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	testutils.SetExampleVersion(s.T())
 	s.image = GetDefaultImage()
-}
-
-func (s *embedTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *embedTestSuite) TestEmbedAllFiles() {
@@ -153,7 +146,7 @@ func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 			}
 
 			// Release builds should not contain scanner files currently
-			// TODO: Remove with release
+			// TODO: Remove release build check if golang release unit tests fail after feature flag is enabled by default
 			if testCase.expectScannerFilesExist && !buildinfo.ReleaseBuild {
 				s.NotEmpty(foundScannerTpls, "Did not found any scanner manifests but expected them.")
 			} else {
