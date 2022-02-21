@@ -24,6 +24,8 @@ import { AccessControlQueryAction } from '../accessControlPaths';
 import AccessScopesTable from './AccessScopesTable';
 import PermissionSetsTable from './PermissionSetsTable';
 
+import './RoleForm.css';
+
 export type RoleFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
