@@ -119,7 +119,7 @@ func (s *sensorGenerateCommand) clusterSetupFromCentralDefaults(ctx context.Cont
 	if err != nil {
 		return err
 	}
-	s.kernelSupportAvailable = clusterDefault.KernelSupportAvailable
+	s.kernelSupportAvailable = clusterDefault.GetKernelSupportAvailable()
 	if s.cluster.MainImage == "" {
 		s.cluster.MainImage = clusterDefault.GetMainImageRepository()
 	}
