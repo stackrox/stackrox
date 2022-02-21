@@ -1,11 +1,10 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import { ButtonVariant, Flex, FlexItem, SelectOption } from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex, FlexItem, SelectOption } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import { accessControlBasePathV2 } from 'routePaths';
 import { fetchAccessScopes, AccessScope } from 'services/AccessScopesService';
+import ResourceScopeFormModal from './ResourceScopeFormModal';
 
 type ResourceScopeSelectionProps = {
     scopeId: string;
@@ -17,8 +16,10 @@ function ResourceScopeSelection({
     setFieldValue,
 }: ResourceScopeSelectionProps): ReactElement {
     const [resourceScopes, setResourceScopes] = useState<AccessScope[]>([]);
+    const [lastAddedResourceScopeId, setLastAddedResourceScopeId] = useState('');
+    const [isResourceScopeModalOpen, setIsResourceScopeModalOpen] = useState(false);
 
-    function getScopes(): void {
+    useEffect(() => {
         fetchAccessScopes()
             .then((response) => {
                 const resourceScopesList = response || [];
@@ -26,56 +27,69 @@ function ResourceScopeSelection({
                     (scope) => scope.id !== 'io.stackrox.authz.accessscope.denyall'
                 );
                 setResourceScopes(filteredScopes);
+
+                if (lastAddedResourceScopeId) {
+                    onScopeChange('scopeId', lastAddedResourceScopeId);
+                }
             })
             .catch(() => {
                 // TODO display message when there is a place for minor errors
             });
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lastAddedResourceScopeId]);
 
-    useEffect(() => {
-        getScopes();
-    }, []);
+    function onToggleResourceScopeModal() {
+        setIsResourceScopeModalOpen((current) => !current);
+    }
 
     function onScopeChange(_id, selection) {
         setFieldValue('scopeId', selection);
     }
 
     return (
-        <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
-            <FlexItem>
-                <FormLabelGroup
-                    className="pf-u-mb-md"
-                    isRequired
-                    label="Configure resource scope"
-                    fieldId="scopeId"
-                    touched={{}}
-                    errors={{}}
-                >
-                    <SelectSingle
-                        id="scopeId"
-                        value={scopeId}
-                        handleSelect={onScopeChange}
-                        isDisabled={false}
-                        placeholderText="Select a scope"
+        <>
+            <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
+                <FlexItem>
+                    <FormLabelGroup
+                        className="pf-u-mb-md"
+                        isRequired
+                        label="Configure resource scope"
+                        fieldId="scopeId"
+                        touched={{}}
+                        errors={{}}
                     >
-                        {resourceScopes.map(({ id, name, description }) => (
-                            <SelectOption key={id} value={id} description={description}>
-                                {name}
-                            </SelectOption>
-                        ))}
-                    </SelectSingle>
-                </FormLabelGroup>
-            </FlexItem>
-            <FlexItem>
-                <ButtonLink
-                    className="pf-u-mb-md"
-                    variant={ButtonVariant.secondary}
-                    to={`${accessControlBasePathV2}/access-scopes?action=create`}
-                >
-                    Create resource scope
-                </ButtonLink>
-            </FlexItem>
-        </Flex>
+                        <SelectSingle
+                            id="scopeId"
+                            value={scopeId}
+                            handleSelect={onScopeChange}
+                            isDisabled={false}
+                            placeholderText="Select a scope"
+                        >
+                            {resourceScopes.map(({ id, name, description }) => (
+                                <SelectOption key={id} value={id} description={description}>
+                                    {name}
+                                </SelectOption>
+                            ))}
+                        </SelectSingle>
+                    </FormLabelGroup>
+                </FlexItem>
+                <FlexItem>
+                    <Button
+                        className="pf-u-mb-md"
+                        variant={ButtonVariant.secondary}
+                        onClick={onToggleResourceScopeModal}
+                    >
+                        Create resource scope
+                    </Button>
+                </FlexItem>
+            </Flex>
+            <ResourceScopeFormModal
+                isOpen={isResourceScopeModalOpen}
+                updateResourceScopeList={setLastAddedResourceScopeId}
+                onToggleResourceScopeModal={onToggleResourceScopeModal}
+                resourceScopes={resourceScopes}
+            />
+        </>
     );
 }
 
