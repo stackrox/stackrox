@@ -14,15 +14,15 @@ import { SearchFilter } from 'types/search';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SelectSingle from 'Components/SelectSingle';
 
-export type ObservedCVEsSearchFilterProps = {
+export type ImageVulnsSearchFilterProps = {
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
 };
 
-function ObservedCVEsSearchFilter({
+function ImageVulnsSearchFilter({
     searchFilter,
     setSearchFilter,
-}: ObservedCVEsSearchFilterProps): ReactElement {
+}: ImageVulnsSearchFilterProps): ReactElement {
     const [selectedAttribute, setSelectedAttribute] = useState<string>('');
     const [inputValue, setInputValue] = useState<string>('');
 
@@ -50,8 +50,6 @@ function ObservedCVEsSearchFilter({
         setInputValue(value);
     }
 
-    // @TODO: We want to change these to sentence case and change the data structure for search filter
-    // accordingly
     return (
         <Flex alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem spacer={{ default: 'spacerNone' }}>
@@ -120,4 +118,4 @@ function ObservedCVEsSearchFilter({
     );
 }
 
-export default ObservedCVEsSearchFilter;
+export default ImageVulnsSearchFilter;

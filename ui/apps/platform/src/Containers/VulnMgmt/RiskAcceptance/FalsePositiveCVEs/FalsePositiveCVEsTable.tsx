@@ -170,6 +170,7 @@ function FalsePositiveCVEsTable({
                 </Thead>
                 <Tbody>
                     {isLoading && (
+                        // @TODO: Consider accessibility in this approach (https://github.com/stackrox/stackrox/pull/671#discussion_r811295184)
                         <Tr>
                             <Td colSpan={9}>
                                 <Bullseye>
@@ -179,6 +180,7 @@ function FalsePositiveCVEsTable({
                         </Tr>
                     )}
                     {!isLoading && rows && rows.length === 0 ? (
+                        // @TODO: Consider accessibility in this approach (https://github.com/stackrox/stackrox/pull/671#discussion_r811295477)
                         <Tr>
                             <Td colSpan={9}>
                                 <PageSection variant={PageSectionVariants.light} isFilled>
