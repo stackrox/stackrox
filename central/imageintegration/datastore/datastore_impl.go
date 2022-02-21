@@ -8,7 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -45,8 +44,7 @@ func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.G
 
 	integrationSlice := integrations[:0]
 	for _, integration := range integrations {
-		clusterSet := set.NewStringSet(integration.GetClusters()...)
-		if len(request.GetCluster()) != 0 && !clusterSet.Contains(request.GetCluster()) {
+		if request.GetCluster() != "" {
 			continue
 		}
 		if request.GetName() != "" && request.GetName() != integration.GetName() {
