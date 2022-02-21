@@ -9,6 +9,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaults (GET /v1/cluster-defaults)` instead.
 
 - Improved accuracy of active component and vulnerability and presented it with higher confidence.
+  - Analyzed dependencies between OS components and detected derived active components.
   - Added `Active` state to list of components and list of vulnerabilities under Vulnerability Management within the scope of a specific deployment.
   - Added `Inactive` state: the component or vulnerability was not run in the specific deployment.
   - Added image scope so that the Active State can be determined in the scope of a deployment for a specific image.
