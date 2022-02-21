@@ -117,9 +117,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 }
 
 func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
-	if err != nil {
-		log.Errorf("local scanner TLS issuer start aborted due to error: %s", err)
-	}
+	log.Errorf("local scanner TLS issuer start aborted due to error: %s", err)
 	i.Stop(err)
 	return err
 }
