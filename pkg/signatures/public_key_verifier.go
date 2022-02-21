@@ -20,8 +20,10 @@ import (
 )
 
 const (
-	publicKeyType = "PUBLIC KEY"
-	sha256Algo    = "sha256"
+	// PublicKeyType is PEM block type which we support.
+	PublicKeyType = "PUBLIC KEY"
+
+	sha256Algo = "sha256"
 )
 
 var (
@@ -31,8 +33,6 @@ var (
 	errHashCreation          = errors.New("creating hash")
 	errCorruptedSignature    = errors.New("corrupted signature")
 )
-// PublicKeyType is PEM block type which we support.
-const PublicKeyType = "PUBLIC KEY"
 
 type publicKeyVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
@@ -42,7 +42,7 @@ var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 
 // newPublicKeyVerifier creates a public key verifier with the given configuration. The provided public keys
 // MUST be valid PEM encoded ones.
-// It will return an error if the provided public keys could not be parsed or the base64 decoding failed.
+// It will return an error if the provided public keys could not be parsed.
 func newPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*publicKeyVerifier, error) {
 	publicKeys := config.GetPublicKeys()
 	pemEncPublicKeys := make([]string, 0, len(publicKeys))
