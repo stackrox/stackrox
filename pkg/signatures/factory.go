@@ -19,7 +19,7 @@ type SignatureVerifier interface {
 func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (SignatureVerifier, error) {
 	switch cfg := config.GetConfig().(type) {
 	case *storage.SignatureVerificationConfig_CosignVerification:
-		return newCosignPublicKeyVerifier(cfg.CosignVerification)
+		return newPublicKeyVerifier(cfg.CosignVerification)
 	default:
 		// Should theoretically never happen.
 		return nil, errox.Newf(errox.InvariantViolation,
