@@ -176,11 +176,6 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 	return r.repositoryList.Contains(image.GetRemote())
 }
 
-// Global returns whether or not this registry is available from all clusters
-func (r *Registry) Global() bool {
-	return len(r.protoImageIntegration.GetClusters()) == 0
-}
-
 // Metadata returns the metadata via this registries implementation
 func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	if image == nil {

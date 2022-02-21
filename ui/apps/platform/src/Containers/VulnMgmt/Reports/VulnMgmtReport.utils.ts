@@ -16,7 +16,12 @@ export const emptyReportValues: ReportConfiguration = {
     vulnReportFilters: {
         fixability: 'BOTH',
         sinceLastReport: false,
-        severities: [],
+        severities: [
+            'CRITICAL_VULNERABILITY_SEVERITY',
+            'IMPORTANT_VULNERABILITY_SEVERITY',
+            'MODERATE_VULNERABILITY_SEVERITY',
+            'LOW_VULNERABILITY_SEVERITY',
+        ],
     },
     scopeId: '',
     emailConfig: {

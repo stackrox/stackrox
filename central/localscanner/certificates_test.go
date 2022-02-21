@@ -114,7 +114,7 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 
 			certAlternativeNames := cert.DNSNames
 			s.ElementsMatch(tc.expectedAlternativeNames, certAlternativeNames)
-			s.Equal(cert.NotBefore.Add(2*24*time.Hour), cert.NotAfter)
+			s.Equal(cert.NotBefore.Add((365*24+1)*time.Hour), cert.NotAfter)
 		})
 	}
 }
