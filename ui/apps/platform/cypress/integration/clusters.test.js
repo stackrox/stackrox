@@ -3,7 +3,12 @@ import cloneDeep from 'lodash/cloneDeep';
 import { selectors, clustersUrl } from '../constants/ClustersPage';
 import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
-import { visitClusters, visitClustersFromLeftNav } from '../helpers/clusters';
+import {
+    visitClusters,
+    visitClustersFromLeftNav,
+    visitClustersWithFixtureMetadataDatetime,
+    visitClusterByNameWithFixtureMetadataDatetime,
+} from '../helpers/clusters';
 
 describe('Clusters page', () => {
     withAuth();
@@ -313,31 +318,14 @@ describe('Cluster management', () => {
 describe('Cluster configuration', () => {
     withAuth();
 
-    let clusters;
-
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            clusters = response.clusters;
-        });
-    });
-
-    beforeEach(() => {
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
-        cy.visit(clustersUrl);
-        cy.wait(['@GetClusters']);
-    });
-
-    const getCluster = (clusterName) => {
-        const n = clusters.findIndex((cluster) => cluster.name === clusterName);
-        const cluster = clusters[n];
-        cy.intercept('GET', clustersApi.single, {
-            body: { cluster },
-        }).as('GetCluster');
-        cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
-        cy.wait('@GetCluster');
+    const fixturePath = 'clusters/health.json';
+    const metadata = {
+        version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
+        buildFlavor: 'release',
+        releaseBuild: true,
+        licenseStatus: 'VALID',
     };
+    const datetimeISOString = '2020-08-31T13:01:00Z'; // for comparison to `lastContact` and `sensorCertExpiry` in clusters fixture
 
     const assertConfigurationReadOnly = () => {
         const form = cy.get('[data-testid="cluster-form"]').children();
@@ -365,12 +353,22 @@ describe('Cluster configuration', () => {
     };
 
     it('should be read-only for Helm-based installations', () => {
-        getCluster('alpha-amsterdam-1');
+        visitClusterByNameWithFixtureMetadataDatetime(
+            'alpha-amsterdam-1',
+            fixturePath,
+            metadata,
+            datetimeISOString
+        );
         assertConfigurationReadOnly();
     });
 
     it('should be read-only for unknown manager installations that have a defined Helm config', () => {
-        getCluster('kappa-kilogramme-10');
+        visitClusterByNameWithFixtureMetadataDatetime(
+            'kappa-kilogramme-10',
+            fixturePath,
+            metadata,
+            datetimeISOString
+        );
         assertConfigurationReadOnly();
     });
 });
@@ -378,36 +376,14 @@ describe('Cluster configuration', () => {
 describe('Cluster Health', () => {
     withAuth();
 
-    let clusters;
-
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            clusters = response.clusters;
-        });
-    });
-
+    const fixturePath = 'clusters/health.json';
     const metadata = {
         version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
         buildFlavor: 'release',
         releaseBuild: true,
         licenseStatus: 'VALID',
     };
-
-    beforeEach(() => {
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
-        cy.intercept('GET', metadataApi, {
-            body: metadata,
-        }).as('GetMetadata');
-
-        // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
-        const currentDatetime = new Date('2020-08-31T13:01:00Z');
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
-
-        cy.visit(clustersUrl);
-        cy.wait(['@GetClusters', '@GetMetadata']);
-    });
+    const datetimeISOString = '2020-08-31T13:01:00Z'; // for comparison to `lastContact` and `sensorCertExpiry` in clusters fixture
 
     const expectedClusters = [
         {
@@ -584,6 +560,8 @@ describe('Cluster Health', () => {
     ];
 
     it('should appear in the list', () => {
+        visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString);
+
         /*
          * Some cells have no internal markup (for example, Name or Cloud Provider).
          * Other cells have div and spans for status color versus default color.
@@ -604,7 +582,7 @@ describe('Cluster Health', () => {
         });
     });
 
-    expectedClusters.forEach(({ expectedInListAndSide, expectedInSide }, i) => {
+    expectedClusters.forEach(({ expectedInListAndSide, expectedInSide }) => {
         const { clusterName, clusterStatus, sensorUpgrade, credentialExpiration } =
             expectedInListAndSide;
         const {
@@ -619,12 +597,12 @@ describe('Cluster Health', () => {
         } = expectedInSide;
 
         it(`should appear in the form for ${clusterName}`, () => {
-            const cluster = clusters[i];
-            cy.intercept('GET', clustersApi.single, {
-                body: { cluster },
-            }).as('GetCluster');
-            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${i + 1})`).click();
-            cy.wait('@GetCluster');
+            visitClusterByNameWithFixtureMetadataDatetime(
+                clusterName,
+                fixturePath,
+                metadata,
+                datetimeISOString
+            );
 
             cy.get(selectors.clusterForm.nameInput).should('have.value', clusterName);
 
