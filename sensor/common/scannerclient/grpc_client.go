@@ -53,8 +53,6 @@ func dial(endpoint string) (*client, error) {
 	}, nil
 }
 
-func ()
-
 // GetImageAnalysis retrieves the image analysis results for the given image.
 // The steps are as follows:
 // 1. Retrieve image metadata.
