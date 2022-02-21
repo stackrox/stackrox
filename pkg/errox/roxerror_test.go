@@ -17,10 +17,10 @@ func TestRoxErrorIs(t *testing.T) {
 	errNotFound1 := makeSentinel("base not found")
 	assert.NotErrorIs(t, errNotFound, errNotFound1)
 
-	fileNotFound := New(errNotFound, "file not found")
-	cpuNotFound := New(errNotFound, "CPU not found")
-	googleNotFound := New(errNotFound, "Google not found")
-	movieNotFound := New(fileNotFound, "movie not found")
+	fileNotFound := errNotFound.New("file not found")
+	cpuNotFound := errNotFound.New("CPU not found")
+	googleNotFound := errNotFound.New("Google not found")
+	movieNotFound := fileNotFound.New("movie not found")
 
 	assert.ErrorIs(t, fileNotFound, errNotFound)
 	assert.ErrorIs(t, googleNotFound, errNotFound)
