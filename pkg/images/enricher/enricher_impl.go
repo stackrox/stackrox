@@ -44,7 +44,6 @@ type enricherImpl struct {
 	metadataCache   expiringcache.Cache
 
 	signatureLimiter *rate.Limiter
-	signatureCache   expiringcache.Cache
 
 	imageGetter imageGetter
 
@@ -217,22 +216,42 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 	return true, nil
 }
 
-func (e *enricherImpl) fetchFromDatabase(img *storage.Image, option FetchOption) bool {
-	if option == ForceRefetch || option == ForceRefetchScansOnly {
-		return false
+func (e *enricherImpl) fetchFromDatabase(img *storage.Image, option FetchOption) (*storage.Image, bool) {
+	if option.ForceRefetchDatastore() {
+		return img, false
 	}
 	// See if the image exists in the DB with a scan, if it does, then use that instead of fetching
 	id := utils.GetImageID(img)
 	if id == "" {
-		return false
+		return img, false
 	}
 	existingImage, exists, err := e.imageGetter(sac.WithAllAccess(context.Background()), id)
 	if err != nil {
 		log.Errorf("error fetching image %q: %v", id, err)
+		return img, false
+	}
+	return existingImage, exists
+}
+
+func (e *enricherImpl) fetchScanFromDatabase(img *storage.Image, option FetchOption) bool {
+	if option == ForceRefetchScansOnly {
 		return false
 	}
-	if exists && existingImage.GetScan() != nil {
+
+	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetScan() != nil {
 		img.Scan = existingImage.GetScan()
+		return true
+	}
+	return false
+}
+
+func (e *enricherImpl) fetchSignatureFromDatabase(img *storage.Image, option FetchOption) bool {
+	if option == ForceRefetchSignaturesOnly {
+		return false
+	}
+
+	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetSignature() != nil {
+		img.Signature = existingImage.GetSignature()
 		return true
 	}
 	return false
@@ -243,7 +262,7 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
 		return ScanNotDone, nil
 	}
-	if e.fetchFromDatabase(image, ctx.FetchOpt) {
+	if e.fetchScanFromDatabase(image, ctx.FetchOpt) {
 		return ScanSucceeded, nil
 	}
 
