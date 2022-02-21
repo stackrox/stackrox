@@ -256,7 +256,8 @@ func (i *Image) GetSensorChartTemplate() (*helmTemplate.ChartTemplate, error) {
 		return nil, errors.Wrap(err, "fetching sensor chart files from embedded filesystem")
 	}
 
-	return helmTemplate.Load(chartTplFiles)
+	load, err := helmTemplate.Load(chartTplFiles)
+	return load, errors.Wrap(err, "could not load chart template")
 }
 
 func (i *Image) getSensorChart(values *charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {

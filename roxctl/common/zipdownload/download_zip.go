@@ -26,7 +26,7 @@ const (
 func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string) error {
 	reader, err := zip.NewReader(contents, contentsLength)
 	if err != nil {
-		return errors.Wrapf(err, "could not read from zip")
+		return errors.Wrap(err, "could not read from zip")
 	}
 
 	if err := os.MkdirAll(outputDir, 0755); err != nil {

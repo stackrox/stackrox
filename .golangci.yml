@@ -71,10 +71,10 @@ linters-settings:
   wrapcheck:
     ignoreSigRegexps:
     - \.GRPCConnection()
-    ignorePackageGlobs:
-    - github.com/stackrox/rox/pkg/*
-    - github.com/stackrox/rox/roxctl/common/*
-    - github.com/stackrox/rox/roxctl/summaries/policy
+    - utils\.Should
+    - errox\.New.*
+    - retry\.MakeRetryable
+    - policy\.NewErr.*
 
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
