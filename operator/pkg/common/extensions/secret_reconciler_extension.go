@@ -33,7 +33,7 @@ func NewSecretReconciliationExtension(ctx context.Context, client ctrlClient.Cli
 	}
 }
 
-// SecretReconciliationExtension runs a secret reconciliation
+// SecretReconciliationExtension reconciles a secret.
 type SecretReconciliationExtension struct {
 	ctx    context.Context
 	client ctrlClient.Client
