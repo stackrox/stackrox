@@ -40,7 +40,7 @@ type SecretReconciliationExtension struct {
 	obj    k8sObject
 }
 
-// Client returns the client of the extension
+// Client returns the controller-runtime client used by the extension.
 func (r *SecretReconciliationExtension) Client() ctrlClient.Client {
 	return r.client
 }
