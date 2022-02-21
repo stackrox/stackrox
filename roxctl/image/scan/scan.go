@@ -189,7 +189,7 @@ func (i *imageScanCommand) scanImage() error {
 func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 	conn, err := i.env.GRPCConnection()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	defer utils.IgnoreError(conn.Close)
 

@@ -60,7 +60,7 @@ func (cmd *clusterDeleteCommand) Validate() error {
 func (cmd *clusterDeleteCommand) Delete() error {
 	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	service := v1.NewClustersServiceClient(conn)
 	clusters, err := cmd.getClusters(service)

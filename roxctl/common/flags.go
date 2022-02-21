@@ -80,5 +80,6 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 		}
 	}
 
-	return clientconn.GRPCConnection(common.Context(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)
+	connection, err := clientconn.GRPCConnection(common.Context(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)
+	return connection, errors.WithStack(err)
 }

@@ -229,7 +229,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage.Alert, error) {
 	conn, err := i.env.GRPCConnection()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 
 	defer pkgUtils.IgnoreError(conn.Close)

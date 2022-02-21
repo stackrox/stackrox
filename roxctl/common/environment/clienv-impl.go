@@ -35,7 +35,7 @@ func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTT
 // GRPCConnection returns the common.GetGRPCConnection
 func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
 	connection, err := common.GetGRPCConnection()
-	return connection, errors.Wrap(err, "could not establish GRPC connection")
+	return connection, errors.WithStack(err)
 }
 
 // InputOutput returns the IO associated with the CLI Environment which holds all relevant input / output streams

@@ -70,7 +70,6 @@ linters-settings:
     require-specific: true # require nolint directives to be specific about which linter is being skipped
   wrapcheck:
     ignoreSigRegexps:
-    - \.GRPCConnection()
     - utils\.Should
     - errox\.New.*
     - retry\.MakeRetryable
