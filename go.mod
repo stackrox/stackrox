@@ -7,7 +7,7 @@ go 1.16
 require github.com/stackrox/scanner v0.0.0-20220106020903-2744339f7e9d
 
 require (
-	cloud.google.com/go/compute v1.1.0
+	cloud.google.com/go/compute v1.3.0
 	cloud.google.com/go/containeranalysis v0.1.1
 	cloud.google.com/go/storage v1.19.0
 	github.com/BurntSushi/toml v1.0.0
@@ -112,13 +112,13 @@ require (
 	golang.org/x/net v0.0.0-20220127074510-2fabfed7e28f
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
+	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
 	golang.org/x/tools v0.1.8
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.66.0
-	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5
-	google.golang.org/grpc v1.43.0
+	google.golang.org/api v0.67.0
+	google.golang.org/genproto v0.0.0-20220207164111-0872dc986b00
+	google.golang.org/grpc v1.44.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
