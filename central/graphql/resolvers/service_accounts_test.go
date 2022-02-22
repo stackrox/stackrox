@@ -93,21 +93,9 @@ func (s *ServiceAccountResolverTestSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ServiceAccountResolverTestSuite) TestGetServiceAccountFiltersOutSAsInDeletedCluster() {
-	clusterID := uuid.NewV4().String()
-	deletedClusterID := uuid.NewV4().String()
-
-	// Valid cluster can be fetched
-	s.clusterDataStore.EXPECT().GetCluster(gomock.Any(), clusterID).Return(&storage.Cluster{
-		Name: "Fake Cluster",
-		Id:   clusterID,
-	}, true, nil)
-	// Deleted cluster returns not found
-	s.clusterDataStore.EXPECT().GetCluster(gomock.Any(), deletedClusterID).Return(nil, false, nil)
-
-	validSA := getServiceAcct("Valid SA", "Fake cluster", clusterID, "Fake NS")
-	deletedClusterSA := getServiceAcct("SA for del cluster", "Fake cluster 2", deletedClusterID, "Fake NS")
-	s.serviceAccountDataStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return([]*storage.ServiceAccount{validSA, deletedClusterSA}, nil).AnyTimes()
+func (s *ServiceAccountResolverTestSuite) TestGetServiceAccounts() {
+	sa := getServiceAcct("Valid SA", "Fake cluster", "Fake NS")
+	s.serviceAccountDataStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return([]*storage.ServiceAccount{sa}, nil).AnyTimes()
 
 	query := `
 		query serviceAccounts($query: String, $pagination: Pagination) {
@@ -121,10 +109,7 @@ func (s *ServiceAccountResolverTestSuite) TestGetServiceAccountFiltersOutSAsInDe
 	}
 `
 	response := s.schema.Exec(s.getMockContext(),
-		query, "serviceAccounts", map[string]interface{}{
-			"id":    clusterID,
-			"query": "",
-		})
+		query, "serviceAccounts", map[string]interface{}{"query": ""})
 
 	var resp struct {
 		Results []serviceAcctResponse `json:"results"`
@@ -134,22 +119,14 @@ func (s *ServiceAccountResolverTestSuite) TestGetServiceAccountFiltersOutSAsInDe
 	s.NoError(json.Unmarshal(response.Data, &resp))
 
 	s.Len(resp.Results, 1)
-	s.Equal(validSA.GetId(), resp.Results[0].ID)
-	s.Equal(validSA.GetNamespace(), resp.Results[0].Namespace)
-	s.Equal(validSA.GetClusterId(), resp.Results[0].ClusterID)
+	s.Equal(sa.GetId(), resp.Results[0].ID)
+	s.Equal(sa.GetNamespace(), resp.Results[0].Namespace)
+	s.Equal(sa.GetClusterId(), resp.Results[0].ClusterID)
 }
 
-func (s *ServiceAccountResolverTestSuite) TestSaNamespaceFiltersOutSAsInDeletedCluster() {
-	clusterID := uuid.NewV4().String()
-	deletedClusterID := uuid.NewV4().String()
-
-	// Valid cluster can be fetched
-	s.clusterDataStore.EXPECT().GetCluster(gomock.Any(), clusterID).Return(&storage.Cluster{
-		Name: "Fake Cluster",
-		Id:   clusterID,
-	}, true, nil)
-	// Deleted cluster returns not found
-	s.clusterDataStore.EXPECT().GetCluster(gomock.Any(), deletedClusterID).Return(nil, false, nil)
+func (s *ServiceAccountResolverTestSuite) TestGetSaNamespace() {
+	sa := getServiceAcct("Valid SA", "Fake cluster", "Fake NS")
+	s.serviceAccountDataStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return([]*storage.ServiceAccount{sa}, nil).AnyTimes()
 
 	// Pulled by saNamespace. It's not necessary for this test so mock away
 	s.deployments.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
@@ -159,12 +136,8 @@ func (s *ServiceAccountResolverTestSuite) TestSaNamespaceFiltersOutSAsInDeletedC
 	s.namespaceDataStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.NamespaceMetadata{{
 		Id:        "namespace-id",
 		Name:      "Fake NS",
-		ClusterId: clusterID,
+		ClusterId: sa.GetClusterId(),
 	}}, nil)
-
-	validSA := getServiceAcct("Valid SA", "Fake cluster", clusterID, "Fake NS")
-	deletedClusterSA := getServiceAcct("SA for del cluster", "Fake cluster 2", deletedClusterID, "Fake NS")
-	s.serviceAccountDataStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return([]*storage.ServiceAccount{validSA, deletedClusterSA}, nil).AnyTimes()
 
 	query := `
 		query serviceAccounts($query: String, $pagination: Pagination) {
@@ -184,10 +157,7 @@ func (s *ServiceAccountResolverTestSuite) TestSaNamespaceFiltersOutSAsInDeletedC
 	}
 `
 	response := s.schema.Exec(s.getMockContext(resources.Cluster, resources.Namespace),
-		query, "serviceAccounts", map[string]interface{}{
-			"id":    clusterID,
-			"query": "",
-		})
+		query, "serviceAccounts", map[string]interface{}{"query": ""})
 
 	var resp struct {
 		Results []serviceAcctResponse `json:"results"`
@@ -197,11 +167,11 @@ func (s *ServiceAccountResolverTestSuite) TestSaNamespaceFiltersOutSAsInDeletedC
 	s.NoError(json.Unmarshal(response.Data, &resp))
 
 	s.Len(resp.Results, 1)
-	s.Equal(validSA.GetId(), resp.Results[0].ID)
-	s.Equal(validSA.GetNamespace(), resp.Results[0].Namespace)
-	s.Equal(validSA.GetClusterId(), resp.Results[0].ClusterID)
+	s.Equal(sa.GetId(), resp.Results[0].ID)
+	s.Equal(sa.GetNamespace(), resp.Results[0].Namespace)
+	s.Equal(sa.GetClusterId(), resp.Results[0].ClusterID)
 	s.NotNil(resp.Results[0].SANamespace)
-	s.Equal(validSA.GetNamespace(), resp.Results[0].SANamespace.Metadata.Name)
+	s.Equal(sa.GetNamespace(), resp.Results[0].SANamespace.Metadata.Name)
 }
 
 func (s *ServiceAccountResolverTestSuite) getMockContext(extraPerms ...permissions.ResourceMetadata) context.Context {
@@ -227,12 +197,12 @@ func (s *ServiceAccountResolverTestSuite) getMockContext(extraPerms ...permissio
 	return authn.ContextWithIdentity(ctx, id, s.T())
 }
 
-func getServiceAcct(name, clusterName, clusterID, namespace string) *storage.ServiceAccount {
+func getServiceAcct(name, clusterName, namespace string) *storage.ServiceAccount {
 	return &storage.ServiceAccount{
 		Id:          uuid.NewV4().String(),
 		Name:        name,
 		Namespace:   namespace,
 		ClusterName: clusterName,
-		ClusterId:   clusterID,
+		ClusterId:   uuid.NewV4().String(),
 	}
 }

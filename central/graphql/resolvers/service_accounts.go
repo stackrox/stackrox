@@ -58,34 +58,9 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	// Filter out any service accounts that don't belong to a valid cluster
-	// Prevents errors later in the pagination or in another resolver (e.g. saNamespace)
-	serviceAccounts, err := resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	filteredSAs := make([]*storage.ServiceAccount, 0, len(serviceAccounts))
-	// Temp storage to avoid unnecessary lookups
-	// This is not thread-safe, but since this isn't trying to cache across invocations, it should be ok
-	clusterIDs := make(map[string]bool)
-	for _, sa := range serviceAccounts {
-		valid, ok := clusterIDs[sa.GetClusterId()]
-		if !ok {
-			cluster, ok, err := resolver.ClusterDataStore.GetCluster(ctx, sa.GetClusterId()) // should mostly hit cache and not ds
-			if err != nil {
-				return nil, err
-			}
-			valid = ok && cluster != nil
-			clusterIDs[sa.GetClusterId()] = valid
-		}
-		if valid {
-			filteredSAs = append(filteredSAs, sa)
-		}
-	}
-
 	resolvers, err := paginationWrapper{
 		pv: query.Pagination,
-	}.paginate(resolver.wrapServiceAccounts(filteredSAs, nil))
+	}.paginate(resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query)))
 	return resolvers.([]*serviceAccountResolver), err
 }
 
