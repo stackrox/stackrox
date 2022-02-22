@@ -16,7 +16,9 @@ import (
 // SecretDataMap represents data stored as part of a secret.
 type SecretDataMap = map[string][]byte
 
-type validateSecretDataFunc func(SecretDataMap, bool) error
+// validateSecretDataFunc validates a secret to determine if the generation should run. The boolean parameter is true if the
+// secret is managed by the running operator.
+type validateSecretDataFunc func(data SecretDataMap, isControllerOwned bool) error
 type generateSecretDataFunc func() (SecretDataMap, error)
 
 type k8sObject interface {
@@ -24,30 +26,30 @@ type k8sObject interface {
 	schema.ObjectKind
 }
 
-// NewSecretReconciliation creates a new SecretReconciliation. It takes a context and controller client.
-// The obj is the object which is owner object (i.e. a custom resource).
-func NewSecretReconciliation(ctx context.Context, client ctrlClient.Client, obj k8sObject) *SecretReconciliation {
-	return &SecretReconciliation{
+// NewSecretReconciliator creates a new SecretReconciliator. It takes a context and controller client.
+// The obj parameter is the owner object (i.e. a custom resource).
+func NewSecretReconciliator(ctx context.Context, client ctrlClient.Client, obj k8sObject) *SecretReconciliator {
+	return &SecretReconciliator{
 		ctx:    ctx,
 		client: client,
 		obj:    obj,
 	}
 }
 
-// SecretReconciliation reconciles a secret.
-type SecretReconciliation struct {
+// SecretReconciliator reconciles a secret.
+type SecretReconciliator struct {
 	ctx    context.Context
 	client ctrlClient.Client
 	obj    k8sObject
 }
 
 // Client returns the controller-runtime client used by the extension.
-func (r *SecretReconciliation) Client() ctrlClient.Client {
+func (r *SecretReconciliator) Client() ctrlClient.Client {
 	return r.client
 }
 
 // Namespace returns the namespace of the object the secret is owned by
-func (r *SecretReconciliation) Namespace() string {
+func (r *SecretReconciliator) Namespace() string {
 	return r.obj.GetNamespace()
 }
 
@@ -57,7 +59,7 @@ func (r *SecretReconciliation) Namespace() string {
 // changing an invalid secret can bring more harm than good.
 // In this case this function will return an error if "validate" rejects the secret.
 // Also note that (regardless of the value of "fixExisting") this function will never touch a secret which is not owned by the object passed to the constructor.
-func (r *SecretReconciliation) ReconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
+func (r *SecretReconciliator) ReconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.Namespace(), Name: name}
 	if err := r.Client().Get(r.ctx, key, secret); err != nil {

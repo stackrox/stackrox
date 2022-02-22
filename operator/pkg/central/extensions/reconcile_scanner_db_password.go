@@ -24,14 +24,14 @@ func ReconcileScannerDBPasswordExtension(client ctrlClient.Client) extensions.Re
 
 func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
-		SecretReconciliation: commonExtensions.NewSecretReconciliation(ctx, client, c),
-		centralObj:           c,
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(ctx, client, c),
+		centralObj:          c,
 	}
 	return run.Execute()
 }
 
 type reconcileScannerDBPasswordExtensionRun struct {
-	*commonExtensions.SecretReconciliation
+	*commonExtensions.SecretReconciliator
 	centralObj *platform.Central
 }
 
