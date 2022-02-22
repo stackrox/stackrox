@@ -43,8 +43,7 @@ var (
 
 // NewLocalScannerTLSIssuer creates a sensor component that will keep the local scanner certificates
 // up to date, using the specified retry parameters.
-func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace string,
-	sensorPodName string) common.SensorComponent {
+func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace string, sensorPodName string) common.SensorComponent {
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &localScannerTLSIssuerImpl{
@@ -166,9 +165,7 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 	}
 }
 
-func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Context,
-	backoff wait.Backoff) (*metav1.OwnerReference, error) {
-
+func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Context, backoff wait.Backoff) (*metav1.OwnerReference, error) {
 	if i.sensorPodName == "" {
 		return nil, errors.New("fetching sensor deployment: empty pod name")
 	}
@@ -223,9 +220,11 @@ func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Co
 	}, nil
 }
 
-func (i *localScannerTLSIssuerImpl) getObjectMetaWithRetries(ctx context.Context, backoff wait.Backoff,
-	getObject func(context.Context) (metav1.Object, error)) (metav1.Object, error) {
-
+func (i *localScannerTLSIssuerImpl) getObjectMetaWithRetries(
+	ctx context.Context,
+	backoff wait.Backoff,
+	getObject func(context.Context) (metav1.Object, error),
+) (metav1.Object, error) {
 	var object metav1.Object
 	getErr := retry.OnError(backoff, func(err error) bool {
 		return !k8sErrors.IsNotFound(err)
