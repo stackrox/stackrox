@@ -163,6 +163,7 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+	processMessageDoneSignal := concurrency.NewErrorSignal()
 	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
 	expectedResponse := &central.IssueLocalScannerCertsResponse{
 		RequestId: uuid.NewDummy().String(),
@@ -174,8 +175,8 @@ func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	}
 
 	go func() {
-		processErr := fixture.tlsIssuer.ProcessMessage(msg)
-		assert.NoError(t, processErr)
+		assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
+		processMessageDoneSignal.Signal()
 	}()
 
 	select {
@@ -184,19 +185,23 @@ func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	case response := <-fixture.tlsIssuer.msgFromCentralC:
 		assert.Equal(t, expectedResponse, response)
 	}
+
+	_, ok := processMessageDoneSignal.WaitWithTimeout(100 * time.Millisecond)
+	assert.True(t, ok)
 }
 
 func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
+	processMessageDoneSignal := concurrency.NewErrorSignal()
 	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ReprocessDeployments{},
 	}
 
 	go func() {
-		processErr := fixture.tlsIssuer.ProcessMessage(msg)
-		assert.NoError(t, processErr)
+		assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
+		processMessageDoneSignal.Signal()
 	}()
 
 	select {
@@ -204,6 +209,8 @@ func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 	case <-fixture.tlsIssuer.msgFromCentralC:
 		assert.Fail(t, "unknown message is not ignored")
 	}
+	_, ok := processMessageDoneSignal.WaitWithTimeout(100 * time.Millisecond)
+	assert.True(t, ok)
 }
 
 func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
