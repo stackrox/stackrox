@@ -204,7 +204,7 @@ func insertIntoMultikeyNested(tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested,
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "<no value>")
+	globaldb.RegisterTable(table, "TestMultiKeyStruct")
 
 	createTableMultikey(db)
 
@@ -214,7 +214,7 @@ func New(db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) upsert(objs ...*storage.TestMultiKeyStruct) error {
-	conn, release := s.acquireConn(ops.Get, "<no value>")
+	conn, release := s.acquireConn(ops.Get, "TestMultiKeyStruct")
 	defer release()
 
 	for _, obj := range objs {
@@ -237,20 +237,20 @@ func (s *storeImpl) upsert(objs ...*storage.TestMultiKeyStruct) error {
 }
 
 func (s *storeImpl) Upsert(obj *storage.TestMultiKeyStruct) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TestMultiKeyStruct")
 
 	return s.upsert(obj)
 }
 
 func (s *storeImpl) UpsertMany(objs []*storage.TestMultiKeyStruct) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestMultiKeyStruct")
 
 	return s.upsert(objs...)
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count() (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "TestMultiKeyStruct")
 
 	row := s.db.QueryRow(context.Background(), countStmt)
 	var count int
@@ -262,7 +262,7 @@ func (s *storeImpl) Count() (int, error) {
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(key1 string, key2 string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestMultiKeyStruct")
 
 	row := s.db.QueryRow(context.Background(), existsStmt, key1, key2)
 	var exists bool
@@ -274,9 +274,9 @@ func (s *storeImpl) Exists(key1 string, key2 string) (bool, error) {
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(key1 string, key2 string) (*storage.TestMultiKeyStruct, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestMultiKeyStruct")
 
-	conn, release := s.acquireConn(ops.Get, "<no value>")
+	conn, release := s.acquireConn(ops.Get, "TestMultiKeyStruct")
 	defer release()
 
 	row := conn.QueryRow(context.Background(), getStmt, key1, key2)
@@ -303,9 +303,9 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(key1 string, key2 string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestMultiKeyStruct")
 
-	conn, release := s.acquireConn(ops.Remove, "<no value>")
+	conn, release := s.acquireConn(ops.Remove, "TestMultiKeyStruct")
 	defer release()
 
 	if _, err := conn.Exec(context.Background(), deleteStmt, key1, key2); err != nil {

@@ -217,7 +217,7 @@ func insertIntoSinglekeyNested(tx pgx.Tx, obj *storage.TestSingleKeyStruct_Neste
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "<no value>")
+	globaldb.RegisterTable(table, "TestSingleKeyStruct")
 
 	createTableSinglekey(db)
 
@@ -227,7 +227,7 @@ func New(db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) upsert(objs ...*storage.TestSingleKeyStruct) error {
-	conn, release := s.acquireConn(ops.Get, "<no value>")
+	conn, release := s.acquireConn(ops.Get, "TestSingleKeyStruct")
 	defer release()
 
 	for _, obj := range objs {
@@ -250,20 +250,20 @@ func (s *storeImpl) upsert(objs ...*storage.TestSingleKeyStruct) error {
 }
 
 func (s *storeImpl) Upsert(obj *storage.TestSingleKeyStruct) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TestSingleKeyStruct")
 
 	return s.upsert(obj)
 }
 
 func (s *storeImpl) UpsertMany(objs []*storage.TestSingleKeyStruct) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestSingleKeyStruct")
 
 	return s.upsert(objs...)
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count() (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "TestSingleKeyStruct")
 
 	row := s.db.QueryRow(context.Background(), countStmt)
 	var count int
@@ -275,7 +275,7 @@ func (s *storeImpl) Count() (int, error) {
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(key string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestSingleKeyStruct")
 
 	row := s.db.QueryRow(context.Background(), existsStmt, key)
 	var exists bool
@@ -287,9 +287,9 @@ func (s *storeImpl) Exists(key string) (bool, error) {
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(key string) (*storage.TestSingleKeyStruct, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestSingleKeyStruct")
 
-	conn, release := s.acquireConn(ops.Get, "<no value>")
+	conn, release := s.acquireConn(ops.Get, "TestSingleKeyStruct")
 	defer release()
 
 	row := conn.QueryRow(context.Background(), getStmt, key)
@@ -316,9 +316,9 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(key string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestSingleKeyStruct")
 
-	conn, release := s.acquireConn(ops.Remove, "<no value>")
+	conn, release := s.acquireConn(ops.Remove, "TestSingleKeyStruct")
 	defer release()
 
 	if _, err := conn.Exec(context.Background(), deleteStmt, key); err != nil {
@@ -349,9 +349,9 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ids []string) ([]*storage.TestSingleKeyStruct, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestSingleKeyStruct")
 
-	conn, release := s.acquireConn(ops.GetMany, "<no value>")
+	conn, release := s.acquireConn(ops.GetMany, "TestSingleKeyStruct")
 	defer release()
 
 	rows, err := conn.Query(context.Background(), getManyStmt, ids)
@@ -391,9 +391,9 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.TestSingleKeyStruct, []int
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TestSingleKeyStruct")
 
-	conn, release := s.acquireConn(ops.RemoveMany, "<no value>")
+	conn, release := s.acquireConn(ops.RemoveMany, "TestSingleKeyStruct")
 	defer release()
 	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err

@@ -1,7 +1,7 @@
 package globaldb
 
 var (
-	registeredTables []registeredTable
+	registeredTables = make(map[string]registeredTable)
 )
 
 type registeredTable struct {
@@ -10,8 +10,11 @@ type registeredTable struct {
 
 // RegisterTable maps a table to an object type for the purposes of metrics gathering
 func RegisterTable(table string, objType string) {
-	registeredTables = append(registeredTables, registeredTable{
+	if registered, ok := registeredTables[table]; ok {
+		log.Fatalf("table %q is already mapped to %q", table, registered.objType)
+	}
+	registeredTables[table] = registeredTable{
 		table:   table,
 		objType: objType,
-	})
+	}
 }

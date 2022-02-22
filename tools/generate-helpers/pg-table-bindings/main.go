@@ -55,9 +55,10 @@ func main() {
 
 		schema := walker.Walk(mt, props.Table)
 		templateMap := map[string]interface{}{
-			"Type":   props.Type,
-			"Table":  props.Table,
-			"Schema": schema,
+			"Type":        props.Type,
+			"TrimmedType": stringutils.GetAfter(props.Type, "."),
+			"Table":       props.Table,
+			"Schema":      schema,
 		}
 
 		buf := bytes.NewBuffer(nil)

@@ -40,7 +40,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_op_duration",
-		Help:      "Time taken to perform a rocksdb operation",
+		Help:      "Time taken to perform a postgres operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -185,7 +185,7 @@ func SetPostgresOperationDurationTime(start time.Time, op metrics.Op, t string) 
 	postgresOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
-// SetAcquireDBConnDuration times how long a particular dackbox operation took on a particular resource
+// SetAcquireDBConnDuration times how long it took the database pool to acquire a connection
 func SetAcquireDBConnDuration(start time.Time, op metrics.Op, t string) {
 	acquireDBConnHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }

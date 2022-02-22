@@ -1388,7 +1388,7 @@ func insertIntoAlertsProcessesLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "<no value>")
+	globaldb.RegisterTable(table, "Alert")
 
 	createTableAlerts(db)
 
@@ -1398,7 +1398,7 @@ func New(db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) upsert(objs ...*storage.Alert) error {
-	conn, release := s.acquireConn(ops.Get, "<no value>")
+	conn, release := s.acquireConn(ops.Get, "Alert")
 	defer release()
 
 	for _, obj := range objs {
@@ -1421,20 +1421,20 @@ func (s *storeImpl) upsert(objs ...*storage.Alert) error {
 }
 
 func (s *storeImpl) Upsert(obj *storage.Alert) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Alert")
 
 	return s.upsert(obj)
 }
 
 func (s *storeImpl) UpsertMany(objs []*storage.Alert) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Alert")
 
 	return s.upsert(objs...)
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count() (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Alert")
 
 	row := s.db.QueryRow(context.Background(), countStmt)
 	var count int
@@ -1446,7 +1446,7 @@ func (s *storeImpl) Count() (int, error) {
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Alert")
 
 	row := s.db.QueryRow(context.Background(), existsStmt, id)
 	var exists bool
@@ -1458,9 +1458,9 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(id string) (*storage.Alert, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Alert")
 
-	conn, release := s.acquireConn(ops.Get, "<no value>")
+	conn, release := s.acquireConn(ops.Get, "Alert")
 	defer release()
 
 	row := conn.QueryRow(context.Background(), getStmt, id)
@@ -1487,9 +1487,9 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Alert")
 
-	conn, release := s.acquireConn(ops.Remove, "<no value>")
+	conn, release := s.acquireConn(ops.Remove, "Alert")
 	defer release()
 
 	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
@@ -1520,9 +1520,9 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Alert")
 
-	conn, release := s.acquireConn(ops.GetMany, "<no value>")
+	conn, release := s.acquireConn(ops.GetMany, "Alert")
 	defer release()
 
 	rows, err := conn.Query(context.Background(), getManyStmt, ids)
@@ -1562,9 +1562,9 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "<no value>")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
 
-	conn, release := s.acquireConn(ops.RemoveMany, "<no value>")
+	conn, release := s.acquireConn(ops.RemoveMany, "Alert")
 	defer release()
 	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err

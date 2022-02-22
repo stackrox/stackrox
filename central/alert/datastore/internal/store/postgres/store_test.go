@@ -47,4 +47,10 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, alert, foundAlert)
+
+	assert.NoError(t, store.Delete(alert.GetId()))
+	foundAlert, exists, err = store.Get(alert.GetId())
+	assert.NoError(t, err)
+	assert.False(t, exists)
+	assert.Nil(t, foundAlert)
 }
