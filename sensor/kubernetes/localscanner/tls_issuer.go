@@ -83,11 +83,12 @@ type certificateRefresherSupplier func(requestCertificates requestCertificatesFu
 type serviceCertificatesRepoSupplier func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo
 
-// Start launches a certificate refreshes that immediately checks the certificates, and that keeps them updated.
+// Start starts the sensor component and launches a certificate refreshes that immediately checks the certificates, and
+// that keeps them updated.
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started it fails immediately.
 func (i *localScannerTLSIssuerImpl) Start() error {
-	log.Info("starting local scanner TLS issuer.")
+	log.Debug("starting local scanner TLS issuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
@@ -110,7 +111,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate refresher"))
 	}
 
-	log.Info("local scanner TLS issuer started.")
+	log.Debug("local scanner TLS issuer started.")
 	return nil
 }
 
@@ -127,7 +128,7 @@ func (i *localScannerTLSIssuerImpl) Stop(err error) {
 	}
 
 	i.requester.Stop()
-	log.Info("local scanner TLS issuer stopped.")
+	log.Debug("local scanner TLS issuer stopped.")
 }
 
 func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapability {
