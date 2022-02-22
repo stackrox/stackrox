@@ -88,7 +88,7 @@ type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, na
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started it fails immediately.
 func (i *localScannerTLSIssuerImpl) Start() error {
-	log.Debug("starting local scanner TLS issuer.")
+	log.Debug("starting local scanner TLS tlsIssuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
@@ -111,12 +111,12 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate refresher"))
 	}
 
-	log.Debug("local scanner TLS issuer started.")
+	log.Debug("local scanner TLS tlsIssuer started.")
 	return nil
 }
 
 func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
-	log.Errorf("local scanner TLS issuer start aborted due to error: %s", err)
+	log.Errorf("local scanner TLS tlsIssuer start aborted due to error: %s", err)
 	i.Stop(err)
 	return err
 }
@@ -128,7 +128,7 @@ func (i *localScannerTLSIssuerImpl) Stop(_ error) {
 	}
 
 	i.requester.Stop()
-	log.Debug("local scanner TLS issuer stopped.")
+	log.Debug("local scanner TLS tlsIssuer stopped.")
 }
 
 func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapability {

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	appsApiv1 "k8s.io/api/apps/v1"
@@ -33,19 +34,20 @@ type localScannerTLSIssuerFixture struct {
 	refresher       *certificateRefresherMock
 	repo            *certsRepoMock
 	componentGetter *componentGetterMock
-	issuer          *localScannerTLSIssuerImpl
+	tlsIssuer       *localScannerTLSIssuerImpl
 }
 
 func newLocalScannerTLSIssuerFixture(k8sClientConfig testK8sClientConfig) *localScannerTLSIssuerFixture {
-	fixture := &localScannerTLSIssuerFixture{}
-	fixture.requester = &certificateRequesterMock{}
-	fixture.refresher = &certificateRefresherMock{}
-	fixture.repo = &certsRepoMock{}
-	fixture.componentGetter = &componentGetterMock{}
-	fixture.k8sClient = testK8sClient(k8sClientConfig)
+	fixture := &localScannerTLSIssuerFixture{
+		requester:       &certificateRequesterMock{},
+		refresher:       &certificateRefresherMock{},
+		repo:            &certsRepoMock{},
+		componentGetter: &componentGetterMock{},
+		k8sClient:       testK8sClient(k8sClientConfig),
+	}
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
-	fixture.issuer = &localScannerTLSIssuerImpl{
+	fixture.tlsIssuer = &localScannerTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    fixture.k8sClient,
@@ -59,7 +61,7 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig testK8sClientConfig) *local
 	return fixture
 }
 
-func (f *localScannerTLSIssuerFixture) assertExpectations(t *testing.T) {
+func (f *localScannerTLSIssuerFixture) assertMockExpectations(t *testing.T) {
 	f.requester.AssertExpectations(t)
 	f.requester.AssertExpectations(t)
 	f.componentGetter.AssertExpectations(t)
@@ -69,10 +71,13 @@ func (f *localScannerTLSIssuerFixture) assertExpectations(t *testing.T) {
 func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 	f.requester.On("Start").Once()
 	f.refresher.On("Start").Once().Return(conf.refresherStartErr)
+
 	f.repo.On("getServiceCertificates", mock.Anything).Once().
 		Return((*storage.TypedServiceCertificateSet)(nil), conf.getCertsErr)
+
 	f.componentGetter.On("getServiceCertificatesRepo", mock.Anything,
 		mock.Anything, mock.Anything).Once().Return(f.repo, nil)
+
 	f.componentGetter.On("getCertificateRefresher", mock.Anything, f.repo,
 		certRefreshTimeout, certRefreshBackoff).Once().Return(f.refresher)
 }
@@ -89,7 +94,7 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 		"no error":            {getCertsErr: nil},
 		"missing secret data": {getCertsErr: ErrMissingSecretData},
 		"inconsistent CAs":    {getCertsErr: ErrDifferentCAForDifferentServiceTypes},
-		"missing secret":      {getCertsErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "foo")},
+		"missing secret":      {getCertsErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "scanner-db-slim-tls")},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
@@ -98,12 +103,12 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 			fixture.refresher.On("Stop").Once()
 			fixture.requester.On("Stop").Once()
 
-			startErr := fixture.issuer.Start()
-			fixture.issuer.Stop(nil)
+			startErr := fixture.tlsIssuer.Start()
+			fixture.tlsIssuer.Stop(nil)
 
 			assert.NoError(t, startErr)
-			assert.Nil(t, fixture.issuer.refresher)
-			fixture.assertExpectations(t)
+			assert.Nil(t, fixture.tlsIssuer.refresher)
+			fixture.assertMockExpectations(t)
 		})
 	}
 }
@@ -114,10 +119,10 @@ func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 	fixture.refresher.On("Stop").Once()
 	fixture.requester.On("Stop").Once()
 
-	startErr := fixture.issuer.Start()
+	startErr := fixture.tlsIssuer.Start()
 
 	assert.Error(t, startErr)
-	fixture.assertExpectations(t)
+	fixture.assertMockExpectations(t)
 }
 
 func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
@@ -126,12 +131,12 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 	fixture.refresher.On("Stop").Once()
 	fixture.requester.On("Stop").Once()
 
-	startErr := fixture.issuer.Start()
-	secondStartErr := fixture.issuer.Start()
+	startErr := fixture.tlsIssuer.Start()
+	secondStartErr := fixture.tlsIssuer.Start()
 
 	assert.NoError(t, startErr)
 	assert.Error(t, secondStartErr)
-	fixture.assertExpectations(t)
+	fixture.assertMockExpectations(t)
 }
 
 func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *testing.T) {
@@ -147,10 +152,10 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 			fixture.refresher.On("Stop").Once()
 			fixture.requester.On("Stop").Once()
 
-			startErr := fixture.issuer.Start()
+			startErr := fixture.tlsIssuer.Start()
 
 			assert.Error(t, startErr)
-			fixture.assertExpectations(t)
+			fixture.assertMockExpectations(t)
 		})
 	}
 }
@@ -160,7 +165,7 @@ func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	defer cancel()
 	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
 	expectedResponse := &central.IssueLocalScannerCertsResponse{
-		RequestId: "requestID",
+		RequestId: uuid.NewDummy().String(),
 	}
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{
@@ -169,14 +174,14 @@ func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	}
 
 	go func() {
-		processErr := fixture.issuer.ProcessMessage(msg)
+		processErr := fixture.tlsIssuer.ProcessMessage(msg)
 		assert.NoError(t, processErr)
 	}()
 
 	select {
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
-	case response := <-fixture.issuer.msgFromCentralC:
+	case response := <-fixture.tlsIssuer.msgFromCentralC:
 		assert.Equal(t, expectedResponse, response)
 	}
 }
@@ -190,13 +195,13 @@ func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 	}
 
 	go func() {
-		processErr := fixture.issuer.ProcessMessage(msg)
+		processErr := fixture.tlsIssuer.ProcessMessage(msg)
 		assert.NoError(t, processErr)
 	}()
 
 	select {
 	case <-ctx.Done():
-	case <-fixture.issuer.msgFromCentralC:
+	case <-fixture.tlsIssuer.msgFromCentralC:
 		assert.Fail(t, "unknown message is not ignored")
 	}
 }
