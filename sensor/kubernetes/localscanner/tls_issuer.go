@@ -179,7 +179,7 @@ func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Co
 		return pod.GetObjectMeta(), nil
 	})
 	if getPodErr != nil {
-		return nil, errors.Wrap(getPodErr, "fetching sensor pod")
+		return nil, errors.Wrapf(getPodErr, "fetching sensor pod with name %q", i.sensorPodName)
 	}
 	podOwners := sensorPodMeta.GetOwnerReferences()
 	if len(podOwners) != 1 {
@@ -198,7 +198,7 @@ func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Co
 			return replicaSet.GetObjectMeta(), nil
 		})
 	if getReplicaSetErr != nil {
-		return nil, errors.Wrap(getReplicaSetErr, "fetching owner replica set")
+		return nil, errors.Wrapf(getReplicaSetErr, "fetching owner replica set with name %q", podOwnerName)
 	}
 	replicaSetOwners := ownerReplicaSetMeta.GetOwnerReferences()
 	if len(replicaSetOwners) != 1 {
