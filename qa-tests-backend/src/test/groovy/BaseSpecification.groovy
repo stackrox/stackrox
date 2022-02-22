@@ -127,7 +127,7 @@ class BaseSpecification extends Specification {
             allResources.getResourcesList().each { res ->
                 resourceAccess.put(res, RoleOuterClass.Access.READ_WRITE_ACCESS) }
 
-            testRoleName = "Test Automation Role - ${RUN_ID}"
+            String testRoleName = "Test Automation Role - ${RUN_ID}"
 
             RoleService.deleteRole(testRoleName)
             RoleService.createRoleWithScopeAndPermissionSet(testRoleName, UNRESTRICTED_SCOPE_ID, resourceAccess)
