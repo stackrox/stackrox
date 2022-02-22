@@ -1,6 +1,6 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 
-export const url = '/main/policies-pf';
+export const url = '/main/policies';
 
 export const selectors = {
     table: {
