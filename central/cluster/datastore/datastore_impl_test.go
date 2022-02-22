@@ -590,13 +590,6 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 	suite.NoError(err)
 
 	someClusterWithManagerType := func(managerType storage.ManagerType, helmConfig *storage.CompleteClusterConfig) *storage.Cluster {
-		//image := "docker.io/stackrox/rox:latest" //mainImage
-		//hconfig := helmConfig
-		//if managerType == storage.ManagerType_MANAGER_TYPE_MANUAL || managerType == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
-		//	image = "docker.io/stackrox/rox"
-		//} else if hconfig == nil {
-		//	hconfig = &storage.CompleteClusterConfig{}
-		//}
 		return &storage.Cluster{
 			Id:                 "",
 			Name:               "",

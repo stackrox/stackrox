@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -169,7 +168,6 @@ func TestDropImageTagsOrDigests(t *testing.T) {
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			fmt.Println(c.image)
 			resImage, gotError := DropImageTagsOrDigests(c.image)
 
 			if c.expectedError == nil {
