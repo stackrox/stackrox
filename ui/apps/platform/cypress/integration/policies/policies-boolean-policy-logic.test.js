@@ -14,7 +14,7 @@ import {
     visitPolicies,
 } from '../../helpers/policies';
 
-describe('Boolean Policy Logic Section', () => {
+describe.skip('Boolean Policy Logic Section', () => {
     withAuth();
 
     const dataTransfer = new DndSimulatorDataTransfer();
