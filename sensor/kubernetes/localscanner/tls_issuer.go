@@ -121,7 +121,7 @@ func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
 	return err
 }
 
-func (i *localScannerTLSIssuerImpl) Stop(err error) {
+func (i *localScannerTLSIssuerImpl) Stop(_ error) {
 	if i.refresher != nil {
 		i.refresher.Stop()
 		i.refresher = nil
@@ -141,7 +141,7 @@ func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return i.msgToCentralC
 }
 
-// ProcessMessage is how the central receiver delivers messages from central to SensorComponents.
+// ProcessMessage dispatches Central's messages to Sensor received via the central receiver.
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
 func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
@@ -160,8 +160,7 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 		}()
 		return nil
 	default:
-		// silently ignore other messages broadcasted by centralReceiverImpl, as centralReceiverImpl logs
-		// all returned errors with error level.
+		// messages not supported by this component are ignored because unknown messages types are handled by the central receiver.
 		return nil
 	}
 }
