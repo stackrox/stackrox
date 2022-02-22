@@ -7,13 +7,12 @@ out_dir=""
 setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq || skip "Tests in this file require yq"
-  [[ -n "$API_ENDPOINT" ]] || fail "API_ENDPOINT environment variable required"
-  [[ -n "$ROX_PASSWORD" ]] || fail "ROX_PASSWORD environment variable required"
+  assert_file_exist "$test_data/helm-output-secured-cluster-services/ca-config.yaml"
+  assert_file_exist "$test_data/helm-output-secured-cluster-services/cluster-init-bundle.yaml"
 }
 
 setup() {
-  # Cluster name must be unique
-  CLUSTER_NAME="CLUSTER-bats-$BATS_SUITE_TEST_NUMBER-$(date '+%Y%m%d%H%M%S')"
+  CLUSTER_NAME="CLUSTER-1"
   out_dir="$(mktemp -d -u)"
 }
 

@@ -15,6 +15,7 @@ luname() {
 }
 
 tmp_roxctl="tmp/roxctl-bats/bin"
+test_data="$BATS_TEST_DIRNAME/../test-data"
 
 any_version='[0-9]+\.[0-9]+\.'
 
@@ -91,12 +92,12 @@ helm_template_secured_cluster() {
   [[ -n "$cluster_name" ]] || fail "helm_template_secured_cluster: missing cluster_name"
   local extra_helm_args=("${@}")
 
-  roxctl_authenticated central init-bundles fetch-ca --output "$in_dir/ca-config.yaml"
-  assert_success
+  # Simulate: roxctl central init-bundles fetch-ca --output "$in_dir/ca-config.yaml"
+  cp "$test_data/helm-output-secured-cluster-services/ca-config.yaml" "$in_dir/ca-config.yaml"
   yaml_valid "$in_dir/ca-config.yaml"
 
-  roxctl_authenticated central init-bundles generate "bundle-${cluster_name}" --output "$in_dir/cluster-init-bundle.yaml"
-  assert_success
+  # Simulate: roxctl central init-bundles generate "bundle-${cluster_name}" --output "$in_dir/cluster-init-bundle.yaml"
+  cp "$test_data/helm-output-secured-cluster-services/cluster-init-bundle.yaml" "$in_dir/cluster-init-bundle.yaml"
   yaml_valid "$in_dir/cluster-init-bundle.yaml"
 
   helm_args=(
