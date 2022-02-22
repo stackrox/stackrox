@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -56,21 +57,23 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	if integration.GetId() != "" {
 		return nil, errox.Newf(errox.InvalidArgs, "id should be empty but %q provided", integration.GetId())
 	}
+	integration.Id = GenerateSignatureIntegrationID()
+	if err := ValidateSignatureIntegration(integration); err != nil {
+		return nil, errox.NewErrInvalidArgs(err.Error())
+	}
 
 	// Protect against TOCTOU race condition.
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	integrationID, err := d.generateUniqueIntegrationID()
-	if err != nil {
+	if err := d.verifyIntegrationIDDoesNotExist(integration.GetId()); err != nil {
+		if errors.Is(err, errox.InvariantViolation) {
+			return nil, errors.Wrap(err, "collision in generated signature integration id, try again")
+		}
 		return nil, err
 	}
-	integration.Id = integrationID
 
-	if err := ValidateSignatureIntegration(integration); err != nil {
-		return nil, errox.NewErrInvalidArgs(err.Error())
-	}
-	err = d.storage.Upsert(integration)
+	err := d.storage.Upsert(integration)
 	if err != nil {
 		return nil, err
 	}
@@ -121,18 +124,12 @@ func (d *datastoreImpl) verifyIntegrationIDExists(id string) error {
 	return nil
 }
 
-func (d *datastoreImpl) generateUniqueIntegrationID() (string, error) {
-	// We decided not to use unbounded loop to avoid risk of getting stack overflows.
-	for i := 0; i < maxGenerateIDAttempts; i++ {
-		id := GenerateSignatureIntegrationID()
-		_, found, err := d.storage.Get(id)
-		if err != nil {
-			return "", err
-		} else if found {
-			log.Warnf("Clash on signature integration id %s", id)
-			continue
-		}
-		return id, nil
+func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(id string) error {
+	_, found, err := d.storage.Get(id)
+	if err != nil {
+		return err
+	} else if found {
+		return errox.Newf(errox.InvariantViolation, "signature integration id=%s already exists", id)
 	}
-	return "", errox.New(errox.InvariantViolation, "could not generate unique signature integration id")
+	return nil
 }
