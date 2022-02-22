@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	labelUtils "github.com/stackrox/rox/pkg/labels"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +24,7 @@ func TestValidateRole(t *testing.T) {
 	}
 
 	testCasesGood := map[string]*storage.Role{
-		"valid name, permissionSetId and accessScopeId": constructRole("new valid role", GeneratePermissionSetID(), permissions.GenerateAccessScopeID()),
+		"valid name, permissionSetId and accessScopeId": constructRole("new valid role", GeneratePermissionSetID(), GenerateAccessScopeID()),
 	}
 
 	for desc, role := range testCasesGood {
@@ -109,7 +108,7 @@ func TestValidatePermissionSet(t *testing.T) {
 }
 
 func TestValidateSimpleAccessScope(t *testing.T) {
-	mockGoodID := permissions.EnsureValidAccessScopeID("42")
+	mockGoodID := EnsureValidAccessScopeID("42")
 	mockBadID := "42"
 	mockName := "Heart of Gold"
 	mockDescription := "HHGTTG"

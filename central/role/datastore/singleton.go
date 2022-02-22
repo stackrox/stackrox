@@ -153,7 +153,7 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		role := &storage.Role{
 			Name:          roleName,
 			Description:   attributes.description,
-			AccessScopeId: permissions.AccessScopeIncludeAll.GetId(),
+			AccessScopeId: rolePkg.AccessScopeIncludeAll.GetId(),
 		}
 
 		permissionSet := &storage.PermissionSet{
@@ -168,5 +168,9 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		roles = append(roles, role)
 
 	}
-	return roles, permissionSets, []*storage.SimpleAccessScope{permissions.AccessScopeIncludeAll, permissions.AccessScopeExcludeAll}
+	simpleAccessScopes := []*storage.SimpleAccessScope{
+		rolePkg.AccessScopeIncludeAll,
+		rolePkg.AccessScopeExcludeAll}
+
+	return roles, permissionSets, simpleAccessScopes
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/central/role"
+	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -120,7 +120,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 	// Empty access scope ID is deprecated. Fill the default during the adoption
 	// period.
 	if role.GetAccessScopeId() == "" {
-		role.AccessScopeId = permissions.AccessScopeIncludeAll.GetId()
+		role.AccessScopeId = rolePkg.AccessScopeIncludeAll.GetId()
 	}
 	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
@@ -133,7 +133,7 @@ func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.E
 	// Empty access scope ID is deprecated. Fill the default during the adoption
 	// period.
 	if role.GetAccessScopeId() == "" {
-		role.AccessScopeId = permissions.AccessScopeIncludeAll.GetId()
+		role.AccessScopeId = rolePkg.AccessScopeIncludeAll.GetId()
 	}
 	err := s.roleDataStore.UpdateRole(ctx, role)
 	if err != nil {
@@ -208,7 +208,7 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 	if permissionSet.GetId() != "" {
 		return nil, errorhelpers.NewErrInvalidArgs("setting id field is not allowed")
 	}
-	permissionSet.Id = role.GeneratePermissionSetID()
+	permissionSet.Id = rolePkg.GeneratePermissionSetID()
 
 	// Store the augmented permission set; report back on error. Note the
 	// permission set is referenced by its name because that's what the caller
@@ -274,7 +274,7 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 	if scope.GetId() != "" {
 		return nil, errorhelpers.NewErrInvalidArgs("setting id field is not allowed")
 	}
-	scope.Id = permissions.GenerateAccessScopeID()
+	scope.Id = rolePkg.GenerateAccessScopeID()
 
 	// Store the augmented access scope; report back on error. Note the access
 	// scope is referenced by its name because that's what the caller knows.
@@ -308,7 +308,7 @@ func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.Resour
 func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error) {
 	// If we're here, service-level authz has already verified that the caller
 	// has at least READ permission on the Role resource.
-	err := role.ValidateSimpleAccessScopeRules(req.GetAccessScope().GetSimpleRules())
+	err := rolePkg.ValidateSimpleAccessScopeRules(req.GetAccessScope().GetSimpleRules())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to compute effective access scope")
 	}

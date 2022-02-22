@@ -1,10 +1,11 @@
-package permissions
+package role
 
 import (
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -45,10 +46,19 @@ var AccessScopeExcludeAll = &storage.SimpleAccessScope{
 	Rules:       &storage.SimpleAccessScope_Rules{},
 }
 
-// AccessScopeIncludeAll has empty rules and hence excludes all
-// scoped resources. Global resources must be unaffected.
+// AccessScopeIncludeAll gives access to all resources. It is checked by ID, as
+// Rules cannot represent unrestricted scope.
 var AccessScopeIncludeAll = &storage.SimpleAccessScope{
 	Id:          EnsureValidAccessScopeID("unrestricted"),
 	Name:        "Unrestricted",
 	Description: "Access to all clusters and namespaces",
+}
+
+// defaultScopesIDs is a string set containing the names of all default (built-in) scopes.
+var defaultScopesIDs = set.NewFrozenStringSet(AccessScopeIncludeAll.Id, AccessScopeExcludeAll.Id)
+
+// IsDefaultAccessScope checks if a given access scope id corresponds to a
+// default access scope.
+func IsDefaultAccessScope(id string) bool {
+	return defaultScopesIDs.Contains(id)
 }

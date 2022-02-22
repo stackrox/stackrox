@@ -3,6 +3,7 @@ package service
 import (
 	"testing"
 
+	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
@@ -19,19 +20,21 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 		},
 	}
 
-	writeRole := roletest.NewResolvedRoleWithGlobalScope(
+	writeRole := roletest.NewResolvedRole(
 		"Admin",
 		map[string]storage.Access{
 			"Image":      storage.Access_READ_WRITE_ACCESS,
 			"Deployment": storage.Access_READ_WRITE_ACCESS,
 		},
+		role.AccessScopeIncludeAll,
 	)
-	readRole := roletest.NewResolvedRoleWithGlobalScope(
+	readRole := roletest.NewResolvedRole(
 		"Analyst",
 		map[string]storage.Access{
 			"Image":      storage.Access_READ_ACCESS,
 			"Deployment": storage.Access_READ_ACCESS,
 		},
+		role.AccessScopeIncludeAll,
 	)
 	devWriteRole := roletest.NewResolvedRole(
 		"Admin",
@@ -89,11 +92,12 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 		},
 		devScope,
 	)
-	deploymentWriteRole := roletest.NewResolvedRoleWithGlobalScope(
+	deploymentWriteRole := roletest.NewResolvedRole(
 		"DeploymentWrite",
 		map[string]storage.Access{
 			"Deployment": storage.Access_READ_WRITE_ACCESS,
 		},
+		role.AccessScopeIncludeAll,
 	)
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devImageWriteRole, deploymentWriteRole}, []permissions.ResolvedRole{devWriteRole})
 	assert.NoError(t, err)

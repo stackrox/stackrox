@@ -14,13 +14,15 @@ func NewResolvedRole(roleName string, permissions map[string]storage.Access, acc
 	}
 }
 
-// NewResolvedRoleWithGlobalScope creates an instance of ResolvedRole with
-// global access scope.
-func NewResolvedRoleWithGlobalScope(roleName string, perms map[string]storage.Access) permissions.ResolvedRole {
+// NewResolvedRoleWithDenyAll creates an instance of ResolvedRole with the
+// 'Deny All' access scope.
+func NewResolvedRoleWithDenyAll(roleName string, perms map[string]storage.Access) permissions.ResolvedRole {
 	return &resolvedRoleImpl{
 		roleName:    roleName,
 		permissions: perms,
-		accessScope: permissions.AccessScopeIncludeAll,
+		accessScope: &storage.SimpleAccessScope{
+			Id:   "io.stackrox.authz.accessscope.denyall",
+			Name: "Deny All Test Scope"},
 	}
 }
 

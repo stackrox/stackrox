@@ -84,7 +84,7 @@ func identity(readResources ...string) func(mockCtrl *gomock.Controller, t *test
 			resourceToAccess[resource] = storage.Access_READ_ACCESS
 		}
 
-		dummyRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+		dummyRole := roletest.NewResolvedRoleWithDenyAll("Dummy", nil)
 		identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{dummyRole})
 		identity.EXPECT().Permissions().AnyTimes().Return(resourceToAccess)
 		return authn.ContextWithIdentity(context.Background(), identity, t)

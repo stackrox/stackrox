@@ -87,7 +87,7 @@ func ValidatePermissionSet(ps *storage.PermissionSet) error {
 func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
 	var multiErr error
 
-	if err := permissions.ValidateAccessScopeID(scope); err != nil {
+	if err := ValidateAccessScopeID(scope); err != nil {
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if scope.GetName() == "" {

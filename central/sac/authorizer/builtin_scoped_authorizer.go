@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
+	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/observe"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -277,20 +277,11 @@ func (c *authorizerDataCache) getEffectiveAccessScopeFromCache(id string) *effec
 	return c.effectiveAccessScopesByID[id]
 }
 
-// DefaultScopesIDs is a string set containing the names of all default (built-in) Roles.
-var DefaultScopesIDs = set.NewFrozenStringSet(permissions.AccessScopeIncludeAll.Id, permissions.AccessScopeExcludeAll.Id)
-
-// IsDefaultAccessScope checks if a given access scope id corresponds to a
-// default access scope.
-func IsDefaultAccessScope(id string) bool {
-	return DefaultScopesIDs.Contains(id)
-}
-
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
-	if accessScope == nil || accessScope.Id == permissions.AccessScopeExcludeAll.Id {
+	if accessScope == nil || accessScope.Id == rolePkg.AccessScopeExcludeAll.Id {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
-	if accessScope.Id == permissions.AccessScopeIncludeAll.Id {
+	if accessScope.Id == rolePkg.AccessScopeIncludeAll.Id {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
 	eas, err := effectiveaccessscope.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)

@@ -7,7 +7,6 @@ import (
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
-	"github.com/stackrox/rox/central/sac/authorizer"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -522,7 +521,7 @@ func (ds *dataStoreImpl) verifyRoleNameExists(name string) error {
 
 // Returns errorhelpers.ErrInvalidArgs if the given scope is a default one.
 func verifyNotDefaultAccessScope(scope *storage.SimpleAccessScope) error {
-	if authorizer.IsDefaultAccessScope(scope.GetId()) {
+	if rolePkg.IsDefaultAccessScope(scope.GetId()) {
 		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "default access scope %q cannot be modified or deleted", scope.GetName())
 	}
 	return nil
