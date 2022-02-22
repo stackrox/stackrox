@@ -1,10 +1,10 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
-import { Bullseye, PageSection, PageSectionVariants, Spinner } from '@patternfly/react-core';
+import React, { ReactElement, useState } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import { SearchFilter } from 'types/search';
+import queryService from 'utils/queryService';
 import ObservedCVEsTable from './ObservedCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 
@@ -13,10 +13,17 @@ type ObservedCVEsProps = {
 };
 
 function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
+    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+
+    const vulnsQuery = queryService.objectToWhereClause({
+        ...searchFilter,
+        'Vulnerability State': 'OBSERVED',
+    });
+
     const { isLoading, data, refetchQuery } = useImageVulnerabilities({
         imageId,
-        vulnsQuery: 'Vulnerability State:OBSERVED',
+        vulnsQuery,
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
@@ -27,27 +34,11 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
         },
     });
 
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner isSVG size="sm" />
-            </Bullseye>
-        );
-    }
-
     const itemCount = data?.image?.vulnCount || 0;
     const rows = data?.image?.vulns || [];
     const registry = data?.image?.name?.registry || '';
     const remote = data?.image?.name?.remote || '';
     const tag = data?.image?.name?.tag || '';
-
-    if (!isLoading && rows && rows.length === 0) {
-        return (
-            <PageSection variant={PageSectionVariants.light} isFilled>
-                <ACSEmptyState title="No CVEs available" />
-            </PageSection>
-        );
-    }
 
     return (
         <ObservedCVEsTable
@@ -62,6 +53,8 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             onSetPage={onSetPage}
             onPerPageSelect={onPerPageSelect}
             updateTable={refetchQuery}
+            searchFilter={searchFilter}
+            setSearchFilter={setSearchFilter}
         />
     );
 }
