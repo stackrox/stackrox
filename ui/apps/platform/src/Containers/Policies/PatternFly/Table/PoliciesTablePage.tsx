@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
-import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 import {
     getPolicies,
     reassessPolicies,

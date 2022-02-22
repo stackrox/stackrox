@@ -1,9 +1,13 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
+    Bullseye,
     Divider,
     DropdownItem,
+    PageSection,
+    PageSectionVariants,
     Pagination,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -15,6 +19,8 @@ import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySever
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import useAuthStatus from 'hooks/useAuthStatus';
+import { SearchFilter } from 'types/search';
+import ACSEmptyState from 'Components/ACSEmptyState';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { DeferredCVEsToBeAssessed } from './types';
@@ -25,12 +31,16 @@ import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
 import DeferralExpirationDate from '../DeferralExpirationDate';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 import CVESummaryLink from '../CVESummaryLink';
+import SearchFilterResults from '../SearchFilterResults';
+import ImageVulnsSearchFilter from '../ImageVulnsSearchFilter';
 
 export type DeferredCVEsTableProps = {
     rows: Vulnerability[];
     isLoading: boolean;
     itemCount: number;
     updateTable: () => void;
+    searchFilter: SearchFilter;
+    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
 } & UsePaginationResult;
 
 function DeferredCVEsTable({
@@ -41,6 +51,9 @@ function DeferredCVEsTable({
     onSetPage,
     onPerPageSelect,
     updateTable,
+    searchFilter,
+    setSearchFilter,
+    isLoading,
 }: DeferredCVEsTableProps): ReactElement {
     const {
         selected,
@@ -90,6 +103,13 @@ function DeferredCVEsTable({
             <Toolbar id="toolbar">
                 <ToolbarContent>
                     <ToolbarItem>
+                        <ImageVulnsSearchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem variant="separator" />
+                    <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
                                 key="undo deferrals"
@@ -118,6 +138,18 @@ function DeferredCVEsTable({
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
+            {Object.keys(searchFilter).length !== 0 && (
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <SearchFilterResults
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
             <Divider component="div" />
             <TableComposable aria-label="Observed CVEs Table" variant="compact" borders>
                 <Thead>
@@ -139,78 +171,97 @@ function DeferredCVEsTable({
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {rows.map((row, rowIndex) => {
-                        const canReobserveCVE =
-                            canApproveRequests ||
-                            (canCreateRequests &&
-                                row.vulnerabilityRequest?.requestor.id === currentUser.userId);
+                    {isLoading && (
+                        <Tr>
+                            <Td colSpan={9}>
+                                <Bullseye>
+                                    <Spinner isSVG size="sm" />
+                                </Bullseye>
+                            </Td>
+                        </Tr>
+                    )}
+                    {!isLoading && rows && rows.length === 0 ? (
+                        <Tr>
+                            <Td colSpan={9}>
+                                <PageSection variant={PageSectionVariants.light} isFilled>
+                                    <ACSEmptyState title="No deferral requests were approved." />
+                                </PageSection>
+                            </Td>
+                        </Tr>
+                    ) : (
+                        rows.map((row, rowIndex) => {
+                            const canReobserveCVE =
+                                canApproveRequests ||
+                                (canCreateRequests &&
+                                    row.vulnerabilityRequest?.requestor.id === currentUser.userId);
 
-                        return (
-                            <Tr key={row.cve}>
-                                <Td
-                                    select={{
-                                        rowIndex,
-                                        onSelect,
-                                        isSelected: selected[rowIndex],
-                                    }}
-                                />
-                                <Td dataLabel="CVE">
-                                    <CVESummaryLink cve={row.cve} />
-                                </Td>
-                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
-                                <Td dataLabel="Severity">
-                                    <VulnerabilitySeverityLabel severity={row.severity} />
-                                </Td>
-                                <Td dataLabel="Expires">
-                                    {row.vulnerabilityRequest ? (
-                                        <DeferralExpirationDate
-                                            targetState={row.vulnerabilityRequest.targetState}
-                                            requestStatus={row.vulnerabilityRequest.status}
-                                            deferralReq={row.vulnerabilityRequest.deferralReq}
-                                        />
-                                    ) : (
-                                        'N/A'
-                                    )}
-                                </Td>
-                                <Td dataLabel="Scope">
-                                    {row.vulnerabilityRequest ? (
-                                        <VulnerabilityRequestScope
-                                            scope={row.vulnerabilityRequest.scope}
-                                        />
-                                    ) : (
-                                        'N/A'
-                                    )}
-                                </Td>
-                                <Td dataLabel="Affected components">
-                                    <AffectedComponentsButton components={row.components} />
-                                </Td>
-                                <Td dataLabel="Comments">
-                                    {row.vulnerabilityRequest ? (
-                                        <RequestCommentsButton
-                                            comments={row.vulnerabilityRequest.comments}
-                                            cve={row.vulnerabilityRequest.cves.ids[0]}
-                                        />
-                                    ) : (
-                                        'N/A'
-                                    )}
-                                </Td>
-                                <Td dataLabel="Approver">
-                                    {row.vulnerabilityRequest
-                                        ? row.vulnerabilityRequest.approvers
-                                              .map((user) => user.name)
-                                              .join(',')
-                                        : 'N/A'}
-                                </Td>
-                                <Td className="pf-u-text-align-right">
-                                    <DeferredCVEActionsColumn
-                                        row={row}
-                                        setVulnsToBeAssessed={setVulnsToBeAssessed}
-                                        canReobserveCVE={canReobserveCVE}
+                            return (
+                                <Tr key={row.cve}>
+                                    <Td
+                                        select={{
+                                            rowIndex,
+                                            onSelect,
+                                            isSelected: selected[rowIndex],
+                                        }}
                                     />
-                                </Td>
-                            </Tr>
-                        );
-                    })}
+                                    <Td dataLabel="CVE">
+                                        <CVESummaryLink cve={row.cve} />
+                                    </Td>
+                                    <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
+                                    <Td dataLabel="Severity">
+                                        <VulnerabilitySeverityLabel severity={row.severity} />
+                                    </Td>
+                                    <Td dataLabel="Expires">
+                                        {row.vulnerabilityRequest ? (
+                                            <DeferralExpirationDate
+                                                targetState={row.vulnerabilityRequest.targetState}
+                                                requestStatus={row.vulnerabilityRequest.status}
+                                                deferralReq={row.vulnerabilityRequest.deferralReq}
+                                            />
+                                        ) : (
+                                            'N/A'
+                                        )}
+                                    </Td>
+                                    <Td dataLabel="Scope">
+                                        {row.vulnerabilityRequest ? (
+                                            <VulnerabilityRequestScope
+                                                scope={row.vulnerabilityRequest.scope}
+                                            />
+                                        ) : (
+                                            'N/A'
+                                        )}
+                                    </Td>
+                                    <Td dataLabel="Affected components">
+                                        <AffectedComponentsButton components={row.components} />
+                                    </Td>
+                                    <Td dataLabel="Comments">
+                                        {row.vulnerabilityRequest ? (
+                                            <RequestCommentsButton
+                                                comments={row.vulnerabilityRequest.comments}
+                                                cve={row.vulnerabilityRequest.cves.ids[0]}
+                                            />
+                                        ) : (
+                                            'N/A'
+                                        )}
+                                    </Td>
+                                    <Td dataLabel="Approver">
+                                        {row.vulnerabilityRequest
+                                            ? row.vulnerabilityRequest.approvers
+                                                  .map((user) => user.name)
+                                                  .join(',')
+                                            : 'N/A'}
+                                    </Td>
+                                    <Td className="pf-u-text-align-right">
+                                        <DeferredCVEActionsColumn
+                                            row={row}
+                                            setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                            canReobserveCVE={canReobserveCVE}
+                                        />
+                                    </Td>
+                                </Tr>
+                            );
+                        })
+                    )}
                 </Tbody>
             </TableComposable>
             <UndoVulnRequestModal

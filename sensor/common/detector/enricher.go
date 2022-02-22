@@ -14,7 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
-	"github.com/stackrox/rox/sensor/common/scannerclient"
+	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc/status"
 )
 
@@ -64,7 +65,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, ci *storage.
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := scannerclient.ScanImage(ctx, svc, ci)
+	img, err := scan.ScanImage(ctx, svc, ci)
 	return &v1.ScanImageInternalResponse{
 		Image: img,
 	}, err
@@ -107,16 +108,16 @@ outer:
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
 	defer c.signal.Signal()
 
-	scannedImage, err := scanWithRetries(ctx, svc, ci, scanImage)
-
-	if features.LocalImageScanning.Enabled() {
-		img := scannedImage.GetImage()
-		// scanImage may return without error even if it was unable to find the image.
-		// Check the metadata and scan here: if Central cannot retrieve the metadata nor scan,
-		// perhaps the image is stored in an internal registry which Sensor can reach.
-		if err == nil && img.GetMetadata() == nil && img.GetScan() == nil {
-			scannedImage, err = scanWithRetries(ctx, svc, ci, scanImageLocal)
-		}
+	var (
+		scannedImage *v1.ScanImageInternalResponse
+		err          error
+	)
+	// Ask Central to scan the image if the image is not internal.
+	// Otherwise, attempt to scan locally.
+	if !features.LocalImageScanning.Enabled() || !imageutil.IsInternalImage(ci.GetName()) {
+		scannedImage, err = scanWithRetries(ctx, svc, ci, scanImage)
+	} else {
+		scannedImage, err = scanWithRetries(ctx, svc, ci, scanImageLocal)
 	}
 
 	if err != nil {

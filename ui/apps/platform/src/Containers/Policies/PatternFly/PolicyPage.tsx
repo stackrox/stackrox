@@ -4,7 +4,7 @@ import { createStructuredSelector } from 'reselect';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
-import { policiesBasePathPatternFly } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
@@ -110,7 +110,7 @@ function PolicyPage({
                             title="404: We couldn't find that page"
                             message={getAxiosErrorMessage(error)}
                             actionText="Go to Policies"
-                            url={policiesBasePathPatternFly}
+                            url={policiesBasePath}
                         />
                     );
                 })

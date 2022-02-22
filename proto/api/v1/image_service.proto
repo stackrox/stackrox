@@ -14,8 +14,9 @@ import "storage/deployment.proto";
 package v1;
 
 message GetImageRequest {
-    string id              = 1;
-    bool   include_snoozed = 2;
+    string id                = 1;
+    bool   include_snoozed   = 2;
+    bool   strip_description = 3;
 }
 
 message ListImagesResponse {

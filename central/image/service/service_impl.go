@@ -111,9 +111,10 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id must be specified")
 	}
-	request.Id = types.NewDigest(request.Id).Digest()
 
-	image, exists, err := s.datastore.GetImage(ctx, request.GetId())
+	id := types.NewDigest(request.GetId()).Digest()
+
+	image, exists, err := s.datastore.GetImage(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -125,6 +126,11 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 		// This modifies the image object
 		utils.FilterSuppressedCVEsNoClone(image)
 	}
+	if request.GetStripDescription() {
+		// This modifies the image object
+		utils.StripCVEDescriptionsNoClone(image)
+	}
+
 	return image, nil
 }
 

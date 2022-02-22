@@ -11,7 +11,6 @@ import {
     clustersListPath,
     integrationsPath,
     policiesPath,
-    policiesPathPatternFly,
     riskPath,
     apidocsPath,
     accessControlPathV2,
@@ -42,7 +41,8 @@ const AsyncIntegrationsPage = asyncComponent(
 );
 const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 
-const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
+// TODO: rename this to AsyncPoliciesPage after we remove the old deprecated policies code
+// Jira issue to track: https://issues.redhat.com/browse/ROX-9450
 const AsyncPoliciesPagePatternFly = asyncComponent(
     () => import('Containers/Policies/PatternFly/PoliciesPage')
 );
@@ -71,9 +71,6 @@ function Body(): ReactElement {
     const isSystemHealthPatternFlyEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
-    const isPoliciesPatternFlyEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_POLICIES_PATTERNFLY
-    );
     const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
     const isVulnRiskAcceptanceEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
@@ -91,12 +88,7 @@ function Body(): ReactElement {
                     <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />
                     <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
                     <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />
-                    <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
-                    <ProtectedRoute
-                        path={policiesPathPatternFly}
-                        component={AsyncPoliciesPagePatternFly}
-                        featureFlagEnabled={isPoliciesPatternFlyEnabled}
-                    />
+                    <ProtectedRoute path={policiesPath} component={AsyncPoliciesPagePatternFly} />
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
                     <ProtectedRoute
                         path={accessControlPathV2}

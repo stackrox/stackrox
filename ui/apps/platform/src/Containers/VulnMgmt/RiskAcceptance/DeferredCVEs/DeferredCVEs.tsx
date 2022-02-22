@@ -1,10 +1,10 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
-import { Bullseye, PageSection, PageSectionVariants, Spinner } from '@patternfly/react-core';
+import React, { ReactElement, useState } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import { SearchFilter } from 'types/search';
+import queryService from 'utils/queryService';
 import DeferredCVEsTable from './DeferredCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 
@@ -13,10 +13,17 @@ type DeferredCVEsProps = {
 };
 
 function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
+    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+
+    const vulnsQuery = queryService.objectToWhereClause({
+        ...searchFilter,
+        'Vulnerability State': 'DEFERRED',
+    });
+
     const { isLoading, data, refetchQuery } = useImageVulnerabilities({
         imageId,
-        vulnsQuery: 'Vulnerability State:DEFERRED',
+        vulnsQuery,
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
@@ -27,24 +34,8 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
         },
     });
 
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner isSVG size="sm" />
-            </Bullseye>
-        );
-    }
-
     const itemCount = data?.image?.vulnCount || 0;
     const rows = data?.image?.vulns || [];
-
-    if (!isLoading && rows && rows.length === 0) {
-        return (
-            <PageSection variant={PageSectionVariants.light} isFilled>
-                <ACSEmptyState title="No deferral requests were approved." />
-            </PageSection>
-        );
-    }
 
     return (
         <DeferredCVEsTable
@@ -56,6 +47,8 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
             onSetPage={onSetPage}
             onPerPageSelect={onPerPageSelect}
             updateTable={refetchQuery}
+            searchFilter={searchFilter}
+            setSearchFilter={setSearchFilter}
         />
     );
 }

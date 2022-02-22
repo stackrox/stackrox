@@ -215,6 +215,12 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "stripDescription",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [

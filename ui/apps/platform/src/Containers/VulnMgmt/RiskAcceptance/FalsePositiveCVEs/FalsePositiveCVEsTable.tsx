@@ -1,9 +1,13 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
+    Bullseye,
     Divider,
     DropdownItem,
+    PageSection,
+    PageSectionVariants,
     Pagination,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -15,6 +19,8 @@ import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import useAuthStatus from 'hooks/useAuthStatus';
+import { SearchFilter } from 'types/search';
+import ACSEmptyState from 'Components/ACSEmptyState';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';
@@ -24,12 +30,16 @@ import FalsePositiveCVEActionsColumn from './FalsePositiveCVEActionsColumns';
 import RequestCommentsButton from '../RequestComments/RequestCommentsButton';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 import CVESummaryLink from '../CVESummaryLink';
+import ImageVulnsSearchFilter from '../ImageVulnsSearchFilter';
+import SearchFilterResults from '../SearchFilterResults';
 
 export type FalsePositiveCVEsTableProps = {
     rows: Vulnerability[];
     isLoading: boolean;
     itemCount: number;
     updateTable: () => void;
+    searchFilter: SearchFilter;
+    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
 } & UsePaginationResult;
 
 function FalsePositiveCVEsTable({
@@ -40,6 +50,9 @@ function FalsePositiveCVEsTable({
     onSetPage,
     onPerPageSelect,
     updateTable,
+    searchFilter,
+    setSearchFilter,
+    isLoading,
 }: FalsePositiveCVEsTableProps): ReactElement {
     const {
         selected,
@@ -89,6 +102,13 @@ function FalsePositiveCVEsTable({
             <Toolbar id="toolbar">
                 <ToolbarContent>
                     <ToolbarItem>
+                        <ImageVulnsSearchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem variant="separator" />
+                    <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
                                 key="undo false positives"
@@ -117,6 +137,18 @@ function FalsePositiveCVEsTable({
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
+            {Object.keys(searchFilter).length !== 0 && (
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <SearchFilterResults
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
             <Divider component="div" />
             <TableComposable aria-label="Observed CVEs Table" variant="compact" borders>
                 <Thead>
@@ -137,57 +169,78 @@ function FalsePositiveCVEsTable({
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {rows.map((row, rowIndex) => {
-                        const canReobserveCVE =
-                            canApproveRequests ||
-                            (canCreateRequests &&
-                                row.vulnerabilityRequest.requestor.id === currentUser.userId);
+                    {isLoading && (
+                        // @TODO: Consider accessibility in this approach (https://github.com/stackrox/stackrox/pull/671#discussion_r811295184)
+                        <Tr>
+                            <Td colSpan={9}>
+                                <Bullseye>
+                                    <Spinner isSVG size="sm" />
+                                </Bullseye>
+                            </Td>
+                        </Tr>
+                    )}
+                    {!isLoading && rows && rows.length === 0 ? (
+                        // @TODO: Consider accessibility in this approach (https://github.com/stackrox/stackrox/pull/671#discussion_r811295477)
+                        <Tr>
+                            <Td colSpan={9}>
+                                <PageSection variant={PageSectionVariants.light} isFilled>
+                                    <ACSEmptyState title="No false positive requests were approved." />
+                                </PageSection>
+                            </Td>
+                        </Tr>
+                    ) : (
+                        rows.map((row, rowIndex) => {
+                            const canReobserveCVE =
+                                canApproveRequests ||
+                                (canCreateRequests &&
+                                    row.vulnerabilityRequest.requestor.id === currentUser.userId);
 
-                        return (
-                            <Tr key={row.cve}>
-                                <Td
-                                    select={{
-                                        rowIndex,
-                                        onSelect,
-                                        isSelected: selected[rowIndex],
-                                    }}
-                                />
-                                <Td dataLabel="CVE">
-                                    <CVESummaryLink cve={row.cve} />
-                                </Td>
-                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
-                                <Td dataLabel="Severity">
-                                    <VulnerabilitySeverityLabel severity={row.severity} />
-                                </Td>
-                                <Td dataLabel="Scope">
-                                    <VulnerabilityRequestScope
-                                        scope={row.vulnerabilityRequest.scope}
+                            return (
+                                <Tr key={row.cve}>
+                                    <Td
+                                        select={{
+                                            rowIndex,
+                                            onSelect,
+                                            isSelected: selected[rowIndex],
+                                        }}
                                     />
-                                </Td>
-                                <Td dataLabel="Affected components">
-                                    <AffectedComponentsButton components={row.components} />
-                                </Td>
-                                <Td dataLabel="Comments">
-                                    <RequestCommentsButton
-                                        comments={row.vulnerabilityRequest.comments}
-                                        cve={row.vulnerabilityRequest.cves.ids[0]}
-                                    />
-                                </Td>
-                                <Td dataLabel="Approver">
-                                    {row.vulnerabilityRequest.approvers
-                                        .map((user) => user.name)
-                                        .join(',')}
-                                </Td>
-                                <Td className="pf-u-text-align-right">
-                                    <FalsePositiveCVEActionsColumn
-                                        row={row}
-                                        setVulnsToBeAssessed={setVulnsToBeAssessed}
-                                        canReobserveCVE={canReobserveCVE}
-                                    />
-                                </Td>
-                            </Tr>
-                        );
-                    })}
+                                    <Td dataLabel="CVE">
+                                        <CVESummaryLink cve={row.cve} />
+                                    </Td>
+                                    <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
+                                    <Td dataLabel="Severity">
+                                        <VulnerabilitySeverityLabel severity={row.severity} />
+                                    </Td>
+                                    <Td dataLabel="Scope">
+                                        <VulnerabilityRequestScope
+                                            scope={row.vulnerabilityRequest.scope}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Affected components">
+                                        <AffectedComponentsButton components={row.components} />
+                                    </Td>
+                                    <Td dataLabel="Comments">
+                                        <RequestCommentsButton
+                                            comments={row.vulnerabilityRequest.comments}
+                                            cve={row.vulnerabilityRequest.cves.ids[0]}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Approver">
+                                        {row.vulnerabilityRequest.approvers
+                                            .map((user) => user.name)
+                                            .join(',')}
+                                    </Td>
+                                    <Td className="pf-u-text-align-right">
+                                        <FalsePositiveCVEActionsColumn
+                                            row={row}
+                                            setVulnsToBeAssessed={setVulnsToBeAssessed}
+                                            canReobserveCVE={canReobserveCVE}
+                                        />
+                                    </Td>
+                                </Tr>
+                            );
+                        })
+                    )}
                 </Tbody>
             </TableComposable>
             <UndoVulnRequestModal
