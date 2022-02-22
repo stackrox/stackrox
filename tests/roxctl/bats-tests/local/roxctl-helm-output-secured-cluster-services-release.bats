@@ -20,6 +20,12 @@ teardown() {
   rm -rf "$out_dir"
 }
 
+@test "roxctl-release helm output secured-cluster-services --image-defaults=development_build should fail" {
+  run roxctl-release helm output secured-cluster-services --image-defaults=development_build --remove --output-dir "$out_dir"
+  assert_failure
+  assert_output --partial "unexpected value 'development_build', allowed values are"
+}
+
 @test "roxctl-release helm output secured-cluster-services (default flavor) should use registry.redhat.io registry (default collector)" {
   run roxctl-release helm output secured-cluster-services --remove --output-dir "$out_dir"
   assert_success
