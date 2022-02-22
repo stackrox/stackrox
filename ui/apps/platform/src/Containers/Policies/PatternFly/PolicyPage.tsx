@@ -82,9 +82,12 @@ function PolicyPage({
     policyId,
 }: PolicyPageProps): ReactElement {
     const { wizardPolicy } = useSelector(wizardPolicyState);
+    console.log(wizardPolicy); // eslint-disable-line no-console
 
     const [policy, setPolicy] = useState<Policy>(
-        pageAction === 'generate' && wizardPolicy ? wizardPolicy : initialPolicy
+        pageAction === 'generate' && wizardPolicy
+            ? getClientWizardPolicy(wizardPolicy)
+            : initialPolicy
     );
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
