@@ -28,12 +28,12 @@ var (
 )
 
 type localScannerTLSIssuerFixture struct {
-	k8sClient *fake.Clientset
-	requester *certificateRequesterMock
-	refresher *certificateRefresherMock
-	repo      *certsRepoMock
-	supplier  *suppliersMock
-	issuer    *localScannerTLSIssuerImpl
+	k8sClient       *fake.Clientset
+	requester       *certificateRequesterMock
+	refresher       *certificateRefresherMock
+	repo            *certsRepoMock
+	componentGetter *componentGetterMock
+	issuer          *localScannerTLSIssuerImpl
 }
 
 func newLocalScannerTLSIssuerFixture(k8sClientConfig testK8sClientConfig) *localScannerTLSIssuerFixture {
@@ -41,19 +41,19 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig testK8sClientConfig) *local
 	fixture.requester = &certificateRequesterMock{}
 	fixture.refresher = &certificateRefresherMock{}
 	fixture.repo = &certsRepoMock{}
-	fixture.supplier = &suppliersMock{}
+	fixture.componentGetter = &componentGetterMock{}
 	fixture.k8sClient = testK8sClient(k8sClientConfig)
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	fixture.issuer = &localScannerTLSIssuerImpl{
-		sensorNamespace:                 sensorNamespace,
-		sensorPodName:                   sensorPodName,
-		k8sClient:                       fixture.k8sClient,
-		msgToCentralC:                   msgToCentralC,
-		msgFromCentralC:                 msgFromCentralC,
-		certificateRefresherSupplier:    fixture.supplier.supplyCertificateRefresher,
-		serviceCertificatesRepoSupplier: fixture.supplier.supplyServiceCertificatesRepoSupplier,
-		requester:                       fixture.requester,
+		sensorNamespace:              sensorNamespace,
+		sensorPodName:                sensorPodName,
+		k8sClient:                    fixture.k8sClient,
+		msgToCentralC:                msgToCentralC,
+		msgFromCentralC:              msgFromCentralC,
+		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
+		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
+		requester:                    fixture.requester,
 	}
 
 	return fixture
@@ -62,7 +62,7 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig testK8sClientConfig) *local
 func (f *localScannerTLSIssuerFixture) assertExpectations(t *testing.T) {
 	f.requester.AssertExpectations(t)
 	f.requester.AssertExpectations(t)
-	f.supplier.AssertExpectations(t)
+	f.componentGetter.AssertExpectations(t)
 }
 
 // mockForStart setups the mocks for the happy path of Start
@@ -71,9 +71,9 @@ func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 	f.refresher.On("Start").Once().Return(conf.refresherStartErr)
 	f.repo.On("getServiceCertificates", mock.Anything).Once().
 		Return((*storage.TypedServiceCertificateSet)(nil), conf.getCertsErr)
-	f.supplier.On("supplyServiceCertificatesRepoSupplier", mock.Anything,
+	f.componentGetter.On("getServiceCertificatesRepo", mock.Anything,
 		mock.Anything, mock.Anything).Once().Return(f.repo, nil)
-	f.supplier.On("supplyCertificateRefresher", mock.Anything, f.repo,
+	f.componentGetter.On("getCertificateRefresher", mock.Anything, f.repo,
 		certRefreshTimeout, certRefreshBackoff).Once().Return(f.refresher)
 }
 
@@ -281,17 +281,17 @@ func (m *certificateRefresherMock) Stop() {
 	m.Called()
 }
 
-type suppliersMock struct {
+type componentGetterMock struct {
 	mock.Mock
 }
 
-func (m *suppliersMock) supplyCertificateRefresher(requestCertificates requestCertificatesFunc,
+func (m *componentGetterMock) getCertificateRefresher(requestCertificates requestCertificatesFunc,
 	repository serviceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
 	args := m.Called(requestCertificates, repository, timeout, backoff)
 	return args.Get(0).(concurrency.RetryTicker)
 }
 
-func (m *suppliersMock) supplyServiceCertificatesRepoSupplier(ownerReference metav1.OwnerReference, namespace string,
+func (m *componentGetterMock) getServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
 	args := m.Called(ownerReference, namespace, secretsClient)
 	return args.Get(0).(serviceCertificatesRepo)

@@ -47,27 +47,27 @@ func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace st
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &localScannerTLSIssuerImpl{
-		sensorNamespace:                 sensorNamespace,
-		sensorPodName:                   sensorPodName,
-		k8sClient:                       k8sClient,
-		msgToCentralC:                   msgToCentralC,
-		msgFromCentralC:                 msgFromCentralC,
-		certificateRefresherSupplier:    newCertificatesRefresher,
-		serviceCertificatesRepoSupplier: newServiceCertificatesRepo,
-		requester:                       NewCertificateRequester(msgToCentralC, msgFromCentralC),
+		sensorNamespace:              sensorNamespace,
+		sensorPodName:                sensorPodName,
+		k8sClient:                    k8sClient,
+		msgToCentralC:                msgToCentralC,
+		msgFromCentralC:              msgFromCentralC,
+		getCertificateRefresherFn:    newCertificatesRefresher,
+		getServiceCertificatesRepoFn: newServiceCertificatesRepo,
+		requester:                    NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
 
 type localScannerTLSIssuerImpl struct {
-	sensorNamespace                 string
-	sensorPodName                   string
-	k8sClient                       kubernetes.Interface
-	msgToCentralC                   chan *central.MsgFromSensor
-	msgFromCentralC                 chan *central.IssueLocalScannerCertsResponse
-	certificateRefresherSupplier    certificateRefresherSupplier
-	serviceCertificatesRepoSupplier serviceCertificatesRepoSupplier
-	requester                       CertificateRequester
-	refresher                       concurrency.RetryTicker
+	sensorNamespace              string
+	sensorPodName                string
+	k8sClient                    kubernetes.Interface
+	msgToCentralC                chan *central.MsgFromSensor
+	msgFromCentralC              chan *central.IssueLocalScannerCertsResponse
+	getCertificateRefresherFn    certificateRefresherGetter
+	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
+	requester                    CertificateRequester
+	refresher                    concurrency.RetryTicker
 }
 
 // CertificateRequester requests a new set of local scanner certificates from central.
@@ -77,10 +77,10 @@ type CertificateRequester interface {
 	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 }
 
-type certificateRefresherSupplier func(requestCertificates requestCertificatesFunc, repository serviceCertificatesRepo,
+type certificateRefresherGetter func(requestCertificates requestCertificatesFunc, repository serviceCertificatesRepo,
 	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
 
-type serviceCertificatesRepoSupplier func(ownerReference metav1.OwnerReference, namespace string,
+type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo
 
 // Start starts the sensor component and launches a certificate refreshes that immediately checks the certificates, and
@@ -101,9 +101,9 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
 	}
 
-	certsRepo := i.serviceCertificatesRepoSupplier(*sensorOwnerReference, i.sensorNamespace,
+	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	i.refresher = i.certificateRefresherSupplier(i.requester.RequestCertificates, certsRepo,
+	i.refresher = i.getCertificateRefresherFn(i.requester.RequestCertificates, certsRepo,
 		certRefreshTimeout, certRefreshBackoff)
 
 	i.requester.Start()
