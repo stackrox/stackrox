@@ -25,6 +25,30 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	return errorList
 }
 
+// isManagerManualOrUnknown returns whether a given manager is Manual or Unknown
+func isManagerManualOrUnknown(manager storage.ManagerType) bool {
+	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL || manager == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+		return true
+	}
+	return false
+}
+
+// DropImageTagsOrDigests drops the tag or digests of a given image.
+// If the image is not a properly formatted image returns an error
+func DropImageTagsOrDigests(image string) (string, error) {
+	ref, err := reference.ParseAnyReference(image)
+	if err != nil {
+		return image, errors.Wrapf(err, "invalid main image '%s'", image)
+	}
+	if _, ok := ref.(reference.Digested); ok {
+		return ref.(reference.Named).Name(), nil
+	}
+	if _, ok := ref.(reference.NamedTagged); ok {
+		return ref.(reference.Named).Name(), nil
+	}
+	return image, nil
+}
+
 // ValidatePartial partially validates a cluster object.
 // Some fields are allowed to be left empty for the server to complete with default values.
 func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
@@ -37,12 +61,12 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		if err != nil {
 			errorList.AddError(errors.Wrapf(err, "invalid main image '%s'", cluster.GetMainImage()))
 		}
-		if digested, ok := ref.(reference.Digested); cluster.ProhibitDigest && ok {
-			errorList.AddStringf("central image contains the SHA: '%s'. The use "+
+		if digested, ok := ref.(reference.Digested); isManagerManualOrUnknown(cluster.ManagedBy) && ok {
+			errorList.AddStringf("central image contains SHA reference: '%s'. The use "+
 				"of SHAs is not allowed", digested.Digest().String())
 		}
-		if namedTagged, ok := ref.(reference.NamedTagged); cluster.ProhibitTag && ok {
-			errorList.AddStringf("central image contains the tag: '%s'. The use "+
+		if namedTagged, ok := ref.(reference.NamedTagged); isManagerManualOrUnknown(cluster.ManagedBy) && ok {
+			errorList.AddStringf("central image contains tag: '%s'. The use "+
 				"of tags is not allowed", namedTagged.Tag())
 		}
 	}
@@ -52,12 +76,12 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 			errorList.AddError(errors.Wrapf(err, "invalid collector image '%s'", cluster.GetCollectorImage()))
 		}
 
-		if namedTagged, ok := ref.(reference.NamedTagged); (cluster.ProhibitTag || cluster.GetHelmConfig() == nil) && ok {
-			errorList.AddStringf("collector image contains the tag: '%s'. The use "+
+		if namedTagged, ok := ref.(reference.NamedTagged); isManagerManualOrUnknown(cluster.ManagedBy) && ok {
+			errorList.AddStringf("collector image contains tag: '%s'. The use "+
 				"of tags is not allowed", namedTagged.Tag())
 		}
-		if digested, ok := ref.(reference.Digested); cluster.ProhibitDigest && ok {
-			errorList.AddStringf("collector image contains the SHA: '%s'. The use "+
+		if digested, ok := ref.(reference.Digested); isManagerManualOrUnknown(cluster.ManagedBy) && ok {
+			errorList.AddStringf("collector image contains SHA reference: '%s'. The use "+
 				"of SHAs is not allowed", digested.Digest().String())
 		}
 	}

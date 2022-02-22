@@ -1,6 +1,8 @@
 package cluster
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -9,7 +11,7 @@ import (
 
 var validCluster = &storage.Cluster{
 	Name:               "cluster-name",
-	MainImage:          "stackrox.io/main:3.0.55.0",
+	MainImage:          "stackrox.io/main",
 	CentralApiEndpoint: "central.stackrox:443",
 	Type:               storage.ClusterType_OPENSHIFT4_CLUSTER,
 }
@@ -33,40 +35,30 @@ func TestPartialValidation(t *testing.T) {
 				cluster.MainImage = ""
 			},
 		},
-		"Cluster with main image with tag should fail when ProhibitTag is set to true": {
+		"Cluster with main image with tag should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = "docker.io/stackrox/main:some_tag"
-				cluster.ProhibitTag = true
 			},
-			expectedErrors: []string{"central image contains the tag: 'some_tag'. The use of tags is not allowed"},
+			expectedErrors: []string{"central image contains tag: 'some_tag'. The use of tags is not allowed"},
 		},
-		"Cluster with main image with sha should fail when ProhibitDigest is set to true": {
+		"Cluster with main image with sha should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = "docker.io/stackrox/main@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993"
-				cluster.ProhibitDigest = true
 			},
-			expectedErrors: []string{"central image contains the SHA: 'sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'. The use of SHAs is not allowed"},
+			expectedErrors: []string{"central image contains SHA reference: 'sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'. The use of SHAs is not allowed"},
 		},
-		"Cluster with configured collector image tag should fail": {
+		"Cluster with collector image with tag should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
+				cluster.HelmConfig = &storage.CompleteClusterConfig{} // Not really needed since ManagedBy is checked first
 			},
-			expectedErrors: []string{"collector image contains the tag: '3.2.0-slim'. The use of tags is not allowed"},
+			expectedErrors: []string{"collector image contains tag: '3.2.0-slim'. The use of tags is not allowed"},
 		},
-		"Cluster with collector image with tag should fail when ProhibitTag is set to true": {
-			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
-				cluster.ProhibitTag = true
-				cluster.HelmConfig = &storage.CompleteClusterConfig{} // Not really needed since ProhibitTag is checked first
-			},
-			expectedErrors: []string{"collector image contains the tag: '3.2.0-slim'. The use of tags is not allowed"},
-		},
-		"Cluster with collector image with sha should fail when ProhibitDigest is set to true": {
+		"Cluster with collector image with sha should fail when Managedby is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "docker.io/stackrox/collector@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993"
-				cluster.ProhibitDigest = true
 			},
-			expectedErrors: []string{"collector image contains the SHA: 'sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'. The use of SHAs is not allowed"},
+			expectedErrors: []string{"collector image contains SHA reference: 'sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'. The use of SHAs is not allowed"},
 		},
 		"Cluster with configured collector image without tag is valid": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -86,6 +78,7 @@ func TestPartialValidation(t *testing.T) {
 		},
 		"Helm Managed cluster with configured collector image tag is allowed": {
 			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.ManagedBy = storage.ManagerType_MANAGER_TYPE_HELM_CHART
 				cluster.HelmConfig = &storage.CompleteClusterConfig{}
 				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
 			},
@@ -143,6 +136,48 @@ func TestPartialValidation(t *testing.T) {
 
 			for _, expectedErr := range c.expectedErrors {
 				assert.Contains(t, gotErrors.String(), expectedErr)
+			}
+		})
+	}
+}
+
+func TestDropImageTagsOrDigests(t *testing.T) {
+	cases := map[string]struct {
+		image         string
+		expectedImage string
+		expectedError error
+	}{
+		"Image with Tag": {
+			image:         "docker.io/stackrox/rox:tag",
+			expectedImage: "docker.io/stackrox/rox",
+			expectedError: nil,
+		},
+		"Image with Digest": {
+			image:         "docker.io/stackrox/rox@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "docker.io/stackrox/rox",
+			expectedError: nil,
+		},
+		"Image with no tag or digest": {
+			image:         "docker.io/stackrox/rox",
+			expectedImage: "docker.io/stackrox/rox",
+			expectedError: nil,
+		},
+		"Invalid image": {
+			image:         "invalid image",
+			expectedError: errors.New("invalid main image 'invalid image': invalid reference format"),
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			fmt.Println(c.image)
+			resImage, gotError := DropImageTagsOrDigests(c.image)
+
+			if c.expectedError == nil {
+				assert.NoError(t, gotError, "expected a valid image but got error")
+				assert.Equal(t, c.expectedImage, resImage, "Expected image %s but got %s", c.expectedImage, resImage)
+			} else {
+				assert.Error(t, gotError)
+				assert.Equal(t, c.expectedError.Error(), gotError.Error())
 			}
 		})
 	}

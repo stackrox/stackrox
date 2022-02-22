@@ -912,6 +912,23 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		cluster.HelmConfig = clusterConfig.Clone()
 	}
 
+	// If we manually upgrade a cluster that was created with Helm or the Operator we need to drop the tags/digests (if there are any)
+	if currentCluster.ManagedBy != cluster.ManagedBy && (currentCluster.ManagedBy == storage.ManagerType_MANAGER_TYPE_HELM_CHART || currentCluster.ManagedBy == storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR) {
+		if cluster.GetMainImage() != "" {
+			var err error
+			if cluster.MainImage, err = clusterValidation.DropImageTagsOrDigests(cluster.GetMainImage()); err != nil {
+				return nil, err
+			}
+		}
+
+		if cluster.GetCollectorImage() != "" {
+			var err error
+			if cluster.CollectorImage, err = clusterValidation.DropImageTagsOrDigests(cluster.GetCollectorImage()); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	if !proto.Equal(currentCluster, cluster) {
 		// Cluster is dirty and needs to be updated in the DB.
 		if err := ds.updateClusterNoLock(ctx, cluster); err != nil {

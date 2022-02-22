@@ -66,8 +66,6 @@ func defaultCluster() storage.Cluster {
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AdmissionControllerConfig: &storage.AdmissionControllerConfig{},
 		},
-		ProhibitDigest: true,
-		ProhibitTag:    true,
 	}
 }
 

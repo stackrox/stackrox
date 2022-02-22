@@ -239,8 +239,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"mostRecentSensorId: SensorDeploymentIdentification",
 		"name: String!",
 		"priority: Int!",
-		"prohibitDigest: Boolean!",
-		"prohibitTag: Boolean!",
 		"runtimeSupport: Boolean!",
 		"slimCollector: Boolean!",
 		"status: ClusterStatus",
@@ -3214,16 +3212,6 @@ func (resolver *clusterResolver) Name(ctx context.Context) string {
 func (resolver *clusterResolver) Priority(ctx context.Context) int32 {
 	value := resolver.data.GetPriority()
 	return int32(value)
-}
-
-func (resolver *clusterResolver) ProhibitDigest(ctx context.Context) bool {
-	value := resolver.data.GetProhibitDigest()
-	return value
-}
-
-func (resolver *clusterResolver) ProhibitTag(ctx context.Context) bool {
-	value := resolver.data.GetProhibitTag()
-	return value
 }
 
 func (resolver *clusterResolver) RuntimeSupport(ctx context.Context) bool {

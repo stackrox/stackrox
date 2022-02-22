@@ -148,8 +148,6 @@ message Cluster {
 
     string                    init_bundle_id                   = 29;
     ManagerType               managed_by                       = 30;
-    bool                      prohibit_digest                  = 31;
-    bool                      prohibit_tag                     = 32;
 }
 
 enum ManagerType {
