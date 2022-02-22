@@ -8,14 +8,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
+	"helm.sh/helm/v3/pkg/chart"
 )
 
 func init() {
@@ -30,18 +31,12 @@ func TestManager(t *testing.T) {
 type embedTestSuite struct {
 	suite.Suite
 
-	envIsolator *envisolator.EnvIsolator
-	image       *Image
+	image *Image
 }
 
 func (s *embedTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	testutils.SetExampleVersion(s.T())
 	s.image = GetDefaultImage()
-}
-
-func (s *embedTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *embedTestSuite) TestEmbedAllFiles() {
@@ -102,21 +97,62 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 
 // This test will be removed after the scanner integration is finished. It is critical to check that no scanner manifests are contained within
 // secured cluster.
-func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() {
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
-
-	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
-	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
-	s.Require().NoError(err)
-	s.Equal("stackrox-secured-cluster-services", chart.Name())
-	s.NotEmpty(chart.Templates)
-
-	var foundScannerTpls []string
-	for _, tpl := range chart.Templates {
-		if strings.Contains(tpl.Name, "scanner") {
-			foundScannerTpls = append(foundScannerTpls, tpl.Name)
-		}
+func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
+	testCases := map[string]struct {
+		kubectlOutput                 bool
+		enableLocalScannerFeatureFlag bool
+		expectScannerFilesExist       bool
+	}{
+		"with feature flag is disabled should not contain scanner manifests": {
+			enableLocalScannerFeatureFlag: false,
+			expectScannerFilesExist:       false,
+		},
+		"with feature flag enabled contains scanner manifests ": {
+			enableLocalScannerFeatureFlag: true,
+			expectScannerFilesExist:       true,
+		},
+		"in kubectl output and feature flag enabled does not contain scanner manifests": {
+			kubectlOutput:                 true,
+			enableLocalScannerFeatureFlag: true,
+			expectScannerFilesExist:       false,
+		},
+		"in kubectl output contains scanner manifests": {
+			kubectlOutput:           true,
+			expectScannerFilesExist: false,
+		},
 	}
 
-	s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster chart", foundScannerTpls)
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+			metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
+			metaVals.KubectlOutput = testCase.kubectlOutput
+			if !buildinfo.ReleaseBuild {
+				metaVals.FeatureFlags[features.LocalImageScanning.EnvVar()] = testCase.enableLocalScannerFeatureFlag
+			}
+
+			loadedChart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
+			s.Require().NoError(err)
+			s.NotEmpty(loadedChart.Templates)
+
+			var chartFiles []*chart.File
+			chartFiles = append(chartFiles, loadedChart.Files...)
+			chartFiles = append(chartFiles, loadedChart.Templates...)
+
+			var foundScannerTpls []string
+			for _, tpl := range chartFiles {
+				if strings.Contains(tpl.Name, "scanner") {
+					foundScannerTpls = append(foundScannerTpls, tpl.Name)
+				}
+			}
+
+			// Release builds should not contain scanner files currently
+			// TODO: Remove release build check if golang release unit tests fail after feature flag is enabled by default
+			if testCase.expectScannerFilesExist && !buildinfo.ReleaseBuild {
+				s.NotEmpty(foundScannerTpls, "Did not found any scanner manifests but expected them.")
+			} else {
+				s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster loadedChart", foundScannerTpls)
+			}
+		})
+	}
+
 }
