@@ -23,6 +23,8 @@ type DataStore interface {
 	GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error)
 	UpsertRole(ctx context.Context, request *storage.K8SRole) error
 	RemoveRole(ctx context.Context, id string) error
+
+	WalkAll(ctx context.Context, fn func(role *storage.K8SRole) error) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

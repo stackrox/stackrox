@@ -30,9 +30,12 @@ import (
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
+	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	k8srolebindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
@@ -49,6 +52,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -394,7 +398,7 @@ func TestImagePruning(t *testing.T) {
 			alerts, config, images, deployments, pods, indexQ := generateImageDataStructures(ctx, t)
 			nodes := generateNodeDataStructures(t)
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, config, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, config, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -551,7 +555,7 @@ func TestAlertPruning(t *testing.T) {
 			alerts, config, images, deployments := generateAlertDataStructures(ctx, t)
 			nodes := generateNodeDataStructures(t)
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, config, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -1104,6 +1108,110 @@ func TestRemoveOrphanedNodeRisks(t *testing.T) {
 			}
 
 			gci.removeOrphanedNodeRisks()
+		})
+	}
+}
+
+func TestRemoveOrphanedRBACObjects(t *testing.T) {
+	clusters := []string{uuid.NewV4().String(), uuid.NewV4().String(), uuid.NewV4().String()}
+	cases := []struct {
+		name                  string
+		serviceAccts          []*storage.ServiceAccount
+		roles                 []*storage.K8SRole
+		bindings              []*storage.K8SRoleBinding
+		expectedSADeletions   []string
+		expectedRoleDeletions []string
+		expectedRBDeletions   []string
+	}{
+		{
+			name: "remove SAs that belong to deleted clusters",
+			serviceAccts: []*storage.ServiceAccount{
+				{Id: "sa-0", ClusterId: clusters[0]},
+				{Id: "sa-1", ClusterId: "invalid-1"},
+				{Id: "sa-2", ClusterId: clusters[1]},
+				{Id: "sa-3", ClusterId: "invalid-2"},
+			},
+			expectedSADeletions: []string{"sa-1", "sa-3"},
+		},
+		{
+			name: "remove K8SRole that belong to deleted clusters",
+			roles: []*storage.K8SRole{
+				{Id: "r-0", ClusterId: clusters[0]},
+				{Id: "r-1", ClusterId: "invalid-1"},
+				{Id: "r-2", ClusterId: clusters[1]},
+				{Id: "r-3", ClusterId: "invalid-2"},
+			},
+			expectedRoleDeletions: []string{"r-1", "r-3"},
+		},
+		{
+			name: "remove K8SRoleBinding that belong to deleted clusters",
+			bindings: []*storage.K8SRoleBinding{
+				{Id: "rb-0", ClusterId: clusters[0]},
+				{Id: "rb-1", ClusterId: "invalid-1"},
+				{Id: "rb-2", ClusterId: clusters[1]},
+				{Id: "rb-3", ClusterId: "invalid-2"},
+			},
+			expectedRBDeletions: []string{"rb-1", "rb-3"},
+		},
+		{
+			name:                  "Don't remove anything if all belong to valid cluster",
+			serviceAccts:          []*storage.ServiceAccount{{Id: "sa-0", ClusterId: clusters[0]}},
+			roles:                 []*storage.K8SRole{{Id: "r-0", ClusterId: clusters[0]}},
+			bindings:              []*storage.K8SRoleBinding{{Id: "rb-0", ClusterId: clusters[0]}},
+			expectedSADeletions:   []string{},
+			expectedRoleDeletions: []string{},
+			expectedRBDeletions:   []string{},
+		},
+		{
+			name:                  "Remove all if they belong to a deleted cluster",
+			serviceAccts:          []*storage.ServiceAccount{{Id: "sa-0", ClusterId: "invalid-1"}},
+			roles:                 []*storage.K8SRole{{Id: "r-0", ClusterId: "invalid-1"}},
+			bindings:              []*storage.K8SRoleBinding{{Id: "rb-0", ClusterId: "invalid-1"}},
+			expectedSADeletions:   []string{"sa-0"},
+			expectedRoleDeletions: []string{"r-0"},
+			expectedRBDeletions:   []string{"rb-0"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			serviceAccounts := serviceAccountMocks.NewMockDataStore(ctrl)
+			k8sRoles := k8sroleMocks.NewMockDataStore(ctrl)
+			k8sRoleBindings := k8srolebindingMocks.NewMockDataStore(ctrl)
+			gc := &garbageCollectorImpl{
+				serviceAccts:    serviceAccounts,
+				k8sRoles:        k8sRoles,
+				k8sRoleBindings: k8sRoleBindings,
+			}
+
+			serviceAccounts.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
+				func(ctx context.Context, fn func(_ *storage.ServiceAccount) error) error {
+					for _, s := range c.serviceAccts {
+						assert.NoError(t, fn(s))
+					}
+					return nil
+				})
+			k8sRoles.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
+				func(ctx context.Context, fn func(_ *storage.K8SRole) error) error {
+					for _, r := range c.roles {
+						assert.NoError(t, fn(r))
+					}
+					return nil
+				})
+			k8sRoleBindings.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
+				func(ctx context.Context, fn func(_ *storage.K8SRoleBinding) error) error {
+					for _, rb := range c.bindings {
+						assert.NoError(t, fn(rb))
+					}
+					return nil
+				})
+			serviceAccounts.EXPECT().RemoveServiceAccount(pruningCtx, testutils.AssertionMatcher(assert.Contains, c.expectedSADeletions)).Times(len(c.expectedSADeletions))
+			k8sRoles.EXPECT().RemoveRole(pruningCtx, testutils.AssertionMatcher(assert.Contains, c.expectedRoleDeletions)).Times(len(c.expectedRoleDeletions))
+			k8sRoleBindings.EXPECT().RemoveRoleBinding(pruningCtx, testutils.AssertionMatcher(assert.Contains, c.expectedRBDeletions)).Times(len(c.expectedRBDeletions))
+			gc.removeOrphanedServiceAccounts(set.NewFrozenStringSet(clusters...))
+			gc.removeOrphanedK8SRoles(set.NewFrozenStringSet(clusters...))
+			gc.removeOrphanedK8SRoleBindings(set.NewFrozenStringSet(clusters...))
 		})
 	}
 }

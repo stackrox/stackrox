@@ -23,6 +23,8 @@ type DataStore interface {
 	GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error)
 	UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error
 	RemoveRoleBinding(ctx context.Context, id string) error
+
+	WalkAll(ctx context.Context, fn func(rb *storage.K8SRoleBinding) error) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

@@ -23,6 +23,8 @@ type DataStore interface {
 	GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error)
 	UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error
 	RemoveServiceAccount(ctx context.Context, id string) error
+
+	WalkAll(ctx context.Context, fn func(sa *storage.ServiceAccount) error) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

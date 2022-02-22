@@ -17,7 +17,10 @@ import (
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -59,7 +62,10 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore,
 	risks riskDataStore.DataStore,
-	vulnReqs vulnReqDataStore.DataStore) GarbageCollector {
+	vulnReqs vulnReqDataStore.DataStore,
+	serviceAccts serviceAccountDataStore.DataStore,
+	k8sRoles k8sRoleDataStore.DataStore,
+	k8sRoleBindings roleBindingDataStore.DataStore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -74,6 +80,9 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		config:          config,
 		risks:           risks,
 		vulnReqs:        vulnReqs,
+		serviceAccts:    serviceAccts,
+		k8sRoles:        k8sRoles,
+		k8sRoleBindings: k8sRoleBindings,
 		stopSig:         concurrency.NewSignal(),
 		stoppedSig:      concurrency.NewSignal(),
 	}
@@ -93,6 +102,9 @@ type garbageCollectorImpl struct {
 	config          configDatastore.DataStore
 	risks           riskDataStore.DataStore
 	vulnReqs        vulnReqDataStore.DataStore
+	serviceAccts    serviceAccountDataStore.DataStore
+	k8sRoles        k8sRoleDataStore.DataStore
+	k8sRoleBindings roleBindingDataStore.DataStore
 	stopSig         concurrency.Signal
 	stoppedSig      concurrency.Signal
 }
@@ -190,6 +202,93 @@ func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) 
 	}
 }
 
+// Remove ServiceAccounts where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedServiceAccounts(clusters set.FrozenStringSet) {
+	var toRemoveSAs []string
+	staleClusterIDsFound := set.NewStringSet()
+	err := g.serviceAccts.WalkAll(pruningCtx, func(sa *storage.ServiceAccount) error {
+		if !clusters.Contains(sa.GetClusterId()) {
+			toRemoveSAs = append(toRemoveSAs, sa.GetId())
+			staleClusterIDsFound.Add(sa.GetClusterId())
+		}
+		return nil
+	})
+	if err != nil {
+		log.Errorf("Error walking pods to find orphaned service accounts: %v", err)
+		return
+	}
+	if len(toRemoveSAs) == 0 {
+		log.Info("[Pruning] Found no orphaned service accounts...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned service accounts (from formerly deleted clusters: %v). Deleting...",
+		len(toRemoveSAs), staleClusterIDsFound.AsSlice())
+
+	for _, id := range toRemoveSAs {
+		if err := g.serviceAccts.RemoveServiceAccount(pruningCtx, id); err != nil {
+			log.Errorf("Failed to remove service accounts with id %s: %v", id, err)
+		}
+	}
+}
+
+// Remove K8SRoles where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedK8SRoles(clusters set.FrozenStringSet) {
+	var k8sRolesToRemove []string
+	staleClusterIDsFound := set.NewStringSet()
+	err := g.k8sRoles.WalkAll(pruningCtx, func(r *storage.K8SRole) error {
+		if !clusters.Contains(r.GetClusterId()) {
+			k8sRolesToRemove = append(k8sRolesToRemove, r.GetId())
+			staleClusterIDsFound.Add(r.GetClusterId())
+		}
+		return nil
+	})
+	if err != nil {
+		log.Errorf("Error walking pods to find orphaned K8S Roles: %v", err)
+		return
+	}
+	if len(k8sRolesToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned K8S Roles...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned K8S Roles (from formerly deleted clusters: %v). Deleting...",
+		len(k8sRolesToRemove), staleClusterIDsFound.AsSlice())
+
+	for _, id := range k8sRolesToRemove {
+		if err := g.k8sRoles.RemoveRole(pruningCtx, id); err != nil {
+			log.Errorf("Failed to remove K8S Roles with id %s: %v", id, err)
+		}
+	}
+}
+
+// Remove K8SRoleBinding where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings(clusters set.FrozenStringSet) {
+	var k8sRoleBindingsToRemove []string
+	staleClusterIDsFound := set.NewStringSet()
+	err := g.k8sRoleBindings.WalkAll(pruningCtx, func(r *storage.K8SRoleBinding) error {
+		if !clusters.Contains(r.GetClusterId()) {
+			k8sRoleBindingsToRemove = append(k8sRoleBindingsToRemove, r.GetId())
+			staleClusterIDsFound.Add(r.GetClusterId())
+		}
+		return nil
+	})
+	if err != nil {
+		log.Errorf("Error walking pods to find orphaned K8S Role Bindings: %v", err)
+		return
+	}
+	if len(k8sRoleBindingsToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned K8S Role Bindings...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned K8S Role Bindings (from formerly deleted clusters: %v). Deleting...",
+		len(k8sRoleBindingsToRemove), staleClusterIDsFound.AsSlice())
+
+	for _, id := range k8sRoleBindingsToRemove {
+		if err := g.k8sRoleBindings.RemoveRoleBinding(pruningCtx, id); err != nil {
+			log.Errorf("Failed to remove K8S Role Bindings with id %s: %v", id, err)
+		}
+	}
+}
+
 func (g *garbageCollectorImpl) removeOrphanedResources() {
 	clusters, err := g.clusters.GetClusters(pruningCtx)
 	if err != nil {
@@ -218,6 +317,9 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.markOrphanedAlertsAsResolved(deploymentSet)
 	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
 	g.removeOrphanedPods(clusterIDSet)
+	g.removeOrphanedServiceAccounts(clusterIDSet)
+	g.removeOrphanedK8SRoles(clusterIDSet)
+	g.removeOrphanedK8SRoleBindings(clusterIDSet)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
