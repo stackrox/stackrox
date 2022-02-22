@@ -1,7 +1,6 @@
 import * as api from '../../../constants/apiEndpoints';
 import { selectors } from '../../../constants/PoliciesPagePatternFly';
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     doPolicyPageAction,
     doPolicyRowAction,
@@ -11,12 +10,6 @@ import {
 
 describe('Export policy', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POLICIES_PATTERNFLY')) {
-            this.skip();
-        }
-    });
 
     describe('policies table', () => {
         it('should export policy', () => {

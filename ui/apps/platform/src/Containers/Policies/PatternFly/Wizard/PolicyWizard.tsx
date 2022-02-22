@@ -13,7 +13,7 @@ import {
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
