@@ -121,7 +121,6 @@ export const basePathToLabelMap = {
     [apidocsPath]: 'API Reference',
     [productDocsPath]: 'Help Center',
     [clustersBasePath]: 'Clusters',
-    [policiesBasePath]: 'System Policies',
     [policiesBasePath]: 'Policies',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
