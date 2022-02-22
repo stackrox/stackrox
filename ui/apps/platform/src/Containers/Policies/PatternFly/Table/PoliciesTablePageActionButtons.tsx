@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
-import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 
 type PoliciesTablePageActionButtonsProps = {
     onClickImportPolicy: () => void;

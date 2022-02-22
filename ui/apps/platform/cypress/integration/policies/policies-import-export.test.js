@@ -3,7 +3,7 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { goToFirstPolicy, visitPolicies } from '../../helpers/policies';
 
-describe('policy import and export', () => {
+describe.skip('policy import and export', () => {
     withAuth();
 
     describe('policy export', () => {

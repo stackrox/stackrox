@@ -1,17 +1,10 @@
 import * as api from '../../../constants/apiEndpoints';
 import { selectors } from '../../../constants/PoliciesPagePatternFly';
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { doPolicyRowAction, visitPolicies } from '../../../helpers/policiesPatternFly';
 
 describe('Import policy', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POLICIES_PATTERNFLY')) {
-            this.skip();
-        }
-    });
 
     it('should open and close dialog box', () => {
         visitPolicies();
