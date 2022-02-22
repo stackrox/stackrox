@@ -3,11 +3,15 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
+    Bullseye,
     Divider,
     DropdownItem,
     Flex,
     FlexItem,
+    PageSection,
+    PageSectionVariants,
     Pagination,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -21,6 +25,8 @@ import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySever
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import usePermissions from 'hooks/usePermissions';
+import { SearchFilter } from 'types/search';
+import ACSEmptyState from 'Components/ACSEmptyState';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -29,6 +35,8 @@ import useMarkFalsePositive from './useMarkFalsePositive';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import PendingApprovalPopover from './PendingApprovalPopover';
 import CVESummaryLink from '../CVESummaryLink';
+import ImageVulnsSearchFilter from '../ImageVulnsSearchFilter';
+import SearchFilterResults from '../SearchFilterResults';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
@@ -43,6 +51,8 @@ export type ObservedCVEsTableProps = {
     tag: string;
     itemCount: number;
     updateTable: () => void;
+    searchFilter: SearchFilter;
+    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
 } & UsePaginationResult;
 
 function ObservedCVEsTable({
@@ -56,6 +66,9 @@ function ObservedCVEsTable({
     onSetPage,
     onPerPageSelect,
     updateTable,
+    searchFilter,
+    setSearchFilter,
+    isLoading,
 }: ObservedCVEsTableProps): ReactElement {
     const {
         selected,
@@ -107,6 +120,13 @@ function ObservedCVEsTable({
             <Toolbar id="toolbar">
                 <ToolbarContent>
                     <ToolbarItem>
+                        <ImageVulnsSearchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem variant="separator" />
+                    <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
                                 key="upgrade"
@@ -148,6 +168,18 @@ function ObservedCVEsTable({
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
+            {Object.keys(searchFilter).length !== 0 && (
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <SearchFilterResults
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
             <Divider component="div" />
             <TableComposable aria-label="Observed CVEs Table" variant="compact" borders>
                 <Thead>
@@ -167,71 +199,95 @@ function ObservedCVEsTable({
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {rows.map((row, rowIndex) => {
-                        const actions: IActions = [
-                            {
-                                title: 'Defer CVE',
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.cve] });
+                    {isLoading && (
+                        <Tr>
+                            <Td colSpan={7}>
+                                <Bullseye>
+                                    <Spinner isSVG size="sm" />
+                                </Bullseye>
+                            </Td>
+                        </Tr>
+                    )}
+                    {!isLoading && rows && rows.length === 0 ? (
+                        <Tr>
+                            <Td colSpan={7}>
+                                <PageSection variant={PageSectionVariants.light} isFilled>
+                                    <ACSEmptyState title="No CVEs available" />
+                                </PageSection>
+                            </Td>
+                        </Tr>
+                    ) : (
+                        rows.map((row, rowIndex) => {
+                            const actions: IActions = [
+                                {
+                                    title: 'Defer CVE',
+                                    onClick: (event) => {
+                                        event.preventDefault();
+                                        setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.cve] });
+                                    },
+                                    isDisabled: !canCreateRequests,
                                 },
-                                isDisabled: !canCreateRequests,
-                            },
-                            {
-                                title: 'Mark as False Positive',
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: [row.cve] });
+                                {
+                                    title: 'Mark as False Positive',
+                                    onClick: (event) => {
+                                        event.preventDefault();
+                                        setCVEsToBeAssessed({
+                                            type: 'FALSE_POSITIVE',
+                                            ids: [row.cve],
+                                        });
+                                    },
+                                    isDisabled: !canCreateRequests,
                                 },
-                                isDisabled: !canCreateRequests,
-                            },
-                        ];
-                        return (
-                            <Tr key={rowIndex}>
-                                <Td
-                                    select={{
-                                        rowIndex,
-                                        onSelect,
-                                        isSelected: selected[rowIndex],
-                                    }}
-                                />
-                                <Td dataLabel="CVE">
-                                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                        <FlexItem>
-                                            <CVESummaryLink cve={row.cve} />
-                                        </FlexItem>
-                                        {row.vulnerabilityRequest?.id &&
-                                            !row.vulnerabilityRequest.expired && (
-                                                <FlexItem>
-                                                    <PendingApprovalPopover
-                                                        vulnRequestId={row.vulnerabilityRequest.id}
-                                                    />
-                                                </FlexItem>
-                                            )}
-                                    </Flex>
-                                </Td>
-                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
-                                <Td dataLabel="Severity">
-                                    <VulnerabilitySeverityLabel severity={row.severity} />
-                                </Td>
-                                <Td dataLabel="CVSS score">
-                                    <CVSSScoreLabel cvss={row.cvss} />
-                                </Td>
-                                <Td dataLabel="Affected components">
-                                    <AffectedComponentsButton components={row.components} />
-                                </Td>
-                                <Td dataLabel="Discovered">
-                                    <DateTimeFormat time={row.discoveredAtImage} />
-                                </Td>
-                                <Td
-                                    className="pf-u-text-align-right"
-                                    actions={{
-                                        items: actions,
-                                    }}
-                                />
-                            </Tr>
-                        );
-                    })}
+                            ];
+                            return (
+                                <Tr key={rowIndex}>
+                                    <Td
+                                        select={{
+                                            rowIndex,
+                                            onSelect,
+                                            isSelected: selected[rowIndex],
+                                        }}
+                                    />
+                                    <Td dataLabel="CVE">
+                                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                            <FlexItem>
+                                                <CVESummaryLink cve={row.cve} />
+                                            </FlexItem>
+                                            {row.vulnerabilityRequest?.id &&
+                                                !row.vulnerabilityRequest.expired && (
+                                                    <FlexItem>
+                                                        <PendingApprovalPopover
+                                                            vulnRequestId={
+                                                                row.vulnerabilityRequest.id
+                                                            }
+                                                        />
+                                                    </FlexItem>
+                                                )}
+                                        </Flex>
+                                    </Td>
+                                    <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
+                                    <Td dataLabel="Severity">
+                                        <VulnerabilitySeverityLabel severity={row.severity} />
+                                    </Td>
+                                    <Td dataLabel="CVSS score">
+                                        <CVSSScoreLabel cvss={row.cvss} />
+                                    </Td>
+                                    <Td dataLabel="Affected components">
+                                        <AffectedComponentsButton components={row.components} />
+                                    </Td>
+                                    <Td dataLabel="Discovered">
+                                        <DateTimeFormat time={row.discoveredAtImage} />
+                                    </Td>
+                                    <Td
+                                        className="pf-u-text-align-right"
+                                        actions={{
+                                            items: actions,
+                                        }}
+                                    />
+                                </Tr>
+                            );
+                        })
+                    )}
                 </Tbody>
             </TableComposable>
             <DeferralFormModal
