@@ -54,7 +54,7 @@ func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace st
 		msgFromCentralC:              msgFromCentralC,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: newServiceCertificatesRepo,
-		requester:                    NewCertificateRequester(msgToCentralC, msgFromCentralC),
+		certRequester:                NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
 
@@ -66,8 +66,8 @@ type localScannerTLSIssuerImpl struct {
 	msgFromCentralC              chan *central.IssueLocalScannerCertsResponse
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
-	requester                    CertificateRequester
-	refresher                    concurrency.RetryTicker
+	certRequester                CertificateRequester
+	certRefresher                concurrency.RetryTicker
 }
 
 // CertificateRequester requests a new set of local scanner certificates from central.
@@ -92,7 +92,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
-	if i.refresher != nil {
+	if i.certRefresher != nil {
 		return i.abortStart(errors.New("already started"))
 	}
 
@@ -103,12 +103,12 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	i.refresher = i.getCertificateRefresherFn(i.requester.RequestCertificates, certsRepo,
+	i.certRefresher = i.getCertificateRefresherFn(i.certRequester.RequestCertificates, certsRepo,
 		certRefreshTimeout, certRefreshBackoff)
 
-	i.requester.Start()
-	if refreshStartErr := i.refresher.Start(); refreshStartErr != nil {
-		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate refresher"))
+	i.certRequester.Start()
+	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
+		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate certRefresher"))
 	}
 
 	log.Debug("local scanner TLS tlsIssuer started.")
@@ -122,12 +122,12 @@ func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
 }
 
 func (i *localScannerTLSIssuerImpl) Stop(_ error) {
-	if i.refresher != nil {
-		i.refresher.Stop()
-		i.refresher = nil
+	if i.certRefresher != nil {
+		i.certRefresher.Stop()
+		i.certRefresher = nil
 	}
 
-	i.requester.Stop()
+	i.certRequester.Stop()
 	log.Debug("local scanner TLS tlsIssuer stopped.")
 }
 
@@ -153,7 +153,7 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 			defer cancel()
 			select {
 			case <-ctx.Done():
-				// refresher will retry.
+				// certRefresher will retry.
 				log.Errorf("timeout forwarding response %s from central: %s", response, ctx.Err())
 			case i.msgFromCentralC <- response:
 			}
