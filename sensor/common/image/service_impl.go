@@ -13,7 +13,8 @@ import (
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
-	"github.com/stackrox/rox/sensor/common/scannerclient"
+	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc"
 )
 
@@ -52,29 +53,24 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}
 	}
 
-	// Ask Central to scan the image.
-	scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-		Image:      req.GetImage(),
-		CachedOnly: !req.GetScanInline(),
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "scanning image via central")
-	}
-
-	img := scanResp.GetImage()
-
-	if features.LocalImageScanning.Enabled() {
-		// ScanImageInternal may return without error even if it was unable to find the image.
-		// Check the metadata and scan here: if Central cannot retrieve the metadata nor scan,
-		// perhaps the image is stored in an internal registry which Sensor can reach.
-		if img.GetMetadata() == nil && img.GetScan() == nil {
-			img, err = scannerclient.ScanImage(ctx, s.centralClient, req.GetImage())
-			if err != nil {
-				return nil, errors.Wrap(err, "scanning image via local scanner")
-			}
+	// Ask Central to scan the image if the image is not internal.
+	if !features.LocalImageScanning.Enabled() || !imageutil.IsInternalImage(req.GetImage().GetName()) {
+		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+			Image:      req.GetImage(),
+			CachedOnly: !req.GetScanInline(),
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "scanning image via central")
 		}
+		return &sensor.GetImageResponse{
+			Image: scanResp.GetImage(),
+		}, nil
 	}
 
+	img, err := scan.ScanImage(ctx, s.centralClient, req.GetImage())
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning image via local scanner")
+	}
 	return &sensor.GetImageResponse{
 		Image: img,
 	}, nil

@@ -14,7 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
-	"github.com/stackrox/rox/sensor/common/scannerclient"
+	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc/status"
 )
 
@@ -54,21 +55,18 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
-	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-		Image: ci,
-	})
 
-	if features.LocalImageScanning.Enabled() {
-		img := scannedImage.GetImage()
-		// ScanImageInternal may return without error even if it was unable to find the image.
-		// Check the metadata and scan here: if Central cannot retrieve the metadata nor scan,
-		// perhaps the image is stored in an internal registry which Sensor can reach.
-		if err == nil && img.GetMetadata() == nil && img.GetScan() == nil {
-			scannedImage.Image, err = scannerclient.ScanImage(ctx, svc, ci)
-		}
+	// Ask Central to scan the image if the image is not internal.
+	if !features.LocalImageScanning.Enabled() || !imageutil.IsInternalImage(ci.GetName()) {
+		return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+			Image: ci,
+		})
 	}
 
-	return scannedImage, err
+	img, err := scan.ScanImage(ctx, svc, ci)
+	return &v1.ScanImageInternalResponse{
+		Image: img,
+	}, err
 }
 
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
