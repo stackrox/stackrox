@@ -58,7 +58,6 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	cases := map[string]struct {
 		integration *storage.SignatureIntegration
 		results     []storage.ImageSignatureVerificationResult
-		failure     bool
 	}{
 		"successful verification": {
 			integration: &storage.SignatureIntegration{
@@ -81,7 +80,6 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 					failingCosignConfig,
 				},
 			},
-			failure: true,
 			results: []storage.ImageSignatureVerificationResult{
 				{
 					VerifierId:  "failure",
@@ -111,7 +109,6 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 					failingCosignConfig, failingCosignConfig,
 				},
 			},
-			failure: true,
 			results: []storage.ImageSignatureVerificationResult{
 				{
 					VerifierId:  "multiple-failures",
@@ -129,13 +126,7 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			results, err := VerifyAgainstSignatureIntegration(context.Background(), c.integration, testImg)
-			if c.failure {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-
+			results := VerifyAgainstSignatureIntegration(context.Background(), c.integration, testImg)
 			require.Len(t, results, len(c.results))
 			for i, res := range c.results {
 				assert.Equal(t, res.VerifierId, results[i].VerifierId)

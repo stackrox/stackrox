@@ -4,10 +4,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // SignatureVerifier is responsible for verifying signatures using a specific signature verification method.
@@ -32,19 +36,23 @@ func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (Signatur
 
 // VerifyAgainstSignatureIntegration is a wrapper that will verify an image signature with SignatureVerifier's created
 // based off of the configuration within the storage.SignatureIntegration.
-// It will return an error if the creation of SignatureVerifier's fails or the verification of the signature fails.
-func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration, image *storage.Image) ([]storage.ImageSignatureVerificationResult, error) {
+// NOTE: No error will be returned if the SignatureVerifier's creation failed or the signature verification itself
+// failed. A log entry will be created for a failing creation, and the verification status can be must be checked within
+// the storage.ImageSignatureVerificationResult.
+func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration,
+	image *storage.Image) []storage.ImageSignatureVerificationResult {
 	verifiers := make([]SignatureVerifier, 0, len(integration.GetSignatureVerificationConfigs()))
 	for _, config := range integration.GetSignatureVerificationConfigs() {
 		verifier, err := NewSignatureVerifier(config)
 		if err != nil {
-			return nil, err
+			log.Errorf("Error during creation of the signature verifier for config %q: %v",
+				config.GetId(), err)
+			continue
 		}
 		verifiers = append(verifiers, verifier)
 	}
 
 	var results []storage.ImageSignatureVerificationResult
-	var allVerifyErrs error
 	for _, verifier := range verifiers {
 		res, err := verifier.VerifySignature(ctx, image)
 		// We do not currently support specifying which specific method within an image signature integration should
@@ -57,36 +65,37 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 					VerifierId:       integration.GetId(),
 					Status:           res,
 				},
-			}, nil
+			}
 		}
 		// Right now, we will duplicate the verification result for each SignatureVerifier contained within an image
 		// signature, ensuring all errors are properly returned to the caller.
-		results = append(results, storage.ImageSignatureVerificationResult{
+		verificationResult := storage.ImageSignatureVerificationResult{
 			VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
 			VerifierId:       integration.GetId(),
 			Status:           res,
-			Description:      err.Error(),
-		})
-		allVerifyErrs = multierror.Append(allVerifyErrs, err)
+		}
+
+		if err != nil {
+			verificationResult.Description = err.Error()
+		}
+
+		results = append(results, verificationResult)
 	}
-	return results, allVerifyErrs
+	return results
 }
 
 // VerifyAgainstSignatureIntegrations is a wrapper that will verify an image signature against a list of
 // storage.SignatureIntegration using VerifyAgainstSignatureIntegration.
-// It will return a map of integrations and their related results and any error that may have occurred.
+// NOTE: No error will be returned if the SignatureVerifier's creation failed or the signature verification itself
+// failed. A log entry will be created for a failing creation, and the verification status can be must be checked within
+// the storage.ImageSignatureVerificationResult.
 func VerifyAgainstSignatureIntegrations(ctx context.Context, integrations []*storage.SignatureIntegration,
 	image *storage.Image) (map[*storage.SignatureIntegration][]storage.ImageSignatureVerificationResult, error) {
 	results := make(map[*storage.SignatureIntegration][]storage.ImageSignatureVerificationResult, len(integrations))
-
-	var allVerifyErrs error
-
+	var verifierCreationErrs error
 	for _, integration := range integrations {
-		verificationResults, err := VerifyAgainstSignatureIntegration(ctx, integration, image)
+		verificationResults := VerifyAgainstSignatureIntegration(ctx, integration, image)
 		results[integration] = verificationResults
-		if err != nil {
-			allVerifyErrs = multierror.Append(allVerifyErrs, err)
-		}
 	}
-	return results, allVerifyErrs
+	return results, verifierCreationErrs
 }
