@@ -2,7 +2,39 @@ import { selectors, systemHealthUrl } from '../../constants/SystemHealth';
 import { clusters as clustersApi } from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
-import navigationSelectors from '../../selectors/navigation';
+import { visitFromLeftNavExpandable } from '../../helpers/nav';
+
+function visitSystemHealth() {
+    cy.intercept('GET', clustersApi.list).as('getClusters');
+    cy.visit(systemHealthUrl);
+    cy.wait('@getClusters');
+}
+
+function visitSystemHealthWithDatetimeAndFixture() {
+    // For comparison to `sensorCertExpiry` in clusters fixture.
+    const currentDatetime = new Date('2020-08-31T13:01:00Z');
+    cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+
+    cy.intercept('GET', clustersApi.list, {
+        fixture: 'clusters/health.json',
+    }).as('getClusters');
+    cy.visit(systemHealthUrl);
+    cy.wait('@getClusters');
+}
+
+function visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames) {
+    // For comparison to `sensorCertExpiry` in clusters fixture.
+    const currentDatetime = new Date('2020-08-31T13:01:00Z');
+    cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+
+    cy.fixture('clusters/health.json').then(({ clusters }) => {
+        cy.intercept('GET', clustersApi.list, {
+            body: { clusters: clusters.filter(({ name }) => clusterNames.includes(name)) },
+        }).as('getClusters');
+        cy.visit(systemHealthUrl);
+        cy.wait('@getClusters');
+    });
+}
 
 describe('System Health Clusters local deployment', () => {
     withAuth();
@@ -12,10 +44,7 @@ describe('System Health Clusters local deployment', () => {
     });
 
     it('should go from left navigation to Dashboard and have widgets', () => {
-        cy.visit('/');
-        cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
-        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Health")`).click();
-        cy.wait('@GetClusters');
+        visitFromLeftNavExpandable('Platform Configuration', 'System Health');
 
         cy.get('[data-testid="header-text"]').should('have.text', 'System Health');
 
@@ -34,11 +63,11 @@ describe('System Health Clusters local deployment', () => {
     });
 
     it('should go from Dashboard to Clusters via click View All', () => {
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
+        visitSystemHealth();
 
+        cy.intercept('GET', clustersApi.list).as('getClusters');
         cy.get(selectors.clusters.viewAllButton).click();
-        cy.wait('@GetClusters');
+        cy.wait('@getClusters');
 
         cy.get('[data-testid="header-text"]').should('have.text', 'Clusters');
         cy.get('[data-testid="clusters-side-panel-header"]').should('not.exist');
@@ -51,21 +80,9 @@ describe('System Health Clusters health fixture', () => {
     const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
         selectors.clusters;
 
-    // For comparison to `sensorCertExpiry` in clusters fixture.
-    const currentDatetime = new Date('2020-08-31T13:01:00Z');
-
-    beforeEach(() => {
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
-
-        cy.intercept('GET', clustersApi.list, {
-            fixture: 'clusters/health.json',
-        }).as('GetClusters');
-
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
-    });
-
     it('should have counts in Cluster Overview', () => {
+        visitSystemHealthWithDatetimeAndFixture();
+
         const widgetSelector = selectors.clusters.widgets.clusterOverview;
 
         Object.entries({
@@ -93,6 +110,8 @@ describe('System Health Clusters health fixture', () => {
     });
 
     it('should have counts in Collector Status', () => {
+        visitSystemHealthWithDatetimeAndFixture();
+
         const widgetSelector = selectors.clusters.widgets.collectorStatus;
         let total = 0;
 
@@ -118,6 +137,8 @@ describe('System Health Clusters health fixture', () => {
     });
 
     it('should have counts in Sensor Status', () => {
+        visitSystemHealthWithDatetimeAndFixture();
+
         const widgetSelector = selectors.clusters.widgets.sensorStatus;
         let total = 0;
 
@@ -143,6 +164,8 @@ describe('System Health Clusters health fixture', () => {
     });
 
     it('should have counts in Sensor Updgrade', () => {
+        visitSystemHealthWithDatetimeAndFixture();
+
         const widgetSelector = selectors.clusters.widgets.sensorUpgrade;
         let total = 0;
 
@@ -164,6 +187,8 @@ describe('System Health Clusters health fixture', () => {
     });
 
     it('should have counts in Credential Expiration', () => {
+        visitSystemHealthWithDatetimeAndFixture();
+
         const widgetSelector = selectors.clusters.widgets.credentialExpiration;
         let total = 0;
 
@@ -195,30 +220,11 @@ describe('System Health Clusters subset 3', () => {
     const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
         selectors.clusters;
 
-    // For comparison to `sensorCertExpiry` in clusters fixture.
-    const currentDatetime = new Date('2020-08-31T13:01:00Z');
-
-    let clusters;
-
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            // Return eta-7, kappa-kilogramme-10, lambda-liverpool-11.
-            clusters = response.clusters.slice(2, 5);
-        });
-    });
-
-    beforeEach(() => {
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
-
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
-
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
-    });
+    const clusterNames = ['eta-7', 'kappa-kilogramme-10', 'lambda-liverpool-11'];
 
     it('should have counts in Cluster Overview', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         const widgetSelector = selectors.clusters.widgets.clusterOverview;
 
         Object.entries({
@@ -246,6 +252,8 @@ describe('System Health Clusters subset 3', () => {
     });
 
     it('should have problem counts in Collector Status', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         const widgetSelector = selectors.clusters.widgets.collectorStatus;
         let total = 0;
 
@@ -271,6 +279,8 @@ describe('System Health Clusters subset 3', () => {
     });
 
     it('should have problem count in Sensor Status', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         const widgetSelector = selectors.clusters.widgets.sensorStatus;
         let total = 0;
 
@@ -292,6 +302,8 @@ describe('System Health Clusters subset 3', () => {
     });
 
     it('should have healthy count in Sensor Updgrade', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         const widgetSelector = selectors.clusters.widgets.sensorUpgrade;
         const nbsp = '\u00A0';
 
@@ -309,6 +321,8 @@ describe('System Health Clusters subset 3', () => {
     });
 
     it('should have problem count in Credential Expiration', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         const widgetSelector = selectors.clusters.widgets.credentialExpiration;
         let total = 0;
 
@@ -336,25 +350,11 @@ describe('System Health Clusters subset 1 Uninitialized', () => {
     const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
         selectors.clusters;
 
-    let clusters;
-
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            // Return only alpha-amsterdam-1, which has Uninitialized status.
-            clusters = response.clusters.slice(0, 1);
-        });
-    });
-
-    beforeEach(() => {
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
-
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
-    });
+    const clusterNames = ['alpha-amsterdam-1']; // which has Uninitialized status
 
     it('should have counts in Cluster Overview', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         const widgetSelector = selectors.clusters.widgets.clusterOverview;
 
         Object.entries({
@@ -382,6 +382,8 @@ describe('System Health Clusters subset 1 Uninitialized', () => {
     });
 
     it('should have 0 clusters in other widgets', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         const { collectorStatus, credentialExpiration, sensorStatus, sensorUpgrade } =
             selectors.clusters.widgets;
         [collectorStatus, sensorStatus, sensorUpgrade, credentialExpiration].forEach(
@@ -402,30 +404,11 @@ describe('System Health Clusters subset 1 Healthy', () => {
     const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
         selectors.clusters;
 
-    // For comparison to `sensorCertExpiry` in clusters fixture.
-    const currentDatetime = new Date('2020-08-31T13:01:00Z');
-
-    let clusters;
-
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            // Return only nu-york-13, which has Healthy status.
-            clusters = response.clusters.slice(6, 7);
-        });
-    });
-
-    beforeEach(() => {
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
-
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
-
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
-    });
+    const clusterNames = ['nu-york-13']; // which has Healthy status
 
     it('should have counts in Cluster Overview', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         const widgetSelector = selectors.clusters.widgets.clusterOverview;
 
         Object.entries({
@@ -453,6 +436,8 @@ describe('System Health Clusters subset 1 Healthy', () => {
     });
 
     it('should have 1 cluster in other widgets', () => {
+        visitSystemHealthWithDatetimeAndFilteredFixture(clusterNames);
+
         Object.entries({
             collectorStatus: 'All expected collector pods are ready',
             sensorStatus: 'All sensors last contacted less than 1 minute ago',
@@ -483,14 +468,11 @@ describe('System Health, PatternFly version', () => {
     });
 
     it('should go from left navigation to Dashboard and have widgets', () => {
-        cy.visit('/');
-        cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
-        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Health")`).click();
-
-        // TODO: remove this direct access shim after the PF version of the page is the default
+        // visitFromLeftNavExpandable('Platform Configuration', 'System Health');
+        // TODO: Substitute preceding call for this direct access shim after the PF version of the page is the default
+        // cy.intercept('GET', clustersApi.list).as('getClusters');
         cy.visit('/main/system-health-pf');
-
-        cy.wait('@GetClusters');
+        // cy.wait('@getClusters');
 
         cy.get('h1:contains("System Health")');
     });
