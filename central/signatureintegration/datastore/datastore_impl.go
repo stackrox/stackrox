@@ -8,16 +8,12 @@ import (
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const maxGenerateIDAttempts = 2
-
 var (
 	signatureSAC = sac.ForResource(resources.SignatureIntegration)
-	log          = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
