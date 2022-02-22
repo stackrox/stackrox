@@ -49,7 +49,7 @@ func dial(endpoint string) (*client, error) {
 	// then add the grpc.WithBlock() DialOption.
 	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to connect to Scanner")
+		return nil, errors.Wrap(err, "failed to dial Scanner")
 	}
 
 	log.Infof("Dialing Scanner at %s", endpoint)

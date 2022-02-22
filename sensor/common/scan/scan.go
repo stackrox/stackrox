@@ -23,6 +23,7 @@ var (
 
 // ScanImage runs the pipeline required to scan an image with a local Scanner.
 // TODO(ROX-9281): add retries for rate-limiting.
+//nolint:revive
 func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	// 1. Check if Central already knows about this image.
 	// If Central already knows about it, then return its results.
@@ -64,10 +65,10 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 	// 5. Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, reg.Config())
 	if err != nil {
-		return nil, errors.Wrapf(err, "scanning image %s", image.GetName().GetFullName())
+		return nil, errors.Wrapf(err, "scanning image %s", name)
 	}
 	if scanResp.GetStatus() != scannerV1.ScanStatus_SUCCEEDED {
-		return nil, errors.Wrapf(err, "scan failed for image %s", image.GetName().GetFullName())
+		return nil, errors.Wrapf(err, "scan failed for image %s", name)
 	}
 
 	// 6. Get the image's vulnerabilities from Central.
@@ -79,7 +80,7 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 		Notes:      scanResp.GetNotes(),
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s", image.GetName().GetFullName())
+		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s", name)
 	}
 
 	// 7. Return the completely scanned image.
