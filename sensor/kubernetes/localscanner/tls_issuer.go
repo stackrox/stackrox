@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -43,13 +44,19 @@ var (
 
 // NewLocalScannerTLSIssuer creates a sensor component that will keep the local scanner certificates
 // up to date, using the specified retry parameters.
-func NewLocalScannerTLSIssuer(k8sClient kubernetes.Interface, sensorNamespace string, sensorPodName string) common.SensorComponent {
+func NewLocalScannerTLSIssuer(
+	k8sClient kubernetes.Interface,
+	sensorManagedBy storage.ManagerType,
+	sensorNamespace string,
+	sensorPodName string,
+) common.SensorComponent {
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &localScannerTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
+		sensorManagedBy:              sensorManagedBy,
 		msgToCentralC:                msgToCentralC,
 		msgFromCentralC:              msgFromCentralC,
 		getCertificateRefresherFn:    newCertificatesRefresher,
@@ -62,6 +69,7 @@ type localScannerTLSIssuerImpl struct {
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
+	sensorManagedBy              storage.ManagerType
 	msgToCentralC                chan *central.MsgFromSensor
 	msgFromCentralC              chan *central.IssueLocalScannerCertsResponse
 	getCertificateRefresherFn    certificateRefresherGetter
@@ -88,12 +96,18 @@ type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, na
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started it fails immediately.
 func (i *localScannerTLSIssuerImpl) Start() error {
-	log.Debug("starting local scanner TLS tlsIssuer.")
+	log.Debug("starting local scanner TLS issuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
+	if i.sensorManagedBy != storage.ManagerType_MANAGER_TYPE_HELM_CHART &&
+		i.sensorManagedBy != storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR {
+		log.Debugf("start aborted: local scanner scanner TLS issuer is disabled for manager type %q.", i.sensorManagedBy)
+		return nil
+	}
+
 	if i.certRefresher != nil {
-		return i.abortStart(errors.New("already started"))
+		return i.abortStart(errors.New("already started."))
 	}
 
 	sensorOwnerReference, fetchSensorDeploymentErr := i.fetchSensorDeploymentOwnerRef(ctx, fetchSensorDeploymentOwnerRefBackoff)
@@ -111,12 +125,12 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate certRefresher"))
 	}
 
-	log.Debug("local scanner TLS tlsIssuer started.")
+	log.Debug("local scanner TLS issuer started.")
 	return nil
 }
 
 func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
-	log.Errorf("local scanner TLS tlsIssuer start aborted due to error: %s", err)
+	log.Errorf("local scanner TLS issuer start aborted due to error: %s", err)
 	i.Stop(err)
 	// This component should never stop Sensor.
 	return nil
@@ -129,7 +143,7 @@ func (i *localScannerTLSIssuerImpl) Stop(_ error) {
 	}
 
 	i.certRequester.Stop()
-	log.Debug("local scanner TLS tlsIssuer stopped.")
+	log.Debug("local scanner TLS issuer stopped.")
 }
 
 func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapability {

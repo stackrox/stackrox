@@ -51,6 +51,7 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *local
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    fixture.k8sClient,
+		sensorManagedBy:              storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 		msgToCentralC:                msgToCentralC,
 		msgFromCentralC:              msgFromCentralC,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
@@ -155,6 +156,27 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 			startErr := fixture.tlsIssuer.Start()
 
 			assert.NoError(t, startErr)
+			fixture.assertMockExpectations(t)
+		})
+	}
+}
+
+func TestLocalScannerTLSIssuerWrongManagerTypeStartNoop(t *testing.T) {
+	testCases := map[string]struct {
+		sensorManagedBy storage.ManagerType
+	}{
+		"bundle installations":      {sensorManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL},
+		"unknown installation type": {sensorManagedBy: storage.ManagerType_MANAGER_TYPE_UNKNOWN},
+	}
+	for tcName, tc := range testCases {
+		t.Run(tcName, func(t *testing.T) {
+			fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
+			fixture.tlsIssuer.sensorManagedBy = tc.sensorManagedBy
+
+			startErr := fixture.tlsIssuer.Start()
+
+			assert.NoError(t, startErr)
+			assert.Nil(t, fixture.tlsIssuer.certRefresher)
 			fixture.assertMockExpectations(t)
 		})
 	}
