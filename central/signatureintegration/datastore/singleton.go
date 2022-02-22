@@ -13,14 +13,12 @@ var (
 	instance DataStore
 )
 
-func initialize() {
-	storage, err := rocksdb.New(globaldb.GetRocksDB())
-	utils.CrashOnError(errors.Wrap(err, "unable to create rocksdb store for signature integrations"))
-	instance = New(storage)
-}
-
 // Singleton returns the sole instance of the DataStore service.
 func Singleton() DataStore {
-	once.Do(initialize)
+	once.Do(func() {
+		storage, err := rocksdb.New(globaldb.GetRocksDB())
+		utils.CrashOnError(errors.Wrap(err, "unable to create rocksdb store for signature integrations"))
+		instance = New(storage)
+	})
 	return instance
 }

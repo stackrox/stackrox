@@ -10,12 +10,10 @@ var (
 	instance Service
 )
 
-func initialize() {
-	instance = New(datastore.Singleton())
-}
-
 // Singleton returns the signature integration service singleton.
 func Singleton() Service {
-	once.Do(initialize)
+	once.Do(func() {
+		instance = New(datastore.Singleton())
+	})
 	return instance
 }

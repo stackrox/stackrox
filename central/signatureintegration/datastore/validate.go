@@ -40,7 +40,7 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 	for _, verificationConfig := range integration.GetSignatureVerificationConfigs() {
 		switch cfg := verificationConfig.GetConfig().(type) {
 		case *storage.SignatureVerificationConfig_CosignVerification:
-			err := validateCosignVerification(cfg)
+			err := validateCosignVerification(cfg.CosignVerification)
 			if err != nil {
 				multiErr = multierror.Append(multiErr, err)
 			}
@@ -54,16 +54,17 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 	return multiErr
 }
 
-func validateCosignVerification(config *storage.SignatureVerificationConfig_CosignVerification) error {
+func validateCosignVerification(config *storage.CosignPublicKeyVerification) error {
 	var multiErr error
 
-	publicKeys := config.CosignVerification.GetPublicKeys()
+	publicKeys := config.GetPublicKeys()
 	if len(publicKeys) == 0 {
-		multiErr = multierror.Append(multiErr, errors.New("cosign verification must have at least one public key configured"))
+		err := errors.New("cosign verification must have at least one public key configured")
+		multiErr = multierror.Append(multiErr, err)
 	}
 	for _, publicKey := range publicKeys {
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
-		if keyBlock == nil || keyBlock.Type != signatures.PublicKeyType || len(rest) > 0 {
+		if !signatures.IsValidPEMBlock(keyBlock, rest) {
 			err := errors.Errorf("failed to decode PEM block containing public key %q", publicKey.GetName())
 			multiErr = multierror.Append(multiErr, err)
 		}
