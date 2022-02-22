@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	scanTimeout = 10 * time.Minute
+	scanTimeout = 6 * time.Minute
 )
 
 type scanResult struct {
