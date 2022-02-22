@@ -1,9 +1,9 @@
 package errox
 
 import (
+	"errors"
 	"testing"
 
-	"errors"
 	"github.com/stretchr/testify/assert"
 )
 
