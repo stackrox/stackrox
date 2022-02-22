@@ -37,13 +37,13 @@ type localScannerTLSIssuerFixture struct {
 	tlsIssuer       *localScannerTLSIssuerImpl
 }
 
-func newLocalScannerTLSIssuerFixture(k8sClientConfig testK8sClientConfig) *localScannerTLSIssuerFixture {
+func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *localScannerTLSIssuerFixture {
 	fixture := &localScannerTLSIssuerFixture{
 		requester:       &certificateRequesterMock{},
 		refresher:       &certificateRefresherMock{},
 		repo:            &certsRepoMock{},
 		componentGetter: &componentGetterMock{},
-		k8sClient:       testK8sClient(k8sClientConfig),
+		k8sClient:       getFakeK8sClient(k8sClientConfig),
 	}
 	msgToCentralC := make(chan *central.MsgFromSensor)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
@@ -98,7 +98,7 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
-			fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+			fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 			fixture.mockForStart(mockForStartConfig{getCertsErr: tc.getCertsErr})
 			fixture.refresher.On("Stop").Once()
 			fixture.requester.On("Stop").Once()
@@ -114,7 +114,7 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 }
 
 func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
-	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{refresherStartErr: errForced})
 	fixture.refresher.On("Stop").Once()
 	fixture.requester.On("Stop").Once()
@@ -126,7 +126,7 @@ func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 }
 
 func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
-	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{})
 	fixture.refresher.On("Stop").Once()
 	fixture.requester.On("Stop").Once()
@@ -141,10 +141,10 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 
 func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *testing.T) {
 	testCases := map[string]struct {
-		testK8sClientConfig testK8sClientConfig
+		testK8sClientConfig fakeK8sClientConfig
 	}{
-		"sensor replica set missing": {testK8sClientConfig: testK8sClientConfig{skipSensorReplicaSet: true}},
-		"sensor pod missing":         {testK8sClientConfig: testK8sClientConfig{skipSensorPod: true}},
+		"sensor replica set missing": {testK8sClientConfig: fakeK8sClientConfig{skipSensorReplicaSet: true}},
+		"sensor pod missing":         {testK8sClientConfig: fakeK8sClientConfig{skipSensorPod: true}},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
@@ -164,7 +164,7 @@ func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	processMessageDoneSignal := concurrency.NewErrorSignal()
-	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 	expectedResponse := &central.IssueLocalScannerCertsResponse{
 		RequestId: uuid.NewDummy().String(),
 	}
@@ -194,7 +194,7 @@ func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	processMessageDoneSignal := concurrency.NewErrorSignal()
-	fixture := newLocalScannerTLSIssuerFixture(testK8sClientConfig{})
+	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ReprocessDeployments{},
 	}
@@ -213,7 +213,7 @@ func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 	assert.True(t, ok)
 }
 
-func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
+func getFakeK8sClient(conf fakeK8sClientConfig) *fake.Clientset {
 	objects := make([]runtime.Object, 0)
 	if !conf.skipSensorReplicaSet {
 		sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
@@ -258,7 +258,7 @@ func testK8sClient(conf testK8sClientConfig) *fake.Clientset {
 	return k8sClient
 }
 
-type testK8sClientConfig struct {
+type fakeK8sClientConfig struct {
 	// if true then no sensor replica set and no sensor pod will be added to the test client.
 	skipSensorReplicaSet bool
 	// if true then no sensor pod set will be added to the test client.
