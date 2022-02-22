@@ -1,4 +1,4 @@
-name: Tasks for a developers pull request
+name: PR Workflow
 on:
   pull_request:
     types:
@@ -14,8 +14,11 @@ jobs:
         username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Run style checks
+      # - name: Checkout
+      #   uses: actions/checkout@v2
+      - name: Test
         run: |
-          ls
+          id
+          pwd
+          ls -l
+          env
