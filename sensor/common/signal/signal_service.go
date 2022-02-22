@@ -123,10 +123,10 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 
 			processSignal.ExecFilePath = stringutils.OrDefault(processSignal.GetExecFilePath(), processSignal.GetName())
 			if !isProcessSignalValid(processSignal) {
+				log.Debugf("Invalid process signal: %+v", processSignal)
 				continue
 			}
 
-			log.Debugf("Process Signal: %+v", processSignal)
 			s.processPipeline.Process(processSignal)
 		default:
 			// Currently eat unhandled signals

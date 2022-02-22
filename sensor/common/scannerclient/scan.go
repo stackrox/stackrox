@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	// ErrNoLocalScanner indicates there is no Secured Cluster local Scanner.
+	// ErrNoLocalScanner indicates there is no Secured Cluster local Scanner connection.
+	// This happens if it's not desired or if there is a connection error.
 	ErrNoLocalScanner = errors.New("No local Scanner connection")
 
 	log = logging.LoggerForModule()

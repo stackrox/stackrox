@@ -1,5 +1,8 @@
 import { url as apidocsUrl } from '../constants/ApiReferencePage';
-import { url as dashboardUrl } from '../constants/DashboardPage';
+import { baseURL as complianceUrl } from '../constants/CompliancePage';
+import { url as dashboardUrl, selectors as dashboardSelectors } from '../constants/DashboardPage';
+import { url as networkUrl } from '../constants/NetworkPage';
+import { url as userUrl } from '../constants/UserPage';
 import { url as violationsUrl } from '../constants/ViolationsPage';
 import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
@@ -12,47 +15,41 @@ import withAuth from '../helpers/basicAuth';
 describe('General sanity checks', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.intercept('GET', api.alerts.countsByCluster).as('alertsByCluster');
-    });
-
     describe('should have correct page titles based on URL', () => {
         const baseTitleText = 'Red Hat Advanced Cluster Security';
 
         it('for Dashboard', () => {
-            cy.intercept('GET', api.dashboard.timeseries).as('dashboardTimeseries');
-
-            cy.visit('/main');
-            cy.wait('@dashboardTimeseries');
+            cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
+            cy.visit(dashboardUrl);
+            cy.wait('@summaryCounts');
 
             cy.title().should('eq', `Dashboard | ${baseTitleText}`);
         });
 
         it('for Network Graph', () => {
             cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-
-            cy.visit('/main/network');
-            cy.wait('@networkGraph');
+            cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
+            cy.visit(networkUrl);
+            cy.wait(['@networkGraph', '@networkPolicies']);
 
             cy.title().should('eq', `Network Graph | ${baseTitleText}`);
         });
 
         it('for Violations', () => {
             cy.intercept('GET', api.alerts.alerts).as('alerts');
-
-            cy.visit('/main/violations');
-            cy.wait('@alerts');
+            cy.intercept('GET', api.alerts.alertscount).as('alertsCount');
+            cy.visit(violationsUrl);
+            cy.wait(['@alerts', '@alertsCount']);
 
             cy.title().should('eq', `Violations | ${baseTitleText}`);
         });
 
         it('for Violations with side panel open', () => {
             cy.intercept('GET', api.alerts.alertById).as('alertById');
-
             cy.visit('/main/violations/1234');
-            cy.wait('@alertById');
+            cy.wait('@alertById'); // 404
 
-            cy.title().should('eq', `Violations | ${baseTitleText}`);
+            cy.title().should('eq', `Violations | ${baseTitleText}`); // Violation not found.
         });
 
         it('for Compliance Dashboard', () => {
@@ -60,8 +57,7 @@ describe('General sanity checks', () => {
                 api.compliance.graphqlOps.getAggregatedResults
             );
             cy.intercept('POST', getAggregatedResults).as('getAggregatedResults');
-
-            cy.visit('/main/compliance');
+            cy.visit(complianceUrl);
             cy.wait('@getAggregatedResults');
 
             cy.title().should('eq', `Compliance | ${baseTitleText}`);
@@ -70,63 +66,59 @@ describe('General sanity checks', () => {
         it('for Compliance Namespaces', () => {
             const namespaces = api.graphql(api.compliance.graphqlOps.namespaces);
             cy.intercept('POST', namespaces).as('namespaces');
-
-            cy.visit('/main/compliance/namespaces');
+            cy.visit(`${complianceUrl}/namespaces`);
             cy.wait('@namespaces');
 
             cy.title().should('eq', `Compliance - Namespace | ${baseTitleText}`);
         });
 
-        it('for API Docs', () => {
-            cy.intercept('GET', api.apiDocs.docs).as('apiDocs');
+        it('for User Profile', () => {
+            cy.intercept('GET', api.roles.mypermissions).as('mypermissions');
+            cy.intercept('GET', api.auth.authStatus).as('authStatus');
+            cy.visit(userUrl);
+            cy.wait(['@mypermissions', '@authStatus']);
 
-            cy.visit('/main/apidocs');
+            cy.title().should('eq', `User Profile | ${baseTitleText}`);
+        });
+
+        it('for API Docs', () => {
+            // User Profile test often failed when preceded by this test, so move to last place.
+            cy.intercept('GET', api.apiDocs.docs).as('apiDocs');
+            cy.visit(apidocsUrl);
             cy.wait('@apiDocs', { timeout: 10000 }); // api docs are sloooooow
 
             cy.title().should('eq', `API Reference | ${baseTitleText}`);
         });
-
-        it('for User Profile', () => {
-            const { mypermissions } = api.roles;
-            cy.intercept('GET', mypermissions).as('mypermissions');
-
-            cy.visit('/main/user');
-            cy.wait('@mypermissions');
-
-            cy.title().should('eq', `User Profile | ${baseTitleText}`);
-        });
     });
 
     it('should render navbar with Dashboard selected', () => {
+        cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
         cy.visit('/');
-        cy.wait('@alertsByCluster');
-
-        cy.get(selectors.navLinks.first).as('firstNavItem');
-        cy.get(selectors.navLinks.others).as('otherNavItems');
+        cy.wait('@summaryCounts');
 
         // redirect should happen
-        cy.url().should('contain', dashboardUrl);
+        cy.location('pathname').should('eq', dashboardUrl);
 
         // Dashboard is selected
-        cy.get('@firstNavItem').should('have.class', 'pf-m-current');
-        cy.get('@firstNavItem').contains('Dashboard');
+        cy.get(selectors.navLinks.first).should('have.class', 'pf-m-current');
+        cy.get(selectors.navLinks.first).contains('Dashboard');
 
         // nothing else is selected
-        cy.get('@otherNavItems').should('not.have.class', 'pf-m-current');
+        cy.get(selectors.navLinks.others).should('not.have.class', 'pf-m-current');
     });
 
-    // TODO: Fix for ROX-6826
-    xit('should have the summary counts in the top header', () => {
-        cy.get(selectors.navLinks.list).as('topNavItems');
-        cy.get('@topNavItems').should(($lis) => {
-            expect($lis).to.have.length(6);
-            expect($lis.eq(0)).to.contain('Cluster');
-            expect($lis.eq(1)).to.contain('Node');
-            expect($lis.eq(2)).to.contain('Violation');
-            expect($lis.eq(3)).to.contain('Deployment');
-            expect($lis.eq(4)).to.contain('Image');
-            expect($lis.eq(5)).to.contain('Secret');
-        });
+    it('should have the summary counts in the top header', () => {
+        cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
+        cy.visit(dashboardUrl);
+        cy.wait('@summaryCounts');
+
+        const { summaryCount: summaryCountSelector } = dashboardSelectors;
+        cy.get(`${summaryCountSelector}:nth-child(1):contains("Cluster")`);
+        cy.get(`${summaryCountSelector}:nth-child(2):contains("Node")`);
+        cy.get(`${summaryCountSelector}:nth-child(3):contains("Violation")`);
+        cy.get(`${summaryCountSelector}:nth-child(4):contains("Deployment")`);
+        cy.get(`${summaryCountSelector}:nth-child(5):contains("Image")`);
+        cy.get(`${summaryCountSelector}:nth-child(6):contains("Secret")`);
     });
 
     // TODO: Fix for ROX-6826

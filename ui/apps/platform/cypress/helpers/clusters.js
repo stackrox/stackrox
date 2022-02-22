@@ -23,3 +23,49 @@ export function visitClusters() {
     cy.visit(clustersUrl);
     cy.wait('@getClusters');
 }
+
+export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString) {
+    cy.fixture(fixturePath).then(({ clusters }) => {
+        cy.intercept('GET', api.clusters.list, {
+            body: { clusters },
+        }).as('getClusters');
+        cy.intercept('GET', api.metadata, {
+            body: metadata,
+        }).as('getMetadata');
+
+        // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
+        const currentDatetime = new Date(datetimeISOString);
+        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+
+        cy.visit(clustersUrl);
+        cy.wait(['@getClusters', '@getMetadata']);
+    });
+}
+
+export function visitClusterByNameWithFixtureMetadataDatetime(
+    clusterName,
+    fixturePath,
+    metadata,
+    datetimeISOString
+) {
+    cy.fixture(fixturePath).then(({ clusters }) => {
+        cy.intercept('GET', api.clusters.list, {
+            body: { clusters },
+        }).as('getClusters');
+        cy.intercept('GET', api.metadata, {
+            body: metadata,
+        }).as('getMetadata');
+
+        const cluster = clusters.find(({ name }) => name === clusterName);
+        cy.intercept('GET', api.clusters.single, {
+            body: { cluster },
+        }).as('getCluster');
+
+        // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
+        const currentDatetime = new Date(datetimeISOString);
+        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+
+        cy.visit(`${clustersUrl}/${cluster.id}`);
+        cy.wait(['@getClusters', '@getCluster', '@getMetadata']);
+    });
+}

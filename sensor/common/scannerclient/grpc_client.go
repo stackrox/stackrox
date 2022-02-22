@@ -23,6 +23,7 @@ type client struct {
 }
 
 // dial Scanner and return a new client.
+// dial is non-blocking and returns a non-nil error upon configuration error.
 func dial(endpoint string) (*client, error) {
 	if endpoint == "" {
 		return nil, errors.New("Invalid Scanner endpoint (empty)")
@@ -40,6 +41,8 @@ func dial(endpoint string) (*client, error) {
 		return nil, errors.Wrap(err, "failed to initialize Scanner TLS config")
 	}
 
+	// This is non-blocking. If we ever want this to block,
+	// then add the grpc.WithBlock() DialOption.
 	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to Scanner")
@@ -52,8 +55,6 @@ func dial(endpoint string) (*client, error) {
 		conn:   conn,
 	}, nil
 }
-
-func ()
 
 // GetImageAnalysis retrieves the image analysis results for the given image.
 // The steps are as follows:
@@ -92,7 +93,7 @@ func (c *client) GetImageAnalysis(ctx context.Context, ci *storage.ContainerImag
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Got image components from local Scanner for image %s", name)
+	log.Debugf("Received image components from local Scanner for image %s", name)
 
 	return &imageData{
 		metadata:                   metadata,

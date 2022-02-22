@@ -134,6 +134,7 @@ export const certGen = {
 
 export const dashboard = {
     timeseries: '/v1/alerts/summary/timeseries?*',
+    summaryCounts: graphql('summary_counts'),
 };
 
 export const metadata = 'v1/metadata';
