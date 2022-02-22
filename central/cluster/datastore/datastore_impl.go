@@ -609,7 +609,9 @@ func (ds *datastoreImpl) removeClusterSecrets(ctx context.Context, cluster *stor
 	}
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		_ = ds.secretsDataStore.RemoveSecret(ctx, s.GetId())
+		if err := ds.secretsDataStore.RemoveSecret(ctx, s.GetId()); err != nil {
+			log.Errorf("failed to remove secret with id %s from deleted cluster %s", s.GetId(), cluster.GetId())
+		}
 	}
 }
 
@@ -620,7 +622,9 @@ func (ds *datastoreImpl) removeClusterServiceAccounts(ctx context.Context, clust
 	}
 	for _, s := range serviceAccounts {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		_ = ds.serviceAccountDataStore.RemoveServiceAccount(ctx, s.GetId())
+		if err := ds.serviceAccountDataStore.RemoveServiceAccount(ctx, s.GetId()); err != nil {
+			log.Errorf("failed to remove service account with id %s from deleted cluster %s", s.GetId(), cluster.GetId())
+		}
 	}
 }
 
@@ -631,7 +635,9 @@ func (ds *datastoreImpl) removeK8SRoles(ctx context.Context, cluster *storage.Cl
 	}
 	for _, r := range roles {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		_ = ds.roleDataStore.RemoveRole(ctx, r.GetId())
+		if err := ds.roleDataStore.RemoveRole(ctx, r.GetId()); err != nil {
+			log.Errorf("failed to remove K8S role with id %s from deleted cluster %s", r.GetId(), cluster.GetId())
+		}
 	}
 }
 
@@ -642,7 +648,9 @@ func (ds *datastoreImpl) removeRoleBindings(ctx context.Context, cluster *storag
 	}
 	for _, b := range bindings {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		_ = ds.roleBindingDataStore.RemoveRoleBinding(ctx, b.GetId())
+		if err := ds.roleBindingDataStore.RemoveRoleBinding(ctx, b.GetId()); err != nil {
+			log.Errorf("failed to remove K8S role binding with id %s from deleted cluster %s", b.GetId(), cluster.GetId())
+		}
 	}
 }
 
