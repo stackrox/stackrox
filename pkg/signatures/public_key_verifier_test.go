@@ -43,7 +43,7 @@ func TestNewPublicKeyVerifier(t *testing.T) {
 					},
 				},
 			}
-			verifier, err := newPublicKeyVerifier(config)
+			verifier, err := newCosignPublicKeyVerifier(config)
 			if c.fail {
 				assert.Error(t, err)
 				assert.Nil(t, verifier)
@@ -70,7 +70,7 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newPublicKeyVerifier(&storage.CosignPublicKeyVerification{
+	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "publicKey",
@@ -103,7 +103,7 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newPublicKeyVerifier(&storage.CosignPublicKeyVerification{
+	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "Non matching key",
@@ -114,7 +114,7 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 
 	require.NoError(t, err, "creating public key verifier")
 
-	emptyPubKeyVerifier, err := newPublicKeyVerifier(&storage.CosignPublicKeyVerification{})
+	emptyPubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{})
 	require.NoError(t, err, "creating empty public key verifier")
 
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)

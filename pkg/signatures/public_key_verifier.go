@@ -43,10 +43,10 @@ func IsValidPEMBlock(keyBlock *pem.Block, rest []byte) bool {
 	return keyBlock != nil && keyBlock.Type == publicKeyType && len(rest) <= 0
 }
 
-// newPublicKeyVerifier creates a public key verifier with the given configuration. The provided public keys
+// newCosignPublicKeyVerifier creates a public key verifier with the given Cosign configuration. The provided public keys
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed.
-func newPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*publicKeyVerifier, error) {
+func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*publicKeyVerifier, error) {
 	publicKeys := config.GetPublicKeys()
 	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
