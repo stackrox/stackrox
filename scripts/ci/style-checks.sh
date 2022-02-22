@@ -10,8 +10,8 @@ source "$SCRIPTS_ROOT/scripts/lib.sh"
 
 style_checks() {
     if is_GITHUB_ACTIONS; then
-        require_environment "GITHUB_TOKEN"
-        git config --global "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf" https://github.com/
+        require_environment "ORG_TOKEN_FOR_GITHUB"
+        git config --global "url.https://${ORG_TOKEN_FOR_GITHUB}:x-oauth-basic@github.com/.insteadOf" https://github.com/
     fi
 
     make style
