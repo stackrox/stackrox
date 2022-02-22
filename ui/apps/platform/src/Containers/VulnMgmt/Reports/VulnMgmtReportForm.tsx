@@ -72,22 +72,18 @@ export const validationSchema = yup.object().shape({
             .test('valid-emails-test', '', (emails, { createError }) => {
                 if (!emails?.length) {
                     return createError({
-                        message: 'At least one email is required',
+                        message: 'At least one email address is required',
                         path: 'emailConfig.mailingLists',
                     });
                 }
-                let isValid = true;
-
-                emails?.forEach((email) => {
-                    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                        isValid = false;
-                    }
+                const isValid = emails.every((email) => {
+                    return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
                 });
 
                 return (
                     isValid ||
                     createError({
-                        message: 'List must be valid emails separated by a comma',
+                        message: 'List must be valid email addresses, separated by commas',
                         path: 'emailConfig.mailingLists',
                     })
                 );
