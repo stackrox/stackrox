@@ -42,6 +42,11 @@ const (
 )
 
 var (
+	_ scannerTypes.Scanner                  = (*clairify)(nil)
+	_ scannerTypes.ImageVulnerabilityGetter = (*clairify)(nil)
+)
+
+var (
 	log = logging.LoggerForModule()
 )
 
