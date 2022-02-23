@@ -8,6 +8,7 @@ import (
 func GetSecret() *storage.Secret {
 	return &storage.Secret{
 		Id:          "ID",
+		Name:        "secretName",
 		ClusterId:   "clusterid",
 		ClusterName: "clustername",
 		Files: []*storage.SecretDataFile{
