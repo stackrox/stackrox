@@ -332,7 +332,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			ok := concurrency.PollWithTimeout(func() bool {
 				secrets, err = k8sClient.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
 				s.Require().NoError(err)
-				return len(secrets.Items) == 2
+				return len(secrets.Items) == 2 && len(secrets.Items[0].Data) > 0 && len(secrets.Items[1].Data) > 0
 			}, 10*time.Millisecond, testTimeout)
 			s.Require().True(ok)
 			for _, secret := range secrets.Items {
