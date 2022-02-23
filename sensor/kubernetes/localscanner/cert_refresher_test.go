@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -132,9 +133,10 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsInconsistentImmediat
 	}
 }
 
-func (s *certRefresherSuite) TestRefreshCertificatesGetCertsUnexpectedOwnerFailure() {
+func (s *certRefresherSuite) TestRefreshCertificatesGetCertsUnexpectedOwnerHighestPriorityFailure() {
+	getErr := multierror.Append(nil, ErrUnexpectedSecretsOwner, ErrDifferentCAForDifferentServiceTypes, ErrMissingSecretData)
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(
-		(*storage.TypedServiceCertificateSet)(nil), concurrency.ErrNonRecoverable)
+		(*storage.TypedServiceCertificateSet)(nil), getErr)
 
 	_, err := s.refreshCertificates()
 
