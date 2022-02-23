@@ -10,6 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ORG_TOKEN_FOR_GITHUB: ${{ secrets.ORG_TOKEN_FOR_GITHUB }}
+      GO111MODULE: on
+      GOPRIVATE: github.com/stackrox
+      GOPROXY: https://proxy.golang.org|https://goproxy.io|direct
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
