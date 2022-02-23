@@ -34,18 +34,16 @@ func ReconcileAdminPasswordExtension(client ctrlClient.Client) extensions.Reconc
 
 func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileAdminPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(ctx, client, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
 		statusUpdater:       statusUpdater,
 		centralObj:          c,
-		ctx:                 ctx,
 	}
-	return run.Execute()
+	return run.Execute(ctx)
 }
 
 type reconcileAdminPasswordExtensionRun struct {
 	*commonExtensions.SecretReconciliator
 	statusUpdater func(updateStatusFunc)
-	ctx           context.Context
 
 	centralObj         *platform.Central
 	password           string
@@ -55,7 +53,7 @@ type reconcileAdminPasswordExtensionRun struct {
 	infoUpdate string
 }
 
-func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret() error {
+func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret(ctx context.Context) error {
 	if r.centralObj.Spec.Central.GetAdminPasswordSecret() == nil {
 		return nil
 	}
@@ -64,7 +62,7 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret() 
 
 	passwordSecret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: r.passwordSecretName}
-	if err := r.Client().Get(r.ctx, key, passwordSecret); err != nil {
+	if err := r.Client().Get(ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve admin password secret %q", r.passwordSecretName)
 	}
 
@@ -77,13 +75,13 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret() 
 	return nil
 }
 
-func (r *reconcileAdminPasswordExtensionRun) Execute() error {
+func (r *reconcileAdminPasswordExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
-		return r.ReconcileSecret("central-htpasswd", shouldNotExist, nil, nil, false)
+		return r.ReconcileSecret(ctx, "central-htpasswd", shouldNotExist, nil, nil, false)
 	}
 
 	if r.centralObj.Spec.Central.GetAdminPasswordGenerationDisabled() && r.centralObj.Spec.Central.GetAdminPasswordSecret() == nil {
-		err := r.ReconcileSecret("central-htpasswd", shouldNotExist, nil, nil, false)
+		err := r.ReconcileSecret(ctx, "central-htpasswd", shouldNotExist, nil, nil, false)
 		if err != nil {
 			return err
 		}
@@ -93,11 +91,11 @@ func (r *reconcileAdminPasswordExtensionRun) Execute() error {
 		return nil
 	}
 
-	if err := r.readPasswordFromReferencedSecret(); err != nil {
+	if err := r.readPasswordFromReferencedSecret(ctx); err != nil {
 		return err
 	}
 
-	if err := r.ReconcileSecret("central-htpasswd", true, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData, true); err != nil {
+	if err := r.ReconcileSecret(ctx, "central-htpasswd", true, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData, true); err != nil {
 		return errors.Wrap(err, "reconciling central-htpasswd secret")
 	}
 
