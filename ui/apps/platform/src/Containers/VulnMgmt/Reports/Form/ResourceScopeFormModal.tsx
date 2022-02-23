@@ -113,7 +113,7 @@ function ResourceScopeFormModal({
                         isSubmitting
                     }
                 >
-                    Save integration
+                    Create resource scope
                 </FormSaveButton>,
                 <FormCancelButton onCancel={onHandleCancel}>Cancel</FormCancelButton>,
             ]}
