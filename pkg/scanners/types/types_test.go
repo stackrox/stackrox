@@ -40,9 +40,7 @@ func (*nopAsyncScanner) Test() error                                            
 func (*nopAsyncScanner) Type() string                                             { return "" }
 func (*nopAsyncScanner) Name() string                                             { return "" }
 func (*nopAsyncScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) { return nil, nil }
-func (*nopAsyncScanner) GetOrTriggerScan(_ *storage.Image) (*storage.ImageScan, error) {
-	return nil, nil
-}
+func (*nopAsyncScanner) GetOrTriggerScan(_ *storage.Image) (*storage.ImageScan, error) { return nil, nil }
 
 func TestAsyncScannerAssertion(t *testing.T) {
 	i := &nopImageScanner{Scanner: &nopAsyncScanner{}}
