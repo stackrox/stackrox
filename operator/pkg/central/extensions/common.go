@@ -12,9 +12,6 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// secretDataMap represents data stored as part of a secret.
-type secretDataMap = map[string][]byte
-
 type updateStatusFunc func(*platform.CentralStatus) bool
 
 var (
