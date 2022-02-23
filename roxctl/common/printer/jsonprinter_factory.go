@@ -44,8 +44,8 @@ func (j *JSONPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error)
 		return printers.NewJSONPrinter(printers.WithJSONEscapeHTML(j.EscapeHTMLCharacters),
 			printers.WithJSONCompact(j.Compact)), nil
 	default:
-		return nil, errox.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
-			"JSON printer: %q", format))
+		return nil, errox.Newf(errox.InvalidArgs, "invalid output format %q used for "+
+			"JSON printer", format)
 	}
 }
 
