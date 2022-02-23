@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	mappings "github.com/stackrox/rox/central/alert/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	mappings "github.com/stackrox/rox/index/mappings"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres/walker/walker"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/postgres"
@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_, walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts"))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_ALERTS, walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts"))
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
@@ -36,13 +36,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Alert")
 
-	return postgres.RunCountRequest(v1.SearchCategory_, q, b.db, mappings.OptionsMap)
+	return postgres.RunCountRequest(v1.SearchCategory_ALERTS, q, b.db, mappings.OptionsMap)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Alert")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_, q, b.db, mappings.OptionsMap)
+	return postgres.RunSearchRequest(v1.SearchCategory_ALERTS, q, b.db, mappings.OptionsMap)
 }
 
 //// Stubs for satisfying interfaces

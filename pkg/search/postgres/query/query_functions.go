@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/parse"
-	"github.com/stackrox/rox/pkg/postgres/walker/walker"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/stringutils"

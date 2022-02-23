@@ -3,7 +3,7 @@ package mapping
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres/walker/walker"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (

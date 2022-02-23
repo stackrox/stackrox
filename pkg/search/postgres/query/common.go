@@ -3,7 +3,7 @@ package pgsearch
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres/walker/walker"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -39,7 +39,8 @@ func MatchFieldQuery(schema *walker.Schema, query *v1.MatchFieldQuery, optionsMa
 		log.Infof("Options Map for %s does not have field: %v", schema.Table, query.GetField())
 		return nil, nil
 	}
-	dbField := schema.FieldsBySearchLabel()[query.GetField()]
+	fieldsBySearchLabel := schema.FieldsBySearchLabel()
+	dbField := fieldsBySearchLabel[query.GetField()]
 	if dbField == nil {
 		log.Errorf("Missing field %s in table %s", schema.Table, schema.Table)
 		return nil, nil

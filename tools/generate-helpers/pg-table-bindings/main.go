@@ -15,7 +15,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 	_ "github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/walker/walker"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"

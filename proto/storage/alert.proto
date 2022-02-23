@@ -14,7 +14,7 @@ package storage;
 
 message Alert {
     message Deployment {
-        string                  id                  = 1;
+        string                  id                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
         string                  name                = 2;
         string                  type                = 4;
         string                  namespace           = 5;
@@ -115,8 +115,8 @@ message Alert {
     }
 
     // For run-time phase alert, a maximum of 40 violations are retained.
-    repeated Violation        violations        = 5;
-    ProcessViolation          process_violation = 13;
+    repeated Violation        violations        = 5  [(gogoproto.moretags) = 'sensorhash:"ignore" search:"-"'];
+    ProcessViolation          process_violation = 13 [(gogoproto.moretags) = 'search:"-"'];
 
     Enforcement               enforcement       = 6;
 

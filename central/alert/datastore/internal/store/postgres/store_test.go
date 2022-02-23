@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,4 +54,14 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, foundAlert)
+
+	alert.State = storage.ViolationState_ACTIVE
+	assert.NoError(t, store.Upsert(alert))
+
+	indexer := NewIndexer(pool)
+
+	// Common alert searches
+	results, err := indexer.Search(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
+	assert.NoError(t, err)
+	assert.Len(t, results, 1)
 }

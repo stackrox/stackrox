@@ -29,7 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 func init() {

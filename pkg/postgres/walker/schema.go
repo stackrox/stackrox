@@ -138,6 +138,7 @@ type SearchField struct {
 	Hidden    bool
 	Store     bool
 	Enabled   bool
+	Ignored   bool
 }
 
 // PostgresOptions is the parsed representation of the sql tag on the struct field
