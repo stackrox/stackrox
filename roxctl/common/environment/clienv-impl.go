@@ -29,7 +29,7 @@ func NewCLIEnvironment(io IO, c printer.ColorfulPrinter) Environment {
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
 func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
 	client, err := common.GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure())
-	return client, errors.Wrap(err, "could not create HTTP client")
+	return client, errors.WithStack(err)
 }
 
 // GRPCConnection returns the common.GetGRPCConnection

@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 /*
@@ -36,7 +36,7 @@ func (v Value) Set(s string) error {
 	// Then check for booleans.
 	b, err := strconv.ParseBool(s)
 	if err != nil {
-		return errors.Wrapf(err, "could not parse boolean: %q", s)
+		return errox.NewErrInvalidArgs(err.Error())
 	}
 
 	*v.bp = &b

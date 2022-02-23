@@ -85,7 +85,7 @@ func GetDefaultImage() *Image {
 func (i *Image) LoadFileContents(filename string) (string, error) {
 	content, err := fs.ReadFile(AssetFS, filename)
 	if err != nil {
-		return "", errors.Wrap(err, "could load file content")
+		return "", errors.Wrapf(err, "could not read file %q", filename)
 	}
 	return string(content), nil
 }
@@ -98,7 +98,7 @@ func (i *Image) ReadFileAndTemplate(pathToFile string) (*template.Template, erro
 		return nil, err
 	}
 	parse, err := helmTemplate.InitTemplate(templatePath).Parse(contents)
-	return parse, errors.Wrap(err, "could not render template with content")
+	return parse, errors.Wrapf(err, "could not render template %q with file %q", templatePath, pathToFile)
 }
 
 // GetChartTemplate loads the chart based on the given prefix.
@@ -218,7 +218,7 @@ func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
 
 		data, err := fs.ReadFile(i.fs, p)
 		if err != nil {
-			return errors.Wrapf(err, "could not read file: %q", p)
+			return errors.Wrapf(err, "could not read file %q", p)
 		}
 
 		newPath := strings.TrimPrefix(p, prefixPath+"/")

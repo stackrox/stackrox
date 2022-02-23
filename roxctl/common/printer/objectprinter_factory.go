@@ -124,17 +124,17 @@ func (o *ObjectPrinterFactory) CreatePrinter() (ObjectPrinter, error) {
 // validate will validate whether the given output format can be satisfied by the registered CustomPrinterFactory. It also
 // verifies whether each registered CustomPrinterFactory is able to create a ObjectPrinter with the current configuration
 func (o *ObjectPrinterFactory) validate() error {
-	var errs *multierror.Error
+	var validateErrs *multierror.Error
 	for _, printerFactory := range o.RegisteredPrinterFactories {
 		if err := printerFactory.validate(); err != nil {
-			errs = multierror.Append(errs, err)
+			validateErrs = multierror.Append(validateErrs, err)
 		}
 	}
 	if err := o.validateOutputFormat(); err != nil {
-		errs = multierror.Append(errs, err)
+		validateErrs = multierror.Append(validateErrs, err)
 	}
 
-	return errors.Wrap(errs.ErrorOrNil(), "invalid printer configuration")
+	return errors.Wrap(validateErrs.ErrorOrNil(), "invalid printer configuration")
 }
 
 // validateOutputFormat will verify whether the currently set OutputFormat is supported by a registered
