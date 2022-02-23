@@ -110,13 +110,15 @@ function NotifierSelection({
                 </FlexItem>
             </Flex>
             <FormLabelGroup
+                isRequired
                 label="Distribution list"
                 fieldId="emailConfig.mailingLists"
                 touched={touched}
                 errors={errors}
-                helperText="Enter an audience, who will receive the scheduled report. If an audience is not entered, the recipient defined in the notifier will be used. Multiple email addresses can be entered with comma separators."
+                helperText="Enter an audience, who will receive the scheduled report. Multiple email addresses can be entered with comma separators."
             >
                 <TextInput
+                    isRequired
                     type="text"
                     id="emailConfig.mailingLists"
                     value={joinedMailingLists}

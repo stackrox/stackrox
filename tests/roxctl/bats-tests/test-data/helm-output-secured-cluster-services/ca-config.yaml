@@ -1,0 +1,18 @@
+# This is a StackRox CA configuration.
+# It can be used with the stackrox-secured-cluster-services Helm chart, provided that
+# (a) secrets exist from a previous 'helm install', or (b) secrets have been manually
+# pre-created in Kubernetes.
+ca:
+  cert: |
+    -----BEGIN CERTIFICATE-----
+    MIIB0zCCAXigAwIBAgIUDgfhW56tvR4de185tTzeNwm2UAkwCgYIKoZIzj0EAwIw
+    RzEnMCUGA1UEAxMeU3RhY2tSb3ggQ2VydGlmaWNhdGUgQXV0aG9yaXR5MRwwGgYD
+    VQQFExM5OTczNzUxNDUzNTY2MzY1NDI2MB4XDTIyMDIyMjE1MDQwMFoXDTI3MDIy
+    MTE1MDQwMFowRzEnMCUGA1UEAxMeU3RhY2tSb3ggQ2VydGlmaWNhdGUgQXV0aG9y
+    aXR5MRwwGgYDVQQFExM5OTczNzUxNDUzNTY2MzY1NDI2MFkwEwYHKoZIzj0CAQYI
+    KoZIzj0DAQcDQgAEQHENtUDOrLT/VTmL1GJjSSyeU789lO5+5YhFWJ1pBuVAUS3a
+    3Iv48CNnm8xuyp251Ex3Fke4dtnd+OkAQ/8AXaNCMEAwDgYDVR0PAQH/BAQDAgEG
+    MA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFFVpxOYXNQVgsBA3HwfPC9+DMcct
+    MAoGCCqGSM49BAMCA0kAMEYCIQCmcj7trZrNL5iDgIFRox+OZwqmO/Ot8O1vQKwP
+    5Y+neQIhAPMGVb1gB3E/gBMxDUbWTPvh52QJXzD00EK8M9Kf3BCr
+    -----END CERTIFICATE-----

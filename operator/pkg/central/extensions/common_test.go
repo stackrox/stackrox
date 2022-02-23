@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/types"
+	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -16,11 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-const (
-	testNamespace = `testns`
-)
-
-type secretVerifyFunc func(t *testing.T, data secretDataMap)
+type secretVerifyFunc func(t *testing.T, data types.SecretDataMap)
 type statusVerifyFunc func(t *testing.T, status *platform.CentralStatus)
 
 type secretReconciliationTestCase struct {
@@ -57,7 +55,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-central",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Spec: *c.Spec.DeepCopy(),
 	}
@@ -105,7 +103,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	}
 
 	secretsList := &v1.SecretList{}
-	err = client.List(context.Background(), secretsList, ctrlClient.InNamespace(testNamespace))
+	err = client.List(context.Background(), secretsList, ctrlClient.InNamespace(testutils.TestNamespace))
 	require.NoError(t, err)
 
 	secretsByName := make(map[string]v1.Secret)
@@ -154,7 +152,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	}
 
 	secretsList2 := &v1.SecretList{}
-	err = client.List(context.Background(), secretsList2, ctrlClient.InNamespace(testNamespace))
+	err = client.List(context.Background(), secretsList2, ctrlClient.InNamespace(testutils.TestNamespace))
 	require.NoError(t, err)
 
 	assert.ElementsMatch(t, secretsList.Items, secretsList2.Items, "second invocation changed the cluster state")
@@ -167,7 +165,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	assert.NoError(t, err, "deletion of CR resulted in error")
 
 	secretsList3 := &v1.SecretList{}
-	err = client.List(context.Background(), secretsList3, ctrlClient.InNamespace(testNamespace))
+	err = client.List(context.Background(), secretsList3, ctrlClient.InNamespace(testutils.TestNamespace))
 	require.NoError(t, err)
 
 	postDeletionSecretsByName := make(map[string]v1.Secret)

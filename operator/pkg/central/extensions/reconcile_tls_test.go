@@ -5,6 +5,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/types"
+	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
@@ -15,7 +17,7 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func verifyCentralCert(t *testing.T, data secretDataMap) {
+func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
 	assert.NoError(t, certgen.VerifyServiceCert(data, ca, storage.ServiceType_CENTRAL_SERVICE, ""))
@@ -33,7 +35,7 @@ func verifySecuredClusterServiceCert(serviceType storage.ServiceType) secretVeri
 }
 
 func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) secretVerifyFunc {
-	return func(t *testing.T, data secretDataMap) {
+	return func(t *testing.T, data types.SecretDataMap) {
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
 
@@ -45,7 +47,7 @@ func TestCreateCentralTLS(t *testing.T) {
 	testCA, err := certgen.GenerateCA()
 	require.NoError(t, err)
 
-	centralFileMap := make(secretDataMap)
+	centralFileMap := make(types.SecretDataMap)
 	certgen.AddCAToFileMap(centralFileMap, testCA)
 	require.NoError(t, certgen.IssueCentralCert(centralFileMap, testCA))
 	jwtKey, err := certgen.GenerateJWTSigningKey()
@@ -55,31 +57,31 @@ func TestCreateCentralTLS(t *testing.T) {
 	existingCentral := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "central-tls",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Data: centralFileMap,
 	}
 
-	scannerFileMap := make(secretDataMap)
+	scannerFileMap := make(types.SecretDataMap)
 	certgen.AddCACertToFileMap(scannerFileMap, testCA)
 	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerSubject, ""))
 
 	existingScanner := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "scanner-tls",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Data: scannerFileMap,
 	}
 
-	scannerDBFileMap := make(secretDataMap)
+	scannerDBFileMap := make(types.SecretDataMap)
 	certgen.AddCACertToFileMap(scannerDBFileMap, testCA)
 	require.NoError(t, certgen.IssueServiceCert(scannerDBFileMap, testCA, mtls.ScannerDBSubject, ""))
 
 	existingScannerDB := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "scanner-db-tls",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Data: scannerDBFileMap,
 	}
@@ -96,7 +98,7 @@ func TestCreateCentralTLS(t *testing.T) {
 			Other: []ctrlClient.Object{&platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secured-cluster-services",
-					Namespace: testNamespace,
+					Namespace: testutils.TestNamespace,
 				},
 			}},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
