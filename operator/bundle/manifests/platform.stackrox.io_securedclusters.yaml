@@ -117,9 +117,9 @@ spec:
                       which admission review will fail open. Use it to set request
                       timeouts when you enable inline image scanning. The default
                       kubectl timeout is 30 seconds, with padding this should not
-                      exceed 27 seconds.
+                      exceed 25 seconds.
                     format: int32
-                    maximum: 27
+                    maximum: 25
                     minimum: 1
                     type: integer
                   tolerations:
