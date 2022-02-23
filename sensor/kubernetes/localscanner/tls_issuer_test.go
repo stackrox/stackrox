@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -266,7 +267,7 @@ func (s *localScannerTLSIssueIntegrationTests) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s *localScannerTLSIssueIntegrationTests) TestSuccessfullRefresh() {
+func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 	testCases := map[string]struct {
 		k8sClientConfig    fakeK8sClientConfig
 		numFailedResponses int
@@ -298,10 +299,10 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfullRefresh() {
 			s.Require().NoError(err)
 			scannerCert := s.getCertificate()
 			scannerDBCert := s.getCertificate()
-			client := getFakeK8sClient(tc.k8sClientConfig)
+			k8sClient := getFakeK8sClient(tc.k8sClientConfig)
 			tlsIssuer := newLocalScannerTLSIssuer(
 				s.T(),
-				client,
+				k8sClient,
 				storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 				sensorNamespace,
 				sensorPodName,
@@ -313,6 +314,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfullRefresh() {
 			s.Require().NoError(tlsIssuer.Start())
 			defer tlsIssuer.Stop(nil)
 			s.Require().NotNil(tlsIssuer.certRefresher)
+			s.Require().False(tlsIssuer.certRefresher.Stopped())
 
 			for i := 0; i < tc.numFailedResponses; i++ {
 				request := s.waitForRequest(ctx, tlsIssuer)
@@ -328,7 +330,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfullRefresh() {
 
 			var secrets *v1.SecretList
 			ok := concurrency.PollWithTimeout(func() bool {
-				secrets, err = client.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
+				secrets, err = k8sClient.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
 				s.Require().NoError(err)
 				return len(secrets.Items) == 2
 			}, 10*time.Millisecond, testTimeout)
@@ -348,6 +350,48 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfullRefresh() {
 				s.Equal(expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
 				s.Equal(expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
 			}
+		})
+	}
+}
+
+func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
+	testCases := map[string]struct {
+		secretNames []string
+	}{
+		"wrong owner for scanner secret":                 {secretNames: []string{"scanner-slim-tls"}},
+		"wrong owner for scanner db secret":              {secretNames: []string{"scanner-db-slim-tls"}},
+		"wrong owner for scanner and scanner db secrets": {secretNames: []string{"scanner-slim-tls", "scanner-db-slim-tls"}},
+	}
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			secretsData := make(map[string]map[string][]byte, len(tc.secretNames))
+			for _, secretName := range tc.secretNames {
+				secretsData[secretName] = nil
+			}
+			k8sClient := getFakeK8sClient(fakeK8sClientConfig{
+				secretsData: secretsData,
+				secretsOwner: &metav1.OwnerReference{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       "another-deployment",
+					UID:        types.UID(uuid.NewDummy().String()),
+				},
+			})
+			tlsIssuer := newLocalScannerTLSIssuer(
+				s.T(),
+				k8sClient,
+				storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+				sensorNamespace,
+				sensorPodName,
+			)
+
+			s.Require().NoError(tlsIssuer.Start())
+			defer tlsIssuer.Stop(nil)
+
+			ok := concurrency.PollWithTimeout(func() bool {
+				return tlsIssuer.certRefresher != nil && tlsIssuer.certRefresher.Stopped()
+			}, 10*time.Millisecond, 100*time.Millisecond)
+			s.True(ok)
 		})
 	}
 }
@@ -456,12 +500,16 @@ func getFakeK8sClient(conf fakeK8sClientConfig) *fake.Clientset {
 			objects = append(objects, sensorPod)
 		}
 
+		secretsOwnerRef := sensorReplicaSetOwnerRef
+		if conf.secretsOwner != nil {
+			secretsOwnerRef = *conf.secretsOwner
+		}
 		for secretName, secretData := range conf.secretsData {
 			secret := &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            secretName,
 					Namespace:       sensorNamespace,
-					OwnerReferences: []metav1.OwnerReference{sensorReplicaSetOwnerRef},
+					OwnerReferences: []metav1.OwnerReference{secretsOwnerRef},
 				},
 				Data: secretData,
 			}
@@ -482,6 +530,9 @@ type fakeK8sClientConfig struct {
 	// if skipSensorReplicaSet is false, then a secret will be added to the test client for
 	// each entry in this map, using the key as the secret name and the value as the secret data.
 	secretsData map[string]map[string][]byte
+	// owner reference to used for the secrets specified in `secretsData`. If `nil` then the sensor
+	// replica set is used as owner
+	secretsOwner *metav1.OwnerReference
 }
 
 func newLocalScannerTLSIssuer(
@@ -513,6 +564,7 @@ func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*ce
 
 type certificateRefresherMock struct {
 	mock.Mock
+	stopped bool
 }
 
 func (m *certificateRefresherMock) Start() error {
@@ -522,6 +574,11 @@ func (m *certificateRefresherMock) Start() error {
 
 func (m *certificateRefresherMock) Stop() {
 	m.Called()
+	m.stopped = true
+}
+
+func (m *certificateRefresherMock) Stopped() bool {
+	return m.stopped
 }
 
 type componentGetterMock struct {
