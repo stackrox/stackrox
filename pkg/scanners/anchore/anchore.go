@@ -202,10 +202,6 @@ func (a *anchore) Test() error {
 	return err
 }
 
-func (a *anchore) GetOrTriggerScan(image *storage.Image) (*storage.ImageScan, error) {
-	return a.getOrTriggerScan(image)
-}
-
 func (a *anchore) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	for attempt := 0; attempt < maxPollAttempts; attempt++ {
 		scan, err := a.getOrTriggerScan(image)

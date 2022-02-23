@@ -256,7 +256,7 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 	}
 
 	for _, scanner := range scanners.GetAll() {
-		result, err := e.enrichImageWithScanner(ctx, image, scanner)
+		result, err := e.enrichImageWithScanner(image, scanner)
 		if err != nil {
 			var currentScannerErrors int32
 			concurrency.WithLock(&e.scannerErrorsLock, func() {
@@ -311,43 +311,28 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 	}
 }
 
-func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
+func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
 	if !scanner.Match(image.GetName()) {
 		return ScanNotDone, nil
 	}
 
-	var scan *storage.ImageScan
+	sema := scanner.MaxConcurrentScanSemaphore()
+	_ = sema.Acquire(context.Background(), 1)
+	defer sema.Release(1)
 
-	if asyncScanner, ok := scanner.(scannerTypes.AsyncScanner); ok && ctx.UseNonBlockingCallsWherePossible {
-		_ = e.asyncRateLimiter.Wait(context.Background())
-
-		var err error
-		scan, err = asyncScanner.GetOrTriggerScan(image)
-		if err != nil {
-			return ScanNotDone, errors.Wrapf(err, "Error triggering scan for %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
-		}
-		if scan == nil {
-			return ScanTriggered, nil
-		}
-	} else {
-		sema := scanner.MaxConcurrentScanSemaphore()
-		_ = sema.Acquire(context.Background(), 1)
-		defer sema.Release(1)
-
-		var err error
-		scanStartTime := time.Now()
-		scan, err = scanner.GetScan(image)
-		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
-		if err != nil {
-			return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
-		}
-		if scan == nil {
-			return ScanNotDone, nil
-		}
-
-		// normalize the vulns
-		normalizeVulnerabilities(scan)
+	scanStartTime := time.Now()
+	scan, err := scanner.GetScan(image)
+	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+	if err != nil {
+		return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
 	}
+	if scan == nil {
+		return ScanNotDone, nil
+	}
+
+	// normalize the vulns
+	normalizeVulnerabilities(scan)
+
 	scan.DataSource = scanner.DataSource()
 
 	// Assume:
