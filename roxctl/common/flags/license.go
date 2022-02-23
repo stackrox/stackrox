@@ -55,7 +55,7 @@ func readLicenseFromStdin() ([]byte, error) {
 	}
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read from stdin")
+		return nil, errors.Wrap(err, "failed to read license from stdin")
 	}
 	return data, nil
 }
