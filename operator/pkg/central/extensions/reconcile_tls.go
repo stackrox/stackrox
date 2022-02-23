@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -28,19 +30,19 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client) extensions.Reconcil
 
 func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
-		secretReconciliationExtension: secretReconciliationExtension{
-			ctx:        ctx,
-			centralObj: c,
-			client:     client,
-		},
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(ctx, client, c),
+		centralObj:          c,
+		ctx:                 ctx,
 	}
 	return run.Execute()
 }
 
 type createCentralTLSExtensionRun struct {
-	secretReconciliationExtension
+	*commonExtensions.SecretReconciliator
 
-	ca mtls.CA
+	ca         mtls.CA
+	centralObj *platform.Central
+	ctx        context.Context
 }
 
 func (r *createCentralTLSExtensionRun) Execute() error {
@@ -48,16 +50,16 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 
 	// If we find a broken central-tls secret, do NOT try to auto-fix it. Doing so would invalidate all previously issued certificates
 	// (including sensor certificates and init bundles), and is very unlikely to result in a working state.
-	if err := r.reconcileSecret("central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
+	if err := r.ReconcileSecret("central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
 	// scanner and scanner-db certs can be re-issued without a problem.
 	scannerEnabled := r.centralObj.Spec.Scanner.IsEnabled()
-	if err := r.reconcileSecret("scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
+	if err := r.ReconcileSecret("scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner secret")
 	}
-	if err := r.reconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
+	if err := r.ReconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
 
@@ -69,13 +71,13 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 	for _, serviceType := range centralsensor.AllSecuredClusterServices {
 		slugCaseService := services.ServiceTypeToSlugName(serviceType)
 		secretName := slugCaseService + "-tls"
-		validateFunc := func(fileMap secretDataMap, _ bool) error {
+		validateFunc := func(fileMap types.SecretDataMap, _ bool) error {
 			return r.validateServiceTLSData(serviceType, slugCaseService+"-", fileMap)
 		}
-		generateFunc := func() (secretDataMap, error) {
+		generateFunc := func() (types.SecretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
-		if err := r.reconcileSecret(secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
+		if err := r.ReconcileSecret(secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
 			return errors.Wrapf(err, "reconciling %s secret ", slugCaseService)
 		}
 	}
@@ -95,7 +97,7 @@ func (r *createCentralTLSExtensionRun) shouldBundleSecretsExist(shouldDelete boo
 	return securedClusterPresent, nil
 }
 
-func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap secretDataMap, _ bool) error {
+func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap types.SecretDataMap, _ bool) error {
 	var err error
 	r.ca, err = certgen.LoadCAFromFileMap(fileMap)
 	if err != nil {
@@ -110,14 +112,14 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) generateCentralTLSData() (secretDataMap, error) {
+func (r *createCentralTLSExtensionRun) generateCentralTLSData() (types.SecretDataMap, error) {
 	var err error
 	r.ca, err = certgen.GenerateCA()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating new CA")
 	}
 
-	fileMap := make(secretDataMap)
+	fileMap := make(types.SecretDataMap)
 	certgen.AddCAToFileMap(fileMap, r.ca)
 
 	if err := certgen.IssueCentralCert(fileMap, r.ca, mtls.WithNamespace(r.Namespace())); err != nil {
@@ -133,7 +135,7 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData() (secretDataMap, 
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap secretDataMap) error {
+func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {
 	if err := certgen.VerifyServiceCert(fileMap, r.ca, serviceType, fileNamePrefix); err != nil {
 		return err
 	}
@@ -143,7 +145,7 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject, fileNamePrefix string, fileMap secretDataMap, opts ...mtls.IssueCertOption) error {
+func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject, fileNamePrefix string, fileMap types.SecretDataMap, opts ...mtls.IssueCertOption) error {
 	allOpts := append([]mtls.IssueCertOption{mtls.WithNamespace(r.Namespace())}, opts...)
 	if err := certgen.IssueServiceCert(fileMap, r.ca, subj, fileNamePrefix, allOpts...); err != nil {
 		return err
@@ -152,32 +154,32 @@ func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject,
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) validateScannerTLSData(fileMap secretDataMap, _ bool) error {
+func (r *createCentralTLSExtensionRun) validateScannerTLSData(fileMap types.SecretDataMap, _ bool) error {
 	return r.validateServiceTLSData(storage.ServiceType_SCANNER_SERVICE, "", fileMap)
 }
 
-func (r *createCentralTLSExtensionRun) generateScannerTLSData() (secretDataMap, error) {
-	fileMap := make(secretDataMap, numServiceCertDataEntries)
+func (r *createCentralTLSExtensionRun) generateScannerTLSData() (types.SecretDataMap, error) {
+	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.ScannerSubject, "", fileMap); err != nil {
 		return nil, err
 	}
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) validateScannerDBTLSData(fileMap secretDataMap, _ bool) error {
+func (r *createCentralTLSExtensionRun) validateScannerDBTLSData(fileMap types.SecretDataMap, _ bool) error {
 	return r.validateServiceTLSData(storage.ServiceType_SCANNER_DB_SERVICE, "", fileMap)
 }
 
-func (r *createCentralTLSExtensionRun) generateScannerDBTLSData() (secretDataMap, error) {
-	fileMap := make(secretDataMap, numServiceCertDataEntries)
+func (r *createCentralTLSExtensionRun) generateScannerDBTLSData() (types.SecretDataMap, error) {
+	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.ScannerDBSubject, "", fileMap); err != nil {
 		return nil, err
 	}
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix string, serviceType storage.ServiceType) (secretDataMap, error) {
-	fileMap := make(secretDataMap, numServiceCertDataEntries)
+func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix string, serviceType storage.ServiceType) (types.SecretDataMap, error) {
+	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	bundleID := uuid.NewV4()
 	subject := mtls.NewInitSubject(centralsensor.EphemeralInitCertClusterID, serviceType, bundleID)
 	if err := r.generateServiceTLSData(subject, fileNamePrefix, fileMap, mtls.WithValidityExpiringInHours()); err != nil {
@@ -189,7 +191,7 @@ func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix 
 func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent() (bool, error) {
 	list := &platform.SecuredClusterList{}
 	namespace := r.centralObj.GetNamespace()
-	if err := r.client.List(r.ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
+	if err := r.Client().List(r.ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
 		return false, errors.Wrapf(err, "cannot list securedclusters in namespace %q", namespace)
 	}
 	return len(list.Items) > 0, nil

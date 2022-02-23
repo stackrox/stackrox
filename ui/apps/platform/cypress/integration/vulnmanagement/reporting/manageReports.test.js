@@ -71,8 +71,12 @@ describe('Vulnmanagement reports', () => {
 
             // Step 1, check empty fields
             getInputByLabel('Report name').type(' ').blur();
+            getInputByLabel('Distribution list').focus().blur();
 
             getHelperElementByLabel('Report name').contains('A report name is required');
+            getHelperElementByLabel('Distribution list').contains(
+                'At least one email address is required'
+            );
             cy.get(selectors.reportSection.buttons.create).should('be.disabled');
 
             // TODO: add checks for FE validation error messages on the following fields
@@ -99,7 +103,7 @@ describe('Vulnmanagement reports', () => {
                 .blur();
 
             getHelperElementByLabel('Distribution list').contains(
-                'List must be valid emails separated by a comma'
+                'List must be valid email addresses, separated by comma'
             );
 
             cy.get(selectors.reportSection.buttons.create).should('be.disabled');

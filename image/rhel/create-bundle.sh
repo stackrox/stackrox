@@ -88,7 +88,13 @@ cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 
 mkdir -p "${bundle_root}/go/bin"
 if [[ "$DEBUG_BUILD" == "yes" ]]; then
-  GOBIN="${bundle_root}/go/bin" go install github.com/go-delve/delve/cmd/dlv@latest
+  if [[ "$OSTYPE" != "linux-gnu"* ]]; then
+    GOBIN= GOOS=linux GOARCH=amd64 GOPATH="${bundle_root}/go" go install github.com/go-delve/delve/cmd/dlv@latest
+    mv $bundle_root/go/bin/linux_amd64/dlv $bundle_root/go/bin/dlv
+    rm -r $bundle_root/go/bin/linux_amd64
+  else
+    GOBIN="${bundle_root}/go/bin" go install github.com/go-delve/delve/cmd/dlv@latest
+  fi
 fi
 
 # Extract data from data container image
@@ -114,4 +120,5 @@ fi
 tar cz "${tar_chown_args[@]}" --file "$OUTPUT_BUNDLE" --directory "${bundle_root}" .
 
 # Clean up after success
+chmod -R u+w "${bundle_root}"
 rm -r "${bundle_root}"
