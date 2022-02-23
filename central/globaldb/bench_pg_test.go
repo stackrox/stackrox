@@ -24,6 +24,15 @@ const sqlTemplate = `SELECT count(*) FROM test WHERE
  {{- end }};
 `
 
+const sqlTempTableTemplate = `DROP TABLE IF EXISTS eas;
+CREATE TEMPORARY TABLE eas (c_id INT NOT NULL, n_id INT NOT NULL);
+INSERT INTO eas (c_id, n_id) VALUES
+(0, 0),
+ {{- range $i, $c := $.C }}
+	{{if $c.N}}{{- range $index, $n := $c.N}}({{$c.ID}}, {{$n}}),{{end}}{{ end -}}
+ {{- end }}(0, 0);
+`
+
 type C struct {
 	ID int
 	N  []int
@@ -43,10 +52,10 @@ func BenchmarkTestPG(b *testing.B) {
 	require.NoError(b, err)
 	createTableSql := `
 	CREATE TABLE IF NOT EXISTS eas (
-	                     id SERIAL UNIQUE NOT NULL PRIMARY KEY,
-	                     c_id INT NOT NULL,
-	                     n_id INT NOT NULL,
-	                     role INT NOT NULL
+	                    id SERIAL UNIQUE NOT NULL PRIMARY KEY,
+	                    c_id INT NOT NULL,
+	                    n_id INT NOT NULL,
+	                    role INT NOT NULL
 	);
 	CREATE INDEX IF NOT EXISTS  eas_index ON eas (c_id, n_id);
 	CREATE INDEX IF NOT EXISTS  eas_c_index ON eas (c_id);
@@ -103,11 +112,29 @@ func BenchmarkTestPG(b *testing.B) {
 
 	for _, numberOfClusters := range numbers {
 		// prerun -- generate query and get expected count
-		query, err := generateQuery(prepareIDs(numberOfClusters))
+		query, err := generateQuery(prepareIDs(numberOfClusters), sqlTemplate)
 		require.NoError(b, err)
 		count := execute(b, conn, query)
 		b.Run(fmt.Sprintf("where numberOfClusters=%d count=%d query_len=%d", numberOfClusters, count, len(query)), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
+				execute(b, conn, query)
+			}
+		})
+	}
+
+	for _, numberOfClusters := range numbers {
+		// prerun -- generate query and get expected count
+		eas, err := generateQuery(prepareIDs(numberOfClusters), sqlTempTableTemplate)
+		query := `SELECT count(*) FROM test INNER JOIN eas ON (eas.c_id = test.c_id AND eas.n_id = test.n_id)`
+		require.NoError(b, err)
+		tag, err := conn.Exec(context.Background(), eas)
+		require.NoError(b, err)
+		println(tag.String())
+		count := execute(b, conn, query)
+		b.Run(fmt.Sprintf("tmp table numberOfClusters=%d count=%d query_len=%d", numberOfClusters, count, len(query)), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				_, err = conn.Exec(context.Background(), eas)
+				require.NoError(b, err)
 				execute(b, conn, query)
 			}
 		})
@@ -140,7 +167,7 @@ func execute(t *testing.B, conn *pgxpool.Conn, query string) int64 {
 	return count
 }
 
-func generateQuery(filter filter) (string, error) {
+func generateQuery(filter filter, sqlTemplate string) (string, error) {
 	tmpl := template.Must(template.New("tmpl").Funcs(template.FuncMap{
 		"IntsJoin": intsJoin,
 	}).Parse(sqlTemplate))
