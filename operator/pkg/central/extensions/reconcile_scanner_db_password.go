@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/renderer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -46,15 +47,15 @@ func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
 	return nil
 }
 
-func (r *reconcileScannerDBPasswordExtensionRun) validateScannerDBPasswordData(data secretDataMap, _ bool) error {
+func (r *reconcileScannerDBPasswordExtensionRun) validateScannerDBPasswordData(data types.SecretDataMap, _ bool) error {
 	if len(data[scannerDBPasswordKey]) == 0 {
 		return errors.Errorf("scanner-db-password secret must contain a non-empty %q entry", scannerDBPasswordKey)
 	}
 	return nil
 }
 
-func (r *reconcileScannerDBPasswordExtensionRun) generateScannerDBPasswordData() (secretDataMap, error) {
-	data := secretDataMap{
+func (r *reconcileScannerDBPasswordExtensionRun) generateScannerDBPasswordData() (types.SecretDataMap, error) {
+	data := types.SecretDataMap{
 		scannerDBPasswordKey: []byte(renderer.CreatePassword()),
 	}
 	return data, nil
