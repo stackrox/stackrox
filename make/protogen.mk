@@ -24,6 +24,7 @@ GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH
 ## Protobuf ##
 ##############
 # Set some platform variables for protoc.
+# If the proto version is changed, be sure it is also changed in qa-tests-backend/build.gradle.
 PROTOC_VERSION := 3.19.4
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
