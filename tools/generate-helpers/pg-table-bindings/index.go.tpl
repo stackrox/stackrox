@@ -1,17 +1,3 @@
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.Name}} = ${{add $idx 1}}{{end}}{{end}}
-{{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
-{{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
-
-{{- $ := . }}
-{{- $pks := .Schema.LocalPrimaryKeys }}
-
-{{- $singlePK := dict.nil }}
-{{- if eq (len $pks) 1 }}
-{{ $singlePK = index $pks 0 }}
-{{- end }}
 
 package postgres
 

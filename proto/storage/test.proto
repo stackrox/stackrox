@@ -88,7 +88,7 @@ message TestMultiKeyStruct {
   int64 int64                  = 6;
   // repeated int64 int64_slice: currently unsupported
 
-  float float                   = 7 [(gogoproto.moretags) = 'sql:"pk" search:"Test Key"'];
+  float float                   = 7 [(gogoproto.moretags) = 'search:"Test Key"'];
   // repeated float float_slice: currently unsupported
 
   map<string, string> labels          = 8;
