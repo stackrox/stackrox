@@ -1,7 +1,7 @@
 # Reduced resource overrides for the stackrox-central-services Helm chart in CI.
 
 scanner:
-  replicas: 1
+  replicas: 2
   autoscaling:
     disable: true
 
