@@ -15,7 +15,7 @@ repositories {
     mavenCentral()
 }
 
-def grpcVersion = '1.21.0'
+def grpcVersion = '1.44.0'
 def protocVersion = '3.17.3'
 def protobufVersion = '3.18.1'
 def nettyTcNativeVersion = '2.0.45.Final'
