@@ -3460,7 +3460,7 @@ jobs:
       - *restoreGoModCache
       - *setupRoxctl
       - run:
-          name: Run roxctl Bats tests
+          name: Run standalone roxctl Bats tests
           command: |
             source tests/e2e/run.sh
             # Bats tests from the 'local' folder can be run locally without any prerequisites
@@ -3543,7 +3543,7 @@ jobs:
             cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
 
       - run:
-          name: Run roxctl Bats tests
+          name: Run roxctl Bats tests that require a running cluster
           command: |
             source tests/e2e/run.sh
             # Bats tests from the 'cluster' folder require running central
