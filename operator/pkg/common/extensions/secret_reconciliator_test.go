@@ -16,20 +16,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-type secretReconcilerExtensionTestSuite struct {
+const (
+	testNamespace = `testns`
+)
+
+type secretReconcilerTestSuite struct {
 	suite.Suite
 
 	centralObj *platform.Central
 	client     ctrlClient.Client
 
-	reconcileExt *secretReconciliationExtension
+	reconciliator *SecretReconciliator
 }
 
 func TestSecretReconcilerExtension(t *testing.T) {
-	suite.Run(t, new(secretReconcilerExtensionTestSuite))
+	suite.Run(t, new(secretReconcilerTestSuite))
 }
 
-func (s *secretReconcilerExtensionTestSuite) SetupTest() {
+func (s *secretReconcilerTestSuite) SetupTest() {
 	s.centralObj = &platform.Central{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: platform.CentralGVK.GroupVersion().String(),
@@ -77,24 +81,20 @@ func (s *secretReconcilerExtensionTestSuite) SetupTest() {
 
 	s.client = fake.NewClientBuilder().WithObjects(existingSecret, existingOwnedSecret).Build()
 
-	s.reconcileExt = &secretReconciliationExtension{
-		ctx:        context.Background(),
-		client:     s.client,
-		centralObj: s.centralObj,
-	}
+	s.reconciliator = NewSecretReconciliator(context.Background(), s.client, s.centralObj)
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNothing() {
-	validateFn := func(secretDataMap, bool) error {
+func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNothing() {
+	validateFn := func(SecretDataMap, bool) error {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
-	generateFn := func() (secretDataMap, error) {
+	generateFn := func() (SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
 
-	err := s.reconcileExt.reconcileSecret("absent-secret", false, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret("absent-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	dummy := &v1.Secret{}
@@ -103,17 +103,17 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnNonExisting_S
 	s.True(errors.IsNotFound(err))
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingManaged_ShouldDelete() {
-	validateFn := func(secretDataMap, bool) error {
+func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnExistingManaged_ShouldDelete() {
+	validateFn := func(SecretDataMap, bool) error {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
-	generateFn := func() (secretDataMap, error) {
+	generateFn := func() (SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
 
-	err := s.reconcileExt.reconcileSecret("existing-managed-secret", false, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret("existing-managed-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	dummy := &v1.Secret{}
@@ -122,17 +122,17 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingManag
 	s.True(errors.IsNotFound(err))
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingUnmanaged_ShouldDoNothing() {
-	validateFn := func(secretDataMap, bool) error {
+func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnExistingUnmanaged_ShouldDoNothing() {
+	validateFn := func(SecretDataMap, bool) error {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
-	generateFn := func() (secretDataMap, error) {
+	generateFn := func() (SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
 
-	err := s.reconcileExt.reconcileSecret("existing-secret", false, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret("existing-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	dummy := &v1.Secret{}
@@ -141,21 +141,21 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingUnman
 	s.NoError(err)
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnNonExisting_ShouldCreateSecretWithOwnerRef() {
-	validateFn := func(secretDataMap, bool) error {
+func (s *secretReconcilerTestSuite) Test_ShouldExist_OnNonExisting_ShouldCreateSecretWithOwnerRef() {
+	validateFn := func(SecretDataMap, bool) error {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
 	// this ensures that we check for the existence of a unique created secret
 	var markerID string
-	generateFn := func() (secretDataMap, error) {
+	generateFn := func() (SecretDataMap, error) {
 		markerID = uuid.NewV4().String()
-		return secretDataMap{
+		return SecretDataMap{
 			"generated": []byte(markerID),
 		}, nil
 	}
 
-	err := s.reconcileExt.reconcileSecret("absent-secret", true, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret("absent-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.NotEmpty(markerID, "generate function has not been called")
 
@@ -169,26 +169,26 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnNonExisting_Shou
 	s.Equal(markerID, string(secret.Data["generated"]))
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_PassingValidation_ShouldDoNothing() {
+func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_PassingValidation_ShouldDoNothing() {
 	initSecret := &v1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: testNamespace, Name: "existing-managed-secret"}
 	err := s.client.Get(context.Background(), key, initSecret)
 	s.Require().NoError(err)
 
 	validated := false
-	validateFn := func(data secretDataMap, managed bool) error {
+	validateFn := func(data SecretDataMap, managed bool) error {
 		s.Equal("existing-managed-secret", string(data["secret-name"]))
 		s.True(managed)
 		validated = true
 		return nil
 	}
 
-	generateFn := func() (secretDataMap, error) {
+	generateFn := func() (SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
 
-	err = s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
+	err = s.reconciliator.ReconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.True(validated)
 
@@ -199,21 +199,21 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	s.Equal(initSecret, secret)
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_FailingValidation_NoFixExisting_ShouldFail() {
+func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingValidation_NoFixExisting_ShouldFail() {
 	failValidationErr := pkgErrors.New("failed validation")
-	validateFn := func(data secretDataMap, managed bool) error {
+	validateFn := func(data SecretDataMap, managed bool) error {
 		s.Equal("existing-managed-secret", string(data["secret-name"]))
 		s.True(managed)
 		return failValidationErr
 	}
 
-	generateFn := func() (secretDataMap, error) {
-		return secretDataMap{
+	generateFn := func() (SecretDataMap, error) {
+		return SecretDataMap{
 			"new-secret-data": []byte("foo"),
 		}, nil
 	}
 
-	err := s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
 	secret := &v1.Secret{}
@@ -224,21 +224,21 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	s.Equal("existing-managed-secret", string(secret.Data["secret-name"]))
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_FailingValidation_WithFixExisting_ShouldFix() {
+func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingValidation_WithFixExisting_ShouldFix() {
 	failValidationErr := pkgErrors.New("failed validation")
-	validateFn := func(data secretDataMap, managed bool) error {
+	validateFn := func(data SecretDataMap, managed bool) error {
 		s.Equal("existing-managed-secret", string(data["secret-name"]))
 		s.True(managed)
 		return failValidationErr
 	}
 
-	generateFn := func() (secretDataMap, error) {
-		return secretDataMap{
+	generateFn := func() (SecretDataMap, error) {
+		return SecretDataMap{
 			"new-secret-data": []byte("foo"),
 		}, nil
 	}
 
-	err := s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn, true)
+	err := s.reconciliator.ReconcileSecret("existing-managed-secret", true, validateFn, generateFn, true)
 	s.NoError(err)
 
 	secret := &v1.Secret{}
@@ -249,26 +249,26 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	s.Equal("foo", string(secret.Data["new-secret-data"]))
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanaged_PassingValidation_ShouldDoNothing() {
+func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_PassingValidation_ShouldDoNothing() {
 	initSecret := &v1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: testNamespace, Name: "existing-secret"}
 	err := s.client.Get(context.Background(), key, initSecret)
 	s.Require().NoError(err)
 
 	validated := false
-	validateFn := func(data secretDataMap, managed bool) error {
+	validateFn := func(data SecretDataMap, managed bool) error {
 		s.Equal("existing-secret", string(data["secret-name"]))
 		s.False(managed)
 		validated = true
 		return nil
 	}
 
-	generateFn := func() (secretDataMap, error) {
+	generateFn := func() (SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
 
-	err = s.reconcileExt.reconcileSecret("existing-secret", true, validateFn, generateFn, false)
+	err = s.reconciliator.ReconcileSecret("existing-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.True(validated)
 
@@ -278,25 +278,25 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanage
 	s.Equal(initSecret, secret)
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanaged_FailingValidation_ShouldDoNothingAndFail() {
+func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_FailingValidation_ShouldDoNothingAndFail() {
 	initSecret := &v1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: testNamespace, Name: "existing-secret"}
 	err := s.client.Get(context.Background(), key, initSecret)
 	s.Require().NoError(err)
 
 	failValidationErr := pkgErrors.New("failed validation")
-	validateFn := func(data secretDataMap, managed bool) error {
+	validateFn := func(data SecretDataMap, managed bool) error {
 		s.Equal("existing-secret", string(data["secret-name"]))
 		s.False(managed)
 		return failValidationErr
 	}
 
-	generateFn := func() (secretDataMap, error) {
+	generateFn := func() (SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
 
-	err = s.reconcileExt.reconcileSecret("existing-secret", true, validateFn, generateFn, false)
+	err = s.reconciliator.ReconcileSecret("existing-secret", true, validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
 	secret := &v1.Secret{}

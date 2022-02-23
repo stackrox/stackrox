@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -28,19 +29,19 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client) extensions.Reconcil
 
 func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
-		secretReconciliationExtension: secretReconciliationExtension{
-			ctx:        ctx,
-			centralObj: c,
-			client:     client,
-		},
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(ctx, client, c),
+		centralObj:          c,
+		ctx:                 ctx,
 	}
 	return run.Execute()
 }
 
 type createCentralTLSExtensionRun struct {
-	secretReconciliationExtension
+	*commonExtensions.SecretReconciliator
 
-	ca mtls.CA
+	ca         mtls.CA
+	centralObj *platform.Central
+	ctx        context.Context
 }
 
 func (r *createCentralTLSExtensionRun) Execute() error {
@@ -48,16 +49,16 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 
 	// If we find a broken central-tls secret, do NOT try to auto-fix it. Doing so would invalidate all previously issued certificates
 	// (including sensor certificates and init bundles), and is very unlikely to result in a working state.
-	if err := r.reconcileSecret("central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
+	if err := r.ReconcileSecret("central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
 	// scanner and scanner-db certs can be re-issued without a problem.
 	scannerEnabled := r.centralObj.Spec.Scanner.IsEnabled()
-	if err := r.reconcileSecret("scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
+	if err := r.ReconcileSecret("scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner secret")
 	}
-	if err := r.reconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
+	if err := r.ReconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
 
@@ -75,7 +76,7 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 		generateFunc := func() (secretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
-		if err := r.reconcileSecret(secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
+		if err := r.ReconcileSecret(secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
 			return errors.Wrapf(err, "reconciling %s secret ", slugCaseService)
 		}
 	}
@@ -189,7 +190,7 @@ func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix 
 func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent() (bool, error) {
 	list := &platform.SecuredClusterList{}
 	namespace := r.centralObj.GetNamespace()
-	if err := r.client.List(r.ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
+	if err := r.Client().List(r.ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
 		return false, errors.Wrapf(err, "cannot list securedclusters in namespace %q", namespace)
 	}
 	return len(list.Items) > 0, nil
