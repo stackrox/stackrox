@@ -16,22 +16,25 @@ import (
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sync/semaphore"
 )
 
+var _ types.Scanner = (*fakeScanner)(nil)
+
 type fakeScanner struct{}
 
-func (*fakeScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (*fakeScanner) GetScan(*storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
 }
 
-func (*fakeScanner) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
+func (*fakeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
 	panic("implement me")
 }
 
-func (*fakeScanner) Match(image *storage.ImageName) bool {
+func (*fakeScanner) Match(*storage.ImageName) bool {
 	panic("implement me")
 }
 
@@ -47,24 +50,38 @@ func (*fakeScanner) Name() string {
 	panic("implement me")
 }
 
-func (f *fakeScanner) Type() string {
+func (*fakeScanner) Type() string {
 	return "type"
 }
 
-func (f *fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
+func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(10)
 }
 
-func (f *fakeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
+func (*fakeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(10)
 }
 
-func (f *fakeScanner) DataSource() *storage.DataSource {
-	return nil
-}
-
-func (f *fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	return &v1.VulnDefinitionsInfo{}, nil
+}
+
+var _ types.ImageScanner = (*fakeImageScanner)(nil)
+
+type fakeImageScanner struct {
+	scanner types.Scanner
+}
+
+func newFakeImageScanner() types.ImageScanner {
+	return &fakeImageScanner{scanner: &fakeScanner{}}
+}
+
+func (f *fakeImageScanner) GetScanner() types.Scanner {
+	return f.scanner
+}
+
+func (*fakeImageScanner) DataSource() *storage.DataSource {
+	return nil
 }
 
 func TestValidateIntegration(t *testing.T) {
@@ -269,8 +286,8 @@ func TestValidateNodeIntegration(t *testing.T) {
 		gomock.Any(),
 		&v1.GetImageIntegrationsRequest{Name: "name"},
 	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
-	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(&fakeScanner{}, nil).Times(1)
-	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(&fakeScanner{}, nil).Times(1)
+	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(newFakeImageScanner(), nil).Times(1)
+	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(newFakeImageScanner(), nil).Times(1)
 	_, err := s.TestImageIntegration(testCtx, clairifyIntegrationConfig)
 	assert.NoError(t, err)
 

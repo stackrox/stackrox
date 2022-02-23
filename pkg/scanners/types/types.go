@@ -20,10 +20,10 @@ type Scanner interface {
 	GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error)
 }
 
-// ImageScanner adds a DataSource function to Scanner that describes which
-// integration formed the interface
+// ImageScanner provides a GetScanner to retrieve the underlying Scanner and
+// a DataSource function to describe which integration formed the interface
 type ImageScanner interface {
-	Scanner
+	GetScanner() Scanner
 	DataSource() *storage.DataSource
 }
 
