@@ -27,6 +27,11 @@ type ImageScanner interface {
 	DataSource() *storage.DataSource
 }
 
+// ScannerGetter defines an interface with a GetScanner function.
+type ScannerGetter interface {
+	GetScanner() Scanner
+}
+
 // AsyncScanner is an image scanner that can be accessed asynchronously.
 type AsyncScanner interface {
 	Scanner

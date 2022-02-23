@@ -7,13 +7,24 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
+var _ Factory = (*factoryImpl)(nil)
+
 type factoryImpl struct {
 	creators map[string]Creator
 }
 
+var (
+	_ types.ImageScanner = (*imageScannerWithDataSource)(nil)
+	_ types.ScannerGetter = (*imageScannerWithDataSource)(nil)
+)
+
 type imageScannerWithDataSource struct {
 	types.Scanner
 	datasource *storage.DataSource
+}
+
+func (i *imageScannerWithDataSource) GetScanner() types.Scanner {
+	return i.Scanner
 }
 
 func (i *imageScannerWithDataSource) DataSource() *storage.DataSource {

@@ -311,35 +311,39 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 	}
 }
 
-func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
-	if !scanner.Match(image.GetName()) {
+func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, imageScanner scannerTypes.ImageScanner) (ScanResult, error) {
+	if !imageScanner.Match(image.GetName()) {
 		return ScanNotDone, nil
 	}
 
 	var scan *storage.ImageScan
 
-	if asyncScanner, ok := scanner.(scannerTypes.AsyncScanner); ok && ctx.UseNonBlockingCallsWherePossible {
+	var asyncScanner scannerTypes.AsyncScanner
+	if scanner, ok := imageScanner.(scannerTypes.ScannerGetter); ok {
+		asyncScanner, _ = scanner.GetScanner().(scannerTypes.AsyncScanner)
+	}
+	if asyncScanner != nil && ctx.UseNonBlockingCallsWherePossible {
 		_ = e.asyncRateLimiter.Wait(context.Background())
 
 		var err error
 		scan, err = asyncScanner.GetOrTriggerScan(image)
 		if err != nil {
-			return ScanNotDone, errors.Wrapf(err, "Error triggering scan for %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
+			return ScanNotDone, errors.Wrapf(err, "Error triggering scan for %q with scanner %q", image.GetName().GetFullName(), imageScanner.Name())
 		}
 		if scan == nil {
 			return ScanTriggered, nil
 		}
 	} else {
-		sema := scanner.MaxConcurrentScanSemaphore()
+		sema := imageScanner.MaxConcurrentScanSemaphore()
 		_ = sema.Acquire(context.Background(), 1)
 		defer sema.Release(1)
 
 		var err error
 		scanStartTime := time.Now()
-		scan, err = scanner.GetScan(image)
-		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+		scan, err = imageScanner.GetScan(image)
+		e.metrics.SetScanDurationTime(scanStartTime, imageScanner.Name(), err)
 		if err != nil {
-			return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
+			return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), imageScanner.Name())
 		}
 		if scan == nil {
 			return ScanNotDone, nil
@@ -348,7 +352,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		// normalize the vulns
 		normalizeVulnerabilities(scan)
 	}
-	scan.DataSource = scanner.DataSource()
+	scan.DataSource = imageScanner.DataSource()
 
 	// Assume:
 	//  scan != nil
