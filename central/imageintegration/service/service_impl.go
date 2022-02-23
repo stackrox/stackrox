@@ -261,7 +261,7 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 	if err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
-	if err := scanner.Test(); err != nil {
+	if err := scanner.GetScanner().Test(); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil

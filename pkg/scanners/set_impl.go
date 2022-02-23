@@ -28,7 +28,7 @@ func (e *setImpl) GetAll() []types.ImageScanner {
 		integrations = append(integrations, i)
 	}
 	sort.Slice(integrations, func(i, j int) bool {
-		return !registryDependentScanners.Contains(integrations[i].Type())
+		return !registryDependentScanners.Contains(integrations[i].GetScanner().Type())
 	})
 	return integrations
 }

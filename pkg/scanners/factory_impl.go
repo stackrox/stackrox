@@ -16,7 +16,7 @@ type factoryImpl struct {
 var _ types.ImageScanner = (*imageScannerWithDataSource)(nil)
 
 type imageScannerWithDataSource struct {
-	scanner types.Scanner
+	scanner    types.Scanner
 	datasource *storage.DataSource
 }
 
