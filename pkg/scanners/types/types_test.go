@@ -47,14 +47,14 @@ func (*nopAsyncScanner) GetOrTriggerScan(_ *storage.Image) (*storage.ImageScan, 
 func TestAsyncScannerAssertion(t *testing.T) {
 	i := &nopImageScanner{Scanner: &nopAsyncScanner{}}
 
-	shouldFail := func(i ImageScanner) {
+	assertFalse := func(i ImageScanner) {
 		scanner, ok := i.(AsyncScanner)
 		assert.Nil(t, scanner)
 		assert.False(t, ok)
 	}
-	shouldFail(i)
+	assertFalse(i)
 
-	shouldPass := func(i ImageScanner) {
+	assertTrue := func(i ImageScanner) {
 		scanner, ok := i.(ScannerGetter)
 		assert.NotNil(t, scanner)
 		assert.True(t, ok)
@@ -64,5 +64,5 @@ func TestAsyncScannerAssertion(t *testing.T) {
 		assert.NotNil(t, async)
 		assert.True(t, ok)
 	}
-	shouldPass(i)
+	assertTrue(i)
 }
