@@ -61,6 +61,7 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 		log.Debugf("no valid scan, skip populating executable cache %s: %s", imageID, image.GetName())
 		return nil
 	}
+
 	scanTime := protoconv.ConvertTimestampToTimeOrNow(scan.GetScanTime())
 
 	// Check if we should update executable cache
@@ -70,6 +71,7 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 		return nil
 	}
 
+	log.Errorf("SHREWS current scan version %s", currRecord.(*imageExecutable).scannerVersion)
 	if ok && currRecord.(*imageExecutable).scannerVersion == scan.GetScannerVersion() {
 		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scan.GetScannerVersion(), currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
 		return nil
