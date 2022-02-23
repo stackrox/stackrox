@@ -29,7 +29,8 @@ ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
 ## Protobuf ##
 ##############
 # Set some platform variables for protoc.
-PROTOC_VERSION := 3.6.1
+# If the proto version is changed, be sure it is also changed in qa-tests-backend/build.gradle.
+PROTOC_VERSION := 3.19.4
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_ARCH = linux
