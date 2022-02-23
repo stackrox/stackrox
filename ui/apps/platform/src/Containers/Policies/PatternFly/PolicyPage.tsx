@@ -84,7 +84,9 @@ function PolicyPage({
     const { wizardPolicy } = useSelector(wizardPolicyState);
 
     const [policy, setPolicy] = useState<Policy>(
-        pageAction === 'generate' && wizardPolicy ? wizardPolicy : initialPolicy
+        pageAction === 'generate' && wizardPolicy
+            ? getClientWizardPolicy(wizardPolicy)
+            : initialPolicy
     );
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
