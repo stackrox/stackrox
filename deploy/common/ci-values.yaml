@@ -10,5 +10,5 @@ scanner:
       memory: "1000Mi"
       cpu: "500m"
     limits:
-      memory: "2500Mi"
+      memory: "4Gi"
       cpu: "2000m"
