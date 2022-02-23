@@ -126,10 +126,9 @@ message Alert {
     // The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
     google.protobuf.Timestamp resolved_at       = 17 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
 
-    ViolationState            state             = 11;
+    ViolationState            state             = 11 [(gogoproto.moretags) = "search:\"Violation State,store\""];
     google.protobuf.Timestamp snooze_till       = 12;
     repeated string           tags              = 14;
-
 }
 
 message ListAlert {

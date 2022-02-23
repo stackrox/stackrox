@@ -15,8 +15,8 @@ var (
 )
 
 type context struct {
-	getter string
-	column string
+	getter         string
+	column         string
 	searchDisabled bool
 }
 
@@ -35,11 +35,11 @@ func (c context) Column(name string) string {
 	return c.column + "_" + name
 }
 
-func (c context) childContext(name string) context {
+func (c context) childContext(name string, searchDisabled bool) context {
 	return context{
-		getter: c.Getter(name),
-		column: c.Column(name),
-		searchDisabled: c.searchDisabled,
+		getter:         c.Getter(name),
+		column:         c.Column(name),
+		searchDisabled: c.searchDisabled || searchDisabled,
 	}
 }
 
@@ -117,9 +117,6 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			continue
 		}
 		searchOpts := getSearchOptions(ctx, structField.Tag.Get("search"))
-		if searchOpts.Ignored {
-			ctx.searchDisabled = true
-		}
 
 		field := Field{
 			Schema:  schema,
@@ -144,7 +141,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				continue
 			}
 
-			handleStruct(ctx.childContext(field.Name), schema, structField.Type.Elem())
+			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored), schema, structField.Type.Elem())
 		case reflect.Slice:
 			elemType := structField.Type.Elem()
 
@@ -184,10 +181,10 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 
-			handleStruct(context{searchDisabled: ctx.searchDisabled}, childSchema, structField.Type.Elem().Elem())
+			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored}, childSchema, structField.Type.Elem().Elem())
 			continue
 		case reflect.Struct:
-			handleStruct(ctx.childContext(field.Name), schema, structField.Type)
+			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored), schema, structField.Type)
 		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
 			enum, ok := reflect.Zero(structField.Type).Interface().(protoreflect.ProtoEnum)
 			if !ok {

@@ -42,7 +42,7 @@ func MatchFieldQuery(schema *walker.Schema, query *v1.MatchFieldQuery, optionsMa
 	fieldsBySearchLabel := schema.FieldsBySearchLabel()
 	dbField := fieldsBySearchLabel[query.GetField()]
 	if dbField == nil {
-		log.Errorf("Missing field %s in table %s", schema.Table, schema.Table)
+		log.Errorf("Missing field %s in table %s", query.GetField(), schema.Table)
 		return nil, nil
 	}
 	return matchFieldQuery(dbField, field, query.Value)

@@ -64,4 +64,13 @@ func TestStore(t *testing.T) {
 	results, err := indexer.Search(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).
+		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		ProtoQuery()
+	results, err = indexer.Search(q)
+	assert.NoError(t, err)
+	assert.Len(t, results, 1)
 }
