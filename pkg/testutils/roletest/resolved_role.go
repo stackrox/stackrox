@@ -20,9 +20,7 @@ func NewResolvedRoleWithDenyAll(roleName string, perms map[string]storage.Access
 	return &resolvedRoleImpl{
 		roleName:    roleName,
 		permissions: perms,
-		accessScope: &storage.SimpleAccessScope{
-			Id:   "io.stackrox.authz.accessscope.denyall",
-			Name: "Deny All Test Scope"},
+		accessScope: nil, // i.e., Deny All.
 	}
 }
 
