@@ -14,7 +14,13 @@ style_checks() {
         git config --global "url.https://${ORG_TOKEN_FOR_GITHUB}:x-oauth-basic@github.com/.insteadOf" https://github.com/
     fi
 
-    make style
+    set -x
+
+    go env GOCACHE
+    go env GOMODCACHE
+
+    make golangci-lint
+    # make style
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
