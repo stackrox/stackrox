@@ -110,8 +110,8 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsInconsistentImmediat
 	testCases := map[string]struct {
 		recoverableErr error
 	}{
-		"refresh immediately on ErrDifferentCAForDifferentServiceTypes": {recoverableErr: ErrDifferentCAForDifferentServiceTypes},
-		"refresh immediately on ErrMissingSecretData":                   {recoverableErr: ErrMissingSecretData},
+		"refresh immediately on ErrDifferentCAForDifferentServiceTypes": {recoverableErr: errors.Wrap(ErrDifferentCAForDifferentServiceTypes, "wrap error")},
+		"refresh immediately on ErrMissingSecretData":                   {recoverableErr: errors.Wrap(ErrMissingSecretData, "wrap error")},
 		"refresh immediately on missing secrets":                        {recoverableErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "foo")},
 	}
 	for tcName, tc := range testCases {

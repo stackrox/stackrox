@@ -97,7 +97,7 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 	repository serviceCertificatesRepo) (time.Duration, error) {
 
 	certificates, getCertsErr := repository.getServiceCertificates(ctx)
-	if getCertsErr == ErrDifferentCAForDifferentServiceTypes || getCertsErr == ErrMissingSecretData {
+	if errors.Is(getCertsErr, ErrDifferentCAForDifferentServiceTypes) || errors.Is(getCertsErr, ErrMissingSecretData) {
 		log.Errorf("local scanner certificates are in an inconsistent state, "+
 			"will refresh certificates immediately: %s", getCertsErr)
 		return 0, nil
