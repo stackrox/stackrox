@@ -18,6 +18,8 @@ jobs:
           ./scripts/ci/github.sh get_private_repo_access
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
+        with:
+          args: --timeout=20m
 
   # style-checks:
   #   runs-on: ubuntu-latest
