@@ -52,7 +52,6 @@ type imageExecutable struct {
 // PopulateExecutableCache extracts executables from image scan and stores them in the executable cache.
 // Image executables are cleared on successful return.
 func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storage.Image) error {
-	log.Errorf("SHREWS PopulateExecutableCache")
 	if !features.ActiveVulnManagement.Enabled() {
 		return nil
 	}
@@ -68,6 +67,11 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 	currRecord, ok := u.executableCache.Get(imageID)
 	if ok && !currRecord.(*imageExecutable).scanTime.Before(scanTime) {
 		log.Debugf("Skip scan at %v, current scan (%v) has been populated for image %s: %s", scanTime, currRecord.(*imageExecutable).scanTime, imageID, image.GetName())
+		return nil
+	}
+
+	if ok && currRecord.(*imageExecutable).scannerVersion == scan.GetScannerVersion() {
+		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scan.GetScannerVersion(), currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
 		return nil
 	}
 
