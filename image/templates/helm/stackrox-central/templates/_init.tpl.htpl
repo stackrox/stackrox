@@ -88,7 +88,8 @@
    */}}
 {{ $env := $._rox.env }}
 
-{{ include "srox.openshift" (list $) }}
+{{/* Detect openshift version */}}
+{{ include "srox.autoSenseOpenshiftVersion" (list $) }}
 
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
