@@ -24,7 +24,7 @@ GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH
 ## Protobuf ##
 ##############
 # Set some platform variables for protoc.
-PROTOC_VERSION := 3.6.1
+PROTOC_VERSION := 3.19.4
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_ARCH = linux
