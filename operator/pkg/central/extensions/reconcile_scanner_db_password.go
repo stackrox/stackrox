@@ -7,6 +7,7 @@ import (
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/pkg/renderer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,24 +24,22 @@ func ReconcileScannerDBPasswordExtension(client ctrlClient.Client) extensions.Re
 
 func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
-		secretReconciliationExtension: secretReconciliationExtension{
-			ctx:        ctx,
-			client:     client,
-			centralObj: c,
-		},
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(ctx, client, c),
+		centralObj:          c,
 	}
 	return run.Execute()
 }
 
 type reconcileScannerDBPasswordExtensionRun struct {
-	secretReconciliationExtension
+	*commonExtensions.SecretReconciliator
+	centralObj *platform.Central
 }
 
 func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
 	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
 	shouldDelete := r.centralObj.DeletionTimestamp != nil || !r.centralObj.Spec.Scanner.IsEnabled()
 
-	if err := r.reconcileSecret("scanner-db-password", !shouldDelete, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
+	if err := r.ReconcileSecret("scanner-db-password", !shouldDelete, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db-password secret")
 	}
 
