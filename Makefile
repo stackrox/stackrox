@@ -166,7 +166,7 @@ ifdef CI
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
 	@echo "Running with no tags..."
-	golangci-lint run
+	golangci-lint run --timeout 20m
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
