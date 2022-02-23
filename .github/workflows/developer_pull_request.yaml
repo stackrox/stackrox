@@ -13,6 +13,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.17.2'
       - name: Get private repo access
         run: |
           ./scripts/ci/github.sh get_private_repo_access
