@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -12,6 +13,7 @@ import (
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -60,6 +62,7 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *local
 		sensorManagedBy:              storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 		msgToCentralC:                msgToCentralC,
 		msgFromCentralC:              msgFromCentralC,
+		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
 		certRequester:                fixture.certRequester,
@@ -99,8 +102,8 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 		getCertsErr error
 	}{
 		"no error":            {getCertsErr: nil},
-		"missing secret data": {getCertsErr: ErrMissingSecretData},
-		"inconsistent CAs":    {getCertsErr: ErrDifferentCAForDifferentServiceTypes},
+		"missing secret data": {getCertsErr: errors.Wrap(ErrMissingSecretData, "wrap error")},
+		"inconsistent CAs":    {getCertsErr: errors.Wrap(ErrDifferentCAForDifferentServiceTypes, "wrap error")},
 		"missing secret":      {getCertsErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "scanner-db-slim-tls")},
 	}
 	for tcName, tc := range testCases {
@@ -263,10 +266,10 @@ func (s *localScannerTLSIssueIntegrationTests) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s *localScannerTLSIssueIntegrationTests) TestHappyPath() {
-	// var corruptedSecretData map[string][]byte
+func (s *localScannerTLSIssueIntegrationTests) TestSuccessfullRefresh() {
 	testCases := map[string]struct {
-		k8sClientConfig fakeK8sClientConfig
+		k8sClientConfig    fakeK8sClientConfig
+		numFailedResponses int
 	}{
 		"no secrets": {k8sClientConfig: fakeK8sClientConfig{}},
 		"corrupted data in scanner secret": {
@@ -284,12 +287,17 @@ func (s *localScannerTLSIssueIntegrationTests) TestHappyPath() {
 				secretsData: map[string]map[string][]byte{"scanner-slim-tls": nil, "scanner-db-slim-tls": nil},
 			},
 		},
+		"refresh failure and retries": {k8sClientConfig: fakeK8sClientConfig{}, numFailedResponses: 2},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
 			testTimeout := 100 * time.Millisecond
 			ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 			defer cancel()
+			ca, err := mtls.CAForSigning()
+			s.Require().NoError(err)
+			scannerCert := s.getCertificate()
+			scannerDBCert := s.getCertificate()
 			client := getFakeK8sClient(tc.k8sClientConfig)
 			tlsIssuer := newLocalScannerTLSIssuer(
 				s.T(),
@@ -298,55 +306,23 @@ func (s *localScannerTLSIssueIntegrationTests) TestHappyPath() {
 				sensorNamespace,
 				sensorPodName,
 			)
+			tlsIssuer.certRefreshBackoff = wait.Backoff{
+				Duration: time.Millisecond,
+			}
 
-			err := tlsIssuer.Start()
+			s.Require().NoError(tlsIssuer.Start())
 			defer tlsIssuer.Stop(nil)
-			s.Require().NoError(err)
 			s.Require().NotNil(tlsIssuer.certRefresher)
 
-			var request *central.MsgFromSensor
-			select {
-			case request = <-tlsIssuer.ResponsesC():
-			case <-ctx.Done():
-				s.Require().Fail(ctx.Err().Error())
+			for i := 0; i < tc.numFailedResponses; i++ {
+				request := s.waitForRequest(ctx, tlsIssuer)
+				response := getIssueCertsFailureResponse(request.GetRequestId())
+				err = tlsIssuer.ProcessMessage(response)
+				s.Require().NoError(err)
 			}
 
-			s.Require().NotNil(request.GetIssueLocalScannerCertsRequest())
-			ca, err := mtls.CAForSigning()
-			s.Require().NoError(err)
-			// TODO(ROX-9463): use short expiration for testing renewal when ROX-9010 implementing `WithCustomCertLifetime` is merged
-			scannerCert, err := issueCertificate(mtls.WithValidityExpiringInHours())
-			s.Require().NoError(err)
-			scannerDBCert, err := issueCertificate(mtls.WithValidityExpiringInHours())
-			s.Require().NoError(err)
-			response := &central.MsgToSensor{
-				Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{
-					IssueLocalScannerCertsResponse: &central.IssueLocalScannerCertsResponse{
-						RequestId: request.GetIssueLocalScannerCertsRequest().GetRequestId(),
-						Response: &central.IssueLocalScannerCertsResponse_Certificates{
-							Certificates: &storage.TypedServiceCertificateSet{
-								CaPem: ca.CertPEM(),
-								ServiceCerts: []*storage.TypedServiceCertificate{
-									{
-										ServiceType: storage.ServiceType_SCANNER_SERVICE,
-										Cert: &storage.ServiceCertificate{
-											KeyPem:  scannerCert.KeyPEM,
-											CertPem: scannerCert.CertPEM,
-										},
-									},
-									{
-										ServiceType: storage.ServiceType_SCANNER_DB_SERVICE,
-										Cert: &storage.ServiceCertificate{
-											KeyPem:  scannerDBCert.KeyPEM,
-											CertPem: scannerDBCert.CertPEM,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			}
+			request := s.waitForRequest(ctx, tlsIssuer)
+			response := getIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), scannerCert, scannerDBCert)
 			err = tlsIssuer.ProcessMessage(response)
 			s.Require().NoError(err)
 
@@ -373,6 +349,71 @@ func (s *localScannerTLSIssueIntegrationTests) TestHappyPath() {
 				s.Equal(expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
 			}
 		})
+	}
+}
+
+func (s *localScannerTLSIssueIntegrationTests) getCertificate() *mtls.IssuedCert {
+	// TODO(ROX-9463): use short expiration for testing renewal when ROX-9010 implementing `WithCustomCertLifetime` is merged
+	cert, err := issueCertificate(mtls.WithValidityExpiringInHours())
+	s.Require().NoError(err)
+	return cert
+}
+
+func (s *localScannerTLSIssueIntegrationTests) waitForRequest(ctx context.Context, tlsIssuer common.SensorComponent) *central.IssueLocalScannerCertsRequest {
+	var request *central.MsgFromSensor
+	select {
+	case request = <-tlsIssuer.ResponsesC():
+	case <-ctx.Done():
+		s.Require().Fail(ctx.Err().Error())
+	}
+	s.Require().NotNil(request.GetIssueLocalScannerCertsRequest())
+
+	return request.GetIssueLocalScannerCertsRequest()
+}
+
+func getIssueCertsSuccessResponse(requestID string, caPem []byte, scannerCert, scannerDBCert *mtls.IssuedCert) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{
+			IssueLocalScannerCertsResponse: &central.IssueLocalScannerCertsResponse{
+				RequestId: requestID,
+				Response: &central.IssueLocalScannerCertsResponse_Certificates{
+					Certificates: &storage.TypedServiceCertificateSet{
+						CaPem: caPem,
+						ServiceCerts: []*storage.TypedServiceCertificate{
+							{
+								ServiceType: storage.ServiceType_SCANNER_SERVICE,
+								Cert: &storage.ServiceCertificate{
+									KeyPem:  scannerCert.KeyPEM,
+									CertPem: scannerCert.CertPEM,
+								},
+							},
+							{
+								ServiceType: storage.ServiceType_SCANNER_DB_SERVICE,
+								Cert: &storage.ServiceCertificate{
+									KeyPem:  scannerDBCert.KeyPEM,
+									CertPem: scannerDBCert.CertPEM,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func getIssueCertsFailureResponse(requestID string) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{
+			IssueLocalScannerCertsResponse: &central.IssueLocalScannerCertsResponse{
+				RequestId: requestID,
+				Response: &central.IssueLocalScannerCertsResponse_Error{
+					Error: &central.LocalScannerCertsIssueError{
+						Message: "forced error",
+					},
+				},
+			},
+		},
 	}
 }
 

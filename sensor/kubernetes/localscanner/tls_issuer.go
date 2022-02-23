@@ -59,6 +59,7 @@ func NewLocalScannerTLSIssuer(
 		sensorManagedBy:              sensorManagedBy,
 		msgToCentralC:                msgToCentralC,
 		msgFromCentralC:              msgFromCentralC,
+		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: newServiceCertificatesRepo,
 		certRequester:                NewCertificateRequester(msgToCentralC, msgFromCentralC),
@@ -72,6 +73,7 @@ type localScannerTLSIssuerImpl struct {
 	sensorManagedBy              storage.ManagerType
 	msgToCentralC                chan *central.MsgFromSensor
 	msgFromCentralC              chan *central.IssueLocalScannerCertsResponse
+	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
 	certRequester                CertificateRequester
@@ -118,7 +120,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
 	i.certRefresher = i.getCertificateRefresherFn(i.certRequester.RequestCertificates, certsRepo,
-		certRefreshTimeout, certRefreshBackoff)
+		certRefreshTimeout, i.certRefreshBackoff)
 
 	i.certRequester.Start()
 	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
