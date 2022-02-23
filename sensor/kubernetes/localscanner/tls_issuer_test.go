@@ -148,14 +148,14 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 
 func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *testing.T) {
 	testCases := map[string]struct {
-		testK8sClientConfig fakeK8sClientConfig
+		k8sClientConfig fakeK8sClientConfig
 	}{
-		"sensor replica set missing": {testK8sClientConfig: fakeK8sClientConfig{skipSensorReplicaSet: true}},
-		"sensor pod missing":         {testK8sClientConfig: fakeK8sClientConfig{skipSensorPod: true}},
+		"sensor replica set missing": {k8sClientConfig: fakeK8sClientConfig{skipSensorReplicaSet: true}},
+		"sensor pod missing":         {k8sClientConfig: fakeK8sClientConfig{skipSensorPod: true}},
 	}
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
-			fixture := newLocalScannerTLSIssuerFixture(tc.testK8sClientConfig)
+			fixture := newLocalScannerTLSIssuerFixture(tc.k8sClientConfig)
 			fixture.certRefresher.On("Stop").Once()
 			fixture.certRequester.On("Stop").Once()
 
@@ -264,90 +264,115 @@ func (s *localScannerTLSIssueIntegrationTests) TearDownTest() {
 }
 
 func (s *localScannerTLSIssueIntegrationTests) TestHappyPath() {
-	testTimeout := 100 * time.Millisecond
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-	client := getFakeK8sClient(fakeK8sClientConfig{})
-	tlsIssuer := newLocalScannerTLSIssuer(
-		s.T(),
-		client,
-		storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-		sensorNamespace,
-		sensorPodName,
-	)
-
-	err := tlsIssuer.Start()
-	defer tlsIssuer.Stop(nil)
-	s.Require().NoError(err)
-	s.Require().NotNil(tlsIssuer.certRefresher)
-
-	var request *central.MsgFromSensor
-	select {
-	case request = <-tlsIssuer.ResponsesC():
-	case <-ctx.Done():
-		s.Require().Fail(ctx.Err().Error())
+	// var corruptedSecretData map[string][]byte
+	testCases := map[string]struct {
+		k8sClientConfig fakeK8sClientConfig
+	}{
+		"no secrets": {k8sClientConfig: fakeK8sClientConfig{}},
+		"corrupted data in scanner secret": {
+			k8sClientConfig: fakeK8sClientConfig{
+				secretsData: map[string]map[string][]byte{"scanner-slim-tls": nil},
+			},
+		},
+		"corrupted data in scanner DB secret": {
+			k8sClientConfig: fakeK8sClientConfig{
+				secretsData: map[string]map[string][]byte{"scanner-db-slim-tls": nil},
+			},
+		},
+		"corrupted data in all local scanner secrets": {
+			k8sClientConfig: fakeK8sClientConfig{
+				secretsData: map[string]map[string][]byte{"scanner-slim-tls": nil, "scanner-db-slim-tls": nil},
+			},
+		},
 	}
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			testTimeout := 100 * time.Millisecond
+			ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+			defer cancel()
+			client := getFakeK8sClient(tc.k8sClientConfig)
+			tlsIssuer := newLocalScannerTLSIssuer(
+				s.T(),
+				client,
+				storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+				sensorNamespace,
+				sensorPodName,
+			)
 
-	s.Require().NotNil(request.GetIssueLocalScannerCertsRequest())
-	ca, err := mtls.CAForSigning()
-	s.Require().NoError(err)
-	// TODO(ROX-9463): use short expiration for testing renewal when ROX-9010 implementing `WithCustomCertLifetime` is merged
-	scannerCert, err := issueCertificate(mtls.WithValidityExpiringInHours())
-	s.Require().NoError(err)
-	scannerDBCert, err := issueCertificate(mtls.WithValidityExpiringInHours())
-	s.Require().NoError(err)
-	response := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{
-			IssueLocalScannerCertsResponse: &central.IssueLocalScannerCertsResponse{
-				RequestId: request.GetIssueLocalScannerCertsRequest().GetRequestId(),
-				Response: &central.IssueLocalScannerCertsResponse_Certificates{
-					Certificates: &storage.TypedServiceCertificateSet{
-						CaPem: ca.CertPEM(),
-						ServiceCerts: []*storage.TypedServiceCertificate{
-							{
-								ServiceType: storage.ServiceType_SCANNER_SERVICE,
-								Cert: &storage.ServiceCertificate{
-									KeyPem:  scannerCert.KeyPEM,
-									CertPem: scannerCert.CertPEM,
-								},
-							},
-							{
-								ServiceType: storage.ServiceType_SCANNER_DB_SERVICE,
-								Cert: &storage.ServiceCertificate{
-									KeyPem:  scannerDBCert.KeyPEM,
-									CertPem: scannerDBCert.CertPEM,
+			err := tlsIssuer.Start()
+			defer tlsIssuer.Stop(nil)
+			s.Require().NoError(err)
+			s.Require().NotNil(tlsIssuer.certRefresher)
+
+			var request *central.MsgFromSensor
+			select {
+			case request = <-tlsIssuer.ResponsesC():
+			case <-ctx.Done():
+				s.Require().Fail(ctx.Err().Error())
+			}
+
+			s.Require().NotNil(request.GetIssueLocalScannerCertsRequest())
+			ca, err := mtls.CAForSigning()
+			s.Require().NoError(err)
+			// TODO(ROX-9463): use short expiration for testing renewal when ROX-9010 implementing `WithCustomCertLifetime` is merged
+			scannerCert, err := issueCertificate(mtls.WithValidityExpiringInHours())
+			s.Require().NoError(err)
+			scannerDBCert, err := issueCertificate(mtls.WithValidityExpiringInHours())
+			s.Require().NoError(err)
+			response := &central.MsgToSensor{
+				Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{
+					IssueLocalScannerCertsResponse: &central.IssueLocalScannerCertsResponse{
+						RequestId: request.GetIssueLocalScannerCertsRequest().GetRequestId(),
+						Response: &central.IssueLocalScannerCertsResponse_Certificates{
+							Certificates: &storage.TypedServiceCertificateSet{
+								CaPem: ca.CertPEM(),
+								ServiceCerts: []*storage.TypedServiceCertificate{
+									{
+										ServiceType: storage.ServiceType_SCANNER_SERVICE,
+										Cert: &storage.ServiceCertificate{
+											KeyPem:  scannerCert.KeyPEM,
+											CertPem: scannerCert.CertPEM,
+										},
+									},
+									{
+										ServiceType: storage.ServiceType_SCANNER_DB_SERVICE,
+										Cert: &storage.ServiceCertificate{
+											KeyPem:  scannerDBCert.KeyPEM,
+											CertPem: scannerDBCert.CertPEM,
+										},
+									},
 								},
 							},
 						},
 					},
 				},
-			},
-		},
-	}
-	err = tlsIssuer.ProcessMessage(response)
-	s.Require().NoError(err)
+			}
+			err = tlsIssuer.ProcessMessage(response)
+			s.Require().NoError(err)
 
-	var secrets *v1.SecretList
-	ok := concurrency.PollWithTimeout(func() bool {
-		secrets, err = client.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
-		s.Require().NoError(err)
-		return len(secrets.Items) == 2
-	}, 10*time.Millisecond, testTimeout)
-	s.Require().True(ok)
-	for _, secret := range secrets.Items {
-		var expectedCert *mtls.IssuedCert
-		switch secretName := secret.GetName(); secretName {
-		case "scanner-slim-tls":
-			expectedCert = scannerCert
-		case "scanner-db-slim-tls":
-			expectedCert = scannerDBCert
-		default:
-			s.Require().Failf("expected secret name should be either %q or %q, found %q instead",
-				"scanner-slim-tls", "scanner-db-slim-tls", secretName)
-		}
-		s.Equal(ca.CertPEM(), secret.Data[mtls.CACertFileName])
-		s.Equal(expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
-		s.Equal(expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
+			var secrets *v1.SecretList
+			ok := concurrency.PollWithTimeout(func() bool {
+				secrets, err = client.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
+				s.Require().NoError(err)
+				return len(secrets.Items) == 2
+			}, 10*time.Millisecond, testTimeout)
+			s.Require().True(ok)
+			for _, secret := range secrets.Items {
+				var expectedCert *mtls.IssuedCert
+				switch secretName := secret.GetName(); secretName {
+				case "scanner-slim-tls":
+					expectedCert = scannerCert
+				case "scanner-db-slim-tls":
+					expectedCert = scannerDBCert
+				default:
+					s.Require().Failf("expected secret name should be either %q or %q, found %q instead",
+						"scanner-slim-tls", "scanner-db-slim-tls", secretName)
+				}
+				s.Equal(ca.CertPEM(), secret.Data[mtls.CACertFileName])
+				s.Equal(expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
+				s.Equal(expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
+			}
+		})
 	}
 }
 
@@ -371,23 +396,35 @@ func getFakeK8sClient(conf fakeK8sClientConfig) *fake.Clientset {
 		}
 		objects = append(objects, sensorReplicaSet)
 
+		sensorReplicaSetGVK := sensorReplicaSet.GroupVersionKind()
+		sensorReplicaSetOwnerRef := metav1.OwnerReference{
+			APIVersion: sensorReplicaSetGVK.GroupVersion().String(),
+			Kind:       sensorReplicaSet.Kind,
+			Name:       sensorReplicaSet.GetName(),
+			UID:        sensorReplicaSet.GetUID(),
+		}
+
 		if !conf.skipSensorPod {
-			sensorReplicaSetGVK := sensorReplicaSet.GroupVersionKind()
 			sensorPod := &v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      sensorPodName,
-					Namespace: sensorNamespace,
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: sensorReplicaSetGVK.GroupVersion().String(),
-							Kind:       sensorReplicaSet.Kind,
-							Name:       sensorReplicaSet.GetName(),
-							UID:        sensorReplicaSet.GetUID(),
-						},
-					},
+					Name:            sensorPodName,
+					Namespace:       sensorNamespace,
+					OwnerReferences: []metav1.OwnerReference{sensorReplicaSetOwnerRef},
 				},
 			}
 			objects = append(objects, sensorPod)
+		}
+
+		for secretName, secretData := range conf.secretsData {
+			secret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            secretName,
+					Namespace:       sensorNamespace,
+					OwnerReferences: []metav1.OwnerReference{sensorReplicaSetOwnerRef},
+				},
+				Data: secretData,
+			}
+			objects = append(objects, secret)
 		}
 	}
 
@@ -401,6 +438,9 @@ type fakeK8sClientConfig struct {
 	skipSensorReplicaSet bool
 	// if true then no sensor pod set will be added to the test client.
 	skipSensorPod bool
+	// if skipSensorReplicaSet is false, then a secret will be added to the test client for
+	// each entry in this map, using the key as the secret name and the value as the secret data.
+	secretsData map[string]map[string][]byte
 }
 
 func newLocalScannerTLSIssuer(
