@@ -8,9 +8,14 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/mtls"
+	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	appsApiv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -235,6 +241,116 @@ func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestLocalScannerTLSIssuerIntegrationTests(t *testing.T) {
+	suite.Run(t, new(localScannerTLSIssueIntegrationTests))
+}
+
+type localScannerTLSIssueIntegrationTests struct {
+	suite.Suite
+	envIsolator *envisolator.EnvIsolator
+}
+
+func (s *localScannerTLSIssueIntegrationTests) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+}
+
+func (s *localScannerTLSIssueIntegrationTests) SetupTest() {
+	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	s.Require().NoError(err)
+}
+
+func (s *localScannerTLSIssueIntegrationTests) TearDownTest() {
+	s.envIsolator.RestoreAll()
+}
+
+func (s *localScannerTLSIssueIntegrationTests) TestHappyPath() {
+	testTimeout := 100 * time.Millisecond
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	client := getFakeK8sClient(fakeK8sClientConfig{})
+	tlsIssuer := newLocalScannerTLSIssuer(
+		s.T(),
+		client,
+		storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		sensorNamespace,
+		sensorPodName,
+	)
+
+	err := tlsIssuer.Start()
+	defer tlsIssuer.Stop(nil)
+	s.Require().NoError(err)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+
+	var request *central.MsgFromSensor
+	select {
+	case request = <-tlsIssuer.ResponsesC():
+	case <-ctx.Done():
+		s.Require().Fail(ctx.Err().Error())
+	}
+
+	s.Require().NotNil(request.GetIssueLocalScannerCertsRequest())
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+	// TODO(ROX-9463): use short expiration for testing renewal when ROX-9010 implementing `WithCustomCertLifetime` is merged
+	scannerCert, err := issueCertificate(mtls.WithValidityExpiringInHours())
+	s.Require().NoError(err)
+	scannerDBCert, err := issueCertificate(mtls.WithValidityExpiringInHours())
+	s.Require().NoError(err)
+	response := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{
+			IssueLocalScannerCertsResponse: &central.IssueLocalScannerCertsResponse{
+				RequestId: request.GetIssueLocalScannerCertsRequest().GetRequestId(),
+				Response: &central.IssueLocalScannerCertsResponse_Certificates{
+					Certificates: &storage.TypedServiceCertificateSet{
+						CaPem: ca.CertPEM(),
+						ServiceCerts: []*storage.TypedServiceCertificate{
+							{
+								ServiceType: storage.ServiceType_SCANNER_SERVICE,
+								Cert: &storage.ServiceCertificate{
+									KeyPem:  scannerCert.KeyPEM,
+									CertPem: scannerCert.CertPEM,
+								},
+							},
+							{
+								ServiceType: storage.ServiceType_SCANNER_DB_SERVICE,
+								Cert: &storage.ServiceCertificate{
+									KeyPem:  scannerDBCert.KeyPEM,
+									CertPem: scannerDBCert.CertPEM,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	var secrets *v1.SecretList
+	ok := concurrency.PollWithTimeout(func() bool {
+		secrets, err = client.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
+		s.Require().NoError(err)
+		return len(secrets.Items) == 2
+	}, 10*time.Millisecond, testTimeout)
+	s.Require().True(ok)
+	for _, secret := range secrets.Items {
+		var expectedCert *mtls.IssuedCert
+		switch secretName := secret.GetName(); secretName {
+		case "scanner-slim-tls":
+			expectedCert = scannerCert
+		case "scanner-db-slim-tls":
+			expectedCert = scannerDBCert
+		default:
+			s.Require().Failf("expected secret name should be either %q or %q, found %q instead",
+				"scanner-slim-tls", "scanner-db-slim-tls", secretName)
+		}
+		s.Equal(ca.CertPEM(), secret.Data[mtls.CACertFileName])
+		s.Equal(expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
+		s.Equal(expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
+	}
+}
+
 func getFakeK8sClient(conf fakeK8sClientConfig) *fake.Clientset {
 	objects := make([]runtime.Object, 0)
 	if !conf.skipSensorReplicaSet {
@@ -285,6 +401,18 @@ type fakeK8sClientConfig struct {
 	skipSensorReplicaSet bool
 	// if true then no sensor pod set will be added to the test client.
 	skipSensorPod bool
+}
+
+func newLocalScannerTLSIssuer(
+	t *testing.T,
+	k8sClient kubernetes.Interface,
+	sensorManagedBy storage.ManagerType,
+	sensorNamespace string,
+	sensorPodName string,
+) *localScannerTLSIssuerImpl {
+	tlsIssuer := NewLocalScannerTLSIssuer(k8sClient, sensorManagedBy, sensorNamespace, sensorPodName)
+	require.IsType(t, &localScannerTLSIssuerImpl{}, tlsIssuer)
+	return tlsIssuer.(*localScannerTLSIssuerImpl)
 }
 
 type certificateRequesterMock struct {

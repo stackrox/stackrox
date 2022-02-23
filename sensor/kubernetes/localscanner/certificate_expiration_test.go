@@ -68,7 +68,7 @@ func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {
 	s.LessOrEqual(certDuration, afterOffset/2)
 }
 
-func issueCertificatePEM(issueOption mtls.IssueCertOption) ([]byte, error) {
+func issueCertificate(issueOption mtls.IssueCertOption) (*mtls.IssuedCert, error) {
 	ca, err := mtls.CAForSigning()
 	if err != nil {
 		return nil, err
@@ -78,5 +78,13 @@ func issueCertificatePEM(issueOption mtls.IssueCertOption) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cert.CertPEM, err
+	return cert, err
+}
+
+func issueCertificatePEM(issueOption mtls.IssueCertOption) ([]byte, error) {
+	cert, err := issueCertificate(issueOption)
+	if err != nil {
+		return nil, err
+	}
+	return cert.CertPEM, nil
 }
