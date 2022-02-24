@@ -68,18 +68,21 @@ func (SourceType) EnumDescriptor() ([]byte, []int) {
 type Image_Note int32
 
 const (
-	Image_MISSING_METADATA  Image_Note = 0
-	Image_MISSING_SCAN_DATA Image_Note = 1
+	Image_MISSING_METADATA                    Image_Note = 0
+	Image_MISSING_SCAN_DATA                   Image_Note = 1
+	Image_MISSING_SIGNATURE_VERIFICATION_DATA Image_Note = 2
 )
 
 var Image_Note_name = map[int32]string{
 	0: "MISSING_METADATA",
 	1: "MISSING_SCAN_DATA",
+	2: "MISSING_SIGNATURE_VERIFICATION_DATA",
 }
 
 var Image_Note_value = map[string]int32{
-	"MISSING_METADATA":  0,
-	"MISSING_SCAN_DATA": 1,
+	"MISSING_METADATA":                    0,
+	"MISSING_SCAN_DATA":                   1,
+	"MISSING_SIGNATURE_VERIFICATION_DATA": 2,
 }
 
 func (x Image_Note) String() string {

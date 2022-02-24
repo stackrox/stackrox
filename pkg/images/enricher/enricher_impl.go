@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
@@ -134,6 +135,20 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 		delete(imageNoteSet, storage.Image_MISSING_SCAN_DATA)
 	}
 
+	// TODO(dhaus): Will become obsolete once the feature flag for image signature verification is removed.
+	updatedSigVerificationData := false
+	if features.ImageSignatureVerification.Enabled() {
+		// TODO(ROX-9452): Missing fetching of signature incl. updatedSignature flag.
+		updatedSigVerificationData, err = e.enrichWithSignatureVerificationData(ctx, image, false)
+		errorList.AddError(err)
+
+		if image.GetSignatureVerificationData() == nil || image.GetSignatureVerificationData().GetResults() == nil {
+			imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
+		} else {
+			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA)
+		}
+	}
+
 	image.Notes = image.Notes[:0]
 	for note := range imageNoteSet {
 		image.Notes = append(image.Notes, note)
@@ -143,7 +158,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
 	return EnrichmentResult{
-		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone),
+		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone) || updatedSigVerificationData,
 		ScanResult:   scanResult,
 	}, errorList.ToError()
 }
@@ -300,6 +315,30 @@ func (e *enricherImpl) fetchScanFromDatabase(img *storage.Image, option FetchOpt
 	return false
 }
 
+func (e *enricherImpl) fetchSignatureFromDatabase(img *storage.Image, option FetchOption) bool {
+	if option == ForceRefetchSignaturesOnly {
+		return false
+	}
+
+	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetSignature() != nil {
+		img.Signature = existingImage.GetSignature()
+		return true
+	}
+	return false
+}
+
+func (e *enricherImpl) fetchSignatureVerificationDataFromDatabase(img *storage.Image, option FetchOption) bool {
+	if option == ForceRefetchSignaturesOnly {
+		return false
+	}
+
+	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetSignature() != nil {
+		img.SignatureVerificationData = existingImage.GetSignatureVerificationData()
+		return true
+	}
+	return false
+}
+
 func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) (ScanResult, error) {
 	// Attempt to short-circuit before checking scanners.
 	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
@@ -366,6 +405,45 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 		}
 	}
 	return ScanNotDone, errorList.ToError()
+}
+
+// enrichWithSignatureVerificationData enriches the image with signature verification data and returns a bool,
+// indicating whether any verification data was added to the image or not.
+// Based on the given FetchOption, it will try to short-circuit using cached values from existing images where
+// possible.
+func (e *enricherImpl) enrichWithSignatureVerificationData(ctx EnrichmentContext, img *storage.Image,
+	updatedSignature bool) (bool, error) {
+	// Do not fetch signature verification data from database if the signature was updated for the image.
+	if !updatedSignature && e.fetchSignatureVerificationDataFromDatabase(img, ctx.FetchOpt) {
+		return false, nil
+	}
+
+	// If no external metadata should be taken into account, we skip the verification.
+	if ctx.FetchOpt == NoExternalMetadata {
+		return false, nil
+	}
+
+	// Fetch signature integrations from the data store.
+	sigIntegrations, err := e.signatureIntegrationGetter(sac.WithAllAccess(context.Background()))
+	if err != nil {
+		return false, errors.Wrap(err, "fetching signature integrations")
+	}
+
+	// Timeout is based on benchmark test result for 100 integrations with 500 configs each (roughly 1 sec) + a grace
+	// timeout on top. Currently, signature verification is done without remote RPCs, this will need to be
+	// adapted accordingly when RPCs are required (i.e. cosign keyless).
+	verifySignatureCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	res := signatures.VerifyAgainstSignatureIntegrations(verifySignatureCtx, sigIntegrations, img)
+	if res == nil {
+		return false, nil
+	}
+
+	img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+		Results: res,
+	}
+	return true, nil
 }
 
 func normalizeVulnerabilities(scan *storage.ImageScan) {
