@@ -25,6 +25,7 @@ var (
 type RetryTicker interface {
 	Start() error
 	Stop()
+	Stopped() bool
 }
 
 type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error)
@@ -64,7 +65,7 @@ type retryTickerImpl struct {
 // - ErrStartedTimer is returned if the timer was already started.
 // - ErrStoppedTimer is returned if the timer was stopped.
 func (t *retryTickerImpl) Start() error {
-	if t.stopFlag.Get() {
+	if t.Stopped() {
 		return ErrStoppedTimer
 	}
 	if t.getTickTimer() != nil {
@@ -82,13 +83,18 @@ func (t *retryTickerImpl) Stop() {
 	t.setTickTimer(nil)
 }
 
+// Stopped returns true if this RetryTicker has been stopped, otherwise returns false.
+func (t *retryTickerImpl) Stopped() bool {
+	return t.stopFlag.Get()
+}
+
 func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 	t.setTickTimer(t.scheduler(timeToTick, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
 		defer cancel()
 
 		nextTimeToTick, tickErr := t.doFunc(ctx)
-		if t.stopFlag.Get() {
+		if t.Stopped() {
 			// ticker was stopped while tick function was running.
 			return
 		}
