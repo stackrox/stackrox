@@ -110,6 +110,11 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 	return pks
 }
 
+// NoPrimaryKey returns true if the current schema does not have a primary key defined
+func (s *Schema) NoPrimaryKey() bool {
+	return len(s.LocalPrimaryKeys()) == 0
+}
+
 // SearchField is the parsed representation of the search tag on the struct field
 type SearchField struct {
 	FieldName string
