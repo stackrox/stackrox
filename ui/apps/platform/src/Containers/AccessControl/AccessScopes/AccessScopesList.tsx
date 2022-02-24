@@ -2,15 +2,12 @@ import React, { ReactElement, useState } from 'react';
 import {
     Alert,
     AlertVariant,
-    Badge,
     Button,
     Modal,
     ModalVariant,
+    PageSection,
+    pluralize,
     Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
@@ -24,14 +21,12 @@ const entityType = 'ACCESS_SCOPE';
 export type AccessScopesListProps = {
     accessScopes: AccessScope[];
     roles: Role[];
-    handleCreate: () => void;
     handleDelete: (id: string) => Promise<void>;
 };
 
 function AccessScopesList({
     accessScopes,
     roles,
-    handleCreate,
     handleDelete,
 }: AccessScopesListProps): ReactElement {
     const [idDeleting, setIdDeleting] = useState('');
@@ -71,24 +66,8 @@ function AccessScopesList({
     }
 
     return (
-        <>
-            <Toolbar inset={{ default: 'insetNone' }}>
-                <ToolbarContent>
-                    <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
-                        <ToolbarItem>
-                            <Title headingLevel="h2">Access scopes</Title>
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <Badge isRead>{accessScopes.length}</Badge>
-                        </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <Button variant="primary" onClick={handleCreate} isSmall>
-                            Add access scope
-                        </Button>
-                    </ToolbarItem>
-                </ToolbarContent>
-            </Toolbar>
+        <PageSection variant="light">
+            <Title headingLevel="h2">{pluralize(accessScopes.length, 'result')} found</Title>
             {alertDelete}
             <TableComposable variant="compact">
                 <Thead>
@@ -174,7 +153,7 @@ function AccessScopesList({
                     ''
                 )}
             </Modal>
-        </>
+        </PageSection>
     );
 }
 
