@@ -12,7 +12,7 @@
     If the Kubernetes version is not available (i.e. when using Helm template) auto-sensing falls back on OpenShift 3.
   */}}
 
-{{ define "srox.autoSenseOpenShiftVersion" }}
+{{ define "srox.autoSenseOpenshiftVersion" }}
 
 {{ $ := index . 0 }}
 {{ $env := $._rox.env }}
