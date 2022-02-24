@@ -63,6 +63,7 @@ jobs:
           path: |
             ui/deps
             /github/home/.cache/Cypress
+            /usr/local/share/.cache
             ui/node_modules
             ui/apps/platform/node_modules
             ui/packages/ui-components/node_modules

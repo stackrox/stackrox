@@ -23,8 +23,10 @@ style_checks() {
     # make deps
     # make golangci-lint
     du -s --si /github/home/.cache/*
+    du -s --si /usr/local/share/.cache/*
     make style || true
     du -s --si /github/home/.cache/*
+    du -s --si /usr/local/share/.cache/*
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
