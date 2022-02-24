@@ -10,7 +10,6 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,14 +18,9 @@ import (
 type validateSecretDataFunc func(types.SecretDataMap, bool) error
 type generateSecretDataFunc func() (types.SecretDataMap, error)
 
-type k8sObject interface {
-	metav1.Object
-	schema.ObjectKind
-}
-
 // NewSecretReconciliator creates a new SecretReconciliator. It takes a context and controller client.
 // The obj parameter is the owner object (i.e. a custom resource).
-func NewSecretReconciliator(client ctrlClient.Client, obj k8sObject) *SecretReconciliator {
+func NewSecretReconciliator(client ctrlClient.Client, obj types.K8sObject) *SecretReconciliator {
 	return &SecretReconciliator{
 		client: client,
 		obj:    obj,
@@ -36,7 +30,7 @@ func NewSecretReconciliator(client ctrlClient.Client, obj k8sObject) *SecretReco
 // SecretReconciliator reconciles a secret.
 type SecretReconciliator struct {
 	client ctrlClient.Client
-	obj    k8sObject
+	obj    types.K8sObject
 }
 
 // Client returns the controller-runtime client used by the extension.
