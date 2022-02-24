@@ -24,19 +24,21 @@ func TestStore(t *testing.T) {
 	}
 	defer pool.Close()
 
+	Destroy(pool)
 	store := New(pool)
 
-	singleKey := &storage.TestSingleKeyStruct{
-		Key: "key1",
+	multiKey := &storage.TestMultiKeyStruct{
+		Key1: "key1",
+		Key2: "key2",
 	}
-	dep, exists, err := store.Get(singleKey.GetKey())
+	dep, exists, err := store.Get(multiKey.GetKey1(), multiKey.GetKey2())
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, dep)
 
-	assert.NoError(t, store.Upsert(singleKey))
-	dep, exists, err = store.Get(singleKey.GetKey())
+	assert.NoError(t, store.Upsert(multiKey))
+	dep, exists, err = store.Get(multiKey.GetKey1(), multiKey.GetKey2())
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	assert.Equal(t, singleKey, dep)
+	assert.Equal(t, multiKey, dep)
 }
