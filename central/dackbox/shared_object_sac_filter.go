@@ -174,19 +174,19 @@ func (f *combinedSAC) noSACApply(ctx context.Context, from ...string) ([]int, bo
 	filteredIndices := make([]int, 0, len(from))
 	for idx, id := range from {
 		if imageExistenceCheck != nil {
-			if allowed, _ := imageExistenceCheck.Search(id); allowed {
+			if allowed, _ := imageExistenceCheck.Search(ctx, id); allowed {
 				filteredIndices = append(filteredIndices, idx)
 				continue
 			}
 		}
 		if nodeExistenceCheck != nil {
-			if allowed, _ := nodeExistenceCheck.Search(id); allowed {
+			if allowed, _ := nodeExistenceCheck.Search(ctx, id); allowed {
 				filteredIndices = append(filteredIndices, idx)
 				continue
 			}
 		}
 		if clusterExistenceCheck != nil {
-			if allowed, _ := clusterExistenceCheck.Search(id); allowed {
+			if allowed, _ := clusterExistenceCheck.Search(ctx, id); allowed {
 				filteredIndices = append(filteredIndices, idx)
 				continue
 			}
@@ -238,7 +238,7 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]int, bool, e
 	filteredIndices := make([]int, 0, len(from))
 
 	for idx, id := range from {
-		if ok, err := imageChecker.Search(id); err != nil {
+		if ok, err := imageChecker.Search(ctx, id); err != nil {
 			errorList.AddError(err)
 			continue
 		} else if ok {
@@ -246,7 +246,7 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]int, bool, e
 			continue
 		}
 
-		if ok, err := nodeChecker.Search(id); err != nil {
+		if ok, err := nodeChecker.Search(ctx, id); err != nil {
 			errorList.AddError(err)
 			continue
 		} else if ok {
@@ -258,7 +258,7 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]int, bool, e
 			continue
 		}
 
-		if ok, err := clusterChecker.Search(id); err != nil {
+		if ok, err := clusterChecker.Search(ctx, id); err != nil {
 			errorList.AddError(err)
 			continue
 		} else if ok {
