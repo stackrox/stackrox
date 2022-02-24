@@ -1,8 +1,6 @@
 import React, { ReactElement, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
-    Breadcrumb,
-    BreadcrumbItem,
     TabTitleText,
     Tabs,
     Tab,
@@ -13,12 +11,12 @@ import {
     Bullseye,
 } from '@patternfly/react-core';
 
-import { violationsBasePath } from 'routePaths';
 import { fetchAlert } from 'services/AlertsService';
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
+import { violationsBasePath } from 'routePaths';
+import { AngleLeftIcon } from '@patternfly/react-icons';
 import PolicyDetailContent from '../../Policies/PatternFly/Detail/PolicyDetailContent';
 import DeploymentDetails from './DeploymentDetails';
 import PolicyDetails from './PolicyDetails';
@@ -26,6 +24,7 @@ import EnforcementDetails from './EnforcementDetails';
 import { Alert } from '../types/violationTypes';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
 import ViolationDetails from './ViolationDetails';
+import ViolationsBreadcrumbs from '../ViolationsBreadcrumbs';
 
 function ViolationDetailsPage(): ReactElement {
     const [activeTabKey, setActiveTabKey] = useState(0);
@@ -71,49 +70,71 @@ function ViolationDetailsPage(): ReactElement {
     const resourceType = resource?.resourceType || commonEntityInfo?.resourceType || 'deployment';
 
     return (
-        <PageSection variant="light" isFilled data-testid="violation-details-page">
-            <Breadcrumb className="pf-u-mb-md">
-                <BreadcrumbItemLink to={violationsBasePath}>Violations</BreadcrumbItemLink>
-                <BreadcrumbItem isActive>{title}</BreadcrumbItem>
-            </Breadcrumb>
-            <Title headingLevel="h1">{title}</Title>
-            <Title headingLevel="h2" className="pf-u-mb-md">{`in "${
-                entityName as string
-            }" ${resourceType}`}</Title>
-            <Tabs mountOnEnter activeKey={activeTabKey} onSelect={handleTabClick}>
-                <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
-                    <ViolationDetails
-                        violationId={alert.id}
-                        violations={alert.violations}
-                        processViolation={alert.processViolation}
-                        lifecycleStage={alert.lifecycleStage}
-                    />
-                </Tab>
-                {alert?.enforcement && (
-                    <Tab eventKey={1} title={<TabTitleText>Enforcement</TabTitleText>}>
-                        <EnforcementDetails alert={alert} />
+        <>
+            <ViolationsBreadcrumbs current={title} />
+            <PageSection variant="light" className="pf-u-pb-0">
+                <Link to={violationsBasePath} className="pf-u-display-inline-block pf-u-mb-md">
+                    <AngleLeftIcon className="pf-u-display-inline-block" />
+                    Back to violations
+                </Link>
+                <Title headingLevel="h1">{title}</Title>
+                <Title headingLevel="h2" className="pf-u-mb-md">{`in "${
+                    entityName as string
+                }" ${resourceType}`}</Title>
+            </PageSection>
+            <PageSection
+                variant="default"
+                padding={{ default: 'noPadding' }}
+                data-testid="violation-details-page"
+            >
+                <Tabs
+                    mountOnEnter
+                    activeKey={activeTabKey}
+                    onSelect={handleTabClick}
+                    className="pf-u-background-color-100 pf-u-pl-lg pf-u-pt-md"
+                >
+                    <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
+                        <PageSection variant="default">
+                            <ViolationDetails
+                                violationId={alert.id}
+                                violations={alert.violations}
+                                processViolation={alert.processViolation}
+                                lifecycleStage={alert.lifecycleStage}
+                            />
+                        </PageSection>
                     </Tab>
-                )}
-                {alert?.deployment && (
-                    <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
-                        <DeploymentDetails deployment={alert.deployment} />
-                    </Tab>
-                )}
-                <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
-                    {isPoliciesPFEnabled ? (
-                        <>
-                            <Title headingLevel="h2" className="pf-u-my-md">
-                                Policy overview
-                            </Title>
-                            <Divider component="div" className="pf-u-pb-md" />
-                            <PolicyDetailContent policy={policy} />
-                        </>
-                    ) : (
-                        <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
+                    {alert?.enforcement && (
+                        <Tab eventKey={1} title={<TabTitleText>Enforcement</TabTitleText>}>
+                            <PageSection variant="default">
+                                <EnforcementDetails alert={alert} />
+                            </PageSection>
+                        </Tab>
                     )}
-                </Tab>
-            </Tabs>
-        </PageSection>
+                    {alert?.deployment && (
+                        <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
+                            <PageSection variant="default">
+                                <DeploymentDetails deployment={alert.deployment} />
+                            </PageSection>
+                        </Tab>
+                    )}
+                    <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
+                        <PageSection variant="default">
+                            {isPoliciesPFEnabled ? (
+                                <>
+                                    <Title headingLevel="h3" className="pf-u-mb-md">
+                                        Policy overview
+                                    </Title>
+                                    <Divider component="div" className="pf-u-pb-md" />
+                                    <PolicyDetailContent policy={policy} />
+                                </>
+                            ) : (
+                                <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
+                            )}
+                        </PageSection>
+                    </Tab>
+                </Tabs>
+            </PageSection>
+        </>
     );
 }
 
