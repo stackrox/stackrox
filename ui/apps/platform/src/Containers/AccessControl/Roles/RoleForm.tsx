@@ -24,6 +24,8 @@ import { AccessControlQueryAction } from '../accessControlPaths';
 import AccessScopesTable from './AccessScopesTable';
 import PermissionSetsTable from './PermissionSetsTable';
 
+import './RoleForm.css';
+
 export type RoleFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
@@ -106,7 +108,7 @@ function RoleForm({
 
     return (
         <Form id="role-form">
-            <Toolbar inset={{ default: 'insetNone' }}>
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">

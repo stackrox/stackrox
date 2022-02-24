@@ -6,6 +6,9 @@ import {
     AlertActionCloseButton,
     AlertVariant,
     Bullseye,
+    Button,
+    PageSection,
+    PageSectionVariants,
     Spinner,
 } from '@patternfly/react-core';
 
@@ -25,13 +28,14 @@ import {
 } from 'services/RolesService';
 
 import AccessControlDescription from '../AccessControlDescription';
-import AccessControlHeading from '../AccessControlHeading';
-import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import RoleForm from './RoleForm';
 import RolesList from './RolesList';
+import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
+import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import AccessControlHeading from '../AccessControlHeading';
 
 const entityType = 'ROLE';
 
@@ -219,55 +223,70 @@ function Roles(): ReactElement {
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isList={isList} />
-            <AccessControlHeading
-                entityType={entityType}
-                entityName={action === 'create' ? 'Add role' : role?.name}
-                isDisabled={hasAction}
-                isList={isList}
-            />
-            <AccessControlNav entityType={entityType} isDisabled={hasAction} />
-            <AccessControlDescription>
-                Add user roles by selecting the permission sets and access scopes required for
-                user&apos;s jobs
-            </AccessControlDescription>
-            {alertRoles}
-            {alertPermissionSets}
-            {alertAccessScopes}
-            {alertGroups}
-            {counterFetching !== 0 ? (
-                <Bullseye>
-                    <Spinner isSVG />
-                </Bullseye>
-            ) : isList ? (
-                <RolesList
-                    roles={roles}
-                    s={s}
-                    groups={groups}
-                    permissionSets={permissionSets}
-                    accessScopes={accessScopes}
-                    handleCreate={handleCreate}
-                    handleDelete={handleDelete}
-                />
-            ) : typeof entityName === 'string' && !role ? (
-                <NotFoundMessage
-                    title="Role does not exist"
-                    message={`Role name: ${entityName}`}
-                    actionText="Roles"
-                    url={getEntityPath(entityType)}
-                />
+            {isList ? (
+                <>
+                    <AccessControlHeading entityType={entityType} />
+                    <AccessControlHeaderActionBar
+                        displayComponent={
+                            <AccessControlDescription>
+                                Add user roles by selecting the permission sets and access scopes
+                                required for user&apos;s jobs
+                            </AccessControlDescription>
+                        }
+                        actionComponent={
+                            <Button variant="primary" onClick={handleCreate}>
+                                Add role
+                            </Button>
+                        }
+                    />
+                </>
             ) : (
-                <RoleForm
-                    isActionable={!role || !getIsDefaultRoleName(role.name)}
-                    action={action}
-                    role={role ?? roleNew}
-                    roles={roles}
-                    permissionSets={permissionSets}
-                    accessScopes={accessScopes}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
+                <AccessControlBreadcrumbs
+                    entityType={entityType}
+                    entityName={action === 'create' ? 'Add role' : role?.name}
+                    isDisabled={hasAction}
+                    isList={isList}
                 />
             )}
+            <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
+                {alertRoles}
+                {alertPermissionSets}
+                {alertAccessScopes}
+                {alertGroups}
+                {counterFetching !== 0 ? (
+                    <Bullseye>
+                        <Spinner isSVG />
+                    </Bullseye>
+                ) : isList ? (
+                    <RolesList
+                        roles={roles}
+                        s={s}
+                        groups={groups}
+                        permissionSets={permissionSets}
+                        accessScopes={accessScopes}
+                        handleDelete={handleDelete}
+                    />
+                ) : typeof entityName === 'string' && !role ? (
+                    <NotFoundMessage
+                        title="Role does not exist"
+                        message={`Role name: ${entityName}`}
+                        actionText="Roles"
+                        url={getEntityPath(entityType)}
+                    />
+                ) : (
+                    <RoleForm
+                        isActionable={!role || !getIsDefaultRoleName(role.name)}
+                        action={action}
+                        role={role ?? roleNew}
+                        roles={roles}
+                        permissionSets={permissionSets}
+                        accessScopes={accessScopes}
+                        handleCancel={handleCancel}
+                        handleEdit={handleEdit}
+                        handleSubmit={handleSubmit}
+                    />
+                )}
+            </PageSection>
         </>
     );
 }

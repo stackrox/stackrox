@@ -2,15 +2,12 @@ import React, { ReactElement, useState } from 'react';
 import {
     Alert,
     AlertVariant,
-    Badge,
     Button,
     Modal,
     ModalVariant,
+    PageSection,
+    pluralize,
     Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
@@ -30,7 +27,6 @@ export type PermissionSetsListProps = {
 function PermissionSetsList({
     permissionSets,
     roles,
-    handleCreate,
     handleDelete,
 }: PermissionSetsListProps): ReactElement {
     const [idDeleting, setIdDeleting] = useState('');
@@ -70,24 +66,8 @@ function PermissionSetsList({
     }
 
     return (
-        <>
-            <Toolbar inset={{ default: 'insetNone' }}>
-                <ToolbarContent>
-                    <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
-                        <ToolbarItem>
-                            <Title headingLevel="h2">Permission sets</Title>
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <Badge isRead>{permissionSets.length}</Badge>
-                        </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <Button variant="primary" onClick={handleCreate} isSmall>
-                            Add permission set
-                        </Button>
-                    </ToolbarItem>
-                </ToolbarContent>
-            </Toolbar>
+        <PageSection variant="light">
+            <Title headingLevel="h2">{pluralize(permissionSets.length, 'result')} found</Title>
             {alertDelete}
             {permissionSets.length !== 0 && (
                 <TableComposable variant="compact" isStickyHeader>
@@ -162,7 +142,7 @@ function PermissionSetsList({
                     ''
                 )}
             </Modal>
-        </>
+        </PageSection>
     );
 }
 
