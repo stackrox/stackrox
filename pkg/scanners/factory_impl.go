@@ -13,7 +13,7 @@ type factoryImpl struct {
 	creators map[string]Creator
 }
 
-var _ types.ImageScanner = (*imageScannerWithDataSource)(nil)
+var _ types.ImageScannerWithDataSource = (*imageScannerWithDataSource)(nil)
 
 type imageScannerWithDataSource struct {
 	scanner    types.Scanner
@@ -28,7 +28,7 @@ func (i *imageScannerWithDataSource) DataSource() *storage.DataSource {
 	return i.datasource
 }
 
-func (e *factoryImpl) CreateScanner(source *storage.ImageIntegration) (types.ImageScanner, error) {
+func (e *factoryImpl) CreateScanner(source *storage.ImageIntegration) (types.ImageScannerWithDataSource, error) {
 	creator, exists := e.creators[source.GetType()]
 	if !exists {
 		return nil, fmt.Errorf("scanner with type %q does not exist", source.GetType())

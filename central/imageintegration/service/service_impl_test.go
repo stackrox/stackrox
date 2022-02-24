@@ -30,19 +30,11 @@ func (*fakeScanner) GetScan(*storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
 }
 
-func (*fakeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
-	panic("implement me")
-}
-
 func (*fakeScanner) Match(*storage.ImageName) bool {
 	panic("implement me")
 }
 
 func (*fakeScanner) Test() error {
-	return nil
-}
-
-func (*fakeScanner) TestNodeScanner() error {
 	return nil
 }
 
@@ -58,23 +50,46 @@ func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(10)
 }
 
-func (*fakeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
-	return semaphore.NewWeighted(10)
-}
-
 func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	return &v1.VulnDefinitionsInfo{}, nil
 }
 
-var _ types.ImageScanner              = (*fakeImageScanner)(nil)
-var _ types.NodeScannerWithDataSource = (*fakeImageScanner)(nil)
+var _ types.NodeScanner = (*fakeNodeScanner)(nil)
 
-type fakeImageScanner struct {
-	scanner types.Scanner
+type fakeNodeScanner struct {}
+
+func (*fakeNodeScanner) Name() string {
+	panic("implement me")
 }
 
-func newFakeImageScanner() types.ImageScanner {
-	return &fakeImageScanner{scanner: &fakeScanner{}}
+func (*fakeNodeScanner) Type() string {
+	return "type"
+}
+
+func (*fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
+	panic("implement me")
+}
+
+func (*fakeNodeScanner) TestNodeScanner() error {
+	return nil
+}
+
+func (*fakeNodeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
+	return semaphore.NewWeighted(10)
+}
+
+var (
+	_ types.ImageScannerWithDataSource = (*fakeImageAndNodeScanner)(nil)
+	_ types.NodeScannerWithDataSource  = (*fakeImageAndNodeScanner)(nil)
+)
+
+type fakeImageAndNodeScanner struct {
+	scanner types.Scanner
+	nodeScanner types.NodeScanner
+}
+
+func newFakeImageAndNodeScanner() *fakeImageAndNodeScanner {
+	return &fakeImageAndNodeScanner{scanner: &fakeScanner{}}
 }
 
 func (f *fakeImageScanner) GetScanner() types.Scanner {

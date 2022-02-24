@@ -8,7 +8,7 @@ import (
 // Set provides an interface for reading the active set of image integrations.
 //go:generate mockgen-wrapper
 type Set interface {
-	GetAll() []types.ImageScanner
+	GetAll() []types.ImageScannerWithDataSource
 
 	IsEmpty() bool
 	Clear()
@@ -20,6 +20,6 @@ type Set interface {
 func NewSet(factory Factory) Set {
 	return &setImpl{
 		factory:      factory,
-		integrations: make(map[string]types.ImageScanner),
+		integrations: make(map[string]types.ImageScannerWithDataSource),
 	}
 }

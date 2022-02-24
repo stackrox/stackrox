@@ -20,9 +20,9 @@ type Scanner interface {
 	GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error)
 }
 
-// ImageScanner provides a GetScanner to retrieve the underlying Scanner and
-// a DataSource function to describe which integration formed the interface
-type ImageScanner interface {
+// ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and
+// a DataSource function to describe which integration formed the interface.
+type ImageScannerWithDataSource interface {
 	GetScanner() Scanner
 	DataSource() *storage.DataSource
 }
@@ -36,10 +36,10 @@ type NodeScanner interface {
 	Type() string
 }
 
-// NodeScannerWithDataSource adds a DataSource function to NodeScanner that describes which
-// integration formed the interface
+// NodeScannerWithDataSource provides a GetNodeScanner to retrieve the underlying NodeScanner and
+// a DataSource function to describe which integration formed the interface.
 type NodeScannerWithDataSource interface {
-	NodeScanner
+	GetNodeScanner() NodeScanner
 	DataSource() *storage.DataSource
 }
 
