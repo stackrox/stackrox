@@ -19,7 +19,8 @@ style_checks() {
     go env GOCACHE
     go env GOMODCACHE
 
-    make golangci-lint
+    make deps
+    # make golangci-lint
     # make style
 }
 
