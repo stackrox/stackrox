@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 )
 
 var (
@@ -19,6 +20,11 @@ type SignatureVerifier interface {
 	// It will return a storage.ImageSignatureVerificationResult_Status and
 	// an error if the verification was unsuccessful.
 	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error)
+}
+
+// SignatureFetcher is responsbile for fetching raw signatures supporting multiple specific signature formats.
+type SignatureFetcher interface {
+	FetchSignature(ctx context.Context, image *storage.Image, registry registryTypes.ImageRegistry) (*storage.ImageSignature, bool, error)
 }
 
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
@@ -97,4 +103,10 @@ func createVerifiersFromIntegration(integration *storage.SignatureIntegration) [
 	}
 
 	return verifiers
+}
+
+// NewSignatureFetcher creates a new signature fetcher capable of fetching a specific signature format for an image.
+// Currently, only cosign public key signatures are supported.
+func NewSignatureFetcher() SignatureFetcher {
+	return &cosignPublicKey{}
 }
