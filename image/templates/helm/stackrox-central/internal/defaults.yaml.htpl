@@ -52,11 +52,11 @@ defaults:
 
     resources:
       requests:
-        memory: "1600Mi"
-        cpu: "1100m"
+        memory: "1500Mi"
+        cpu: "1000m"
       limits:
-        memory: "4100Mi"
-        cpu: "2100m"
+        memory: "3000Mi"
+        cpu: "2000m"
 
     image:
       name: [< required "" .ScannerImageRemote >]

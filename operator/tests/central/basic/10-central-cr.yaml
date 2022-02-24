@@ -24,7 +24,7 @@ spec:
           memory: 500Mi
           cpu: 500m
         limits:
-          memory: 2509Mi
+          memory: 2500Mi
           cpu: 2000m
   tls:
     additionalCAs:
