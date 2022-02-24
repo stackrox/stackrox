@@ -152,7 +152,8 @@ func getOrSetClientConn(endpoint string) *clientConn {
 
 	conn, ok := clientConns[endpoint]
 	if !ok {
-		clientConns[endpoint] = &clientConn{}
+		conn = &clientConn{}
+		clientConns[endpoint] = conn
 	}
 
 	return conn
