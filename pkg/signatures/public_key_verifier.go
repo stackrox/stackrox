@@ -40,7 +40,7 @@ var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 
 // IsValidPEMBlock is a helper function which checks whether PEM block was successfully decoded.
 func IsValidPEMBlock(keyBlock *pem.Block, rest []byte) bool {
-	return keyBlock != nil && keyBlock.Type == publicKeyType && len(rest) <= 0
+	return keyBlock != nil && keyBlock.Type == publicKeyType && len(rest) == 0
 }
 
 // newCosignPublicKeyVerifier creates a public key verifier with the given Cosign configuration. The provided public keys
