@@ -23,10 +23,10 @@ style_checks() {
     # make deps
     # make golangci-lint
     make style || true
-    time find / -name mod -print
-    time find / -name .cache -print
-    time find / -name .caches -print
-    time find / -name .node_modules -print
+    find / -name mod -print
+    find / -name .cache -print -exec ls -l '{}' \;
+    find / -name caches -print
+    find / -name node_modules -print
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
