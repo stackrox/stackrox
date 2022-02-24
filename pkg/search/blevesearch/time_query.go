@@ -16,6 +16,10 @@ const (
 	dayDuration = 24 * time.Hour
 )
 
+var (
+	tzInfo = timezone.New()
+)
+
 func newTimeQuery(_ v1.SearchCategory, field string, value string, modifiers ...queryModifier) (query.Query, error) {
 	prefix, trimmedValue := parseNumericPrefix(value)
 	var seconds int64
@@ -63,9 +67,18 @@ func parseTimeString(value string) (time.Time, bool) {
 
 func timeToOffset(t time.Time) int64 {
 	tz, _ := t.Zone()
-	offset, err := timezone.GetOffset(tz, false)
-	if err != nil {
+	infos, _ := tzInfo.GetTzAbbreviationInfo(tz)
+	if len(infos) == 0 {
 		return 0
 	}
+
+	// We can tolerate ambiguities, but only if all timezones have the same offset.
+	offset := infos[0].Offset()
+	for _, info := range infos[1:] {
+		if info.Offset() != offset {
+			return 0
+		}
+	}
+
 	return int64(offset)
 }
