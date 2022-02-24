@@ -72,7 +72,7 @@ func (e *CentralEnv) populateCentralEnv(ctx context.Context, service v1.Clusters
 
 // RetrieveCentralEnvOrDefault is a convenience function wrapping `PopulateCentralEnv`. It populates a fresh `CentralEnv`
 // struct with defaults and warnings. Warnings are to be used by the caller to properly display them.
-// If there is an error fetching defaults from the API that is not "Unimplemented", the error is returned.
+// If there is an error fetching defaults from the API the error will be returned in `CentralEnv`.
 func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersServiceClient) CentralEnv {
 	env := CentralEnv{}
 	env.populateCentralEnv(ctx, service)
