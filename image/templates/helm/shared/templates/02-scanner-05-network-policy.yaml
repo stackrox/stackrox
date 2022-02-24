@@ -20,9 +20,12 @@ spec:
     - podSelector:
         matchLabels:
           app: central
+{{ if eq ._rox.scanner.mode "slim" }}
+  - from:
     - podSelector:
         matchLabels:
           app: sensor
+{{ end }}
     ports:
     - port: 8080
       protocol: TCP

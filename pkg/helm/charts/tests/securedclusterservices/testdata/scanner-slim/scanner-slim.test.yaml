@@ -60,3 +60,13 @@ tests:
           tag: 1.2.3
           registry: custom.io
           name: custom-scanner-db
+
+- name: "scanner accepts connections from sensor when scanner slim is enabled"
+  set:
+    scanner.disable: false
+    scanner.mode: "slim"
+  expect: |
+    [.objects[] | select(.kind == "NetworkPolicy" and .metadata.name == "scanner-slim")][0].spec.ingress |
+         assertThat(length == 2)
+    [.objects[] | select(.kind == "NetworkPolicy" and .metadata.name == "scanner-slim")][0].spec |
+     .ingress[1].from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
