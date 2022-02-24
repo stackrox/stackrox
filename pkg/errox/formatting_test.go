@@ -25,11 +25,6 @@ func TestErrorMessage(t *testing.T) {
 	}
 }
 
-func TestNewf(t *testing.T) {
-	errFileNotFound := NotFound.Template("file '{{.}}' not found")
-	assert.Equal(t, "file 'filename' not found", errFileNotFound("filename").Error())
-}
-
 func TestCausedBy(t *testing.T) {
 	{
 		errInvalidAlgorithm := InvalidArgs.Template("invalid hashing algorithm \"{{.}}\" used")
