@@ -23,7 +23,6 @@ var (
 )
 
 // ScanImage runs the pipeline required to scan an image with a local Scanner.
-// TODO(ROX-9281): add retries for rate-limiting.
 //nolint:revive
 func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	// 1. Check if Central already knows about this image.
