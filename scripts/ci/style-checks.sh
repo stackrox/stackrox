@@ -22,7 +22,8 @@ style_checks() {
 
     # make deps
     # make golangci-lint
-    make style
+    make style || true
+    find / -name mod -print
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

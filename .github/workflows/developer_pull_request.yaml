@@ -15,15 +15,24 @@ jobs:
         password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       env:
         ORG_TOKEN_FOR_GITHUB: ${{ secrets.ORG_TOKEN_FOR_GITHUB }}
+        MONOREPO_LOCK: ui/monorepo.lock
       options: --user 0 --cpus 2
     steps:
-      - name: Determine cache paths
+      - name: Determine Go cache paths
         id: cache-paths
         run: |
           echo "::set-output name=GOCACHE::$(go env GOCACHE)"
           echo "::set-output name=GOMODCACHE::$(go env GOMODCACHE)"
+
+      - name: Create combined mono repo lock file & digest
+        id: create-concatenated-ui-monorepo-lock
+        run: |
+          find ui/ -type d \( -name node_modules \) -prune -false -o -name package.json -print0 | sort -z | xargs -r0 cat > $MONOREPO_LOCK
+          cat ui/yarn.lock >> $MONOREPO_LOCK
+
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Restore Go Cache
         uses: actions/cache@v2
         with:
@@ -33,6 +42,34 @@ jobs:
           key: ${{ runner.os }}-go-v1-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-v1-
+            ${{ runner.os }}-go-
+
+      - name: Restore Gradle Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches/
+          key: ${{ runner.os }}-gradle-v1-${{ hashFiles('qa-tests-backend/build.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-v1-
+            ${{ runner.os }}-gradle-
+
+      - name: Restore NPM Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            $MONOREPO_LOCK
+            ui/deps
+            ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
+            ui/node_modules # CircleCI doesn't support globbing here https://circleci.com/docs/2.0/caching/#basic-example-of-dependency-caching so all `node_nodules` need to be listed
+            ui/apps/platform/node_modules
+            ui/packages/ui-components/node_modules
+            ui/packages/tailwind-config/node_modules
+          key: ${{ runner.os }}-npm-v1-${{ hashFiles($MONOREPO_LOCK) }}
+          restore-keys: |
+            ${{ runner.os }}-npm-v1-
+            ${{ runner.os }}-npm-
+            
       - name: Run style checks
         run: |
           ./scripts/ci/style-checks.sh
