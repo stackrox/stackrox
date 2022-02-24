@@ -834,7 +834,7 @@ func makeValidationError(policy *storage.Policy, err error) *v1.ImportPolicyResp
 func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFromSearchRequest) (*v1.PolicyFromSearchResponse, error) {
 	policy, unconvertableCriteria, hasNestedFields, err := s.parsePolicy(ctx, request.GetSearchParams())
 	if err != nil {
-		return nil, errors.Wrapf(err, "error creating policy from search string")
+		return nil, errors.Wrap(err, "error creating policy from search string")
 	}
 
 	response := &v1.PolicyFromSearchResponse{
