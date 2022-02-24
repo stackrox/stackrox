@@ -10,7 +10,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -243,6 +245,13 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			s.Assert().Equal(testCase.expectBundleDownloaded, getBundleCalled)
 		})
 	}
+}
+
+func getFlavorFromReleaseBuild() defaults.ImageFlavor {
+	if buildinfo.ReleaseBuild {
+		return defaults.RHACSReleaseImageFlavor()
+	}
+	return defaults.DevelopmentBuildImageFlavor()
 }
 
 func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
