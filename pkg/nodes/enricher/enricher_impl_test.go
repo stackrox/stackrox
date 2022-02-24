@@ -12,15 +12,43 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+var _ types.NodeScannerWithDataSource = (*fakeNodeScannerWithDataSource)(nil)
+
+type fakeNodeScannerWithDataSource struct {
+	nodeScanner types.NodeScanner
+}
+
+type opts struct {
+	requestedScan bool
+}
+
+func newFakeNodeScannerWithDataSource(opts opts) types.NodeScannerWithDataSource {
+	return &fakeNodeScannerWithDataSource{
+		nodeScanner: &fakeNodeScanner{
+			requestedScan: opts.requestedScan,
+		},
+	}
+}
+
+func (f *fakeNodeScannerWithDataSource) GetNodeScanner() types.NodeScanner {
+	return f.nodeScanner
+}
+
+func (*fakeNodeScannerWithDataSource) DataSource() *storage.DataSource {
+	return nil
+}
+
+var _ types.NodeScanner = (*fakeNodeScanner)(nil)
+
 type fakeNodeScanner struct {
 	requestedScan bool
 }
 
-func (f *fakeNodeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
+func (*fakeNodeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(1)
 }
 
-func (f *fakeNodeScanner) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error) {
+func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
 	f.requestedScan = true
 	return &storage.NodeScan{
 		Components: []*storage.EmbeddedNodeScanComponent{
@@ -35,25 +63,21 @@ func (f *fakeNodeScanner) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error
 	}, nil
 }
 
-func (f *fakeNodeScanner) TestNodeScanner() error {
+func (*fakeNodeScanner) TestNodeScanner() error {
 	return nil
 }
 
-func (f *fakeNodeScanner) Type() string {
+func (*fakeNodeScanner) Type() string {
 	return "type"
 }
 
-func (f *fakeNodeScanner) Name() string {
+func (*fakeNodeScanner) Name() string {
 	return "name"
-}
-
-func (f *fakeNodeScanner) DataSource() *storage.DataSource {
-	return nil
 }
 
 type fakeCVESuppressor struct{}
 
-func (f *fakeCVESuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
+func (*fakeCVESuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	for _, c := range node.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
 			if v.Cve == "CVE-2020-1234" {
@@ -68,7 +92,7 @@ func TestEnricherFlow(t *testing.T) {
 		name string
 		node *storage.Node
 
-		fns *fakeNodeScanner
+		fns types.NodeScannerWithDataSource
 	}{
 		{
 			name: "node already has scan",
@@ -76,18 +100,18 @@ func TestEnricherFlow(t *testing.T) {
 				Id:   "id",
 				Scan: &storage.NodeScan{},
 			},
-			fns: &fakeNodeScanner{
+			fns: newFakeNodeScannerWithDataSource(opts{
 				requestedScan: true,
-			},
+			}),
 		},
 		{
 			name: "node does not have scan",
 			node: &storage.Node{
 				Id: "id",
 			},
-			fns: &fakeNodeScanner{
+			fns: newFakeNodeScannerWithDataSource(opts{
 				requestedScan: true,
-			},
+			}),
 		},
 	}
 
@@ -96,12 +120,12 @@ func TestEnricherFlow(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			fns := &fakeNodeScanner{}
+			fns := newFakeNodeScannerWithDataSource(opts{})
 
 			enricherImpl := &enricherImpl{
 				cves: &fakeCVESuppressor{},
 				scanners: map[string]types.NodeScannerWithDataSource{
-					fns.Type(): fns,
+					fns.GetNodeScanner().Type(): fns,
 				},
 				metrics: newMetrics(pkgMetrics.CentralSubsystem),
 			}
@@ -118,12 +142,12 @@ func TestCVESuppression(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	fns := &fakeNodeScanner{}
+	fns := newFakeNodeScannerWithDataSource(opts{})
 
 	enricherImpl := &enricherImpl{
 		cves: &fakeCVESuppressor{},
 		scanners: map[string]types.NodeScannerWithDataSource{
-			fns.Type(): fns,
+			fns.GetNodeScanner().Type(): fns,
 		},
 		metrics: newMetrics(pkgMetrics.CentralSubsystem),
 	}

@@ -37,7 +37,7 @@ type enricherImpl struct {
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
 	registryErrorsLock sync.RWMutex
-	errorsPerScanner   map[scannerTypes.ImageScanner]int32
+	errorsPerScanner   map[scannerTypes.ImageScannerWithDataSource]int32
 	scannerErrorsLock  sync.RWMutex
 
 	integrationHealthReporter integrationhealth.Reporter ``
@@ -73,7 +73,8 @@ func (e *enricherImpl) EnrichWithVulnerabilities(ctx EnrichmentContext, image *s
 		}, errors.New("no image scanners are integrated")
 	}
 
-	for _, scanner := range scanners.GetAll() {
+	for _, imageScanner := range scanners.GetAll() {
+		scanner := imageScanner.GetScanner()
 		log.Infof("Scanner: %s [%s]", scanner.Name(), scanner.Type())
 		if vulnScanner, ok := scanner.(scannerTypes.ImageVulnerabilityGetter); ok {
 			// Clairify is the only supported ImageVulnerabilityGetter at this time.
@@ -82,7 +83,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(ctx EnrichmentContext, image *s
 				continue
 			}
 
-			res, err := e.enrichWithVulnerabilities(scanner.Name(), scanner.DataSource(), vulnScanner, image, components, notes)
+			res, err := e.enrichWithVulnerabilities(scanner.Name(), imageScanner.DataSource(), vulnScanner, image, components, notes)
 			if err != nil {
 				return EnrichmentResult{
 					ScanResult: ScanNotDone,
@@ -376,7 +377,9 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 	}
 }
 
-func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
+func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
+	scanner := imageScanner.GetScanner()
+
 	if !scanner.Match(image.GetName()) {
 		return ScanNotDone, nil
 	}
@@ -395,7 +398,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scan
 		return ScanNotDone, nil
 	}
 
-	enrichImage(image, scan, scanner.DataSource())
+	enrichImage(image, scan, imageScanner.DataSource())
 
 	return ScanSucceeded, nil
 }
