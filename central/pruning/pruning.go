@@ -202,67 +202,39 @@ func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) 
 	}
 }
 
-// Remove ServiceAccounts where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedServiceAccounts(searchQuery *v1.Query) {
-	searchRes, err := g.serviceAccts.Search(pruningCtx, searchQuery)
+func removeOrphanedObjectsBySearch(searchQuery *v1.Query, name string, searchFn func(ctx context.Context, query *v1.Query) ([]search.Result, error), removeFn func(ctx context.Context, id string) error) {
+	searchRes, err := searchFn(pruningCtx, searchQuery)
 	if err != nil {
-		log.Errorf("Error finding orphaned service accounts: %v", err)
+		log.Errorf("Error finding orphaned %s: %v", name, err)
 		return
 	}
 	if len(searchRes) == 0 {
-		log.Info("[Pruning] Found no orphaned service accounts...")
+		log.Infof("[Pruning] Found no orphaned %s...", name)
 		return
 	}
 
-	log.Infof("[Pruning] Found %d orphaned service accounts. Deleting...", len(searchRes))
+	log.Infof("[Pruning] Found %d orphaned %s. Deleting...", len(searchRes), name)
 
 	for _, res := range searchRes {
-		if err := g.serviceAccts.RemoveServiceAccount(pruningCtx, res.ID); err != nil {
-			log.Errorf("Failed to remove service accounts with id %s: %v", res.ID, err)
+		if err := removeFn(pruningCtx, res.ID); err != nil {
+			log.Errorf("Failed to remove %s with id %s: %v", name, res.ID, err)
 		}
 	}
+}
+
+// Remove ServiceAccounts where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedServiceAccounts(searchQuery *v1.Query) {
+	removeOrphanedObjectsBySearch(searchQuery, "service accounts", g.serviceAccts.Search, g.serviceAccts.RemoveServiceAccount)
 }
 
 // Remove K8SRoles where the cluster has been deleted.
 func (g *garbageCollectorImpl) removeOrphanedK8SRoles(searchQuery *v1.Query) {
-	searchRes, err := g.k8sRoles.Search(pruningCtx, searchQuery)
-	if err != nil {
-		log.Errorf("Error finding orphaned K8S Roles: %v", err)
-		return
-	}
-	if len(searchRes) == 0 {
-		log.Info("[Pruning] Found no orphaned K8S Roles...")
-		return
-	}
-
-	log.Infof("[Pruning] Found %d orphaned K8S Roles. Deleting...", len(searchRes))
-
-	for _, res := range searchRes {
-		if err := g.k8sRoles.RemoveRole(pruningCtx, res.ID); err != nil {
-			log.Errorf("Failed to remove K8S Roles with id %s: %v", res.ID, err)
-		}
-	}
+	removeOrphanedObjectsBySearch(searchQuery, "K8S roles", g.k8sRoles.Search, g.k8sRoles.RemoveRole)
 }
 
 // Remove K8SRoleBinding where the cluster has been deleted.
 func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings(searchQuery *v1.Query) {
-	searchRes, err := g.k8sRoleBindings.Search(pruningCtx, searchQuery)
-	if err != nil {
-		log.Errorf("Error finding orphaned K8S Role Bindings: %v", err)
-		return
-	}
-	if len(searchRes) == 0 {
-		log.Info("[Pruning] Found no orphaned K8S Role Bindings...")
-		return
-	}
-
-	log.Infof("[Pruning] Found %d orphaned K8S Role Bindings. Deleting...", len(searchRes))
-
-	for _, res := range searchRes {
-		if err := g.k8sRoleBindings.RemoveRoleBinding(pruningCtx, res.ID); err != nil {
-			log.Errorf("Failed to remove K8S Role Bindings with id %s: %v", res.ID, err)
-		}
-	}
+	removeOrphanedObjectsBySearch(searchQuery, "K8S role bindings", g.k8sRoleBindings.Search, g.k8sRoleBindings.RemoveRoleBinding)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedResources() {
@@ -303,6 +275,9 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 }
 
 func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
+	// TODO: When searching can be done with SQL, this should be refactored to a simple `NOT IN...` query. This current one is inefficent
+	// with a large number of clusters and because of the required conjunction query that is taking a hit being a regex query to do nothing
+	// Bleve/booleanquery requires a conjunction so it can't be removed
 	return search.NewBooleanQuery(
 		search.ConjunctionQuery(search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery(), search.EmptyQuery()).GetConjunction(),
 		search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction(),

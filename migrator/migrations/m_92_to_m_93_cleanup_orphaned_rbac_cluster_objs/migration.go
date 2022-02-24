@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
+	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/tecbot/gorocksdb"
@@ -89,6 +90,7 @@ func removedOrphanedObjects(db *types.Databases, bucket []byte, checkIfShouldDel
 
 	var deletedCount int
 	wb := gorocksdb.NewWriteBatch()
+	defer wb.Destroy()
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		key := it.Key().Copy()
 
@@ -97,16 +99,18 @@ func removedOrphanedObjects(db *types.Databases, bucket []byte, checkIfShouldDel
 			return 0, err
 		}
 
-		if shouldDelete {
-			wb.Delete(key)
-			deletedCount++
+		if !shouldDelete {
+			continue
+		}
 
-			if wb.Count() == batchSize {
-				if err := db.RocksDB.Write(writeOpts, wb); err != nil {
-					return deletedCount, errors.Wrap(err, "writing to RocksDB")
-				}
-				wb.Clear()
+		wb.Delete(key)
+		deletedCount++
+
+		if wb.Count() == batchSize {
+			if err := db.RocksDB.Write(writeOpts, wb); err != nil {
+				return deletedCount, errors.Wrap(err, "writing to RocksDB")
 			}
+			wb.Clear()
 		}
 	}
 
@@ -129,13 +133,8 @@ func getActiveClusters(db *types.Databases) (set.FrozenStringSet, error) {
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		key := it.Key().Copy()
-
-		var cluster storage.Cluster
-		if err := proto.Unmarshal(it.Value().Data(), &cluster); err != nil {
-			return set.NewFrozenStringSet(), errors.Wrapf(err, "unmarshaling cluster %s", key)
-		}
-
-		clusters = append(clusters, cluster.GetId())
+		clusterID := rocksdbmigration.GetIDFromPrefixedKey(clusterBucket, key)
+		clusters = append(clusters, string(clusterID))
 	}
 
 	return set.NewFrozenStringSet(clusters...), nil

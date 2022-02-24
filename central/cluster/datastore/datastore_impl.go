@@ -674,11 +674,7 @@ func convertSearchResultsToIDs(res []pkgSearch.Result, err error) ([]string, err
 		return nil, err
 	}
 
-	ids := make([]string, 0, len(res))
-	for _, r := range res {
-		ids = append(ids, r.ID)
-	}
-	return ids, nil
+	return pkgSearch.ResultsToIDs(res), nil
 }
 
 func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListSecret, error) {
