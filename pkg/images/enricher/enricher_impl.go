@@ -35,7 +35,7 @@ type enricherImpl struct {
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
 	registryErrorsLock sync.RWMutex
-	errorsPerScanner   map[scannerTypes.ImageScanner]int32
+	errorsPerScanner   map[scannerTypes.ImageScannerWithDataSource]int32
 	scannerErrorsLock  sync.RWMutex
 
 	integrationHealthReporter integrationhealth.Reporter ``
@@ -311,7 +311,9 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 	}
 }
 
-func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
+func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
+	scanner := imageScanner.GetScanner()
+
 	if !scanner.Match(image.GetName()) {
 		return ScanNotDone, nil
 	}
@@ -333,7 +335,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scan
 	// normalize the vulns
 	normalizeVulnerabilities(scan)
 
-	scan.DataSource = scanner.DataSource()
+	scan.DataSource = imageScanner.DataSource()
 
 	// Assume:
 	//  scan != nil

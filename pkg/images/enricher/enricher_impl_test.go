@@ -33,26 +33,18 @@ func imageGetterFromImage(image *storage.Image) imageGetter {
 	}
 }
 
-type fakeRegistryScanner struct {
-	requestedMetadata bool
-	requestedScan     bool
-	notMatch          bool
+var _ scannertypes.Scanner = (*fakeScanner)(nil)
+
+type fakeScanner struct {
+	requestedScan bool
+	notMatch      bool
 }
 
-func (f *fakeRegistryScanner) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
-	f.requestedMetadata = true
-	return &storage.ImageMetadata{}, nil
-}
-
-func (f *fakeRegistryScanner) Config() *types.Config {
-	return nil
-}
-
-func (f *fakeRegistryScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
+func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(1)
 }
 
-func (f *fakeRegistryScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (f *fakeScanner) GetScan(_ *storage.Image) (*storage.ImageScan, error) {
 	f.requestedScan = true
 	return &storage.ImageScan{
 		Components: []*storage.EmbeddedImageScanComponent{
@@ -67,20 +59,81 @@ func (f *fakeRegistryScanner) GetScan(image *storage.Image) (*storage.ImageScan,
 	}, nil
 }
 
-func (f *fakeRegistryScanner) Match(image *storage.ImageName) bool {
+func (f *fakeScanner) Match(*storage.ImageName) bool {
 	return !f.notMatch
 }
 
-func (f *fakeRegistryScanner) Test() error {
+func (*fakeScanner) Test() error {
 	return nil
 }
 
-func (f *fakeRegistryScanner) Type() string {
+func (*fakeScanner) Type() string {
 	return "type"
 }
 
-func (f *fakeRegistryScanner) Name() string {
+func (*fakeScanner) Name() string {
 	return "name"
+}
+
+func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	return &v1.VulnDefinitionsInfo{}, nil
+}
+
+var (
+	_ scannertypes.ImageScannerWithDataSource = (*fakeRegistryScanner)(nil)
+	_ types.ImageRegistry                     = (*fakeRegistryScanner)(nil)
+)
+
+type fakeRegistryScanner struct {
+	scanner           scannertypes.Scanner
+	requestedMetadata bool
+	notMatch          bool
+}
+
+type opts struct {
+	requestedScan     bool
+	requestedMetadata bool
+	notMatch          bool
+}
+
+func newFakeRegistryScanner(opts opts) *fakeRegistryScanner {
+	return &fakeRegistryScanner{
+		scanner: &fakeScanner{
+			requestedScan: opts.requestedScan,
+			notMatch:      opts.notMatch,
+		},
+		requestedMetadata: opts.requestedMetadata,
+		notMatch:          opts.notMatch,
+	}
+}
+
+func (f *fakeRegistryScanner) Metadata(*storage.Image) (*storage.ImageMetadata, error) {
+	f.requestedMetadata = true
+	return &storage.ImageMetadata{}, nil
+}
+
+func (f *fakeRegistryScanner) Config() *types.Config {
+	return nil
+}
+
+func (f *fakeRegistryScanner) Match(*storage.ImageName) bool {
+	return !f.notMatch
+}
+
+func (*fakeRegistryScanner) Test() error {
+	return nil
+}
+
+func (*fakeRegistryScanner) Type() string {
+	return "type"
+}
+
+func (*fakeRegistryScanner) Name() string {
+	return "name"
+}
+
+func (f *fakeRegistryScanner) GetScanner() scannertypes.Scanner {
+	return f.scanner
 }
 
 func (f *fakeRegistryScanner) DataSource() *storage.DataSource {
@@ -88,10 +141,6 @@ func (f *fakeRegistryScanner) DataSource() *storage.DataSource {
 		Id:   "id",
 		Name: f.Name(),
 	}
-}
-
-func (f *fakeRegistryScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return &v1.VulnDefinitionsInfo{}, nil
 }
 
 type fakeCVESuppressor struct{}
@@ -139,10 +188,10 @@ func TestEnricherFlow(t *testing.T) {
 			inMetadataCache: false,
 			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 
-			fsr: &fakeRegistryScanner{
+			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
 				requestedScan:     true,
-			},
+			}),
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -159,10 +208,10 @@ func TestEnricherFlow(t *testing.T) {
 			image:                &storage.Image{Id: "id"},
 			imageGetter:          imageGetterFromImage(&storage.Image{Id: "id", Scan: &storage.ImageScan{}}),
 
-			fsr: &fakeRegistryScanner{
+			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     false,
-			},
+			}),
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -176,10 +225,10 @@ func TestEnricherFlow(t *testing.T) {
 			inMetadataCache: true,
 			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 
-			fsr: &fakeRegistryScanner{
+			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
 				requestedScan:     true,
-			},
+			}),
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -194,10 +243,10 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitRegistry: true,
 			image:                &storage.Image{Id: "id"},
 
-			fsr: &fakeRegistryScanner{
+			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     true,
-			},
+			}),
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -213,10 +262,10 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitScanner:  true,
 			image:                &storage.Image{Id: "id"},
 
-			fsr: &fakeRegistryScanner{
+			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     false,
-			},
+			}),
 			result: EnrichmentResult{
 				ImageUpdated: false,
 				ScanResult:   ScanNotDone,
@@ -235,10 +284,10 @@ func TestEnricherFlow(t *testing.T) {
 				Metadata: &storage.ImageMetadata{},
 				Scan:     &storage.ImageScan{},
 			},
-			fsr: &fakeRegistryScanner{
+			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     false,
-			},
+			}),
 			result: EnrichmentResult{
 				ImageUpdated: false,
 				ScanResult:   ScanNotDone,
@@ -257,10 +306,10 @@ func TestEnricherFlow(t *testing.T) {
 				},
 				Scan: &storage.ImageScan{},
 			},
-			fsr: &fakeRegistryScanner{
+			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
 				requestedScan:     true,
-			},
+			}),
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -284,10 +333,10 @@ func TestEnricherFlow(t *testing.T) {
 				Metadata: &storage.ImageMetadata{},
 				Scan:     &storage.ImageScan{},
 			}),
-			fsr: &fakeRegistryScanner{
+			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     false,
-			},
+			}),
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -302,7 +351,7 @@ func TestEnricherFlow(t *testing.T) {
 
 			set := mocks.NewMockSet(ctrl)
 
-			fsr := &fakeRegistryScanner{}
+			fsr := newFakeRegistryScanner(opts{})
 			registrySet := mocks2.NewMockSet(ctrl)
 			if !c.shortCircuitRegistry {
 				registrySet.EXPECT().IsEmpty().Return(false)
@@ -313,7 +362,7 @@ func TestEnricherFlow(t *testing.T) {
 			scannerSet := mocks3.NewMockSet(ctrl)
 			if !c.shortCircuitScanner {
 				scannerSet.EXPECT().IsEmpty().Return(false)
-				scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr})
+				scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr})
 				set.EXPECT().ScannerSet().Return(scannerSet)
 			}
 
@@ -324,7 +373,7 @@ func TestEnricherFlow(t *testing.T) {
 				cvesSuppressor:            &fakeCVESuppressor{},
 				cvesSuppressorV2:          &fakeCVESuppressorV2{},
 				integrations:              set,
-				errorsPerScanner:          map[scannertypes.ImageScanner]int32{fsr: 0},
+				errorsPerScanner:          map[scannertypes.ImageScannerWithDataSource]int32{fsr: 0},
 				errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},
 				integrationHealthReporter: mockReporter,
 				metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
@@ -353,14 +402,14 @@ func TestCVESuppression(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	fsr := &fakeRegistryScanner{}
+	fsr := newFakeRegistryScanner(opts{})
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
 
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
-	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr})
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr})
 
 	set := mocks.NewMockSet(ctrl)
 	set.EXPECT().RegistrySet().Return(registrySet)
@@ -373,7 +422,7 @@ func TestCVESuppression(t *testing.T) {
 		cvesSuppressor:            &fakeCVESuppressor{},
 		cvesSuppressorV2:          &fakeCVESuppressorV2{},
 		integrations:              set,
-		errorsPerScanner:          map[scannertypes.ImageScanner]int32{fsr: 0},
+		errorsPerScanner:          map[scannertypes.ImageScannerWithDataSource]int32{fsr: 0},
 		errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},
 		integrationHealthReporter: mockReporter,
 		metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
@@ -402,7 +451,7 @@ func TestZeroIntegrations(t *testing.T) {
 
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(true)
-	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{}).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
 	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
@@ -432,7 +481,7 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
 	scannerSet := mocks3.NewMockSet(ctrl)
-	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{}).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
 	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
@@ -459,10 +508,10 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
-	fsr := &fakeRegistryScanner{}
+	fsr := newFakeRegistryScanner(opts{})
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
-	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr}).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
 	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
@@ -493,10 +542,10 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 	registrySet.EXPECT().IsEmpty().Return(true)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
-	fsr := &fakeRegistryScanner{}
+	fsr := newFakeRegistryScanner(opts{})
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
-	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr}).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
 	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
@@ -523,16 +572,16 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	fsr := &fakeRegistryScanner{
+	fsr := newFakeRegistryScanner(opts{
 		notMatch: true,
-	}
+	})
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
 
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
-	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr}).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
 	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
@@ -558,13 +607,13 @@ func TestZeroScannerIntegrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	fsr := &fakeRegistryScanner{}
+	fsr := newFakeRegistryScanner(opts{})
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
 	registrySet.EXPECT().IsEmpty().Return(false)
 
 	scannerSet := mocks3.NewMockSet(ctrl)
-	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{}).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{}).AnyTimes()
 	scannerSet.EXPECT().IsEmpty().Return(true)
 
 	set := mocks.NewMockSet(ctrl)
