@@ -303,10 +303,6 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 }
 
 func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
-	nq := make([]*v1.Query, 0, clusterIDSet.Cardinality())
-	for _, c := range clusterIDSet.AsSlice() {
-		nq = append(nq, search.NewQueryBuilder().AddExactMatches(search.ClusterID, c).ProtoQuery())
-	}
 	return search.NewBooleanQuery(
 		search.ConjunctionQuery(search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery(), search.EmptyQuery()).GetConjunction(),
 		search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction(),
