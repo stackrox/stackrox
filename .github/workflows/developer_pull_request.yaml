@@ -24,12 +24,6 @@ jobs:
           echo "::set-output name=GOCACHE::$(go env GOCACHE)"
           echo "::set-output name=GOMODCACHE::$(go env GOMODCACHE)"
 
-      - name: Create combined mono repo lock file & digest
-        id: create-concatenated-ui-monorepo-lock
-        run: |
-          find ui/ -type d \( -name node_modules \) -prune -false -o -name package.json -print0 | sort -z | xargs -r0 cat > $MONOREPO_LOCK
-          cat ui/yarn.lock >> $MONOREPO_LOCK
-
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -53,6 +47,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-v1-
             ${{ runner.os }}-gradle-
+
+      - name: Create combined mono repo lock file & digest
+        id: create-concatenated-ui-monorepo-lock
+        run: |
+          find ui/ -type d \( -name node_modules \) -prune -false -o -name package.json -print0 | sort -z | xargs -r0 cat > $MONOREPO_LOCK
+          cat ui/yarn.lock >> $MONOREPO_LOCK
 
       - name: Restore NPM Cache
         uses: actions/cache@v2
