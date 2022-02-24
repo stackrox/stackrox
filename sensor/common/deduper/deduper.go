@@ -55,7 +55,13 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		resourceType: reflect.TypeOf(event.GetResource()),
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
+		priorLen := len(d.lastSent)
 		delete(d.lastSent, key)
+		// Do not send a remove message for something that has not been seen before
+		// This also effectively dedupes REMOVE actions
+		if priorLen == len(d.lastSent) {
+			return nil
+		}
 		return d.stream.Send(msg)
 	}
 
