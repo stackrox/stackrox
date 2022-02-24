@@ -1,6 +1,8 @@
 package rocksdb
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
@@ -21,8 +23,8 @@ type fullStoreImpl struct {
 }
 
 // ListAlert retrieves a single list alert
-func (f *fullStoreImpl) ListAlert(id string) (*storage.ListAlert, bool, error) {
-	alert, exists, err := f.Store.Get(id)
+func (f *fullStoreImpl) ListAlert(ctx context.Context, id string) (*storage.ListAlert, bool, error) {
+	alert, exists, err := f.Store.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -30,13 +32,13 @@ func (f *fullStoreImpl) ListAlert(id string) (*storage.ListAlert, bool, error) {
 }
 
 // GetListAlerts returns list alert versions from the specified IDs
-func (f *fullStoreImpl) GetListAlerts(ids []string) ([]*storage.ListAlert, []int, error) {
+func (f *fullStoreImpl) GetListAlerts(ctx context.Context, ids []string) ([]*storage.ListAlert, []int, error) {
 	// RocksDB MultiGet is similar performance to single gets so run single gets
 	// also, this keeps memory pressure similar to previous runs
 	var missingIndices []int
 	listAlerts := make([]*storage.ListAlert, 0, len(ids))
 	for idx, id := range ids {
-		listAlert, exists, err := f.ListAlert(id)
+		listAlert, exists, err := f.ListAlert(ctx, id)
 		if err != nil {
 			return nil, nil, err
 		}

@@ -55,7 +55,7 @@ func New(storage store.Store, commentsStorage commentsStore.Store, indexer index
 		searcher:        searcher,
 		keyedMutex:      concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
-	if err := ds.buildIndex(); err != nil {
+	if err := ds.buildIndex(context.TODO()); err != nil {
 		return nil, err
 	}
 	return ds, nil
