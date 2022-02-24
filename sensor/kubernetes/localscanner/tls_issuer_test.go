@@ -60,7 +60,6 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *local
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    fixture.k8sClient,
-		sensorManagedBy:              storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 		msgToCentralC:                msgToCentralC,
 		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
@@ -166,27 +165,6 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 			startErr := fixture.tlsIssuer.Start()
 
 			assert.NoError(t, startErr)
-			fixture.assertMockExpectations(t)
-		})
-	}
-}
-
-func TestLocalScannerTLSIssuerWrongManagerTypeStartNoop(t *testing.T) {
-	testCases := map[string]struct {
-		sensorManagedBy storage.ManagerType
-	}{
-		"bundle installations":      {sensorManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL},
-		"unknown installation type": {sensorManagedBy: storage.ManagerType_MANAGER_TYPE_UNKNOWN},
-	}
-	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
-			fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
-			fixture.tlsIssuer.sensorManagedBy = tc.sensorManagedBy
-
-			startErr := fixture.tlsIssuer.Start()
-
-			assert.NoError(t, startErr)
-			assert.Nil(t, fixture.tlsIssuer.certRefresher)
 			fixture.assertMockExpectations(t)
 		})
 	}
@@ -300,13 +278,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			scannerCert := s.getCertificate()
 			scannerDBCert := s.getCertificate()
 			k8sClient := getFakeK8sClient(tc.k8sClientConfig)
-			tlsIssuer := newLocalScannerTLSIssuer(
-				s.T(),
-				k8sClient,
-				storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-				sensorNamespace,
-				sensorPodName,
-			)
+			tlsIssuer := newLocalScannerTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
 			tlsIssuer.certRefreshBackoff = wait.Backoff{
 				Duration: time.Millisecond,
 			}
@@ -377,13 +349,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 					UID:        types.UID(uuid.NewDummy().String()),
 				},
 			})
-			tlsIssuer := newLocalScannerTLSIssuer(
-				s.T(),
-				k8sClient,
-				storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-				sensorNamespace,
-				sensorPodName,
-			)
+			tlsIssuer := newLocalScannerTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
 
 			s.Require().NoError(tlsIssuer.Start())
 			defer tlsIssuer.Stop(nil)
@@ -538,11 +504,10 @@ type fakeK8sClientConfig struct {
 func newLocalScannerTLSIssuer(
 	t *testing.T,
 	k8sClient kubernetes.Interface,
-	sensorManagedBy storage.ManagerType,
 	sensorNamespace string,
 	sensorPodName string,
 ) *localScannerTLSIssuerImpl {
-	tlsIssuer := NewLocalScannerTLSIssuer(k8sClient, sensorManagedBy, sensorNamespace, sensorPodName)
+	tlsIssuer := NewLocalScannerTLSIssuer(k8sClient, sensorNamespace, sensorPodName)
 	require.IsType(t, &localScannerTLSIssuerImpl{}, tlsIssuer)
 	return tlsIssuer.(*localScannerTLSIssuerImpl)
 }

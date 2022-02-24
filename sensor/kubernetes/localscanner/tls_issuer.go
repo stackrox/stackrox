@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -46,7 +45,6 @@ var (
 // up to date, using the specified retry parameters.
 func NewLocalScannerTLSIssuer(
 	k8sClient kubernetes.Interface,
-	sensorManagedBy storage.ManagerType,
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
@@ -56,7 +54,6 @@ func NewLocalScannerTLSIssuer(
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
-		sensorManagedBy:              sensorManagedBy,
 		msgToCentralC:                msgToCentralC,
 		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
@@ -70,7 +67,6 @@ type localScannerTLSIssuerImpl struct {
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
-	sensorManagedBy              storage.ManagerType
 	msgToCentralC                chan *central.MsgFromSensor
 	msgFromCentralC              chan *central.IssueLocalScannerCertsResponse
 	certRefreshBackoff           wait.Backoff
@@ -101,12 +97,6 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Debug("starting local scanner TLS issuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
-
-	if i.sensorManagedBy != storage.ManagerType_MANAGER_TYPE_HELM_CHART &&
-		i.sensorManagedBy != storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR {
-		log.Debugf("start aborted: local scanner scanner TLS issuer is disabled for manager type %q.", i.sensorManagedBy)
-		return nil
-	}
 
 	if i.certRefresher != nil {
 		return i.abortStart(errors.New("already started."))
