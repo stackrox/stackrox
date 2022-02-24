@@ -38,8 +38,8 @@ type publicKeyVerifier struct {
 
 var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 
-// IsValidPEMBlock is a helper function which checks whether PEM block was successfully decoded.
-func IsValidPEMBlock(keyBlock *pem.Block, rest []byte) bool {
+// IsValidPublicKeyPEMBlock is a helper function which checks whether public key PEM block was successfully decoded.
+func IsValidPublicKeyPEMBlock(keyBlock *pem.Block, rest []byte) bool {
 	return keyBlock != nil && keyBlock.Type == publicKeyType && len(rest) == 0
 }
 
@@ -52,7 +52,7 @@ func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*p
 	for _, publicKey := range publicKeys {
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
-		if !IsValidPEMBlock(keyBlock, rest) {
+		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
 			return nil, errox.Newf(errox.InvariantViolation, "failed to decode PEM block containing public key %q", publicKey.GetName())
 		}
 

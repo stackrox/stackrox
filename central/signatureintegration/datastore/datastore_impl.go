@@ -63,7 +63,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	defer d.lock.Unlock()
 
 	if err := d.verifyIntegrationIDDoesNotExist(integration.GetId()); err != nil {
-		if errors.Is(err, errox.InvariantViolation) {
+		if errors.Is(err, errox.AlreadyExists) {
 			return nil, errors.Wrap(err, "collision in generated signature integration id, try again")
 		}
 		return nil, err
@@ -125,7 +125,7 @@ func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(id string) error {
 	if err != nil {
 		return err
 	} else if found {
-		return errox.Newf(errox.InvariantViolation, "signature integration id=%s already exists", id)
+		return errox.Newf(errox.AlreadyExists, "signature integration id=%s already exists", id)
 	}
 	return nil
 }

@@ -64,7 +64,7 @@ func validateCosignVerification(config *storage.CosignPublicKeyVerification) err
 	}
 	for _, publicKey := range publicKeys {
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
-		if !signatures.IsValidPEMBlock(keyBlock, rest) {
+		if !signatures.IsValidPublicKeyPEMBlock(keyBlock, rest) {
 			err := errors.Errorf("failed to decode PEM block containing public key %q", publicKey.GetName())
 			multiErr = multierror.Append(multiErr, err)
 		}
