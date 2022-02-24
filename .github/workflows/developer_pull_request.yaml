@@ -65,7 +65,7 @@ jobs:
             ui/apps/platform/node_modules
             ui/packages/ui-components/node_modules
             ui/packages/tailwind-config/node_modules
-          key: ${{ runner.os }}-npm-v1-${{ hashFiles(${{ env.MONOREPO_LOCK }}) }}
+          key: ${{ runner.os }}-npm-v1-${{ hashFiles(env.MONOREPO_LOCK) }}
           restore-keys: |
             ${{ runner.os }}-npm-v1-
             ${{ runner.os }}-npm-
