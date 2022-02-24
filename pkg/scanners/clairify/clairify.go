@@ -24,6 +24,7 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	clairGRPCV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -48,7 +49,18 @@ var (
 
 var (
 	log = logging.LoggerForModule()
+
+	// Map of Clairify endpoint to its respective clientConn.
+	// Only one connection per endpoint is necessary.
+	clientConns map[string]*clientConn
+	clientConnsLock sync.Mutex
 )
+
+type clientConn struct {
+	once sync.Once
+	conn *grpc.ClientConn
+	err  error
+}
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
@@ -134,13 +146,20 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	return scanner, nil
 }
 
-func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientConn, error) {
-	if err := validateConfig(conf); err != nil {
-		return nil, err
+func getOrSetClientConn(endpoint string) *clientConn {
+	clientConnsLock.Lock()
+	defer clientConnsLock.Unlock()
+
+	conn, ok := clientConns[endpoint]
+	if !ok {
+		clientConns[endpoint] = &clientConn{}
 	}
 
-	tlsConfig, err := getTLSConfig()
-	if err != nil {
+	return conn
+}
+
+func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientConn, error) {
+	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
 
@@ -149,7 +168,18 @@ func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientCo
 		endpoint = fmt.Sprintf("scanner.%s:8443", env.Namespace.Setting())
 	}
 
-	return grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	conn := getOrSetClientConn(endpoint)
+	conn.once.Do(func() {
+		tlsConfig, err := getTLSConfig()
+		if err != nil {
+			conn.conn, conn.err = nil, err
+			return
+		}
+
+		conn.conn, conn.err = grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	})
+
+	return conn.conn, conn.err
 }
 
 func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, error) {

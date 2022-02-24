@@ -75,7 +75,6 @@ func (e *enricherImpl) EnrichWithVulnerabilities(ctx EnrichmentContext, image *s
 
 	for _, imageScanner := range scanners.GetAll() {
 		scanner := imageScanner.GetScanner()
-		log.Infof("Scanner: %s [%s]", scanner.Name(), scanner.Type())
 		if vulnScanner, ok := scanner.(scannerTypes.ImageVulnerabilityGetter); ok {
 			// Clairify is the only supported ImageVulnerabilityGetter at this time.
 			if scanner.Type() != clairify.TypeString {

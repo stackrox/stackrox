@@ -86,10 +86,10 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 		Notes:      scanResp.GetNotes(),
 	})
 	if err != nil {
-		log.Infof("Unable to retrieve image vulnerabilities for %s: %v", name, err)
+		log.Debugf("Unable to retrieve image vulnerabilities for %s: %v", name, err)
 		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s", name)
 	}
-	log.Infof("Retrieved image vulnerabilities for %s", name)
+	log.Debugf("Retrieved image vulnerabilities for %s", name)
 
 	// 7. Return the completely scanned image.
 	return centralResp.GetImage(), nil
