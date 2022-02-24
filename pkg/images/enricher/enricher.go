@@ -40,10 +40,6 @@ type EnrichmentContext struct {
 	// EnforcementOnly indicates that we don't care about any violations unless they have enforcement enabled.
 	EnforcementOnly bool
 
-	// UseNonBlockingCallsWherePossible tells the enricher to make non-blocking calls to image scanners where that is
-	// possible. Note that, if NoExternalMetadata is true, this param is irrelevant since no external calls are made at all.
-	UseNonBlockingCallsWherePossible bool
-
 	// Internal is used to indicate when the caller is internal.
 	// This is used to indicate that we do not want to fail upon failing to find integrations.
 	Internal bool

@@ -34,15 +34,6 @@ type ImageVulnerabilityGetter interface {
 	GetVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (*storage.ImageScan, error)
 }
 
-// AsyncScanner is an image scanner that can be accessed asynchronously.
-type AsyncScanner interface {
-	Scanner
-	// GetOrTriggerScan does a non-blocking request to the scanner.
-	// It gets the scan for the given image if it exists;
-	// if not, implementations trigger a new one and instantly return.
-	GetOrTriggerScan(image *storage.Image) (*storage.ImageScan, error)
-}
-
 // NodeScanner is the interface all node scanners must implement
 type NodeScanner interface {
 	NodeScanSemaphore
