@@ -20,6 +20,9 @@ spec:
     - podSelector:
         matchLabels:
           app: central
+    - podSelector:
+        matchLabels:
+          app: sensor
     ports:
     - port: 8080
       protocol: TCP
