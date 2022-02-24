@@ -79,8 +79,10 @@ func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	return &v1.VulnDefinitionsInfo{}, nil
 }
 
-var _ scannertypes.ImageScannerWithDataSource = (*fakeRegistryScanner)(nil)
-var _ types.ImageRegistry = (*fakeRegistryScanner)(nil)
+var (
+	_ scannertypes.ImageScannerWithDataSource = (*fakeRegistryScanner)(nil)
+	_ types.ImageRegistry                     = (*fakeRegistryScanner)(nil)
+)
 
 type fakeRegistryScanner struct {
 	scanner           scannertypes.Scanner
