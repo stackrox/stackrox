@@ -17,14 +17,19 @@ jobs:
         ORG_TOKEN_FOR_GITHUB: ${{ secrets.ORG_TOKEN_FOR_GITHUB }}
       options: --user 0 --cpus 2
     steps:
+      - name: Determine cache paths
+        id: cache-paths
+        run: |
+          echo "::set-output name=GOCACHE::$(go env GOCACHE)"
+          echo "::set-output name=GOMODCACHE::$(go env GOMODCACHE)"
       - name: Checkout
         uses: actions/checkout@v2
       - name: Restore Go Cache
         uses: actions/cache@v2
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
+            ${{ steps.cache-paths.outputs.GOCACHE }}
+            ${{ steps.cache-paths.outputs.GOMODCACHE }}
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-

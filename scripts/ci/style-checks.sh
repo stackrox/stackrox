@@ -16,6 +16,7 @@ style_checks() {
 
     set -x
 
+    env | sort
     go env GOCACHE
     go env GOMODCACHE
 
