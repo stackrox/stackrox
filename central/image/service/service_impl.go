@@ -51,11 +51,8 @@ var (
 			"/v1.ImageService/CountImages",
 			"/v1.ImageService/ListImages",
 		},
-		or.SensorOrAuthorizer(idcheck.AdmissionControlOnly()): {
+		or.Or(idcheck.SensorsOnly(), idcheck.AdmissionControlOnly()): {
 			"/v1.ImageService/ScanImageInternal",
-		},
-		idcheck.SensorsOnly(): {
-			"/v1.ImageService/GetImageVulnerabilitiesInternal",
 		},
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/DeleteImages",
@@ -111,10 +108,9 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id must be specified")
 	}
+	request.Id = types.NewDigest(request.Id).Digest()
 
-	id := types.NewDigest(request.GetId()).Digest()
-
-	image, exists, err := s.datastore.GetImage(ctx, id)
+	image, exists, err := s.datastore.GetImage(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -126,11 +122,6 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 		// This modifies the image object
 		utils.FilterSuppressedCVEsNoClone(image)
 	}
-	if request.GetStripDescription() {
-		// This modifies the image object
-		utils.StripCVEDescriptionsNoClone(image)
-	}
-
 	return image, nil
 }
 
@@ -184,7 +175,7 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 	}
 }
 
-// ScanImageInternal handles an image request from Sensor and Admission Controller.
+// ScanImageInternal handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
 		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
@@ -201,8 +192,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		if err != nil {
 			return nil, err
 		}
-		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
-		// Otherwise, fetch it from the DB.
+		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
 			return internalScanRespFromImage(img), nil
 		}
@@ -259,14 +249,6 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		utils.FilterSuppressedCVEsNoClone(img)
 	}
 	return img, nil
-}
-
-// GetImageVulnerabilitiesInternal retrieves the vulnerabilities related to the image
-// specified by the given components and scan notes.
-// This is meant to be called by Sensor.
-// TODO(ROX-9281): Implement me.
-func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	return nil, nil
 }
 
 // DeleteImages deletes images based on query
