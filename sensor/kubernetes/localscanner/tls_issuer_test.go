@@ -391,7 +391,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 			ok := concurrency.PollWithTimeout(func() bool {
 				return tlsIssuer.certRefresher != nil && tlsIssuer.certRefresher.Stopped()
 			}, 10*time.Millisecond, 100*time.Millisecond)
-			s.True(ok)
+			s.True(ok, "cert refresher should be stopped")
 		})
 	}
 }
