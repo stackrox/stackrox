@@ -75,7 +75,7 @@ restoreGoModCache: &restoreGoModCache
 
 goModTidy: &goModTidy
   run:
-    name: go mod tidy
+    name: Ensure all go modules are present
     command: go mod tidy
     when: always
 
