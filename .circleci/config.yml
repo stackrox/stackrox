@@ -1387,6 +1387,8 @@ commands:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
+      - restore-go-mod-cache
+
       - *setupRoxctl
       - setup-gcp
       - setup-dep-env:
@@ -3781,6 +3783,7 @@ jobs:
           changed-path: '^migrator/.*$'
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
+      - restore-go-mod-cache
 
       - setup-gcp
       - attach-gke-cluster:
