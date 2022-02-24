@@ -349,7 +349,7 @@ func TestEnricherFlow(t *testing.T) {
 
 			set := mocks.NewMockSet(ctrl)
 
-			fsr := &fakeRegistryScanner{}
+			fsr := newFakeRegistryScanner(opts{})
 			registrySet := mocks2.NewMockSet(ctrl)
 			if !c.shortCircuitRegistry {
 				registrySet.EXPECT().IsEmpty().Return(false)
@@ -400,7 +400,7 @@ func TestCVESuppression(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	fsr := &fakeRegistryScanner{}
+	fsr := newFakeRegistryScanner(opts{})
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
@@ -506,7 +506,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
-	fsr := &fakeRegistryScanner{}
+	fsr := newFakeRegistryScanner(opts{})
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr}).AnyTimes()
@@ -540,7 +540,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 	registrySet.EXPECT().IsEmpty().Return(true)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
-	fsr := &fakeRegistryScanner{}
+	fsr := newFakeRegistryScanner(opts{})
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr}).AnyTimes()
@@ -570,9 +570,9 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	fsr := &fakeRegistryScanner{
+	fsr := newFakeRegistryScanner(opts{
 		notMatch: true,
-	}
+	})
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
@@ -605,7 +605,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	fsr := &fakeRegistryScanner{}
+	fsr := newFakeRegistryScanner(opts{})
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
 	registrySet.EXPECT().IsEmpty().Return(false)
