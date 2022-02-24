@@ -261,7 +261,7 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 	if err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
-	if err := scanner.Test(); err != nil {
+	if err := scanner.GetScanner().Test(); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil
@@ -272,7 +272,7 @@ func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegr
 	if err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
-	if err := scanner.TestNodeScanner(); err != nil {
+	if err := scanner.GetNodeScanner().TestNodeScanner(); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil

@@ -100,7 +100,7 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 
 		// number of consecutive errors per registry or scanner to ascertain health of the integration
 		errorsPerRegistry:         make(map[registryTypes.ImageRegistry]int32, len(is.RegistrySet().GetAll())),
-		errorsPerScanner:          make(map[scannerTypes.ImageScanner]int32, len(is.ScannerSet().GetAll())),
+		errorsPerScanner:          make(map[scannerTypes.ImageScannerWithDataSource]int32, len(is.ScannerSet().GetAll())),
 		integrationHealthReporter: healthReporter,
 
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
