@@ -200,7 +200,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			}
 		}
 	}
-	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs().AnyTimes().Return(deploymentIDs, nil)
+	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return(deploymentIDs, nil)
 	s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
 		func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
@@ -394,7 +394,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			return []search.Result{{ID: image.GetId()}}, nil
 		})
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image.Clone()))
-	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs().AnyTimes().Return([]string{deployment.GetId()}, nil)
+	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return([]string{deployment.GetId()}, nil)
 
 	// Test active components with designated image and deployment
 	var testCases = []struct {

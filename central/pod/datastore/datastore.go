@@ -29,7 +29,7 @@ type DataStore interface {
 
 	RemovePod(ctx context.Context, id string) error
 
-	GetPodIDs() ([]string, error)
+	GetPodIDs(ctx context.Context) ([]string, error)
 }
 
 // NewRocksDB creates a pod datastore based on RocksDB
