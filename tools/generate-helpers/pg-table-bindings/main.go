@@ -54,6 +54,10 @@ func main() {
 		}
 
 		schema := walker.Walk(mt, props.Table)
+		if schema.NoPrimaryKey() {
+			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
+		}
+
 		templateMap := map[string]interface{}{
 			"Type":        props.Type,
 			"TrimmedType": stringutils.GetAfter(props.Type, "."),
