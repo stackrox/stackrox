@@ -12,13 +12,17 @@ import (
 func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	const (
 		// b64MatchingPubKey matches the b64Signature.
-		b64MatchingPubKey = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFM" +
-			"DRzb0FvTnlnUmhheXRDdHlnUGN3c1ArNkVpbgpZb0R2L0JKeDFUOVdtdHNBTmgySHBsUlI2NkZibSszT2pGdWFoMkloRnVmUGhEbD" +
-			"ZhODVJM3ltVll3PT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+		b64MatchingPubKey = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein
+YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==
+-----END PUBLIC KEY-----
+`
 		// b64NonMatchingPubKey does not match b64Signature.
-		b64NonMatchingPubKey = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0" +
-			"FFV2kzdFN4dkJIN1MvV1VtdjQwOG5LUHhOU0p4NgordzdjOUZ0RlNrNmNveHgyVlViUHkvWDNVUzNjWGZrL3pWQStHN05iWEdCWWh" +
-			"BR2FPc3BzNVpLamtRPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+		b64NonMatchingPubKey = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6
++w7c9FtFSk6coxx2VUbPy/X3US3cXfk/zVA+G7NbXGBYhAGaOsps5ZKjkQ==
+-----END PUBLIC KEY-----
+`
 		// b64Signature is a cosign signature b64 encoded.
 		b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
 			"kAnXI="
@@ -36,20 +40,24 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	require.NoError(t, err, "creating test image")
 
 	successfulCosignConfig := &storage.SignatureVerificationConfig{
-		Config: &storage.SignatureVerificationConfig_PublicKey{
-			PublicKey: &storage.CosignPublicKeyVerification{
-				PublicKeysBase64Enc: []string{
-					b64MatchingPubKey,
+		Config: &storage.SignatureVerificationConfig_CosignVerification{
+			CosignVerification: &storage.CosignPublicKeyVerification{
+				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+					{
+						PublicKeyPemEnc: b64MatchingPubKey,
+					},
 				},
 			},
 		},
 	}
 
 	failingCosignConfig := &storage.SignatureVerificationConfig{
-		Config: &storage.SignatureVerificationConfig_PublicKey{
-			PublicKey: &storage.CosignPublicKeyVerification{
-				PublicKeysBase64Enc: []string{
-					b64NonMatchingPubKey,
+		Config: &storage.SignatureVerificationConfig_CosignVerification{
+			CosignVerification: &storage.CosignPublicKeyVerification{
+				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+					{
+						PublicKeyPemEnc: b64NonMatchingPubKey,
+					},
 				},
 			},
 		},

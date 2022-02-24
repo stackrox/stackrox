@@ -45,8 +45,8 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 	for _, config := range integration.GetSignatureVerificationConfigs() {
 		verifier, err := NewSignatureVerifier(config)
 		if err != nil {
-			log.Errorf("Error during creation of the signature verifier for config %q: %v",
-				config.GetId(), err)
+			log.Errorf("Error during creation of the signature verifier for signature integration %q: %v",
+				integration.GetId(), err)
 			continue
 		}
 		verifiers = append(verifiers, verifier)
