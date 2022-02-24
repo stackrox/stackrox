@@ -275,8 +275,8 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			defer cancel()
 			ca, err := mtls.CAForSigning()
 			s.Require().NoError(err)
-			scannerCert := s.getCertificate()
-			scannerDBCert := s.getCertificate()
+			scannerCert := s.getCertificate(storage.ServiceType_SCANNER_SERVICE)
+			scannerDBCert := s.getCertificate(storage.ServiceType_SCANNER_DB_SERVICE)
 			k8sClient := getFakeK8sClient(tc.k8sClientConfig)
 			tlsIssuer := newLocalScannerTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
 			tlsIssuer.certRefreshBackoff = wait.Backoff{
@@ -362,9 +362,9 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 	}
 }
 
-func (s *localScannerTLSIssueIntegrationTests) getCertificate() *mtls.IssuedCert {
+func (s *localScannerTLSIssueIntegrationTests) getCertificate(serviceType storage.ServiceType) *mtls.IssuedCert {
 	// TODO(ROX-9463): use short expiration for testing renewal when ROX-9010 implementing `WithCustomCertLifetime` is merged
-	cert, err := issueCertificate(mtls.WithValidityExpiringInHours())
+	cert, err := issueCertificate(serviceType, mtls.WithValidityExpiringInHours())
 	s.Require().NoError(err)
 	return cert
 }

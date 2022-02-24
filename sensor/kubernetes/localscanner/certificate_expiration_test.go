@@ -68,12 +68,12 @@ func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {
 	s.LessOrEqual(certDuration, afterOffset/2)
 }
 
-func issueCertificate(issueOption mtls.IssueCertOption) (*mtls.IssuedCert, error) {
+func issueCertificate(serviceType storage.ServiceType, issueOption mtls.IssueCertOption) (*mtls.IssuedCert, error) {
 	ca, err := mtls.CAForSigning()
 	if err != nil {
 		return nil, err
 	}
-	subject := mtls.NewSubject("clusterId", storage.ServiceType_SCANNER_SERVICE)
+	subject := mtls.NewSubject("clusterId", serviceType)
 	cert, err := ca.IssueCertForSubject(subject, issueOption)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func issueCertificate(issueOption mtls.IssueCertOption) (*mtls.IssuedCert, error
 }
 
 func issueCertificatePEM(issueOption mtls.IssueCertOption) ([]byte, error) {
-	cert, err := issueCertificate(issueOption)
+	cert, err := issueCertificate(storage.ServiceType_SCANNER_SERVICE, issueOption)
 	if err != nil {
 		return nil, err
 	}
