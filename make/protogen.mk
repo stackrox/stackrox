@@ -20,11 +20,6 @@ GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 
-SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
-SCANNER_PROTO_BASE_PATH = $(SCANNER_DIR)/proto
-ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')
-ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
-
 ##############
 ## Protobuf ##
 ##############
@@ -97,15 +92,10 @@ $(PROTOC_GEN_LINT): $(MODFILE_DIR)/github.com/ckaznocha/protoc-gen-lint/UPDATE_C
 
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 
-# The --go_out=M... argument specifies the go package to use for an imported proto file.
-# Here, we instruct protoc-gen-go to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
+# The --go_out=M... argument specifies the go package to use for an imported proto file. Here, we instruct protoc-gen-go
+# to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "github.com/stackrox/rox/generated/<path>".
-ROX_M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
-# Here, we instruct protoc-gen-go to import the go source for proto file github.com/stackrox/scanner/proto/<path>/*.proto to
-# "github.com/stackrox/scanner/generated/<path>".
-SCANNER_M_ARGS = $(foreach proto,$(ALL_SCANNER_PROTOS_REL),M$(proto)=github.com/stackrox/scanner/generated/$(patsubst %/,%,$(dir $(proto))))
-# Combine the *_M_ARGS.
-M_ARGS = $(ROX_M_ARGS) $(SCANNER_M_ARGS)
+M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
 # This is the M_ARGS used for the grpc-gateway invocation. We only map the storage protos, because
 # - the gateway code produces no output (possibly because of a bug) if we pass M_ARGS_STR to it.
 # - the gateway code doesn't need access to anything outside api/v1 except storage. In particular, it should NOT import internalapi protos.
@@ -133,7 +123,6 @@ proto-fmt: $(PROTOC_GEN_LINT)
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOGO_DIR)/protobuf \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_PROTO_BASE_PATH) \
 		--lint_out=. \
 		--proto_path=$(PROTO_BASE_PATH) \
 		$(ALL_PROTOS)
@@ -202,7 +191,6 @@ $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTO
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--gofast_out=$(GOGO_M_STR:%=%,)$(M_ARGS_STR:%=%,)plugins=grpc:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
@@ -217,7 +205,6 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOGO_DIR) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,)allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
@@ -231,7 +218,6 @@ $(GENERATED_BASE_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) 
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
