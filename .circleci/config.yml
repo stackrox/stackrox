@@ -3772,6 +3772,7 @@ jobs:
           changed-path: '^migrator/.*$'
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
+      - *restoreGoModCache
 
       - setup-gcp
       - attach-gke-cluster:
