@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
  *
  * With shim idiom which reuses anchor element for every render:
  * <Button variant={variant} component={LinkShim} href={href}>
+ * just as it would be component={Link} if Link element had href prop instead of to prop.
  */
 function LinkShim({
     children,
