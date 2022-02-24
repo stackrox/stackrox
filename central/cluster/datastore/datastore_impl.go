@@ -610,7 +610,7 @@ func (ds *datastoreImpl) removeClusterSecrets(ctx context.Context, cluster *stor
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
 		if err := ds.secretsDataStore.RemoveSecret(ctx, s.GetId()); err != nil {
-			log.Errorf("failed to remove secret with id %s from deleted cluster %s", s.GetId(), cluster.GetId())
+			log.Errorf("failed to remove secret with id %s from deleted cluster %s: %v", s.GetId(), cluster.GetId(), err)
 		}
 	}
 }
@@ -622,8 +622,8 @@ func (ds *datastoreImpl) removeClusterServiceAccounts(ctx context.Context, clust
 	}
 	for _, s := range serviceAccounts {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		if err := ds.serviceAccountDataStore.RemoveServiceAccount(ctx, s.GetId()); err != nil {
-			log.Errorf("failed to remove service account with id %s from deleted cluster %s", s.GetId(), cluster.GetId())
+		if err := ds.serviceAccountDataStore.RemoveServiceAccount(ctx, s); err != nil {
+			log.Errorf("failed to remove service account with id %s from deleted cluster %s: %v", s, cluster.GetId(), err)
 		}
 	}
 }
@@ -635,8 +635,8 @@ func (ds *datastoreImpl) removeK8SRoles(ctx context.Context, cluster *storage.Cl
 	}
 	for _, r := range roles {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		if err := ds.roleDataStore.RemoveRole(ctx, r.GetId()); err != nil {
-			log.Errorf("failed to remove K8S role with id %s from deleted cluster %s", r.GetId(), cluster.GetId())
+		if err := ds.roleDataStore.RemoveRole(ctx, r); err != nil {
+			log.Errorf("failed to remove K8S role with id %s from deleted cluster %s: %v", r, cluster.GetId(), err)
 		}
 	}
 }
@@ -648,25 +648,37 @@ func (ds *datastoreImpl) removeRoleBindings(ctx context.Context, cluster *storag
 	}
 	for _, b := range bindings {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		if err := ds.roleBindingDataStore.RemoveRoleBinding(ctx, b.GetId()); err != nil {
-			log.Errorf("failed to remove K8S role binding with id %s from deleted cluster %s", b.GetId(), cluster.GetId())
+		if err := ds.roleBindingDataStore.RemoveRoleBinding(ctx, b); err != nil {
+			log.Errorf("failed to remove K8S role binding with id %s from deleted cluster %s: %v", b, cluster.GetId(), err)
 		}
 	}
 }
 
-func (ds *datastoreImpl) getRoleBindings(ctx context.Context, cluster *storage.Cluster) ([]*storage.K8SRoleBinding, error) {
+func (ds *datastoreImpl) getRoleBindings(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	return ds.roleBindingDataStore.SearchRawRoleBindings(ctx, q)
+	return convertSearchResultsToIDs(ds.roleBindingDataStore.Search(ctx, q))
 }
 
-func (ds *datastoreImpl) getRoles(ctx context.Context, cluster *storage.Cluster) ([]*storage.K8SRole, error) {
+func (ds *datastoreImpl) getRoles(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	return ds.roleDataStore.SearchRawRoles(ctx, q)
+	return convertSearchResultsToIDs(ds.roleDataStore.Search(ctx, q))
 }
 
-func (ds *datastoreImpl) getServiceAccounts(ctx context.Context, cluster *storage.Cluster) ([]*storage.ServiceAccount, error) {
+func (ds *datastoreImpl) getServiceAccounts(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	return ds.serviceAccountDataStore.SearchRawServiceAccounts(ctx, q)
+	return convertSearchResultsToIDs(ds.serviceAccountDataStore.Search(ctx, q))
+}
+
+func convertSearchResultsToIDs(res []pkgSearch.Result, err error) ([]string, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(res))
+	for _, r := range res {
+		ids = append(ids, r.ID)
+	}
+	return ids, nil
 }
 
 func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListSecret, error) {

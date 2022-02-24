@@ -187,9 +187,9 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	testPods := []search.Result{{ID: "fakepod"}}
 	testAlerts := []*storage.Alert{{}}
 	testSecrets := []*storage.ListSecret{{}}
-	testServiceAccounts := []*storage.ServiceAccount{{}}
-	testRoles := []*storage.K8SRole{{}}
-	testRoleBindings := []*storage.K8SRoleBinding{{}}
+	testServiceAccounts := []search.Result{{ID: "fakeSA"}}
+	testRoles := []search.Result{{ID: "fakeK8Srole"}}
+	testRoleBindings := []search.Result{{ID: "fakerolebinding"}}
 	suite.clusters.EXPECT().Get(fakeClusterID).Return(testCluster, true, nil)
 	suite.clusters.EXPECT().Delete(fakeClusterID).Return(nil)
 	suite.indexer.EXPECT().DeleteCluster(fakeClusterID).Return(nil)
@@ -204,9 +204,9 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.podDataStore.EXPECT().RemovePod(gomock.Any(), "fakepod").Return(nil)
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(testSecrets, nil)
-	suite.serviceAccountDataStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(testServiceAccounts, nil)
-	suite.roleDataStore.EXPECT().SearchRawRoles(gomock.Any(), gomock.Any()).Return(testRoles, nil)
-	suite.roleBindingDataStore.EXPECT().SearchRawRoleBindings(gomock.Any(), gomock.Any()).Return(testRoleBindings, nil)
+	suite.serviceAccountDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testServiceAccounts, nil)
+	suite.roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testRoles, nil)
+	suite.roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testRoleBindings, nil)
 	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil)
 	suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().RemoveSecret(gomock.Any(), gomock.Any()).Return(nil)
@@ -352,9 +352,9 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
 	suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
-	suite.serviceAccountDataStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, nil)
-	suite.roleDataStore.EXPECT().SearchRawRoles(gomock.Any(), gomock.Any()).Return(nil, nil)
-	suite.roleBindingDataStore.EXPECT().SearchRawRoleBindings(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.serviceAccountDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 

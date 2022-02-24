@@ -30,12 +30,12 @@ import (
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
-	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
-	k8srolebindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	k8sRoleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
-	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
@@ -171,11 +171,16 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 	}
 }
 
-func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore, queue.WaitableQueue) {
+func setupRocksDBAndBleve(t *testing.T) (*rocksdb.RocksDB, bleve.Index) {
 	db := rocksdbtest.RocksDBForT(t)
-
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
+
+	return db, bleveIndex
+}
+
+func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore, queue.WaitableQueue) {
+	db, bleveIndex := setupRocksDBAndBleve(t)
 
 	ctrl := gomock.NewController(t)
 	mockComponentDatastore := componentsMocks.NewMockDataStore(ctrl)
@@ -211,10 +216,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 }
 
 func generateNodeDataStructures(t *testing.T) nodeGlobalDatastore.GlobalDataStore {
-	db := rocksdbtest.RocksDBForT(t)
-
-	bleveIndex, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
+	db, bleveIndex := setupRocksDBAndBleve(t)
 
 	ctrl := gomock.NewController(t)
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
@@ -230,11 +232,8 @@ func generateNodeDataStructures(t *testing.T) nodeGlobalDatastore.GlobalDataStor
 }
 
 func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
-	db := rocksdbtest.RocksDBForT(t)
+	db, bleveIndex := setupRocksDBAndBleve(t)
 	commentsDB := testutils.DBForT(t)
-
-	bleveIndex, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
 
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(t, err)
@@ -1175,43 +1174,57 @@ func TestRemoveOrphanedRBACObjects(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			serviceAccounts := serviceAccountMocks.NewMockDataStore(ctrl)
-			k8sRoles := k8sroleMocks.NewMockDataStore(ctrl)
-			k8sRoleBindings := k8srolebindingMocks.NewMockDataStore(ctrl)
+			db, bleveIndex := setupRocksDBAndBleve(t)
+			serviceAccounts, err := serviceAccountDataStore.NewForTestOnly(t, db, bleveIndex)
+			assert.NoError(t, err)
+			k8sRoles, err := k8sRoleDataStore.NewForTestOnly(t, db, bleveIndex)
+			assert.NoError(t, err)
+			k8sRoleBindings, err := k8sRoleBindingDataStore.NewForTestOnly(t, db, bleveIndex)
+			assert.NoError(t, err)
+
+			for _, s := range c.serviceAccts {
+				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, s))
+			}
+
+			for _, r := range c.roles {
+				assert.NoError(t, k8sRoles.UpsertRole(pruningCtx, r))
+			}
+
+			for _, b := range c.bindings {
+				assert.NoError(t, k8sRoleBindings.UpsertRoleBinding(pruningCtx, b))
+			}
+
 			gc := &garbageCollectorImpl{
 				serviceAccts:    serviceAccounts,
 				k8sRoles:        k8sRoles,
 				k8sRoleBindings: k8sRoleBindings,
 			}
 
-			serviceAccounts.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, fn func(_ *storage.ServiceAccount) error) error {
-					for _, s := range c.serviceAccts {
-						assert.NoError(t, fn(s))
-					}
-					return nil
-				})
-			k8sRoles.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, fn func(_ *storage.K8SRole) error) error {
-					for _, r := range c.roles {
-						assert.NoError(t, fn(r))
-					}
-					return nil
-				})
-			k8sRoleBindings.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, fn func(_ *storage.K8SRoleBinding) error) error {
-					for _, rb := range c.bindings {
-						assert.NoError(t, fn(rb))
-					}
-					return nil
-				})
-			serviceAccounts.EXPECT().RemoveServiceAccount(pruningCtx, testutils.AssertionMatcher(assert.Contains, c.expectedSADeletions)).Times(len(c.expectedSADeletions))
-			k8sRoles.EXPECT().RemoveRole(pruningCtx, testutils.AssertionMatcher(assert.Contains, c.expectedRoleDeletions)).Times(len(c.expectedRoleDeletions))
-			k8sRoleBindings.EXPECT().RemoveRoleBinding(pruningCtx, testutils.AssertionMatcher(assert.Contains, c.expectedRBDeletions)).Times(len(c.expectedRBDeletions))
-			gc.removeOrphanedServiceAccounts(set.NewFrozenStringSet(clusters...))
-			gc.removeOrphanedK8SRoles(set.NewFrozenStringSet(clusters...))
-			gc.removeOrphanedK8SRoleBindings(set.NewFrozenStringSet(clusters...))
+			q := clusterIDsToNegationQuery(set.NewFrozenStringSet(clusters...))
+			gc.removeOrphanedServiceAccounts(q)
+			gc.removeOrphanedK8SRoles(q)
+			gc.removeOrphanedK8SRoleBindings(q)
+
+			for _, id := range c.expectedSADeletions {
+				sa, ok, err := serviceAccounts.GetServiceAccount(pruningCtx, id)
+				assert.NoError(t, err)
+				assert.False(t, ok)
+				assert.Nil(t, sa)
+			}
+
+			for _, id := range c.expectedRoleDeletions {
+				r, ok, err := k8sRoles.GetRole(pruningCtx, id)
+				assert.NoError(t, err)
+				assert.False(t, ok)
+				assert.Nil(t, r)
+			}
+
+			for _, id := range c.expectedRBDeletions {
+				rb, ok, err := k8sRoleBindings.GetRoleBinding(pruningCtx, id)
+				assert.NoError(t, err)
+				assert.False(t, ok)
+				assert.Nil(t, rb)
+			}
 		})
 	}
 }

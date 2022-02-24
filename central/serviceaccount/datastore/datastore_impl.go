@@ -108,12 +108,3 @@ func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Re
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
 }
-
-func (d *datastoreImpl) WalkAll(ctx context.Context, fn func(sa *storage.ServiceAccount) error) error {
-	if ok, err := serviceAccountsSAC.ReadAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	return d.storage.Walk(fn)
-}

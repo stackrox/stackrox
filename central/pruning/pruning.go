@@ -203,88 +203,64 @@ func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) 
 }
 
 // Remove ServiceAccounts where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedServiceAccounts(clusters set.FrozenStringSet) {
-	var toRemoveSAs []string
-	staleClusterIDsFound := set.NewStringSet()
-	err := g.serviceAccts.WalkAll(pruningCtx, func(sa *storage.ServiceAccount) error {
-		if !clusters.Contains(sa.GetClusterId()) {
-			toRemoveSAs = append(toRemoveSAs, sa.GetId())
-			staleClusterIDsFound.Add(sa.GetClusterId())
-		}
-		return nil
-	})
+func (g *garbageCollectorImpl) removeOrphanedServiceAccounts(searchQuery *v1.Query) {
+	searchRes, err := g.serviceAccts.Search(pruningCtx, searchQuery)
 	if err != nil {
-		log.Errorf("Error walking pods to find orphaned service accounts: %v", err)
+		log.Errorf("Error finding orphaned service accounts: %v", err)
 		return
 	}
-	if len(toRemoveSAs) == 0 {
+	if len(searchRes) == 0 {
 		log.Info("[Pruning] Found no orphaned service accounts...")
 		return
 	}
-	log.Infof("[Pruning] Found %d orphaned service accounts (from formerly deleted clusters: %v). Deleting...",
-		len(toRemoveSAs), staleClusterIDsFound.AsSlice())
 
-	for _, id := range toRemoveSAs {
-		if err := g.serviceAccts.RemoveServiceAccount(pruningCtx, id); err != nil {
-			log.Errorf("Failed to remove service accounts with id %s: %v", id, err)
+	log.Infof("[Pruning] Found %d orphaned service accounts. Deleting...", len(searchRes))
+
+	for _, res := range searchRes {
+		if err := g.serviceAccts.RemoveServiceAccount(pruningCtx, res.ID); err != nil {
+			log.Errorf("Failed to remove service accounts with id %s: %v", res.ID, err)
 		}
 	}
 }
 
 // Remove K8SRoles where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedK8SRoles(clusters set.FrozenStringSet) {
-	var k8sRolesToRemove []string
-	staleClusterIDsFound := set.NewStringSet()
-	err := g.k8sRoles.WalkAll(pruningCtx, func(r *storage.K8SRole) error {
-		if !clusters.Contains(r.GetClusterId()) {
-			k8sRolesToRemove = append(k8sRolesToRemove, r.GetId())
-			staleClusterIDsFound.Add(r.GetClusterId())
-		}
-		return nil
-	})
+func (g *garbageCollectorImpl) removeOrphanedK8SRoles(searchQuery *v1.Query) {
+	searchRes, err := g.k8sRoles.Search(pruningCtx, searchQuery)
 	if err != nil {
-		log.Errorf("Error walking pods to find orphaned K8S Roles: %v", err)
+		log.Errorf("Error finding orphaned K8S Roles: %v", err)
 		return
 	}
-	if len(k8sRolesToRemove) == 0 {
+	if len(searchRes) == 0 {
 		log.Info("[Pruning] Found no orphaned K8S Roles...")
 		return
 	}
-	log.Infof("[Pruning] Found %d orphaned K8S Roles (from formerly deleted clusters: %v). Deleting...",
-		len(k8sRolesToRemove), staleClusterIDsFound.AsSlice())
 
-	for _, id := range k8sRolesToRemove {
-		if err := g.k8sRoles.RemoveRole(pruningCtx, id); err != nil {
-			log.Errorf("Failed to remove K8S Roles with id %s: %v", id, err)
+	log.Infof("[Pruning] Found %d orphaned K8S Roles. Deleting...", len(searchRes))
+
+	for _, res := range searchRes {
+		if err := g.k8sRoles.RemoveRole(pruningCtx, res.ID); err != nil {
+			log.Errorf("Failed to remove K8S Roles with id %s: %v", res.ID, err)
 		}
 	}
 }
 
 // Remove K8SRoleBinding where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings(clusters set.FrozenStringSet) {
-	var k8sRoleBindingsToRemove []string
-	staleClusterIDsFound := set.NewStringSet()
-	err := g.k8sRoleBindings.WalkAll(pruningCtx, func(r *storage.K8SRoleBinding) error {
-		if !clusters.Contains(r.GetClusterId()) {
-			k8sRoleBindingsToRemove = append(k8sRoleBindingsToRemove, r.GetId())
-			staleClusterIDsFound.Add(r.GetClusterId())
-		}
-		return nil
-	})
+func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings(searchQuery *v1.Query) {
+	searchRes, err := g.k8sRoleBindings.Search(pruningCtx, searchQuery)
 	if err != nil {
-		log.Errorf("Error walking pods to find orphaned K8S Role Bindings: %v", err)
+		log.Errorf("Error finding orphaned K8S Role Bindings: %v", err)
 		return
 	}
-	if len(k8sRoleBindingsToRemove) == 0 {
+	if len(searchRes) == 0 {
 		log.Info("[Pruning] Found no orphaned K8S Role Bindings...")
 		return
 	}
-	log.Infof("[Pruning] Found %d orphaned K8S Role Bindings (from formerly deleted clusters: %v). Deleting...",
-		len(k8sRoleBindingsToRemove), staleClusterIDsFound.AsSlice())
 
-	for _, id := range k8sRoleBindingsToRemove {
-		if err := g.k8sRoleBindings.RemoveRoleBinding(pruningCtx, id); err != nil {
-			log.Errorf("Failed to remove K8S Role Bindings with id %s: %v", id, err)
+	log.Infof("[Pruning] Found %d orphaned K8S Role Bindings. Deleting...", len(searchRes))
+
+	for _, res := range searchRes {
+		if err := g.k8sRoleBindings.RemoveRoleBinding(pruningCtx, res.ID); err != nil {
+			log.Errorf("Failed to remove K8S Role Bindings with id %s: %v", res.ID, err)
 		}
 	}
 }
@@ -316,10 +292,25 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.removeOrphanedProcessBaselines(deploymentSet)
 	g.markOrphanedAlertsAsResolved(deploymentSet)
 	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
+
+	// TODO: Convert this from ListSearch to using negation search similar to SAs, roles and role bindings below
 	g.removeOrphanedPods(clusterIDSet)
-	g.removeOrphanedServiceAccounts(clusterIDSet)
-	g.removeOrphanedK8SRoles(clusterIDSet)
-	g.removeOrphanedK8SRoleBindings(clusterIDSet)
+
+	q := clusterIDsToNegationQuery(clusterIDSet)
+	g.removeOrphanedServiceAccounts(q)
+	g.removeOrphanedK8SRoles(q)
+	g.removeOrphanedK8SRoleBindings(q)
+}
+
+func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
+	nq := make([]*v1.Query, 0, clusterIDSet.Cardinality())
+	for _, c := range clusterIDSet.AsSlice() {
+		nq = append(nq, search.NewQueryBuilder().AddExactMatches(search.ClusterID, c).ProtoQuery())
+	}
+	return search.NewBooleanQuery(
+		search.ConjunctionQuery(search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery(), search.EmptyQuery()).GetConjunction(),
+		search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction(),
+	)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {

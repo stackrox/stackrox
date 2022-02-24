@@ -97,11 +97,6 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, "NONEXISTENT").ProtoQuery()
 	suite.assertSearchResults(invalidQ, nil)
 
-	suite.NoError(suite.datastore.WalkAll(suite.ctx, func(foundSA *storage.ServiceAccount) error {
-		suite.Equal(sa, foundSA)
-		return nil
-	}))
-
 	err = suite.datastore.RemoveServiceAccount(suite.ctx, sa.GetId())
 	suite.Require().NoError(err)
 
