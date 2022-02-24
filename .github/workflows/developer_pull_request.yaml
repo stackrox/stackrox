@@ -51,14 +51,14 @@ jobs:
       - name: Create combined mono repo lock file & digest
         id: create-concatenated-ui-monorepo-lock
         run: |
-          find ui/ -type d \( -name node_modules \) -prune -false -o -name package.json -print0 | sort -z | xargs -r0 cat > $MONOREPO_LOCK
-          cat ui/yarn.lock >> $MONOREPO_LOCK
+          echo "Creating combined lovk in: ${{ env.MONOREPO_LOCK }}"
+          find ui/ -type d \( -name node_modules \) -prune -false -o -name package.json -print0 | sort -z | xargs -r0 cat > ${{ env.MONOREPO_LOCK }}
+          cat ui/yarn.lock >> ${{ env.MONOREPO_LOCK }}
 
       - name: Restore NPM Cache
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.MONOREPO_LOCK }}
             ui/deps
             ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
             ui/node_modules # CircleCI doesn't support globbing here https://circleci.com/docs/2.0/caching/#basic-example-of-dependency-caching so all `node_nodules` need to be listed
