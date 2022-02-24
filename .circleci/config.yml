@@ -1376,8 +1376,6 @@ commands:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-      - *restoreGoModCache
-
       - *setupRoxctl
       - setup-gcp
       - setup-dep-env:
