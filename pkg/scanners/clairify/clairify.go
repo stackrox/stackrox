@@ -52,7 +52,7 @@ var (
 
 	// Map of Clairify endpoint to its respective clientConn.
 	// Only one connection per endpoint is necessary.
-	clientConns     map[string]*clientConn
+	clientConns     = make(map[string]*clientConn)
 	clientConnsLock sync.Mutex
 )
 
