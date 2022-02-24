@@ -43,7 +43,8 @@ type enricherImpl struct {
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
 
-	signatureLimiter *rate.Limiter
+	signatureLimiter           *rate.Limiter
+	signatureIntegrationGetter signatureIntegrationGetter
 
 	imageGetter imageGetter
 
@@ -217,7 +218,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 }
 
 func (e *enricherImpl) fetchFromDatabase(img *storage.Image, option FetchOption) (*storage.Image, bool) {
-	if option.ForceRefetchDatastore() {
+	if option.ForceRefetchCachedValues() {
 		return img, false
 	}
 	// See if the image exists in the DB with a scan, if it does, then use that instead of fetching

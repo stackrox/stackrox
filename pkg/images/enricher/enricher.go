@@ -30,14 +30,14 @@ const (
 	ForceRefetch
 	ForceRefetchScansOnly
 	ForceRefetchSignaturesOnly
-	ForceRefetchDataStore
+	ForceRefetchCachedValuesOnly
 )
 
-// ForceRefetchDatastore implies whether the cached values within the database should be skipped and refetched.
+// ForceRefetchCachedValues implies whether the cached values within the database should be skipped and refetched.
 // Note: This does not include the specific FetchOption ForceRefetchScansOnly and ForceRefetchSignaturesOnly, the caller
 // still needs to check for those specifically.
-func (f FetchOption) ForceRefetchDatastore() bool {
-	return f == ForceRefetch || f == ForceRefetchDataStore
+func (f FetchOption) ForceRefetchCachedValues() bool {
+	return f == ForceRefetch || f == ForceRefetchCachedValuesOnly
 }
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
@@ -61,7 +61,7 @@ func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
 
 // FetchOnlyIfScanEmpty will use the scan that exists in the image unless the fetch opts prohibit it
 func (e EnrichmentContext) FetchOnlyIfScanEmpty() bool {
-	return e.FetchOpt != IgnoreExistingImages && !e.FetchOpt.ForceRefetchDatastore() && e.FetchOpt != ForceRefetchScansOnly
+	return e.FetchOpt != IgnoreExistingImages && !e.FetchOpt.ForceRefetchCachedValues() && e.FetchOpt != ForceRefetchScansOnly
 }
 
 // EnrichmentResult denotes possible return values of the EnrichImage function.
@@ -98,10 +98,14 @@ type cveSuppressor interface {
 
 type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
+// signatureIntegrationGetter will be used to retrieve all available signature integrations.
+type signatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
+
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
 func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
-	imageGetter imageGetter, healthReporter integrationhealth.Reporter) ImageEnricher {
+	imageGetter imageGetter, healthReporter integrationhealth.Reporter,
+	signatureIntegrationGetter signatureIntegrationGetter) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
@@ -115,7 +119,8 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
 
-		signatureLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
+		signatureLimiter:           rate.NewLimiter(rate.Every(1*time.Second), 5),
+		signatureIntegrationGetter: signatureIntegrationGetter,
 
 		imageGetter: imageGetter,
 
