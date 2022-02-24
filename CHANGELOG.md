@@ -5,6 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- Increased default Scanner memory limit from 3000 MiB to 4GiB.
 - API changes/deprecations:
   - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaults (GET /v1/cluster-defaults)` instead.
 
