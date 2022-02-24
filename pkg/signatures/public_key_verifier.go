@@ -38,25 +38,22 @@ type publicKeyVerifier struct {
 
 var _ SignatureVerifier = (*publicKeyVerifier)(nil)
 
-// newPublicKeyVerifier creates a public key verifier with the given configuration. The provided public keys
+// IsValidPublicKeyPEMBlock is a helper function which checks whether public key PEM block was successfully decoded.
+func IsValidPublicKeyPEMBlock(keyBlock *pem.Block, rest []byte) bool {
+	return keyBlock != nil && keyBlock.Type == publicKeyType && len(rest) == 0
+}
+
+// newCosignPublicKeyVerifier creates a public key verifier with the given Cosign configuration. The provided public keys
 // MUST be valid PEM encoded ones.
-// It will return an error if the provided public keys could not be parsed or the base64 decoding failed.
-func newPublicKeyVerifier(config *storage.SignatureVerificationConfig_PublicKey) (*publicKeyVerifier, error) {
-	base64EncPublicKeys := config.PublicKey.GetPublicKeysBase64Enc()
-
-	parsedKeys := make([]crypto.PublicKey, 0, len(base64EncPublicKeys))
-	for _, base64EncKey := range base64EncPublicKeys {
-		// Each key should be base64 encoded.
-		decodedKey, err := base64.StdEncoding.DecodeString(base64EncKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "decoding base64 encoded key")
-		}
-
+// It will return an error if the provided public keys could not be parsed.
+func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*publicKeyVerifier, error) {
+	publicKeys := config.GetPublicKeys()
+	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
+	for _, publicKey := range publicKeys {
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
-		keyBlock, rest := pem.Decode(decodedKey)
-		if keyBlock == nil || keyBlock.Type != publicKeyType || len(rest) > 0 {
-			return nil, errox.New(errox.InvariantViolation,
-				"failed to decode PEM block containing public key")
+		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
+		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
+			return nil, errox.Newf(errox.InvariantViolation, "failed to decode PEM block containing public key %q", publicKey.GetName())
 		}
 
 		parsedKey, err := x509.ParsePKIXPublicKey(keyBlock.Bytes)

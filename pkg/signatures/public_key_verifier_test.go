@@ -15,31 +15,35 @@ import (
 
 func TestNewPublicKeyVerifier(t *testing.T) {
 	cases := map[string]struct {
-		base64EncKey string
-		fail         bool
-		err          error
+		pemEncKey string
+		fail      bool
+		err       error
 	}{
+
 		"valid public key": {
-			base64EncKey: "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFMDRzb0Fv" +
-				"TnlnUmhheXRDdHlnUGN3c1ArNkVpbgpZb0R2L0JKeDFUOVdtdHNBTmgySHBsUlI2NkZibSszT2pGdWFoMkloRnVmUGhEbDZhODVJM3l" +
-				"tVll3PT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==",
-		},
-		"error in decoding base64 encoded string": {
-			base64EncKey: "<",
-			fail:         true,
-			err:          base64.CorruptInputError(0),
+			pemEncKey: "-----BEGIN PUBLIC KEY-----\n" +
+				"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
+				"YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==\n" +
+				"-----END PUBLIC KEY-----",
 		},
 		"non PEM encoded public key": {
-			base64EncKey: "anVzdHNvbWV0ZXh0Cg==",
-			fail:         true,
-			err:          errox.InvariantViolation,
+			pemEncKey: "anVzdHNvbWV0ZXh0Cg==",
+			fail:      true,
+			err:       errox.InvariantViolation,
 		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			config := &storage.SignatureVerificationConfig_PublicKey{PublicKey: &storage.CosignPublicKeyVerification{PublicKeysBase64Enc: []string{c.base64EncKey}}}
-			verifier, err := newPublicKeyVerifier(config)
+			config := &storage.CosignPublicKeyVerification{
+				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+					{
+						Name:            "pemEncKey",
+						PublicKeyPemEnc: c.pemEncKey,
+					},
+				},
+			}
+			verifier, err := newCosignPublicKeyVerifier(config)
 			if c.fail {
 				assert.Error(t, err)
 				assert.Nil(t, verifier)
@@ -53,9 +57,10 @@ func TestNewPublicKeyVerifier(t *testing.T) {
 }
 
 func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
-	const b64PublicKey = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFMDRzb0" +
-		"FvTnlnUmhheXRDdHlnUGN3c1ArNkVpbgpZb0R2L0JKeDFUOVdtdHNBTmgySHBsUlI2NkZibSszT2pGdWFoMkloRnVmUGhEbDZhODVJM3ltV" +
-		"ll3PT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+	const pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
+		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
+		"YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==\n" +
+		"-----END PUBLIC KEY-----"
 	const b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
 		"kAnXI="
 	const b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
@@ -65,9 +70,14 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newPublicKeyVerifier(&storage.SignatureVerificationConfig_PublicKey{
-		PublicKey: &storage.CosignPublicKeyVerification{
-			PublicKeysBase64Enc: []string{b64PublicKey}}})
+	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "publicKey",
+				PublicKeyPemEnc: pemPublicKey,
+			},
+		},
+	})
 
 	require.NoError(t, err, "creating public key verifier")
 
@@ -80,9 +90,10 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 }
 
 func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
-	const b64NonMatchingPubKey = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0" +
-		"FFV2kzdFN4dkJIN1MvV1VtdjQwOG5LUHhOU0p4NgordzdjOUZ0RlNrNmNveHgyVlViUHkvWDNVUzNjWGZrL3pWQStHN05iWEdCWWhBR2FPc" +
-		"3BzNVpLamtRPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+	const pemNonMatchingPubKey = "-----BEGIN PUBLIC KEY-----\n" +
+		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6\n" +
+		"+w7c9FtFSk6coxx2VUbPy/X3US3cXfk/zVA+G7NbXGBYhAGaOsps5ZKjkQ==\n" +
+		"-----END PUBLIC KEY-----"
 	const b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
 		"kAnXI="
 	const b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
@@ -92,14 +103,18 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newPublicKeyVerifier(&storage.SignatureVerificationConfig_PublicKey{
-		PublicKey: &storage.CosignPublicKeyVerification{
-			PublicKeysBase64Enc: []string{b64NonMatchingPubKey}}})
+	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "Non matching key",
+				PublicKeyPemEnc: pemNonMatchingPubKey,
+			},
+		},
+	})
 
 	require.NoError(t, err, "creating public key verifier")
 
-	emptyPubKeyVerifier, err := newPublicKeyVerifier(&storage.SignatureVerificationConfig_PublicKey{
-		PublicKey: &storage.CosignPublicKeyVerification{}})
+	emptyPubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{})
 	require.NoError(t, err, "creating empty public key verifier")
 
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
