@@ -22,11 +22,9 @@ style_checks() {
 
     # make deps
     # make golangci-lint
+    du -s --si /github/home/.cache/*
     make style || true
-    find / -name mod -print
-    find / -name .cache -print -exec ls -l '{}' \;
-    find / -name caches -print
-    find / -name node_modules -print
+    du -s --si /github/home/.cache/*
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

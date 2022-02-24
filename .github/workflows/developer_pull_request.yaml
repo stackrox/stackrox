@@ -34,20 +34,21 @@ jobs:
           path: |
             ${{ steps.cache-paths.outputs.GOCACHE }}
             ${{ steps.cache-paths.outputs.GOMODCACHE }}
-          key: ${{ runner.os }}-go-v1-${{ hashFiles('**/go.sum') }}
+            /github/home/.cache/go-build
+            /github/home/.cache/golangci-lint
+            /github/home/.cache/staticcheck
+          key: ${{ runner.os }}-go-v2-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-v1-
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-go-v2-
 
       - name: Restore Gradle Cache
         uses: actions/cache@v2
         with:
           path: |
-            ~/.gradle/caches/
-          key: ${{ runner.os }}-gradle-v1-${{ hashFiles('qa-tests-backend/build.gradle') }}
+            /root/.gradle/caches
+          key: ${{ runner.os }}-gradle-v2-${{ hashFiles('qa-tests-backend/build.gradle') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-v1-
-            ${{ runner.os }}-gradle-
+            ${{ runner.os }}-gradle-v2-
 
       - name: Create combined mono repo lock file & digest
         id: create-concatenated-ui-monorepo-lock
@@ -61,15 +62,14 @@ jobs:
         with:
           path: |
             ui/deps
-            ~/.cache/Cypress
+            /github/home/.cache/Cypress
             ui/node_modules
             ui/apps/platform/node_modules
             ui/packages/ui-components/node_modules
             ui/packages/tailwind-config/node_modules
-          key: ${{ runner.os }}-npm-v1-${{ hashFiles(env.MONOREPO_LOCK) }}
+          key: ${{ runner.os }}-npm-v2-${{ hashFiles(env.MONOREPO_LOCK) }}
           restore-keys: |
-            ${{ runner.os }}-npm-v1-
-            ${{ runner.os }}-npm-
+            ${{ runner.os }}-npm-v2-
             
       - name: Run style checks
         run: |
