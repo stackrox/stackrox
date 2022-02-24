@@ -7,8 +7,8 @@ scanner:
 
   resources:
     requests:
-      memory: "1000Mi"
+      memory: "1010Mi"
       cpu: "500m"
     limits:
       memory: "4Gi"
-      cpu: "2000m"
+      cpu: "2010m"
