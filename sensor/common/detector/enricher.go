@@ -10,9 +10,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc/status"
 )
 
@@ -52,9 +55,18 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
-	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-		Image: ci,
-	})
+
+	// Ask Central to scan the image if the image is not internal.
+	if !features.LocalImageScanning.Enabled() || !imageutil.IsInternalImage(ci.GetName()) {
+		return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+			Image: ci,
+		})
+	}
+
+	img, err := scan.ScanImage(ctx, svc, ci)
+	return &v1.ScanImageInternalResponse{
+		Image: img,
+	}, err
 }
 
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
@@ -142,7 +154,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 
 func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, containerIdx int, ci *storage.ContainerImage) {
 	go func() {
-		// unguarded send (push to channel outside of a select) is allowed because the imageChan is a buffered channel of exact size
+		// unguarded send (push to channel outside a select) is allowed because the imageChan is a buffered channel of exact size
 		imageChan <- e.runScan(containerIdx, ci)
 	}()
 }
