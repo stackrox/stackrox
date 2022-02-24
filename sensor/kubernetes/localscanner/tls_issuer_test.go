@@ -306,7 +306,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 				s.Require().NoError(err)
 				return len(secrets.Items) == 2 && len(secrets.Items[0].Data) > 0 && len(secrets.Items[1].Data) > 0
 			}, 10*time.Millisecond, testTimeout)
-			s.Require().True(ok)
+			s.Require().True(ok, "expected exactly 2 secrets with non-empty data available in the k8s API")
 			for _, secret := range secrets.Items {
 				var expectedCert *mtls.IssuedCert
 				switch secretName := secret.GetName(); secretName {
