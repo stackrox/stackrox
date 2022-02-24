@@ -6,6 +6,9 @@ import {
     AlertActionCloseButton,
     AlertVariant,
     Bullseye,
+    Button,
+    PageSection,
+    PageSectionVariants,
     Spinner,
 } from '@patternfly/react-core';
 
@@ -23,14 +26,15 @@ import {
 } from 'services/RolesService';
 
 import AccessControlDescription from '../AccessControlDescription';
-import AccessControlHeading from '../AccessControlHeading';
-import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import PermissionSetForm from './PermissionSetForm';
 import PermissionSetsList from './PermissionSetsList';
 import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.utils';
+import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
+import AccessControlHeading from '../AccessControlHeading';
 
 const entityType = 'PERMISSION_SET';
 
@@ -175,53 +179,69 @@ function PermissionSets(): ReactElement {
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isList={isList} />
-            <AccessControlHeading
-                entityType={entityType}
-                entityName={action === 'create' ? 'Add permission set' : permissionSet?.name}
-                isDisabled={hasAction}
-                isList={isList}
-            />
-            <AccessControlNav entityType={entityType} isDisabled={hasAction} />
-            <AccessControlDescription>
-                Add predefined sets of application level permissions that users have when
-                interacting with the platform
-            </AccessControlDescription>
+            {isList ? (
+                <>
+                    <AccessControlHeading entityType={entityType} />
+                    <AccessControlHeaderActionBar
+                        displayComponent={
+                            <AccessControlDescription>
+                                Add predefined sets of application level permissions that users have
+                                when interacting with the platform
+                            </AccessControlDescription>
+                        }
+                        actionComponent={
+                            <Button variant="primary" onClick={handleCreate}>
+                                Add permission set
+                            </Button>
+                        }
+                    />
+                </>
+            ) : (
+                <AccessControlBreadcrumbs
+                    entityType={entityType}
+                    entityName={action === 'create' ? 'Add permission set' : permissionSet?.name}
+                    isDisabled={hasAction}
+                    isList={isList}
+                />
+            )}
             {alertPermissionSets}
             {alertResources}
             {alertRoles}
-            {counterFetching !== 0 ? (
-                <Bullseye>
-                    <Spinner isSVG />
-                </Bullseye>
-            ) : isList ? (
-                <PermissionSetsList
-                    permissionSets={permissionSets}
-                    roles={roles}
-                    handleCreate={handleCreate}
-                    handleDelete={handleDelete}
-                />
-            ) : typeof entityId === 'string' && !permissionSet ? (
-                <NotFoundMessage
-                    title="Permission set does not exist"
-                    message={`Permission set id: ${entityId}`}
-                    actionText="Permission sets"
-                    url={getEntityPath(entityType)}
-                />
-            ) : (
-                <PermissionSetForm
-                    isActionable={!permissionSet || !getIsDefaultRoleName(permissionSet.name)}
-                    action={action}
-                    permissionSet={
-                        permissionSet
-                            ? getCompletePermissionSet(permissionSet, resources)
-                            : getNewPermissionSet(resources)
-                    }
-                    permissionSets={permissionSets}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
-                />
-            )}
+            <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
+                {counterFetching !== 0 ? (
+                    <Bullseye>
+                        <Spinner isSVG />
+                    </Bullseye>
+                ) : isList ? (
+                    <PermissionSetsList
+                        permissionSets={permissionSets}
+                        roles={roles}
+                        handleCreate={handleCreate}
+                        handleDelete={handleDelete}
+                    />
+                ) : typeof entityId === 'string' && !permissionSet ? (
+                    <NotFoundMessage
+                        title="Permission set does not exist"
+                        message={`Permission set id: ${entityId}`}
+                        actionText="Permission sets"
+                        url={getEntityPath(entityType)}
+                    />
+                ) : (
+                    <PermissionSetForm
+                        isActionable={!permissionSet || !getIsDefaultRoleName(permissionSet.name)}
+                        action={action}
+                        permissionSet={
+                            permissionSet
+                                ? getCompletePermissionSet(permissionSet, resources)
+                                : getNewPermissionSet(resources)
+                        }
+                        permissionSets={permissionSets}
+                        handleCancel={handleCancel}
+                        handleEdit={handleEdit}
+                        handleSubmit={handleSubmit}
+                    />
+                )}
+            </PageSection>
         </>
     );
 }

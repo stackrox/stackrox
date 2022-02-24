@@ -21,6 +21,7 @@ import usePermissions from 'hooks/usePermissions';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { SearchFilter } from 'types/search';
 import ACSEmptyState from 'Components/ACSEmptyState';
+import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { FalsePositiveCVEsToBeAssessed } from './types';
@@ -40,6 +41,7 @@ export type FalsePositiveCVEsTableProps = {
     updateTable: () => void;
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
+    getSortParams: GetSortParams;
 } & UsePaginationResult;
 
 function FalsePositiveCVEsTable({
@@ -53,6 +55,7 @@ function FalsePositiveCVEsTable({
     searchFilter,
     setSearchFilter,
     isLoading,
+    getSortParams,
 }: FalsePositiveCVEsTableProps): ReactElement {
     const {
         selected,
@@ -161,7 +164,7 @@ function FalsePositiveCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Fixable</Th>
-                        <Th>Severity</Th>
+                        <Th sort={getSortParams('Severity')}>Severity</Th>
                         <Th modifier="fitContent">Scope</Th>
                         <Th>Affected Components</Th>
                         <Th>Comments</Th>

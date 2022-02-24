@@ -69,6 +69,10 @@ $ kubectl -n stackrox delete pvc stackrox-db
 $ kubectl -n stackrox port-forward svc/central 8000:443 &
 ```
 
+### Changing the charts
+
+See [this document](CHANGING_CHARTS.md) which shows how to change the charts, for example to add a new values field.
+
 ### Testing
 
 To test helm chart changes see `pkg/helm/charts/tests/{centralservices,securedclusterservices}`.

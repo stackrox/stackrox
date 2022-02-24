@@ -5,6 +5,7 @@ import React, { ReactElement, useState } from 'react';
 import usePagination from 'hooks/patternfly/usePagination';
 import { SearchFilter } from 'types/search';
 import queryService from 'utils/queryService';
+import useTableSort, { SortOption } from 'hooks/patternfly/useTableSort';
 import FalsePositiveCVEsTable from './FalsePositiveCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 
@@ -12,9 +13,19 @@ type FalsePositiveCVEsProps = {
     imageId: string;
 };
 
+const sortFields = ['Severity'];
+const defaultSortOption: SortOption = {
+    field: 'Severity',
+    direction: 'desc',
+};
+
 function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
     const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { sortOption, getSortParams } = useTableSort({
+        sortFields,
+        defaultSortOption,
+    });
 
     const vulnsQuery = queryService.objectToWhereClause({
         ...searchFilter,
@@ -27,10 +38,7 @@ function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
-            sortOption: {
-                field: 'Severity',
-                reversed: true,
-            },
+            sortOption,
         },
     });
 
@@ -49,6 +57,7 @@ function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
             updateTable={refetchQuery}
             searchFilter={searchFilter}
             setSearchFilter={setSearchFilter}
+            getSortParams={getSortParams}
         />
     );
 }

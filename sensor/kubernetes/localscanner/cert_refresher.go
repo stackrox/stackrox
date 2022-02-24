@@ -47,7 +47,7 @@ func refreshCertificates(ctx context.Context, requestCertificates requestCertifi
 	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, requestCertificates, getCertsRenewalTime, repository)
 	if err != nil {
 		if errors.Is(err, ErrUnexpectedSecretsOwner) {
-			log.Errorf("stopping automatic refresh of %s: %s", certsDescription, err)
+			log.Errorf("non-recoverable error refreshing %s, automatic refresh will be stopped: %s", certsDescription, err)
 			return 0, concurrency.ErrNonRecoverable
 		}
 
@@ -97,7 +97,10 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 	repository serviceCertificatesRepo) (time.Duration, error) {
 
 	certificates, getCertsErr := repository.getServiceCertificates(ctx)
-	if getCertsErr == ErrDifferentCAForDifferentServiceTypes || getCertsErr == ErrMissingSecretData {
+	if errors.Is(getCertsErr, ErrUnexpectedSecretsOwner) {
+		return 0, getCertsErr
+	}
+	if errors.Is(getCertsErr, ErrDifferentCAForDifferentServiceTypes) || errors.Is(getCertsErr, ErrMissingSecretData) {
 		log.Errorf("local scanner certificates are in an inconsistent state, "+
 			"will refresh certificates immediately: %s", getCertsErr)
 		return 0, nil

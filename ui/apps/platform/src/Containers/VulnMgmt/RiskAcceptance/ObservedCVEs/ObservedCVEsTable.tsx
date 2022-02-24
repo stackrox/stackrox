@@ -27,6 +27,7 @@ import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
 import ACSEmptyState from 'Components/ACSEmptyState';
+import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -53,6 +54,7 @@ export type ObservedCVEsTableProps = {
     updateTable: () => void;
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
+    getSortParams: GetSortParams;
 } & UsePaginationResult;
 
 function ObservedCVEsTable({
@@ -69,6 +71,7 @@ function ObservedCVEsTable({
     searchFilter,
     setSearchFilter,
     isLoading,
+    getSortParams,
 }: ObservedCVEsTableProps): ReactElement {
     const {
         selected,
@@ -192,10 +195,10 @@ function ObservedCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Fixable</Th>
-                        <Th>Severity</Th>
-                        <Th>CVSS score</Th>
+                        <Th sort={getSortParams('Severity')}>Severity</Th>
+                        <Th sort={getSortParams('CVSS')}>CVSS score</Th>
                         <Th>Affected components</Th>
-                        <Th>Discovered</Th>
+                        <Th sort={getSortParams('Discovered')}>Discovered</Th>
                     </Tr>
                 </Thead>
                 <Tbody>

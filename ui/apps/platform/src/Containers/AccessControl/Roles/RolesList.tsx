@@ -2,15 +2,12 @@ import React, { ReactElement, useState } from 'react';
 import {
     Alert,
     AlertVariant,
-    Badge,
     Button,
     Modal,
     ModalVariant,
+    PageSection,
+    pluralize,
     Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
@@ -36,7 +33,6 @@ export type RolesListProps = {
     groups: Group[];
     permissionSets: PermissionSet[];
     accessScopes: AccessScope[];
-    handleCreate: () => void;
     handleDelete: (id: string) => Promise<void>;
 };
 
@@ -46,7 +42,6 @@ function RolesList({
     groups,
     permissionSets,
     accessScopes,
-    handleCreate,
     handleDelete,
 }: RolesListProps): ReactElement {
     const [nameDeleting, setNameDeleting] = useState('');
@@ -100,26 +95,8 @@ function RolesList({
         : roles;
 
     return (
-        <>
-            <Toolbar inset={{ default: 'insetNone' }}>
-                <ToolbarContent>
-                    <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
-                        <ToolbarItem>
-                            <Title headingLevel="h2">Roles</Title>
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <Badge isRead>
-                                {s ? `${rolesFiltered.length} / ${roles.length}` : roles.length}
-                            </Badge>
-                        </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <Button variant="primary" onClick={handleCreate} isSmall>
-                            Add role
-                        </Button>
-                    </ToolbarItem>
-                </ToolbarContent>
-            </Toolbar>
+        <PageSection variant="light">
+            <Title headingLevel="h2">{pluralize(rolesFiltered.length, 'result')} found</Title>
             {alertDelete}
             {rolesFiltered.length !== 0 && (
                 <TableComposable variant="compact" isStickyHeader>
@@ -205,7 +182,7 @@ function RolesList({
                     ''
                 )}
             </Modal>
-        </>
+        </PageSection>
     );
 }
 

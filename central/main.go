@@ -119,6 +119,7 @@ import (
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
+	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
@@ -351,6 +352,10 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister,
 			reportConfigurationService.Singleton(),
 			reportService.Singleton())
+	}
+
+	if features.ImageSignatureVerification.Enabled() {
+		servicesToRegister = append(servicesToRegister, signatureIntegrationService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
