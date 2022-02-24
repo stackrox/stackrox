@@ -17,8 +17,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/stackrox/rox/operator/pkg/common/extensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+)
+
+var (
+	_ extensions.ScannerEnabled = (*Central)(nil)
 )
 
 // Important: Run "make generate manifests" to regenerate code after modifying this file
@@ -361,3 +366,8 @@ var (
 	// CentralGVK is the GVK for the Central type.
 	CentralGVK = SchemeGroupVersion.WithKind("Central")
 )
+
+// ScannerEnabled returns if scanner is enabled.
+func (c *Central) ScannerEnabled() bool {
+	return c.Spec.Scanner.IsEnabled()
+}

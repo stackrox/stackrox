@@ -21,5 +21,5 @@ func ReconcileScannerDBPasswordExtension(client ctrlClient.Client) extensions.Re
 }
 
 func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
-	return commonExtensions.ReconcileScannerDBPassword(ctx, c, client, c.Spec.Scanner.IsEnabled())
+	return commonExtensions.ReconcileScannerDBPassword(ctx, c, client)
 }
