@@ -10,6 +10,10 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var (
+	_ commonExtensions.ScannerBearingCustomResource = (*platform.Central)(nil)
+)
+
 const (
 	scannerDBPasswordKey = `password`
 )

@@ -14,14 +14,9 @@ const (
 	passwordResourceName = "scanner-db-password"
 )
 
-type k8sObjectWithScanner interface {
+// ScannerBearingCustomResource interface exposes details about the Scanner resource from the kubernetes object.
+type ScannerBearingCustomResource interface {
 	types.K8sObject
-	ScannerEnabled
-}
-
-// ScannerEnabled is implemented by k8s API structs providing information about whether the Scanner component is enabled.
-// The interface must be implemented to be compatible with this reconciler.
-type ScannerEnabled interface {
 	ScannerEnabled() bool
 }
 
@@ -31,13 +26,13 @@ type reconcileScannerDBPasswordConfig struct {
 }
 
 // ReconcileScannerDBPassword reconciles a scanner db password
-func ReconcileScannerDBPassword(ctx context.Context, obj k8sObjectWithScanner, client ctrlClient.Client) error {
+func ReconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client) error {
 	return reconcileScannerDBPassword(ctx, obj, client, reconcileScannerDBPasswordConfig{
 		PasswordResourceName: passwordResourceName,
 	})
 }
 
-func reconcileScannerDBPassword(ctx context.Context, obj k8sObjectWithScanner, client ctrlClient.Client, config reconcileScannerDBPasswordConfig) error {
+func reconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client, config reconcileScannerDBPasswordConfig) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
 		SecretReconciliator:  NewSecretReconciliator(ctx, client, obj),
 		obj:                  obj,
@@ -48,16 +43,15 @@ func reconcileScannerDBPassword(ctx context.Context, obj k8sObjectWithScanner, c
 
 type reconcileScannerDBPasswordExtensionRun struct {
 	*SecretReconciliator
-	obj                  k8sObjectWithScanner
+	obj                  ScannerBearingCustomResource
 	passwordResourceName string
-	scannerIsEnabled     bool
 }
 
 func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
 	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
-	shouldDelete := r.obj.GetDeletionTimestamp() != nil || !r.obj.ScannerEnabled()
+	shouldExist := r.obj.GetDeletionTimestamp() == nil && r.obj.ScannerEnabled()
 
-	if err := r.ReconcileSecret(r.passwordResourceName, !shouldDelete, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
+	if err := r.ReconcileSecret(r.passwordResourceName, shouldExist, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
 		return errors.Wrapf(err, "reconciling %q secret", r.passwordResourceName)
 	}
 
