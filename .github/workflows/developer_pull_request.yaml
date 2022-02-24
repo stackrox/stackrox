@@ -30,9 +30,9 @@ jobs:
           path: |
             ${{ steps.cache-paths.outputs.GOCACHE }}
             ${{ steps.cache-paths.outputs.GOMODCACHE }}
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-v1-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-go-v1-
       - name: Run style checks
         run: |
           ./scripts/ci/style-checks.sh
