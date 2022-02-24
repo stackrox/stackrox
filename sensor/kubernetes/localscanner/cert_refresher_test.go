@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -110,8 +111,8 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsInconsistentImmediat
 	testCases := map[string]struct {
 		recoverableErr error
 	}{
-		"refresh immediately on ErrDifferentCAForDifferentServiceTypes": {recoverableErr: ErrDifferentCAForDifferentServiceTypes},
-		"refresh immediately on ErrMissingSecretData":                   {recoverableErr: ErrMissingSecretData},
+		"refresh immediately on ErrDifferentCAForDifferentServiceTypes": {recoverableErr: errors.Wrap(ErrDifferentCAForDifferentServiceTypes, "wrap error")},
+		"refresh immediately on ErrMissingSecretData":                   {recoverableErr: errors.Wrap(ErrMissingSecretData, "wrap error")},
 		"refresh immediately on missing secrets":                        {recoverableErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "foo")},
 	}
 	for tcName, tc := range testCases {
@@ -132,9 +133,10 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsInconsistentImmediat
 	}
 }
 
-func (s *certRefresherSuite) TestRefreshCertificatesGetCertsUnexpectedOwnerFailure() {
+func (s *certRefresherSuite) TestRefreshCertificatesGetCertsUnexpectedOwnerHighestPriorityFailure() {
+	getErr := multierror.Append(nil, ErrUnexpectedSecretsOwner, ErrDifferentCAForDifferentServiceTypes, ErrMissingSecretData)
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(
-		(*storage.TypedServiceCertificateSet)(nil), concurrency.ErrNonRecoverable)
+		(*storage.TypedServiceCertificateSet)(nil), getErr)
 
 	_, err := s.refreshCertificates()
 
