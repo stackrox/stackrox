@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,17 +38,14 @@ func (s *SecretsStoreSuite) TearDownTest() {
 }
 
 func (s *SecretsStoreSuite) TestStore() {
-	t := s.T()
 
-	source := pgtest.GetConnectionString(t)
+	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	if err != nil {
 		panic(err)
 	}
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
-	if err != nil {
-		panic(err)
-	}
+	s.NoError(err)
 	defer pool.Close()
 
 	Destroy(pool)
@@ -57,27 +53,27 @@ func (s *SecretsStoreSuite) TestStore() {
 
 	secret := fixtures.GetSecret()
 	foundSecret, exists, err := store.Get(secret.GetId())
-	assert.NoError(t, err)
-	assert.False(t, exists)
-	assert.Nil(t, foundSecret)
+	s.NoError(err)
+	s.False(exists)
+	s.Nil(foundSecret)
 
-	assert.NoError(t, store.Upsert(secret))
+	s.NoError(store.Upsert(secret))
 	foundSecret, exists, err = store.Get(secret.GetId())
-	assert.NoError(t, err)
-	assert.True(t, exists)
-	assert.Equal(t, secret, foundSecret)
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(secret, foundSecret)
 
 	secret.Name = "name_changed"
-	assert.NoError(t, store.Upsert(secret))
+	s.NoError(store.Upsert(secret))
 
 	foundSecret, exists, err = store.Get(secret.GetId())
-	assert.NoError(t, err)
-	assert.True(t, exists)
-	assert.Equal(t, secret, foundSecret)
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(secret, foundSecret)
 
-	assert.NoError(t, store.Delete(secret.GetId()))
+	s.NoError(store.Delete(secret.GetId()))
 	foundSecret, exists, err = store.Get(secret.GetId())
-	assert.NoError(t, err)
-	assert.False(t, exists)
-	assert.Nil(t, foundSecret)
+	s.NoError(err)
+	s.False(exists)
+	s.Nil(foundSecret)
 }
