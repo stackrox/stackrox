@@ -56,7 +56,7 @@ require (
 	github.com/google/go-containerregistry v0.8.1-0.20220125170349-50dfc2733d10
 	github.com/googleapis/gnostic v0.5.5
 	github.com/gorilla/schema v1.2.0
-	github.com/graph-gophers/graphql-go v1.1.0
+	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
