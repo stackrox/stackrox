@@ -21,8 +21,8 @@ style_checks() {
     go env GOMODCACHE
 
     # make deps
-    make golangci-lint
-    # make style
+    # make golangci-lint
+    make style
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
