@@ -43,6 +43,7 @@ export type ResourceName =
     | 'SensorUpgradeConfig'
     | 'ServiceAccount'
     | 'ServiceIdentity'
+    | 'SignatureIntegration'
     | 'User'
     | 'VulnerabilityManagementRequests'
     | 'VulnerabilityManagementApprovals'

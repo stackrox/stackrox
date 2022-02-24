@@ -5,17 +5,15 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
-    Badge,
     Bullseye,
     Dropdown,
     DropdownItem,
     DropdownPosition,
     DropdownToggle,
+    PageSection,
+    pluralize,
     Spinner,
     Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
@@ -33,13 +31,14 @@ import { AuthProvider } from 'services/AuthService';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 import { mergeGroupsWithAuthProviders } from './authProviders.utils';
 
-import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 
 import AccessControlDescription from '../AccessControlDescription';
-import AccessControlHeading from '../AccessControlHeading';
 import AuthProviderForm from './AuthProviderForm';
 import AuthProvidersList from './AuthProvidersList';
+import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
+import AccessControlHeading from '../AccessControlHeading';
+import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 
 const entityType = 'AUTH_PROVIDER';
 
@@ -137,80 +136,87 @@ function AuthProviders(): ReactElement {
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isList={isList} />
-            <AccessControlHeading
-                entityType={entityType}
-                entityName={action === 'create' ? 'Add auth provider' : selectedAuthProvider?.name}
-                isDisabled={hasAction}
-                isList={isList}
-            />
-            <AccessControlNav entityType={entityType} />
-            <AccessControlDescription>
-                Configure authentication providers and rules to assign roles to users
-            </AccessControlDescription>
-            {isFetchingAuthProviders || isFetchingRoles ? (
-                <Bullseye>
-                    <Spinner isSVG />
-                </Bullseye>
-            ) : isList ? (
+            {isList ? (
                 <>
-                    <Toolbar inset={{ default: 'insetNone' }}>
-                        <ToolbarContent>
-                            <ToolbarItem>
-                                <Title headingLevel="h2">Auth providers</Title>
-                            </ToolbarItem>
-                            <ToolbarItem>
-                                <Badge isRead>{authProvidersWithRules.length}</Badge>
-                            </ToolbarItem>
-                            {hasWriteAccess && (
-                                <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                    <Dropdown
-                                        className="pf-m-small"
-                                        onSelect={onClickCreate}
-                                        position={DropdownPosition.right}
-                                        toggle={
-                                            <DropdownToggle
-                                                onToggle={onToggleCreateMenu}
-                                                toggleIndicator={CaretDownIcon}
-                                                isPrimary
-                                            >
-                                                Add auth provider
-                                            </DropdownToggle>
-                                        }
-                                        isOpen={isCreateMenuOpen}
-                                        dropdownItems={dropdownItems}
-                                    />
-                                </ToolbarItem>
-                            )}
-                        </ToolbarContent>
-                    </Toolbar>
-                    {authProvidersWithRules.length === 0 && (
-                        <ACSEmptyState title="No auth providers" headingLevel="h3">
-                            Please add one.
-                        </ACSEmptyState>
-                    )}
-                    {authProvidersWithRules.length > 0 && (
-                        <AuthProvidersList
-                            entityId={entityId}
-                            authProviders={authProvidersWithRules}
-                        />
-                    )}
+                    <AccessControlHeading entityType={entityType} />
+                    <AccessControlHeaderActionBar
+                        displayComponent={
+                            <AccessControlDescription>
+                                Configure authentication providers and rules to assign roles to
+                                users
+                            </AccessControlDescription>
+                        }
+                        actionComponent={
+                            hasWriteAccess && (
+                                <Dropdown
+                                    className="auth-provider-dropdown"
+                                    onSelect={onClickCreate}
+                                    position={DropdownPosition.right}
+                                    toggle={
+                                        <DropdownToggle
+                                            onToggle={onToggleCreateMenu}
+                                            toggleIndicator={CaretDownIcon}
+                                            isPrimary
+                                        >
+                                            Add auth provider
+                                        </DropdownToggle>
+                                    }
+                                    isOpen={isCreateMenuOpen}
+                                    dropdownItems={dropdownItems}
+                                />
+                            )
+                        }
+                    />
                 </>
-            ) : typeof entityId === 'string' && !selectedAuthProvider ? (
-                <NotFoundMessage
-                    title="Auth provider does not exist"
-                    message={`Auth provider id: ${entityId}`}
-                    actionText="Auth providers"
-                    url={getEntityPath(entityType)}
-                />
             ) : (
-                <AuthProviderForm
-                    isActionable={hasWriteAccess}
-                    action={action}
-                    selectedAuthProvider={selectedAuthProvider ?? getNewAuthProviderObj(type)}
-                    onClickCancel={onClickCancel}
-                    onClickEdit={onClickEdit}
+                <AccessControlBreadcrumbs
+                    entityType={entityType}
+                    entityName={
+                        action === 'create' ? 'Add auth provider' : selectedAuthProvider?.name
+                    }
+                    isDisabled={hasAction}
+                    isList={isList}
                 />
             )}
+            <PageSection variant={isList ? 'default' : 'light'}>
+                {isFetchingAuthProviders || isFetchingRoles ? (
+                    <Bullseye>
+                        <Spinner isSVG />
+                    </Bullseye>
+                ) : isList ? (
+                    <PageSection variant="light">
+                        <Title headingLevel="h2">
+                            {pluralize(authProvidersWithRules.length, 'result')} found
+                        </Title>
+                        {authProvidersWithRules.length === 0 && (
+                            <ACSEmptyState title="No auth providers" headingLevel="h2">
+                                Please add one.
+                            </ACSEmptyState>
+                        )}
+                        {authProvidersWithRules.length > 0 && (
+                            <AuthProvidersList
+                                entityId={entityId}
+                                authProviders={authProvidersWithRules}
+                            />
+                        )}
+                    </PageSection>
+                ) : typeof entityId === 'string' && !selectedAuthProvider ? (
+                    <NotFoundMessage
+                        title="Auth provider does not exist"
+                        message={`Auth provider id: ${entityId}`}
+                        actionText="Auth providers"
+                        url={getEntityPath(entityType)}
+                    />
+                ) : (
+                    <AuthProviderForm
+                        isActionable={hasWriteAccess}
+                        action={action}
+                        selectedAuthProvider={selectedAuthProvider ?? getNewAuthProviderObj(type)}
+                        onClickCancel={onClickCancel}
+                        onClickEdit={onClickEdit}
+                    />
+                )}
+            </PageSection>
         </>
     );
 }

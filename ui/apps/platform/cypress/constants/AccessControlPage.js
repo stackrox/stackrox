@@ -10,7 +10,8 @@ function getFormGroupControlForLabel(label) {
     return `.pf-c-form__group-label:contains("${label}") + .pf-c-form__group-control`;
 }
 
-export const selectors = scopeSelectors('#access-control', {
+export const selectors = scopeSelectors('main', {
+    breadcrumbNav: '.pf-c-breadcrumb',
     breadcrumbItem: '.pf-c-breadcrumb__item',
     breadcrumbLink: 'a.pf-c-breadcrumb__link',
     h1: 'h1',

@@ -1,0 +1,4 @@
+#role-form input[type='radio']:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
