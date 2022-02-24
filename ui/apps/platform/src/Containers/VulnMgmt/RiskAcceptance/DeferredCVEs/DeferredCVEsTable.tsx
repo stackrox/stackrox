@@ -21,6 +21,7 @@ import usePermissions from 'hooks/usePermissions';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { SearchFilter } from 'types/search';
 import ACSEmptyState from 'Components/ACSEmptyState';
+import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
 import { DeferredCVEsToBeAssessed } from './types';
@@ -41,6 +42,7 @@ export type DeferredCVEsTableProps = {
     updateTable: () => void;
     searchFilter: SearchFilter;
     setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
+    getSortParams: GetSortParams;
 } & UsePaginationResult;
 
 function DeferredCVEsTable({
@@ -54,6 +56,7 @@ function DeferredCVEsTable({
     searchFilter,
     setSearchFilter,
     isLoading,
+    getSortParams,
 }: DeferredCVEsTableProps): ReactElement {
     const {
         selected,
@@ -162,7 +165,7 @@ function DeferredCVEsTable({
                         />
                         <Th>CVE</Th>
                         <Th>Fixable</Th>
-                        <Th>Severity</Th>
+                        <Th sort={getSortParams('Severity')}>Severity</Th>
                         <Th>Expires</Th>
                         <Th modifier="fitContent">Scope</Th>
                         <Th>Affected Components</Th>
