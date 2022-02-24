@@ -64,7 +64,6 @@ type fetchImageResult struct {
 func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img *storage.ContainerImage) (*storage.Image, error) {
 	// Talk to central if we know its endpoint (and the client connection is not shutting down), and if we are not
 	// currently connected to sensor.
-	// Note: Sensor is required to scan images in the local registry.
 	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
 		// Central route
 		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
