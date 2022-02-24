@@ -11,7 +11,7 @@ var _ types.NodeScannerWithDataSource = (*nodeScannerWithDataSource)(nil)
 
 type nodeScannerWithDataSource struct {
 	nodeScanner types.NodeScanner
-	datasource *storage.DataSource
+	datasource  *storage.DataSource
 }
 
 func (n *nodeScannerWithDataSource) GetNodeScanner() types.NodeScanner {

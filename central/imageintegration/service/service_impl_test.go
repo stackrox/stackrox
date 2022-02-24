@@ -56,7 +56,7 @@ func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 
 var _ types.NodeScanner = (*fakeNodeScanner)(nil)
 
-type fakeNodeScanner struct {}
+type fakeNodeScanner struct{}
 
 func (*fakeNodeScanner) Name() string {
 	panic("implement me")
@@ -84,19 +84,26 @@ var (
 )
 
 type fakeImageAndNodeScanner struct {
-	scanner types.Scanner
+	scanner     types.Scanner
 	nodeScanner types.NodeScanner
 }
 
 func newFakeImageAndNodeScanner() *fakeImageAndNodeScanner {
-	return &fakeImageAndNodeScanner{scanner: &fakeScanner{}}
+	return &fakeImageAndNodeScanner{
+		scanner:     &fakeScanner{},
+		nodeScanner: &fakeNodeScanner{},
+	}
 }
 
-func (f *fakeImageScanner) GetScanner() types.Scanner {
+func (f *fakeImageAndNodeScanner) GetScanner() types.Scanner {
 	return f.scanner
 }
 
-func (*fakeImageScanner) DataSource() *storage.DataSource {
+func (f *fakeImageAndNodeScanner) GetNodeScanner() types.NodeScanner {
+	return f.nodeScanner
+}
+
+func (*fakeImageAndNodeScanner) DataSource() *storage.DataSource {
 	return nil
 }
 
@@ -302,8 +309,8 @@ func TestValidateNodeIntegration(t *testing.T) {
 		gomock.Any(),
 		&v1.GetImageIntegrationsRequest{Name: "name"},
 	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
-	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(newFakeImageScanner(), nil).Times(1)
-	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(newFakeImageScanner(), nil).Times(1)
+	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(newFakeImageAndNodeScanner(), nil).Times(1)
+	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(newFakeImageAndNodeScanner(), nil).Times(1)
 	_, err := s.TestImageIntegration(testCtx, clairifyIntegrationConfig)
 	assert.NoError(t, err)
 
