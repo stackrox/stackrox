@@ -58,14 +58,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            $MONOREPO_LOCK
+            ${{ env.MONOREPO_LOCK }}
             ui/deps
             ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
             ui/node_modules # CircleCI doesn't support globbing here https://circleci.com/docs/2.0/caching/#basic-example-of-dependency-caching so all `node_nodules` need to be listed
             ui/apps/platform/node_modules
             ui/packages/ui-components/node_modules
             ui/packages/tailwind-config/node_modules
-          key: ${{ runner.os }}-npm-v1-${{ hashFiles($MONOREPO_LOCK) }}
+          key: ${{ runner.os }}-npm-v1-${{ hashFiles(${{ env.MONOREPO_LOCK }}) }}
           restore-keys: |
             ${{ runner.os }}-npm-v1-
             ${{ runner.os }}-npm-
