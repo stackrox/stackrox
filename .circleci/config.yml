@@ -73,6 +73,12 @@ restoreGoModCache: &restoreGoModCache
     keys:
       - *goModCacheKey
 
+goModTidy: &goModTidy
+  run:
+    name: Ensure all go modules are present
+    command: go mod tidy
+    when: always
+
 saveGoModCache: &saveGoModCache
   save_cache:
     name: Saving Go module cache
@@ -902,6 +908,11 @@ commands:
             if .circleci/pr_has_label.sh "ci-release-build"; then
               cci-export GOTAGS release
             fi
+
+  restore-go-mod-cache:
+    steps:
+      - *restoreGoModCache
+      - *goModTidy
 
   setup-dep-env:
     parameters:
@@ -2071,7 +2082,7 @@ commands:
           run-on-master: true
           run-on-tags: true
           changed-path-ignore: "^ui/"
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
       - *restoreGoBuildCache
 
@@ -2225,7 +2236,7 @@ jobs:
     steps:
       - checkout
 
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
       - *restoreGradle
       - restore-npm-deps-cache
@@ -2263,7 +2274,7 @@ jobs:
     resource_class: medium
     steps:
       - checkout
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
       - run:
           no_output_timeout: 30m
@@ -2312,7 +2323,7 @@ jobs:
     steps:
       - checkout
 
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
 
       - run:
@@ -2351,7 +2362,7 @@ jobs:
             fi
 
       - checkout
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
 
       - run:
@@ -2376,7 +2387,7 @@ jobs:
       resource_class: large
     steps:
       - checkout
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
 
       - *restoreGoBuildCache
@@ -2613,7 +2624,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
       - *restoreGoBuildCache
       - run:
@@ -2744,7 +2755,7 @@ jobs:
 
       - install-ossls
 
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
 
       - run:
@@ -2861,7 +2872,7 @@ jobs:
 
       - install-ossls
 
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
 
       - restore-npm-deps-cache
@@ -2931,7 +2942,7 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
 
       - run:
@@ -3053,7 +3064,7 @@ jobs:
 
       - *refreshAlpineBaseImage
 
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
       - *restoreGoBuildCache
 
@@ -3459,7 +3470,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - *setupRoxctl
       - run:
           name: Run standalone roxctl Bats tests
@@ -3500,7 +3511,7 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-      - *restoreGoModCache
+      - restore-go-mod-cache
       - setup-go-build-env
       - run:
           name: Retrieving missing dependencies
