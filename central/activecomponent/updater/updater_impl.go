@@ -60,7 +60,6 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 	}
 
 	scannerVersion := scan.GetScannerVersion()
-	log.Errorf("SHREWS %s", scannerVersion)
 
 	// Check if we should update executable cache
 	currRecord, ok := u.executableCache.Get(imageID)
