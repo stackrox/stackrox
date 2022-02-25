@@ -14,3 +14,4 @@ package groups
 @interface GraphQL { }
 @interface Notifiers { }
 @interface K8sEvents { }
+@interface OpenShift { } // Test should only run on OpenShift
