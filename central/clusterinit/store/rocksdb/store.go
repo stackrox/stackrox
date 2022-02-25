@@ -3,6 +3,7 @@
 package rocksdb
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,18 +25,18 @@ var (
 )
 
 type Store interface {
-	Count() (int, error)
-	Exists(id string) (bool, error)
-	GetIDs() ([]string, error)
-	Get(id string) (*storage.InitBundleMeta, bool, error)
-	GetMany(ids []string) ([]*storage.InitBundleMeta, []int, error)
-	Upsert(obj *storage.InitBundleMeta) error
-	UpsertMany(objs []*storage.InitBundleMeta) error
-	Delete(id string) error
-	DeleteMany(ids []string) error
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	Get(ctx context.Context, id string) (*storage.InitBundleMeta, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.InitBundleMeta, []int, error)
+	Upsert(ctx context.Context, obj *storage.InitBundleMeta) error
+	UpsertMany(ctx context.Context, objs []*storage.InitBundleMeta) error
+	Delete(ctx context.Context, id string) error
+	DeleteMany(ctx context.Context, ids []string) error
 	Walk(fn func(obj *storage.InitBundleMeta) error) error
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -64,28 +65,28 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 }
 
 // Count returns the number of objects in the store
-func (b *storeImpl) Count() (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Count, "InitBundleMeta")
 
 	return b.crud.Count()
 }
 
 // Exists returns if the id exists in the store
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Exists, "InitBundleMeta")
 
 	return b.crud.Exists(id)
 }
 
 // GetIDs returns all the IDs for the store
-func (b *storeImpl) GetIDs() ([]string, error) {
+func (b *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "InitBundleMetaIDs")
 
 	return b.crud.GetKeys()
 }
 
 // Get returns the object, if it exists from the store
-func (b *storeImpl) Get(id string) (*storage.InitBundleMeta, bool, error) {
+func (b *storeImpl) Get(_ context.Context, id string) (*storage.InitBundleMeta, bool, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "InitBundleMeta")
 
 	msg, exists, err := b.crud.Get(id)
@@ -96,7 +97,7 @@ func (b *storeImpl) Get(id string) (*storage.InitBundleMeta, bool, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice 
-func (b *storeImpl) GetMany(ids []string) ([]*storage.InitBundleMeta, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.InitBundleMeta, []int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "InitBundleMeta")
 
 	msgs, missingIndices, err := b.crud.GetMany(ids)
@@ -111,14 +112,14 @@ func (b *storeImpl) GetMany(ids []string) ([]*storage.InitBundleMeta, []int, err
 }
 
 // Upsert inserts the object into the DB
-func (b *storeImpl) Upsert(obj *storage.InitBundleMeta) error {
+func (b *storeImpl) Upsert(_ context.Context, obj *storage.InitBundleMeta) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "InitBundleMeta")
 
 	return b.crud.Upsert(obj)
 }
 
 // UpsertMany batches objects into the DB
-func (b *storeImpl) UpsertMany(objs []*storage.InitBundleMeta) error {
+func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.InitBundleMeta) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "InitBundleMeta")
 
 	msgs := make([]proto.Message, 0, len(objs))
@@ -130,14 +131,14 @@ func (b *storeImpl) UpsertMany(objs []*storage.InitBundleMeta) error {
 }
 
 // Delete removes the specified ID from the store
-func (b *storeImpl) Delete(id string) error {
+func (b *storeImpl) Delete(_ context.Context, id string) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "InitBundleMeta")
 
 	return b.crud.Delete(id)
 }
 
 // Delete removes the specified IDs from the store
-func (b *storeImpl) DeleteMany(ids []string) error {
+func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "InitBundleMeta")
 
 	return b.crud.DeleteMany(ids)
@@ -151,11 +152,11 @@ func (b *storeImpl) Walk(fn func(obj *storage.InitBundleMeta) error) error {
 }
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (b *storeImpl) AckKeysIndexed(keys ...string) error {
+func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
 	return b.crud.AckKeysIndexed(keys...)
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (b *storeImpl) GetKeysToIndex() ([]string, error) {
+func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return b.crud.GetKeysToIndex()
 }
