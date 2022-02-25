@@ -25,10 +25,10 @@ func ReconcileScannerDBPasswordExtension(client ctrlClient.Client) extensions.Re
 
 func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(ctx, client, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
 		centralObj:          c,
 	}
-	return run.Execute()
+	return run.Execute(ctx)
 }
 
 type reconcileScannerDBPasswordExtensionRun struct {
@@ -36,11 +36,11 @@ type reconcileScannerDBPasswordExtensionRun struct {
 	centralObj *platform.Central
 }
 
-func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
+func (r *reconcileScannerDBPasswordExtensionRun) Execute(ctx context.Context) error {
 	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
 	shouldDelete := r.centralObj.DeletionTimestamp != nil || !r.centralObj.Spec.Scanner.IsEnabled()
 
-	if err := r.ReconcileSecret("scanner-db-password", !shouldDelete, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
+	if err := r.ReconcileSecret(ctx, "scanner-db-password", !shouldDelete, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db-password secret")
 	}
 
