@@ -63,9 +63,9 @@ func NewObjectPrinterFactory(defaultOutputFormat string, customPrinterFactories 
 		if _, ok := factoryMap[supportedFormatString]; !ok {
 			factoryMap[supportedFormatString] = factory
 		} else {
-			return nil, errox.NewErrInvariantViolation(fmt.Sprintf("tried to register two printer "+
+			return nil, errox.Newf(errox.InvariantViolation, "tried to register two printer "+
 				"factories which support the same output formats %q: %T and %T",
-				supportedFormatString, factory, factoryMap[supportedFormatString]))
+				supportedFormatString, factory, factoryMap[supportedFormatString])
 		}
 	}
 
