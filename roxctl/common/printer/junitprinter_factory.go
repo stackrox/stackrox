@@ -106,8 +106,8 @@ func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 	case "junit":
 		return printers.NewJUnitPrinter(j.suiteName, j.jsonPathExpressions), nil
 	default:
-		return nil, errox.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
-			"JUnit Printer: %q", format))
+		return nil, errox.Newf(errox.InvalidArgs, "invalid output format used for "+
+			"JUnit Printer %q", format)
 	}
 }
 
