@@ -17,7 +17,7 @@ const (
 // ScannerBearingCustomResource interface exposes details about the Scanner resource from the kubernetes object.
 type ScannerBearingCustomResource interface {
 	types.K8sObject
-	ScannerEnabled() bool
+	IsScannerEnabled() bool
 }
 
 // reconcileScannerDBPasswordConfig represents the config for scanner db password reconciliation
@@ -49,7 +49,7 @@ type reconcileScannerDBPasswordExtensionRun struct {
 
 func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
 	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
-	shouldExist := r.obj.GetDeletionTimestamp() == nil && r.obj.ScannerEnabled()
+	shouldExist := r.obj.GetDeletionTimestamp() == nil && r.obj.IsScannerEnabled()
 
 	if err := r.ReconcileSecret(r.passwordResourceName, shouldExist, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
 		return errors.Wrapf(err, "reconciling %q secret", r.passwordResourceName)

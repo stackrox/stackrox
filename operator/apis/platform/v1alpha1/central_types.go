@@ -362,7 +362,7 @@ var (
 	CentralGVK = SchemeGroupVersion.WithKind("Central")
 )
 
-// ScannerEnabled returns if scanner is enabled.
-func (c *Central) ScannerEnabled() bool {
+// IsScannerEnabled returns true if scanner is enabled.
+func (c *Central) IsScannerEnabled() bool {
 	return c.Spec.Scanner.IsEnabled()
 }
