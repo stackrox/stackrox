@@ -52,20 +52,10 @@ type enricherImpl struct {
 	metrics metrics
 }
 
-func (e *enricherImpl) EnrichWithVulnerabilities(ctx EnrichmentContext, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
-	// Attempt to short-circuit before checking scanners.
-	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
-		return EnrichmentResult{
-			ScanResult: ScanNotDone,
-		}, nil
-	}
-	if e.fetchFromDatabase(image, ctx.FetchOpt) {
-		return EnrichmentResult{
-			ImageUpdated: true,
-			ScanResult:   ScanSucceeded,
-		}, nil
-	}
-
+// EnrichWithVulnerabilities enriches the given image with vulnerabilities.
+// At the moment, the EnrichmentContext is ignored, but it is kept there,
+// as there may be use for it in the future.
+func (e *enricherImpl) EnrichWithVulnerabilities(_ EnrichmentContext, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
 	scanners := e.integrations.ScannerSet()
 	if scanners.IsEmpty() {
 		return EnrichmentResult{

@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -31,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/timestamp"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
@@ -209,8 +211,8 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		if err != nil {
 			return nil, err
 		}
-		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
-		// Otherwise, fetch it from the DB.
+		// If the scan exists, return the scan.
+		// Otherwise, run the enrichment pipeline.
 		if exists {
 			return internalScanRespFromImage(img), nil
 		}
@@ -278,30 +280,28 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	}
 	defer s.internalScanSemaphore.Release(1)
 
-	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
-	// images
+	// Attempt to pull the image from the store if the ID != "".
 	if request.GetImageId() != "" {
 		img, exists, err := s.datastore.GetImage(ctx, request.GetImageId())
 		if err != nil {
 			return nil, err
 		}
-		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
-		// Otherwise, fetch it from the DB.
-		if exists {
+
+		reprocessInterval := env.ReprocessInterval.DurationSetting()
+		// This is safe even if img is nil.
+		scanTime := img.GetScan().GetScanTime()
+
+		// If the scan exists, and reprocessing has not run since, return the scan.
+		// Otherwise, run the enrichment pipeline to ensure we do not return stale data.
+		if exists && timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now()) {
 			return internalScanRespFromImage(img), nil
 		}
 	}
 
-	// If no ID, then don't use caches as they could return stale data
-	fetchOpt := enricher.UseCachesIfPossible
-	if request.GetImageId() == "" {
-		fetchOpt = enricher.ForceRefetch
-	}
 	enrichmentCtx := enricher.EnrichmentContext{
-		FetchOpt: fetchOpt,
+		FetchOpt: enricher.ForceRefetch,
 		Internal: true,
 	}
-
 	img := &storage.Image{
 		Id:       request.GetImageId(),
 		Name:     request.GetImageName(),
