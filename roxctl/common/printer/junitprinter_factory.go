@@ -124,8 +124,8 @@ func (j *JUnitPrinterFactory) validate() error {
 		if _, exists := j.jsonPathExpressions[key]; !exists {
 			// since the jsonPathExpression map is NOT expected to be set by the user, return an ErrInvariantViolation
 			// instead
-			return errox.NewErrInvariantViolation(fmt.Sprintf("missing required JSON Path expression "+
-				"for key %q", key))
+			return errox.Newf(errox.InvariantViolation, "missing required JSON Path expression "+
+				"for key %q", key)
 		}
 	}
 
