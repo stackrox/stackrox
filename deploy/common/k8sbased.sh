@@ -316,6 +316,7 @@ function launch_central {
           launch_service $unzip_dir scanner
 
           if [[ -n "$CI" ]]; then
+            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
             ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
           elif [[ "${is_local_dev}" == "true" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
