@@ -71,10 +71,7 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 		return nil
 	}
 
-	//Todo: remove
-	if ok {
-		log.Errorf("SHREWS current scan version %s", currRecord.(*imageExecutable).scannerVersion)
-	}
+	log.Errorf("SHREWS current scan version %s", currRecord.(*imageExecutable).scannerVersion)
 	if ok && currRecord.(*imageExecutable).scannerVersion == scan.GetScannerVersion() {
 		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scan.GetScannerVersion(), currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
 		return nil
