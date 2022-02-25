@@ -265,7 +265,7 @@ function PendingApprovalsTable({
                         {rows.map((row, rowIndex) => {
                             const canCancelRequest =
                                 canApproveRequests ||
-                                    (canCreateRequests && row.requestor.id === currentUser.userId);
+                                (canCreateRequests && row.requestor.id === currentUser.userId);
 
                             return (
                                 <Tr key={row.id}>
