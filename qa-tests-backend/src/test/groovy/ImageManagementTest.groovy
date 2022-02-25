@@ -105,7 +105,6 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify image scan finds correct base OS for OpenShift4 internal image - #imageName"() {
         given:
         Assume.assumeTrue(ClusterService.isOpenShift4())
-        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
         when:
         def img = Services.scanImage(OPENSHIFT4_REGISTRY + "/" + project + "/" + imageRemote + ":" + imageTag)
         then:
