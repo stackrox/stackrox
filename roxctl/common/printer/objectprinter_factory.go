@@ -17,8 +17,8 @@ var (
 )
 
 func unsupportedOutputFormatError(format string, supportedFormats []string) error {
-	return errox.NewErrInvalidArgs(fmt.Sprintf("unsupported output format used: %q. Choose one of %s",
-		format, strings.Join(supportedFormats, " | ")))
+	return errox.Newf(errox.InvalidArgs, "unsupported output format used: %q. Choose one of %s",
+		format, strings.Join(supportedFormats, " | "))
 }
 
 // ObjectPrinterFactory holds all flags for specific printers implementing ObjectPrinter as well as the output format flag
