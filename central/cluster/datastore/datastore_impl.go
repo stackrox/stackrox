@@ -92,7 +92,7 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	}
 
 	cluster.Status.UpgradeStatus = upgradeStatus
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error {
@@ -113,7 +113,7 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	}
 
 	cluster.Status.CertExpiryStatus = clusterCertExpiryStatus
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
@@ -131,7 +131,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 		return err
 	}
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
 	cluster.Status = status
 
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) buildIndex() error {
@@ -209,13 +209,13 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 
-	ds.populateHealthInfos(clusters...)
+	ds.populateHealthInfos(ctx, clusters...)
 	ds.updateClusterPriority(clusters...)
 	return clusters, nil
 }
 
 func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
-	cluster, found, err := ds.clusterStorage.Get(id)
+	cluster, found, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -223,7 +223,7 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 		return nil, false, err
 	}
 
-	ds.populateHealthInfos(cluster)
+	ds.populateHealthInfos(ctx, cluster)
 	ds.updateClusterPriority(cluster)
 	return cluster, true, nil
 }
@@ -242,7 +242,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 			return nil, err
 		}
 
-		ds.populateHealthInfos(clusters...)
+		ds.populateHealthInfos(ctx, clusters...)
 		ds.updateClusterPriority(clusters...)
 		return clusters, nil
 	}
@@ -281,7 +281,7 @@ func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if ok {
-		return ds.clusterStorage.Count()
+		return ds.clusterStorage.Count(ctx)
 	}
 
 	return ds.Count(ctx, pkgSearch.EmptyQuery())
@@ -304,10 +304,10 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	return ds.addClusterNoLock(cluster)
+	return ds.addClusterNoLock(ctx, cluster)
 }
 
-func (ds *datastoreImpl) addClusterNoLock(cluster *storage.Cluster) (string, error) {
+func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.Cluster) (string, error) {
 	if cluster.GetId() != "" {
 		return "", errors.Errorf("cannot add a cluster that has already been assigned an id: %q", cluster.GetId())
 	}
@@ -317,7 +317,7 @@ func (ds *datastoreImpl) addClusterNoLock(cluster *storage.Cluster) (string, err
 	}
 
 	cluster.Id = uuid.NewV4().String()
-	if err := ds.updateClusterNoLock(cluster); err != nil {
+	if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 		return "", err
 	}
 
@@ -341,7 +341,7 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	existingCluster, exists, err := ds.clusterStorage.Get(cluster.GetId())
+	existingCluster, exists, err := ds.clusterStorage.Get(ctx, cluster.GetId())
 	if err != nil {
 		return err
 	}
@@ -355,7 +355,7 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 		cluster.Status = existingCluster.GetStatus()
 	}
 
-	if err := ds.updateClusterNoLock(cluster); err != nil {
+	if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 		return err
 	}
 
@@ -393,12 +393,12 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	oldHealth, _, err := ds.clusterHealthStorage.Get(id)
+	oldHealth, _, err := ds.clusterHealthStorage.Get(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	if err := ds.clusterHealthStorage.UpsertWithID(id, clusterHealthStatus); err != nil {
+	if err := ds.clusterHealthStorage.UpsertWithID(ctx, id, clusterHealthStatus); err != nil {
 		return err
 	}
 
@@ -407,7 +407,7 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 		return nil
 	}
 
-	cluster, exists, err := ds.clusterStorage.Get(id)
+	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -426,13 +426,13 @@ func (ds *datastoreImpl) UpdateSensorDeploymentIdentification(ctx context.Contex
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	cluster.MostRecentSensorId = identification
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string, states map[string]*storage.AuditLogFileState) error {
@@ -450,7 +450,7 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -464,7 +464,7 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 		cluster.AuditLogState[node] = state
 	}
 
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
@@ -476,7 +476,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	defer ds.lock.Unlock()
 
 	// Fetch the cluster an confirm it exists.
-	cluster, exists, err := ds.clusterStorage.Get(id)
+	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if !exists {
 		return errors.Errorf("unable to find cluster %q", id)
 	}
@@ -484,7 +484,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 		return err
 	}
 
-	if err := ds.clusterStorage.Delete(id); err != nil {
+	if err := ds.clusterStorage.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 	ds.idToNameCache.Remove(id)
@@ -666,8 +666,8 @@ func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {
 	}
 }
 
-func (ds *datastoreImpl) getClusterOnly(id string) (*storage.Cluster, error) {
-	cluster, exists, err := ds.clusterStorage.Get(id)
+func (ds *datastoreImpl) getClusterOnly(ctx context.Context, id string) (*storage.Cluster, error) {
+	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -677,13 +677,13 @@ func (ds *datastoreImpl) getClusterOnly(id string) (*storage.Cluster, error) {
 	return cluster, nil
 }
 
-func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
+func (ds *datastoreImpl) populateHealthInfos(ctx context.Context, clusters ...*storage.Cluster) {
 	ids := make([]string, 0, len(clusters))
 	for _, cluster := range clusters {
 		ids = append(ids, cluster.GetId())
 	}
 
-	infos, missing, err := ds.clusterHealthStorage.GetMany(ids)
+	infos, missing, err := ds.clusterHealthStorage.GetMany(ctx, ids)
 	if err != nil {
 		log.Errorf("failed to populate health info for %d clusters: %v", len(ids), err)
 		return
@@ -704,7 +704,7 @@ func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
 	}
 }
 
-func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
+func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *storage.Cluster) error {
 	if err := normalizeCluster(cluster); err != nil {
 		return err
 	}
@@ -712,7 +712,7 @@ func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
 		return err
 	}
 
-	if err := ds.clusterStorage.Upsert(cluster); err != nil {
+	if err := ds.clusterStorage.Upsert(ctx, cluster); err != nil {
 		return err
 	}
 	if err := ds.indexer.AddCluster(cluster); err != nil {
@@ -781,7 +781,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			cluster.HelmConfig = clusterConfig.Clone()
 		}
 
-		if _, err := ds.addClusterNoLock(cluster); err != nil {
+		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
 		}
 	} else {
@@ -840,7 +840,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	if !proto.Equal(currentCluster, cluster) {
 		// Cluster is dirty and needs to be updated in the DB.
-		if err := ds.updateClusterNoLock(cluster); err != nil {
+		if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 			return nil, err
 		}
 	}

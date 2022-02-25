@@ -63,7 +63,7 @@ func (ds *searcherImpl) searchClusters(ctx context.Context, q *v1.Query) ([]*sto
 		return nil, nil, err
 	}
 
-	clusters, missingIndices, err := ds.clusterStorage.GetMany(search.ResultsToIDs(results))
+	clusters, missingIndices, err := ds.clusterStorage.GetMany(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}

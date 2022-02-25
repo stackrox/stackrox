@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,38 +36,38 @@ func (m *MockClusterStore) EXPECT() *MockClusterStoreMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockClusterStore) Count() (int, error) {
+func (m *MockClusterStore) Count(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count")
+	ret := m.ctrl.Call(m, "Count", ctx)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockClusterStoreMockRecorder) Count() *gomock.Call {
+func (mr *MockClusterStoreMockRecorder) Count(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockClusterStore)(nil).Count))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockClusterStore)(nil).Count), ctx)
 }
 
 // Delete mocks base method.
-func (m *MockClusterStore) Delete(id string) error {
+func (m *MockClusterStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockClusterStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockClusterStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockClusterStore)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockClusterStore)(nil).Delete), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockClusterStore) Get(id string) (*storage.Cluster, bool, error) {
+func (m *MockClusterStore) Get(ctx context.Context, id string) (*storage.Cluster, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.Cluster)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -74,15 +75,15 @@ func (m *MockClusterStore) Get(id string) (*storage.Cluster, bool, error) {
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockClusterStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockClusterStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockClusterStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockClusterStore)(nil).Get), ctx, id)
 }
 
 // GetMany mocks base method.
-func (m *MockClusterStore) GetMany(ids []string) ([]*storage.Cluster, []int, error) {
+func (m *MockClusterStore) GetMany(ctx context.Context, ids []string) ([]*storage.Cluster, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMany", ids)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
 	ret0, _ := ret[0].([]*storage.Cluster)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
@@ -90,23 +91,23 @@ func (m *MockClusterStore) GetMany(ids []string) ([]*storage.Cluster, []int, err
 }
 
 // GetMany indicates an expected call of GetMany.
-func (mr *MockClusterStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
+func (mr *MockClusterStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockClusterStore)(nil).GetMany), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockClusterStore)(nil).GetMany), ctx, ids)
 }
 
 // Upsert mocks base method.
-func (m *MockClusterStore) Upsert(cluster *storage.Cluster) error {
+func (m *MockClusterStore) Upsert(ctx context.Context, cluster *storage.Cluster) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", cluster)
+	ret := m.ctrl.Call(m, "Upsert", ctx, cluster)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockClusterStoreMockRecorder) Upsert(cluster interface{}) *gomock.Call {
+func (mr *MockClusterStoreMockRecorder) Upsert(ctx, cluster interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockClusterStore)(nil).Upsert), cluster)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockClusterStore)(nil).Upsert), ctx, cluster)
 }
 
 // Walk mocks base method.
@@ -147,23 +148,23 @@ func (m *MockClusterHealthStore) EXPECT() *MockClusterHealthStoreMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockClusterHealthStore) Delete(id string) error {
+func (m *MockClusterHealthStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockClusterHealthStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockClusterHealthStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockClusterHealthStore)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockClusterHealthStore)(nil).Delete), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockClusterHealthStore) Get(id string) (*storage.ClusterHealthStatus, bool, error) {
+func (m *MockClusterHealthStore) Get(ctx context.Context, id string) (*storage.ClusterHealthStatus, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.ClusterHealthStatus)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -171,15 +172,15 @@ func (m *MockClusterHealthStore) Get(id string) (*storage.ClusterHealthStatus, b
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockClusterHealthStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockClusterHealthStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockClusterHealthStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockClusterHealthStore)(nil).Get), ctx, id)
 }
 
 // GetMany mocks base method.
-func (m *MockClusterHealthStore) GetMany(ids []string) ([]*storage.ClusterHealthStatus, []int, error) {
+func (m *MockClusterHealthStore) GetMany(ctx context.Context, ids []string) ([]*storage.ClusterHealthStatus, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMany", ids)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
 	ret0, _ := ret[0].([]*storage.ClusterHealthStatus)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
@@ -187,37 +188,37 @@ func (m *MockClusterHealthStore) GetMany(ids []string) ([]*storage.ClusterHealth
 }
 
 // GetMany indicates an expected call of GetMany.
-func (mr *MockClusterHealthStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
+func (mr *MockClusterHealthStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockClusterHealthStore)(nil).GetMany), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockClusterHealthStore)(nil).GetMany), ctx, ids)
 }
 
 // UpsertManyWithIDs mocks base method.
-func (m *MockClusterHealthStore) UpsertManyWithIDs(ids []string, objs []*storage.ClusterHealthStatus) error {
+func (m *MockClusterHealthStore) UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.ClusterHealthStatus) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertManyWithIDs", ids, objs)
+	ret := m.ctrl.Call(m, "UpsertManyWithIDs", ctx, ids, objs)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertManyWithIDs indicates an expected call of UpsertManyWithIDs.
-func (mr *MockClusterHealthStoreMockRecorder) UpsertManyWithIDs(ids, objs interface{}) *gomock.Call {
+func (mr *MockClusterHealthStoreMockRecorder) UpsertManyWithIDs(ctx, ids, objs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertManyWithIDs", reflect.TypeOf((*MockClusterHealthStore)(nil).UpsertManyWithIDs), ids, objs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertManyWithIDs", reflect.TypeOf((*MockClusterHealthStore)(nil).UpsertManyWithIDs), ctx, ids, objs)
 }
 
 // UpsertWithID mocks base method.
-func (m *MockClusterHealthStore) UpsertWithID(id string, obj *storage.ClusterHealthStatus) error {
+func (m *MockClusterHealthStore) UpsertWithID(ctx context.Context, id string, obj *storage.ClusterHealthStatus) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertWithID", id, obj)
+	ret := m.ctrl.Call(m, "UpsertWithID", ctx, id, obj)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertWithID indicates an expected call of UpsertWithID.
-func (mr *MockClusterHealthStoreMockRecorder) UpsertWithID(id, obj interface{}) *gomock.Call {
+func (mr *MockClusterHealthStoreMockRecorder) UpsertWithID(ctx, id, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertWithID", reflect.TypeOf((*MockClusterHealthStore)(nil).UpsertWithID), id, obj)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertWithID", reflect.TypeOf((*MockClusterHealthStore)(nil).UpsertWithID), ctx, id, obj)
 }
 
 // WalkAllWithID mocks base method.
