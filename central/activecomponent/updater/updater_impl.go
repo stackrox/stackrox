@@ -2,7 +2,6 @@ package updater
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/converter"
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,8 +43,7 @@ type updaterImpl struct {
 
 type imageExecutable struct {
 	execToComponents map[string][]string
-	scanTime         time.Time
-	// Todo(cdu) add scannerVersion string
+	scannerVersion   string
 }
 
 // PopulateExecutableCache extracts executables from image scan and stores them in the executable cache.
@@ -62,26 +59,23 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 		return nil
 	}
 
-	scanTime := protoconv.ConvertTimestampToTimeOrNow(scan.GetScanTime())
+	scannerVersion := scan.GetScannerVersion()
+	log.Errorf("SHREWS %s", scannerVersion)
 
 	// Check if we should update executable cache
 	currRecord, ok := u.executableCache.Get(imageID)
-	if ok && !currRecord.(*imageExecutable).scanTime.Before(scanTime) {
-		log.Debugf("Skip scan at %v, current scan (%v) has been populated for image %s: %s", scanTime, currRecord.(*imageExecutable).scanTime, imageID, image.GetName())
-		return nil
-	}
 
-	log.Errorf("SHREWS current scan version %s", currRecord.(*imageExecutable).scannerVersion)
-	if ok && currRecord.(*imageExecutable).scannerVersion == scan.GetScannerVersion() {
-		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scan.GetScannerVersion(), currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
+	if ok && currRecord.(*imageExecutable).scannerVersion == scannerVersion {
+		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scannerVersion, currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
 		return nil
 	}
 
 	// Create or update executable cache
 	execToComponents := u.getExecToComponentsMap(scan)
-	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponents: execToComponents, scanTime: scanTime})
+	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponents: execToComponents, scannerVersion: scannerVersion})
 
-	log.Debugf("Executable cache updated for image %s with %d paths", image.GetId(), len(execToComponents))
+	log.Debugf("Executable cache updated for image %s of scan version %s with %d paths", image.GetId(), scannerVersion, len(execToComponents))
+
 	return nil
 }
 

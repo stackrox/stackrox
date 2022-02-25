@@ -79,6 +79,8 @@ var (
 		Id: "image1",
 		Scan: &storage.ImageScan{
 			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
+			// leaving empty initially so the test will cover backwards compatibility for scans iwth now version
+			ScannerVersion: "",
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "image1_component1",
@@ -118,6 +120,7 @@ var (
 			},
 		},
 	}
+
 	mockIndicators = []indicatorModel{
 		{
 			DeploymentID:  "depA",
@@ -293,7 +296,9 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 	}
 
 	// Initial population
+	// scanner version is empty to test backward compatibility
 	image := mockImage.Clone()
+	s.Assert().Equal(image.GetScan().GetScannerVersion(), "")
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
 	s.verifyExecutableCache(updater, mockImage)
 
@@ -308,7 +313,8 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 	// New update without the first component
 	image = mockImage.Clone()
-	image.GetScan().ScanTime = protoconv.ConvertTimeToTimestamp(time.Now().Add(1))
+	// update the scanner version to make sure cache gets re-populated
+	image.GetScan().ScannerVersion = "scanner_version_1"
 	image.GetScan().Components = image.GetScan().GetComponents()[1:]
 	imageForVerify := image.Clone()
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
@@ -317,8 +323,12 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 func (s *acUpdaterTestSuite) verifyExecutableCache(updater *updaterImpl, image *storage.Image) {
 	s.Assert().Len(updater.executableCache.Keys(), 1)
+
 	result, ok := updater.executableCache.Get(image.GetId())
 	s.Assert().True(ok)
+
+	// ensure the scanner version is updated and matches
+	s.Assert().Equal(image.GetScan().GetScannerVersion(), result.(*imageExecutable).scannerVersion)
 	execToComponents := result.(*imageExecutable).execToComponents
 	allExecutables := set.NewStringSet()
 	for _, component := range image.GetScan().GetComponents() {
@@ -347,7 +357,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	image := &storage.Image{
 		Id: "image1",
 		Scan: &storage.ImageScan{
-			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
+			ScanTime:       protoconv.ConvertTimeToTimestamp(time.Now()),
+			ScannerVersion: "scanner_version_1",
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "component1",
