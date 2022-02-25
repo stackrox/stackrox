@@ -5,8 +5,10 @@ import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
 import objects.GenericNotifier
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.CVEService
+import services.ClusterService
 import services.ImageService
 import services.PolicyService
 import spock.lang.Unroll
@@ -14,6 +16,9 @@ import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import util.Env
 
 class ImageManagementTest extends BaseSpecification {
+
+    private static final String OPENSHIFT4_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
+
     @Unroll
     @Category([BAT, Integration])
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
@@ -93,6 +98,22 @@ class ImageManagementTest extends BaseSpecification {
         "nginx:1.19"            | "docker.io"   | "library/nginx"   | "1.19"           | "debian:10"
         // TODO: Add check for RHEL
         "ubuntu:14.04"          | "docker.io"   | "library/ubuntu"  | "14.04"          | "ubuntu:14.04"
+    }
+
+    @Unroll
+    def "Verify image scan finds correct base OS for OpenShift4 internal image - #imageName"() {
+        given:
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
+        when:
+        def img = Services.scanImage(OPENSHIFT4_REGISTRY + "/" + project + "/" + imageRemote + ":" + imageTag)
+        then:
+        assert img.scan.operatingSystem == expected
+        where:
+        "Data inputs are: "
+
+        imageName | project     | imageRemote | imageTag | expected
+        "java:8"  | "openshift" | "java"      | "8"      | "rhel:8"
     }
 
     @Unroll
