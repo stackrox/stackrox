@@ -5,6 +5,7 @@ import {
     Alert,
     AlertVariant,
     Bullseye,
+    Button,
     ButtonVariant,
     PageSection,
     PageSectionVariants,
@@ -19,7 +20,7 @@ import {
 
 import ACSEmptyState from 'Components/ACSEmptyState';
 import PageTitle from 'Components/PageTitle';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import { searchCategories } from 'constants/entityTypes';
 import usePermissions from 'hooks/usePermissions';
 import useSearchOptions from 'hooks/useSearchOptions';
@@ -124,13 +125,14 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                         </ToolbarItem>
                         {canWriteReports && (
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                <ButtonLink
+                                <Button
                                     variant={ButtonVariant.primary}
                                     isInline
-                                    to={`${vulnManagementReportsPath}?action=create`}
+                                    component={LinkShim}
+                                    href={`${vulnManagementReportsPath}?action=create`}
                                 >
                                     Create report
-                                </ButtonLink>
+                                </Button>
                             </ToolbarItem>
                         )}
                     </ToolbarContent>
