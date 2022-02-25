@@ -237,6 +237,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 // ScanImage scans an image and returns the result
 func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
+	log.Errorf("SHREWS ScanImage")
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt: enricher.IgnoreExistingImages,
 	}
@@ -258,6 +259,8 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	if !request.GetIncludeSnoozed() {
 		utils.FilterSuppressedCVEsNoClone(img)
 	}
+
+	log.Errorf("SHREWS End ScanImage")
 	return img, nil
 }
 
