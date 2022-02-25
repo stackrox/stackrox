@@ -245,20 +245,6 @@ func (e *enricherImpl) fetchScanFromDatabase(img *storage.Image, option FetchOpt
 	return false
 }
 
-// fetchSignatureFromDatabase fetches the signature tries to fetch the signature from the cached image.
-// If a signature could be retrieved, it will return true, otherwise false.
-func (e *enricherImpl) fetchSignatureFromDatabase(img *storage.Image, option FetchOption) bool {
-	if option == ForceRefetchSignaturesOnly {
-		return false
-	}
-
-	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetSignature() != nil {
-		img.Signature = existingImage.GetSignature()
-		return true
-	}
-	return false
-}
-
 func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) (ScanResult, error) {
 	// Attempt to short-circuit before checking scanners.
 	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
