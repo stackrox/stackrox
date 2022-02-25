@@ -6,10 +6,10 @@ import * as yup from 'yup';
 import { ClusterInitBundle } from 'services/ClustersService';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import NotFoundMessage from 'Components/NotFoundMessage';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
-import FormCancelButton from '../../FormCancelButton';
-import FormSaveButton from '../../FormSaveButton';
 import ClusterInitBundleFormMessageAlert, {
     ClusterInitBundleFormResponseMessage,
 } from './ClusterInitBundleFormMessageAlert';

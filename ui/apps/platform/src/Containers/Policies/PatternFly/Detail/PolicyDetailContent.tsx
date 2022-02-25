@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Formik } from 'formik';
-import { Flex, Title, Divider } from '@patternfly/react-core';
+import { Flex, Title, Divider, Grid } from '@patternfly/react-core';
 
 import { fetchClustersAsArray } from 'services/ClustersService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
@@ -65,7 +65,10 @@ function PolicyDetailContent({
                                 Policy criteria
                             </Title>
                             <Divider component="div" />
-                            <BooleanPolicyLogicSection readOnly />
+                            {/* this grid component specifies a GridItem to span 5 columns by default for policy sections */}
+                            <Grid hasGutter lg={5}>
+                                <BooleanPolicyLogicSection readOnly />
+                            </Grid>
                         </>
                     )}
                 </Formik>

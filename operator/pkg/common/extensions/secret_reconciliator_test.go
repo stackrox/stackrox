@@ -23,6 +23,7 @@ type secretReconcilerTestSuite struct {
 
 	centralObj *platform.Central
 	client     ctrlClient.Client
+	ctx        context.Context
 
 	reconciliator *SecretReconciliator
 }
@@ -32,6 +33,7 @@ func TestSecretReconcilerExtension(t *testing.T) {
 }
 
 func (s *secretReconcilerTestSuite) SetupTest() {
+	s.ctx = context.Background()
 	s.centralObj = &platform.Central{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: platform.CentralGVK.GroupVersion().String(),
@@ -79,7 +81,7 @@ func (s *secretReconcilerTestSuite) SetupTest() {
 
 	s.client = fake.NewClientBuilder().WithObjects(existingSecret, existingOwnedSecret).Build()
 
-	s.reconciliator = NewSecretReconciliator(context.Background(), s.client, s.centralObj)
+	s.reconciliator = NewSecretReconciliator(s.client, s.centralObj)
 }
 
 func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNothing() {
@@ -92,7 +94,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNo
 		panic("unexpected")
 	}
 
-	err := s.reconciliator.ReconcileSecret("absent-secret", false, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret(s.ctx, "absent-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	dummy := &v1.Secret{}
@@ -111,7 +113,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnExistingManaged_Should
 		panic("unexpected")
 	}
 
-	err := s.reconciliator.ReconcileSecret("existing-managed-secret", false, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret(s.ctx, "existing-managed-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	dummy := &v1.Secret{}
@@ -130,7 +132,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnExistingUnmanaged_Shou
 		panic("unexpected")
 	}
 
-	err := s.reconciliator.ReconcileSecret("existing-secret", false, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret(s.ctx, "existing-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	dummy := &v1.Secret{}
@@ -153,7 +155,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnNonExisting_ShouldCreateS
 		}, nil
 	}
 
-	err := s.reconciliator.ReconcileSecret("absent-secret", true, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret(s.ctx, "absent-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.NotEmpty(markerID, "generate function has not been called")
 
@@ -186,7 +188,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_PassingVa
 		panic("unexpected")
 	}
 
-	err = s.reconciliator.ReconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
+	err = s.reconciliator.ReconcileSecret(s.ctx, "existing-managed-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.True(validated)
 
@@ -211,7 +213,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingVa
 		}, nil
 	}
 
-	err := s.reconciliator.ReconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
+	err := s.reconciliator.ReconcileSecret(s.ctx, "existing-managed-secret", true, validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
 	secret := &v1.Secret{}
@@ -236,7 +238,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingVa
 		}, nil
 	}
 
-	err := s.reconciliator.ReconcileSecret("existing-managed-secret", true, validateFn, generateFn, true)
+	err := s.reconciliator.ReconcileSecret(s.ctx, "existing-managed-secret", true, validateFn, generateFn, true)
 	s.NoError(err)
 
 	secret := &v1.Secret{}
@@ -266,7 +268,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Passing
 		panic("unexpected")
 	}
 
-	err = s.reconciliator.ReconcileSecret("existing-secret", true, validateFn, generateFn, false)
+	err = s.reconciliator.ReconcileSecret(s.ctx, "existing-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.True(validated)
 
@@ -294,7 +296,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Failing
 		panic("unexpected")
 	}
 
-	err = s.reconciliator.ReconcileSecret("existing-secret", true, validateFn, generateFn, false)
+	err = s.reconciliator.ReconcileSecret(s.ctx, "existing-secret", true, validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
 	secret := &v1.Secret{}
