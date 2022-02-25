@@ -47,7 +47,7 @@ func (d *datastoreImpl) Upsert(ctx context.Context, scan *storage.ComplianceOper
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan write")
 	}
-	return d.store.Upsert(scan)
+	return d.store.Upsert(ctx, scan)
 }
 
 func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
@@ -56,5 +56,5 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan delete")
 	}
-	return d.store.Delete(id)
+	return d.store.Delete(ctx, id)
 }

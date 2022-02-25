@@ -74,7 +74,7 @@ func (d *datastoreImpl) Upsert(ctx context.Context, rule *storage.ComplianceOper
 	d.ruleLock.Lock()
 	defer d.ruleLock.Unlock()
 
-	if err := d.store.Upsert(rule); err != nil {
+	if err := d.store.Upsert(ctx, rule); err != nil {
 		return err
 	}
 	d.addToRulesByNameNoLock(rule)
@@ -91,12 +91,12 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	d.ruleLock.Lock()
 	defer d.ruleLock.Unlock()
 
-	rule, exists, err := d.store.Get(id)
+	rule, exists, err := d.store.Get(ctx, id)
 	if err != nil || !exists {
 		return err
 	}
 
-	if err := d.store.Delete(rule.GetId()); err != nil {
+	if err := d.store.Delete(ctx, rule.GetId()); err != nil {
 		return err
 	}
 	delete(d.rulesByName[rule.GetName()], rule.GetId())
