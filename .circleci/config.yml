@@ -3975,7 +3975,7 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-    - restore-go-mod-cache
+      - restore-go-mod-cache
 
       - run:
           name: Sanity check KUBECONFIG
