@@ -14,6 +14,7 @@ import {
 import NotFoundMessage from 'Components/NotFoundMessage';
 import {
     AccessScope,
+    accessScopeNew,
     createAccessScope,
     deleteAccessScope,
     getIsDefaultAccessScopeId,
@@ -33,18 +34,6 @@ import './AccessScopes.css';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
-
-const accessScopeNew: AccessScope = {
-    id: '',
-    name: '',
-    description: '',
-    rules: {
-        includedClusters: [],
-        includedNamespaces: [],
-        clusterLabelSelectors: [],
-        namespaceLabelSelectors: [],
-    },
-};
 
 const entityType = 'ACCESS_SCOPE';
 

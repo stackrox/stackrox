@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex } from '@patternfly/react-core';
+import { Flex, GridItem } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
 import {
@@ -31,30 +31,61 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
 
     return (
         <>
-            {values.policySections?.map((_, sectionIndex) => (
-                // eslint-disable-next-line react/no-array-index-key
-                <React.Fragment key={sectionIndex}>
-                    <PolicySection
-                        sectionIndex={sectionIndex}
-                        descriptors={descriptor}
-                        readOnly={readOnly}
-                    />
-                    {sectionIndex !== values.policySections.length - 1 && (
-                        <Flex
-                            alignSelf={{ default: 'alignSelfCenter' }}
-                            alignItems={{ default: 'alignItemsCenter' }}
-                            direction={{ default: 'column' }}
-                            flexWrap={{ default: 'nowrap' }}
-                            spaceItems={{ default: 'spaceItemsNone' }}
-                            className="pf-u-h-100"
-                        >
-                            <div className="or-divider" />
-                            OR
-                            <div className="or-divider" />
-                        </Flex>
-                    )}
-                </React.Fragment>
-            ))}
+            {values.policySections?.map((_, sectionIndex) =>
+                readOnly ? (
+                    // eslint-disable-next-line react/no-array-index-key
+                    <React.Fragment key={sectionIndex}>
+                        {/* this grid item takes up the default 5 columns specified in the Grid component in PolicyDetailContent */}
+                        <GridItem>
+                            <PolicySection
+                                sectionIndex={sectionIndex}
+                                descriptors={descriptor}
+                                readOnly={readOnly}
+                            />
+                        </GridItem>
+                        {/* this grid item takes up 1 column specified here so that two policy sections & OR dividers can fit in one row */}
+                        <GridItem lg={1}>
+                            {sectionIndex !== values.policySections.length - 1 && (
+                                <Flex
+                                    alignSelf={{ default: 'alignSelfCenter' }}
+                                    alignItems={{ default: 'alignItemsCenter' }}
+                                    direction={{ default: 'row', lg: 'column' }}
+                                    flexWrap={{ default: 'nowrap' }}
+                                    spaceItems={{ default: 'spaceItemsSm' }}
+                                    className="or-divider-container"
+                                >
+                                    <div className="or-divider" />
+                                    <div className="pf-u-align-self-center">OR</div>
+                                    <div className="or-divider" />
+                                </Flex>
+                            )}
+                        </GridItem>
+                    </React.Fragment>
+                ) : (
+                    // eslint-disable-next-line react/no-array-index-key
+                    <React.Fragment key={sectionIndex}>
+                        <PolicySection
+                            sectionIndex={sectionIndex}
+                            descriptors={descriptor}
+                            readOnly={readOnly}
+                        />
+                        {sectionIndex !== values.policySections.length - 1 && (
+                            <Flex
+                                alignSelf={{ default: 'alignSelfCenter' }}
+                                alignItems={{ default: 'alignItemsCenter' }}
+                                direction={{ default: 'row', lg: 'column' }}
+                                flexWrap={{ default: 'nowrap' }}
+                                spaceItems={{ default: 'spaceItemsSm' }}
+                                className="or-divider-container"
+                            >
+                                <div className="or-divider" />
+                                <div className="pf-u-align-self-center">OR</div>
+                                <div className="or-divider" />
+                            </Flex>
+                        )}
+                    </React.Fragment>
+                )
+            )}
         </>
     );
 }

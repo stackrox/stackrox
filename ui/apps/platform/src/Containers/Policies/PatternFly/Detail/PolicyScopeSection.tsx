@@ -27,7 +27,7 @@ function PolicyScopeSection({
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
                         Scope inclusions
                     </Title>
-                    <Grid hasGutter sm={12} md={6}>
+                    <Grid hasGutter md={6} xl={4}>
                         {scope.map((restriction, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
@@ -49,7 +49,7 @@ function PolicyScopeSection({
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
                         Scope exclusions
                     </Title>
-                    <Grid hasGutter sm={12} md={6}>
+                    <Grid hasGutter md={6} xl={4}>
                         {excludedDeployments.map((excludedDeployment, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
