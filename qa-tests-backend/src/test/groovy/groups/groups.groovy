@@ -15,3 +15,4 @@ package groups
 @interface Notifiers { }
 @interface K8sEvents { }
 @interface OpenShift { } // Test should only run on OpenShift
+@interface OpenShift4 { } // Test should only run on OpenShift 4.x

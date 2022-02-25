@@ -1359,6 +1359,10 @@ commands:
         type: string
         default: k8s
 
+      is-openshift-4:
+        type: boolean
+        default: false
+
       use-websocket:
         type: boolean
         default: false
@@ -1434,12 +1438,17 @@ commands:
             else
               export CLUSTER=K8S
             fi
+            if [[ "<< parameters.is-openshift-4 >>" ]]; then
+              export TEST=openshift4-test
+            else
+              export TEST=test
+            fi
             if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
-              make -C qa-tests-backend test || touch FAIL
+              make -C qa-tests-backend $TEST || touch FAIL
             elif .circleci/pr_has_label.sh ci-all-qa-tests; then
               echo "ci-all-qa-tests label was specified, so running all QA tests..."
-              make -C qa-tests-backend test || touch FAIL
+              make -C qa-tests-backend $TEST || touch FAIL
             else
               echo "On a PR branch, running BAT tests only..."
               make -C qa-tests-backend bat-test || touch FAIL
@@ -4211,6 +4220,7 @@ jobs:
           cluster-id: openshift-4-api-e2e-tests
           sensor-deploy-flavor: helm
           orchestrator-flavor: openshift
+          is-openshift-4: true
           determine-whether-to-run:
             - check-to-run:
                 label: ci-openshift-4-tests
