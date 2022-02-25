@@ -27,10 +27,10 @@ type QueryType int
 
 // These are the currently supported query types
 const (
-	GET    QueryType = 0
-	COUNT  QueryType = 1
-	VALUE  QueryType = 2
-	DELETE QueryType = 3
+	GET    QueryType = iota
+	COUNT
+	VALUE
+	DELETE
 )
 
 func replaceVars(s string) string {
