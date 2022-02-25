@@ -6,7 +6,9 @@ import withAuth from '../helpers/basicAuth';
 import {
     visitClusters,
     visitClustersFromLeftNav,
+    visitClustersWithFixture,
     visitClustersWithFixtureMetadataDatetime,
+    visitClusterByNameWithFixture,
     visitClusterByNameWithFixtureMetadataDatetime,
 } from '../helpers/clusters';
 
@@ -286,20 +288,8 @@ describe('Cluster management', () => {
     withAuth();
 
     it('should indicate which clusters are managed by Helm and the Operator', () => {
-        cy.intercept('GET', clustersApi.list, {
-            fixture: 'clusters/health.json',
-        }).as('getClusters');
-        cy.intercept('GET', clustersApi.kernelSupportAvailable, {
-            body: {
-                kernelSupportAvailable: true,
-            },
-        }).as('getIsKernelSupportAvailable');
-
-        const currentDatetime = new Date('2020-08-31T13:01:00Z');
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
-
-        cy.visit(clustersUrl);
-        cy.wait('@getClusters');
+        const fixturePath = 'clusters/health.json';
+        visitClustersWithFixture(fixturePath);
 
         const helmIndicator = '[data-testid="cluster-name"] img[alt="Managed by Helm"]';
         const k8sOperatorIndicator =
@@ -319,13 +309,6 @@ describe('Cluster configuration', () => {
     withAuth();
 
     const fixturePath = 'clusters/health.json';
-    const metadata = {
-        version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
-        buildFlavor: 'release',
-        releaseBuild: true,
-        licenseStatus: 'VALID',
-    };
-    const datetimeISOString = '2020-08-31T13:01:00Z'; // for comparison to `lastContact` and `sensorCertExpiry` in clusters fixture
 
     const assertConfigurationReadOnly = () => {
         const form = cy.get('[data-testid="cluster-form"]').children();
@@ -353,22 +336,12 @@ describe('Cluster configuration', () => {
     };
 
     it('should be read-only for Helm-based installations', () => {
-        visitClusterByNameWithFixtureMetadataDatetime(
-            'alpha-amsterdam-1',
-            fixturePath,
-            metadata,
-            datetimeISOString
-        );
+        visitClusterByNameWithFixture('alpha-amsterdam-1', fixturePath);
         assertConfigurationReadOnly();
     });
 
     it('should be read-only for unknown manager installations that have a defined Helm config', () => {
-        visitClusterByNameWithFixtureMetadataDatetime(
-            'kappa-kilogramme-10',
-            fixturePath,
-            metadata,
-            datetimeISOString
-        );
+        visitClusterByNameWithFixture('kappa-kilogramme-10', fixturePath);
         assertConfigurationReadOnly();
     });
 });
