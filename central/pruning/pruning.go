@@ -208,7 +208,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 		return
 	}
 	deploymentSet := set.NewFrozenStringSet(deploymentIDs...)
-	podIDs, err := g.pods.GetPodIDs()
+	podIDs, err := g.pods.GetPodIDs(pruningCtx)
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch pod IDs in pruning"))
 		return

@@ -29,13 +29,13 @@ type DataStore interface {
 
 	RemovePod(ctx context.Context, id string) error
 
-	GetPodIDs() ([]string, error)
+	GetPodIDs(ctx context.Context) ([]string, error)
 }
 
 // NewRocksDB creates a pod datastore based on RocksDB
-func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
+func NewRocksDB(ctx context.Context, db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	store := cache.NewCachedStore(rocksdb.New(db))
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(ctx, store, indexer, searcher, indicators, processFilter)
 }

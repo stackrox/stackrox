@@ -200,7 +200,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
-	pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
+	pods, err := podDatastore.NewRocksDB(ctx, db, bleveIndex, mockProcessDataStore, mockFilter)
 	require.NoError(t, err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods, indexingQ

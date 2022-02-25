@@ -45,7 +45,7 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(storage podStore.Store, indexer podIndex.Indexer, searcher podSearch.Searcher,
+func newDatastoreImpl(ctx context.Context, storage podStore.Store, indexer podIndex.Indexer, searcher podSearch.Searcher,
 	indicators piDS.DataStore, processFilter filter.Filter) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		podStore:      storage,
@@ -55,13 +55,13 @@ func newDatastoreImpl(storage podStore.Store, indexer podIndex.Indexer, searcher
 		processFilter: processFilter,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
-	if err := ds.buildIndex(); err != nil {
+	if err := ds.buildIndex(ctx); err != nil {
 		return nil, err
 	}
 	return ds, nil
 }
 
-func (ds *datastoreImpl) buildIndex() error {
+func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 
 	needsReindexing, err := ds.podIndexer.NeedsInitialIndexing()
@@ -69,12 +69,12 @@ func (ds *datastoreImpl) buildIndex() error {
 		return err
 	}
 	if needsReindexing {
-		return ds.fullReindex()
+		return ds.fullReindex(ctx)
 	}
 
 	log.Info("[STARTUP] Determining if pod db/indexer reconciliation is needed")
 
-	podsToIndex, err := ds.podStore.GetKeysToIndex()
+	podsToIndex, err := ds.podStore.GetKeysToIndex(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error retrieving keys to index")
 	}
@@ -83,7 +83,7 @@ func (ds *datastoreImpl) buildIndex() error {
 
 	podBatcher := batcher.New(len(podsToIndex), podBatchSize)
 	for start, end, valid := podBatcher.Next(); valid; start, end, valid = podBatcher.Next() {
-		pods, missingIndices, err := ds.podStore.GetMany(podsToIndex[start:end])
+		pods, missingIndices, err := ds.podStore.GetMany(ctx, podsToIndex[start:end])
 		if err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ func (ds *datastoreImpl) buildIndex() error {
 		}
 
 		// Ack keys so that even if central restarts, we don't need to reindex them again
-		if err := ds.podStore.AckKeysIndexed(podsToIndex[start:end]...); err != nil {
+		if err := ds.podStore.AckKeysIndexed(ctx, podsToIndex[start:end]...); err != nil {
 			return err
 		}
 		log.Infof("[STARTUP] Successfully indexed %d/%d pods", end, len(podsToIndex))
@@ -111,17 +111,17 @@ func (ds *datastoreImpl) buildIndex() error {
 	return nil
 }
 
-func (ds *datastoreImpl) fullReindex() error {
+func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 	log.Info("[STARTUP] Reindexing all pods")
 
-	podIDs, err := ds.podStore.GetIDs()
+	podIDs, err := ds.podStore.GetIDs(ctx)
 	if err != nil {
 		return err
 	}
 	log.Infof("[STARTUP] Found %d pods to index", len(podIDs))
 	podBatcher := batcher.New(len(podIDs), podBatchSize)
 	for start, end, valid := podBatcher.Next(); valid; start, end, valid = podBatcher.Next() {
-		pods, _, err := ds.podStore.GetMany(podIDs[start:end])
+		pods, _, err := ds.podStore.GetMany(ctx, podIDs[start:end])
 		if err != nil {
 			return err
 		}
@@ -133,11 +133,11 @@ func (ds *datastoreImpl) fullReindex() error {
 	log.Infof("[STARTUP] Successfully indexed %d pods", len(podIDs))
 
 	// Clear the keys because we just re-indexed everything
-	keys, err := ds.podStore.GetKeysToIndex()
+	keys, err := ds.podStore.GetKeysToIndex(ctx)
 	if err != nil {
 		return err
 	}
-	if err := ds.podStore.AckKeysIndexed(keys...); err != nil {
+	if err := ds.podStore.AckKeysIndexed(ctx, keys...); err != nil {
 		return err
 	}
 
@@ -160,7 +160,7 @@ func (ds *datastoreImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*sto
 }
 
 func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, bool, error) {
-	pod, found, err := ds.podStore.Get(id)
+	pod, found, err := ds.podStore.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -184,7 +184,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	ds.processFilter.UpdateByPod(pod)
 
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
-		oldPod, found, err := ds.podStore.Get(pod.GetId())
+		oldPod, found, err := ds.podStore.Get(ctx, pod.GetId())
 		if err != nil {
 			return errors.Wrapf(err, "retrieving pod %q from store", pod.GetName())
 		}
@@ -192,13 +192,13 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 			mergeContainerInstances(pod, oldPod)
 		}
 
-		if err := ds.podStore.Upsert(pod); err != nil {
+		if err := ds.podStore.Upsert(ctx, pod); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
 		}
 		if err := ds.podIndexer.AddPod(pod); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to index", pod.GetName())
 		}
-		if err := ds.podStore.AckKeysIndexed(pod.GetId()); err != nil {
+		if err := ds.podStore.AckKeysIndexed(ctx, pod.GetId()); err != nil {
 			return errors.Wrapf(err, "could not acknowledge indexing for %q", pod.GetName())
 		}
 		return nil
@@ -256,20 +256,20 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	pod, found, err := ds.podStore.Get(id)
+	pod, found, err := ds.podStore.Get(ctx, id)
 	if err != nil || !found {
 		return err
 	}
 	ds.processFilter.DeleteByPod(pod)
 
 	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.podStore.Delete(id); err != nil {
+		if err := ds.podStore.Delete(ctx, id); err != nil {
 			return err
 		}
 		if err := ds.podIndexer.DeletePod(id); err != nil {
 			return err
 		}
-		if err := ds.podStore.AckKeysIndexed(id); err != nil {
+		if err := ds.podStore.AckKeysIndexed(ctx, id); err != nil {
 			return err
 		}
 		return nil
@@ -285,8 +285,8 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	return ds.indicators.RemoveProcessIndicatorsByPod(deleteIndicatorsCtx, id)
 }
 
-func (ds *datastoreImpl) GetPodIDs() ([]string, error) {
-	return ds.podStore.GetIDs()
+func (ds *datastoreImpl) GetPodIDs(ctx context.Context) ([]string, error) {
+	return ds.podStore.GetIDs(ctx)
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pod *storage.Pod) error) error {

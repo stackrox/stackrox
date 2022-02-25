@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
@@ -24,6 +26,7 @@ func Singleton() DataStore {
 	once.Do(func() {
 		var err error
 		ps, err = NewRocksDB(
+			context.TODO(),
 			globaldb.GetRocksDB(),
 			globalindex.GetPodIndex(),
 			piDS.Singleton(),
