@@ -46,6 +46,18 @@ export type AccessScope = {
     rules: SimpleAccessScopeRules;
 };
 
+export const accessScopeNew: AccessScope = {
+    id: '',
+    name: '',
+    description: '',
+    rules: {
+        includedClusters: [],
+        includedNamespaces: [],
+        clusterLabelSelectors: [],
+        namespaceLabelSelectors: [],
+    },
+};
+
 /*
  * Fetch entities and return array of objects.
  */
