@@ -101,6 +101,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
+    @Category(BAT)
     def "Verify image scan finds correct base OS for OpenShift4 internal image - #imageName"() {
         given:
         Assume.assumeTrue(ClusterService.isOpenShift4())
