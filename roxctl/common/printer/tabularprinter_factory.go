@@ -1,7 +1,6 @@
 package printer
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -135,7 +134,7 @@ func (t *TabularPrinterFactory) validate() error {
 	columnsToMerge := set.NewStringSet(t.columnsToMerge...)
 	intersect := headers.Intersect(columnsToMerge)
 	if !intersect.Equal(columnsToMerge) {
-		return errox.Newf(errox.InvalidArgs"undefined columns to merge: %s", columnsToMerge.Difference(intersect).ElementsString(", "))
+		return errox.Newf(errox.InvalidArgs, "undefined columns to merge: %s", columnsToMerge.Difference(intersect).ElementsString(", "))
 	}
 	return nil
 }
