@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { ButtonVariant } from '@patternfly/react-core';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 
-import ButtonLink from 'Components/PatternFly/ButtonLink';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import FixabilityLabelsList from 'Components/PatternFly/FixabilityLabelsList';
 import SeverityLabelsList from 'Components/PatternFly/SeverityLabelsList';
@@ -15,9 +15,9 @@ const VulnMgmtReportTableColumnDescriptor = [
         Cell: ({ original }) => {
             const url = `${vulnManagementReportsPath}/${original.id as string}`;
             return (
-                <ButtonLink variant={ButtonVariant.link} isInline to={url}>
+                <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
                     {original?.name}
-                </ButtonLink>
+                </Button>
             );
         },
     },
