@@ -128,10 +128,10 @@ function PolicyScopeForm() {
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <Grid hasGutter>
+                    <Grid hasGutter md={6} xl={4}>
                         {scope?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
-                            <GridItem span={4} rowSpan={4} key={index}>
+                            <GridItem key={index}>
                                 <PolicyScopeCard
                                     type="inclusion"
                                     name={`scope[${index}]`}
@@ -168,10 +168,10 @@ function PolicyScopeForm() {
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <Grid hasGutter>
+                    <Grid hasGutter md={6} xl={4}>
                         {excludedDeploymentScopes?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
-                            <GridItem span={4} rowSpan={4} key={index}>
+                            <GridItem key={index}>
                                 <PolicyScopeCard
                                     type="exclusion"
                                     name={`excludedDeploymentScopes[${index}]`}
