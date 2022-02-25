@@ -84,11 +84,11 @@ func (ds *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return false, err
 	}
-	return ds.storage.Exists(id)
+	return ds.storage.Exists(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetIDs(ctx context.Context) ([]string, error) {
-	ids, err := ds.storage.GetIDs()
+	ids, err := ds.storage.GetIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (ds *dataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.Net
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return nil, false, err
 	}
-	return ds.storage.Get(id)
+	return ds.storage.Get(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error) {
@@ -273,7 +273,7 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
-	if stored, found, err := ds.storage.Get(entity.GetInfo().GetId()); err != nil {
+	if stored, found, err := ds.storage.Get(ctx, entity.GetInfo().GetId()); err != nil {
 		return errors.Wrapf(err, "could not determine if network entity %s already exists in DB. SKIPPING",
 			entity.GetInfo().GetExternalSource().GetName())
 	} else if found {
@@ -284,7 +284,7 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 			stored.GetInfo().GetExternalSource().GetName(), stored.GetInfo().GetExternalSource().GetCidr())
 	}
 
-	if err := ds.storage.Upsert(entity); err != nil {
+	if err := ds.storage.Upsert(ctx, entity); err != nil {
 		return errors.Wrapf(err, "upserting network entity %s into storage", entity.GetInfo().GetId())
 	}
 
@@ -305,12 +305,12 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
-	_, err := ds.validateNoCIDRUpdate(entity)
+	_, err := ds.validateNoCIDRUpdate(ctx, entity)
 	if err != nil {
 		return err
 	}
 
-	if err := ds.storage.Upsert(entity); err != nil {
+	if err := ds.storage.Upsert(ctx, entity); err != nil {
 		return errors.Wrapf(err, "upserting network entity %s into storage", entity.GetInfo().GetId())
 	}
 
@@ -334,7 +334,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 	defer ds.netEntityLock.Unlock()
 
 	// Check if the entity actually exists to avoid unnecessary push to Sensor.
-	found, err := ds.storage.Exists(id)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -342,7 +342,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 		return nil
 	}
 
-	if err := ds.storage.Delete(id); err != nil {
+	if err := ds.storage.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "deleting network entity %s from storage", id)
 	}
 
@@ -388,7 +388,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 		return err
 	}
 
-	if err := ds.storage.DeleteMany(ids); err != nil {
+	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return errors.Wrapf(err, "deleting network entities for cluster %s from storage", clusterID)
 	}
 
@@ -399,8 +399,8 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	return nil
 }
 
-func (ds *dataStoreImpl) validateNoCIDRUpdate(newEntity *storage.NetworkEntity) (bool, error) {
-	old, found, err := ds.storage.Get(newEntity.GetInfo().GetId())
+func (ds *dataStoreImpl) validateNoCIDRUpdate(ctx context.Context, newEntity *storage.NetworkEntity) (bool, error) {
+	old, found, err := ds.storage.Get(ctx, newEntity.GetInfo().GetId())
 	if err != nil {
 		return false, err
 	}

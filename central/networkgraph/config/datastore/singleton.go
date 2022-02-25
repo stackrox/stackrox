@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/pkg/sync"
@@ -14,7 +16,7 @@ var (
 // Singleton provides the instance of DataStore to use.
 func Singleton() DataStore {
 	once.Do(func() {
-		instance = New(rocksdb.New(globaldb.GetRocksDB()))
+		instance = New(context.TODO(), rocksdb.New(globaldb.GetRocksDB()))
 	})
 	return instance
 }
