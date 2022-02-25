@@ -28,7 +28,7 @@ func (t *ScopeTransform) NewCachedChecker(ctx context.Context, resourceHelper *s
 	}
 	searcher := dackbox.NewCachedSearcher(graph.GetGraph(ctx), pred, t.Path)
 	if t.EdgeIndex != nil {
-		searcher = dackbox.EdgeSearcher(ctx, searcher, *t.EdgeIndex)
+		searcher = dackbox.EdgeSearcher(searcher, *t.EdgeIndex)
 	}
 	return searcher
 }
