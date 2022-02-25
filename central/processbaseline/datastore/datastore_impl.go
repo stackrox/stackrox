@@ -49,7 +49,7 @@ func (ds *datastoreImpl) GetProcessBaseline(ctx context.Context, key *storage.Pr
 	if err != nil {
 		return nil, false, err
 	}
-	processBaseline, exists, err := ds.storage.Get(id)
+	processBaseline, exists, err := ds.storage.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -69,10 +69,10 @@ func (ds *datastoreImpl) AddProcessBaseline(ctx context.Context, baseline *stora
 	}
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
-	return ds.addProcessBaselineUnlocked(id, baseline)
+	return ds.addProcessBaselineUnlocked(ctx, id, baseline)
 }
 
-func (ds *datastoreImpl) addProcessBaselineUnlocked(id string, baseline *storage.ProcessBaseline) (string, error) {
+func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id string, baseline *storage.ProcessBaseline) (string, error) {
 	baseline.Id = id
 	baseline.Created = types.TimestampNow()
 	baseline.LastUpdate = baseline.GetCreated()
@@ -81,12 +81,12 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(id string, baseline *storage
 	if err == nil {
 		baseline.StackRoxLockedTimestamp = lockTimestamp
 	}
-	if err := ds.storage.Upsert(baseline); err != nil {
+	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
 	if err := ds.indexer.AddBaseline(baseline); err != nil {
 		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
-		subErr := ds.storage.Delete(id)
+		subErr := ds.storage.Delete(ctx, id)
 		if subErr != nil {
 			err = errors.Wrap(err, "error rolling back process process baseline addition")
 		}
@@ -95,13 +95,13 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(id string, baseline *storage
 	return id, nil
 }
 
-func (ds *datastoreImpl) removeProcessBaselineByID(id string) error {
+func (ds *datastoreImpl) removeProcessBaselineByID(ctx context.Context, id string) error {
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
 	if err := ds.indexer.DeleteBaseline(id); err != nil {
 		return errors.Wrap(err, "error removing process baseline from index")
 	}
-	if err := ds.storage.Delete(id); err != nil {
+	if err := ds.storage.Delete(ctx, id); err != nil {
 		return errors.Wrap(err, "error removing process baseline from store")
 	}
 	return nil
@@ -125,7 +125,7 @@ func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage
 	if err != nil {
 		return err
 	}
-	if err := ds.removeProcessBaselineByID(id); err != nil {
+	if err := ds.removeProcessBaselineByID(ctx, id); err != nil {
 		return err
 	}
 	// Delete process baseline results if this is the last process baseline with the given deploymentID
@@ -156,7 +156,7 @@ func (ds *datastoreImpl) RemoveProcessBaselinesByDeployment(ctx context.Context,
 
 	var errList []error
 	for _, result := range results {
-		err := ds.removeProcessBaselineByID(result.ID)
+		err := ds.removeProcessBaselineByID(ctx, result.ID)
 		if err != nil {
 			errList = append(errList, err)
 		}
@@ -173,8 +173,8 @@ func (ds *datastoreImpl) RemoveProcessBaselinesByDeployment(ctx context.Context,
 	return nil
 }
 
-func (ds *datastoreImpl) getBaselineForUpdate(id string) (*storage.ProcessBaseline, error) {
-	baseline, exists, err := ds.storage.Get(id)
+func (ds *datastoreImpl) getBaselineForUpdate(ctx context.Context, id string) (*storage.ProcessBaseline, error) {
+	baseline, exists, err := ds.storage.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -200,12 +200,12 @@ func makeElementList(elementMap map[string]*storage.BaselineElement) []*storage.
 	return elementList
 }
 
-func (ds *datastoreImpl) updateProcessBaselineAndSetTimestamp(baseline *storage.ProcessBaseline) error {
+func (ds *datastoreImpl) updateProcessBaselineAndSetTimestamp(ctx context.Context, baseline *storage.ProcessBaseline) error {
 	baseline.LastUpdate = types.TimestampNow()
-	return ds.storage.Upsert(baseline)
+	return ds.storage.Upsert(ctx, baseline)
 }
 
-func (ds *datastoreImpl) updateProcessBaselineElementsUnlocked(baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
+func (ds *datastoreImpl) updateProcessBaselineElementsUnlocked(ctx context.Context, baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
 	baselineMap := makeElementMap(baseline.GetElements())
 	graveyardMap := makeElementMap(baseline.GetElementGraveyard())
 
@@ -238,7 +238,7 @@ func (ds *datastoreImpl) updateProcessBaselineElementsUnlocked(baseline *storage
 	baseline.Elements = makeElementList(baselineMap)
 	baseline.ElementGraveyard = makeElementList(graveyardMap)
 
-	err := ds.updateProcessBaselineAndSetTimestamp(baseline)
+	err := ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	if err != nil {
 		return nil, err
 	}
@@ -263,12 +263,12 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
 
-	baseline, err := ds.getBaselineForUpdate(id)
+	baseline, err := ds.getBaselineForUpdate(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return ds.updateProcessBaselineElementsUnlocked(baseline, addElements, removeElements, auto)
+	return ds.updateProcessBaselineElementsUnlocked(ctx, baseline, addElements, removeElements, auto)
 }
 
 func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
@@ -292,7 +292,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 	}
 
 	if exists {
-		return ds.updateProcessBaselineElementsUnlocked(baseline, addElements, nil, auto)
+		return ds.updateProcessBaselineElementsUnlocked(ctx, baseline, addElements, nil, auto)
 	}
 
 	timestamp := types.TimestampNow()
@@ -307,7 +307,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 		Created:    timestamp,
 		LastUpdate: timestamp,
 	}
-	_, err = ds.addProcessBaselineUnlocked(id, baseline)
+	_, err = ds.addProcessBaselineUnlocked(ctx, id, baseline)
 	if err != nil {
 		return nil, err
 	}
@@ -328,17 +328,17 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
 
-	baseline, err := ds.getBaselineForUpdate(id)
+	baseline, err := ds.getBaselineForUpdate(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	if locked && baseline.GetUserLockedTimestamp() == nil {
 		baseline.UserLockedTimestamp = types.TimestampNow()
-		err = ds.updateProcessBaselineAndSetTimestamp(baseline)
+		err = ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	} else if !locked && baseline.GetUserLockedTimestamp() != nil {
 		baseline.UserLockedTimestamp = nil
-		err = ds.updateProcessBaselineAndSetTimestamp(baseline)
+		err = ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	}
 	if err != nil {
 		return nil, err
@@ -366,7 +366,7 @@ func (ds *datastoreImpl) RemoveProcessBaselinesByIDs(ctx context.Context, ids []
 		} else if !ok {
 			return sac.ErrResourceAccessDenied
 		}
-		if err := ds.removeProcessBaselineByID(id); err != nil {
+		if err := ds.removeProcessBaselineByID(ctx, id); err != nil {
 			return errors.Wrapf(err, "removing baseline %s", id)
 		}
 	}

@@ -62,7 +62,7 @@ func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Quer
 		return nil, err
 	}
 	ids := search.ResultsToIDs(results)
-	baselines, _, err := s.storage.GetMany(ids)
+	baselines, _, err := s.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
