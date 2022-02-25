@@ -33,10 +33,10 @@ const (
 	ForceRefetchCachedValuesOnly
 )
 
-// ForceRefetchCachedValues implies whether the cached values within the database should be skipped and refetched.
+// forceRefetchCachedValues implies whether the cached values within the database should be skipped and refetched.
 // Note: This does not include the specific FetchOption ForceRefetchScansOnly and ForceRefetchSignaturesOnly, the caller
 // still needs to check for those specifically.
-func (f FetchOption) ForceRefetchCachedValues() bool {
+func (f FetchOption) forceRefetchCachedValues() bool {
 	return f == ForceRefetch || f == ForceRefetchCachedValuesOnly
 }
 
@@ -61,7 +61,7 @@ func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
 
 // FetchOnlyIfScanEmpty will use the scan that exists in the image unless the fetch opts prohibit it
 func (e EnrichmentContext) FetchOnlyIfScanEmpty() bool {
-	return e.FetchOpt != IgnoreExistingImages && !e.FetchOpt.ForceRefetchCachedValues() && e.FetchOpt != ForceRefetchScansOnly
+	return e.FetchOpt != IgnoreExistingImages && !e.FetchOpt.forceRefetchCachedValues() && e.FetchOpt != ForceRefetchScansOnly
 }
 
 // EnrichmentResult denotes possible return values of the EnrichImage function.
@@ -119,7 +119,6 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
 
-		signatureLimiter:           rate.NewLimiter(rate.Every(1*time.Second), 5),
 		signatureIntegrationGetter: signatureIntegrationGetter,
 
 		imageGetter: imageGetter,

@@ -43,7 +43,6 @@ type enricherImpl struct {
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
 
-	signatureLimiter           *rate.Limiter
 	signatureIntegrationGetter signatureIntegrationGetter
 
 	imageGetter imageGetter
@@ -218,7 +217,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 }
 
 func (e *enricherImpl) fetchFromDatabase(img *storage.Image, option FetchOption) (*storage.Image, bool) {
-	if option.ForceRefetchCachedValues() {
+	if option.forceRefetchCachedValues() {
 		return img, false
 	}
 	// See if the image exists in the DB with a scan, if it does, then use that instead of fetching
@@ -246,6 +245,8 @@ func (e *enricherImpl) fetchScanFromDatabase(img *storage.Image, option FetchOpt
 	return false
 }
 
+// fetchSignatureFromDatabase fetches the signature tries to fetch the signature from the cached image.
+// If a signature could be retrieved, it will return true, otherwise false.
 func (e *enricherImpl) fetchSignatureFromDatabase(img *storage.Image, option FetchOption) bool {
 	if option == ForceRefetchSignaturesOnly {
 		return false
