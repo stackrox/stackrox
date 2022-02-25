@@ -34,11 +34,11 @@ func ReconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomRes
 
 func reconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client, config reconcileScannerDBPasswordConfig) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
-		SecretReconciliator:  NewSecretReconciliator(ctx, client, obj),
+		SecretReconciliator:  NewSecretReconciliator(client, obj),
 		obj:                  obj,
 		passwordResourceName: config.PasswordResourceName,
 	}
-	return run.Execute()
+	return run.Execute(ctx)
 }
 
 type reconcileScannerDBPasswordExtensionRun struct {
@@ -47,11 +47,11 @@ type reconcileScannerDBPasswordExtensionRun struct {
 	passwordResourceName string
 }
 
-func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
+func (r *reconcileScannerDBPasswordExtensionRun) Execute(ctx context.Context) error {
 	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
 	shouldExist := r.obj.GetDeletionTimestamp() == nil && r.obj.IsScannerEnabled()
 
-	if err := r.ReconcileSecret(r.passwordResourceName, shouldExist, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
+	if err := r.ReconcileSecret(ctx, r.passwordResourceName, shouldExist, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
 		return errors.Wrapf(err, "reconciling %q secret", r.passwordResourceName)
 	}
 
