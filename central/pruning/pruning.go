@@ -278,10 +278,24 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 	// TODO: When searching can be done with SQL, this should be refactored to a simple `NOT IN...` query. This current one is inefficent
 	// with a large number of clusters and because of the required conjunction query that is taking a hit being a regex query to do nothing
 	// Bleve/booleanquery requires a conjunction so it can't be removed
-	return search.NewBooleanQuery(
-		search.ConjunctionQuery(search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery(), search.EmptyQuery()).GetConjunction(),
-		search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction(),
-	)
+	var mustNot *v1.DisjunctionQuery
+	if clusterIDSet.Cardinality() > 1 {
+		mustNot = search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction()
+	} else {
+		mustNot = (&v1.Query{
+			Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+				Queries: []*v1.Query{search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()},
+			}},
+		}).GetDisjunction()
+	}
+
+	must := (&v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery()},
+		}},
+	}).GetConjunction()
+
+	return search.NewBooleanQuery(must, mustNot)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {

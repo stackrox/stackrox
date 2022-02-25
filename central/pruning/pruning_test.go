@@ -1115,60 +1115,88 @@ func TestRemoveOrphanedRBACObjects(t *testing.T) {
 	clusters := []string{uuid.NewV4().String(), uuid.NewV4().String(), uuid.NewV4().String()}
 	cases := []struct {
 		name                  string
+		validClusters         []string
 		serviceAccts          []*storage.ServiceAccount
 		roles                 []*storage.K8SRole
 		bindings              []*storage.K8SRoleBinding
-		expectedSADeletions   []string
-		expectedRoleDeletions []string
-		expectedRBDeletions   []string
+		expectedSADeletions   set.FrozenStringSet
+		expectedRoleDeletions set.FrozenStringSet
+		expectedRBDeletions   set.FrozenStringSet
 	}{
 		{
-			name: "remove SAs that belong to deleted clusters",
+			name:          "remove SAs that belong to deleted clusters",
+			validClusters: clusters,
 			serviceAccts: []*storage.ServiceAccount{
 				{Id: "sa-0", ClusterId: clusters[0]},
 				{Id: "sa-1", ClusterId: "invalid-1"},
 				{Id: "sa-2", ClusterId: clusters[1]},
 				{Id: "sa-3", ClusterId: "invalid-2"},
 			},
-			expectedSADeletions: []string{"sa-1", "sa-3"},
+			expectedSADeletions: set.NewFrozenStringSet("sa-1", "sa-3"),
 		},
 		{
-			name: "remove K8SRole that belong to deleted clusters",
+			name:          "Removing when there is only one valid cluster",
+			validClusters: clusters[:1],
+			serviceAccts: []*storage.ServiceAccount{
+				{Id: "sa-0", ClusterId: clusters[0]},
+				{Id: "sa-1", ClusterId: "invalid-1"},
+				{Id: "sa-2", ClusterId: clusters[0]},
+				{Id: "sa-3", ClusterId: "invalid-2"},
+			},
+			expectedSADeletions: set.NewFrozenStringSet("sa-1", "sa-3"),
+		},
+		{
+			name:          "Removing when there are no valid clusters",
+			validClusters: []string{},
+			serviceAccts: []*storage.ServiceAccount{
+				{Id: "sa-0", ClusterId: clusters[0]},
+				{Id: "sa-1", ClusterId: "invalid-1"},
+				{Id: "sa-2", ClusterId: clusters[0]},
+				{Id: "sa-3", ClusterId: "invalid-2"},
+			},
+			expectedSADeletions: set.NewFrozenStringSet("sa-0", "sa-1", "sa-2", "sa-3"),
+		},
+		{
+			name:          "remove K8SRole that belong to deleted clusters",
+			validClusters: clusters,
 			roles: []*storage.K8SRole{
 				{Id: "r-0", ClusterId: clusters[0]},
 				{Id: "r-1", ClusterId: "invalid-1"},
 				{Id: "r-2", ClusterId: clusters[1]},
 				{Id: "r-3", ClusterId: "invalid-2"},
 			},
-			expectedRoleDeletions: []string{"r-1", "r-3"},
+			expectedRoleDeletions: set.NewFrozenStringSet("r-1", "r-3"),
 		},
 		{
-			name: "remove K8SRoleBinding that belong to deleted clusters",
+			name:          "remove K8SRoleBinding that belong to deleted clusters",
+			validClusters: clusters,
 			bindings: []*storage.K8SRoleBinding{
 				{Id: "rb-0", ClusterId: clusters[0]},
 				{Id: "rb-1", ClusterId: "invalid-1"},
 				{Id: "rb-2", ClusterId: clusters[1]},
 				{Id: "rb-3", ClusterId: "invalid-2"},
 			},
-			expectedRBDeletions: []string{"rb-1", "rb-3"},
+			expectedRBDeletions: set.NewFrozenStringSet("rb-1", "rb-3"),
 		},
 		{
 			name:                  "Don't remove anything if all belong to valid cluster",
+			validClusters:         clusters,
 			serviceAccts:          []*storage.ServiceAccount{{Id: "sa-0", ClusterId: clusters[0]}},
 			roles:                 []*storage.K8SRole{{Id: "r-0", ClusterId: clusters[0]}},
 			bindings:              []*storage.K8SRoleBinding{{Id: "rb-0", ClusterId: clusters[0]}},
-			expectedSADeletions:   []string{},
-			expectedRoleDeletions: []string{},
-			expectedRBDeletions:   []string{},
+			expectedSADeletions:   set.NewFrozenStringSet(),
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedRBDeletions:   set.NewFrozenStringSet(),
 		},
 		{
 			name:                  "Remove all if they belong to a deleted cluster",
+			validClusters:         clusters,
 			serviceAccts:          []*storage.ServiceAccount{{Id: "sa-0", ClusterId: "invalid-1"}},
 			roles:                 []*storage.K8SRole{{Id: "r-0", ClusterId: "invalid-1"}},
 			bindings:              []*storage.K8SRoleBinding{{Id: "rb-0", ClusterId: "invalid-1"}},
-			expectedSADeletions:   []string{"sa-0"},
-			expectedRoleDeletions: []string{"r-0"},
-			expectedRBDeletions:   []string{"rb-0"},
+			expectedSADeletions:   set.NewFrozenStringSet("sa-0"),
+			expectedRoleDeletions: set.NewFrozenStringSet("r-0"),
+			expectedRBDeletions:   set.NewFrozenStringSet("rb-0"),
 		},
 	}
 
@@ -1200,30 +1228,27 @@ func TestRemoveOrphanedRBACObjects(t *testing.T) {
 				k8sRoleBindings: k8sRoleBindings,
 			}
 
-			q := clusterIDsToNegationQuery(set.NewFrozenStringSet(clusters...))
+			q := clusterIDsToNegationQuery(set.NewFrozenStringSet(c.validClusters...))
 			gc.removeOrphanedServiceAccounts(q)
 			gc.removeOrphanedK8SRoles(q)
 			gc.removeOrphanedK8SRoleBindings(q)
 
-			for _, id := range c.expectedSADeletions {
-				sa, ok, err := serviceAccounts.GetServiceAccount(pruningCtx, id)
+			for _, s := range c.serviceAccts {
+				_, ok, err := serviceAccounts.GetServiceAccount(pruningCtx, s.GetId())
 				assert.NoError(t, err)
-				assert.False(t, ok)
-				assert.Nil(t, sa)
+				assert.Equal(t, !c.expectedSADeletions.Contains(s.GetId()), ok) // should _not_ be found if it was expected to be deleted
 			}
 
-			for _, id := range c.expectedRoleDeletions {
-				r, ok, err := k8sRoles.GetRole(pruningCtx, id)
+			for _, r := range c.roles {
+				_, ok, err := k8sRoles.GetRole(pruningCtx, r.GetId())
 				assert.NoError(t, err)
-				assert.False(t, ok)
-				assert.Nil(t, r)
+				assert.Equal(t, !c.expectedRoleDeletions.Contains(r.GetId()), ok) // should _not_ be found if it was expected to be deleted
 			}
 
-			for _, id := range c.expectedRBDeletions {
-				rb, ok, err := k8sRoleBindings.GetRoleBinding(pruningCtx, id)
+			for _, rb := range c.bindings {
+				_, ok, err := k8sRoleBindings.GetRoleBinding(pruningCtx, rb.GetId())
 				assert.NoError(t, err)
-				assert.False(t, ok)
-				assert.Nil(t, rb)
+				assert.Equal(t, !c.expectedRBDeletions.Contains(rb.GetId()), ok) // should _not_ be found if it was expected to be deleted
 			}
 		})
 	}
