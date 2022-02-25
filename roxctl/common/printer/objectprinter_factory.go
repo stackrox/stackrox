@@ -70,8 +70,8 @@ func NewObjectPrinterFactory(defaultOutputFormat string, customPrinterFactories 
 	}
 
 	if len(factoryMap) == 0 {
-		return nil, errox.NewErrInvariantViolation(fmt.Sprintf("no custom printer factory added. You must specify at least one "+
-			"custom printer factory that supports the %q output format", defaultOutputFormat))
+		return nil, errox.Newf(errox.InvariantViolation, "no custom printer factory added. You must specify at least one "+
+			"custom printer factory that supports the %q output format", defaultOutputFormat)
 	}
 
 	o.RegisteredPrinterFactories = factoryMap
