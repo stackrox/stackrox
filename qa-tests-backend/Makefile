@@ -38,11 +38,6 @@ test: proto-generated-srcs
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
 
-.PHONY: openshift4-test
-openshift4-test: proto-generated-srcs
-	@echo "+ $@"
-	$(GRADLE) test -Dgroups=OpenShift,OpenShift4,-Upgrade,-SensorBounce,-SensorBounceNext
-
 .PHONY: bat-test
 bat-test: proto-generated-srcs
 	@echo "+ $@"

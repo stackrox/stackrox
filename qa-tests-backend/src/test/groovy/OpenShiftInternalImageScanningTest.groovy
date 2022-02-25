@@ -1,14 +1,15 @@
-import groups.OpenShift
-import groups.OpenShift4
-import org.junit.experimental.categories.Category
+import org.junit.Assume
+import services.ClusterService
+import util.Env
 
-@Category(OpenShift)
 class OpenShiftInternalImageScanningTest extends BaseSpecification {
 
     private static final String OPENSHIFT4_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
 
-    @Category(OpenShift4)
     def "Verify image scan finds correct base OS - #imageName"() {
+        given:
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
         when:
         def img = Services.scanImage(OPENSHIFT4_REGISTRY + "/" + project + "/" + imageRemote + ":" + imageTag)
         then:
