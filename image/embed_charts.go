@@ -229,7 +229,7 @@ func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "errors when reading dir: %q", prefixPath)
+		return nil, errors.Wrapf(err, "errors when reading dir %q", prefixPath)
 	}
 
 	return files, nil
