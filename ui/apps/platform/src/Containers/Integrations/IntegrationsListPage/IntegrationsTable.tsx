@@ -16,7 +16,7 @@ import resolvePath from 'object-resolve-path';
 import pluralize from 'pluralize';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import useTableSelection from 'hooks/useTableSelection';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
@@ -130,13 +130,14 @@ function IntegrationsTable({
                         )}
                         {permissions[source].write && (
                             <FlexItem spacer={{ default: 'spacerMd' }}>
-                                <ButtonLink
-                                    to={getPathToCreate(source, type)}
+                                <Button
                                     variant={ButtonVariant.primary}
+                                    component={LinkShim}
+                                    href={getPathToCreate(source, type)}
                                     data-testid="add-integration"
                                 >
                                     {newButtonText}
-                                </ButtonLink>
+                                </Button>
                             </FlexItem>
                         )}
                     </Flex>
@@ -210,10 +211,11 @@ function IntegrationsTable({
                                             if (column.Header === 'Name') {
                                                 return (
                                                     <Td key="name">
-                                                        <ButtonLink
+                                                        <Button
                                                             variant={ButtonVariant.link}
                                                             isInline
-                                                            to={getPathToViewDetails(
+                                                            component={LinkShim}
+                                                            href={getPathToViewDetails(
                                                                 source,
                                                                 type,
                                                                 id
@@ -223,7 +225,7 @@ function IntegrationsTable({
                                                                 row={integration}
                                                                 column={column}
                                                             />
-                                                        </ButtonLink>
+                                                        </Button>
                                                     </Td>
                                                 );
                                             }
