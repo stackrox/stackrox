@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
@@ -40,14 +41,44 @@ const VulnMgmtReportTableColumnDescriptor = [
     },
     {
         Header: 'Last run',
-        accessor: 'runStatus',
+        accessor: 'lastRunStatus',
         Cell: ({ value }): ReactElement => {
-            const lastRunAttempt = value?.lastTimeRun;
-            return lastRunAttempt ? (
-                <DateTimeFormat time={lastRunAttempt} />
-            ) : (
-                <span>Not run yet</span>
-            );
+            const lastRunTime = value?.lastRunTime;
+
+            if (value?.reportStatus === 'FAILURE') {
+                return (
+                    <Tooltip
+                        content={
+                            <div>
+                                <div>{value?.errorMsg || 'Unrecognized error'}</div>
+                                <div>
+                                    (attempted at:{' '}
+                                    {lastRunTime ? (
+                                        <DateTimeFormat time={lastRunTime} isInline />
+                                    ) : (
+                                        ''
+                                    )}
+                                </div>
+                            </div>
+                        }
+                        isContentLeftAligned
+                        maxWidth="24rem"
+                    >
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsXs' }}
+                            display={{ default: 'inlineFlex' }}
+                        >
+                            <FlexItem>
+                                <ExclamationCircleIcon className="pf-u-danger-color-100" />
+                            </FlexItem>
+                            <FlexItem>Error</FlexItem>
+                        </Flex>
+                    </Tooltip>
+                );
+            }
+
+            return lastRunTime ? <DateTimeFormat time={lastRunTime} /> : <span>Not run yet</span>;
         },
     },
 ];
