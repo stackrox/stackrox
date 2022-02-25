@@ -1,5 +1,5 @@
 spec:
-  replicas: 1
+  replicas: 2
   template:
     spec:
       containers:
@@ -9,5 +9,5 @@ spec:
             memory: "1000Mi"
             cpu: "500m"
           limits:
-            memory: "2500Mi"
+            memory: "4Gi"
             cpu: "2000m"
