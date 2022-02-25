@@ -282,6 +282,8 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 	if clusterIDSet.Cardinality() > 1 {
 		mustNot = search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction()
 	} else {
+		// Manually generating a disjunction because search.DisjunctionQuery returns a v1.Query if there's only thing it's matching on
+		// which then results in a nil disjunction inside boolean query. That means this search will match everything.
 		mustNot = (&v1.Query{
 			Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
 				Queries: []*v1.Query{search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()},
@@ -290,6 +292,8 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 	}
 
 	must := (&v1.Query{
+		// Similar to disjunction, conjunction needs multiple queries, or it has to be manually created
+		// Unlike disjunction, if there's only one query when the boolean query is used it will panic
 		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
 			Queries: []*v1.Query{search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery()},
 		}},
