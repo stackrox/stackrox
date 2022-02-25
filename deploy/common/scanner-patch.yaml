@@ -1,13 +1,2 @@
 spec:
-  replicas: 1
-  template:
-    spec:
-      containers:
-      - name: scanner
-        resources:
-          requests:
-            memory: "1000Mi"
-            cpu: "500m"
-          limits:
-            memory: "2500Mi"
-            cpu: "2000m"
+  replicas: 2

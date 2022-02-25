@@ -26,8 +26,8 @@ import pluralize from 'pluralize';
 
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
@@ -444,13 +444,14 @@ function PoliciesTable({
                                         }}
                                     />
                                     <Td dataLabel="Policy">
-                                        <ButtonLink
+                                        <Button
                                             variant={ButtonVariant.link}
                                             isInline
-                                            to={`${policiesBasePath}/${id}`}
+                                            component={LinkShim}
+                                            href={`${policiesBasePath}/${id}`}
                                         >
                                             {name}
-                                        </ButtonLink>
+                                        </Button>
                                     </Td>
                                     <Td dataLabel="Description">
                                         <Truncate
