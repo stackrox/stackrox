@@ -108,7 +108,7 @@ func (b *datastoreImpl) buildIndex() error {
 
 // GetNamespace returns namespace with given id.
 func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
-	namespace, found, err := b.store.Get(id)
+	namespace, found, err := b.store.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -149,7 +149,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(namespace); err != nil {
+	if err := b.store.Upsert(ctx, namespace); err != nil {
 		return err
 	}
 	if b.idMapStorage != nil {
@@ -166,7 +166,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(namespace); err != nil {
+	if err := b.store.Upsert(ctx, namespace); err != nil {
 		return err
 	}
 	return b.indexer.AddNamespaceMetadata(namespace)
@@ -180,7 +180,7 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Delete(id); err != nil {
+	if err := b.store.Delete(ctx, id); err != nil {
 		return err
 	}
 	if b.idMapStorage != nil {
