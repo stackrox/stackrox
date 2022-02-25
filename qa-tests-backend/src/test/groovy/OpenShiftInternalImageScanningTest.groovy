@@ -5,7 +5,7 @@ import org.junit.experimental.categories.Category
 @Category(OpenShift)
 class OpenShiftInternalImageScanningTest extends BaseSpecification {
 
-    private static String OPENSHIFT4_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
+    private static final String OPENSHIFT4_REGISTRY = "image-registry.openshift-image-registry.svc:5000"
 
     @Category(OpenShift4)
     def "Verify image scan finds correct base OS - #imageName"() {
