@@ -100,6 +100,7 @@ class ImageManagementTest extends BaseSpecification {
         "ubuntu:14.04"          | "docker.io"   | "library/ubuntu"  | "14.04"          | "ubuntu:14.04"
     }
 
+    @SuppressWarnings('LineLength')
     @Unroll
     @Category(BAT)
     def "Verify image scan finds correct base OS for OpenShift4 internal image - #imageName"() {
@@ -112,8 +113,22 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        imageName | project     | imageRemote | imageTag | expected
-        "java:8"  | "openshift" | "java"      | "8"      | "rhel:8"
+        // Images taken from
+        // https://docs.openshift.com/container-platform/4.9/cli_reference/developer_cli_odo/creating_and_deploying_applications_with_odo/sample-applications.html
+        imageName     | project     | imageRemote | imageTag | expected
+        "dotnet:3.1"  | "openshift" | "dotnet"    | "3.1"    | "rhel"
+        "httpd:2.4"   | "openshift" | "httpd"     | "2.4"    | "rhel:8"
+        "java:8"      | "openshift" | "java"      | "8"      | "rhel:7"
+        "nginx:1.8"   | "openshift" | "nginx"     | "1.8"    | "debian"
+        "nginx:1.10"  | "openshift" | "nginx"     | "1.10"   | "debian"
+        "nginx:1.12"  | "openshift" | "nginx"     | "1.12"   | "debian"
+        "nodejs:4"    | "openshift" | "nodejs"    | "4"      | "rhel"
+        "nodejs:6"    | "openshift" | "nodejs"    | "6"      | "rhel"
+        "nodejs:8"    | "openshift" | "nodejs"    | "8"      | "rhel"
+        "python:2.7"  | "openshift" | "python"    | "2.7"    | "rhel"
+        "python:3.6"  | "openshift" | "python"    | "3.6"    | "rhel"
+        "ruby:2.0"    | "openshift" | "ruby"      | "2.0"    | "rhel"
+        "ruby:2.4"    | "openshift" | "ruby"      | "2.4"    | "rhel"
     }
 
     @Unroll
