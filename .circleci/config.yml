@@ -4483,7 +4483,7 @@ jobs:
             gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${CIRCLE_TAG}"
             gitbot push origin "${branch_name}"
 
-            .circleci/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS"
+            /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
 
   push-release:
     executor: custom
