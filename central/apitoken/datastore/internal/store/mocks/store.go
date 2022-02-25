@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,9 +36,9 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(id string) (*storage.TokenMetadata, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.TokenMetadata)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -45,23 +46,23 @@ func (m *MockStore) Get(id string) (*storage.TokenMetadata, bool, error) {
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(arg0 *storage.TokenMetadata) error {
+func (m *MockStore) Upsert(arg0 context.Context, arg1 *storage.TokenMetadata) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", arg0)
+	ret := m.ctrl.Call(m, "Upsert", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(arg0 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Upsert(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), arg0, arg1)
 }
 
 // Walk mocks base method.

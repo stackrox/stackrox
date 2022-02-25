@@ -1,6 +1,8 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -9,7 +11,7 @@ import (
 // Importantly, the Store persists token revocations.
 //go:generate mockgen-wrapper
 type Store interface {
-	Get(id string) (*storage.TokenMetadata, bool, error)
+	Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error)
 	Walk(func(*storage.TokenMetadata) error) error
-	Upsert(*storage.TokenMetadata) error
+	Upsert(context.Context, *storage.TokenMetadata) error
 }
