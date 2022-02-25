@@ -119,8 +119,8 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 		return printers.NewCSVPrinter(t.RowJSONPathExpression,
 			printers.WithCSVColumnHeaders(t.Headers), printers.WithCSVHeaderOptions(t.NoHeader, t.HeaderAsComment)), nil
 	default:
-		return nil, errox.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
-			"Tabular Printer: %q", format))
+		return nil, errox.Newf(errox.InvalidArgs, "invalid output format used for "+
+			"Tabular Printer: %q", format)
 	}
 }
 
