@@ -35,6 +35,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                 readOnly ? (
                     // eslint-disable-next-line react/no-array-index-key
                     <React.Fragment key={sectionIndex}>
+                        {/* this grid item takes up the default 5 columns specified in the Grid component in PolicyDetailContent */}
                         <GridItem>
                             <PolicySection
                                 sectionIndex={sectionIndex}
@@ -42,6 +43,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                                 readOnly={readOnly}
                             />
                         </GridItem>
+                        {/* this grid item takes up 1 column specified here so that two policy sections & OR dividers can fit in one row */}
                         <GridItem lg={1}>
                             {sectionIndex !== values.policySections.length - 1 && (
                                 <Flex

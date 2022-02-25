@@ -65,6 +65,7 @@ function PolicyDetailContent({
                                 Policy criteria
                             </Title>
                             <Divider component="div" />
+                            {/* this grid component specifies a GridItem to span 5 columns by default for policy sections */}
                             <Grid hasGutter lg={5}>
                                 <BooleanPolicyLogicSection readOnly />
                             </Grid>
