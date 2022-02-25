@@ -27,7 +27,7 @@ type QueryType int
 
 // These are the currently supported query types
 const (
-	GET    QueryType = iota
+	GET QueryType = iota
 	COUNT
 	VALUE
 	DELETE
