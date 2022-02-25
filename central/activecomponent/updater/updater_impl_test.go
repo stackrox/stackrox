@@ -79,8 +79,6 @@ var (
 		Id: "image1",
 		Scan: &storage.ImageScan{
 			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
-			// leaving empty initially so the test will cover backwards compatibility for scans iwth now version
-			ScannerVersion: "",
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "image1_component1",
@@ -310,8 +308,7 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 	// New update without the first component
 	image = mockImage.Clone()
-	// update the scanner version to make sure cache gets re-populated
-	image.GetScan().ScannerVersion = "scanner_version_1"
+	image.GetScan().ScanTime = protoconv.ConvertTimeToTimestamp(time.Now().Add(1))
 	image.GetScan().Components = image.GetScan().GetComponents()[1:]
 	imageForVerify := image.Clone()
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
@@ -350,8 +347,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	image := &storage.Image{
 		Id: "image1",
 		Scan: &storage.ImageScan{
-			ScanTime:       protoconv.ConvertTimeToTimestamp(time.Now()),
-			ScannerVersion: "scanner_version_1",
+			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "component1",
