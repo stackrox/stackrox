@@ -56,7 +56,7 @@ func (ds *datastoreImpl) UpdateIntegrationHealth(ctx context.Context, integratio
 	} else if !ok {
 		return nil
 	}
-	return ds.store.Upsert(integrationHealth)
+	return ds.store.Upsert(ctx, integrationHealth)
 }
 
 func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string) error {
@@ -72,11 +72,11 @@ func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string)
 	} else if !ok {
 		return nil
 	}
-	return ds.store.Delete(id)
+	return ds.store.Delete(ctx, id)
 }
 
 func (ds *datastoreImpl) GetIntegrationHealth(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
-	health, found, err := ds.store.Get(id)
+	health, found, err := ds.store.Get(ctx, id)
 	if !found || err != nil {
 		return nil, false, err
 	}
