@@ -45,7 +45,7 @@ func parseNumericPrefix(value string) (prefix string, trimmedValue string) {
 	return "", value
 }
 
-func parseNumericStringToPtr(s string) (float64, error) {
+func parseNumericStringToFloat(s string) (float64, error) {
 	val, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0, err
@@ -75,7 +75,7 @@ func newNumericQuery(table string, field *search.Field, value string, modifiers 
 		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", modifiers)
 	}
 	prefix, trimmedValue := parseNumericPrefix(value)
-	valuePtr, err := parseNumericStringToPtr(trimmedValue)
+	valuePtr, err := parseNumericStringToFloat(trimmedValue)
 	if err != nil {
 		return nil, err
 	}

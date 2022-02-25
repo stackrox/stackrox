@@ -95,12 +95,29 @@ func newBoolQuery(table string, field *pkgSearch.Field, value string, modifiers 
 	if len(modifiers) > 0 {
 		return nil, errors.Errorf("modifiers for bool query not allowed: %+v", modifiers)
 	}
-	_, err := parse.FriendlyParseBool(value)
+	res, err := parse.FriendlyParseBool(value)
 	if err != nil {
 		return nil, err
 	}
 	// explicitly apply equality check
-	return newStringQuery(table, field, value, pkgSearch.Equality)
+	return newStringQuery(table, field, fmt.Sprintf("%t", res), pkgSearch.Equality)
+}
+
+func enumEquality(columnName string, field *pkgSearch.Field, enumValues []int32) (*QueryEntry, error) {
+	var queries []string
+	var values []interface{}
+	for _, s := range enumValues {
+		entry, err := newStringQuery(columnName, field, strconv.Itoa(int(s)), pkgSearch.Equality)
+		if err != nil {
+			return nil, err
+		}
+		queries = append(queries, entry.Query)
+		values = append(values, entry.Values...)
+	}
+	return &QueryEntry{
+		Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
+		Values: values,
+	}, nil
 }
 
 func newEnumQuery(columnName string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
@@ -137,7 +154,6 @@ func newEnumQuery(columnName string, field *pkgSearch.Field, value string, query
 			enumValues = enumregistry.GetValuesMatchingRegex(field.FieldPath, re)
 		case pkgSearch.Equality:
 			enumValues = enumregistry.GetExactMatches(field.FieldPath, value)
-			equality = true
 		default:
 			return nil, errors.Errorf("unsupported query modifier for enum query: %v", queryModifiers[0])
 		}
@@ -153,20 +169,7 @@ func newEnumQuery(columnName string, field *pkgSearch.Field, value string, query
 
 		// Equality means no numeric cast required, and could benefit from hash indexes
 		if equality {
-			var queries []string
-			var values []interface{}
-			for _, s := range enumValues {
-				entry, err := newStringQuery(columnName, field, strconv.Itoa(int(s)), pkgSearch.Equality)
-				if err != nil {
-					return nil, err
-				}
-				queries = append(queries, entry.Query)
-				values = append(values, entry.Values...)
-			}
-			return &QueryEntry{
-				Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
-				Values: values,
-			}, nil
+			return enumEquality(columnName, field, enumValues)
 		}
 
 		var queries []string
@@ -185,33 +188,5 @@ func newEnumQuery(columnName string, field *pkgSearch.Field, value string, query
 	if len(enumValues) == 0 {
 		return nil, fmt.Errorf("could not find corresponding enum at field %q with value %q and modifiers %+v", field.FieldPath, value, queryModifiers)
 	}
-
-	if equality {
-		var queries []string
-		var values []interface{}
-		for _, s := range enumValues {
-			entry, err := newStringQuery(columnName, field, strconv.Itoa(int(s)), pkgSearch.Equality)
-			if err != nil {
-				return nil, err
-			}
-			queries = append(queries, entry.Query)
-			values = append(values, entry.Values...)
-		}
-		return &QueryEntry{
-			Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
-			Values: values,
-		}, nil
-	}
-
-	var queries []string
-	var values []interface{}
-	for _, s := range enumValues {
-		entry := createNumericQuery(columnName, field, "=", float64(s))
-		queries = append(queries, entry.Query)
-		values = append(values, entry.Values...)
-	}
-	return &QueryEntry{
-		Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
-		Values: values,
-	}, nil
+	return enumEquality(columnName, field, enumValues)
 }

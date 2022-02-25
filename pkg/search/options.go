@@ -253,17 +253,17 @@ var (
 	UserName                    = newFieldLabel("User Name")
 
 	// Test Search Fields
-	TestKey  = newFieldLabel("Test Key")
-	TestName = newFieldLabel("Test Name")
+	TestKey         = newFieldLabel("Test Key")
+	TestName        = newFieldLabel("Test Name")
 	TestStringSlice = newFieldLabel("Test String Slice")
-	TestBool = newFieldLabel("Test Bool")
-	TestUint64 = newFieldLabel("Test Uint64")
-	TestInt64 = newFieldLabel("Test Int64")
-	TestFloat = newFieldLabel("Test Float")
-	TestLabels = newFieldLabel("Test Labels")
-	TestTimestamp = newFieldLabel("Test Timestamp")
-	TestEnum = newFieldLabel("Test Enum")
-	TestEnumSlice = newFieldLabel("Test Enum Slice")
+	TestBool        = newFieldLabel("Test Bool")
+	TestUint64      = newFieldLabel("Test Uint64")
+	TestInt64       = newFieldLabel("Test Int64")
+	TestFloat       = newFieldLabel("Test Float")
+	TestLabels      = newFieldLabel("Test Labels")
+	TestTimestamp   = newFieldLabel("Test Timestamp")
+	TestEnum        = newFieldLabel("Test Enum")
+	TestEnumSlice   = newFieldLabel("Test Enum Slice")
 )
 
 func newFieldLabel(s string) FieldLabel {
