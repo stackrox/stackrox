@@ -21,10 +21,13 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
+	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -65,16 +68,19 @@ type datastoreImpl struct {
 	notifier             notifierProcessor.Processor
 	searcher             search.Searcher
 
-	alertDataStore      alertDataStore.DataStore
-	namespaceDataStore  namespaceDataStore.DataStore
-	deploymentDataStore deploymentDataStore.DataStore
-	nodeDataStore       nodeDataStore.GlobalDataStore
-	podDataStore        podDataStore.DataStore
-	secretsDataStore    secretDataStore.DataStore
-	netFlowsDataStore   netFlowDataStore.ClusterDataStore
-	netEntityDataStore  netEntityDataStore.EntityDataStore
-	cm                  connection.Manager
-	networkBaselineMgr  networkBaselineManager.Manager
+	alertDataStore          alertDataStore.DataStore
+	namespaceDataStore      namespaceDataStore.DataStore
+	deploymentDataStore     deploymentDataStore.DataStore
+	nodeDataStore           nodeDataStore.GlobalDataStore
+	podDataStore            podDataStore.DataStore
+	secretsDataStore        secretDataStore.DataStore
+	netFlowsDataStore       netFlowDataStore.ClusterDataStore
+	netEntityDataStore      netEntityDataStore.EntityDataStore
+	serviceAccountDataStore serviceAccountDataStore.DataStore
+	roleDataStore           roleDataStore.DataStore
+	roleBindingDataStore    roleBindingDataStore.DataStore
+	cm                      connection.Manager
+	networkBaselineMgr      networkBaselineManager.Manager
 
 	clusterRanker *ranking.Ranker
 
@@ -531,6 +537,10 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	}
 
 	ds.removeClusterSecrets(ctx, cluster)
+	ds.removeClusterServiceAccounts(ctx, cluster)
+	ds.removeK8SRoles(ctx, cluster)
+	ds.removeRoleBindings(ctx, cluster)
+
 	if done != nil {
 		done.Signal()
 	}
@@ -599,8 +609,72 @@ func (ds *datastoreImpl) removeClusterSecrets(ctx context.Context, cluster *stor
 	}
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		_ = ds.secretsDataStore.RemoveSecret(ctx, s.GetId())
+		if err := ds.secretsDataStore.RemoveSecret(ctx, s.GetId()); err != nil {
+			log.Errorf("failed to remove secret with id %s from deleted cluster %s: %v", s.GetId(), cluster.GetId(), err)
+		}
 	}
+}
+
+func (ds *datastoreImpl) removeClusterServiceAccounts(ctx context.Context, cluster *storage.Cluster) {
+	serviceAccounts, err := ds.getServiceAccounts(ctx, cluster)
+	if err != nil {
+		log.Errorf("failed to find service accounts in deleted cluster %s: %v", cluster.GetId(), err)
+	}
+	for _, s := range serviceAccounts {
+		// Best effort to remove. If the object doesn't exist, then that is okay
+		if err := ds.serviceAccountDataStore.RemoveServiceAccount(ctx, s); err != nil {
+			log.Errorf("failed to remove service account with id %s from deleted cluster %s: %v", s, cluster.GetId(), err)
+		}
+	}
+}
+
+func (ds *datastoreImpl) removeK8SRoles(ctx context.Context, cluster *storage.Cluster) {
+	roles, err := ds.getRoles(ctx, cluster)
+	if err != nil {
+		log.Errorf("failed to find K8S roles in deleted cluster %s: %v", cluster.GetId(), err)
+	}
+	for _, r := range roles {
+		// Best effort to remove. If the object doesn't exist, then that is okay
+		if err := ds.roleDataStore.RemoveRole(ctx, r); err != nil {
+			log.Errorf("failed to remove K8S role with id %s from deleted cluster %s: %v", r, cluster.GetId(), err)
+		}
+	}
+}
+
+func (ds *datastoreImpl) removeRoleBindings(ctx context.Context, cluster *storage.Cluster) {
+	bindings, err := ds.getRoleBindings(ctx, cluster)
+	if err != nil {
+		log.Errorf("failed to find K8S role bindings in deleted cluster %s: %v", cluster.GetId(), err)
+	}
+	for _, b := range bindings {
+		// Best effort to remove. If the object doesn't exist, then that is okay
+		if err := ds.roleBindingDataStore.RemoveRoleBinding(ctx, b); err != nil {
+			log.Errorf("failed to remove K8S role binding with id %s from deleted cluster %s: %v", b, cluster.GetId(), err)
+		}
+	}
+}
+
+func (ds *datastoreImpl) getRoleBindings(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	return convertSearchResultsToIDs(ds.roleBindingDataStore.Search(ctx, q))
+}
+
+func (ds *datastoreImpl) getRoles(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	return convertSearchResultsToIDs(ds.roleDataStore.Search(ctx, q))
+}
+
+func (ds *datastoreImpl) getServiceAccounts(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	return convertSearchResultsToIDs(ds.serviceAccountDataStore.Search(ctx, q))
+}
+
+func convertSearchResultsToIDs(res []pkgSearch.Result, err error) ([]string, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	return pkgSearch.ResultsToIDs(res), nil
 }
 
 func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListSecret, error) {

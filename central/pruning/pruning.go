@@ -17,7 +17,10 @@ import (
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -59,7 +62,10 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore,
 	risks riskDataStore.DataStore,
-	vulnReqs vulnReqDataStore.DataStore) GarbageCollector {
+	vulnReqs vulnReqDataStore.DataStore,
+	serviceAccts serviceAccountDataStore.DataStore,
+	k8sRoles k8sRoleDataStore.DataStore,
+	k8sRoleBindings roleBindingDataStore.DataStore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -74,6 +80,9 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		config:          config,
 		risks:           risks,
 		vulnReqs:        vulnReqs,
+		serviceAccts:    serviceAccts,
+		k8sRoles:        k8sRoles,
+		k8sRoleBindings: k8sRoleBindings,
 		stopSig:         concurrency.NewSignal(),
 		stoppedSig:      concurrency.NewSignal(),
 	}
@@ -93,6 +102,9 @@ type garbageCollectorImpl struct {
 	config          configDatastore.DataStore
 	risks           riskDataStore.DataStore
 	vulnReqs        vulnReqDataStore.DataStore
+	serviceAccts    serviceAccountDataStore.DataStore
+	k8sRoles        k8sRoleDataStore.DataStore
+	k8sRoleBindings roleBindingDataStore.DataStore
 	stopSig         concurrency.Signal
 	stoppedSig      concurrency.Signal
 }
@@ -190,6 +202,41 @@ func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) 
 	}
 }
 
+func removeOrphanedObjectsBySearch(searchQuery *v1.Query, name string, searchFn func(ctx context.Context, query *v1.Query) ([]search.Result, error), removeFn func(ctx context.Context, id string) error) {
+	searchRes, err := searchFn(pruningCtx, searchQuery)
+	if err != nil {
+		log.Errorf("Error finding orphaned %s: %v", name, err)
+		return
+	}
+	if len(searchRes) == 0 {
+		log.Infof("[Pruning] Found no orphaned %s...", name)
+		return
+	}
+
+	log.Infof("[Pruning] Found %d orphaned %s. Deleting...", len(searchRes), name)
+
+	for _, res := range searchRes {
+		if err := removeFn(pruningCtx, res.ID); err != nil {
+			log.Errorf("Failed to remove %s with id %s: %v", name, res.ID, err)
+		}
+	}
+}
+
+// Remove ServiceAccounts where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedServiceAccounts(searchQuery *v1.Query) {
+	removeOrphanedObjectsBySearch(searchQuery, "service accounts", g.serviceAccts.Search, g.serviceAccts.RemoveServiceAccount)
+}
+
+// Remove K8SRoles where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedK8SRoles(searchQuery *v1.Query) {
+	removeOrphanedObjectsBySearch(searchQuery, "K8S roles", g.k8sRoles.Search, g.k8sRoles.RemoveRole)
+}
+
+// Remove K8SRoleBinding where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings(searchQuery *v1.Query) {
+	removeOrphanedObjectsBySearch(searchQuery, "K8S role bindings", g.k8sRoleBindings.Search, g.k8sRoleBindings.RemoveRoleBinding)
+}
+
 func (g *garbageCollectorImpl) removeOrphanedResources() {
 	clusters, err := g.clusters.GetClusters(pruningCtx)
 	if err != nil {
@@ -217,7 +264,42 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.removeOrphanedProcessBaselines(deploymentSet)
 	g.markOrphanedAlertsAsResolved(deploymentSet)
 	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
+
+	// TODO: Convert this from ListSearch to using negation search similar to SAs, roles and role bindings below
 	g.removeOrphanedPods(clusterIDSet)
+
+	q := clusterIDsToNegationQuery(clusterIDSet)
+	g.removeOrphanedServiceAccounts(q)
+	g.removeOrphanedK8SRoles(q)
+	g.removeOrphanedK8SRoleBindings(q)
+}
+
+func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
+	// TODO: When searching can be done with SQL, this should be refactored to a simple `NOT IN...` query. This current one is inefficent
+	// with a large number of clusters and because of the required conjunction query that is taking a hit being a regex query to do nothing
+	// Bleve/booleanquery requires a conjunction so it can't be removed
+	var mustNot *v1.DisjunctionQuery
+	if clusterIDSet.Cardinality() > 1 {
+		mustNot = search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction()
+	} else {
+		// Manually generating a disjunction because search.DisjunctionQuery returns a v1.Query if there's only thing it's matching on
+		// which then results in a nil disjunction inside boolean query. That means this search will match everything.
+		mustNot = (&v1.Query{
+			Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+				Queries: []*v1.Query{search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()},
+			}},
+		}).GetDisjunction()
+	}
+
+	must := (&v1.Query{
+		// Similar to disjunction, conjunction needs multiple queries, or it has to be manually created
+		// Unlike disjunction, if there's only one query when the boolean query is used it will panic
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery()},
+		}},
+	}).GetConjunction()
+
+	return search.NewBooleanQuery(must, mustNot)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
