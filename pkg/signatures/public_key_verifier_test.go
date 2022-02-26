@@ -274,8 +274,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	}
 	reg := &mockRegistry{cfg: mockConfig}
 
-	res, exists, err := p.FetchSignature(context.Background(), img, reg)
-	require.NoError(t, err)
+	res, exists := p.FetchSignature(context.Background(), img, reg)
 	assert.True(t, exists)
 	assert.Equal(t, expectedSignatures, res)
 }
@@ -284,7 +283,6 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	cases := map[string]struct {
 		registry registryTypes.ImageRegistry
 		img      string
-		err      interface{}
 	}{
 		"failed authentication for registry": {
 			registry: &mockRegistry{cfg: &registryTypes.Config{}},
@@ -301,8 +299,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 			require.NoError(t, err, "creating test image")
 			cimg.Name.FullName = c.img
 			img := types.ToImage(cimg)
-			res, exists, err := p.FetchSignature(context.Background(), img, c.registry)
-			require.Error(t, err)
+			res, exists := p.FetchSignature(context.Background(), img, c.registry)
 			assert.False(t, exists)
 			assert.Nil(t, res)
 		})
@@ -317,7 +314,7 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	p := &cosignPublicKey{}
 	reg := &mockRegistry{cfg: &registryTypes.Config{}}
 
-	result, exists, err := p.FetchSignature(context.Background(), img, reg)
+	result, exists := p.FetchSignature(context.Background(), img, reg)
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, result)

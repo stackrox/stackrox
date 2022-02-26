@@ -127,15 +127,15 @@ func (c *cosignPublicKey) VerifySignature(ctx context.Context,
 // FetchSignature implements the SignatureFetcher interface.
 // The signature associated with the image will be fetched from the given registry.
 // It will return the storage.ImageSignature and a boolean, indicating whether any signatures were found or not.
-// It will return an error if an error occurred creating the image's reference or during fetching of the signature.
-// NOTE: If no signature is available, no error will be returned.
 func (c *cosignPublicKey) FetchSignature(ctx context.Context, image *storage.Image,
-	registry registryTypes.ImageRegistry) (*storage.ImageSignature, bool, error) {
+	registry registryTypes.ImageRegistry) (*storage.ImageSignature, bool) {
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
-	imgRef, err := name.ParseReference(image.GetName().GetFullName())
+	imgFullName := image.GetName().GetFullName()
+	imgRef, err := name.ParseReference(imgFullName)
 	if err != nil {
-		return nil, false, errors.Wrapf(err, "parsing image reference %q", image.GetName().GetFullName())
+		log.Errorf("Parsing image reference %q: %v", imgFullName, err)
+		return nil, false
 	}
 
 	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
@@ -148,12 +148,13 @@ func (c *cosignPublicKey) FetchSignature(ctx context.Context, image *storage.Ima
 	// Cosign ref:
 	//  https://github.com/sigstore/cosign/blob/44f3814667ba6a398aef62814cabc82aee4896e5/pkg/cosign/fetch.go#L84-L86
 	if err != nil && !strings.Contains(err.Error(), "no signatures associated") {
-		return nil, false, err
+		log.Errorf("Fetching signature for image %q: %v", imgFullName, err)
+		return nil, false
 	}
 
 	// Short-circuit if no signatures are associated with the image.
 	if len(signedPayloads) == 0 {
-		return nil, false, nil
+		return nil, false
 	}
 
 	cosignSignatures := make([]*storage.Signature, 0, len(signedPayloads))
@@ -163,7 +164,7 @@ func (c *cosignPublicKey) FetchSignature(ctx context.Context, image *storage.Ima
 		// We skip the invalid base64 signature and log its occurrence.
 		if err != nil {
 			log.Errorf("Error during decoding of raw signature for image %q: %v",
-				image.GetName().GetFullName(), err)
+				imgFullName, err)
 		}
 		// Since we are only focusing on public keys, we are ignoring the certificate / rekor bundles associated with
 		// the signature.
@@ -179,16 +180,19 @@ func (c *cosignPublicKey) FetchSignature(ctx context.Context, image *storage.Ima
 
 	// Since we are skipping invalid base64 signatures, need to check the length of the result.
 	if len(cosignSignatures) == 0 {
-		return nil, false, nil
+		return nil, false
 	}
 
 	return &storage.ImageSignature{
 		Signatures: cosignSignatures,
-	}, true, nil
+	}, true
 }
 
 func optionsFromRegistry(registry registryTypes.ImageRegistry) []gcrRemote.Option {
-	registryCfg := registry.Config()
+	registryCfg := &registryTypes.Config{}
+	if cfg := registry.Config(); cfg != nil {
+		registryCfg = cfg
+	}
 	authCfg := authn.AuthConfig{
 		Username: registryCfg.Username,
 		Password: registryCfg.Password,
