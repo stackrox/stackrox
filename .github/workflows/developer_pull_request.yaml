@@ -7,7 +7,7 @@ on:
 
 jobs:
   style-checks:
-    runs-on: [self-hosted, vm-test]
+    runs-on: [self-hosted, vm-centos8-test]
     env:
       MONOREPO_LOCK: ui/monorepo.lock
     container:
