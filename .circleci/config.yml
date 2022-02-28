@@ -4887,17 +4887,14 @@ jobs:
     steps:
       - checkout
       - run:
-          name: make main-build-nodeps
           command: |
             make main-build-nodeps
           background: true
       - run:
-          name: make cli
           command: |
             make cli
           background: true
       - run:
-          name: make -C ui build
           command: |
             make -C ui build
 
