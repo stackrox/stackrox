@@ -130,7 +130,6 @@ function IntegrationsTable({
             <PageSection
                 isFilled
                 padding={{ default: 'noPadding' }}
-                hasOverflowScroll
                 variant={PageSectionVariants.light}
             >
                 {integrations.length > 0 ? (
