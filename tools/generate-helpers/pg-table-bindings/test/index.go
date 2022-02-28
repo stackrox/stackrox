@@ -3,13 +3,10 @@ package postgres
 
 import (
 	"reflect"
-	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -33,13 +30,13 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "TestSingleKeyStruct")
+	//defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "TestSingleKeyStruct")
 
 	return postgres.RunCountRequest(v1.SearchCategory_SEARCH_UNSET, q, b.db, mappings.OptionsMap)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestSingleKeyStruct")
+	//defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestSingleKeyStruct")
 
 	return postgres.RunSearchRequest(v1.SearchCategory_SEARCH_UNSET, q, b.db, mappings.OptionsMap)
 }

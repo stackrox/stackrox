@@ -51,7 +51,6 @@ func (s *SecretsStoreSuite) TestStore() {
 
 	Destroy(pool)
 	store := New(pool)
-	indexer := NewIndexer(pool)
 
 	secret := fixtures.GetSecret()
 	foundSecret, exists, err := store.Get(secret.GetId())
