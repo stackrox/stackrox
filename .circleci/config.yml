@@ -1695,8 +1695,6 @@ commands:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-      - restore-go-mod-cache
-
       - when:
           condition: << parameters.suffix >>
           steps:
@@ -1769,6 +1767,7 @@ commands:
 
       - *getECRDockerPullPassword
       - *restoreGradle
+      - restore-go-mod-cache
       - run:
           name: QA Automation Platform Part 1
           no_output_timeout: 15m
@@ -3975,8 +3974,6 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-      - restore-go-mod-cache
-
       - run:
           name: Sanity check KUBECONFIG
           command: |
@@ -4009,6 +4006,7 @@ jobs:
 
       - *getECRDockerPullPassword
       - *restoreGradle
+      - restore-go-mod-cache
       - run:
           name: QA Automation Platform
           command: |
@@ -4070,8 +4068,6 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-      - restore-go-mod-cache
-
       - run:
           name: Add /etc/hosts entry
           command: echo "$(cat $PWD/kops/master_ip) api.$(cat $PWD/kops/cluster_name)" | sudo tee -a /etc/hosts
@@ -4109,6 +4105,7 @@ jobs:
 
       - *getECRDockerPullPassword
       - *restoreGradle
+      - restore-go-mod-cache
       - run:
           name: QA Automation Platform
           command: |
