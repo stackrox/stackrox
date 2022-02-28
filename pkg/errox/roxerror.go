@@ -1,13 +1,23 @@
 package errox
 
+type RoxError interface {
+	error
+	Unwrap() error
+	New(message string) RoxError
+	CausedBy(cause interface{}) error
+}
+
 type roxError struct {
 	message string
 	base    error
 }
 
+// Ensure roxError to implement RoxError.
+var _ RoxError = (*roxError)(nil)
+
 // makeSentinel returns a new sentinel error. Semantically this is very close to
 // `errors.New(message)` from the standard library.
-func makeSentinel(message string) *roxError {
+func makeSentinel(message string) RoxError {
 	return &roxError{message, nil}
 }
 

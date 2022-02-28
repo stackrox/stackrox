@@ -47,30 +47,28 @@ var (
 	// When adding a new error please update the translators in this package (gRPC, etc.).
 )
 
-var userNotAuthorized = NoValidRole.Template(
-	"access for this user is not authorized: {{.}}, please contact your system administrator")
-
-// GenericNoValidRole wraps ErrNoValidRole with a generic error message.
+// GenericNoValidRole wraps NoValidRole with a generic error message.
 func GenericNoValidRole() error {
-	return userNotAuthorized(NoValidRole)
+	return NoValidRole.New("access for this user is not authorized: no valid role, " +
+		"please contact your system administrator")
 }
 
-// NewErrNotAuthorized wraps ErrNotAuthorized into an explanation.
+// NewErrNotAuthorized wraps NotAuthorized into an explanation.
 func NewErrNotAuthorized(explanation string) error {
 	return NotAuthorized.CausedBy(explanation)
 }
 
-// NewErrNoCredentials wraps ErrNoCredentials into an explanation.
+// NewErrNoCredentials wraps NoCredentials into an explanation.
 func NewErrNoCredentials(explanation string) error {
 	return NoCredentials.CausedBy(explanation)
 }
 
-// NewErrInvariantViolation wraps ErrInvariantViolation into an explanation.
+// NewErrInvariantViolation wraps InvariantViolation into an explanation.
 func NewErrInvariantViolation(explanation string) error {
 	return InvariantViolation.CausedBy(explanation)
 }
 
-// NewErrInvalidArgs wraps ErrInvalidArgs into an explanation.
+// NewErrInvalidArgs wraps InvalidArgs into an explanation.
 func NewErrInvalidArgs(explanation string) error {
 	return InvalidArgs.CausedBy(explanation)
 }
