@@ -1,6 +1,6 @@
 {{- $namePrefix := .Table|upperCamelCase}}
 
-// +build sql_integration
+//go:build sql_integration
 
 package postgres
 
