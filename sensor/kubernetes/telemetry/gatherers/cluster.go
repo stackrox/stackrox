@@ -68,7 +68,7 @@ func (c *ClusterGatherer) getOrchestrator() (*data.OrchestratorInfo, error) {
 		return nil, err
 	}
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
-	if env.OpenshiftAPI.Setting() == "true" {
+	if env.OpenshiftAPI.BooleanSetting() {
 		orchestrator = storage.ClusterType_OPENSHIFT_CLUSTER.String()
 	}
 	return &data.OrchestratorInfo{
