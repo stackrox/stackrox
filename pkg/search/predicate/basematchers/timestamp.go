@@ -77,9 +77,9 @@ func parseTimeString(value string) (time.Time, bool) {
 
 func timeToOffset(t time.Time) int64 {
 	tz, _ := t.Zone()
-	offset, err := timezone.GetOffset(tz, false)
+	offset, err := timezone.New().GetTzInfo(tz)
 	if err != nil {
 		return 0
 	}
-	return int64(offset)
+	return int64(offset.StandardOffset())
 }
