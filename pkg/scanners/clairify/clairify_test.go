@@ -10,7 +10,7 @@ import (
 )
 
 func getTestScan() (*clairV1.LayerEnvelope, *storage.ImageScan, *storage.Image) {
-	scannerVersion := "scanner_image_1"
+	scannerVersion := "2.22.0"
 
 	image := &storage.Image{
 		Name: &storage.ImageName{
