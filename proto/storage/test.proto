@@ -15,27 +15,28 @@ message TestSingleKeyStruct {
       ENUM1 = 1;
       ENUM2 = 2;
     }
-    string key                   = 1 [(gogoproto.moretags) = 'sql:"pk,index=hash"'];
-    string name                  = 15 [(gogoproto.moretags) = 'sql:"unique"'];
-    repeated string string_slice = 2;
 
-    bool bool                    = 3;
+    string key                 = 1 [(gogoproto.moretags) = 'sql:"pk,index=hash" search:"Test Key"'];
+    string name                = 2 [(gogoproto.moretags) = 'sql:"unique" search:"Test Name"'];
+    repeated string string_slice = 3 [(gogoproto.moretags) = 'search:"Test String Slice"'];
+
+    bool bool                    = 4 [(gogoproto.moretags) = 'search:"Test Bool"'];
     // repeated bool bool_slice: currently unsupported
 
-    uint64 uint64                = 4;
+    uint64 uint64                = 5 [(gogoproto.moretags) = 'search:"Test Uint64"'];
     // repeated uint64 uint64_slice: currently unsupported
 
-    int64 int64                  = 5;
+    int64 int64                  = 6 [(gogoproto.moretags) = 'search:"Test Int64"'];
     // repeated int64 int64_slice: currently unsupported
 
-    float float                   = 6;
+    float float                   = 7 [(gogoproto.moretags) = 'search:"Test Float"'];
     // repeated float float_slice: currently unsupported
 
-    map<string, string> labels          = 7;
-    google.protobuf.Timestamp timestamp = 8;
+    map<string, string> labels          = 8  [(gogoproto.moretags) = 'search:"Test Labels"'];
+    google.protobuf.Timestamp timestamp = 9  [(gogoproto.moretags) = 'search:"Test Timestamp"'];
 
-    Enum enum                           = 9;
-    repeated Enum enums                 = 10;
+    Enum enum                           = 10 [(gogoproto.moretags) = 'search:"Test Enum"'];
+    repeated Enum enums                 = 11 [(gogoproto.moretags) = 'search:"Test Enum Slice"'];
 
     message Embedded {
       string embedded = 1;
@@ -43,7 +44,7 @@ message TestSingleKeyStruct {
         string embedded = 2;
       }
     }
-    Embedded embedded = 11;
+    Embedded embedded = 12;
 
     message Nested {
       string nested = 1;
@@ -52,7 +53,7 @@ message TestSingleKeyStruct {
       }
       Nested2 nested2 = 2;
     }
-    repeated Nested nested = 12;
+    repeated Nested nested = 13;
 
     message OneOfNested {
       string nested = 1;
@@ -62,8 +63,8 @@ message TestSingleKeyStruct {
       Nested2 nested2 = 2;
     }
     oneof oneof {
-      string oneofstring      = 13;
-      OneOfNested oneofnested = 14;
+      string oneofstring      = 14;
+      OneOfNested oneofnested = 15;
     }
 }
 
@@ -73,28 +74,28 @@ message TestMultiKeyStruct {
     ENUM1 = 1;
     ENUM2 = 2;
   }
-  string key1                  = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string key1                  = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Test Key"'];
   string key2                  = 2 [(gogoproto.moretags) = 'sql:"pk"'];
 
-  repeated string string_slice = 3;
+  repeated string string_slice = 3 [(gogoproto.moretags) = 'search:"Test String Slice"'];
 
-  bool bool                    = 4;
+  bool bool                    = 4 [(gogoproto.moretags) = 'search:"Test Bool"'];
   // repeated bool bool_slice: currently unsupported
 
-  uint64 uint64                = 5;
+  uint64 uint64                = 5 [(gogoproto.moretags) = 'search:"Test Uint64"'];
   // repeated uint64 uint64_slice: currently unsupported
 
-  int64 int64                  = 6;
+  int64 int64                  = 6 [(gogoproto.moretags) = 'search:"Test Int64"'];
   // repeated int64 int64_slice: currently unsupported
 
-  float float                   = 7;
+  float float                   = 7 [(gogoproto.moretags) = 'search:"Test Float"'];
   // repeated float float_slice: currently unsupported
 
-  map<string, string> labels          = 8;
-  google.protobuf.Timestamp timestamp = 9;
+  map<string, string> labels          = 8  [(gogoproto.moretags) = 'search:"Test Labels"'];
+  google.protobuf.Timestamp timestamp = 9  [(gogoproto.moretags) = 'search:"Test Timestamp"'];
 
-  Enum enum                           = 10;
-  repeated Enum enums                 = 11;
+  Enum enum                           = 10 [(gogoproto.moretags) = 'search:"Test Enum"'];
+  repeated Enum enums                 = 11 [(gogoproto.moretags) = 'search:"Test Enum Slice"'];
 
   message Embedded {
     string embedded = 1;
@@ -109,6 +110,7 @@ message TestMultiKeyStruct {
     message Nested2 {
       string nested2 = 2;
     }
+    Nested2 nested2 = 2;
   }
   repeated Nested nested = 13;
 
