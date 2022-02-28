@@ -66,7 +66,5 @@ tests:
     scanner.disable: false
     scanner.mode: "slim"
   expect: |
-    [.objects[] | select(.kind == "NetworkPolicy" and .metadata.name == "scanner-slim")][0].spec.ingress |
-         assertThat(length == 2)
-    [.objects[] | select(.kind == "NetworkPolicy" and .metadata.name == "scanner-slim")][0].spec |
-     .ingress[1].from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+    .networkpolicys["scanner-slim"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["scanner-slim"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
