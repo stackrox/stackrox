@@ -58,6 +58,7 @@ const VulnMgmtReportTableColumnDescriptor = [
                                     ) : (
                                         ''
                                     )}
+                                    )
                                 </div>
                             </div>
                         }
