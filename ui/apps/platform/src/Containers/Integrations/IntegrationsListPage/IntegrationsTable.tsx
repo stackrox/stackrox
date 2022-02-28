@@ -90,26 +90,15 @@ function IntegrationsTable({
         <>
             <PageSection variant="light">
                 <Flex>
-                    <FlexItem
-                        spacer={{ default: 'spacerMd' }}
-                        alignSelf={{ default: 'alignSelfCenter' }}
-                    >
-                        <Flex alignSelf={{ default: 'alignSelfCenter' }}>
-                            <FlexItem
-                                spacer={{ default: 'spacerMd' }}
-                                alignSelf={{ default: 'alignSelfCenter' }}
-                            >
-                                <Title headingLevel="h2">
-                                    {integrations.length}{' '}
-                                    {pluralize('results', integrations.length)} found
-                                </Title>
-                            </FlexItem>
-                        </Flex>
+                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                        <Title headingLevel="h2">
+                            {integrations.length} {pluralize('results', integrations.length)} found
+                        </Title>
                     </FlexItem>
                     <FlexItem align={{ default: 'alignRight' }}>
                         <Flex>
                             {hasSelections && hasMultipleDelete && permissions[source].write && (
-                                <FlexItem spacer={{ default: 'spacerMd' }}>
+                                <FlexItem>
                                     <Button variant="danger" onClick={onDeleteIntegrationHandler}>
                                         Delete {numSelected} selected{' '}
                                         {pluralize('integration', numSelected)}
@@ -117,12 +106,12 @@ function IntegrationsTable({
                                 </FlexItem>
                             )}
                             {isClusterInitBundle && (
-                                <FlexItem spacer={{ default: 'spacerMd' }}>
+                                <FlexItem>
                                     <DownloadCAConfigBundle />
                                 </FlexItem>
                             )}
                             {permissions[source].write && (
-                                <FlexItem spacer={{ default: 'spacerMd' }}>
+                                <FlexItem>
                                     <Button
                                         variant={ButtonVariant.primary}
                                         component={LinkShim}
