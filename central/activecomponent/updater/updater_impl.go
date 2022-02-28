@@ -63,7 +63,6 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 
 	// Check if we should update executable cache
 	currRecord, ok := u.executableCache.Get(imageID)
-
 	if ok && currRecord.(*imageExecutable).scannerVersion == scannerVersion {
 		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scannerVersion, currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
 		return nil

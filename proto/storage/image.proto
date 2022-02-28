@@ -57,11 +57,12 @@ message DataSource {
     string name = 2;
 }
 
+// Next tag: 7
 message ImageScan {
+    string                              scanner_version  = 6;
     google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
     repeated EmbeddedImageScanComponent components       = 2;
     string                              operating_system = 4 [(gogoproto.moretags) = "search:\"Image OS,store\""];
-    string                              scanner_version  = 6;
     // DataSource contains information about which integration was used to scan the image
     DataSource                          data_source      = 3;
     enum Note {
