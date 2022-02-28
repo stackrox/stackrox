@@ -94,6 +94,7 @@ create table if not exists multikey_Nested (
     parent_Key2 varchar,
     idx numeric,
     Nested varchar,
+    Nested2_Nested2 varchar,
     PRIMARY KEY(parent_Key1, parent_Key2, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_Key1, parent_Key2) REFERENCES multikey(Key1, Key2) ON DELETE CASCADE
 )
@@ -191,9 +192,11 @@ func insertIntoMultikeyNested(tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested,
 		idx,
 
 		obj.GetNested(),
+
+		obj.GetNested2().GetNested2(),
 	}
 
-	finalStr := "INSERT INTO multikey_Nested (parent_Key1, parent_Key2, idx, Nested) VALUES($1, $2, $3, $4) ON CONFLICT(parent_Key1, parent_Key2, idx) DO UPDATE SET parent_Key1 = EXCLUDED.parent_Key1, parent_Key2 = EXCLUDED.parent_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested"
+	finalStr := "INSERT INTO multikey_Nested (parent_Key1, parent_Key2, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4, $5) ON CONFLICT(parent_Key1, parent_Key2, idx) DO UPDATE SET parent_Key1 = EXCLUDED.parent_Key1, parent_Key2 = EXCLUDED.parent_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
 	_, err := tx.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err

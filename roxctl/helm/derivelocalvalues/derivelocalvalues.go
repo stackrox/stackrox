@@ -173,7 +173,7 @@ func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8s
 	publicValuesCleaned := maputil.NormalizeGenericMap(publicValues)
 	privateValuesCleaned := maputil.NormalizeGenericMap(privateValues)
 
-	return publicValuesCleaned, privateValuesCleaned, err
+	return publicValuesCleaned, privateValuesCleaned, errors.Wrap(err, "could not derive local values")
 
 }
 

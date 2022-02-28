@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"errors"
 
 	"github.com/stackrox/rox/pkg/errox"
@@ -30,6 +31,10 @@ func RoxErrorToGRPCCode(err error) codes.Code {
 		return codes.PermissionDenied
 	case errors.Is(err, errox.NoAuthzConfigured):
 		return codes.Unimplemented
+	case errors.Is(err, context.Canceled):
+		return codes.Canceled
+	case errors.Is(err, context.DeadlineExceeded):
+		return codes.DeadlineExceeded
 	default:
 		return codes.Internal
 	}

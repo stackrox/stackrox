@@ -16,9 +16,12 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
+	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -83,6 +86,9 @@ func New(
 	ss secretDataStore.DataStore,
 	flows netFlowsDataStore.ClusterDataStore,
 	netEntities netEntityDataStore.EntityDataStore,
+	sads serviceAccountDataStore.DataStore,
+	rds roleDataStore.DataStore,
+	rbds roleBindingDataStore.DataStore,
 	cm connection.Manager,
 	notifier notifierProcessor.Processor,
 	graphProvider graph.Provider,
@@ -90,22 +96,25 @@ func New(
 	networkBaselineMgr networkBaselineManager.Manager,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
-		clusterStorage:       clusterStorage,
-		clusterHealthStorage: clusterHealthStorage,
-		indexer:              indexer,
-		searcher:             search.New(clusterStorage, indexer, graphProvider, clusterRanker),
-		alertDataStore:       ads,
-		namespaceDataStore:   namespaceDS,
-		deploymentDataStore:  dds,
-		nodeDataStore:        ns,
-		podDataStore:         pods,
-		secretsDataStore:     ss,
-		netFlowsDataStore:    flows,
-		netEntityDataStore:   netEntities,
-		cm:                   cm,
-		notifier:             notifier,
-		clusterRanker:        clusterRanker,
-		networkBaselineMgr:   networkBaselineMgr,
+		clusterStorage:          clusterStorage,
+		clusterHealthStorage:    clusterHealthStorage,
+		indexer:                 indexer,
+		searcher:                search.New(clusterStorage, indexer, graphProvider, clusterRanker),
+		alertDataStore:          ads,
+		namespaceDataStore:      namespaceDS,
+		deploymentDataStore:     dds,
+		nodeDataStore:           ns,
+		podDataStore:            pods,
+		secretsDataStore:        ss,
+		netFlowsDataStore:       flows,
+		netEntityDataStore:      netEntities,
+		serviceAccountDataStore: sads,
+		roleDataStore:           rds,
+		roleBindingDataStore:    rbds,
+		cm:                      cm,
+		notifier:                notifier,
+		clusterRanker:           clusterRanker,
+		networkBaselineMgr:      networkBaselineMgr,
 
 		idToNameCache: simplecache.New(),
 		nameToIDCache: simplecache.New(),

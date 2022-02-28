@@ -1,11 +1,10 @@
 package printer
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -119,8 +118,8 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 		return printers.NewCSVPrinter(t.RowJSONPathExpression,
 			printers.WithCSVColumnHeaders(t.Headers), printers.WithCSVHeaderOptions(t.NoHeader, t.HeaderAsComment)), nil
 	default:
-		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
-			"Tabular Printer: %q", format))
+		return nil, errox.Newf(errox.InvalidArgs, "invalid output format used for "+
+			"Tabular Printer: %q", format)
 	}
 }
 
@@ -128,14 +127,14 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 // if it is not possible
 func (t *TabularPrinterFactory) validate() error {
 	if t.NoHeader && t.HeaderAsComment {
-		return errorhelpers.NewErrInvalidArgs("cannot specify both --no-header as well as " +
+		return errox.NewErrInvalidArgs("cannot specify both --no-header as well as " +
 			"--headers-as-comment flags. Choose only one of them")
 	}
 	headers := set.NewStringSet(t.Headers...)
 	columnsToMerge := set.NewStringSet(t.columnsToMerge...)
 	intersect := headers.Intersect(columnsToMerge)
 	if !intersect.Equal(columnsToMerge) {
-		return errorhelpers.NewErrInvalidArgs("undefined columns to merge: " + columnsToMerge.Difference(intersect).ElementsString(", "))
+		return errox.Newf(errox.InvalidArgs, "undefined columns to merge: %s", columnsToMerge.Difference(intersect).ElementsString(", "))
 	}
 	return nil
 }

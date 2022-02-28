@@ -3,6 +3,7 @@ package common
 import (
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -17,7 +18,7 @@ func retrieveAuthToken() (string, error) {
 	if tokenFile := flags.APITokenFile(); tokenFile != "" {
 		token, err := flags.ReadTokenFromFile(tokenFile)
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err, "could not read token from %q", tokenFile)
 		}
 		apiToken = token
 	} else if token := env.TokenEnv.Setting(); token != "" {

@@ -54,18 +54,18 @@ func (mr *MockDataStoreMockRecorder) GetPod(ctx, id interface{}) *gomock.Call {
 }
 
 // GetPodIDs mocks base method.
-func (m *MockDataStore) GetPodIDs() ([]string, error) {
+func (m *MockDataStore) GetPodIDs(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPodIDs")
+	ret := m.ctrl.Call(m, "GetPodIDs", ctx)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPodIDs indicates an expected call of GetPodIDs.
-func (mr *MockDataStoreMockRecorder) GetPodIDs() *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetPodIDs(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPodIDs", reflect.TypeOf((*MockDataStore)(nil).GetPodIDs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPodIDs", reflect.TypeOf((*MockDataStore)(nil).GetPodIDs), ctx)
 }
 
 // RemovePod mocks base method.
