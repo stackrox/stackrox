@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +28,7 @@ func PatchPersistentPreRunHooks(c *cobra.Command) {
 			if c.PersistentPreRunE != nil {
 				err := c.PersistentPreRunE(c, args)
 				if err != nil {
-					return err
+					return errors.WithStack(err)
 				}
 			} else if c.PersistentPreRun != nil {
 				c.PersistentPreRun(c, args)
@@ -37,7 +38,7 @@ func PatchPersistentPreRunHooks(c *cobra.Command) {
 			if thisHookE != nil {
 				err := thisHookE(cmd, args)
 				if err != nil {
-					return err
+					return errors.WithStack(err)
 				}
 			} else if thisHook != nil {
 				thisHook(cmd, args)
