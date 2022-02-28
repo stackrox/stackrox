@@ -1180,6 +1180,9 @@
         "operatingSystem": {
           "type": "string"
         },
+        "scannerVersion": {
+          "type": "string"
+        },
         "dataSource": {
           "$ref": "#/definitions/storageDataSource",
           "title": "DataSource contains information about which integration was used to scan the image"
