@@ -65,7 +65,7 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 	currRecord, ok := u.executableCache.Get(imageID)
 
 	if ok && currRecord.(*imageExecutable).scannerVersion == scannerVersion {
-		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scannerVersion, currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
+		log.Errorf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scannerVersion, currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
 		return nil
 	}
 
@@ -73,7 +73,7 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 	execToComponents := u.getExecToComponentsMap(scan)
 	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponents: execToComponents, scannerVersion: scannerVersion})
 
-	log.Debugf("Executable cache updated for image %s of scan version %s with %d paths", image.GetId(), scannerVersion, len(execToComponents))
+	log.Errorf("Executable cache updated for image %s of scan version %s with %d paths", image.GetId(), scannerVersion, len(execToComponents))
 
 	return nil
 }
