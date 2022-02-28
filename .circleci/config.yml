@@ -504,7 +504,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.28
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.29
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -4503,7 +4503,7 @@ jobs:
             gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${CIRCLE_TAG}"
             gitbot push origin "${branch_name}"
 
-            .circleci/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS"
+            /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
 
   push-release:
     executor: custom

@@ -19,13 +19,29 @@ var (
 // Schema is the go representation of the schema for a table
 // This is derived from walking the go struct
 type Schema struct {
-	Table               string
-	ParentSchema        *Schema
-	Fields              []Field
-	FieldsBySearchField map[string]Field
-	Children            []*Schema
-	Type                string
-	ObjectGetter        string
+	Table        string
+	ParentSchema *Schema
+	Fields       []Field
+	Children     []*Schema
+	Type         string
+	ObjectGetter string
+}
+
+// FieldsBySearchLabel returns the resulting fields in the schema by their field label
+func (s *Schema) FieldsBySearchLabel() map[string]*Field {
+	m := make(map[string]*Field)
+	for _, f := range s.Fields {
+		field := f
+		if f.Search.Enabled {
+			m[f.Search.FieldName] = &field
+		}
+	}
+	for _, child := range s.Children {
+		for k, v := range child.FieldsBySearchLabel() {
+			m[k] = v
+		}
+	}
+	return m
 }
 
 // AddFieldWithType adds a field to the schema with the specified data type
@@ -122,6 +138,7 @@ type SearchField struct {
 	Hidden    bool
 	Store     bool
 	Enabled   bool
+	Ignored   bool
 }
 
 // PostgresOptions is the parsed representation of the sql tag on the struct field

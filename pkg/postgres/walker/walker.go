@@ -15,8 +15,9 @@ var (
 )
 
 type context struct {
-	getter string
-	column string
+	getter         string
+	column         string
+	searchDisabled bool
 }
 
 func (c context) Getter(name string) string {
@@ -34,10 +35,11 @@ func (c context) Column(name string) string {
 	return c.column + "_" + name
 }
 
-func (c context) childContext(name string) context {
+func (c context) childContext(name string, searchDisabled bool) context {
 	return context{
-		getter: c.Getter(name),
-		column: c.Column(name),
+		getter:         c.Getter(name),
+		column:         c.Column(name),
+		searchDisabled: c.searchDisabled || searchDisabled,
 	}
 }
 
@@ -79,13 +81,17 @@ func getPostgresOptions(tag string) PostgresOptions {
 	return opts
 }
 
-func getSearchOptions(searchTag string) SearchField {
-	if searchTag == "-" || searchTag == "" {
-		return SearchField{}
+func getSearchOptions(ctx context, searchTag string) SearchField {
+	ignored := searchTag == "-"
+	if ignored || searchTag == "" {
+		return SearchField{
+			Ignored: ignored,
+		}
 	}
 	fields := strings.Split(searchTag, ",")
 	return SearchField{
 		FieldName: fields[0],
+		Enabled:   !ctx.searchDisabled,
 	}
 }
 
@@ -110,7 +116,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if opts.Ignored {
 			continue
 		}
-		searchOpts := getSearchOptions(structField.Tag.Get("search"))
+		searchOpts := getSearchOptions(ctx, structField.Tag.Get("search"))
 
 		field := Field{
 			Schema:  schema,
@@ -135,7 +141,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				continue
 			}
 
-			handleStruct(ctx.childContext(field.Name), schema, structField.Type.Elem())
+			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored), schema, structField.Type.Elem())
 		case reflect.Slice:
 			elemType := structField.Type.Elem()
 
@@ -175,10 +181,10 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 
-			handleStruct(context{}, childSchema, structField.Type.Elem().Elem())
+			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored}, childSchema, structField.Type.Elem().Elem())
 			continue
 		case reflect.Struct:
-			handleStruct(ctx.childContext(field.Name), schema, structField.Type)
+			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored), schema, structField.Type)
 		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
 			enum, ok := reflect.Zero(structField.Type).Interface().(protoreflect.ProtoEnum)
 			if !ok {

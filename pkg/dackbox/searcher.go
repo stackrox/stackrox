@@ -1,19 +1,21 @@
 package dackbox
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dackbox/keys"
 )
 
 // Searcher is an interface to performing a search on a DackBox graph.
 type Searcher interface {
-	Search(id string) (bool, error)
+	Search(ctx context.Context, id string) (bool, error)
 }
 
-type funcSearcher func(id string) (bool, error)
+type funcSearcher func(ctx context.Context, id string) (bool, error)
 
-func (s funcSearcher) Search(id string) (bool, error) {
-	return s(id)
+func (s funcSearcher) Search(ctx context.Context, id string) (bool, error) {
+	return s(ctx, id)
 }
 
 // EdgeSearcher returns a searcher that starts at an edge, taking the given component as the start.
@@ -23,11 +25,11 @@ func EdgeSearcher(searcher Searcher, edgeComponentIndex int) Searcher {
 		panic(errors.Errorf("invalid edge component index %d", edgeComponentIndex))
 	}
 
-	return funcSearcher(func(edgeID string) (bool, error) {
+	return funcSearcher(func(ctx context.Context, edgeID string) (bool, error) {
 		component, err := keys.PairKeySelect([]byte(edgeID), edgeComponentIndex)
 		if err != nil {
 			return false, errors.Wrap(err, "decoding edge key")
 		}
-		return searcher.Search(string(component))
+		return searcher.Search(ctx, string(component))
 	})
 }

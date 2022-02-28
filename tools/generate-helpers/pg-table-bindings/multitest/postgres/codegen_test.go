@@ -41,4 +41,6 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, multiKey, dep)
+
+	// Search is currently unsupported for tables with multiple primary keys
 }
