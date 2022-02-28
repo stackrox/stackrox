@@ -78,6 +78,8 @@ tests:
     .rolebindings["scanner-use-scc"] | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 3)
+    .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
 
 - name: "scanner with OpenShift 4 and disabled SCCs"
   server:
@@ -96,3 +98,5 @@ tests:
     .securitycontextconstraints["stackrox-scanner"] | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 3)
+    .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")

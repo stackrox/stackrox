@@ -20,7 +20,7 @@ spec:
     - podSelector:
         matchLabels:
           app: central
-{{ if eq ._rox.scanner.mode "slim" }}
+{{ if or (eq ._rox.scanner.mode "slim") ._rox.env.openshift }}
   - from:
     - podSelector:
         matchLabels:
