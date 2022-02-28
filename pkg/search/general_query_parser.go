@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -56,7 +55,7 @@ func getFieldMap(query string) map[FieldLabel][]string {
 func ParseFieldMap(query string) (map[FieldLabel][]string, error) {
 	fieldMap := getFieldMap(query)
 	if len(fieldMap) == 0 {
-		return nil, errox.NewErrInvalidArgs("after parsing, query is empty")
+		return nil, errors.New("after parsing, query is empty")
 	}
 	return fieldMap, nil
 }

@@ -1,10 +1,6 @@
 package standards
 
-import (
-	"fmt"
-
-	"github.com/stackrox/rox/pkg/errox"
-)
+import "github.com/pkg/errors"
 
 // GetSupportedStandards returns the ids of all supported compliance standards
 func GetSupportedStandards() []string {
@@ -32,7 +28,7 @@ func IsSupported(standardID string) bool {
 	return RegistrySingleton().LookupStandard(standardID) != nil
 }
 
-// UnSupportedStandardsErr builds error message for unsupported compliance standards and returns the error
+// UnSupportedStandardsErr builds error message for unsupported compliance standards and returns the errir
 func UnSupportedStandardsErr(unsupported ...string) error {
-	return errox.NewErrInvalidArgs(fmt.Sprintf("unsupported standard(s): %+v. Supported standards are %+v", unsupported, GetSupportedStandards()))
+	return errors.Errorf("unsupported standard(s): %+v. Supported standards are %+v", unsupported, GetSupportedStandards())
 }
