@@ -9,7 +9,7 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/tkuchiki/go-timezone"
+	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 const (
@@ -21,7 +21,7 @@ func newTimeQuery(_ v1.SearchCategory, field string, value string, modifiers ...
 	var seconds int64
 	if t, ok := parseTimeString(trimmedValue); ok {
 		// Adjust for the timezone offset when comparing
-		seconds = t.Unix() - timeToOffset(t)
+		seconds = t.Unix() - timeutil.TimeToOffset(t)
 
 		// If the date query is a singular date with no prefix, then need to create a numeric query with the min = date. max = date + 1
 		if prefix == "" {
@@ -59,13 +59,4 @@ func parseTimeString(value string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
-}
-
-func timeToOffset(t time.Time) int64 {
-	tz, _ := t.Zone()
-	offset, err := timezone.GetOffset(tz, false)
-	if err != nil {
-		return 0
-	}
-	return int64(offset)
 }
