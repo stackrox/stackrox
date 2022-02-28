@@ -38,16 +38,15 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
     return (
         <>
             <PageTitle title={title} />
+            <PageSection variant="light" className="pf-u-p-md">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={integrationsListPath}>{typeLabel}</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{title}</BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
+            <Divider component="div" />
             <PageSection variant="light">
-                <div className="pf-u-mb-sm">
-                    <Breadcrumb>
-                        <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
-                        <BreadcrumbItemLink to={integrationsListPath}>
-                            {typeLabel}
-                        </BreadcrumbItemLink>
-                        <BreadcrumbItem isActive>{title}</BreadcrumbItem>
-                    </Breadcrumb>
-                </div>
                 <Flex>
                     <FlexItem>
                         <Title headingLevel="h1">{`${
@@ -67,7 +66,6 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
                     )}
                 </Flex>
             </PageSection>
-            <Divider component="div" />
             {children}
         </>
     );
