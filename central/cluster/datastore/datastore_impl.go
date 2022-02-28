@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -912,18 +913,18 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		cluster.HelmConfig = clusterConfig.Clone()
 	}
 
-	// If we manually upgrade a cluster that was created with Helm or the Operator we need to drop the tags/digests (if there are any)
+	// Manually managed clusters drop the tags/digests (if there are any)
 	if clusterValidation.IsManagerManualOrUnknown(cluster.GetManagedBy()) {
 		if cluster.GetMainImage() != "" {
 			var err error
-			if cluster.MainImage, err = clusterValidation.DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
+			if cluster.MainImage, err = imageUtils.DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
 				return nil, err
 			}
 		}
 
 		if cluster.GetCollectorImage() != "" {
 			var err error
-			if cluster.CollectorImage, err = clusterValidation.DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
+			if cluster.CollectorImage, err = imageUtils.DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
 				return nil, err
 			}
 		}

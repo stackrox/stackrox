@@ -243,3 +243,26 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 		}
 	}
 }
+
+// DropImageTagAndDigest drops the tag or digests of a given image.
+// If the image is not a properly formatted image returns an error
+func DropImageTagAndDigest(image string) (string, error) {
+	ref, err := reference.ParseAnyReference(image)
+	if err != nil {
+		return image, errors.Wrapf(err, "invalid image '%s'", image)
+	}
+	// We need to do the trim in two steps, otherwise 'docker.io' will be added to images that specify a path
+	// but not a domain (e.g. stackrox/main will become docker.io/stackrox/main)
+	retName := strings.TrimPrefix(ref.(reference.Named).Name(), "docker.io/")
+	retName = strings.TrimPrefix(retName, "library/")
+	if strings.HasPrefix(image, "docker.io/") {
+		retName = ref.(reference.Named).Name()
+	}
+	if _, ok := ref.(reference.Digested); ok {
+		return retName, nil
+	}
+	if _, ok := ref.(reference.NamedTagged); ok {
+		return retName, nil
+	}
+	return retName, nil
+}

@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -136,77 +135,6 @@ func TestPartialValidation(t *testing.T) {
 
 			for _, expectedErr := range c.expectedErrors {
 				assert.Contains(t, gotErrors.String(), expectedErr)
-			}
-		})
-	}
-}
-
-func TestDropImageTagsOrDigests(t *testing.T) {
-	cases := map[string]struct {
-		image         string
-		expectedImage string
-		expectedError error
-	}{
-		"Image with Tag": {
-			image:         "docker.io/stackrox/rox:tag",
-			expectedImage: "docker.io/stackrox/rox",
-			expectedError: nil,
-		},
-		"Image with Digest": {
-			image:         "docker.io/stackrox/rox@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
-			expectedImage: "docker.io/stackrox/rox",
-			expectedError: nil,
-		},
-		"Image with Tag and Digest": {
-			image:         "docker.io/stackrox/rox:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
-			expectedImage: "docker.io/stackrox/rox",
-			expectedError: nil,
-		},
-		"Image with no tag or digest": {
-			image:         "docker.io/stackrox/rox",
-			expectedImage: "docker.io/stackrox/rox",
-			expectedError: nil,
-		},
-		"Image with no tag or digest and no domain": {
-			image:         "stackrox/rox",
-			expectedImage: "stackrox/rox",
-			expectedError: nil,
-		},
-		"No registry with tag": {
-			image:         "nginx:tag",
-			expectedImage: "nginx",
-			expectedError: nil,
-		},
-		"No registry with sha": {
-			image:         "nginx@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
-			expectedImage: "nginx",
-			expectedError: nil,
-		},
-		"No registry with tag and sha": {
-			image:         "nginx:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
-			expectedImage: "nginx",
-			expectedError: nil,
-		},
-		"No registry": {
-			image:         "nginx",
-			expectedImage: "nginx",
-			expectedError: nil,
-		},
-		"Invalid image": {
-			image:         "invalid image",
-			expectedError: errors.New("invalid image 'invalid image': invalid reference format"),
-		},
-	}
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			resImage, gotError := DropImageTagAndDigest(c.image)
-
-			if c.expectedError == nil {
-				assert.NoError(t, gotError, "expected a valid image but got error")
-				assert.Equal(t, c.expectedImage, resImage, "Expected image %s but got %s", c.expectedImage, resImage)
-			} else {
-				assert.Error(t, gotError)
-				assert.Equal(t, c.expectedError.Error(), gotError.Error())
 			}
 		})
 	}

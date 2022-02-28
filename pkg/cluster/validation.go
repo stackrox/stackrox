@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -27,33 +28,7 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 
 // IsManagerManualOrUnknown returns whether a given manager is Manual or Unknown
 func IsManagerManualOrUnknown(manager storage.ManagerType) bool {
-	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL || manager == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
-		return true
-	}
-	return false
-}
-
-// DropImageTagAndDigest drops the tag or digests of a given image.
-// If the image is not a properly formatted image returns an error
-func DropImageTagAndDigest(image string) (string, error) {
-	ref, err := reference.ParseAnyReference(image)
-	if err != nil {
-		return image, errors.Wrapf(err, "invalid image '%s'", image)
-	}
-	// We need to do the trim in two steps, otherwise 'docker.io' will be added to images that specify a path
-	// but not a domain (e.g. stackrox/main will become docker.io/stackrox/main)
-	retName := strings.TrimPrefix(ref.(reference.Named).Name(), "docker.io/")
-	retName = strings.TrimPrefix(retName, "library/")
-	if strings.HasPrefix(image, "docker.io/") {
-		retName = ref.(reference.Named).Name()
-	}
-	if _, ok := ref.(reference.Digested); ok {
-		return retName, nil
-	}
-	if _, ok := ref.(reference.NamedTagged); ok {
-		return retName, nil
-	}
-	return retName, nil
+	return manager == storage.ManagerType_MANAGER_TYPE_MANUAL || manager == storage.ManagerType_MANAGER_TYPE_UNKNOWN
 }
 
 // ValidatePartial partially validates a cluster object.
@@ -64,14 +39,14 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		errorList.AddString("Cluster name is required")
 	}
 	if cluster.GetMainImage() != "" {
-		if image, err := DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
+		if image, err := utils.DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
 			errorList.AddError(err)
 		} else if image != cluster.GetMainImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
 			errorList.AddString("main image should not contain tags or digests")
 		}
 	}
 	if cluster.GetCollectorImage() != "" {
-		if image, err := DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
+		if image, err := utils.DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
 			errorList.AddError(err)
 		} else if image != cluster.GetCollectorImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
 			errorList.AddString("collector image should not contain tags or digests")
