@@ -298,16 +298,12 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		}
 	}
 
-	enrichmentCtx := enricher.EnrichmentContext{
-		FetchOpt: enricher.ForceRefetch,
-		Internal: true,
-	}
 	img := &storage.Image{
 		Id:       request.GetImageId(),
 		Name:     request.GetImageName(),
 		Metadata: request.GetMetadata(),
 	}
-	_, err := s.enricher.EnrichWithVulnerabilities(enrichmentCtx, img, request.GetComponents(), request.GetNotes())
+	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
 	if err != nil {
 		return nil, err
 	}

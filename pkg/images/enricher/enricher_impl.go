@@ -30,6 +30,10 @@ const (
 	consecutiveErrorThreshold = 3
 )
 
+var (
+	_ ImageEnricher = (*enricherImpl)(nil)
+)
+
 type enricherImpl struct {
 	cvesSuppressor   cveSuppressor
 	cvesSuppressorV2 cveSuppressor
