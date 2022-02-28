@@ -913,17 +913,17 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	// If we manually upgrade a cluster that was created with Helm or the Operator we need to drop the tags/digests (if there are any)
-	if currentCluster.ManagedBy != cluster.ManagedBy && (currentCluster.ManagedBy == storage.ManagerType_MANAGER_TYPE_HELM_CHART || currentCluster.ManagedBy == storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR) {
+	if clusterValidation.IsManagerManualOrUnknown(cluster.GetManagedBy()) {
 		if cluster.GetMainImage() != "" {
 			var err error
-			if cluster.MainImage, err = clusterValidation.DropImageTagsOrDigests(cluster.GetMainImage()); err != nil {
+			if cluster.MainImage, err = clusterValidation.DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
 				return nil, err
 			}
 		}
 
 		if cluster.GetCollectorImage() != "" {
 			var err error
-			if cluster.CollectorImage, err = clusterValidation.DropImageTagsOrDigests(cluster.GetCollectorImage()); err != nil {
+			if cluster.CollectorImage, err = clusterValidation.DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
 				return nil, err
 			}
 		}

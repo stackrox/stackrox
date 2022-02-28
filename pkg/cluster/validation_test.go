@@ -27,7 +27,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = "invalid image"
 			},
-			expectedErrors: []string{"invalid main image 'invalid image': invalid reference format"},
+			expectedErrors: []string{"invalid image 'invalid image': invalid reference format"},
 		},
 		"Cluster with empty main image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -37,27 +37,28 @@ func TestPartialValidation(t *testing.T) {
 		"Cluster with main image with tag should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = "docker.io/stackrox/main:some_tag"
+				// cluster.MainImage = "image"
 			},
-			expectedErrors: []string{"central image contains tag: 'some_tag'. The use of tags is not allowed"},
+			expectedErrors: []string{"main image should not contain tags or digests"},
 		},
 		"Cluster with main image with sha should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = "docker.io/stackrox/main@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993"
 			},
-			expectedErrors: []string{"central image contains SHA reference: 'sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'. The use of SHAs is not allowed"},
+			expectedErrors: []string{"main image should not contain tags or digests"},
 		},
 		"Cluster with collector image with tag should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
 				cluster.HelmConfig = &storage.CompleteClusterConfig{} // Not really needed since ManagedBy is checked first
 			},
-			expectedErrors: []string{"collector image contains tag: '3.2.0-slim'. The use of tags is not allowed"},
+			expectedErrors: []string{"collector image should not contain tags or digests"},
 		},
 		"Cluster with collector image with sha should fail when Managedby is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "docker.io/stackrox/collector@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993"
 			},
-			expectedErrors: []string{"collector image contains SHA reference: 'sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'. The use of SHAs is not allowed"},
+			expectedErrors: []string{"collector image should not contain tags or digests"},
 		},
 		"Cluster with configured collector image without tag is valid": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -68,7 +69,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "invalid image"
 			},
-			expectedErrors: []string{"invalid collector image 'invalid image': invalid reference format"},
+			expectedErrors: []string{"invalid image 'invalid image': invalid reference format"},
 		},
 		"Cluster with empty collector image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -156,19 +157,49 @@ func TestDropImageTagsOrDigests(t *testing.T) {
 			expectedImage: "docker.io/stackrox/rox",
 			expectedError: nil,
 		},
+		"Image with Tag and Digest": {
+			image:         "docker.io/stackrox/rox:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "docker.io/stackrox/rox",
+			expectedError: nil,
+		},
 		"Image with no tag or digest": {
 			image:         "docker.io/stackrox/rox",
 			expectedImage: "docker.io/stackrox/rox",
 			expectedError: nil,
 		},
+		"Image with no tag or digest and no domain": {
+			image:         "stackrox/rox",
+			expectedImage: "stackrox/rox",
+			expectedError: nil,
+		},
+		"No registry with tag": {
+			image:         "nginx:tag",
+			expectedImage: "nginx",
+			expectedError: nil,
+		},
+		"No registry with sha": {
+			image:         "nginx@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "nginx",
+			expectedError: nil,
+		},
+		"No registry with tag and sha": {
+			image:         "nginx:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "nginx",
+			expectedError: nil,
+		},
+		"No registry": {
+			image:         "nginx",
+			expectedImage: "nginx",
+			expectedError: nil,
+		},
 		"Invalid image": {
 			image:         "invalid image",
-			expectedError: errors.New("invalid main image 'invalid image': invalid reference format"),
+			expectedError: errors.New("invalid image 'invalid image': invalid reference format"),
 		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			resImage, gotError := DropImageTagsOrDigests(c.image)
+			resImage, gotError := DropImageTagAndDigest(c.image)
 
 			if c.expectedError == nil {
 				assert.NoError(t, gotError, "expected a valid image but got error")

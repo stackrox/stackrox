@@ -25,28 +25,35 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	return errorList
 }
 
-// isManagerManualOrUnknown returns whether a given manager is Manual or Unknown
-func isManagerManualOrUnknown(manager storage.ManagerType) bool {
+// IsManagerManualOrUnknown returns whether a given manager is Manual or Unknown
+func IsManagerManualOrUnknown(manager storage.ManagerType) bool {
 	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL || manager == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
 		return true
 	}
 	return false
 }
 
-// DropImageTagsOrDigests drops the tag or digests of a given image.
+// DropImageTagAndDigest drops the tag or digests of a given image.
 // If the image is not a properly formatted image returns an error
-func DropImageTagsOrDigests(image string) (string, error) {
+func DropImageTagAndDigest(image string) (string, error) {
 	ref, err := reference.ParseAnyReference(image)
 	if err != nil {
-		return image, errors.Wrapf(err, "invalid main image '%s'", image)
+		return image, errors.Wrapf(err, "invalid image '%s'", image)
+	}
+	// We need to do the trim in two steps, otherwise 'docker.io' will be added to images that specify a path
+	// but not a domain (e.g. stackrox/main will become docker.io/stackrox/main)
+	retName := strings.TrimPrefix(ref.(reference.Named).Name(), "docker.io/")
+	retName = strings.TrimPrefix(retName, "library/")
+	if strings.HasPrefix(image, "docker.io/") {
+		retName = ref.(reference.Named).Name()
 	}
 	if _, ok := ref.(reference.Digested); ok {
-		return ref.(reference.Named).Name(), nil
+		return retName, nil
 	}
 	if _, ok := ref.(reference.NamedTagged); ok {
-		return ref.(reference.Named).Name(), nil
+		return retName, nil
 	}
-	return image, nil
+	return retName, nil
 }
 
 // ValidatePartial partially validates a cluster object.
@@ -57,32 +64,17 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		errorList.AddString("Cluster name is required")
 	}
 	if cluster.GetMainImage() != "" {
-		ref, err := reference.ParseAnyReference(cluster.GetMainImage())
-		if err != nil {
-			errorList.AddError(errors.Wrapf(err, "invalid main image '%s'", cluster.GetMainImage()))
-		}
-		if digested, ok := ref.(reference.Digested); isManagerManualOrUnknown(cluster.ManagedBy) && ok {
-			errorList.AddStringf("central image contains SHA reference: '%s'. The use "+
-				"of SHAs is not allowed", digested.Digest().String())
-		}
-		if namedTagged, ok := ref.(reference.NamedTagged); isManagerManualOrUnknown(cluster.ManagedBy) && ok {
-			errorList.AddStringf("central image contains tag: '%s'. The use "+
-				"of tags is not allowed", namedTagged.Tag())
+		if image, err := DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
+			errorList.AddError(err)
+		} else if image != cluster.GetMainImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
+			errorList.AddString("main image should not contain tags or digests")
 		}
 	}
 	if cluster.GetCollectorImage() != "" {
-		ref, err := reference.ParseAnyReference(cluster.GetCollectorImage())
-		if err != nil {
-			errorList.AddError(errors.Wrapf(err, "invalid collector image '%s'", cluster.GetCollectorImage()))
-		}
-
-		if namedTagged, ok := ref.(reference.NamedTagged); isManagerManualOrUnknown(cluster.ManagedBy) && ok {
-			errorList.AddStringf("collector image contains tag: '%s'. The use "+
-				"of tags is not allowed", namedTagged.Tag())
-		}
-		if digested, ok := ref.(reference.Digested); isManagerManualOrUnknown(cluster.ManagedBy) && ok {
-			errorList.AddStringf("collector image contains SHA reference: '%s'. The use "+
-				"of SHAs is not allowed", digested.Digest().String())
+		if image, err := DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
+			errorList.AddError(err)
+		} else if image != cluster.GetCollectorImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
+			errorList.AddString("collector image should not contain tags or digests")
 		}
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
