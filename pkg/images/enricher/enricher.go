@@ -82,7 +82,7 @@ const (
 //go:generate mockgen-wrapper
 type ImageEnricher interface {
 	EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
-	EnrichWithVulnerabilities(ctx EnrichmentContext, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
+	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
 }
 
 type cveSuppressor interface {

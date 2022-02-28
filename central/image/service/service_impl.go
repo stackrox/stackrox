@@ -74,6 +74,8 @@ var (
 			"/v1.ImageService/UnwatchImage",
 		},
 	})
+
+	reprocessInterval = env.ReprocessInterval.DurationSetting()
 )
 
 // serviceImpl provides APIs for alerts.
@@ -287,10 +289,8 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 			return nil, err
 		}
 
-		reprocessInterval := env.ReprocessInterval.DurationSetting()
 		// This is safe even if img is nil.
 		scanTime := img.GetScan().GetScanTime()
-
 		// If the scan exists, and reprocessing has not run since, return the scan.
 		// Otherwise, run the enrichment pipeline to ensure we do not return stale data.
 		if exists && timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now()) {

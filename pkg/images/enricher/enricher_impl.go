@@ -53,9 +53,7 @@ type enricherImpl struct {
 }
 
 // EnrichWithVulnerabilities enriches the given image with vulnerabilities.
-// At the moment, the EnrichmentContext is ignored, but it is kept there,
-// as there may be use for it in the future.
-func (e *enricherImpl) EnrichWithVulnerabilities(_ EnrichmentContext, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
+func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
 	scanners := e.integrations.ScannerSet()
 	if scanners.IsEmpty() {
 		return EnrichmentResult{
