@@ -1,14 +1,16 @@
 package completion
 
 import (
-	"errors"
+	"io"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common"
 )
 
 var (
-	errInvalidArgs = errors.New("Invalid argument. Use one of the following: [bash|zsh|fish|powershell]")
+	errInvalidArgs = errox.NewErrInvalidArgs("use one of the following: [bash|zsh|fish|powershell]")
 )
 
 const (
@@ -67,18 +69,20 @@ func Command() *cobra.Command {
 		Long:                  longDescriptionForCompletion,
 		Args:                  common.ExactArgsWithCustomErrMessage(1, "Missing argument. Use one of the following: [bash|zsh|fish|powershell]"),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			var gen func(w io.Writer) error
 			switch args[0] {
 			case "bash":
-				return cmd.Root().GenBashCompletion(cmd.OutOrStdout())
+				gen = cmd.Root().GenBashCompletion
 			case "zsh":
-				return cmd.Root().GenZshCompletion(cmd.OutOrStdout())
+				gen = cmd.Root().GenZshCompletion
 			case "fish":
-				return cmd.Root().GenFishCompletion(cmd.OutOrStdout(), true)
+				gen = func(w io.Writer) error { return errors.WithStack(cmd.Root().GenFishCompletion(w, true)) }
 			case "powershell":
-				return cmd.Root().GenPowerShellCompletionWithDesc(cmd.OutOrStdout())
+				gen = cmd.Root().GenPowerShellCompletionWithDesc
 			default:
 				return errInvalidArgs
 			}
+			return errors.Wrap(gen(cmd.OutOrStdout()), "could not generate completion")
 		},
 	}
 }
