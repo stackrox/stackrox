@@ -9,15 +9,11 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/tkuchiki/go-timezone"
+	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 const (
 	dayDuration = 24 * time.Hour
-)
-
-var (
-	tzInfo = timezone.New()
 )
 
 func newTimeQuery(_ v1.SearchCategory, field string, value string, modifiers ...queryModifier) (query.Query, error) {
@@ -25,7 +21,7 @@ func newTimeQuery(_ v1.SearchCategory, field string, value string, modifiers ...
 	var seconds int64
 	if t, ok := parseTimeString(trimmedValue); ok {
 		// Adjust for the timezone offset when comparing
-		seconds = t.Unix() - timeToOffset(t)
+		seconds = t.Unix() - timeutil.TimeToOffset(t)
 
 		// If the date query is a singular date with no prefix, then need to create a numeric query with the min = date. max = date + 1
 		if prefix == "" {
@@ -63,22 +59,4 @@ func parseTimeString(value string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
-}
-
-func timeToOffset(t time.Time) int64 {
-	tz, _ := t.Zone()
-	infos, _ := tzInfo.GetTzAbbreviationInfo(tz)
-	if len(infos) == 0 {
-		return 0
-	}
-
-	// We can tolerate ambiguities, but only if all timezones have the same offset.
-	offset := infos[0].Offset()
-	for _, info := range infos[1:] {
-		if info.Offset() != offset {
-			return 0
-		}
-	}
-
-	return int64(offset)
 }
