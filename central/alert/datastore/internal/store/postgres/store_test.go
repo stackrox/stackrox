@@ -12,8 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stretchr/testify/assert"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -82,7 +80,6 @@ func (s *AlertsStoreSuite) TestStore() {
 
 	s.NoError(store.Delete(alert.GetId()))
 	foundAlert, exists, err = store.Get(alert.GetId())
-
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundAlert)
