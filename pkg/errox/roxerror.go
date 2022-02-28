@@ -1,5 +1,6 @@
 package errox
 
+// RoxError is the interface of rox errors.
 type RoxError interface {
 	error
 	Unwrap() error
