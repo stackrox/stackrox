@@ -99,7 +99,7 @@ function IntegrationsTable({
                                 spacer={{ default: 'spacerMd' }}
                                 alignSelf={{ default: 'alignSelfCenter' }}
                             >
-                                <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
+                                <Title headingLevel="h2">
                                     {integrations.length}{' '}
                                     {pluralize('results', integrations.length)} found
                                 </Title>

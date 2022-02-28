@@ -38,7 +38,7 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
     return (
         <>
             <PageTitle title={title} />
-            <PageSection variant="light" className="pf-u-p-md">
+            <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItemLink to={integrationsListPath}>{typeLabel}</BreadcrumbItemLink>
