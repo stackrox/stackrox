@@ -101,7 +101,7 @@ func (u *updaterImpl) Update() {
 		return
 	}
 	if len(u.deploymentToUpdates) == 0 {
-		ids, err := u.deploymentStore.GetDeploymentIDs()
+		ids, err := u.deploymentStore.GetDeploymentIDs(context.TODO())
 		if err != nil {
 			log.Errorf("failed to fetch deployment ids: %v", err)
 			return

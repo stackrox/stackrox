@@ -285,7 +285,7 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	return ds.indicators.RemoveProcessIndicatorsByPod(deleteIndicatorsCtx, id)
 }
 
-func (ds *datastoreImpl) GetPodIDs() ([]string, error) {
+func (ds *datastoreImpl) GetPodIDs(_ context.Context) ([]string, error) {
 	return ds.podStore.GetIDs()
 }
 

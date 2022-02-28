@@ -249,13 +249,13 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
 
-	deploymentIDs, err := g.deployments.GetDeploymentIDs()
+	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx)
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
 		return
 	}
 	deploymentSet := set.NewFrozenStringSet(deploymentIDs...)
-	podIDs, err := g.pods.GetPodIDs()
+	podIDs, err := g.pods.GetPodIDs(pruningCtx)
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch pod IDs in pruning"))
 		return

@@ -53,7 +53,7 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 			return
 		}
 
-		ids, err := deployments.GetDeploymentIDs()
+		ids, err := deployments.GetDeploymentIDs(r.Context())
 		if err != nil {
 			httputil.WriteError(w, err)
 			return
