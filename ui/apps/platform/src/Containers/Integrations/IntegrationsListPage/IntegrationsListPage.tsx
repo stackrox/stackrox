@@ -89,7 +89,6 @@ function IntegrationsListPage({
             </PageSection>
             <PageSection variant="default">
                 <IntegrationsTable
-                    title={typeLabel}
                     integrations={integrations}
                     hasMultipleDelete={!isClusterInitBundle}
                     onDeleteIntegrations={onDeleteIntegrations}

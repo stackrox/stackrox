@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    Badge,
     Button,
     ButtonVariant,
     Divider,
@@ -53,14 +52,12 @@ function getNewButtonText(type) {
 }
 
 type IntegrationsTableProps = {
-    title: string;
     integrations: Integration[];
     hasMultipleDelete: boolean;
     onDeleteIntegrations: (integration) => void;
 };
 
 function IntegrationsTable({
-    title,
     integrations,
     hasMultipleDelete,
     onDeleteIntegrations,
