@@ -413,10 +413,8 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 
 func (ds *dataStoreImpl) verifyRoleReferencesExist(role *storage.Role) error {
 	// Verify storage constraints.
-	if role.GetPermissionSetId() != "" {
-		if err := ds.verifyPermissionSetIDExists(role.GetPermissionSetId()); err != nil {
-			return errors.Wrapf(errorhelpers.ErrInvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
-		}
+	if err := ds.verifyPermissionSetIDExists(role.GetPermissionSetId()); err != nil {
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
 	}
 	if err := ds.verifyAccessScopeIDExists(role.GetAccessScopeId()); err != nil {
 		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
