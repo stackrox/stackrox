@@ -4889,11 +4889,9 @@ jobs:
       - run:
           command: |
             make main-build-nodeps
-          background: true
       - run:
           command: |
             make cli
-          background: true
       - run:
           command: |
             make -C ui build
