@@ -108,19 +108,17 @@ outer:
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
 	defer c.signal.Signal()
 
-	var (
-		scannedImage *v1.ScanImageInternalResponse
-		err          error
-	)
 	// Ask Central to scan the image if the image is not internal.
 	// Otherwise, attempt to scan locally.
-	if !features.LocalImageScanning.Enabled() || !imageutil.IsInternalImage(ci.GetName()) {
-		scannedImage, err = scanWithRetries(ctx, svc, ci, scanImage)
-	} else {
-		scannedImage, err = scanWithRetries(ctx, svc, ci, scanImageLocal)
+	scanImageFn := scanImage
+	if features.LocalImageScanning.Enabled() && imageutil.IsInternalImage(ci.GetName()) {
+		scanImageFn = scanImageLocal
 	}
 
+	scannedImage, err := scanWithRetries(ctx, svc, ci, scanImageFn)
 	if err != nil {
+		// Ignore the error and set the image to something basic,
+		// so alerting can progress.
 		c.image = types.ToImage(ci)
 		return
 	}
