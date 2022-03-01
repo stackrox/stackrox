@@ -44,7 +44,7 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, commentsStorage commentsstore.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
+func New(ctx context.Context, storage store.Store, commentsStorage commentsstore.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
 	d := &datastoreImpl{
 		storage:               storage,
 		commentsStorage:       commentsStorage,
@@ -55,9 +55,9 @@ func New(storage store.Store, commentsStorage commentsstore.Store, indexer index
 		stopSig:               concurrency.NewSignal(),
 		stoppedSig:            concurrency.NewSignal(),
 	}
-	if err := d.buildIndex(); err != nil {
+	if err := d.buildIndex(ctx); err != nil {
 		return nil, err
 	}
-	go d.prunePeriodically()
+	go d.prunePeriodically(ctx)
 	return d, nil
 }
