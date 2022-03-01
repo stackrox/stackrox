@@ -3,7 +3,7 @@
 #
 # # Public configuration options for the StackRox Scanner:
 # # When installing the Secured Cluster chart, a slim scanner mode is deployed with reduced image caching.
-# # To run the scanner in the secured cluster, you must connect the Scanner to Central.
+# # To run the scanner in the secured cluster, you must connect the Scanner to Sensor.
 #
 # Image configuration for scanner:
 # # For a complete example, see the `values-public.yaml.example` file.
@@ -16,7 +16,7 @@
 #    fullRef: null
 #
 # scanner:
-#   # disable=true Deploys a StackRox Scanner in the secured cluster to allow scanning images
+#   # disable=false Deploys a StackRox Scanner in the secured cluster to allow scanning images
 #   # from the OpenShift Container Platform cluster's local registries.
 #   disable: false
 #
@@ -75,7 +75,7 @@
 #       memory: "1500Mi"
 #       cpu: "1000m"
 #     limits:
-#       memory: "3000Mi"
+#       memory: "4Gi"
 #       cpu: "2000m"
 #
 #   # Custom resource overrides for the Scanner DB deployment.

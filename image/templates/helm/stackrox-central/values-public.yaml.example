@@ -311,7 +311,7 @@
 #       memory: "1500Mi"
 #       cpu: "1000m"
 #     limits:
-#       memory: "3000Mi"
+#       memory: "4Gi"
 #       cpu: "2000m"
 #
 #   # Custom resource overrides for the Scanner DB deployment.

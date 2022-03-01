@@ -219,6 +219,7 @@ func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerE
 	return &storage.ImageScan{
 		OperatingSystem: stringutils.OrDefault(layerEnvelope.Layer.NamespaceName, "unknown"),
 		ScanTime:        gogoProto.TimestampNow(),
+		ScannerVersion:  layerEnvelope.ScannerVersion,
 		Components:      clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
 		Notes:           notes,
 	}

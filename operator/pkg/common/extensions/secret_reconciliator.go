@@ -10,7 +10,6 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,16 +18,10 @@ import (
 type validateSecretDataFunc func(types.SecretDataMap, bool) error
 type generateSecretDataFunc func() (types.SecretDataMap, error)
 
-type k8sObject interface {
-	metav1.Object
-	schema.ObjectKind
-}
-
 // NewSecretReconciliator creates a new SecretReconciliator. It takes a context and controller client.
 // The obj parameter is the owner object (i.e. a custom resource).
-func NewSecretReconciliator(ctx context.Context, client ctrlClient.Client, obj k8sObject) *SecretReconciliator {
+func NewSecretReconciliator(client ctrlClient.Client, obj types.K8sObject) *SecretReconciliator {
 	return &SecretReconciliator{
-		ctx:    ctx,
 		client: client,
 		obj:    obj,
 	}
@@ -36,9 +29,8 @@ func NewSecretReconciliator(ctx context.Context, client ctrlClient.Client, obj k
 
 // SecretReconciliator reconciles a secret.
 type SecretReconciliator struct {
-	ctx    context.Context
 	client ctrlClient.Client
-	obj    k8sObject
+	obj    types.K8sObject
 }
 
 // Client returns the controller-runtime client used by the extension.
@@ -57,10 +49,10 @@ func (r *SecretReconciliator) Namespace() string {
 // changing an invalid secret can bring more harm than good.
 // In this case this function will return an error if "validate" rejects the secret.
 // Also note that (regardless of the value of "fixExisting") this function will never touch a secret which is not owned by the object passed to the constructor.
-func (r *SecretReconciliator) ReconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
+func (r *SecretReconciliator) ReconcileSecret(ctx context.Context, name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.Namespace(), Name: name}
-	if err := r.Client().Get(r.ctx, key, secret); err != nil {
+	if err := r.Client().Get(ctx, key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
 		}
@@ -71,7 +63,7 @@ func (r *SecretReconciliator) ReconcileSecret(name string, shouldExist bool, val
 			return nil
 		}
 
-		if err := utils.DeleteExact(r.ctx, r.Client(), secret); err != nil && !apiErrors.IsNotFound(err) {
+		if err := utils.DeleteExact(ctx, r.Client(), secret); err != nil && !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "deleting %s secret", name)
 		}
 		return nil
@@ -115,12 +107,12 @@ func (r *SecretReconciliator) ReconcileSecret(name string, shouldExist bool, val
 	}
 
 	if secret == nil {
-		if err := r.Client().Create(r.ctx, newSecret); err != nil {
+		if err := r.Client().Create(ctx, newSecret); err != nil {
 			return errors.Wrapf(err, "creating new %s secret", name)
 		}
 	} else {
 		newSecret.ResourceVersion = secret.ResourceVersion
-		if err := r.Client().Update(r.ctx, newSecret); err != nil {
+		if err := r.Client().Update(ctx, newSecret); err != nil {
 			return errors.Wrapf(err, "updating %s secret because existing instance failed validation", secret.Name)
 		}
 	}

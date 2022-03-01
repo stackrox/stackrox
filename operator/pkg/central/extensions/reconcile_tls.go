@@ -30,11 +30,10 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client) extensions.Reconcil
 
 func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(ctx, client, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
 		centralObj:          c,
-		ctx:                 ctx,
 	}
-	return run.Execute()
+	return run.Execute(ctx)
 }
 
 type createCentralTLSExtensionRun struct {
@@ -42,28 +41,27 @@ type createCentralTLSExtensionRun struct {
 
 	ca         mtls.CA
 	centralObj *platform.Central
-	ctx        context.Context
 }
 
-func (r *createCentralTLSExtensionRun) Execute() error {
+func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	shouldDelete := r.centralObj.DeletionTimestamp != nil
 
 	// If we find a broken central-tls secret, do NOT try to auto-fix it. Doing so would invalidate all previously issued certificates
 	// (including sensor certificates and init bundles), and is very unlikely to result in a working state.
-	if err := r.ReconcileSecret("central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
+	if err := r.ReconcileSecret(ctx, "central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
 	// scanner and scanner-db certs can be re-issued without a problem.
 	scannerEnabled := r.centralObj.Spec.Scanner.IsEnabled()
-	if err := r.ReconcileSecret("scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
+	if err := r.ReconcileSecret(ctx, "scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner secret")
 	}
-	if err := r.ReconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
+	if err := r.ReconcileSecret(ctx, "scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
 
-	bundleSecretShouldExist, err := r.shouldBundleSecretsExist(shouldDelete)
+	bundleSecretShouldExist, err := r.shouldBundleSecretsExist(ctx, shouldDelete)
 	if err != nil {
 		return err
 	}
@@ -77,7 +75,7 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 		generateFunc := func() (types.SecretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
-		if err := r.ReconcileSecret(secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
+		if err := r.ReconcileSecret(ctx, secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
 			return errors.Wrapf(err, "reconciling %s secret ", slugCaseService)
 		}
 	}
@@ -85,12 +83,12 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) shouldBundleSecretsExist(shouldDelete bool) (bool, error) {
+func (r *createCentralTLSExtensionRun) shouldBundleSecretsExist(ctx context.Context, shouldDelete bool) (bool, error) {
 	if shouldDelete {
 		// Don't bother listing secured clusters if we're ensuring absence of bundle for other reasons.
 		return false, nil
 	}
-	securedClusterPresent, err := r.isSiblingSecuredClusterPresent()
+	securedClusterPresent, err := r.isSiblingSecuredClusterPresent(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "determining whether to create init bundle failed")
 	}
@@ -188,12 +186,11 @@ func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix 
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent() (bool, error) {
+func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent(ctx context.Context) (bool, error) {
 	list := &platform.SecuredClusterList{}
 	namespace := r.centralObj.GetNamespace()
-	if err := r.Client().List(r.ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
+	if err := r.Client().List(ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
 		return false, errors.Wrapf(err, "cannot list securedclusters in namespace %q", namespace)
 	}
 	return len(list.Items) > 0, nil
-
 }

@@ -473,6 +473,13 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
+.PHONY: go-postgres-unit-tests
+go-postgres-unit-tests: build-prep test-prep
+	set -o pipefail ; \
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -race -cover -coverprofile test-output/coverage.out -v \
+		$(shell git ls-files -- '*postgres/*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		| tee test-output/test.log
+
 .PHONY: shell-unit-tests
 shell-unit-tests:
 	@echo "+ $@"

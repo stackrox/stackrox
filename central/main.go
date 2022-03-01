@@ -119,6 +119,7 @@ import (
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
+	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
@@ -353,6 +354,10 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 			reportService.Singleton())
 	}
 
+	if features.ImageSignatureVerification.Enabled() {
+		servicesToRegister = append(servicesToRegister, signatureIntegrationService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -460,8 +465,14 @@ func startGRPCServer() {
 	}
 
 	if devbuild.IsEnabled() {
-		config.UnaryInterceptors = append(config.UnaryInterceptors, errors.PanicOnInvariantViolationUnaryInterceptor)
-		config.StreamInterceptors = append(config.StreamInterceptors, errors.PanicOnInvariantViolationStreamInterceptor)
+		config.UnaryInterceptors = append(config.UnaryInterceptors,
+			errors.LogInternalErrorInterceptor,
+			errors.PanicOnInvariantViolationUnaryInterceptor,
+		)
+		config.StreamInterceptors = append(config.StreamInterceptors,
+			errors.LogInternalErrorStreamInterceptor,
+			errors.PanicOnInvariantViolationStreamInterceptor,
+		)
 		// This helps validate that SAC is being used correctly.
 		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}

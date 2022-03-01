@@ -47,6 +47,7 @@ func basicSpecWithScanner(scannerEnabled bool) platform.CentralSpec {
 	return spec
 }
 
+// TODO(ROX-9453): Refactor this to be used also by Secured Cluster reconciler extensions.
 func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
 	central := &platform.Central{
 		TypeMeta: metav1.TypeMeta{

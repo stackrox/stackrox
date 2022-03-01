@@ -252,7 +252,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		r.registries = append(r.registries, registryIntegration)
 	}
 	for _, scannerIntegration := range f.imageIntegrationsSet.ScannerSet().GetAll() {
-		r.scanners = append(r.scanners, scannerIntegration)
+		r.scanners = append(r.scanners, scannerIntegration.GetScanner())
 	}
 
 	r.processIndicators, err = f.processIndicatorStore.SearchRawProcessIndicators(ctx, clusterQuery)

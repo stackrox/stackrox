@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
 import { Modal, ModalVariant, Title, TitleSizes } from '@patternfly/react-core';
 
-import FormSaveButton from 'Containers/Integrations/IntegrationForm//FormSaveButton';
-import FormCancelButton from 'Containers/Integrations/IntegrationForm/FormCancelButton';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import {
     defaultValues,
     validationSchema,

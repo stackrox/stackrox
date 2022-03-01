@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -35,7 +36,7 @@ type enricherImpl struct {
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
 	registryErrorsLock sync.RWMutex
-	errorsPerScanner   map[scannerTypes.ImageScanner]int32
+	errorsPerScanner   map[scannerTypes.ImageScannerWithDataSource]int32
 	scannerErrorsLock  sync.RWMutex
 
 	integrationHealthReporter integrationhealth.Reporter ``
@@ -120,7 +121,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 
 	registries := e.integrations.RegistrySet()
 	if !ctx.Internal && registries.IsEmpty() {
-		errorList.AddError(errors.Errorf("no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry()))
+		errorList.AddError(errox.Newf(errox.NotFound, "no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry()))
 		return false, errorList.ToError()
 	}
 
@@ -311,7 +312,9 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 	}
 }
 
-func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
+func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
+	scanner := imageScanner.GetScanner()
+
 	if !scanner.Match(image.GetName()) {
 		return ScanNotDone, nil
 	}
@@ -333,7 +336,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scan
 	// normalize the vulns
 	normalizeVulnerabilities(scan)
 
-	scan.DataSource = scanner.DataSource()
+	scan.DataSource = imageScanner.DataSource()
 
 	// Assume:
 	//  scan != nil

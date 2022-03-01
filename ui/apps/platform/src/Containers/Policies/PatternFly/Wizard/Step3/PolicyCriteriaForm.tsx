@@ -98,10 +98,10 @@ function PolicyCriteriaForm() {
                     </Flex>
                     <Divider component="div" />
                     <Flex
-                        direction={{ default: 'row' }}
+                        direction={{ default: 'column', lg: 'row' }}
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
-                        className="pf-u-p-lg"
+                        className="pf-u-p-lg pf-u-h-100"
                     >
                         <BooleanPolicyLogicSection />
                     </Flex>

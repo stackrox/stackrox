@@ -54,16 +54,15 @@ describe('Access Control Auth providers', () => {
         );
     });
 
-    it('list has breadcrumbs, headings, link, button, and table head cells', () => {
+    it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
         visitAuthProviders();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
+        cy.get(selectors.breadcrumbNav).should('not.exist');
 
         cy.get(selectors.h1).should('have.text', h1);
         cy.get(selectors.navLinkCurrent).should('have.text', h2);
 
-        cy.get(selectors.h2).should('have.text', h2);
+        cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
         cy.get(selectors.list.addButton).should('have.text', 'Add auth provider');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
@@ -84,8 +83,8 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get(selectors.h1).should('not.exist');
+        cy.get(selectors.navLinkCurrent).should('not.exist');
 
         cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
 
@@ -117,8 +116,8 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get(selectors.h1).should('not.exist');
+        cy.get(selectors.navLinkCurrent).should('not.exist');
 
         cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
 
@@ -214,8 +213,8 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get(selectors.h1).should('not.exist');
+        cy.get(selectors.navLinkCurrent).should('not.exist');
 
         cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
 
@@ -251,8 +250,8 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get(selectors.h1).should('not.exist');
+        cy.get(selectors.navLinkCurrent).should('not.exist');
 
         cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
 
@@ -294,8 +293,8 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get(selectors.h1).should('not.exist');
+        cy.get(selectors.navLinkCurrent).should('not.exist');
 
         cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
 
@@ -369,9 +368,8 @@ describe('Access Control Auth providers', () => {
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
-
+        cy.get(selectors.h1).should('not.exist');
+        cy.get(selectors.navLinkCurrent).should('not.exist');
         cy.get(selectors.h2).should('not.exist');
 
         cy.get(selectors.notFound.title).should('have.text', 'Auth provider does not exist');
