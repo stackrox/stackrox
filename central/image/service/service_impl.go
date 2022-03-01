@@ -299,9 +299,10 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	}
 
 	img := &storage.Image{
-		Id:       request.GetImageId(),
-		Name:     request.GetImageName(),
-		Metadata: request.GetMetadata(),
+		Id:             request.GetImageId(),
+		Name:           request.GetImageName(),
+		Metadata:       request.GetMetadata(),
+		IsClusterLocal: request.GetIsClusterLocal(),
 	}
 	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
 	if err != nil {

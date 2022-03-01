@@ -329,12 +329,11 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
 				image.Id = digest
-				// The image is not pullable if it is explicitly not pullable or it is an OpenShift internal image.
-				// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
-				// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				if features.LocalImageScanning.Enabled() {
-					image.NotPullable = image.NotPullable || imageutil.IsInternalImage(image.GetName())
+					// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
+					// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
+					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName())
 				}
 			}
 		}

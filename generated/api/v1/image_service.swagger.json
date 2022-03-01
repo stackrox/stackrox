@@ -842,6 +842,9 @@
         },
         "notPullable": {
           "type": "boolean"
+        },
+        "isClusterLocal": {
+          "type": "boolean"
         }
       },
       "title": "Next tag: 12"
@@ -1067,6 +1070,9 @@
         "notPullable": {
           "type": "boolean"
         },
+        "isClusterLocal": {
+          "type": "boolean"
+        },
         "priority": {
           "type": "string",
           "format": "int64"
@@ -1086,7 +1092,7 @@
           }
         }
       },
-      "title": "Next Tag: 17"
+      "title": "Next Tag: 18"
     },
     "storageImageLayer": {
       "type": "object",

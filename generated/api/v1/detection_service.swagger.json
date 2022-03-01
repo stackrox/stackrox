@@ -712,6 +712,9 @@
         },
         "notPullable": {
           "type": "boolean"
+        },
+        "isClusterLocal": {
+          "type": "boolean"
         }
       },
       "title": "Next tag: 12"
