@@ -52,18 +52,18 @@ func (mr *MockImageEnricherMockRecorder) EnrichImage(ctx, image interface{}) *go
 }
 
 // EnrichWithVulnerabilities mocks base method.
-func (m *MockImageEnricher) EnrichWithVulnerabilities(ctx enricher.EnrichmentContext, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (enricher.EnrichmentResult, error) {
+func (m *MockImageEnricher) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (enricher.EnrichmentResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnrichWithVulnerabilities", ctx, image, components, notes)
+	ret := m.ctrl.Call(m, "EnrichWithVulnerabilities", image, components, notes)
 	ret0, _ := ret[0].(enricher.EnrichmentResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EnrichWithVulnerabilities indicates an expected call of EnrichWithVulnerabilities.
-func (mr *MockImageEnricherMockRecorder) EnrichWithVulnerabilities(ctx, image, components, notes interface{}) *gomock.Call {
+func (mr *MockImageEnricherMockRecorder) EnrichWithVulnerabilities(image, components, notes interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichWithVulnerabilities", reflect.TypeOf((*MockImageEnricher)(nil).EnrichWithVulnerabilities), ctx, image, components, notes)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichWithVulnerabilities", reflect.TypeOf((*MockImageEnricher)(nil).EnrichWithVulnerabilities), image, components, notes)
 }
 
 // MockcveSuppressor is a mock of cveSuppressor interface.
