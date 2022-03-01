@@ -171,11 +171,22 @@ const policySidePanelSelectors = {
 };
 
 const reportSection = {
+    pageTitle: 'h1',
     createReportLink: 'a:contains("Create report")',
     breadcrumbItems: '.pf-c-breadcrumb__item',
     buttons: {
         create: 'button:contains("Create")',
         cancel: 'button:contains("Cancel")',
+    },
+    table: {
+        column: {
+            name: 'th:contains("Report")',
+            description: 'th:contains("Description")',
+            cveFixabilityType: 'th:contains("CVE fixability type")',
+            cveSeverities: 'th:contains("CVE severities")',
+            lastRun: 'th:contains("Last run")',
+        },
+        rows: 'tbody tr',
     },
 };
 
