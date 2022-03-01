@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // Manager manages basic auth user identities.
@@ -29,7 +30,7 @@ func (m *Manager) SetHashFile(hashFile *htpasswd.HashFile) {
 // IdentityForCreds returns an identity for the given credentials.
 func (m *Manager) IdentityForCreds(ctx context.Context, username, password string, authProvider authproviders.Provider) (Identity, error) {
 	if !m.hashFile().Check(username, password) {
-		return nil, errors.New("invalid username and/or password")
+		return nil, errox.NewErrNotAuthorized("invalid username and/or password")
 	}
 
 	resolvedRoles, err := m.mapper.FromUserDescriptor(ctx, &permissions.UserDescriptor{
