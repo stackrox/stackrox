@@ -33,8 +33,9 @@ type mockClustersServiceServer struct {
 	postClusterInjectedFn      postClusterFn
 
 	// spy properties
-	clusterSent      []storage.Cluster
-	getClusterCalled bool
+	clusterSent                     []storage.Cluster
+	getClusterCalled                bool
+	getKernelSupportAvailableCalled bool
 }
 
 type getKernelSupportFn func() (*v1.KernelSupportAvailableResponse, error)
@@ -46,6 +47,7 @@ func (m *mockClustersServiceServer) GetClusterDefaults(ctx context.Context, in *
 }
 
 func (m *mockClustersServiceServer) GetKernelSupportAvailable(ctx context.Context, in *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
+	m.getKernelSupportAvailableCalled = true
 	return m.getKernelSupportInjectedFn()
 }
 
@@ -306,6 +308,23 @@ func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
 			s.Require().Equal(testCase.expectPostedClusterMainImage, mock.clusterSent[0].MainImage)
 		})
 	}
+}
+
+func (s *sensorGenerateTestSuite) TestLegacyAPICalledIfGetClustersUnimplemented() {
+	_, _, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsUnimplemented(), postClusterFake)
+	defer closeF()
+	mock.getKernelSupportInjectedFn = legacyKernelSupport(true)
+
+	// Setup generateCmd
+	generateCmd.timeout = time.Duration(5) * time.Second
+	generateCmd.getBundleFn = emptyGetBundle
+
+	// Create cluster
+	err := generateCmd.fullClusterCreation()
+	s.Require().NoError(err, "shouldn't fail creating cluster")
+
+	// Check that legacy API was called
+	s.Require().True(mock.getKernelSupportAvailableCalled)
 }
 
 func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
