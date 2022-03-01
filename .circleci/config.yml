@@ -4529,12 +4529,7 @@ jobs:
 
             MAIN_TAG=$(make --quiet tag)
             COLLECTOR_TAG=$(make --quiet collector-tag)
-
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/main:$MAIN_TAG" "stackrox.io/main:$MAIN_TAG"
-
-            # RHEL images
-            # For simplicity for customers, tag main as main-rhel as well
-            ./scripts/ci/pull-retag-push.sh "stackrox.io/main:$MAIN_TAG" "stackrox.io/main-rhel:$MAIN_TAG"
 
             # The docs image uses the same tag as main for releases.
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/docs:$MAIN_TAG"   "stackrox.io/docs:$MAIN_TAG"
