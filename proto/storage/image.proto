@@ -4,10 +4,8 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "storage/risk.proto";
 import "storage/cve.proto";
 import "storage/vulnerability.proto";
-import "storage/vuln_requests.proto";
 import "gogoproto/gogo.proto";
 
 package storage;
