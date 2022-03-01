@@ -56,7 +56,6 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
-	helmHandler "github.com/stackrox/rox/central/helm/handler"
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -679,17 +678,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 				},
 			}),
 			ServerHandler: scannerDefinitionsHandler.Singleton(),
-			Compression:   false,
-		},
-	)
-
-	helmClusterAddRoute := "/api/helm/cluster/add"
-	customRoutes = append(customRoutes,
-		routes.CustomRoute{
-			Route: helmClusterAddRoute,
-			Authorizer: user.With(permissions.Modify(resources.Cluster),
-				permissions.Modify(resources.ServiceIdentity)),
-			ServerHandler: helmHandler.Handler(siStore.Singleton(), clusterService.Singleton()),
 			Compression:   false,
 		},
 	)
