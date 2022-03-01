@@ -235,36 +235,6 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                     </FlexItem>
                 </Flex>
             )}
-            {hasAction && (
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
-                    <ToolbarContent>
-                        <ToolbarGroup variant="button-group">
-                            <ToolbarItem>
-                                <Button
-                                    variant="primary"
-                                    onClick={onClickSubmit}
-                                    isDisabled={
-                                        !dirty ||
-                                        !isValid ||
-                                        !isValidRules ||
-                                        getIsEditingLabelSelectors(labelSelectorsEditingState) ||
-                                        isSubmitting
-                                    }
-                                    isLoading={isSubmitting}
-                                    isSmall
-                                >
-                                    Save
-                                </Button>
-                            </ToolbarItem>
-                            <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
-                                    Cancel
-                                </Button>
-                            </ToolbarItem>
-                        </ToolbarGroup>
-                    </ToolbarContent>
-                </Toolbar>
-            )}
         </Form>
     );
 }

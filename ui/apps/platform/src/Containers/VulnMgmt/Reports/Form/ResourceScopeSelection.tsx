@@ -3,12 +3,12 @@ import { Button, ButtonVariant, Flex, FlexItem, SelectOption } from '@patternfly
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import ResourceScopeFormModal from './ResourceScopeFormModal';
 import {
     fetchAccessScopes,
     AccessScope,
     getIsDefaultAccessScopeId,
 } from 'services/AccessScopesService';
+import ResourceScopeFormModal from './ResourceScopeFormModal';
 
 type ResourceScopeSelectionProps = {
     scopeId: string;
