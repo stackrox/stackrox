@@ -544,8 +544,8 @@ func (ds *dataStoreImpl) getRolePermissionSetOrError(role *storage.Role) (*stora
 	return permissionSet, nil
 }
 
-// Finds the access scope associated with the given role. If a stored role
-// references an access scope it must exist.
+// Finds the access scope associated with the given role. Every stored role must
+// reference an existing access scope.
 func (ds *dataStoreImpl) getRoleAccessScopeOrError(role *storage.Role) (*storage.SimpleAccessScope, error) {
 	accessScope, found, err := ds.accessScopeStorage.Get(role.GetAccessScopeId())
 	if err != nil {

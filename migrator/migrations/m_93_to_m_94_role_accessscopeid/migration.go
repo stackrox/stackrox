@@ -27,7 +27,7 @@ var (
 	rolesBucket = []byte("roles")
 )
 
-func getRolesWithNoScope(db *gorocksdb.DB) ([]*storage.Role, error) {
+func getRolesToUpdate(db *gorocksdb.DB) ([]*storage.Role, error) {
 	it := db.NewIterator(gorocksdb.NewDefaultReadOptions())
 	defer it.Close()
 
@@ -47,7 +47,7 @@ func getRolesWithNoScope(db *gorocksdb.DB) ([]*storage.Role, error) {
 }
 
 func updateRoles(db *gorocksdb.DB) error {
-	roles, err := getRolesWithNoScope(db)
+	roles, err := getRolesToUpdate(db)
 	if err != nil {
 		return err
 	}
