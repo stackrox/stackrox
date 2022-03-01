@@ -10,13 +10,13 @@ import (
 )
 
 func TestRoleNewUnionPermissions(t *testing.T) {
-	resolvedRole1 := roletest.NewResolvedRoleWithGlobalScope(
+	resolvedRole1 := roletest.NewResolvedRoleWithDenyAll(
 		"role1",
 		map[string]storage.Access{
 			"A": storage.Access_READ_ACCESS,
 			"B": storage.Access_READ_ACCESS,
 		})
-	resolvedRole2 := roletest.NewResolvedRoleWithGlobalScope(
+	resolvedRole2 := roletest.NewResolvedRoleWithDenyAll(
 		"role2",
 		map[string]storage.Access{
 			"B": storage.Access_READ_WRITE_ACCESS,

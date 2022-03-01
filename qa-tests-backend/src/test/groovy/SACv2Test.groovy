@@ -41,11 +41,11 @@ class SACv2Test extends SACTest {
 
         tokenToRoles = [
                 (NOACCESSTOKEN)                   : [noaccess],
-                (ALLACCESSTOKEN)                  : [createRole("", allResourcesAccess)],
+                (ALLACCESSTOKEN)                  : [createRole(UNRESTRICTED_SCOPE_ID, allResourcesAccess)],
                 "deployments-access-token"        : [createRole(remoteQaTest2.id,
                         ["Deployment": READ_ACCESS, "Risk": READ_ACCESS])],
                 "getSummaryCountsToken"           : [createRole(remoteQaTest1.id, allResourcesAccess)],
-                "listSecretsToken"                : [createRole("", ["Secret": READ_ACCESS])],
+                "listSecretsToken"                : [createRole(UNRESTRICTED_SCOPE_ID, ["Secret": READ_ACCESS])],
                 "searchAlertsToken"               : [createRole(remoteQaTest1.id, ["Alert": READ_ACCESS]), noaccess],
                 "searchDeploymentsToken"          : [createRole(remoteQaTest1.id,
                         ["Deployment": READ_ACCESS]), noaccess],
@@ -56,7 +56,8 @@ class SACv2Test extends SACTest {
                         ["Deployment": READ_ACCESS, "Image": READ_ACCESS]), noaccess],
                 "stackroxNetFlowsToken"           : [createRole(createAccessScope(DEFAULT_CLUSTER_NAME, "stackrox").id,
                         ["Deployment": READ_ACCESS, "NetworkGraph": READ_ACCESS]),
-                                                     createRole("", ["Cluster": READ_ACCESS]), noaccess],
+                                                     createRole(UNRESTRICTED_SCOPE_ID, ["Cluster": READ_ACCESS]),
+                                                     noaccess],
                 "kubeSystemDeploymentsImagesToken": [createRole(createAccessScope(
                         DEFAULT_CLUSTER_NAME, "kube-system").id, ["Deployment": READ_ACCESS, "Image": READ_ACCESS]),
                                                      noaccess],
@@ -93,11 +94,8 @@ class SACv2Test extends SACTest {
     }
 
     String createRole(String sacId, Map<String, RoleOuterClass.Access> resources) {
-        RoleService.createRoleWithPermissionSet(RoleOuterClass.Role.newBuilder()
-                .setName("SACv2 Test Automation Role " + UUID.randomUUID())
-                .setAccessScopeId(sacId)
-                .build(),
-                resources
+        RoleService.createRoleWithScopeAndPermissionSet("SACv2 Test Automation Role " + UUID.randomUUID(),
+                sacId, resources
         ).name
     }
 
