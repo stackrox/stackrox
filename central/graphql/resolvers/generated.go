@@ -473,6 +473,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerConfig_EnvironmentConfig_EnvVarSource(0)))
 	utils.Must(builder.AddType("ContainerImage", []string{
 		"id: ID!",
+		"isClusterLocal: Boolean!",
 		"name: ImageName",
 		"notPullable: Boolean!",
 	}))
@@ -623,6 +624,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Image", []string{
 		"id: ID!",
+		"isClusterLocal: Boolean!",
 		"lastUpdated: Time",
 		"metadata: ImageMetadata",
 		"name: ImageName",
@@ -5000,6 +5002,11 @@ func (resolver *containerImageResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
+func (resolver *containerImageResolver) IsClusterLocal(ctx context.Context) bool {
+	value := resolver.data.GetIsClusterLocal()
+	return value
+}
+
 func (resolver *containerImageResolver) Name(ctx context.Context) (*imageNameResolver, error) {
 	value := resolver.data.GetName()
 	return resolver.root.wrapImageName(value, true, nil)
@@ -6228,6 +6235,12 @@ func (resolver *imageResolver) Id(ctx context.Context) graphql.ID {
 		value = resolver.list.GetId()
 	}
 	return graphql.ID(value)
+}
+
+func (resolver *imageResolver) IsClusterLocal(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetIsClusterLocal()
+	return value
 }
 
 func (resolver *imageResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
