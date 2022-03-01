@@ -13,7 +13,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessScope } from 'services/AccessScopesService';
+import { AccessScope, defaultAccessScopeIds } from 'services/AccessScopesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
@@ -78,7 +78,8 @@ function AccessScopeFormWrapper({
      * A label selector or set requirement is temporarily invalid when it is added,
      * before its first requirement or value has been added.
      */
-    const isValidRules = getIsValidRules(values.rules);
+    const isValidRules =
+        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
 
     function onClickSubmit() {
         // TODO submit through Formik, especially to update its initialValue.

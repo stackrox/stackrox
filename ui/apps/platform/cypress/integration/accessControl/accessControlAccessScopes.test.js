@@ -9,7 +9,7 @@ import withAuth from '../../helpers/basicAuth';
 const h1 = 'Access Control';
 const h2 = 'Access scopes';
 
-const defaultNames = ['Deny All'];
+const defaultNames = ['Unrestricted', 'Deny All'];
 
 describe('Access Control Access scopes', () => {
     withAuth();
@@ -57,10 +57,6 @@ describe('Access Control Access scopes', () => {
     it('list has default names', () => {
         visitAccessScopes();
 
-        // Unrestricted is special case, because it does not have a link.
-        cy.get(`${selectors.list.tdName}:contains("Unrestricted")`);
-        cy.get(`${selectors.list.tdNameLink}:contains("Unrestricted")`).should('not.exist');
-
         defaultNames.forEach((name) => {
             cy.get(`${selectors.list.tdNameLink}:contains("${name}")`);
         });
@@ -69,7 +65,7 @@ describe('Access Control Access scopes', () => {
     it('list link for default Deny All goes to form which has label instead of button and disabled input values', () => {
         visitAccessScopes();
 
-        const name = defaultNames[0];
+        const name = 'Deny All';
         cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);

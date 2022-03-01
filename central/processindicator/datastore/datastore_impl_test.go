@@ -210,8 +210,8 @@ func (suite *IndicatorDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context,
 func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.setupDataStoreNoPruning()
 
-	roleNone := roletest.NewResolvedRoleWithGlobalScope(role.None, nil)
-	roleAdmin := roletest.NewResolvedRoleWithGlobalScope(role.Admin, utils.FromResourcesWithAccess(resources.AllResourcesModifyPermissions()...))
+	roleNone := roletest.NewResolvedRoleWithDenyAll(role.None, nil)
+	roleAdmin := roletest.NewResolvedRoleWithDenyAll(role.Admin, utils.FromResourcesWithAccess(resources.AllResourcesModifyPermissions()...))
 
 	uid1Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "1", roleNone)
 	uid2Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "2", roleNone)

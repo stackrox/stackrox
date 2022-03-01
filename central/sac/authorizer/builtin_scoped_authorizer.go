@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
+	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -277,7 +278,10 @@ func (c *authorizerDataCache) getEffectiveAccessScopeFromCache(id string) *effec
 }
 
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
-	if accessScope == nil {
+	if accessScope == nil || accessScope.Id == rolePkg.AccessScopeExcludeAll.Id {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	if accessScope.Id == rolePkg.AccessScopeIncludeAll.Id {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
 	eas, err := effectiveaccessscope.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
