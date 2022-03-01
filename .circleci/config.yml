@@ -2817,8 +2817,6 @@ jobs:
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
 
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
-              # TODO(RS-381): remove this line once Helm charts are updated to respect image flavors
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector:${MAIN_TAG}-slim"
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
             done
 
@@ -4566,16 +4564,8 @@ jobs:
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "stackrox.io/scanner-db:${MAIN_TAG}"
 
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "collector.stackrox.io/collector:${MAIN_TAG}"
-            # TODO(RS-381): remove this line once Helm charts are updated to respect image flavors
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector:${MAIN_TAG}-slim"
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector-slim:${MAIN_TAG}"
 
-            # Externally exposed registries require '-rhel' suffix for backwards compatibility with some customers.
-            # TODO(RS-381): drop retagging with -rhel
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${MAIN_TAG}"         "stackrox.io/scanner-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"      "stackrox.io/scanner-db-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}"       "collector.stackrox.io/collector-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}-slim"  "collector.stackrox.io/collector-rhel:${MAIN_TAG}-slim"
 
       - run:
           name: Push roxctl to stackrox-hub
