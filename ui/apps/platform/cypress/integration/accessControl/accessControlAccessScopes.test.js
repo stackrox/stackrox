@@ -65,7 +65,7 @@ describe('Access Control Access scopes', () => {
     it('list link for default Deny All goes to form which has label instead of button and disabled input values', () => {
         visitAccessScopes();
 
-        const name = defaultNames[0];
+        const name = 'Deny All';
         cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
