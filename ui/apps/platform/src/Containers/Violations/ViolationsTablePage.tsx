@@ -162,7 +162,6 @@ function ViolationsTablePage(): ReactElement {
             <ViolationsBreadcrumbs />
             <PageSection variant="light" id="violations-table">
                 <Title headingLevel="h1">Violations</Title>
-                <p>Inspect violations by entity type.</p>
                 <Divider className="pf-u-py-md" />
                 <ReduxSearchInput
                     className="w-full theme-light"
