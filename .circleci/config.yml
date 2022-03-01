@@ -1767,6 +1767,7 @@ commands:
 
       - *getECRDockerPullPassword
       - *restoreGradle
+      - restore-go-mod-cache
       - run:
           name: QA Automation Platform Part 1
           no_output_timeout: 15m
@@ -4005,6 +4006,7 @@ jobs:
 
       - *getECRDockerPullPassword
       - *restoreGradle
+      - restore-go-mod-cache
       - run:
           name: QA Automation Platform
           command: |
@@ -4103,6 +4105,7 @@ jobs:
 
       - *getECRDockerPullPassword
       - *restoreGradle
+      - restore-go-mod-cache
       - run:
           name: QA Automation Platform
           command: |
