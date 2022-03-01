@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -13,7 +14,7 @@ import (
 // endpoints, and expansion of their usage creates complicated engineering problems that could be avoided by simply
 // streamlining mutation operations through gRPC (ex. automated audit logging).
 // Think before adding new values to this list.
-var knownMutations = [19]string{
+var knownMutations = set.NewFrozenStringSet(
 	"addAlertComment",
 	"addAlertTags",
 	"addProcessComment",
@@ -33,7 +34,7 @@ var knownMutations = [19]string{
 	"updateAlertComment",
 	"updateProcessComment",
 	"updateVulnerabilityRequest",
-}
+)
 
 func TestMutation(t *testing.T) {
 	suite.Run(t, new(MutationTestSuite))
@@ -56,8 +57,8 @@ func (s *MutationTestSuite) TestKnownMutation() {
 	for _, v := range s.schema.ASTSchema().Objects {
 		if v.Name == "Mutation" {
 			for _, f := range v.Fields {
-				if !isKnownMutation(f.Name) {
-					s.Fail("Encountered unknown mutation type %s", f.Name)
+				if !knownMutations.Contains(f.Name) {
+					s.Failf("Unknown mutation in GraphQL schema", "mutation name %q", f.Name)
 				}
 			}
 
@@ -65,13 +66,4 @@ func (s *MutationTestSuite) TestKnownMutation() {
 			return
 		}
 	}
-}
-
-func isKnownMutation(name string) bool {
-	for _, mutation := range knownMutations {
-		if mutation == name {
-			return true
-		}
-	}
-	return false
 }
