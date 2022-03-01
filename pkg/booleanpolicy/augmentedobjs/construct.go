@@ -2,10 +2,12 @@ package augmentedobjs
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -209,28 +211,26 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 		}
 	}
 
-	// Since policies query for component and version as a single compound field, we simulate it by creating a
-	// "composite" component and version field.
-	verified := false
-	for _, result := range image.GetSignatureVerificationData().GetResults() {
-		if result.GetVerifierId() != "" && result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-			verified = true
-			break
+	if features.ImageSignatureVerification.Enabled() {
+		// Since policies query for image verification status as a single boolean field, we add it to the image here.
+		verifiedBy := []string{}
+		for _, result := range image.GetSignatureVerificationData().GetResults() {
+			if result.GetVerifierId() != "" && result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+				verifiedBy = append(verifiedBy, result.GetVerifierId())
+			}
 		}
-	}
-	/*if verifier == "" {
-		return obj, nil
-	}*/
 
-	// Since policies query for image verification status as a single boolean field, we add it to the image here.
-	err := obj.AddPlainObjAt(
-		&imageSignatureVerification{
-			Status: verified,
-		},
-		pathutil.FieldStep(imageSignatureVerifiedKey),
-	)
-	if err != nil {
-		return nil, utils.Should(err)
+		if len(verifiedBy) > 0 {
+			err := obj.AddPlainObjAt(
+				&imageSignatureVerification{
+					VerifiedBy: strings.Join(verifiedBy, ","),
+				},
+				pathutil.FieldStep(imageSignatureVerifiedKey),
+			)
+			if err != nil {
+				return nil, utils.Should(err)
+			}
+		}
 	}
 
 	return obj, nil

@@ -12,7 +12,7 @@ const (
 	DockerfileLineCustomTag            = "Dockerfile Line"
 	EnvironmentVarCustomTag            = "Environment Variable"
 	ImageScanCustomTag                 = "Image Scan"
-	ImageSignatureVerifiedCustomTag    = "Image Signature Verified"
+	ImageSignatureVerifiedCustomTag    = "Image Signature Verified By"
 	NotInNetworkBaselineCustomTag      = "Not In Network Baseline"
 	NotInProcessBaselineCustomTag      = "Not In Baseline"
 	KubernetesAPIVerbCustomTag         = "Kubernetes API Verb"
@@ -72,5 +72,5 @@ type envVar struct {
 }
 
 type imageSignatureVerification struct {
-	Status bool `search:"Image Signature Verified"`
+	VerifiedBy string `search:"Image Signature Verified By"`
 }

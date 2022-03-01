@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -55,6 +57,8 @@ type DefaultPoliciesTestSuite struct {
 	images                  map[string]*storage.Image
 	deploymentsToImages     map[string][]*storage.Image
 	deploymentsToIndicators map[string][]*storage.ProcessIndicator
+
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupSuite() {
@@ -73,6 +77,9 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	} {
 		suite.customPolicies[customPolicy.GetName()] = customPolicy
 	}
+
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.ImageSignatureVerification.EnvVar(), "true")
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownSuite() {}
@@ -2106,7 +2113,8 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 
 func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 	var images = []*storage.Image{
-		imageWithSignatureVerificationResults("verified_image", []*storage.ImageSignatureVerificationResult{{
+		imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
+		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: "verifier0",
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
@@ -2114,7 +2122,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			VerifierId: "verifier1",
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
 		}}),
-		imageWithSignatureVerificationResults("some_verified_image", []*storage.ImageSignatureVerificationResult{{
+		imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: "verifier2",
 			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 		}, {
@@ -2125,40 +2133,53 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 
 	for _, testCase := range []struct {
 		value           string
+		negate          bool
 		expectedMatches []string
 	}{
 		{
-			value:           "true",
-			expectedMatches: []string{"verified_image", "some_verified_image"},
+			value:           "verifier0",
+			negate:          false,
+			expectedMatches: []string{"verified_by_0"},
 		},
 		{
-			value:           "false",
-			expectedMatches: []string{"unverified_image"},
+			value:           "verifier3",
+			negate:          false,
+			expectedMatches: []string{"verified_by_3"},
+		},
+		{
+			value:           "verifier1",
+			negate:          true,
+			expectedMatches: []string{"verified_by_0", "verified_by_3"},
+		},
+		{
+			value:           "verifier4",
+			negate:          false,
+			expectedMatches: []string{},
 		},
 	} {
 		c := testCase
 
-		suite.T().Run(fmt.Sprintf("ImageMatcher %+v", c), func(t *testing.T) {
-			imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageSignatureVerified, c.value, false))
-			require.NoError(t, err)
+		suite.Run(fmt.Sprintf("ImageMatcher %+v", c), func() {
+			imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageSignatureVerified, c.value, c.negate))
+			suite.NoError(err)
 			imgMatched := set.NewStringSet()
 			for _, img := range images {
 				violations, err := imgMatcher.MatchImage(nil, img)
-				require.NoError(t, err)
+				suite.NoError(err)
 				if len(violations.AlertViolations) > 0 {
 					imgMatched.Add(img.GetName().GetFullName())
-					require.Len(t, violations.AlertViolations, 1)
+					suite.Len(violations.AlertViolations, 1)
 					status := "unverified"
 					for _, r := range img.GetSignatureVerificationData().GetResults() {
 						if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-							status = "verified"
+							status = "verified by " + r.GetVerifierId()
 							break
 						}
 					}
-					assert.Equal(t, fmt.Sprintf("Image signature is %s", status), violations.AlertViolations[0].GetMessage())
+					suite.Equal(fmt.Sprintf("Image signature is %s", status), violations.AlertViolations[0].GetMessage())
 				}
 			}
-			assert.ElementsMatch(t, imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
+			suite.ElementsMatch(imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
 		})
 	}
 }

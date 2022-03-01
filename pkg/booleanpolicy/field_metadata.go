@@ -398,10 +398,10 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(augmentedobjs.ImageSignatureVerifiedCustomTag),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return booleanValueRegex
+			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{}, operatorsForbidden)
+		[]RuntimeFieldType{})
 
 	f.registerFieldMetadata(fieldnames.ImageTag,
 		querybuilders.ForFieldLabelRegex(search.ImageTag),
