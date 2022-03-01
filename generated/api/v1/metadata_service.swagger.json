@@ -77,6 +77,15 @@
       ],
       "default": "NONE"
     },
+    "MetadataProductBranding": {
+      "type": "string",
+      "enum": [
+        "STACKROX_BRANDING",
+        "RHACS_BRANDING"
+      ],
+      "default": "STACKROX_BRANDING",
+      "title": "- STACKROX_BRANDING: Open source, community StackRox product branding\n - RHACS_BRANDING: Commercial RHACS product branding"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -128,6 +137,9 @@
         "licenseStatus": {
           "$ref": "#/definitions/MetadataLicenseStatus",
           "title": "Do not use this field. It will always contain \"VALID\""
+        },
+        "productBranding": {
+          "$ref": "#/definitions/MetadataProductBranding"
         }
       }
     },
