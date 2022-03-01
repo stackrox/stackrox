@@ -115,7 +115,6 @@ func (s *sensorGenerateCommand) isLegacyValidationError(err error) bool {
 		status.Convert(err).Message() == "Cluster Validation error: invalid main image '': invalid reference format"
 }
 
-
 func (s *sensorGenerateCommand) fullClusterCreation() error {
 	conn, err := s.env.GRPCConnection()
 	if err != nil {
