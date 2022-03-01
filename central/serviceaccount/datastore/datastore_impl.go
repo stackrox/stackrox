@@ -54,7 +54,7 @@ func (d *datastoreImpl) buildIndex() error {
 }
 
 func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error) {
-	acc, found, err := d.storage.Get(id)
+	acc, found, err := d.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -81,7 +81,7 @@ func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *stora
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Upsert(request); err != nil {
+	if err := d.storage.Upsert(ctx, request); err != nil {
 		return err
 	}
 	return d.indexer.AddServiceAccount(request)
@@ -94,7 +94,7 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Delete(id); err != nil {
+	if err := d.storage.Delete(ctx, id); err != nil {
 		return err
 	}
 	return d.indexer.DeleteServiceAccount(id)
