@@ -23,14 +23,14 @@ func (d *dataStore) UnwatchImage(ctx context.Context, name string) error {
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return d.storage.Delete(name)
+	return d.storage.Delete(ctx, name)
 }
 
 func (d *dataStore) Exists(ctx context.Context, name string) (bool, error) {
 	if ok, err := watchedImageSAC.ReadAllowed(ctx); err != nil || !ok {
 		return false, err
 	}
-	return d.storage.Exists(name)
+	return d.storage.Exists(ctx, name)
 }
 
 func (d *dataStore) UpsertWatchedImage(ctx context.Context, name string) error {
@@ -39,7 +39,7 @@ func (d *dataStore) UpsertWatchedImage(ctx context.Context, name string) error {
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return d.storage.Upsert(&storage.WatchedImage{Name: name})
+	return d.storage.Upsert(ctx, &storage.WatchedImage{Name: name})
 }
 
 func (d *dataStore) GetAllWatchedImages(ctx context.Context) ([]*storage.WatchedImage, error) {
