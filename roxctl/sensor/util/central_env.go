@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-	"fmt"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"google.golang.org/grpc/codes"
@@ -19,7 +18,6 @@ Please upgrade Central if slim collector images shall be used.`
 // CentralEnv contains information about Central's runtime environment.
 type CentralEnv struct {
 	KernelSupportAvailable bool
-	MainImage              string
 	Warnings               []string
 	Error                  error
 }
@@ -47,8 +45,6 @@ func (e *CentralEnv) fetchClusterDefaultsLegacy(ctx context.Context, service v1.
 	} else {
 		e.KernelSupportAvailable = resp.KernelSupportAvailable
 	}
-
-	e.Warnings = append(e.Warnings, fmt.Sprintf(warningCantDetermineMainImageFromCentral, e.MainImage))
 }
 
 func (e *CentralEnv) populateCentralEnv(ctx context.Context, service v1.ClustersServiceClient) {
