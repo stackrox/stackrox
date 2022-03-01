@@ -1,5 +1,5 @@
 import React, { ReactElement, useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
     TabTitleText,
     Tabs,
@@ -9,6 +9,8 @@ import {
     PageSection,
     Spinner,
     Bullseye,
+    Button,
+    ButtonVariant,
 } from '@patternfly/react-core';
 
 import { fetchAlert } from 'services/AlertsService';
@@ -17,6 +19,7 @@ import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
 import { violationsBasePath } from 'routePaths';
 import { AngleLeftIcon } from '@patternfly/react-icons';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import PolicyDetailContent from '../../Policies/PatternFly/Detail/PolicyDetailContent';
 import DeploymentDetails from './DeploymentDetails';
 import PolicyDetails from './PolicyDetails';
@@ -73,11 +76,18 @@ function ViolationDetailsPage(): ReactElement {
         <>
             <ViolationsBreadcrumbs current={title} />
             <PageSection variant="light" className="pf-u-pb-0">
-                <Link to={violationsBasePath} className="pf-u-display-inline-block pf-u-mb-md">
-                    <AngleLeftIcon className="pf-u-display-inline-block" />
+                <Button
+                    variant={ButtonVariant.link}
+                    isInline
+                    icon={<AngleLeftIcon />}
+                    component={LinkShim}
+                    href={violationsBasePath}
+                >
                     Back to violations
-                </Link>
-                <Title headingLevel="h1">{title}</Title>
+                </Button>
+                <Title headingLevel="h1" className="pf-u-mt-md">
+                    {title}
+                </Title>
                 <Title headingLevel="h2" className="pf-u-mb-md">{`in "${
                     entityName as string
                 }" ${resourceType}`}</Title>
