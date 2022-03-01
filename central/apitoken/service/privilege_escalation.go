@@ -3,12 +3,13 @@ package service
 import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 )
 
-const defaultScopeID = ""
+var defaultScopeID = role.AccessScopeIncludeAll.Id
 
 // This function ensures that no APIToken with permissions more than principal's can be created.
 // For each requested tuple (access scope, resource, accessLevel) we check that either:

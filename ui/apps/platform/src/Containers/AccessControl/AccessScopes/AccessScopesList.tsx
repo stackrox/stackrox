@@ -79,20 +79,6 @@ function AccessScopesList({
                     </Tr>
                 </Thead>
                 <Tbody>
-                    <Tr className="pf-u-background-color-200">
-                        <Td dataLabel="Name">Unrestricted</Td>
-                        <Td dataLabel="Description">Access to all clusters and namespaces</Td>
-                        <Td dataLabel="Roles">
-                            <RolesLink
-                                roles={roles.filter(
-                                    ({ accessScopeId }) => accessScopeId.length === 0
-                                )}
-                                entityType={entityType}
-                                entityId=""
-                            />
-                        </Td>
-                        <Td />
-                    </Tr>
                     {accessScopes.map(({ id, name, description }) => (
                         <Tr key={id}>
                             <Td dataLabel="Name">

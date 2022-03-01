@@ -12,7 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - The external authorization plugin for scoped access control will be removed. Please use the existing in-product scoped access control.
     - The Anchore, Tenable, and Docker Trusted Registry integrations will be removed. Please use the ACS Scanner instead as it is more widely supported.
     - Alert and process comments will be removed.
-
+  - `CreateRole` and `UpdateRole` in `/v1/roles/`: `role.access_scope_id` empty value is deprecated, will be set to the unrestricted access scope ID (`io.stackrox.authz.accessscope.unrestricted`) during the adoption period.
 - Improved accuracy of active component and vulnerability and presented it with higher confidence.
   - Analyzed dependencies between OS components and detected derived active components.
   - Added `Active` state to list of components and list of vulnerabilities under Vulnerability Management within the scope of a specific deployment.
@@ -28,7 +28,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Vulnerability snoozing and un-snoozing will not impact image and component risk. Furthermore, it will not impact `Image Vulnerabilities` risk factor for deployments.
 - Note that this only affects users who are storing their policies externally and keeping those policies in sync with Central. There is no action required for users who are not taking this approach. 
   - Support for system policies with `policyVersion` unset will be removed in 3.71. All such externally stored policies must be converted to policy version 1.0 or higher. To do so, import the policies into the system, and then export the previously imported policies. The exported policies will now be in supported policy version format (>=1.0), which can be ensured by checking the `policyVersion` field.
-- Vulnerability Risk Assessment: Deferral update requests that are in pending state can now be canceled.   
+- Vulnerability Risk Assessment: Deferral update requests that are in pending state can now be canceled.
 
 ## [68.0]
 

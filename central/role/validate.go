@@ -51,6 +51,14 @@ func EnsureValidAccessScopeID(id string) string {
 	return accessScopeIDPrefix + id
 }
 
+// ValidateAccessScopeID returns an error if the scope ID prefix is not correct.
+func ValidateAccessScopeID(scope *storage.SimpleAccessScope) error {
+	if !strings.HasPrefix(scope.GetId(), accessScopeIDPrefix) {
+		return errors.Errorf("id field must be in '%s*' format", accessScopeIDPrefix)
+	}
+	return nil
+}
+
 // ValidateRole checks whether the supplied protobuf message is a valid role.
 func ValidateRole(role *storage.Role) error {
 	var multiErr error
@@ -70,6 +78,10 @@ func ValidateRole(role *storage.Role) error {
 	}
 	if role.GetPermissionSetId() == "" {
 		err := errors.New("role permission_set_id field must be set")
+		multiErr = multierror.Append(multiErr, err)
+	}
+	if role.GetAccessScopeId() == "" {
+		err := errors.New("role access_scope_id field must be set")
 		multiErr = multierror.Append(multiErr, err)
 	}
 	return multiErr
@@ -101,8 +113,8 @@ func ValidatePermissionSet(ps *storage.PermissionSet) error {
 func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
 	var multiErr error
 
-	if !strings.HasPrefix(scope.GetId(), accessScopeIDPrefix) {
-		multiErr = multierror.Append(multiErr, errors.Errorf("id field must be in '%s*' format", accessScopeIDPrefix))
+	if err := ValidateAccessScopeID(scope); err != nil {
+		multiErr = multierror.Append(multiErr, err)
 	}
 	if scope.GetName() == "" {
 		multiErr = multierror.Append(multiErr, errors.New("name field must be set"))
