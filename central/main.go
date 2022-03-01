@@ -465,8 +465,14 @@ func startGRPCServer() {
 	}
 
 	if devbuild.IsEnabled() {
-		config.UnaryInterceptors = append(config.UnaryInterceptors, errors.PanicOnInvariantViolationUnaryInterceptor)
-		config.StreamInterceptors = append(config.StreamInterceptors, errors.PanicOnInvariantViolationStreamInterceptor)
+		config.UnaryInterceptors = append(config.UnaryInterceptors,
+			errors.LogInternalErrorInterceptor,
+			errors.PanicOnInvariantViolationUnaryInterceptor,
+		)
+		config.StreamInterceptors = append(config.StreamInterceptors,
+			errors.LogInternalErrorStreamInterceptor,
+			errors.PanicOnInvariantViolationStreamInterceptor,
+		)
 		// This helps validate that SAC is being used correctly.
 		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}

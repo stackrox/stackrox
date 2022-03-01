@@ -1,0 +1,65 @@
+{
+    "reportConfigs": [
+        {
+            "id": "9aa96bc9-6908-4826-8ecf-95529910e988",
+            "name": "Failing report",
+            "description": "Godfather ipsum dolor sit amet. Do me this favor. I won't forget it. Ask your friends in the neighborhood about me. They'll tell you I know how to return a favor.",
+            "type": "VULNERABILITY",
+            "vulnReportFilters": {
+                "fixability": "BOTH",
+                "sinceLastReport": false,
+                "severities": [
+                    "CRITICAL_VULNERABILITY_SEVERITY",
+                    "IMPORTANT_VULNERABILITY_SEVERITY",
+                    "MODERATE_VULNERABILITY_SEVERITY",
+                    "LOW_VULNERABILITY_SEVERITY"
+                ]
+            },
+            "scopeId": "io.stackrox.authz.accessscope.e1f5ed48-a917-40f1-ab00-626dfb556d22",
+            "emailConfig": {
+                "notifierId": "9b7abf71-dbb3-4d13-bf2d-dbb64739f589",
+                "mailingLists": ["vwilson@redhat.com"]
+            },
+            "schedule": {
+                "intervalType": "WEEKLY",
+                "hour": 0,
+                "minute": 0,
+                "daysOfWeek": { "days": [1, 2, 3, 4, 5, 6, 0] }
+            },
+            "lastRunStatus": {
+                "reportStatus": "FAILURE",
+                "lastRunTime": "2022-02-25T00:00:00.528129Z",
+                "errorMsg": "Connection failed: tls: first record does not look like a TLS handshake"
+            },
+            "lastSuccessfulRunTime": null
+        },
+        {
+            "id": "1aa96bc9-6908-4826-8ecf-95529910e981",
+            "name": "Successful report",
+            "description": "I'm baby pour-over incididunt viral shoreditch, drinking vinegar nostrud mollit quis etsy meh post-ironic flannel letterpress.",
+            "type": "VULNERABILITY",
+            "vulnReportFilters": {
+                "fixability": "FIXABLE",
+                "sinceLastReport": true,
+                "severities": ["CRITICAL_VULNERABILITY_SEVERITY"]
+            },
+            "scopeId": "io.stackrox.authz.accessscope.e1f5ed48-a917-40f1-ab00-626dfb556d22",
+            "emailConfig": {
+                "notifierId": "9b7abf71-dbb3-4d13-bf2d-dbb64739f589",
+                "mailingLists": ["vwilson@redhat.com"]
+            },
+            "schedule": {
+                "intervalType": "WEEKLY",
+                "hour": 0,
+                "minute": 0,
+                "daysOfWeek": { "days": [1, 2, 3, 4, 5, 6, 0] }
+            },
+            "lastRunStatus": {
+                "reportStatus": "SUCCESS",
+                "lastRunTime": "2022-02-25T00:00:00.528129Z",
+                "errorMsg": ""
+            },
+            "lastSuccessfulRunTime": "2022-02-25T00:00:00.528129Z"
+        }
+    ]
+}

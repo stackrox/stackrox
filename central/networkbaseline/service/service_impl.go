@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -63,7 +64,7 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 		return nil, err
 	}
 	if !found {
-		return nil, errors.New("network baseline for the deployment does not exist")
+		return nil, errox.New(errox.NotFound, "network baseline for the deployment does not exist")
 	}
 
 	// Got the baseline, check status of each passed in peer

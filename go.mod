@@ -104,7 +104,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.9.2
-	github.com/tkuchiki/go-timezone v0.1.3
+	github.com/tkuchiki/go-timezone v0.2.2
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0

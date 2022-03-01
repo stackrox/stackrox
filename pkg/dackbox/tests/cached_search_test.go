@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"math/rand"
 	"strings"
@@ -100,7 +101,7 @@ func TestCachedSearch(t *testing.T) {
 	t.Run("unsuccessful search", func(t *testing.T) {
 		// Graph contains no target yet, so search should not succeed (no error).
 		searcher := NewCachedSearcher(g, targetPred, searchPath)
-		found, err := searcher.Search("start")
+		found, err := searcher.Search(context.Background(), "start")
 		assert.NoError(t, err)
 		assert.False(t, found)
 	})
@@ -117,7 +118,7 @@ func TestCachedSearch(t *testing.T) {
 		testutils.AddPathsToGraph(succG, searchPath.KeyPath(ids...))
 
 		searcher := NewCachedSearcher(succG, targetPred, searchPath)
-		found, err := searcher.Search("start")
+		found, err := searcher.Search(context.Background(), "start")
 		assert.NoError(t, err)
 		assert.True(t, found)
 	})
@@ -134,7 +135,7 @@ func TestCachedSearch(t *testing.T) {
 		testutils.AddPathsToGraph(errG, searchPath.KeyPath(ids...))
 
 		searcher := NewCachedSearcher(errG, targetPred, searchPath)
-		_, err := searcher.Search("start")
+		_, err := searcher.Search(context.Background(), "start")
 		assert.Error(t, err)
 	})
 }

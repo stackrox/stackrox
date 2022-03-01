@@ -61,7 +61,7 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 		return nil, err
 	}
 
-	resp, err := client.http.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,8 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
-	return client.http.Do(req)
+	resp, err := client.http.Do(req)
+	return resp, errors.Wrap(err, "error when doing http request")
 }
 
 // NewReq creates a new http.Request which will have all authentication metadata injected
@@ -91,7 +92,7 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 	}
 	req, err := http.NewRequest(method, reqURL, body)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error when creating http request")
 	}
 	if client.forceHTTP1 {
 		req.ProtoMajor, req.ProtoMinor, req.Proto = 1, 1, "HTTP/1.1"
@@ -102,7 +103,7 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 	}
 	err = client.a.SetAuth(req)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not inject authentication information")
 	}
 
 	return req, nil

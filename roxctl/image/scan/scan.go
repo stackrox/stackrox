@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
@@ -112,7 +113,7 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 	i.timeout = flags.Timeout(cmd)
 
 	if err := imageUtils.IsValidImageString(i.image); err != nil {
-		return errorhelpers.NewErrInvalidArgs(err.Error())
+		return errox.NewErrInvalidArgs(err.Error())
 	}
 
 	// There is a case where cobra is not printing the deprecation warning to stderr, when a deprecated flag is not
@@ -127,7 +128,7 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 	if f.OutputFormat != "" {
 		p, err := f.CreatePrinter()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not create printer for image scan result")
 		}
 		i.printer = p
 		i.standardizedFormat = f.IsStandardizedFormat()
@@ -140,15 +141,15 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 // provided values
 func (i *imageScanCommand) Validate() error {
 	if i.image == "" {
-		return errorhelpers.NewErrInvalidArgs("no image name specified via the -i or --image flag")
+		return errox.NewErrInvalidArgs("no image name specified via the -i or --image flag")
 	}
 
 	// Only verify the legacy output format if no printer is constructed, thus the new output format is not used
 	if i.printer == nil {
 		// TODO(ROX-8303): this can be removed once the old output format is fully deprecated
 		if i.format != "" && i.format != "json" && i.format != "csv" {
-			return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format %q used. You can "+
-				"only specify json or csv", i.format))
+			return errox.Newf(errox.InvalidArgs, "invalid output format %q used. You can "+
+				"only specify json or csv", i.format)
 		}
 	}
 	return nil
@@ -167,7 +168,7 @@ func (i *imageScanCommand) Scan() error {
 		}),
 	)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "scaning image failed after %d retries", i.retryCount)
 	}
 	return nil
 }
@@ -188,7 +189,7 @@ func (i *imageScanCommand) scanImage() error {
 func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 	conn, err := i.env.GRPCConnection()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -197,11 +198,12 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
 	defer cancel()
 
-	return svc.ScanImage(ctx, &v1.ScanImageRequest{
+	image, err := svc.ScanImage(ctx, &v1.ScanImageRequest{
 		ImageName:      i.image,
 		Force:          i.force,
 		IncludeSnoozed: i.includeSnoozed,
 	})
+	return image, errors.Wrapf(err, "could not scan image: %q", i.image)
 }
 
 // printImageResult print the storage.ImageScan results, either in legacy output format or
@@ -218,7 +220,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	}
 
 	if err := i.printer.Print(cveSummary, i.env.ColorWriter()); err != nil {
-		return err
+		return errors.Wrap(err, "could not print CVE summary")
 	}
 
 	if !i.standardizedFormat {
@@ -261,7 +263,7 @@ func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer)
 		}
 		jsonResult, err := marshaller.MarshalToString(imageResult)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not marshal image result")
 		}
 
 		fmt.Fprintln(out, jsonResult)

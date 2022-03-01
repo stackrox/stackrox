@@ -99,18 +99,18 @@ func (mr *MockDataStoreMockRecorder) GetDeployment(ctx, id interface{}) *gomock.
 }
 
 // GetDeploymentIDs mocks base method.
-func (m *MockDataStore) GetDeploymentIDs() ([]string, error) {
+func (m *MockDataStore) GetDeploymentIDs(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDeploymentIDs")
+	ret := m.ctrl.Call(m, "GetDeploymentIDs", ctx)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetDeploymentIDs indicates an expected call of GetDeploymentIDs.
-func (mr *MockDataStoreMockRecorder) GetDeploymentIDs() *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetDeploymentIDs(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentIDs", reflect.TypeOf((*MockDataStore)(nil).GetDeploymentIDs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentIDs", reflect.TypeOf((*MockDataStore)(nil).GetDeploymentIDs), ctx)
 }
 
 // GetDeployments mocks base method.
