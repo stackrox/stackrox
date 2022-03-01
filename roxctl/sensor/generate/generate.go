@@ -11,7 +11,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -35,6 +37,8 @@ Please use --admission-controller-listen-on-creates instead to suppress this war
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
 	errorDeprecatedFlag = "Specified deprecated flag %s and new flag %s at the same time"
+
+	warningRunningAgainstLegacyCentral = "Running older version of central. Can't rely on central configuration to determine default values. Using %s as main registry."
 
 	warningCentralEnvironmentError = "Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v."
 )
@@ -104,6 +108,14 @@ func (s *sensorGenerateCommand) setClusterDefaults(envDefaults util.CentralEnv) 
 	}
 }
 
+func (s *sensorGenerateCommand) isLegacyValidationError(err error) bool {
+	return err != nil &&
+		status.Code(err) == codes.Internal &&
+		s.cluster.MainImage == "" &&
+		status.Convert(err).Message() == "Cluster Validation error: invalid main image '': invalid reference format"
+}
+
+
 func (s *sensorGenerateCommand) fullClusterCreation() error {
 	conn, err := s.env.GRPCConnection()
 	if err != nil {
@@ -122,6 +134,22 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	}
 
 	id, err := s.createCluster(ctx, service)
+
+	// Backward compatibility: if the central hasn't accepted the provided cluster
+	// then fill default values as RHACS.
+	if s.isLegacyValidationError(err) {
+		var flavor defaults.ImageFlavor
+		if buildinfo.ReleaseBuild {
+			flavor = defaults.RHACSReleaseImageFlavor()
+		} else {
+			flavor = defaults.DevelopmentBuildImageFlavor()
+		}
+
+		s.env.Logger().WarnfLn(warningRunningAgainstLegacyCentral, flavor.MainRegistry)
+		s.cluster.MainImage = flavor.MainImageNoTag()
+		id, err = s.createCluster(ctx, service)
+	}
+
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
 	// then return an error
 	if err != nil {

@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/images/defaults"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -26,20 +24,12 @@ type CentralEnv struct {
 	Error                  error
 }
 
-func getFlavorFromReleaseBuild() defaults.ImageFlavor {
-	if buildinfo.ReleaseBuild {
-		return defaults.RHACSReleaseImageFlavor()
-	}
-	return defaults.DevelopmentBuildImageFlavor()
-}
-
 func (e *CentralEnv) fetchClusterDefaults(ctx context.Context, service v1.ClustersServiceClient) error {
 	clusterDefault, err := service.GetClusterDefaults(ctx, &v1.Empty{})
 	if err != nil {
 		return err
 	}
 	e.KernelSupportAvailable = clusterDefault.GetKernelSupportAvailable()
-	e.MainImage = clusterDefault.GetMainImageRepository()
 	return nil
 }
 
@@ -58,8 +48,6 @@ func (e *CentralEnv) fetchClusterDefaultsLegacy(ctx context.Context, service v1.
 		e.KernelSupportAvailable = resp.KernelSupportAvailable
 	}
 
-	flavor := getFlavorFromReleaseBuild()
-	e.MainImage = flavor.MainImageNoTag()
 	e.Warnings = append(e.Warnings, fmt.Sprintf(warningCantDetermineMainImageFromCentral, e.MainImage))
 }
 
