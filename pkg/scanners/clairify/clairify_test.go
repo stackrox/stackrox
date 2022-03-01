@@ -10,6 +10,8 @@ import (
 )
 
 func getTestScan() (*clairV1.LayerEnvelope, *storage.ImageScan, *storage.Image) {
+	scannerVersion := "2.22.0"
+
 	image := &storage.Image{
 		Name: &storage.ImageName{
 			Registry: "docker.io",
@@ -24,10 +26,12 @@ func getTestScan() (*clairV1.LayerEnvelope, *storage.ImageScan, *storage.Image) 
 			NamespaceName: "debian:8",
 			Features:      clairFeatures,
 		},
+		ScannerVersion: scannerVersion,
 	}
 
 	protoScan := &storage.ImageScan{
 		Components:      protoComponents,
+		ScannerVersion:  scannerVersion,
 		OperatingSystem: "debian:8",
 		Notes: []storage.ImageScan_Note{
 			storage.ImageScan_OS_CVES_STALE,
@@ -43,6 +47,7 @@ func TestConvertLayerToImageScan(t *testing.T) {
 	assert.Equal(t, protoScan.DataSource, actualScan.DataSource)
 	assert.Equal(t, "debian:8", actualScan.OperatingSystem)
 	assert.Equal(t, protoScan.Components, actualScan.Components)
+	assert.Equal(t, protoScan.ScannerVersion, actualScan.ScannerVersion)
 	assert.Len(t, protoScan.Notes, 1)
 	assert.Contains(t, protoScan.Notes, convertNote(clairV1.OSCVEsStale))
 }
