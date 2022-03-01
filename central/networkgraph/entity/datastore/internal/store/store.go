@@ -19,5 +19,5 @@ type EntityStore interface {
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(fn func(obj *storage.NetworkEntity) error) error
+	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error
 }

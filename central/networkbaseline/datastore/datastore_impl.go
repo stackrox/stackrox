@@ -158,6 +158,6 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.Netw
 		return nil
 	}
 
-	return ds.storage.Walk(f)
+	return ds.storage.Walk(ctx, f)
 
 }

@@ -30,11 +30,11 @@ type searcherImpl struct {
 	formattedSearcher search.Searcher
 }
 
-func (s *searcherImpl) buildIndex() error {
+func (s *searcherImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing process baselines")
 	baselines := make([]*storage.ProcessBaseline, 0, baselineBatchLimit)
-	if err := s.storage.Walk(func(baseline *storage.ProcessBaseline) error {
+	if err := s.storage.Walk(ctx, func(baseline *storage.ProcessBaseline) error {
 		baselines = append(baselines, baseline)
 		if len(baselines) == baselineBatchLimit {
 			if err := s.indexer.AddBaselines(baselines); err != nil {

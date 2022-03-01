@@ -296,5 +296,5 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pod *storage.Pod) 
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.podStore.Walk(fn)
+	return ds.podStore.Walk(ctx, fn)
 }

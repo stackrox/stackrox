@@ -10,7 +10,7 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
-	Walk(func(namespace *storage.NamespaceMetadata) error) error
+	Walk(context.Context, func(namespace *storage.NamespaceMetadata) error) error
 	Upsert(context.Context, *storage.NamespaceMetadata) error
 	Delete(ctx context.Context, id string) error
 }

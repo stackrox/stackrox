@@ -10,7 +10,7 @@ import (
 //go:generate mockgen-wrapper
 type ClusterStore interface {
 	Count(ctx context.Context) (int, error)
-	Walk(fn func(obj *storage.Cluster) error) error
+	Walk(ctx context.Context, fn func(obj *storage.Cluster) error) error
 
 	Get(ctx context.Context, id string) (*storage.Cluster, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Cluster, []int, error)
@@ -28,5 +28,5 @@ type ClusterHealthStore interface {
 	UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.ClusterHealthStatus) error
 
 	Delete(ctx context.Context, id string) error
-	WalkAllWithID(fn func(id string, obj *storage.ClusterHealthStatus) error) error
+	WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.ClusterHealthStatus) error) error
 }

@@ -352,7 +352,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(baseline *storage.
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return ds.storage.Walk(fn)
+	return ds.storage.Walk(ctx, fn)
 }
 
 func (ds *datastoreImpl) RemoveProcessBaselinesByIDs(ctx context.Context, ids []string) error {

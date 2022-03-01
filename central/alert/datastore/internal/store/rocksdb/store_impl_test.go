@@ -48,7 +48,7 @@ func TestFullStoreImpl(t *testing.T) {
 	assert.Equal(t, []*storage.ListAlert{listAlert, listAlert2}, listAlerts)
 
 	var retrievedListAlertsViaWalk []*storage.ListAlert
-	err = store.Walk(func(la *storage.ListAlert) error {
+	err = store.Walk(ctx, func(la *storage.ListAlert) error {
 		retrievedListAlertsViaWalk = append(retrievedListAlertsViaWalk, la)
 		return nil
 	})

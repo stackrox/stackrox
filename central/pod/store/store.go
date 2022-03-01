@@ -13,7 +13,7 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.Pod, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Pod, []int, error)
-	Walk(fn func(obj *storage.Pod) error) error
+	Walk(ctx context.Context, fn func(obj *storage.Pod) error) error
 
 	Upsert(ctx context.Context, pod *storage.Pod) error
 	Delete(ctx context.Context, id string) error

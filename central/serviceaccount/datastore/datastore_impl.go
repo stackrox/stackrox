@@ -27,11 +27,11 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) buildIndex() error {
+func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	log.Info("[STARTUP] Indexing service accounts")
 	var serviceAccounts []*storage.ServiceAccount
 	var count int
-	err := d.storage.Walk(func(sa *storage.ServiceAccount) error {
+	err := d.storage.Walk(ctx, func(sa *storage.ServiceAccount) error {
 		serviceAccounts = append(serviceAccounts, sa)
 		if len(serviceAccounts) == batchSize {
 			if err := d.indexer.AddServiceAccounts(serviceAccounts); err != nil {

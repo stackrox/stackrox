@@ -30,7 +30,7 @@ func NewDatastore(store store.Store) (DataStore, error) {
 		store:       store,
 		rulesByName: make(map[string]map[string]*storage.ComplianceOperatorRule),
 	}
-	err := store.Walk(func(rule *storage.ComplianceOperatorRule) error {
+	err := store.Walk(context.TODO(), func(rule *storage.ComplianceOperatorRule) error {
 		ds.addToRulesByNameNoLock(rule)
 		return nil
 	})
@@ -53,7 +53,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(rule *storage.Complian
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules read")
 	}
-	return d.store.Walk(fn)
+	return d.store.Walk(ctx, fn)
 }
 
 func (d *datastoreImpl) addToRulesByNameNoLock(rule *storage.ComplianceOperatorRule) {

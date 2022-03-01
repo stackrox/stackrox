@@ -30,12 +30,12 @@ type dataStoreImpl struct {
 	indexer  index.Indexer
 }
 
-func (d *dataStoreImpl) buildIndex() error {
+func (d *dataStoreImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing report configurations")
 
 	var reportConfigs []*storage.ReportConfiguration
-	err := d.reportConfigStore.Walk(func(reportConfig *storage.ReportConfiguration) error {
+	err := d.reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
 		reportConfigs = append(reportConfigs, reportConfig)
 		return nil
 	})

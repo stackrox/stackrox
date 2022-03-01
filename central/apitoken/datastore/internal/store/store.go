@@ -12,6 +12,6 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error)
-	Walk(func(*storage.TokenMetadata) error) error
+	Walk(context.Context, func(*storage.TokenMetadata) error) error
 	Upsert(context.Context, *storage.TokenMetadata) error
 }

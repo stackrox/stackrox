@@ -112,10 +112,10 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.networkBaselineMgr = networkBaselineMocks.NewMockManager(suite.mockCtrl)
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Walk(ctx.Any(), gomock.Any()).Return(nil)
 	suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
-	suite.healthStatuses.EXPECT().WalkAllWithID(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Walk(ctx.Any(), gomock.Any()).Return(nil)
+	suite.healthStatuses.EXPECT().WalkAllWithID(ctx.Any(), gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 
 	var err error
@@ -233,13 +233,13 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsGetAll() {
-	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Walk(ctx.Any(), gomock.Any()).Return(nil)
 	suite.healthStatuses.EXPECT().GetMany(ctx.Any(), gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
 
 	_, err := suite.clusterDataStore.GetClusters(suite.hasReadCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 
-	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Walk(ctx.Any(), gomock.Any()).Return(nil)
 	suite.healthStatuses.EXPECT().GetMany(ctx.Any(), gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
 
 	_, err = suite.clusterDataStore.GetClusters(suite.hasWriteCtx)

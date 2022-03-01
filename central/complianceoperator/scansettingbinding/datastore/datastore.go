@@ -36,7 +36,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(binding *storage.Compl
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan setting bindings read")
 	}
-	return d.store.Walk(fn)
+	return d.store.Walk(ctx, fn)
 }
 
 func (d *datastoreImpl) Upsert(ctx context.Context, binding *storage.ComplianceOperatorScanSettingBinding) error {

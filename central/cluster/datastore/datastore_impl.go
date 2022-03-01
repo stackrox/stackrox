@@ -143,9 +143,9 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) buildIndex() error {
+func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	var clusters []*storage.Cluster
-	err := ds.clusterStorage.Walk(func(cluster *storage.Cluster) error {
+	err := ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
 		clusters = append(clusters, cluster)
 		return nil
 	})
@@ -154,7 +154,7 @@ func (ds *datastoreImpl) buildIndex() error {
 	}
 
 	clusterHealthStatuses := make(map[string]*storage.ClusterHealthStatus)
-	err = ds.clusterHealthStorage.WalkAllWithID(func(id string, healthInfo *storage.ClusterHealthStatus) error {
+	err = ds.clusterHealthStorage.WalkAllWithID(ctx, func(id string, healthInfo *storage.ClusterHealthStatus) error {
 		clusterHealthStatuses[id] = healthInfo
 		return nil
 	})
@@ -171,18 +171,18 @@ func (ds *datastoreImpl) buildIndex() error {
 }
 
 func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Node, resources.NetworkGraph)))
+
 	var clusters []*storage.Cluster
-	if err := ds.clusterStorage.Walk(func(cluster *storage.Cluster) error {
+	if err := ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
 		clusters = append(clusters, cluster)
 		return nil
 	}); err != nil {
 		return err
 	}
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Node, resources.NetworkGraph)))
 
 	for _, cluster := range clusters {
 		ds.netEntityDataStore.RegisterCluster(ctx, cluster.GetId())
@@ -234,7 +234,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 		return nil, err
 	} else if ok {
 		var clusters []*storage.Cluster
-		err := ds.clusterStorage.Walk(func(cluster *storage.Cluster) error {
+		err := ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
 			clusters = append(clusters, cluster)
 			return nil
 		})

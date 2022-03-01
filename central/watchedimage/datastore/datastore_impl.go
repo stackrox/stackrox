@@ -48,7 +48,7 @@ func (d *dataStore) GetAllWatchedImages(ctx context.Context) ([]*storage.Watched
 	}
 
 	var watchedImages []*storage.WatchedImage
-	err := d.storage.Walk(func(obj *storage.WatchedImage) error {
+	err := d.storage.Walk(ctx, func(obj *storage.WatchedImage) error {
 		watchedImages = append(watchedImages, obj)
 		return nil
 	})

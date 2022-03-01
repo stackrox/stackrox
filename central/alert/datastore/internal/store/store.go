@@ -12,7 +12,7 @@ type Store interface {
 	ListAlert(ctx context.Context, id string) (*storage.ListAlert, bool, error)
 	GetListAlerts(context.Context, []string) ([]*storage.ListAlert, []int, error)
 
-	Walk(fn func(*storage.ListAlert) error) error
+	Walk(ctx context.Context, fn func(*storage.ListAlert) error) error
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.Alert, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Alert, []int, error)

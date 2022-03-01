@@ -12,7 +12,7 @@ type PermissionSetStore interface {
 	Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error)
 	Upsert(ctx context.Context, obj *storage.PermissionSet) error
 	Delete(ctx context.Context, id string) error
-	Walk(fn func(obj *storage.PermissionSet) error) error
+	Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error
 }
 
 // SimpleAccessScopeStore provides storage functionality for simple access scopes.
@@ -21,7 +21,7 @@ type SimpleAccessScopeStore interface {
 	Get(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
 	Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error
 	Delete(ctx context.Context, id string) error
-	Walk(fn func(obj *storage.SimpleAccessScope) error) error
+	Walk(ctx context.Context, fn func(obj *storage.SimpleAccessScope) error) error
 }
 
 // RoleStore provides storage functionality for roles.
@@ -30,5 +30,5 @@ type RoleStore interface {
 	Get(ctx context.Context, id string) (*storage.Role, bool, error)
 	Upsert(ctx context.Context, obj *storage.Role) error
 	Delete(ctx context.Context, id string) error
-	Walk(fn func(obj *storage.Role) error) error
+	Walk(ctx context.Context, fn func(obj *storage.Role) error) error
 }

@@ -28,13 +28,13 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) buildIndex() error {
+func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing rolebindings")
 
 	var bindings []*storage.K8SRoleBinding
 	var count int
-	err := d.storage.Walk(func(binding *storage.K8SRoleBinding) error {
+	err := d.storage.Walk(ctx, func(binding *storage.K8SRoleBinding) error {
 		bindings = append(bindings, binding)
 		if len(bindings) == batchSize {
 			if err := d.indexer.AddK8sRoleBindings(bindings); err != nil {

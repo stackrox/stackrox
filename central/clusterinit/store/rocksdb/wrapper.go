@@ -25,9 +25,9 @@ func NewStore(db *rocksdb.RocksDB) (store.Store, error) {
 	return &rocksDBStoreWrapper{store: rawStore}, nil
 }
 
-func (w *rocksDBStoreWrapper) GetAll(_ context.Context) ([]*storage.InitBundleMeta, error) {
+func (w *rocksDBStoreWrapper) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error) {
 	var result []*storage.InitBundleMeta
-	if err := w.store.Walk(func(obj *storage.InitBundleMeta) error {
+	if err := w.store.Walk(ctx, func(obj *storage.InitBundleMeta) error {
 		if obj.GetIsRevoked() {
 			return nil
 		}

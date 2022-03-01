@@ -181,7 +181,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.Proces
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(fn)
+	return ds.storage.Walk(ctx, fn)
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []string) error {
@@ -247,10 +247,10 @@ func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
 	}
 }
 
-func (ds *datastoreImpl) getProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
+func (ds *datastoreImpl) getProcessInfoToArgs(ctx context.Context) (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ProcessIndicator", "getProcessInfoToArgs")
 	processNamesToArgs := make(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)
-	err := ds.storage.Walk(func(pi *storage.ProcessIndicator) error {
+	err := ds.storage.Walk(ctx, func(pi *storage.ProcessIndicator) error {
 		info := processindicator.ProcessWithContainerInfo{
 			ContainerName: pi.GetContainerName(),
 			PodID:         pi.GetPodId(),
@@ -273,7 +273,7 @@ func (ds *datastoreImpl) prune(ctx context.Context) {
 	pruner := ds.prunerFactory.StartPruning()
 	defer pruner.Finish()
 
-	processInfoToArgs, err := ds.getProcessInfoToArgs()
+	processInfoToArgs, err := ds.getProcessInfoToArgs(ctx)
 	if err != nil {
 		log.Errorf("Error while pruning processes: couldn't retrieve process info to args: %s", err)
 		return
@@ -320,7 +320,7 @@ func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 
 	indicators := make([]*storage.ProcessIndicator, 0, maxBatchSize)
 	var count int
-	err := ds.storage.Walk(func(pi *storage.ProcessIndicator) error {
+	err := ds.storage.Walk(ctx, func(pi *storage.ProcessIndicator) error {
 		indicators = append(indicators, pi)
 		if len(indicators) == maxBatchSize {
 			if err := ds.indexer.AddProcessIndicators(indicators); err != nil {

@@ -20,5 +20,5 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(fn func(baseline *storage.NetworkBaseline) error) error
+	Walk(ctx context.Context, fn func(baseline *storage.NetworkBaseline) error) error
 }

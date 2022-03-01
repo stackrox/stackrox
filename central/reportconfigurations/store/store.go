@@ -12,7 +12,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Get(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ReportConfiguration, []int, error)
-	Walk(func(reportConfig *storage.ReportConfiguration) error) error
+	Walk(context.Context, func(reportConfig *storage.ReportConfiguration) error) error
 
 	Upsert(ctx context.Context, reportConfig *storage.ReportConfiguration) error
 	Delete(ctx context.Context, id string) error

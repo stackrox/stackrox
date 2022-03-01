@@ -52,8 +52,8 @@ func (f *fullStoreImpl) GetListAlerts(ctx context.Context, ids []string) ([]*sto
 }
 
 // Walk implements the walk interface of the store
-func (f *fullStoreImpl) Walk(fn func(*storage.ListAlert) error) error {
-	return f.Store.Walk(func(alert *storage.Alert) error {
+func (f *fullStoreImpl) Walk(ctx context.Context, fn func(*storage.ListAlert) error) error {
+	return f.Store.Walk(ctx, func(alert *storage.Alert) error {
 		listAlert := convert.AlertToListAlert(alert)
 		return fn(listAlert)
 	})

@@ -53,15 +53,15 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 		sensorConnMgr: sensorConnMgr,
 	}
 
-	go ds.initNetworkTrees()
+	go ds.initNetworkTrees(context.TODO())
 	return ds
 }
 
-func (ds *dataStoreImpl) initNetworkTrees() {
+func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
 	// Create tree for default ones.
 	entitiesByCluster := make(map[string][]*storage.NetworkEntityInfo)
 	// If network tree for a cluster is not found, it means it must orphan which shall be cleaned at next garbage collection.
-	if err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
+	if err := ds.storage.Walk(ctx, func(obj *storage.NetworkEntity) error {
 		entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
 		return nil
 	}); err != nil {
@@ -160,7 +160,7 @@ func (ds *dataStoreImpl) GetAllEntities(ctx context.Context) ([]*storage.Network
 func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(entity *storage.NetworkEntity) bool) ([]*storage.NetworkEntity, error) {
 	var entities []*storage.NetworkEntity
 	allowed := make(map[string]bool)
-	if err := ds.storage.Walk(func(entity *storage.NetworkEntity) error {
+	if err := ds.storage.Walk(ctx, func(entity *storage.NetworkEntity) error {
 		if !pred(entity) {
 			return nil
 		}
@@ -375,7 +375,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	defer ds.netEntityLock.Unlock()
 
 	var ids []string
-	if err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
+	if err := ds.storage.Walk(ctx, func(obj *storage.NetworkEntity) error {
 		// Skip default ones.
 		if obj.GetInfo().GetExternalSource().GetDefault() {
 			return nil

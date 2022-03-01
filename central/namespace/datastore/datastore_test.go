@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/ctx"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -50,7 +51,7 @@ func (suite *NamespaceDataStoreTestSuite) SetupTest() {
 
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 
-	suite.ns.EXPECT().Walk(gomock.Any()).Return(([]*storage.NamespaceMetadata)(nil), nil)
+	suite.ns.EXPECT().Walk(ctx.Any(), gomock.Any()).Return(([]*storage.NamespaceMetadata)(nil), nil)
 	suite.indexer.EXPECT().AddNamespaceMetadatas(nil).Return(nil)
 
 	var err error

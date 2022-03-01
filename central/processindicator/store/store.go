@@ -18,5 +18,5 @@ type Store interface {
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 
-	Walk(func(pi *storage.ProcessIndicator) error) error
+	Walk(context.Context, func(pi *storage.ProcessIndicator) error) error
 }

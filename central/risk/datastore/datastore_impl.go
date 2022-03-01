@@ -26,10 +26,10 @@ type datastoreImpl struct {
 	subjectTypeToRanker map[string]*ranking.Ranker
 }
 
-func (d *datastoreImpl) buildIndex() error {
+func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	log.Info("[STARTUP] Indexing risk")
 	var risks []*storage.Risk
-	err := d.storage.Walk(func(risk *storage.Risk) error {
+	err := d.storage.Walk(ctx, func(risk *storage.Risk) error {
 		risks = append(risks, risk)
 		return nil
 	})

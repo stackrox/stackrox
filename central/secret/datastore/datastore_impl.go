@@ -24,12 +24,12 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) buildIndex() error {
+func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing secrets")
 
 	var secrets []*storage.Secret
-	err := d.storage.Walk(func(secret *storage.Secret) error {
+	err := d.storage.Walk(ctx, func(secret *storage.Secret) error {
 		secrets = append(secrets, secret)
 		return nil
 	})

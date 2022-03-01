@@ -54,9 +54,9 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
 	{{- if .NoKeyField}}
-	WalkAllWithID(fn func(id string, obj *storage.{{.Type}}) error) error
+	WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.{{.Type}}) error) error
 	{{- else }}
-	Walk(fn func(obj *storage.{{.Type}}) error) error
+	Walk(ctx context.Context, fn func(obj *storage.{{.Type}}) error) error
 	{{- end}}
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -220,7 +220,7 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 
 {{- if .NoKeyField}}
 // WalkAllWithID iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) WalkAllWithID(fn func(id string, obj *storage.{{.Type}}) error) error {
+func (b *storeImpl) WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.{{.Type}}) error) error {
 	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
 		return fn(string(id), msg.(*storage.{{.Type}}))
 	})
@@ -228,7 +228,7 @@ func (b *storeImpl) WalkAllWithID(fn func(id string, obj *storage.{{.Type}}) err
 {{- else}}
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) Walk(fn func(obj *storage.{{.Type}}) error) error {
+func (b *storeImpl) Walk(ctx context.Context, fn func(obj *storage.{{.Type}}) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
 		return fn(msg.(*storage.{{.Type}}))
 	})

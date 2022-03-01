@@ -161,6 +161,6 @@ func (c *cachedStore) GetIDs(ctx context.Context) ([]string, error) {
 	return c.store.GetIDs(ctx)
 }
 
-func (c *cachedStore) Walk(fn func(pod *storage.Pod) error) error {
-	return c.store.Walk(fn)
+func (c *cachedStore) Walk(ctx context.Context, fn func(pod *storage.Pod) error) error {
+	return c.store.Walk(ctx, fn)
 }

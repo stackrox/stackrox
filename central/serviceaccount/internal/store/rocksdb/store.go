@@ -33,7 +33,7 @@ type Store interface {
 	UpsertMany(ctx context.Context, objs []*storage.ServiceAccount) error
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-	Walk(fn func(obj *storage.ServiceAccount) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ServiceAccount) error) error
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
@@ -139,7 +139,7 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) Walk(fn func(obj *storage.ServiceAccount) error) error {
+func (b *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ServiceAccount) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
 		return fn(msg.(*storage.ServiceAccount))
 	})

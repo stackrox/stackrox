@@ -65,7 +65,7 @@ func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensReque
 	defer b.Unlock()
 
 	var tokens []*storage.TokenMetadata
-	err := b.storage.Walk(func(token *storage.TokenMetadata) error {
+	err := b.storage.Walk(ctx, func(token *storage.TokenMetadata) error {
 		if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {
 			return nil
 		}

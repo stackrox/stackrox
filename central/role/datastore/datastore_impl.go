@@ -42,12 +42,12 @@ func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, erro
 		return nil, err
 	}
 
-	return ds.getAllRolesNoScopeCheck()
+	return ds.getAllRolesNoScopeCheck(ctx)
 }
 
-func (ds *dataStoreImpl) getAllRolesNoScopeCheck() ([]*storage.Role, error) {
+func (ds *dataStoreImpl) getAllRolesNoScopeCheck(ctx context.Context) ([]*storage.Role, error) {
 	var roles []*storage.Role
-	err := ds.roleStorage.Walk(func(role *storage.Role) error {
+	err := ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
 		roles = append(roles, role)
 		return nil
 	})
@@ -143,7 +143,7 @@ func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.P
 	}
 
 	var permissionSets []*storage.PermissionSet
-	err := ds.permissionSetStorage.Walk(func(permissionSet *storage.PermissionSet) error {
+	err := ds.permissionSetStorage.Walk(ctx, func(permissionSet *storage.PermissionSet) error {
 		permissionSets = append(permissionSets, permissionSet)
 		return nil
 	})
@@ -230,7 +230,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 	}
 
 	// Ensure this PermissionSet isn't in use by any Role.
-	roles, err := ds.getAllRolesNoScopeCheck()
+	roles, err := ds.getAllRolesNoScopeCheck(ctx)
 	if err != nil {
 		return err
 	}
@@ -266,7 +266,7 @@ func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.Sim
 	}
 
 	var scopes []*storage.SimpleAccessScope
-	err := ds.accessScopeStorage.Walk(func(scope *storage.SimpleAccessScope) error {
+	err := ds.accessScopeStorage.Walk(ctx, func(scope *storage.SimpleAccessScope) error {
 		scopes = append(scopes, scope)
 		return nil
 	})
@@ -354,7 +354,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	}
 
 	// Ensure this AccessScope isn't in use by any Role.
-	roles, err := ds.getAllRolesNoScopeCheck()
+	roles, err := ds.getAllRolesNoScopeCheck(ctx)
 	if err != nil {
 		return err
 	}

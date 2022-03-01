@@ -507,5 +507,5 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(fn)
+	return ds.storage.Walk(ctx, fn)
 }

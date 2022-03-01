@@ -138,7 +138,7 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*sto
 	suite.ElementsMatch(resultIDs, indicatorIDs)
 
 	var foundIndicators []*storage.ProcessIndicator
-	err = suite.storage.Walk(func(pi *storage.ProcessIndicator) error {
+	err = suite.storage.Walk(suite.hasReadCtx, func(pi *storage.ProcessIndicator) error {
 		foundIndicators = append(foundIndicators, pi)
 		return nil
 	})

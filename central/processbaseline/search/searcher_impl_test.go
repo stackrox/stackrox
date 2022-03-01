@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/ctx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -55,7 +56,7 @@ func (suite *ProcessBaselineSearchTestSuite) SetupTest() {
 	suite.controller = gomock.NewController(suite.T())
 	suite.indexer = mockIndex.NewMockIndexer(suite.controller)
 	suite.store = mockStore.NewMockStore(suite.controller)
-	suite.store.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.store.EXPECT().Walk(ctx.Any(), gomock.Any()).Return(nil)
 	searcher, err := New(suite.store, suite.indexer)
 
 	suite.NoError(err)

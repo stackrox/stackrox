@@ -111,17 +111,17 @@ func (mr *MockClusterStoreMockRecorder) Upsert(ctx, cluster interface{}) *gomock
 }
 
 // Walk mocks base method.
-func (m *MockClusterStore) Walk(fn func(*storage.Cluster) error) error {
+func (m *MockClusterStore) Walk(ctx context.Context, fn func(*storage.Cluster) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", fn)
+	ret := m.ctrl.Call(m, "Walk", ctx, fn)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Walk indicates an expected call of Walk.
-func (mr *MockClusterStoreMockRecorder) Walk(fn interface{}) *gomock.Call {
+func (mr *MockClusterStoreMockRecorder) Walk(ctx, fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockClusterStore)(nil).Walk), fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockClusterStore)(nil).Walk), ctx, fn)
 }
 
 // MockClusterHealthStore is a mock of ClusterHealthStore interface.
@@ -222,15 +222,15 @@ func (mr *MockClusterHealthStoreMockRecorder) UpsertWithID(ctx, id, obj interfac
 }
 
 // WalkAllWithID mocks base method.
-func (m *MockClusterHealthStore) WalkAllWithID(fn func(string, *storage.ClusterHealthStatus) error) error {
+func (m *MockClusterHealthStore) WalkAllWithID(ctx context.Context, fn func(string, *storage.ClusterHealthStatus) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WalkAllWithID", fn)
+	ret := m.ctrl.Call(m, "WalkAllWithID", ctx, fn)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // WalkAllWithID indicates an expected call of WalkAllWithID.
-func (mr *MockClusterHealthStoreMockRecorder) WalkAllWithID(fn interface{}) *gomock.Call {
+func (mr *MockClusterHealthStoreMockRecorder) WalkAllWithID(ctx, fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAllWithID", reflect.TypeOf((*MockClusterHealthStore)(nil).WalkAllWithID), fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAllWithID", reflect.TypeOf((*MockClusterHealthStore)(nil).WalkAllWithID), ctx, fn)
 }

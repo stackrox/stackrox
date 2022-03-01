@@ -34,7 +34,7 @@ type Store interface {
 	UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.ClusterHealthStatus) error
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-	WalkAllWithID(fn func(id string, obj *storage.ClusterHealthStatus) error) error
+	WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.ClusterHealthStatus) error) error
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
@@ -139,7 +139,7 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	return b.crud.DeleteMany(ids)
 }
 // WalkAllWithID iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) WalkAllWithID(fn func(id string, obj *storage.ClusterHealthStatus) error) error {
+func (b *storeImpl) WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.ClusterHealthStatus) error) error {
 	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
 		return fn(string(id), msg.(*storage.ClusterHealthStatus))
 	})
