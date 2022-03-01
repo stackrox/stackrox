@@ -171,8 +171,13 @@ class ImageScanningTest extends BaseSpecification {
 
     def cleanupSetupForRetry() {
         if (Helpers.getAttemptCount() > 1) {
+            println "Cleaning up"
             cleanup()
+            println "Done cleaning up and sleeping"
+            sleep(10000)
+            println "Setting up"
             setup()
+            println "Done setting up"
         }
     }
 
