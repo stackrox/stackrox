@@ -148,10 +148,9 @@ func getDefaultsUnimplemented() func() (*v1.ClusterDefaultsResponse, error) {
 	}
 }
 
-func getDefaultsFake(kernelSupport bool, mainImage string) func() (*v1.ClusterDefaultsResponse, error) {
+func getDefaultsFake(kernelSupport bool) func() (*v1.ClusterDefaultsResponse, error) {
 	return func() (*v1.ClusterDefaultsResponse, error) {
 		return &v1.ClusterDefaultsResponse{
-			MainImageRepository:    mainImage,
 			KernelSupportAvailable: kernelSupport,
 		}, nil
 	}
@@ -165,9 +164,29 @@ func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	}, nil
 }
 
+// postClusterLegacyCentralFake fake legacy central function for service.PostCluster that returns validation error if main is empty
+func postClusterLegacyCentralFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+	if cluster.MainImage == "" {
+		return nil, status.Error(codes.Internal, "Cluster Validation error: invalid main image '': invalid reference format")
+	}
+	return postClusterFake(cluster)
+}
+
 // postClusterAlreadyExistsFake fake function for service.PostCluster that always returns error codes.AlreadyExists
 func postClusterAlreadyExistsFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	return nil, status.Error(codes.AlreadyExists, "Cluster Exists")
+}
+
+// getMainImageFromBuildFlag is necessary because we run tests both in release and non-release mode.
+// roxctl will select different images based on the build type if communicating with a legacy central
+func getMainImageFromBuildFlag() string {
+	var flavor defaults.ImageFlavor
+	if buildinfo.ReleaseBuild {
+		flavor = defaults.RHACSReleaseImageFlavor()
+	} else {
+		flavor = defaults.DevelopmentBuildImageFlavor()
+	}
+	return flavor.MainImageNoTag()
 }
 
 func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
@@ -218,7 +237,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, _, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(true, "example.io/main"), testCase.postClusterF)
+			_, _, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(true), testCase.postClusterF)
 			defer closeF()
 
 			// Setup generateCmd
@@ -247,15 +266,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 	}
 }
 
-func getFlavorFromReleaseBuild() defaults.ImageFlavor {
-	if buildinfo.ReleaseBuild {
-		return defaults.RHACSReleaseImageFlavor()
-	}
-	return defaults.DevelopmentBuildImageFlavor()
-}
-
 func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
-	flavorInTest := getFlavorFromReleaseBuild()
 	testCases := map[string]struct {
 		getDefaultsF      getDefaultsFn
 		mainImageOverride string
@@ -263,23 +274,13 @@ func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
 		// expected
 		expectPostedClusterMainImage string
 	}{
-		"New Central without override: use main image default": {
-			getDefaultsF:                 getDefaultsFake(true, "example.io/main"),
+		"Without override: send empty main image": {
+			getDefaultsF:                 getDefaultsFake(true),
 			mainImageOverride:            "",
-			expectPostedClusterMainImage: "example.io/main",
+			expectPostedClusterMainImage: "",
 		},
-		"New Central with override: use main image provided": {
-			getDefaultsF:                 getDefaultsFake(true, "example.io/main"),
-			mainImageOverride:            "some.registry.io/stackrox/main",
-			expectPostedClusterMainImage: "some.registry.io/stackrox/main",
-		},
-		"Legacy Central without override: derive main image from release flag": {
-			getDefaultsF:                 getDefaultsUnimplemented(),
-			mainImageOverride:            "",
-			expectPostedClusterMainImage: flavorInTest.MainImageNoTag(),
-		},
-		"Legacy Central with override: use main image provided": {
-			getDefaultsF:                 getDefaultsUnimplemented(),
+		"With override: send main image provided": {
+			getDefaultsF:                 getDefaultsFake(true),
 			mainImageOverride:            "some.registry.io/stackrox/main",
 			expectPostedClusterMainImage: "some.registry.io/stackrox/main",
 		},
@@ -305,6 +306,57 @@ func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
 			s.Require().Equal(testCase.expectPostedClusterMainImage, mock.clusterSent[0].MainImage)
 		})
 	}
+}
+
+func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
+	testCases := map[string]struct {
+		postClusterF postClusterFn
+
+		// expected
+		expectClustersSent int
+		expectMainImages   []string
+		expectWarning      *expectedWarning
+	}{
+		"Legacy central: PostCluster is called twice": {
+			postClusterF:       postClusterLegacyCentralFake,
+			expectClustersSent: 2,
+			expectMainImages:   []string{"", getMainImageFromBuildFlag()},
+			expectWarning:      &expectedWarning{"Running older version of central"},
+		},
+		"New central: PostCluster is called once with empty MainImage": {
+			postClusterF:       postClusterFake,
+			expectClustersSent: 1,
+			expectMainImages:   []string{""},
+			expectWarning:      nil,
+		},
+	}
+
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(true), testCase.postClusterF)
+			defer closeF()
+
+			// Setup generateCmd
+			generateCmd.timeout = time.Duration(5) * time.Second
+			generateCmd.getBundleFn = emptyGetBundle
+
+			// Create cluster
+			err := generateCmd.fullClusterCreation()
+
+			// Assertions
+			s.Require().NoError(err)
+
+			if testCase.expectWarning != nil {
+				s.Assert().Contains(errOut.String(), testCase.expectWarning.messageTemplate)
+			}
+
+			s.Assert().Len(mock.clusterSent, testCase.expectClustersSent)
+			for i, mainImage := range testCase.expectMainImages {
+				s.Assert().Equal(mock.clusterSent[i].MainImage, mainImage)
+			}
+		})
+	}
+
 }
 
 func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
@@ -354,7 +406,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(testCase.serverHasKernelSupport, "example.io/main"), postClusterFake)
+			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(testCase.serverHasKernelSupport), postClusterFake)
 			defer closeF()
 
 			// Setup generateCmd
