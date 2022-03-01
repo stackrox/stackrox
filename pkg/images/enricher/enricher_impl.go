@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -177,7 +178,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 
 	registries := e.integrations.RegistrySet()
 	if !ctx.Internal && registries.IsEmpty() {
-		errorList.AddError(errors.Errorf("no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry()))
+		errorList.AddError(errox.Newf(errox.NotFound, "no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry()))
 		return false, errorList.ToError()
 	}
 

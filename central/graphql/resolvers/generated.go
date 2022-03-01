@@ -680,6 +680,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [ImageScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
+		"scannerVersion: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageScan_Note(0)))
 	utils.Must(builder.AddType("ImageSignature", []string{
@@ -6638,6 +6639,11 @@ func (resolver *imageScanResolver) OperatingSystem(ctx context.Context) string {
 func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
+}
+
+func (resolver *imageScanResolver) ScannerVersion(ctx context.Context) string {
+	value := resolver.data.GetScannerVersion()
+	return value
 }
 
 func toImageScan_Note(value *string) storage.ImageScan_Note {
