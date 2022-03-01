@@ -26,7 +26,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = "invalid image"
 			},
-			expectedErrors: []string{"invalid image 'invalid image': invalid reference format"},
+			expectedErrors: []string{"invalid image name 'invalid image': invalid reference format"},
 		},
 		"Cluster with empty main image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -68,7 +68,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "invalid image"
 			},
-			expectedErrors: []string{"invalid image 'invalid image': invalid reference format"},
+			expectedErrors: []string{"invalid image name 'invalid image': invalid reference format"},
 		},
 		"Cluster with empty collector image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {

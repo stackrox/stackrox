@@ -249,7 +249,7 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 func DropImageTagAndDigest(image string) (string, error) {
 	ref, err := reference.ParseAnyReference(image)
 	if err != nil {
-		return image, errors.Wrapf(err, "invalid image '%s'", image)
+		return image, errors.Wrapf(err, "invalid image name '%s'", image)
 	}
 	// We need to do the trim in two steps, otherwise 'docker.io' will be added to images that specify a path
 	// but not a domain (e.g. stackrox/main will become docker.io/stackrox/main)

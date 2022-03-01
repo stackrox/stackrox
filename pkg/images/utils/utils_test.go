@@ -190,7 +190,7 @@ func TestStripCVEDescriptions(t *testing.T) {
 	assert.True(t, hitOne)
 }
 
-func TestDropImageTagsOrDigests(t *testing.T) {
+func TestDropImageTagAndDigest(t *testing.T) {
 	cases := map[string]struct {
 		image         string
 		expectedImage string
@@ -243,7 +243,7 @@ func TestDropImageTagsOrDigests(t *testing.T) {
 		},
 		"Invalid image": {
 			image:         "invalid image",
-			expectedError: errors.New("invalid image 'invalid image': invalid reference format"),
+			expectedError: errors.New("invalid image name 'invalid image': invalid reference format"),
 		},
 	}
 	for name, c := range cases {
