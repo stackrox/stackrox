@@ -3,6 +3,7 @@
 package rocksdb
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,18 +25,18 @@ var (
 )
 
 type Store interface {
-	Count() (int, error)
-	Exists(id string) (bool, error)
-	GetIDs() ([]string, error)
-	Get(id string) (*storage.Role, bool, error)
-	GetMany(ids []string) ([]*storage.Role, []int, error)
-	Upsert(obj *storage.Role) error
-	UpsertMany(objs []*storage.Role) error
-	Delete(id string) error
-	DeleteMany(ids []string) error
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	Get(ctx context.Context, id string) (*storage.Role, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Role, []int, error)
+	Upsert(ctx context.Context, obj *storage.Role) error
+	UpsertMany(ctx context.Context, objs []*storage.Role) error
+	Delete(ctx context.Context, id string) error
+	DeleteMany(ctx context.Context, ids []string) error
 	Walk(fn func(obj *storage.Role) error) error
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -64,28 +65,28 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 }
 
 // Count returns the number of objects in the store
-func (b *storeImpl) Count() (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Count, "Role")
 
 	return b.crud.Count()
 }
 
 // Exists returns if the id exists in the store
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Exists, "Role")
 
 	return b.crud.Exists(id)
 }
 
 // GetIDs returns all the IDs for the store
-func (b *storeImpl) GetIDs() ([]string, error) {
+func (b *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "RoleIDs")
 
 	return b.crud.GetKeys()
 }
 
 // Get returns the object, if it exists from the store
-func (b *storeImpl) Get(id string) (*storage.Role, bool, error) {
+func (b *storeImpl) Get(_ context.Context, id string) (*storage.Role, bool, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "Role")
 
 	msg, exists, err := b.crud.Get(id)
@@ -96,7 +97,7 @@ func (b *storeImpl) Get(id string) (*storage.Role, bool, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice 
-func (b *storeImpl) GetMany(ids []string) ([]*storage.Role, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Role, []int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "Role")
 
 	msgs, missingIndices, err := b.crud.GetMany(ids)
@@ -111,14 +112,14 @@ func (b *storeImpl) GetMany(ids []string) ([]*storage.Role, []int, error) {
 }
 
 // Upsert inserts the object into the DB
-func (b *storeImpl) Upsert(obj *storage.Role) error {
+func (b *storeImpl) Upsert(_ context.Context, obj *storage.Role) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "Role")
 
 	return b.crud.Upsert(obj)
 }
 
 // UpsertMany batches objects into the DB
-func (b *storeImpl) UpsertMany(objs []*storage.Role) error {
+func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Role) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "Role")
 
 	msgs := make([]proto.Message, 0, len(objs))
@@ -130,14 +131,14 @@ func (b *storeImpl) UpsertMany(objs []*storage.Role) error {
 }
 
 // Delete removes the specified ID from the store
-func (b *storeImpl) Delete(id string) error {
+func (b *storeImpl) Delete(_ context.Context, id string) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "Role")
 
 	return b.crud.Delete(id)
 }
 
 // Delete removes the specified IDs from the store
-func (b *storeImpl) DeleteMany(ids []string) error {
+func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "Role")
 
 	return b.crud.DeleteMany(ids)
@@ -151,11 +152,11 @@ func (b *storeImpl) Walk(fn func(obj *storage.Role) error) error {
 }
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (b *storeImpl) AckKeysIndexed(keys ...string) error {
+func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
 	return b.crud.AckKeysIndexed(keys...)
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (b *storeImpl) GetKeysToIndex() ([]string, error) {
+func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return b.crud.GetKeysToIndex()
 }

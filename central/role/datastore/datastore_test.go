@@ -111,11 +111,11 @@ func (s *roleDataStoreTestSuite) initDataStore() {
 
 	// Insert a permission set, access scope, and role into the test DB.
 	s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
-	s.Require().NoError(permissionSetStorage.Upsert(s.existingPermissionSet))
+	s.Require().NoError(permissionSetStorage.Upsert(s.hasWriteCtx, s.existingPermissionSet))
 	s.existingScope = getValidAccessScope("scope.existing", "existing scope")
-	s.Require().NoError(scopeStorage.Upsert(s.existingScope))
+	s.Require().NoError(scopeStorage.Upsert(s.hasWriteCtx, s.existingScope))
 	s.existingRole = getValidRole("existing role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
-	s.Require().NoError(roleStorage.Upsert(s.existingRole))
+	s.Require().NoError(roleStorage.Upsert(s.hasWriteCtx, s.existingRole))
 }
 
 func (s *roleDataStoreTestSuite) TearDownTest() {

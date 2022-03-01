@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,23 +36,23 @@ func (m *MockPermissionSetStore) EXPECT() *MockPermissionSetStoreMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockPermissionSetStore) Delete(id string) error {
+func (m *MockPermissionSetStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockPermissionSetStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockPermissionSetStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPermissionSetStore)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPermissionSetStore)(nil).Delete), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockPermissionSetStore) Get(id string) (*storage.PermissionSet, bool, error) {
+func (m *MockPermissionSetStore) Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.PermissionSet)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -59,23 +60,23 @@ func (m *MockPermissionSetStore) Get(id string) (*storage.PermissionSet, bool, e
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockPermissionSetStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockPermissionSetStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPermissionSetStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPermissionSetStore)(nil).Get), ctx, id)
 }
 
 // Upsert mocks base method.
-func (m *MockPermissionSetStore) Upsert(obj *storage.PermissionSet) error {
+func (m *MockPermissionSetStore) Upsert(ctx context.Context, obj *storage.PermissionSet) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", obj)
+	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockPermissionSetStoreMockRecorder) Upsert(obj interface{}) *gomock.Call {
+func (mr *MockPermissionSetStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockPermissionSetStore)(nil).Upsert), obj)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockPermissionSetStore)(nil).Upsert), ctx, obj)
 }
 
 // Walk mocks base method.
@@ -116,23 +117,23 @@ func (m *MockSimpleAccessScopeStore) EXPECT() *MockSimpleAccessScopeStoreMockRec
 }
 
 // Delete mocks base method.
-func (m *MockSimpleAccessScopeStore) Delete(id string) error {
+func (m *MockSimpleAccessScopeStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockSimpleAccessScopeStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Delete), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockSimpleAccessScopeStore) Get(id string) (*storage.SimpleAccessScope, bool, error) {
+func (m *MockSimpleAccessScopeStore) Get(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.SimpleAccessScope)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -140,23 +141,23 @@ func (m *MockSimpleAccessScopeStore) Get(id string) (*storage.SimpleAccessScope,
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockSimpleAccessScopeStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Get), ctx, id)
 }
 
 // Upsert mocks base method.
-func (m *MockSimpleAccessScopeStore) Upsert(obj *storage.SimpleAccessScope) error {
+func (m *MockSimpleAccessScopeStore) Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", obj)
+	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockSimpleAccessScopeStoreMockRecorder) Upsert(obj interface{}) *gomock.Call {
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Upsert), obj)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Upsert), ctx, obj)
 }
 
 // Walk mocks base method.
@@ -197,23 +198,23 @@ func (m *MockRoleStore) EXPECT() *MockRoleStoreMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockRoleStore) Delete(id string) error {
+func (m *MockRoleStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockRoleStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockRoleStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleStore)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleStore)(nil).Delete), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockRoleStore) Get(id string) (*storage.Role, bool, error) {
+func (m *MockRoleStore) Get(ctx context.Context, id string) (*storage.Role, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.Role)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -221,23 +222,23 @@ func (m *MockRoleStore) Get(id string) (*storage.Role, bool, error) {
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockRoleStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockRoleStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRoleStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRoleStore)(nil).Get), ctx, id)
 }
 
 // Upsert mocks base method.
-func (m *MockRoleStore) Upsert(obj *storage.Role) error {
+func (m *MockRoleStore) Upsert(ctx context.Context, obj *storage.Role) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", obj)
+	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockRoleStoreMockRecorder) Upsert(obj interface{}) *gomock.Call {
+func (mr *MockRoleStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockRoleStore)(nil).Upsert), obj)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockRoleStore)(nil).Upsert), ctx, obj)
 }
 
 // Walk mocks base method.
