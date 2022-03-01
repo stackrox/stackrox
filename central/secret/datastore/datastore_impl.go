@@ -44,7 +44,7 @@ func (d *datastoreImpl) buildIndex() error {
 }
 
 func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error) {
-	secret, exists, err := d.storage.Get(id)
+	secret, exists, err := d.storage.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -72,7 +72,7 @@ func (d *datastoreImpl) CountSecrets(ctx context.Context) (int, error) {
 	if ok, err := secretSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if ok {
-		return d.storage.Count()
+		return d.storage.Count(ctx)
 	}
 
 	return d.Count(ctx, searchPkg.EmptyQuery())
@@ -85,7 +85,7 @@ func (d *datastoreImpl) UpsertSecret(ctx context.Context, request *storage.Secre
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Upsert(request); err != nil {
+	if err := d.storage.Upsert(ctx, request); err != nil {
 		return err
 	}
 	return d.indexer.AddSecret(request)
@@ -98,7 +98,7 @@ func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Delete(id); err != nil {
+	if err := d.storage.Delete(ctx, id); err != nil {
 		return err
 	}
 	return d.indexer.DeleteSecret(id)
