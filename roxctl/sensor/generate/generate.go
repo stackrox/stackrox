@@ -102,10 +102,6 @@ func (s *sensorGenerateCommand) setClusterDefaults(envDefaults util.CentralEnv) 
 	} else {
 		s.cluster.SlimCollector = envDefaults.KernelSupportAvailable
 	}
-
-	if s.cluster.MainImage == "" {
-		s.cluster.MainImage = envDefaults.MainImage
-	}
 }
 
 func (s *sensorGenerateCommand) isLegacyValidationError(err error) bool {
