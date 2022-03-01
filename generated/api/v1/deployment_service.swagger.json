@@ -571,8 +571,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "These tags maintain backwards compatibility with the previously embedded storage.Image"
+          "type": "string"
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
@@ -580,7 +579,8 @@
         "notPullable": {
           "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 12"
     },
     "storageContainerNameAndBaselineStatus": {
       "type": "object",

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
+	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/imageutil"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/api/batch/v1beta1"
@@ -305,9 +307,11 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 				break
 			}
 
+			image := w.Deployment.Containers[i].Image
+
 			// If there already is an image ID for the image then that implies that the name of the image was fully qualified
 			// with an image digest. e.g. stackrox.io/main@sha256:xyz
-			if w.Deployment.Containers[i].Image.GetId() != "" {
+			if image.GetId() != "" {
 				continue
 			}
 
@@ -319,13 +323,19 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 			}
 
 			// If the pod spec image doesn't match the top level image, then it is an old spec so we should ignore its digest
-			if parsedName.GetName().GetFullName() != w.Containers[i].Image.GetName().GetFullName() {
+			if parsedName.GetName().GetFullName() != image.GetName().GetFullName() {
 				continue
 			}
 
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
-				w.Deployment.Containers[i].Image.Id = digest
-				w.Deployment.Containers[i].Image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+				image.Id = digest
+				// The image is not pullable if it is explicitly not pullable or it is an OpenShift internal image.
+				// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
+				// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
+				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+				if features.LocalImageScanning.Enabled() {
+					image.NotPullable = image.NotPullable || imageutil.IsInternalImage(image.GetName())
+				}
 			}
 		}
 	}

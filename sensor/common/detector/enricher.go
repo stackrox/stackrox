@@ -147,7 +147,8 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	key := imagecacheutils.GetImageCacheKey(ci)
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
-	if ci.GetNotPullable() {
+	// unless the image is OpenShift internal.
+	if ci.GetNotPullable() && !imageutil.IsInternalImage(ci.GetName()) {
 		return imageChanResult{
 			image:        types.ToImage(ci),
 			containerIdx: containerIdx,
