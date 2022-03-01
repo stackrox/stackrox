@@ -33,9 +33,9 @@ type DataStore interface {
 }
 
 // NewRocksDB creates a pod datastore based on RocksDB
-func NewRocksDB(ctx context.Context, db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
+func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	store := cache.NewCachedStore(rocksdb.New(db))
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(ctx, store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(context.TODO(), store, indexer, searcher, indicators, processFilter)
 }

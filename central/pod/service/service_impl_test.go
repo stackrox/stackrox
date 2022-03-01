@@ -78,7 +78,7 @@ func TestGetPods(t *testing.T) {
 			bleveIndex, err := globalindex.MemOnlyIndex()
 			require.NoError(t, err)
 
-			podsDS, err := datastore.NewRocksDB(ctx, rocksDB, bleveIndex, mockIndicators, mockFilter)
+			podsDS, err := datastore.NewRocksDB(rocksDB, bleveIndex, mockIndicators, mockFilter)
 			require.NoError(t, err)
 
 			for _, pod := range c.pods {

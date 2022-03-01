@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -39,7 +38,7 @@ func initialize() {
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)
 
 	var err error
-	ad, err = New(context.TODO(), storage, commentsStorage, indexer, searcher, p)
+	ad, err = New(storage, commentsStorage, indexer, searcher, p)
 	utils.CrashOnError(errors.Wrap(err, "unable to load datastore for process indicators"))
 }
 

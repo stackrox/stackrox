@@ -26,12 +26,12 @@ type datastoreImpl struct {
 }
 
 // New return new instance of DataStore.
-func New(ctx context.Context, storage store.Store) DataStore {
+func New(storage store.Store) DataStore {
 	ds := &datastoreImpl{
 		store: storage,
 	}
 
-	if err := ds.initDefaultConfig(ctx); err != nil {
+	if err := ds.initDefaultConfig(context.TODO()); err != nil {
 		utils.Should(errors.Wrap(err, "could not initialize default network graph configuration"))
 	}
 

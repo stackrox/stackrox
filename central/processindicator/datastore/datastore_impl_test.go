@@ -102,7 +102,7 @@ func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 	var err error
-	suite.datastore, err = New(suite.hasWriteCtx, suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
+	suite.datastore, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.Require().NoError(err)
 }
 
@@ -117,7 +117,7 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks
 
 	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
 	var err error
-	suite.datastore, err = New(suite.hasWriteCtx, mockStorage, mockCommentsStorage, mockIndexer, mockSearcher, nil)
+	suite.datastore, err = New(mockStorage, mockCommentsStorage, mockIndexer, mockSearcher, nil)
 	suite.Require().NoError(err)
 
 	return mockStorage, mockIndexer, mockSearcher
@@ -392,7 +392,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		})
 	}
 	var err error
-	suite.datastore, err = New(suite.hasWriteCtx, suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, mockPrunerFactory)
+	suite.datastore, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, mockPrunerFactory)
 	suite.Require().NoError(err)
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
@@ -584,7 +584,7 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(ctx.Any(), []string{"A", "B", "C"}).Return(nil)
 
-	_, err := New(context.TODO(), suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
+	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 
 	// Make listAlerts just A,B so C should be deleted
@@ -597,6 +597,6 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 	suite.indexer.EXPECT().DeleteProcessIndicators([]string{"C"}).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(ctx.Any(), []string{"A", "B", "C"}).Return(nil)
 
-	_, err = New(context.TODO(), suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
+	_, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 }
