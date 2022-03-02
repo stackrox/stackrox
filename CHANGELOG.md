@@ -6,8 +6,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
-- We no longer add suffix `-slim` to collector image tag (the suffix in the image name remains)
-- We no longer add suffix `-rhel` to collector, scanner, and scanner-db image name
+- `collector` image with `-slim` in the image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
+- `collector-rhel`, `main-rhel`, `scanner-rhel`, and `scanner-db-rhel` images are not published any more. These images were identical to non-rhel ones since version 3.66.
 - Increased default Scanner memory limit from 3000 MiB to 4GiB.
 - API changes/deprecations:
   - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaults (GET /v1/cluster-defaults)` instead.
