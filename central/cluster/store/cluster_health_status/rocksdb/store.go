@@ -139,7 +139,7 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	return b.crud.DeleteMany(ids)
 }
 // WalkAllWithID iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.ClusterHealthStatus) error) error {
+func (b *storeImpl) WalkAllWithID(_ context.Context, fn func(id string, obj *storage.ClusterHealthStatus) error) error {
 	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
 		return fn(string(id), msg.(*storage.ClusterHealthStatus))
 	})

@@ -145,7 +145,7 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error {
+func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.NetworkEntity) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
 		return fn(msg.(*storage.NetworkEntity))
 	})
