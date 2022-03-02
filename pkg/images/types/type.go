@@ -8,13 +8,6 @@ type GenericImage interface {
 	GetName() *storage.ImageName
 }
 
-// ImageWithMetadata defines the interface to interact with an image with metadata.
-// An ImageWithMetadata has an ID and *storage.ImageMetadata.
-type ImageWithMetadata interface {
-	GetId() string
-	GetMetadata() *storage.ImageMetadata
-}
-
 // ToImage converts a storage.ContainerImage to a storage.Image
 func ToImage(ci *storage.ContainerImage) *storage.Image {
 	return &storage.Image{

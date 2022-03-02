@@ -71,10 +71,10 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 		return nil, errors.Wrapf(err, "scan failed for image %s", name)
 	}
 
-	sha := utils.GetSHA(&imageWithMetadata{
-		id:       image.GetId(),
-		metadata: metadata,
-	})
+	// Image ID may not exist, if this image is not from an active deployment
+	// (for example the Admission Controller checks the image prior to deployment).
+	// Try to determine the SHA with best-effort.
+	sha := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
 
 	// 6. Get the image's vulnerabilities from Central.
 	centralResp, err := centralClient.GetImageVulnerabilitiesInternal(ctx, &v1.GetImageVulnerabilitiesInternalRequest{
