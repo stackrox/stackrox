@@ -6,7 +6,16 @@ export const selectors = {
     table: {
         createButton: 'button:contains("Create policy")',
         importButton: 'button:contains("Import policy")',
+        searchInput: '.react-select__input > input',
+        bulkActionsDropdownButton: 'button:contains("Bulk actions")',
+        bulkActionsDropdownItem:
+            'button:contains("Bulk actions") + ul[role="menu"] li[role="menuitem"]',
+        reassessButton: 'button:contains("Reassess all")',
         policyLink: 'td[data-label="Policy"] a',
+        statusCell: 'td[data-label="Status"]',
+        severityCell: 'td[data-label="Severity"]',
+        lifecycleCell: 'td[data-label="Lifecycle"]',
+        selectCheckbox: '.pf-c-table__check input[type="checkbox"]',
         actionsToggleButton: 'td.pf-c-table__action button.pf-c-dropdown__toggle',
         actionsItemButton: 'td.pf-c-table__action ul li[role="menuitem"] button',
     },
