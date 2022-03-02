@@ -245,6 +245,31 @@ func TestDropImageTagAndDigest(t *testing.T) {
 			image:         "invalid image",
 			expectedError: errors.New("invalid image name 'invalid image': invalid reference format"),
 		},
+		"docker.io and library with tag and sha": {
+			image:         "docker.io/library/nginx:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "docker.io/library/nginx",
+			expectedError: nil,
+		},
+		"no domain, library with tag and sha": {
+			image:         "library/nginx:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "library/nginx",
+			expectedError: nil,
+		},
+		"stackrox.io domain with tag and sha": {
+			image:         "stackrox.io/path/main:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "stackrox.io/path/main",
+			expectedError: nil,
+		},
+		"quay.io domain with tag and sha": {
+			image:         "quay.io/path/main:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "quay.io/path/main",
+			expectedError: nil,
+		},
+		"docker.io domain, no repository with tag and sha": {
+			image:         "docker.io/nginx:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedImage: "docker.io/nginx",
+			expectedError: nil,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

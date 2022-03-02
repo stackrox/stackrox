@@ -251,18 +251,24 @@ func DropImageTagAndDigest(image string) (string, error) {
 	if err != nil {
 		return image, errors.Wrapf(err, "invalid image name '%s'", image)
 	}
-	// We need to do the trim in two steps, otherwise 'docker.io' will be added to images that specify a path
-	// but not a domain (e.g. stackrox/main will become docker.io/stackrox/main)
-	retName := strings.TrimPrefix(ref.(reference.Named).Name(), "docker.io/")
-	retName = strings.TrimPrefix(retName, "library/")
-	if strings.HasPrefix(image, "docker.io/") {
-		retName = ref.(reference.Named).Name()
+
+	domain := reference.Domain(ref.(reference.Named))
+	path := reference.Path(ref.(reference.Named))
+	familiarName := reference.FamiliarName(ref.(reference.Named))
+	// If 'image' is already in familiar format
+	if image == reference.FamiliarString(ref) {
+		return familiarName, nil
+	} else {
+		// If it does not have a domain, but it has a repository
+		if strings.HasPrefix(image, path) {
+			return path, nil
+		}
+		// If we have 'docker.io' as domain but not the 'library' repository
+		// e.g. docker.io/nginx
+		domainAndName := fmt.Sprintf("%s/%s", domain, familiarName)
+		if strings.HasPrefix(image, domainAndName) {
+			return domainAndName, nil
+		}
 	}
-	if _, ok := ref.(reference.Digested); ok {
-		return retName, nil
-	}
-	if _, ok := ref.(reference.NamedTagged); ok {
-		return retName, nil
-	}
-	return retName, nil
+	return ref.(reference.Named).Name(), nil
 }
