@@ -18,6 +18,7 @@ type context struct {
 	getter         string
 	column         string
 	searchDisabled bool
+	skipPk         bool
 }
 
 func (c context) Getter(name string) string {
@@ -40,6 +41,7 @@ func (c context) childContext(name string, searchDisabled bool) context {
 		getter:         c.Getter(name),
 		column:         c.Column(name),
 		searchDisabled: c.searchDisabled || searchDisabled,
+		skipPk:         false,
 	}
 }
 
@@ -116,6 +118,11 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if opts.Ignored {
 			continue
 		}
+
+		if ctx.skipPk {
+			opts.PrimaryKey = false
+		}
+
 		searchOpts := getSearchOptions(ctx, structField.Tag.Get("search"))
 
 		field := Field{
@@ -181,7 +188,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 
-			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored}, childSchema, structField.Type.Elem().Elem())
+			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, skipPk: true}, childSchema, structField.Type.Elem().Elem())
 			continue
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored), schema, structField.Type)
