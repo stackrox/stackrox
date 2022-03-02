@@ -107,7 +107,7 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	mockStorage.EXPECT().GetKeysToIndex(suite.hasWriteCtx).Return(nil, nil)
+	mockStorage.EXPECT().GetKeysToIndex(context.TODO()).Return(nil, nil)
 
 	mockCommentsStorage := commentsStoreMocks.NewMockStore(suite.mockCtrl)
 
