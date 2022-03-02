@@ -95,7 +95,7 @@ outer:
 				}
 			}
 
-			return scannedImage, err
+			return nil, err
 		}
 
 		metrics.ObserveTimeSpentInExponentialBackoff(timeSpentInBackoffSoFar)
