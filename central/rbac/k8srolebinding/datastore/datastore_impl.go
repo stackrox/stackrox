@@ -28,13 +28,13 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) buildIndex() error {
+func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing rolebindings")
 
 	var bindings []*storage.K8SRoleBinding
 	var count int
-	err := d.storage.Walk(func(binding *storage.K8SRoleBinding) error {
+	err := d.storage.Walk(ctx, func(binding *storage.K8SRoleBinding) error {
 		bindings = append(bindings, binding)
 		if len(bindings) == batchSize {
 			if err := d.indexer.AddK8sRoleBindings(bindings); err != nil {
@@ -56,7 +56,7 @@ func (d *datastoreImpl) buildIndex() error {
 }
 
 func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
-	binding, found, err := d.storage.Get(id)
+	binding, found, err := d.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -83,7 +83,7 @@ func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Upsert(request); err != nil {
+	if err := d.storage.Upsert(ctx, request); err != nil {
 		return err
 	}
 	return d.indexer.AddK8sRoleBinding(request)
@@ -96,7 +96,7 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Delete(id); err != nil {
+	if err := d.storage.Delete(ctx, id); err != nil {
 		return err
 	}
 	return d.indexer.DeleteK8sRoleBinding(id)
