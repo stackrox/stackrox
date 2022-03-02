@@ -2,7 +2,6 @@ package reprocessor
 
 import (
 	"context"
-	"runtime/debug"
 	"time"
 
 	"github.com/pkg/errors"
@@ -186,7 +185,6 @@ func (l *loopImpl) Stop() {
 }
 
 func (l *loopImpl) ShortCircuit() {
-	debug.PrintStack()
 	// Signal that we should run a short circuited reprocessing. If the signal is already triggered, then the current
 	// signal is effectively deduped
 	l.shortCircuitSig.Signal()

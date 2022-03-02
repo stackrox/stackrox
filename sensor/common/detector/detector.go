@@ -2,7 +2,6 @@ package detector
 
 import (
 	"sort"
-	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -256,9 +255,6 @@ func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 
 	newValue := &cacheValue{
 		image: image,
-	}
-	if strings.Contains(image.GetName().GetFullName(), "registry-image") {
-		log.Infof("Adding image to cache: %+v", image.GetName().GetFullName())
 	}
 	d.enricher.imageCache.Add(key, newValue)
 	d.admissionCacheNeedsFlush = true

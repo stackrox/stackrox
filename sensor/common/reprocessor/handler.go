@@ -91,7 +91,6 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 			}
 			keysToDelete = append(keysToDelete, key)
 		}
-		log.Infof("Removing keys: %+v", keysToDelete)
 		h.imageCache.Remove(keysToDelete...)
 	}
 	return nil

@@ -41,7 +41,7 @@ test: proto-generated-srcs
 .PHONY: bat-test
 bat-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=TARGET
+	$(GRADLE) test -Dgroups=BAT
 
 .PHONY: smoke-test
 smoke-test: proto-generated-srcs

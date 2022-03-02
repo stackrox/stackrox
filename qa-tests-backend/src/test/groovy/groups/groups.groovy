@@ -14,4 +14,3 @@ package groups
 @interface GraphQL { }
 @interface Notifiers { }
 @interface K8sEvents { }
-@interface TARGET { }
