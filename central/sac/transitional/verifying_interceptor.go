@@ -67,7 +67,7 @@ var (
 func VerifySACScopeChecksInterceptor(ctx context.Context, req interface{}, serverInfo *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	// We cannot validate the built-in scoped authorizer's permission checks
 	// because it does not check permissions via ScopeCheckerCore::TryAllowed().
-	if sac.IsContextBuiltinScopedAuthzEnabled(ctx) {
+	if !sac.IsContextPluginScopedAuthzEnabled(ctx) {
 		return handler(ctx, req)
 	}
 
