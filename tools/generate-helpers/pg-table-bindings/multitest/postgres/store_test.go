@@ -16,16 +16,16 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type AlertsStoreSuite struct {
+type MultikeyStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 }
 
-func TestAlertsStore(t *testing.T) {
-	suite.Run(t, new(AlertsStoreSuite))
+func TestMultikeyStore(t *testing.T) {
+	suite.Run(t, new(MultikeyStoreSuite))
 }
 
-func (s *AlertsStoreSuite) SetupTest() {
+func (s *MultikeyStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -35,11 +35,11 @@ func (s *AlertsStoreSuite) SetupTest() {
 	}
 }
 
-func (s *AlertsStoreSuite) TearDownTest() {
+func (s *MultikeyStoreSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s *AlertsStoreSuite) TestStore() {
+func (s *MultikeyStoreSuite) TestStore() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	if err != nil {
@@ -52,35 +52,35 @@ func (s *AlertsStoreSuite) TestStore() {
 	Destroy(pool)
 	store := New(pool)
 
-	alert := fixtures.GetAlert()
-	foundAlert, exists, err := store.Get(alert.GetId())
+	testMultiKeyStruct := fixtures.GetTestMultiKeyStruct()
+	foundTestMultiKeyStruct, exists, err := store.Get(testMultiKeyStruct.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundAlert)
+	s.Nil(foundTestMultiKeyStruct)
 
-	s.NoError(store.Upsert(alert))
-	foundAlert, exists, err = store.Get(alert.GetId())
+	s.NoError(store.Upsert(testMultiKeyStruct))
+	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(alert, foundAlert)
+	s.Equal(testMultiKeyStruct, foundTestMultiKeyStruct)
 
-	alertCount, err := store.Count()
+	testMultiKeyStructCount, err := store.Count()
 	s.NoError(err)
-	s.Equal(alertCount, 1)
+	s.Equal(testMultiKeyStructCount, 1)
 
-	alertExists, err := store.Exists(alert.GetId())
+	testMultiKeyStructExists, err := store.Exists(testMultiKeyStruct.GetId())
 	s.NoError(err)
-	s.True(alertExists)
-	s.NoError(store.Upsert(alert))
+	s.True(testMultiKeyStructExists)
+	s.NoError(store.Upsert(testMultiKeyStruct))
 
-	foundAlert, exists, err = store.Get(alert.GetId())
+	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(alert, foundAlert)
+	s.Equal(testMultiKeyStruct, foundTestMultiKeyStruct)
 
-	s.NoError(store.Delete(alert.GetId()))
-	foundAlert, exists, err = store.Get(alert.GetId())
+	s.NoError(store.Delete(testMultiKeyStruct.GetId()))
+	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundAlert)
+	s.Nil(foundTestMultiKeyStruct)
 }
