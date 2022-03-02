@@ -267,6 +267,7 @@ class NetworkFlowTest extends BaseSpecification {
         println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
+        sleep(60000)
 
         then:
         "Wait for collector update and fetch graph again to confirm connection dropped"

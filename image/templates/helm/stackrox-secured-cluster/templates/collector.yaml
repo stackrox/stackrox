@@ -54,6 +54,10 @@ spec:
           value: {{ ._rox.sensor.endpoint }}
         - name: SNI_HOSTNAME
           value: "sensor.stackrox.svc"
+        - name: ROX_AFTERGLOW_PERIOD
+          value: "{{ ._rox.collector.roxAfterglowPeriod }}"
+        - name: ROX_ENABLE_AFTERGLOW
+          value: "{{ ._rox.collector.roxEnableAfterglow }}"
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
           {{- ._rox.collector._resources | nindent 10 }}

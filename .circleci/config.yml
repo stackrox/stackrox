@@ -1930,6 +1930,11 @@ commands:
               kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
             fi
 
+      - run:
+          name: "Patch collector"
+          command: |
+            kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD=15
+
       - when:
           condition: << parameters.validate-sensor-bundle >>
           steps:

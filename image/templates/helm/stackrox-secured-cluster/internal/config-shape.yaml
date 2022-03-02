@@ -105,6 +105,8 @@ collector:
   nodeSelector: null # string | dict
   disableSELinuxOptions: null # bool
   seLinuxOptionsType: null # string
+  roxAfterglowPeriod: null # string
+  roxEnableAfterglow: null # string
 auditLogs:
   disableCollection: null # bool
 customize:

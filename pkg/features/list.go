@@ -47,4 +47,7 @@ var (
 
 	// PostgresDatastore enables Postgres datastore.
 	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
+
+	// Afterglow enables afteglow for network flows in Collector.
+	Afterglow = registerFeature("Enables afteglow for network flows in Collector", "ROX_ENABLE_AFTERGLOW", true)
 )
