@@ -36,7 +36,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(result *storage.Compli
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles read")
 	}
-	return d.store.Walk(fn)
+	return d.store.Walk(ctx, fn)
 }
 
 func (d *datastoreImpl) Upsert(ctx context.Context, result *storage.ComplianceOperatorProfile) error {
@@ -45,7 +45,7 @@ func (d *datastoreImpl) Upsert(ctx context.Context, result *storage.ComplianceOp
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles write")
 	}
-	return d.store.Upsert(result)
+	return d.store.Upsert(ctx, result)
 }
 
 func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
@@ -54,5 +54,5 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles write")
 	}
-	return d.store.Delete(id)
+	return d.store.Delete(ctx, id)
 }

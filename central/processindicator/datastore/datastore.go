@@ -55,9 +55,10 @@ func New(storage store.Store, commentsStorage commentsstore.Store, indexer index
 		stopSig:               concurrency.NewSignal(),
 		stoppedSig:            concurrency.NewSignal(),
 	}
-	if err := d.buildIndex(); err != nil {
+	ctx := context.TODO()
+	if err := d.buildIndex(ctx); err != nil {
 		return nil, err
 	}
-	go d.prunePeriodically()
+	go d.prunePeriodically(ctx)
 	return d, nil
 }

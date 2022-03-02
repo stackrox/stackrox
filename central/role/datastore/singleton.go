@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/globaldb"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
@@ -46,10 +48,11 @@ func Singleton() DataStore {
 			}
 		}
 
+		ctx := context.TODO()
 		roles, permissionSets, accessScopes := getDefaultObjects()
-		utils.Must(roleStorage.UpsertMany(roles))
-		utils.Must(permissionSetStorage.UpsertMany(permissionSets))
-		utils.Must(accessScopeStorage.UpsertMany(accessScopes))
+		utils.Must(roleStorage.UpsertMany(ctx, roles))
+		utils.Must(permissionSetStorage.UpsertMany(ctx, permissionSets))
+		utils.Must(accessScopeStorage.UpsertMany(ctx, accessScopes))
 	})
 	return ds
 }

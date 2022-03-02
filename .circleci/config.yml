@@ -504,11 +504,24 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.29
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.30
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
     working_directory: /go/src/github.com/stackrox/rox
+
+  stackrox-build:
+    parameters:
+      resource_class:
+        type: string
+        default: medium
+    resource_class: << parameters.resource_class >>
+    docker:
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-build-0.3.30
+        auth:
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
+    working_directory: /go/src/github.com/stackrox/stackrox
 
 commands:
   collect-k8s-logs:
@@ -4870,6 +4883,22 @@ jobs:
           path: /tmp/artifact_dir/howto-locate-artifacts.html
           destination: howto-locate-artifacts.html
 
+  # Mimic an OpenShift CI `binary_build_commands` step
+  openshift-ci-binary-build-commands:
+    executor: stackrox-build
+    resource_class: large
+    steps:
+      - checkout
+      - run:
+          command: |
+            make main-build-nodeps
+      - run:
+          command: |
+            make cli
+      - run:
+          command: |
+            make -C ui build
+
 workflows:
   version: 2
 
@@ -5139,11 +5168,19 @@ workflows:
       - openshift-ci-upgrade-test:
           context:
           - quay-rhacs-eng-readonly
-          filters:
+          filters: &roxbotAndOSCIBranches
             branches:
-              only: /.*RS-454.*/
+              only: /.*(roxbot|osci).*/
           requires:
             - build
+
+      - openshift-ci-binary-build-commands:
+          context:
+          - quay-rhacs-eng-readonly
+          filters:
+            <<: *roxbotAndOSCIBranches
+          requires:
+            - pre-create-tag
 
       - retrigger-master-workflow:
           context: custom-executor-pull
