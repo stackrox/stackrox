@@ -115,7 +115,7 @@ type AdmissionControlComponentSpec struct {
 
 	// Maximum timeout period for admission review, upon which admission review will fail open.
 	// Use it to set request timeouts when you enable inline image scanning.
-	// The default kubectl timeout is 30 seconds, with padding this should not exceed 25 seconds.
+	// The default kubectl timeout is 30 seconds; taking padding into account, this should not exceed 25 seconds.
 	//+kubebuilder:default=20
 	//+kubebuilder:validation:Minimum=1
 	//+kubebuilder:validation:Maximum=25
