@@ -386,26 +386,25 @@ describe('Cluster Health', () => {
     const datetimeISOString = '2020-08-31T13:01:00Z'; // for comparison to `lastContact` and `sensorCertExpiry` in clusters fixture
 
     const expectedClusters = [
-        // TODO(ROX-9546): Enable this test
-        // {
-        //     expectedInListAndSide: {
-        //         clusterName: 'alpha-amsterdam-1',
-        //         cloudProvider: 'Not applicable',
-        //         clusterStatus: 'Uninitialized',
-        //         sensorUpgrade: 'Not applicable',
-        //         credentialExpiration: 'Not applicable',
-        //     },
-        //     expectedInSide: {
-        //         admissionControlHealthInfo: null,
-        //         collectorHealthInfo: null,
-        //         healthInfoComplete: null,
-        //         sensorVersion: null,
-        //         centralVersion: null,
-        //         sensorStatus: 'Uninitialized',
-        //         collectorStatus: 'Uninitialized',
-        //         admissionControlStatus: 'Uninitialized',
-        //     },
-        // },
+        {
+            expectedInListAndSide: {
+                clusterName: 'alpha-amsterdam-1',
+                cloudProvider: 'Not applicable',
+                clusterStatus: 'Uninitialized',
+                sensorUpgrade: 'Not applicable',
+                credentialExpiration: 'Not applicable',
+            },
+            expectedInSide: {
+                admissionControlHealthInfo: null,
+                collectorHealthInfo: null,
+                healthInfoComplete: null,
+                sensorVersion: null,
+                centralVersion: null,
+                sensorStatus: 'Uninitialized',
+                collectorStatus: 'Uninitialized',
+                admissionControlStatus: 'Uninitialized',
+            },
+        },
         {
             expectedInListAndSide: {
                 clusterName: 'epsilon-edison-5',
@@ -597,7 +596,7 @@ describe('Cluster Health', () => {
             admissionControlStatus,
         } = expectedInSide;
 
-        it(`should appear in the form for ${clusterName}`, () => {
+        const clusterFormTest = () => {
             visitClusterByNameWithFixtureMetadataDatetime(
                 clusterName,
                 fixturePath,
@@ -672,6 +671,15 @@ describe('Cluster Health', () => {
                 'have.text',
                 credentialExpiration
             );
-        });
+        };
+        // TODO(ROX-9546): Enable this test
+        if (clusterName === 'alpha-amsterdam-1') {
+            it.skip(
+                `should appear in the form for ${clusterName}: skipped (ROX-9546)`,
+                clusterFormTest
+            );
+        } else {
+            it(`should appear in the form for ${clusterName}`, clusterFormTest);
+        }
     });
 });
