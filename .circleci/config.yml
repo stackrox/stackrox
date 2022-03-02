@@ -4220,7 +4220,7 @@ jobs:
       - ROX_VULN_RISK_MANAGEMENT: true
       - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
-
+      - ROX_LOCAL_IMAGE_SCANNING: true
 
     steps:
       - run-qa-tests:
