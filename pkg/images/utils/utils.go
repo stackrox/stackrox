@@ -258,17 +258,16 @@ func DropImageTagAndDigest(image string) (string, error) {
 	// If 'image' is already in familiar format
 	if image == reference.FamiliarString(ref) {
 		return familiarName, nil
-	} else {
-		// If it does not have a domain, but it has a repository
-		if strings.HasPrefix(image, path) {
-			return path, nil
-		}
-		// If we have 'docker.io' as domain but not the 'library' repository
-		// e.g. docker.io/nginx
-		domainAndName := fmt.Sprintf("%s/%s", domain, familiarName)
-		if strings.HasPrefix(image, domainAndName) {
-			return domainAndName, nil
-		}
+	}
+	// If it does not have a domain, but it has a repository
+	if strings.HasPrefix(image, path) {
+		return path, nil
+	}
+	// If we have 'docker.io' as domain but not the 'library' repository
+	// e.g. docker.io/nginx
+	domainAndName := fmt.Sprintf("%s/%s", domain, familiarName)
+	if strings.HasPrefix(image, domainAndName) {
+		return domainAndName, nil
 	}
 	return ref.(reference.Named).Name(), nil
 }
