@@ -386,25 +386,26 @@ describe('Cluster Health', () => {
     const datetimeISOString = '2020-08-31T13:01:00Z'; // for comparison to `lastContact` and `sensorCertExpiry` in clusters fixture
 
     const expectedClusters = [
-        {
-            expectedInListAndSide: {
-                clusterName: 'alpha-amsterdam-1',
-                cloudProvider: 'Not applicable',
-                clusterStatus: 'Uninitialized',
-                sensorUpgrade: 'Not applicable',
-                credentialExpiration: 'Not applicable',
-            },
-            expectedInSide: {
-                admissionControlHealthInfo: null,
-                collectorHealthInfo: null,
-                healthInfoComplete: null,
-                sensorVersion: null,
-                centralVersion: null,
-                sensorStatus: 'Uninitialized',
-                collectorStatus: 'Uninitialized',
-                admissionControlStatus: 'Uninitialized',
-            },
-        },
+        // TODO(ROX-9546): Enable this test
+        // {
+        //     expectedInListAndSide: {
+        //         clusterName: 'alpha-amsterdam-1',
+        //         cloudProvider: 'Not applicable',
+        //         clusterStatus: 'Uninitialized',
+        //         sensorUpgrade: 'Not applicable',
+        //         credentialExpiration: 'Not applicable',
+        //     },
+        //     expectedInSide: {
+        //         admissionControlHealthInfo: null,
+        //         collectorHealthInfo: null,
+        //         healthInfoComplete: null,
+        //         sensorVersion: null,
+        //         centralVersion: null,
+        //         sensorStatus: 'Uninitialized',
+        //         collectorStatus: 'Uninitialized',
+        //         admissionControlStatus: 'Uninitialized',
+        //     },
+        // },
         {
             expectedInListAndSide: {
                 clusterName: 'epsilon-edison-5',
