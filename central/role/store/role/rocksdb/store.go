@@ -96,7 +96,7 @@ func (b *storeImpl) Get(_ context.Context, id string) (*storage.Role, bool, erro
 	return msg.(*storage.Role), true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice 
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Role, []int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "Role")
 

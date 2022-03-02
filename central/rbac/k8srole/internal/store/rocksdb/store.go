@@ -90,7 +90,7 @@ func (b *storeImpl) Get(_ context.Context, id string) (*storage.K8SRole, bool, e
 	return msg.(*storage.K8SRole), true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice 
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.K8SRole, []int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "K8SRole")
 
