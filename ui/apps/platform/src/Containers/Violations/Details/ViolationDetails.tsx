@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Flex, FlexItem, Title } from '@patternfly/react-core';
+import { Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
 import ViolationTags from './AnalystNotes/ViolationTags';
@@ -23,10 +23,13 @@ function ViolationDetails({
     const showRuntimeMessages = processViolation?.processes?.length || lifecycleStage === 'RUNTIME';
     const showDeploytimeMessages = lifecycleStage === 'DEPLOY';
     return (
-        <Flex className="pf-u-mt-md">
+        <Flex>
             <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                 <FlexItem>
-                    <Title headingLevel="h3">Violation events</Title>
+                    <Title headingLevel="h3" className="pf-u-mb-md">
+                        Violation events
+                    </Title>
+                    <Divider component="div" />
                 </FlexItem>
                 {showRuntimeMessages && (
                     <FlexItem>
@@ -48,7 +51,10 @@ function ViolationDetails({
                 flex={{ default: 'flex_1' }}
             >
                 <FlexItem>
-                    <Title headingLevel="h3">Add violation metadata</Title>
+                    <Title headingLevel="h3" className="pf-u-mb-md">
+                        Add violation metadata
+                    </Title>
+                    <Divider component="div" />
                 </FlexItem>
                 <FlexItem data-testid="violation-tags">
                     <ViolationTags resourceId={violationId} />
