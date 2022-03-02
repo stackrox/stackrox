@@ -164,14 +164,28 @@ func TestComputeOverrides(t *testing.T) {
 func TestConfigureImageOverrides(t *testing.T) {
 	testFlavor := flavorUtils.MakeImageFlavorForTest(t)
 	cases := map[string]struct {
-		configValues         CommonConfig
-		expectedMainRegistry string
+		configValues               CommonConfig
+		expectedMainRegistry       string
+		expectedMainOverrides      map[string]string
+		expectedScannerOverrides   map[string]string
+		expectedScannerDBOverrides map[string]string
 	}{
 		"Override Main Registry": {
 			configValues: CommonConfig{
-				MainImage: "quay.io/rhacs/main",
+				MainImage:      "quay.io/rhacs/main",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
 			},
 			expectedMainRegistry: "quay.io/rhacs",
+			expectedMainOverrides: map[string]string{
+				"Tag": "latest",
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
 		},
 		"Don't override main registry": {
 			configValues: CommonConfig{
@@ -180,7 +194,376 @@ func TestConfigureImageOverrides(t *testing.T) {
 				ScannerDBImage: testFlavor.ScannerDBImage(),
 			},
 		},
-		// TODO(RS-397): Cover other overrides in this test cases (e.g. scanner and scanner-db overrides
+		"Override Main tag": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/main:1.2.4",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainOverrides: map[string]string{
+				"Tag": "1.2.4",
+			},
+		},
+		"Override Main sha": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/main@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainOverrides: map[string]string{
+				"Tag": "@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			},
+		},
+		"Override Main tag and sha": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/main:1.2.4@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainOverrides: map[string]string{
+				"Tag": "1.2.4@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			},
+		},
+		"Override Main name": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/my-main",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainOverrides: map[string]string{
+				"Name": "my-main",
+				"Tag":  "latest",
+			},
+		},
+		"Override Main name and tag": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/my-main:1.2.4",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainOverrides: map[string]string{
+				"Name": "my-main",
+				"Tag":  "1.2.4",
+			},
+		},
+		"Override Main registry, name and tag": {
+			configValues: CommonConfig{
+				MainImage:      "quay.io/rhacs/my-main:1.2.4",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainRegistry: "quay.io/rhacs",
+			expectedMainOverrides: map[string]string{
+				"Name": "my-main",
+				"Tag":  "1.2.4",
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+		},
+		"Override Main sub-repo": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/sub-repo/main",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainRegistry: "test.registry/sub-repo",
+			expectedMainOverrides: map[string]string{
+				"Tag": "latest",
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+		},
+		"Override Main sub-repo and name": {
+			configValues: CommonConfig{
+				MainImage:      "test.registry/sub-repo/my-main",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainOverrides: map[string]string{
+				"Name": "sub-repo/my-main",
+				"Tag":  "latest",
+			},
+		},
+		"Override Main registry and tag": {
+			configValues: CommonConfig{
+				MainImage:      "quay.io/main:1.2.4",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainRegistry: "quay.io",
+			expectedMainOverrides: map[string]string{
+				"Tag": "1.2.4",
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+		},
+		// Scanner
+		"Override Scanner registry": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "quay.io/rhacs/scanner",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "quay.io/rhacs",
+				"Tag":      "latest",
+			},
+		},
+		"Override Scanner tag": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "test.registry/scanner:1.2.3",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Tag": "1.2.3",
+			},
+		},
+		"Override Scanner sha": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "test.registry/scanner@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Tag": "@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			},
+		},
+		"Override Scanner tag and sha": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "test.registry/scanner:1.2.3@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Tag": "1.2.3@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			},
+		},
+		"Override Scanner name": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "test.registry/my-scanner",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Name": "my-scanner",
+				"Tag":  "latest",
+			},
+		},
+		"Override Scanner name and tag": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "test.registry/my-scanner:1.2.3",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Name": "my-scanner",
+				"Tag":  "1.2.3",
+			},
+		},
+		"Override Scanner registry, name and tag": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "quay.io/rhacs/my-scanner:1.2.3",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "quay.io/rhacs",
+				"Name":     "my-scanner",
+				"Tag":      "1.2.3",
+			},
+		},
+		"Override Scanner sub-repo": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "test.registry/sub-repo/scanner",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "test.registry/sub-repo",
+				"Tag":      "latest",
+			},
+		},
+		"Override Scanner sub-repo and name": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "test.registry/sub-repo/my-scanner",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Name": "sub-repo/my-scanner",
+				"Tag":  "latest",
+			},
+		},
+		"Override Scanner registry and tag": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   "quay.io/scanner:1.2.3",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "quay.io",
+				"Tag":      "1.2.3",
+			},
+		},
+		// ScannerDB
+		"Override ScannerDB registry": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "quay.io/rhacs/scanner-db",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "quay.io/rhacs",
+				"Tag":      "latest",
+			},
+		},
+		"Override ScannerDB tag": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "test.registry/scanner-db:1.2.3",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Tag": "1.2.3",
+			},
+		},
+		"Override ScannerDB sha": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "test.registry/scanner-db@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Tag": "@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			},
+		},
+		"Override ScannerDB tag and sha": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "test.registry/scanner-db:1.2.3@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Tag": "1.2.3@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			},
+		},
+		"Override ScannerDB name": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "test.registry/my-scanner-db",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Name": "my-scanner-db",
+				"Tag":  "latest",
+			},
+		},
+		"Override ScannerDB name and tag": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerDBImage: "test.registry/my-scanner-db:1.2.3",
+				ScannerImage:   testFlavor.ScannerImage(),
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Name": "my-scanner-db",
+				"Tag":  "1.2.3",
+			},
+		},
+		"Override ScannerDB registry, name and tag": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerDBImage: "quay.io/rhacs/my-scanner-db:1.2.3",
+				ScannerImage:   testFlavor.ScannerImage(),
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "quay.io/rhacs",
+				"Name":     "my-scanner-db",
+				"Tag":      "1.2.3",
+			},
+		},
+		"Override ScannerDB sub-repo": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "test.registry/sub-repo/scanner-db",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "test.registry/sub-repo",
+				"Tag":      "latest",
+			},
+		},
+		"Override ScannerDB sub-repo and name": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "test.registry/sub-repo/my-scanner-db",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Name": "sub-repo/my-scanner-db",
+				"Tag":  "latest",
+			},
+		},
+		"Override ScannerDB registry and tag": {
+			configValues: CommonConfig{
+				MainImage:      testFlavor.MainImage(),
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "quay.io/scanner-db:1.2.3",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "quay.io",
+				"Tag":      "1.2.3",
+			},
+		},
+		// Registries combinations
+		"Override Main and Scanner registries": {
+			configValues: CommonConfig{
+				MainImage:      "quay.io/rhacs/main",
+				ScannerImage:   "stackrox.io/scanner",
+				ScannerDBImage: testFlavor.ScannerDBImage(),
+			},
+			expectedMainRegistry: "quay.io/rhacs",
+			expectedMainOverrides: map[string]string{
+				"Tag": "latest",
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "stackrox.io",
+				"Tag":      "latest",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+		},
+		"Override Main and ScannerDB registries": {
+			configValues: CommonConfig{
+				MainImage:      "quay.io/rhacs/main",
+				ScannerImage:   testFlavor.ScannerImage(),
+				ScannerDBImage: "stackrox.io/scanner-db",
+			},
+			expectedMainRegistry: "quay.io/rhacs",
+			expectedMainOverrides: map[string]string{
+				"Tag": "latest",
+			},
+			expectedScannerOverrides: map[string]string{
+				"Registry": "test.registry",
+			},
+			expectedScannerDBOverrides: map[string]string{
+				"Registry": "stackrox.io",
+				"Tag":      "latest",
+			},
+		},
 	}
 
 	for name, c := range cases {
@@ -199,12 +582,22 @@ func TestConfigureImageOverrides(t *testing.T) {
 			assert.NotNil(t, config.K8sConfig.ImageOverrides)
 			if c.expectedMainRegistry != "" {
 				assert.Equal(t, c.expectedMainRegistry, config.K8sConfig.ImageOverrides["MainRegistry"])
+			}
+			if c.expectedMainOverrides != nil {
+				assert.Equal(t, c.expectedMainOverrides, config.K8sConfig.ImageOverrides["Main"].(map[string]string))
 			} else {
 				assert.Len(t, config.K8sConfig.ImageOverrides["Main"], 0, "should have no keys in Main map")
+			}
+			if c.expectedScannerOverrides != nil {
+				assert.Equal(t, c.expectedScannerOverrides, config.K8sConfig.ImageOverrides["Scanner"].(map[string]string))
+			} else {
 				assert.Len(t, config.K8sConfig.ImageOverrides["Scanner"], 0, "should have no keys in Scanner map")
+			}
+			if c.expectedScannerDBOverrides != nil {
+				assert.Equal(t, c.expectedScannerDBOverrides, config.K8sConfig.ImageOverrides["ScannerDB"].(map[string]string))
+			} else {
 				assert.Len(t, config.K8sConfig.ImageOverrides["ScannerDB"], 0, "should have no keys in ScannerDB map")
 			}
-
 		})
 	}
 }
