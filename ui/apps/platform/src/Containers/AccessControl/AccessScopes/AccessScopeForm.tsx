@@ -18,6 +18,7 @@ import {
     LabelSelector,
     LabelSelectorsKey,
     computeEffectiveAccessScopeClusters,
+    defaultAccessScopeIds,
 } from 'services/AccessScopesService';
 
 import {
@@ -83,9 +84,12 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
      * A label selector or set requirement is temporarily invalid when it is added,
      * before its first requirement or value has been added.
      */
-    const isValidRules = getIsValidRules(values.rules);
-
+    const isValidRules =
+        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
     useEffect(() => {
+        if (values.id === defaultAccessScopeIds.Unrestricted) {
+            return;
+        }
         setCounterComputing((counterPrev) => counterPrev + 1);
         computeEffectiveAccessScopeClusters(
             isValidRules ? values.rules : getTemporarilyValidRules(values.rules)
@@ -191,44 +195,46 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 />
             </FormGroup>
             {alertCompute}
-            <Flex
-                direction={{ default: 'row' }}
-                spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}
-            >
-                <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
-                    <FormGroup
-                        label="Allowed resources"
-                        fieldId="effectiveAccessScope"
-                        labelIcon={labelIconEffectiveAccessScope}
-                    >
-                        <EffectiveAccessScopeTable
-                            counterComputing={counterComputing}
-                            clusters={clusters}
-                            includedClusters={values.rules.includedClusters}
-                            includedNamespaces={values.rules.includedNamespaces}
-                            handleIncludedClustersChange={handleIncludedClustersChange}
-                            handleIncludedNamespacesChange={handleIncludedNamespacesChange}
-                            hasAction={hasAction}
-                        />
-                    </FormGroup>
-                </FlexItem>
-                <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
-                    <FormGroup
-                        label="Label selection rules"
-                        fieldId="labelInclusion"
-                        labelIcon={labelIconLabelInclusion}
-                    >
-                        <LabelInclusion
-                            clusterLabelSelectors={values.rules.clusterLabelSelectors}
-                            namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
-                            hasAction={hasAction}
-                            labelSelectorsEditingState={labelSelectorsEditingState}
-                            setLabelSelectorsEditingState={setLabelSelectorsEditingState}
-                            handleLabelSelectorsChange={handleLabelSelectorsChange}
-                        />
-                    </FormGroup>
-                </FlexItem>
-            </Flex>
+            {values.id !== defaultAccessScopeIds.Unrestricted && (
+                <Flex
+                    direction={{ default: 'row' }}
+                    spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}
+                >
+                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                        <FormGroup
+                            label="Allowed resources"
+                            fieldId="effectiveAccessScope"
+                            labelIcon={labelIconEffectiveAccessScope}
+                        >
+                            <EffectiveAccessScopeTable
+                                counterComputing={counterComputing}
+                                clusters={clusters}
+                                includedClusters={values.rules.includedClusters}
+                                includedNamespaces={values.rules.includedNamespaces}
+                                handleIncludedClustersChange={handleIncludedClustersChange}
+                                handleIncludedNamespacesChange={handleIncludedNamespacesChange}
+                                hasAction={hasAction}
+                            />
+                        </FormGroup>
+                    </FlexItem>
+                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                        <FormGroup
+                            label="Label selection rules"
+                            fieldId="labelInclusion"
+                            labelIcon={labelIconLabelInclusion}
+                        >
+                            <LabelInclusion
+                                clusterLabelSelectors={values.rules.clusterLabelSelectors}
+                                namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
+                                hasAction={hasAction}
+                                labelSelectorsEditingState={labelSelectorsEditingState}
+                                setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                                handleLabelSelectorsChange={handleLabelSelectorsChange}
+                            />
+                        </FormGroup>
+                    </FlexItem>
+                </Flex>
+            )}
         </Form>
     );
 }

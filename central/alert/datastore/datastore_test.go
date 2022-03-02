@@ -311,7 +311,7 @@ func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID 
 	identity.EXPECT().FullName().AnyTimes().Return(userID)
 	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
 	identity.EXPECT().User().AnyTimes().Return(nil)
-	dummyRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+	dummyRole := roletest.NewResolvedRoleWithDenyAll("Dummy", nil)
 	identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{dummyRole})
 	identity.EXPECT().Permissions().AnyTimes().Return(utils.FromResourcesWithAccess(resourceWithAccess...))
 

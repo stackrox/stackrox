@@ -478,7 +478,8 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	badScope := getInvalidAccessScope("scope.new", "new invalid scope")
 	mimicScope := getValidAccessScope("scope.new", "existing scope")
 	cloneScope := getValidAccessScope("scope.existing", "new existing scope")
-	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall", role.AccessScopeExcludeAll.GetName())
+	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall",
+		role.AccessScopeExcludeAll.GetName())
 
 	err := s.dataStore.AddAccessScope(s.hasWriteCtx, badScope)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid scope for Add*() yields an error")
@@ -567,12 +568,7 @@ func (s *roleDataStoreTestSuite) TestGetAndResolveRole() {
 	s.Nil(resolvedRole)
 
 	err = s.dataStore.AddRole(s.hasWriteCtx, noScopeRole)
-	s.NoError(err)
-	resolvedRole, err = s.dataStore.GetAndResolveRole(s.hasReadCtx, noScopeRole.GetName())
-	s.NoError(err, "no error if the role does not reference a scope")
-	s.Equal(noScopeRole.GetName(), resolvedRole.GetRoleName())
-	s.Equal(s.existingPermissionSet.GetResourceToAccess(), resolvedRole.GetPermissions())
-	s.Nil(resolvedRole.GetAccessScope())
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs)
 
 	resolvedRole, err = s.dataStore.GetAndResolveRole(s.hasReadCtx, s.existingRole.GetName())
 	s.NoError(err)

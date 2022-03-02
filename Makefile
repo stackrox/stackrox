@@ -16,20 +16,14 @@ endif
 # 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
 ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
 
-# Compute the tag of the build image based on the contents of the tracked files in
-# build. This ensures that we build it if and only if necessary, pulling from DockerHub
-# otherwise.
-# `git ls-files -sm build` prints all files in build (including extra entries for locally
-# modified files), along with the SHAs, and `git hash-object` just computes the SHA of that.
-BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
-
-BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
+BUILD_IMAGE := stackrox/apollo-ci:$(BUILD_IMAGE_VERSION)
 MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE_BASE := stackrox/docs
 
 ifdef CI
     QUAY_REPO := rhacs-eng
-    BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+    BUILD_IMAGE := quay.io/$(QUAY_REPO)/apollo-ci:$(BUILD_IMAGE_VERSION)
     MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
     DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
 endif
@@ -381,9 +375,8 @@ build-volumes:
 .PHONY: main-builder-image
 main-builder-image: build-volumes
 	@echo "+ $@"
-	scripts/ensure_image.sh $(BUILD_IMAGE) build/Dockerfile_rhel build/
 	@# Ensure that the go version in the image matches the expected version
-	# If the next line fails, you need to update the go version in build/Dockerfile_rhel.
+	# If the next line fails, you need to update the go version in rox-ci-image/images/stackrox-build.Dockerfile
 	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
 
 .PHONY: main-build

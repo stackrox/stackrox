@@ -30,7 +30,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 		Resource: "dummy-3", Scope: permissions.GlobalScope,
 	}
 
-	testRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+	testRole := roletest.NewResolvedRoleWithDenyAll("Dummy", nil)
 
 	id := mocks.NewMockIdentity(gomock.NewController(t))
 	ctx := authn.ContextWithIdentity(context.Background(), id, t)

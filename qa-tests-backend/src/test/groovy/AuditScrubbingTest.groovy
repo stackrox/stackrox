@@ -92,7 +92,7 @@ class AuditScrubbingTest extends BaseSpecification {
         where:
         "Data inputs are"
         username              | password              | expectedStatusCode | scenario
-        "foo"                 | "bar"                 | 500                | "invalid basic auth password"
+        "foo"                 | "bar"                 | 403                | "invalid basic auth password"
         Env.mustGetUsername() | Env.mustGetPassword() | 200                | "valid basic auth credentials"
     }
 
