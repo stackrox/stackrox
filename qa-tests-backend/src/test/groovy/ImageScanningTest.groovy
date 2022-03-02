@@ -156,6 +156,9 @@ class ImageScanningTest extends BaseSpecification {
         if (imageToCleanup != null) {
             ImageService.clearImageCaches()
             try {
+                // Sleep for 10s in order to avoid race condition with processing that is currently in progress
+                println "Sleep for 10s to try and avoid race condition"
+                sleep(10000)
                 ImageService.deleteImagesWithRetry(SearchServiceOuterClass.RawQuery.newBuilder()
                         .setQuery("Image:${imageToCleanup}").build(), true)
             } catch (e) {
