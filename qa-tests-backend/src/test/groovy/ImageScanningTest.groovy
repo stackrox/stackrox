@@ -23,7 +23,6 @@ import objects.StackroxScannerIntegration
 import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
-import services.PolicyService
 import util.Env
 import util.Helpers
 import util.Timer
