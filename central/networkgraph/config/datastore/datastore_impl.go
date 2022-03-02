@@ -31,15 +31,15 @@ func New(storage store.Store) DataStore {
 		store: storage,
 	}
 
-	if err := ds.initDefaultConfig(); err != nil {
+	if err := ds.initDefaultConfig(context.TODO()); err != nil {
 		utils.Should(errors.Wrap(err, "could not initialize default network graph configuration"))
 	}
 
 	return ds
 }
 
-func (d *datastoreImpl) initDefaultConfig() error {
-	_, found, err := d.store.Get(networkGraphConfigKey)
+func (d *datastoreImpl) initDefaultConfig(ctx context.Context) error {
+	_, found, err := d.store.Get(ctx, networkGraphConfigKey)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (d *datastoreImpl) initDefaultConfig() error {
 		defaultConfig := &storage.NetworkGraphConfig{
 			HideDefaultExternalSrcs: false,
 		}
-		if err := d.store.UpsertWithID(networkGraphConfigKey, defaultConfig); err != nil {
+		if err := d.store.UpsertWithID(ctx, networkGraphConfigKey, defaultConfig); err != nil {
 			return err
 		}
 	}
@@ -62,7 +62,7 @@ func (d *datastoreImpl) GetNetworkGraphConfig(ctx context.Context) (*storage.Net
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	config, found, err := d.store.Get(networkGraphConfigKey)
+	config, found, err := d.store.Get(ctx, networkGraphConfigKey)
 	if err != nil {
 		return nil, err
 	} else if !found {
@@ -79,5 +79,5 @@ func (d *datastoreImpl) UpdateNetworkGraphConfig(ctx context.Context, config *st
 		return sac.ErrResourceAccessDenied
 	}
 
-	return d.store.UpsertWithID(networkGraphConfigKey, config)
+	return d.store.UpsertWithID(ctx, networkGraphConfigKey, config)
 }

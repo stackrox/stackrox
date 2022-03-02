@@ -91,7 +91,7 @@ Tests are based on the [`helmtest` testing framework](https://github.com/stackro
   that can be run individually with `go test`, which is useful for quick iteration. For example the tests in
   `pkg/helm/charts/tests/securedclusterservices/testdata/helmtest/audit-logs.test.yaml` can be run with
   `go test -v github.com/stackrox/rox/pkg/helm/charts/tests/securedclusterservices -run TestWithHelmtest/testdata/helmtest/audit-logs.test.yaml`.
-- When writing a test, replacing assertions with the [`helmtest` function](https://github.com/stackrox/helmtest/blob/main/docs/functions.md) 
+- When writing a test, replacing assertions with the [`helmtest` function](https://github.com/stackrox/helmtest/blob/main/docs/functions.md)
   `print` can be helpful to inspect the objects where assertions are applied. To get YAML formatted output use `toyaml | print`.
 - [`helmtest` documentation on World Model](https://github.com/stackrox/helmtest/blob/main/docs/world-model.md) specifies
   how to access from a test the different k8s objects in the rendered template. In particular `.objects` contains all

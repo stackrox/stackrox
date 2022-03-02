@@ -36,7 +36,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(binding *storage.Compl
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan setting bindings read")
 	}
-	return d.store.Walk(fn)
+	return d.store.Walk(ctx, fn)
 }
 
 func (d *datastoreImpl) Upsert(ctx context.Context, binding *storage.ComplianceOperatorScanSettingBinding) error {
@@ -45,7 +45,7 @@ func (d *datastoreImpl) Upsert(ctx context.Context, binding *storage.ComplianceO
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan setting bindings write")
 	}
-	return d.store.Upsert(binding)
+	return d.store.Upsert(ctx, binding)
 }
 
 func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
@@ -54,5 +54,5 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan setting bindings write")
 	}
-	return d.store.Delete(id)
+	return d.store.Delete(ctx, id)
 }

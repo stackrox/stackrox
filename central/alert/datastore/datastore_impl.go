@@ -107,7 +107,7 @@ func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsR
 
 // GetAlert returns an alert by id.
 func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error) {
-	alert, exists, err := ds.storage.Get(id)
+	alert, exists, err := ds.storage.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -135,7 +135,7 @@ func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) 
 	ds.keyedMutex.Lock(alert.GetId())
 	defer ds.keyedMutex.Unlock(alert.GetId())
 
-	return ds.updateAlertNoLock(alert)
+	return ds.updateAlertNoLock(ctx, alert)
 }
 
 // UpdateAlertBatch updates an alert in storage and in the indexer
@@ -157,7 +157,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 			return
 		}
 	}
-	err = ds.updateAlertNoLock(alert)
+	err = ds.updateAlertNoLock(ctx, alert)
 	if err != nil {
 		c <- err
 	}
@@ -204,7 +204,7 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 	}
 	alert.State = storage.ViolationState_RESOLVED
 	alert.ResolvedAt = types.TimestampNow()
-	return ds.updateAlertNoLock(alert)
+	return ds.updateAlertNoLock(ctx, alert)
 }
 
 func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error {
@@ -217,7 +217,7 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting alert")
-	if err := ds.storage.DeleteMany(ids); err != nil {
+	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		errorList.AddError(err)
 	} else {
 		for _, id := range ids {
@@ -231,7 +231,7 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	if err := ds.indexer.DeleteListAlerts(ids); err != nil {
 		errorList.AddError(err)
 	}
-	if err := ds.storage.AckKeysIndexed(ids...); err != nil {
+	if err := ds.storage.AckKeysIndexed(ctx, ids...); err != nil {
 		errorList.AddError(err)
 	}
 
@@ -318,7 +318,7 @@ func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, ta
 	ds.keyedMutex.Lock(resourceID)
 	defer ds.keyedMutex.Unlock(resourceID)
 
-	alert, exists, err := ds.storage.Get(resourceID)
+	alert, exists, err := ds.storage.Get(ctx, resourceID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error fetching alert %q from the DB", resourceID)
 	}
@@ -332,7 +332,7 @@ func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, ta
 	allTags := sliceutils.StringUnion(alert.GetTags(), tags)
 	sort.Strings(allTags)
 	alert.Tags = allTags
-	if err := ds.updateAlertNoLock(alert); err != nil {
+	if err := ds.updateAlertNoLock(ctx, alert); err != nil {
 		return nil, errors.Wrapf(err, "error upserting alert %q", alert.GetId())
 	}
 
@@ -345,7 +345,7 @@ func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string,
 	ds.keyedMutex.Lock(resourceID)
 	defer ds.keyedMutex.Unlock(resourceID)
 
-	alert, exists, err := ds.storage.Get(resourceID)
+	alert, exists, err := ds.storage.Get(ctx, resourceID)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching alert %q from the DB", resourceID)
 	}
@@ -364,7 +364,7 @@ func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string,
 	} else {
 		alert.Tags = remainingTags
 	}
-	if err := ds.updateAlertNoLock(alert); err != nil {
+	if err := ds.updateAlertNoLock(ctx, alert); err != nil {
 		return fmt.Errorf("error upserting alert %q", alert.GetId())
 	}
 
@@ -393,32 +393,32 @@ func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject 
 	return nil
 }
 
-func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {
+func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alert *storage.Alert) error {
 	// Checks pass then update.
-	if err := ds.storage.Upsert(alert); err != nil {
+	if err := ds.storage.Upsert(ctx, alert); err != nil {
 		return err
 	}
 	if err := ds.indexer.AddListAlert(fillSortHelperFields(convert.AlertToListAlert(alert))); err != nil {
 		return err
 	}
-	return ds.storage.AckKeysIndexed(alert.GetId())
+	return ds.storage.AckKeysIndexed(ctx, alert.GetId())
 }
 
 func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
 }
 
-func (ds *datastoreImpl) fullReindex() error {
+func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 	log.Info("[STARTUP] Reindexing all alerts")
 
-	alertIDs, err := ds.storage.GetIDs()
+	alertIDs, err := ds.storage.GetIDs(ctx)
 	if err != nil {
 		return err
 	}
 	log.Infof("[STARTUP] Found %d alerts to index", len(alertIDs))
 	alertBatcher := batcher.New(len(alertIDs), alertBatchSize)
 	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, _, err := ds.storage.GetListAlerts(alertIDs[start:end])
+		listAlerts, _, err := ds.storage.GetListAlerts(ctx, alertIDs[start:end])
 		if err != nil {
 			return err
 		}
@@ -432,11 +432,11 @@ func (ds *datastoreImpl) fullReindex() error {
 	log.Infof("[STARTUP] Successfully indexed %d alerts", len(alertIDs))
 
 	// Clear the keys because we just re-indexed everything
-	keys, err := ds.storage.GetKeysToIndex()
+	keys, err := ds.storage.GetKeysToIndex(ctx)
 	if err != nil {
 		return err
 	}
-	if err := ds.storage.AckKeysIndexed(keys...); err != nil {
+	if err := ds.storage.AckKeysIndexed(ctx, keys...); err != nil {
 		return err
 	}
 
@@ -448,7 +448,7 @@ func (ds *datastoreImpl) fullReindex() error {
 	return nil
 }
 
-func (ds *datastoreImpl) buildIndex() error {
+func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 
 	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()
@@ -456,11 +456,11 @@ func (ds *datastoreImpl) buildIndex() error {
 		return err
 	}
 	if needsFullIndexing {
-		return ds.fullReindex()
+		return ds.fullReindex(ctx)
 	}
 
 	log.Info("[STARTUP] Determining if alert db/indexer reconciliation is needed")
-	keysToIndex, err := ds.storage.GetKeysToIndex()
+	keysToIndex, err := ds.storage.GetKeysToIndex(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error retrieving keys to index from store")
 	}
@@ -471,7 +471,7 @@ func (ds *datastoreImpl) buildIndex() error {
 
 	alertBatcher := batcher.New(len(keysToIndex), alertBatchSize)
 	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, missingIndices, err := ds.storage.GetListAlerts(keysToIndex[start:end])
+		listAlerts, missingIndices, err := ds.storage.GetListAlerts(ctx, keysToIndex[start:end])
 		if err != nil {
 			return err
 		}
@@ -489,7 +489,7 @@ func (ds *datastoreImpl) buildIndex() error {
 			}
 		}
 		// Ack keys so that even if central restarts, we don't need to reindex them again
-		if err := ds.storage.AckKeysIndexed(keysToIndex[start:end]...); err != nil {
+		if err := ds.storage.AckKeysIndexed(ctx, keysToIndex[start:end]...); err != nil {
 			return err
 		}
 
@@ -507,5 +507,5 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(fn)
+	return ds.storage.Walk(ctx, fn)
 }

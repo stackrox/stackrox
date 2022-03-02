@@ -37,5 +37,5 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 	store := cache.NewCachedStore(rocksdb.New(db))
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(context.TODO(), store, indexer, searcher, indicators, processFilter)
 }
