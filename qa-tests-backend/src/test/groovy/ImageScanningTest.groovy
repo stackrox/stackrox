@@ -9,7 +9,6 @@ import io.stackrox.proto.storage.Vulnerability
 
 import common.Constants
 import groups.BAT
-import groups.TARGET
 import groups.Integration
 import objects.AnchoreScannerIntegration
 import objects.ClairScannerIntegration
@@ -180,7 +179,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration, TARGET])
+    @Category([BAT, Integration])
     def "Verify Image Registry+Scanner Integrations: #testName"() {
         cleanupSetupForRetry()
 
