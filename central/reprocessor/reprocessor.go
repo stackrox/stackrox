@@ -279,7 +279,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 		log.Errorf("error fetching image %q from the database: %v", id, err)
 		return nil, false
 	}
-	if !exists || image.GetNotPullable() {
+	if !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
 		return nil, false
 	}
 
@@ -288,7 +288,6 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 	}, image)
 
 	if err != nil {
-		// TODO: don't want to do this for internal registry images...
 		log.Errorf("error enriching image: %v", err)
 		return nil, false
 	}

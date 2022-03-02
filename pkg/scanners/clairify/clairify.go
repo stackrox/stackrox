@@ -24,7 +24,6 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	clairGRPCV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -49,18 +48,7 @@ var (
 
 var (
 	log = logging.LoggerForModule()
-
-	// Map of Clairify endpoint to its respective clientConn.
-	// Only one connection per endpoint is necessary.
-	clientConns     = make(map[string]*clientConn)
-	clientConnsLock sync.Mutex
 )
-
-type clientConn struct {
-	once sync.Once
-	conn *grpc.ClientConn
-	err  error
-}
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
@@ -146,21 +134,13 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	return scanner, nil
 }
 
-func getOrSetClientConn(endpoint string) *clientConn {
-	clientConnsLock.Lock()
-	defer clientConnsLock.Unlock()
-
-	conn, ok := clientConns[endpoint]
-	if !ok {
-		conn = &clientConn{}
-		clientConns[endpoint] = conn
-	}
-
-	return conn
-}
-
 func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientConn, error) {
 	if err := validateConfig(conf); err != nil {
+		return nil, err
+	}
+
+	tlsConfig, err := getTLSConfig()
+	if err != nil {
 		return nil, err
 	}
 
@@ -169,18 +149,9 @@ func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientCo
 		endpoint = fmt.Sprintf("scanner.%s:8443", env.Namespace.Setting())
 	}
 
-	conn := getOrSetClientConn(endpoint)
-	conn.once.Do(func() {
-		tlsConfig, err := getTLSConfig()
-		if err != nil {
-			conn.conn, conn.err = nil, err
-			return
-		}
-
-		conn.conn, conn.err = grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	})
-
-	return conn.conn, conn.err
+	// Note: it is possible we call `grpc.Dial` multiple times per endpoint,
+	// but this is rather minimal, so it's ok.
+	return grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 }
 
 func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, error) {
@@ -227,7 +198,9 @@ func (c *clairify) Test() error {
 // TestNodeScanner initiates a test of the Clairify Scanner which verifies
 // that we have the proper scan permissions for node scanning
 func (c *clairify) TestNodeScanner() error {
-	_, err := c.pingServiceClient.Ping(context.Background(), &clairGRPCV1.Empty{})
+	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	defer cancel()
+	_, err := c.pingServiceClient.Ping(ctx, &clairGRPCV1.Empty{})
 	return err
 }
 
@@ -418,7 +391,9 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 		Components: components,
 		Notes:      notes,
 	}
-	resp, err := c.imageScanServiceClient.GetImageVulnerabilities(context.Background(), req)
+	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	defer cancel()
+	resp, err := c.imageScanServiceClient.GetImageVulnerabilities(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +404,9 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 // GetNodeScan retrieves the most recent node scan
 func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
 	req := convertNodeToVulnRequest(node)
-	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(context.Background(), req)
+	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	defer cancel()
+	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
 	if err != nil {
 		return nil, err
 	}

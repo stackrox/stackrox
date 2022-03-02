@@ -4,7 +4,6 @@ import (
 	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
-	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -110,7 +109,7 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 			FixedBy: v.GetFixedBy(),
 		},
 		VulnerabilityType: vulnType,
-		Severity:          cvss.StringToSeverity(v.GetSeverity()),
+		Severity:          clair.SeverityToStorageSeverity(v.GetSeverity()),
 	}
 
 	if v.GetMetadataV2() != nil {

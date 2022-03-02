@@ -47,22 +47,6 @@ func VulnToSeverity(v vulnI) storage.VulnerabilitySeverity {
 	return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
-// StringToSeverity converts the given string representation of a severity into a storage.VulnerabilitySeverity.
-func StringToSeverity(severity string) storage.VulnerabilitySeverity {
-	switch strings.ToLower(severity) {
-	case "low":
-		return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
-	case "moderate":
-		return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
-	case "important":
-		return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
-	case "critical":
-		return storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
-	default:
-		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-	}
-}
-
 // FormatSeverity converts the given storage.VulnerabilitySeverity to a more human-readable string.
 // ex: LOW_VULNERABILITY_SEVERITY -> Low
 func FormatSeverity(severity storage.VulnerabilitySeverity) string {

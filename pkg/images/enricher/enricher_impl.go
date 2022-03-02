@@ -31,6 +31,10 @@ const (
 	consecutiveErrorThreshold = 3
 )
 
+var (
+	_ ImageEnricher = (*enricherImpl)(nil)
+)
+
 type enricherImpl struct {
 	cvesSuppressor   cveSuppressor
 	cvesSuppressorV2 cveSuppressor
@@ -55,20 +59,8 @@ type enricherImpl struct {
 	metrics metrics
 }
 
-func (e *enricherImpl) EnrichWithVulnerabilities(ctx EnrichmentContext, image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
-	// Attempt to short-circuit before checking scanners.
-	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
-		return EnrichmentResult{
-			ScanResult: ScanNotDone,
-		}, nil
-	}
-	if e.fetchFromDatabase(image, ctx.FetchOpt) {
-		return EnrichmentResult{
-			ImageUpdated: true,
-			ScanResult:   ScanSucceeded,
-		}, nil
-	}
-
+// EnrichWithVulnerabilities enriches the given image with vulnerabilities.
+func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
 	scanners := e.integrations.ScannerSet()
 	if scanners.IsEmpty() {
 		return EnrichmentResult{

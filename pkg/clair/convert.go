@@ -49,7 +49,8 @@ type cvss struct {
 	ImpactScore         float32
 }
 
-func severityToStorageSeverity(severity string) storage.VulnerabilitySeverity {
+// SeverityToStorageSeverity converts the given string representation of a severity into a storage.VulnerabilitySeverity.
+func SeverityToStorageSeverity(severity string) storage.VulnerabilitySeverity {
 	switch severity {
 	case string(clairV1.UnknownSeverity):
 		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
@@ -90,7 +91,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 			FixedBy: v.FixedBy,
 		},
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		Severity:          severityToStorageSeverity(v.Severity),
+		Severity:          SeverityToStorageSeverity(v.Severity),
 	}
 
 	d, err := json.Marshal(vulnMetadataMap)
