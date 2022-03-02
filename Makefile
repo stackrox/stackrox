@@ -17,13 +17,12 @@ endif
 ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
 
 BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-BUILD_IMAGE := stackrox/apollo-ci:$(BUILD_IMAGE_VERSION)
+BUILD_IMAGE := quay.io/rhacs-eng/apollo-ci:$(BUILD_IMAGE_VERSION)
 MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE_BASE := stackrox/docs
 
 ifdef CI
     QUAY_REPO := rhacs-eng
-    BUILD_IMAGE := quay.io/$(QUAY_REPO)/apollo-ci:$(BUILD_IMAGE_VERSION)
     MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
     DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
 endif
