@@ -167,10 +167,10 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		CollectorSlimImageTag:  v.CollectorVersion,
 
 		ScannerImageName:       "rhacs-scanner-rhel8",
-		ScannerSlimImageName:   "scanner-slim",
+		ScannerSlimImageName:   "rhacs-scanner-slim-rhel8",
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "rhacs-scanner-db-rhel8",
-		ScannerDBSlimImageName: "scanner-db-slim",
+		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel8",
 		ScannerDBImageTag:      v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
