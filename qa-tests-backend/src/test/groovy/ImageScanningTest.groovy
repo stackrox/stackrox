@@ -171,13 +171,8 @@ class ImageScanningTest extends BaseSpecification {
 
     def cleanupSetupForRetry() {
         if (Helpers.getAttemptCount() > 1) {
-            println "Cleaning up"
             cleanup()
-            println "Done cleaning up and sleeping"
-            sleep(10000)
-            println "Setting up"
             setup()
-            println "Done setting up"
         }
     }
 
@@ -238,7 +233,6 @@ class ImageScanningTest extends BaseSpecification {
         addIntegrationClosure.each {
             def id = it()
             integrationIds.add(id) }
-        PolicyService.reassessPolicies()
         ImageService.scanImage(deployment.image)
         imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
 
