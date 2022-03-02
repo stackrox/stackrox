@@ -256,7 +256,6 @@ func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 	newValue := &cacheValue{
 		image: image,
 	}
-	log.Infof("Adding new image to cache: %v %v", image.GetId(), image.GetName().GetFullName())
 	d.enricher.imageCache.Add(key, newValue)
 	d.admissionCacheNeedsFlush = true
 	return nil

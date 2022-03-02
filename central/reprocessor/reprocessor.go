@@ -290,8 +290,6 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 		return nil, false
 	}
 
-	log.Infof("Reprocessing %v and %v", image.GetId(), image.GetName().GetFullName())
-
 	result, err := l.imageEnricher.EnrichImage(imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
