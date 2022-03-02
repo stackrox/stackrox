@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/ctx"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -53,20 +52,20 @@ func (s *apiTokenDataStoreTestSuite) TeardownTest() {
 
 func (s *apiTokenDataStoreTestSuite) TestAddToken() {
 	token := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Upsert(ctx.Any(), token).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any(), token).Return(nil)
 
 	s.NoError(s.dataStore.AddToken(s.hasWriteCtx, token))
 }
 
 func (s *apiTokenDataStoreTestSuite) TestGetTokenOrNil() {
 	expectedToken := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Get(ctx.Any(), "id").Return(nil, false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil)
 
 	token, err := s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
 	s.NoError(err)
 	s.Nil(token)
 
-	s.storage.EXPECT().Get(ctx.Any(), "id").Return(expectedToken, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil)
 
 	token, err = s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
 	s.NoError(err)
@@ -75,15 +74,15 @@ func (s *apiTokenDataStoreTestSuite) TestGetTokenOrNil() {
 
 func (s *apiTokenDataStoreTestSuite) TestRevokeToken() {
 	expectedToken := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Get(ctx.Any(), "id").Return(nil, false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil)
 
 	exists, err := s.dataStore.RevokeToken(s.hasWriteCtx, "id")
 	s.NoError(err)
 	s.False(exists)
 
-	s.storage.EXPECT().Get(ctx.Any(), "id").Return(expectedToken, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil)
 	expectedToken.Revoked = true
-	s.storage.EXPECT().Upsert(ctx.Any(), expectedToken).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any(), expectedToken).Return(nil)
 
 	exists, err = s.dataStore.RevokeToken(s.hasWriteCtx, "id")
 	s.NoError(err)

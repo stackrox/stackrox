@@ -36,7 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/ctx"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -461,7 +460,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
 	mockStore, _, _ := suite.setupDataStoreWithMocks()
-	mockStore.EXPECT().Get(ctx.Any(), gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
+	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
 
 	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasNoneCtx, "hkjddjhk")
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -473,7 +472,7 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	mockStore, _, _ := suite.setupDataStoreWithMocks()
 	testIndicator := &storage.ProcessIndicator{}
 
-	mockStore.EXPECT().Get(ctx.Any(), gomock.Any()).Return(testIndicator, true, nil)
+	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(testIndicator, true, nil)
 	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasReadCtx, "An Id")
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
@@ -568,7 +567,7 @@ func (suite *ProcessIndicatorReindexSuite) SetupTest() {
 }
 
 func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
-	suite.storage.EXPECT().GetKeysToIndex(ctx.Any()).Return([]string{"A", "B", "C"}, nil)
+	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
 	pi1 := fixtures.GetProcessIndicator()
@@ -580,22 +579,22 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 
 	processes := []*storage.ProcessIndicator{pi1, pi2, pi3}
 
-	suite.storage.EXPECT().GetMany(ctx.Any(), []string{"A", "B", "C"}).Return(processes, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(processes, nil, nil)
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed(ctx.Any(), []string{"A", "B", "C"}).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
 	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 
 	// Make listAlerts just A,B so C should be deleted
 	processes = processes[:1]
-	suite.storage.EXPECT().GetKeysToIndex(ctx.Any()).Return([]string{"A", "B", "C"}, nil)
+	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
-	suite.storage.EXPECT().GetMany(ctx.Any(), []string{"A", "B", "C"}).Return(processes, []int{2}, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(processes, []int{2}, nil)
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
 	suite.indexer.EXPECT().DeleteProcessIndicators([]string{"C"}).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed(ctx.Any(), []string{"A", "B", "C"}).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
 	_, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)

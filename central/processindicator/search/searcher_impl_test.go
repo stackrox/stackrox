@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/ctx"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -81,7 +80,7 @@ func (suite *IndicatorSearchTestSuite) TestAllowsSearch() {
 
 func (suite *IndicatorSearchTestSuite) TestEnforcesSearchRaw() {
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
-	suite.storage.EXPECT().GetMany(ctx.Any(), gomock.Any()).Return([]*storage.ProcessIndicator{}, []int{}, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), gomock.Any()).Return([]*storage.ProcessIndicator{}, []int{}, nil)
 
 	processIndicators, err := suite.searcher.SearchRawProcessIndicators(suite.hasNoneCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -90,14 +89,14 @@ func (suite *IndicatorSearchTestSuite) TestEnforcesSearchRaw() {
 
 func (suite *IndicatorSearchTestSuite) TestAllowsSearchRaw() {
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: ""}}, nil)
-	suite.storage.EXPECT().GetMany(ctx.Any(), gomock.Any()).Return([]*storage.ProcessIndicator{{}}, []int{}, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), gomock.Any()).Return([]*storage.ProcessIndicator{{}}, []int{}, nil)
 
 	processIndicators, err := suite.searcher.SearchRawProcessIndicators(suite.hasReadCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.NotEmpty(processIndicators)
 
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
-	suite.storage.EXPECT().GetMany(ctx.Any(), gomock.Any()).Return([]*storage.ProcessIndicator{{}}, []int{}, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), gomock.Any()).Return([]*storage.ProcessIndicator{{}}, []int{}, nil)
 
 	processIndicators, err = suite.searcher.SearchRawProcessIndicators(suite.hasWriteCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error trying to read with permissions")
