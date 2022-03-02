@@ -136,7 +136,7 @@ func (ds *datastoreImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Q
 }
 
 func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
-	indicator, exists, err := ds.storage.Get(id)
+	indicator, exists, err := ds.storage.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -155,7 +155,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	err := ds.storage.UpsertMany(indicators)
+	err := ds.storage.UpsertMany(ctx, indicators)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 	for _, indicator := range indicators {
 		keys = append(keys, indicator.GetId())
 	}
-	if err := ds.storage.AckKeysIndexed(keys...); err != nil {
+	if err := ds.storage.AckKeysIndexed(ctx, keys...); err != nil {
 		return errors.Wrap(err, "error acknowledging added process indexing")
 	}
 	return nil
@@ -181,7 +181,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.Proces
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(fn)
+	return ds.storage.Walk(ctx, fn)
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []string) error {
@@ -191,24 +191,24 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.removeIndicators(ids)
+	return ds.removeIndicators(ctx, ids)
 }
 
-func (ds *datastoreImpl) removeMatchingIndicators(results []pkgSearch.Result) error {
-	return ds.removeIndicators(pkgSearch.ResultsToIDs(results))
+func (ds *datastoreImpl) removeMatchingIndicators(ctx context.Context, results []pkgSearch.Result) error {
+	return ds.removeIndicators(ctx, pkgSearch.ResultsToIDs(results))
 }
 
-func (ds *datastoreImpl) removeIndicators(ids []string) error {
+func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	if err := ds.storage.DeleteMany(ids); err != nil {
+	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return err
 	}
 	if err := ds.indexer.DeleteProcessIndicators(ids); err != nil {
 		return err
 	}
-	if err := ds.storage.AckKeysIndexed(ids...); err != nil {
+	if err := ds.storage.AckKeysIndexed(ctx, ids...); err != nil {
 		return errors.Wrap(err, "error acknowledging indicator removal")
 	}
 	return nil
@@ -225,10 +225,10 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	if err != nil {
 		return err
 	}
-	return ds.removeMatchingIndicators(results)
+	return ds.removeMatchingIndicators(ctx, results)
 }
 
-func (ds *datastoreImpl) prunePeriodically() {
+func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
 	defer ds.stoppedSig.Signal()
 
 	if ds.prunerFactory == nil {
@@ -240,17 +240,17 @@ func (ds *datastoreImpl) prunePeriodically() {
 	for !ds.stopSig.IsDone() {
 		select {
 		case <-t.C:
-			ds.prune()
+			ds.prune(ctx)
 		case <-ds.stopSig.Done():
 			return
 		}
 	}
 }
 
-func (ds *datastoreImpl) getProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
+func (ds *datastoreImpl) getProcessInfoToArgs(ctx context.Context) (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ProcessIndicator", "getProcessInfoToArgs")
 	processNamesToArgs := make(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)
-	err := ds.storage.Walk(func(pi *storage.ProcessIndicator) error {
+	err := ds.storage.Walk(ctx, func(pi *storage.ProcessIndicator) error {
 		info := processindicator.ProcessWithContainerInfo{
 			ContainerName: pi.GetContainerName(),
 			PodID:         pi.GetPodId(),
@@ -268,12 +268,12 @@ func (ds *datastoreImpl) getProcessInfoToArgs() (map[processindicator.ProcessWit
 	return processNamesToArgs, nil
 }
 
-func (ds *datastoreImpl) prune() {
+func (ds *datastoreImpl) prune(ctx context.Context) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Prune, "ProcessIndicator")
 	pruner := ds.prunerFactory.StartPruning()
 	defer pruner.Finish()
 
-	processInfoToArgs, err := ds.getProcessInfoToArgs()
+	processInfoToArgs, err := ds.getProcessInfoToArgs(ctx)
 	if err != nil {
 		log.Errorf("Error while pruning processes: couldn't retrieve process info to args: %s", err)
 		return
@@ -290,7 +290,7 @@ func (ds *datastoreImpl) prune() {
 		incrementProcessPruningCacheMissesMetric()
 		idsToRemove := pruner.Prune(args)
 		if len(idsToRemove) > 0 {
-			if err := ds.removeIndicators(idsToRemove); err != nil {
+			if err := ds.removeIndicators(ctx, idsToRemove); err != nil {
 				log.Errorf("Error while pruning processes: %s", err)
 			} else {
 				incrementPrunedProcessesMetric(len(idsToRemove))
@@ -315,12 +315,12 @@ func (ds *datastoreImpl) Wait(cancelWhen concurrency.Waitable) bool {
 	return concurrency.WaitInContext(&ds.stoppedSig, cancelWhen)
 }
 
-func (ds *datastoreImpl) fullReindex() error {
+func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 	log.Info("[STARTUP] Reindexing all processes")
 
 	indicators := make([]*storage.ProcessIndicator, 0, maxBatchSize)
 	var count int
-	err := ds.storage.Walk(func(pi *storage.ProcessIndicator) error {
+	err := ds.storage.Walk(ctx, func(pi *storage.ProcessIndicator) error {
 		indicators = append(indicators, pi)
 		if len(indicators) == maxBatchSize {
 			if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
@@ -342,11 +342,11 @@ func (ds *datastoreImpl) fullReindex() error {
 	log.Infof("[STARTUP] Successfully indexed all %d processes", count)
 
 	// Clear the keys because we just re-indexed everything
-	keys, err := ds.storage.GetKeysToIndex()
+	keys, err := ds.storage.GetKeysToIndex(ctx)
 	if err != nil {
 		return err
 	}
-	if err := ds.storage.AckKeysIndexed(keys...); err != nil {
+	if err := ds.storage.AckKeysIndexed(ctx, keys...); err != nil {
 		return err
 	}
 
@@ -358,7 +358,7 @@ func (ds *datastoreImpl) fullReindex() error {
 	return nil
 }
 
-func (ds *datastoreImpl) buildIndex() error {
+func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 
 	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()
@@ -366,10 +366,10 @@ func (ds *datastoreImpl) buildIndex() error {
 		return err
 	}
 	if needsFullIndexing {
-		return ds.fullReindex()
+		return ds.fullReindex(ctx)
 	}
 	log.Info("[STARTUP] Determining if process db/indexer reconciliation is needed")
-	processesToIndex, err := ds.storage.GetKeysToIndex()
+	processesToIndex, err := ds.storage.GetKeysToIndex(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error retrieving keys to index")
 	}
@@ -378,7 +378,7 @@ func (ds *datastoreImpl) buildIndex() error {
 
 	processBatcher := batcher.New(len(processesToIndex), maxBatchSize)
 	for start, end, valid := processBatcher.Next(); valid; start, end, valid = processBatcher.Next() {
-		processes, missingIndices, err := ds.storage.GetMany(processesToIndex[start:end])
+		processes, missingIndices, err := ds.storage.GetMany(ctx, processesToIndex[start:end])
 		if err != nil {
 			return err
 		}
@@ -396,7 +396,7 @@ func (ds *datastoreImpl) buildIndex() error {
 		}
 
 		// Ack keys so that even if central restarts, we don't need to reindex them again
-		if err := ds.storage.AckKeysIndexed(processesToIndex[start:end]...); err != nil {
+		if err := ds.storage.AckKeysIndexed(ctx, processesToIndex[start:end]...); err != nil {
 			return err
 		}
 		log.Infof("[STARTUP] Successfully indexed %d/%d processes", end, len(processesToIndex))

@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,23 +36,23 @@ func (m *MockSignatureIntegrationStore) EXPECT() *MockSignatureIntegrationStoreM
 }
 
 // Delete mocks base method.
-func (m *MockSignatureIntegrationStore) Delete(id string) error {
+func (m *MockSignatureIntegrationStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockSignatureIntegrationStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockSignatureIntegrationStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Delete), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockSignatureIntegrationStore) Get(id string) (*storage.SignatureIntegration, bool, error) {
+func (m *MockSignatureIntegrationStore) Get(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.SignatureIntegration)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -59,35 +60,35 @@ func (m *MockSignatureIntegrationStore) Get(id string) (*storage.SignatureIntegr
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockSignatureIntegrationStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockSignatureIntegrationStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Get), ctx, id)
 }
 
 // Upsert mocks base method.
-func (m *MockSignatureIntegrationStore) Upsert(obj *storage.SignatureIntegration) error {
+func (m *MockSignatureIntegrationStore) Upsert(ctx context.Context, obj *storage.SignatureIntegration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", obj)
+	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockSignatureIntegrationStoreMockRecorder) Upsert(obj interface{}) *gomock.Call {
+func (mr *MockSignatureIntegrationStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Upsert), obj)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Upsert), ctx, obj)
 }
 
 // Walk mocks base method.
-func (m *MockSignatureIntegrationStore) Walk(fn func(*storage.SignatureIntegration) error) error {
+func (m *MockSignatureIntegrationStore) Walk(ctx context.Context, fn func(*storage.SignatureIntegration) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", fn)
+	ret := m.ctrl.Call(m, "Walk", ctx, fn)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Walk indicates an expected call of Walk.
-func (mr *MockSignatureIntegrationStoreMockRecorder) Walk(fn interface{}) *gomock.Call {
+func (mr *MockSignatureIntegrationStoreMockRecorder) Walk(ctx, fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Walk), fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Walk), ctx, fn)
 }

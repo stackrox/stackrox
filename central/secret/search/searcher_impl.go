@@ -37,7 +37,7 @@ func (ds *searcherImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.S
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToSearchResults(results)
+	return ds.resultsToSearchResults(ctx, results)
 }
 
 // Search returns the raw search results from the query
@@ -56,7 +56,7 @@ func (ds *searcherImpl) SearchListSecrets(ctx context.Context, q *v1.Query) ([]*
 	if err != nil {
 		return nil, err
 	}
-	secrets, _, err := ds.resultsToListSecrets(results)
+	secrets, _, err := ds.resultsToListSecrets(ctx, results)
 	return secrets, err
 }
 
@@ -70,10 +70,10 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 }
 
 // ToSecrets returns the secrets from the db for the given search results.
-func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storage.ListSecret, []int, error) {
+func (ds *searcherImpl) resultsToListSecrets(ctx context.Context, results []search.Result) ([]*storage.ListSecret, []int, error) {
 	ids := search.ResultsToIDs(results)
 
-	secrets, missingIndices, err := ds.storage.GetMany(ids)
+	secrets, missingIndices, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -85,8 +85,8 @@ func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storag
 }
 
 // ToSearchResults returns the searchResults from the db for the given search results.
-func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	secrets, missingIndices, err := ds.resultsToListSecrets(results)
+func (ds *searcherImpl) resultsToSearchResults(ctx context.Context, results []search.Result) ([]*v1.SearchResult, error) {
+	secrets, missingIndices, err := ds.resultsToListSecrets(ctx, results)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (ds *searcherImpl) searchSecrets(ctx context.Context, q *v1.Query) ([]*stor
 	}
 
 	ids := search.ResultsToIDs(results)
-	secrets, _, err := ds.storage.GetMany(ids)
+	secrets, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

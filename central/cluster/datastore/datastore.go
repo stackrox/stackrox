@@ -120,7 +120,7 @@ func New(
 		nameToIDCache: simplecache.New(),
 	}
 
-	if err := ds.buildIndex(); err != nil {
+	if err := ds.buildIndex(context.TODO()); err != nil {
 		return ds, err
 	}
 

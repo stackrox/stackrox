@@ -31,7 +31,7 @@ func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetada
 	b.Lock()
 	defer b.Unlock()
 
-	return b.storage.Upsert(token)
+	return b.storage.Upsert(ctx, token)
 }
 
 func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *storage.TokenMetadata, err error) {
@@ -44,7 +44,7 @@ func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *st
 	b.Lock()
 	defer b.Unlock()
 
-	token, exists, err := b.storage.Get(id)
+	token, exists, err := b.storage.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensReque
 	defer b.Unlock()
 
 	var tokens []*storage.TokenMetadata
-	err := b.storage.Walk(func(token *storage.TokenMetadata) error {
+	err := b.storage.Walk(ctx, func(token *storage.TokenMetadata) error {
 		if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {
 			return nil
 		}
@@ -88,7 +88,7 @@ func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error
 	b.Lock()
 	defer b.Unlock()
 
-	token, exists, err := b.storage.Get(id)
+	token, exists, err := b.storage.Get(ctx, id)
 	if err != nil {
 		return false, err
 	}
@@ -97,7 +97,7 @@ func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error
 	}
 	token.Revoked = true
 
-	if err := b.storage.Upsert(token); err != nil {
+	if err := b.storage.Upsert(ctx, token); err != nil {
 		return false, err
 	}
 	return true, nil
