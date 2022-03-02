@@ -176,10 +176,10 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchImage() {
 func (suite *ImageComponentSearchTestSuite) TestBasicSearchNode() {
 	node := getTestNode("id1")
 
-	ctx := sac.SetContextSACEnabled(sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Node),
-	)))
+	))
 
 	// Sanity search.
 	results, err := suite.searcher.Search(ctx, pkgSearch.EmptyQuery())

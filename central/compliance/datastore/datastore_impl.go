@@ -181,8 +181,8 @@ func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *stor
 }
 
 func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-	// Using stored aggregation results is not allowed when SAC is enabled
-	if sac.IsContextSACEnabled(ctx) {
+	// TODO(ROX-9134): consider storing compliance results for Unrestricted scope
+	if true {
 		return args.AggregationFunc()
 	}
 

@@ -97,12 +97,13 @@ func TestUnsuppressCVEs(t *testing.T) {
 
 	cveDataStore, edgeDataStore := createDataStore(t, dacky, bleveIndex)
 
+	cveClusters := []*storage.Cluster{{Id: "id"}}
 	parts := make([]converter.ClusterCVEParts, 0, len(expiredCVEs)+len(unexpiredCVEs))
 	for _, expiredCVE := range expiredCVEs {
-		parts = append(parts, converter.ClusterCVEParts{CVE: expiredCVE})
+		parts = append(parts, converter.NewClusterCVEParts(expiredCVE, cveClusters, "fixVersions"))
 	}
 	for _, unexpiredCVE := range unexpiredCVEs {
-		parts = append(parts, converter.ClusterCVEParts{CVE: unexpiredCVE})
+		parts = append(parts, converter.NewClusterCVEParts(unexpiredCVE, cveClusters, "fixVersions"))
 	}
 	err = edgeDataStore.Upsert(reprocessorCtx, parts...)
 	require.NoError(t, err)
