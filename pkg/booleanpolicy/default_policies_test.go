@@ -2129,6 +2129,13 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			VerifierId: "verifier3",
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
+		imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "verifier2",
+			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+		}, {
+			VerifierId: "verifier3",
+			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+		}}),
 	}
 
 	for _, testCase := range []struct {
@@ -2147,9 +2154,14 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			expectedMatches: []string{"verified_by_3"},
 		},
 		{
+			value:           "verifier2,verifier3",
+			negate:          false,
+			expectedMatches: []string{"verified_by_2_and_3"},
+		},
+		{
 			value:           "verifier1",
 			negate:          true,
-			expectedMatches: []string{"verified_by_0", "verified_by_3"},
+			expectedMatches: []string{"verified_by_0", "verified_by_3", "verified_by_2_and_3"},
 		},
 		{
 			value:           "verifier4",
@@ -2169,14 +2181,13 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 				if len(violations.AlertViolations) > 0 {
 					imgMatched.Add(img.GetName().GetFullName())
 					suite.Len(violations.AlertViolations, 1)
-					status := "unverified"
+					verifiedBy := []string{}
 					for _, r := range img.GetSignatureVerificationData().GetResults() {
 						if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-							status = "verified by " + r.GetVerifierId()
-							break
+							verifiedBy = append(verifiedBy, r.GetVerifierId())
 						}
 					}
-					suite.Equal(fmt.Sprintf("Image signature is %s", status), violations.AlertViolations[0].GetMessage())
+					suite.Equal(fmt.Sprintf("Image signature is verified by %s", strings.Join(verifiedBy, ",")), violations.AlertViolations[0].GetMessage())
 				}
 			}
 			suite.ElementsMatch(imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
