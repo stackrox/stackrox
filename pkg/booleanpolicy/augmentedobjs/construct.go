@@ -220,17 +220,16 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 			}
 		}
 
-		if len(verifiedBy) > 0 {
-			err := obj.AddPlainObjAt(
-				&imageSignatureVerification{
-					VerifiedBy: strings.Join(verifiedBy, ","),
-				},
-				pathutil.FieldStep(imageSignatureVerifiedKey),
-			)
-			if err != nil {
-				return nil, utils.Should(err)
-			}
+		err := obj.AddPlainObjAt(
+			&imageSignatureVerification{
+				VerifiedBy: strings.Join(verifiedBy, ","),
+			},
+			pathutil.FieldStep(imageSignatureVerifiedKey),
+		)
+		if err != nil {
+			return nil, utils.Should(err)
 		}
+
 	}
 
 	return obj, nil

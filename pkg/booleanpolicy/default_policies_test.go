@@ -2119,7 +2119,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
 		imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "verifier1",
+			VerifierId: "unverifier",
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
 		}}),
 		imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
@@ -2159,9 +2159,9 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			expectedMatches: []string{"verified_by_2_and_3"},
 		},
 		{
-			value:           "verifier1",
+			value:           "unverifier",
 			negate:          true,
-			expectedMatches: []string{"verified_by_0", "verified_by_3", "verified_by_2_and_3"},
+			expectedMatches: []string{"unverified_image", "image_no_results", "verified_by_0", "verified_by_3", "verified_by_2_and_3"},
 		},
 		{
 			value:           "verifier4",
@@ -2187,7 +2187,11 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 							verifiedBy = append(verifiedBy, r.GetVerifierId())
 						}
 					}
-					suite.Equal(fmt.Sprintf("Image signature is verified by %s", strings.Join(verifiedBy, ",")), violations.AlertViolations[0].GetMessage())
+					if len(verifiedBy) > 0 {
+						suite.Equal(fmt.Sprintf("Image signature is verified by %s", strings.Join(verifiedBy, ",")), violations.AlertViolations[0].GetMessage())
+					} else {
+						suite.Equal("Image signature is unverified", violations.AlertViolations[0].GetMessage())
+					}
 				}
 			}
 			suite.ElementsMatch(imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
