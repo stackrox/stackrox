@@ -3,4 +3,4 @@ tests:
   expect: |
     assertCentral("test.registry/main:custom-main")
     assertScanner("test.registry/scanner:custom-scanner")
-    assertScannerDB("test.registry/scanner-db:custom-scanner-db")
+    assertScannerDB("test.registry/scanner-db:custom-scanner")
