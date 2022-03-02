@@ -16,6 +16,8 @@ const (
 Please upgrade Central if slim collector images shall be used.`
 	warningFailedAToGetKernelSupportAvailable = "Failed to retrieve KernelSupportAvailable property from Central"
 	warningLegacyCentralDefaultMain           = "Central is running on a legacy version, main will be defaulted to %s if no override is provided"
+	warningNoClusterDefaultsAPI               = "Central does not implement /v1/cluster-defaults API"
+	warningFailedToCallClusterDefaultsAPI     = "Failed to retrieve data from /v1/cluster-defaults API"
 )
 
 // CentralEnv contains information about Central's runtime environment.
@@ -34,6 +36,12 @@ type CentralEnv struct {
 
 func (e *CentralEnv) fetchClusterDefaults(ctx context.Context, service v1.ClustersServiceClient) error {
 	clusterDefault, err := service.GetClusterDefaults(ctx, &v1.Empty{})
+	if status.Convert(err).Code() == codes.Unimplemented {
+		e.Warnings = append(e.Warnings, warningNoClusterDefaultsAPI)
+	} else {
+		e.Warnings = append(e.Warnings, fmt.Sprintf("%s: %s", warningFailedToCallClusterDefaultsAPI, err))
+	}
+
 	if err != nil {
 		return err
 	}
