@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/tkuchiki/go-timezone"
+	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 func parseTimestamp(value string) (*types.Timestamp, *time.Duration, error) {
 	if t, ok := parseTimeString(value); ok {
 		// Adjust for the timezone offset when comparing
-		seconds := t.Unix() - timeToOffset(t)
+		seconds := t.Unix() - timeutil.TimeToOffset(t)
 		return &types.Timestamp{
 			Seconds: seconds,
 		}, nil, nil
@@ -73,13 +73,4 @@ func parseTimeString(value string) (time.Time, bool) {
 		return t, true
 	}
 	return time.Time{}, false
-}
-
-func timeToOffset(t time.Time) int64 {
-	tz, _ := t.Zone()
-	offset, err := timezone.GetOffset(tz, false)
-	if err != nil {
-		return 0
-	}
-	return int64(offset)
 }

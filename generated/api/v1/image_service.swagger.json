@@ -1167,6 +1167,9 @@
     "storageImageScan": {
       "type": "object",
       "properties": {
+        "scannerVersion": {
+          "type": "string"
+        },
         "scanTime": {
           "type": "string",
           "format": "date-time"
@@ -1190,7 +1193,8 @@
             "$ref": "#/definitions/storageImageScanNote"
           }
         }
-      }
+      },
+      "title": "Next tag: 7"
     },
     "storageImageScanNote": {
       "type": "string",

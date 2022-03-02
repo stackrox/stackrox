@@ -1,6 +1,12 @@
 {
     "accessScopes": [
         {
+            "id": "io.stackrox.authz.accessscope.unrestricted",
+            "name": "Unrestricted",
+            "description": "Access to all clusters and namespaces",
+            "rules": null
+        },
+        {
             "id": "io.stackrox.authz.accessscope.denyall",
             "name": "Deny All",
             "description": "No access to scoped resources",

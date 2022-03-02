@@ -1,29 +1,52 @@
 package generate
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/util"
+	"github.com/stackrox/rox/roxctl/common/zipdownload"
 	"github.com/stackrox/rox/roxctl/scanner/clustertype"
-	"github.com/stackrox/rox/roxctl/scanner/generate/run"
 )
+
+// Options stores options related to scanner generate commands.
+type Options struct {
+	OutputDir string
+}
 
 // Command represents the generate command.
 func Command() *cobra.Command {
 	var params apiparams.Scanner
-	var opts run.Options
+	var opts Options
 
 	c := &cobra.Command{
-		Use: "generate",
-		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return run.Run(c, &params, opts)
-		}),
+		Use:  "generate",
+		Args: cobra.NoArgs,
+		RunE: func(c *cobra.Command, args []string) error {
+			params.ClusterType = clustertype.Get().String()
+			body, err := json.Marshal(params)
+			if err != nil {
+				return errors.Wrap(err, "could not marshal scanner params")
+			}
+			timeout := flags.Timeout(c)
+			err = zipdownload.GetZip(zipdownload.GetZipOptions{
+				Path:       "/api/extensions/scanner/zip",
+				Method:     http.MethodPost,
+				Body:       body,
+				Timeout:    timeout,
+				BundleType: "scanner",
+				ExpandZip:  true,
+				OutputDir:  opts.OutputDir,
+			})
+			return errors.Wrap(err, "could not get scanner zip")
+		},
 	}
 
 	c.PersistentFlags().Var(clustertype.Value(storage.ClusterType_KUBERNETES_CLUSTER), "cluster-type", "type of cluster the scanner will run on (k8s, openshift)")

@@ -138,5 +138,5 @@ func writeFile(file *loader.BufferedFile, destDir string) error {
 	if filepath.Ext(file.Name) == ".sh" {
 		perms = os.FileMode(0755)
 	}
-	return os.WriteFile(outputPath, file.Data, perms)
+	return errors.Wrap(os.WriteFile(outputPath, file.Data, perms), "could not write file")
 }

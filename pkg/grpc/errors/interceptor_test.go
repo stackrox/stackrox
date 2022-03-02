@@ -7,8 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -60,6 +63,45 @@ func TestErrorToGrpcCodeInterceptor(t *testing.T) {
 			}
 			require.NotNil(t, err)
 			assert.Equal(t, tt.err.Error(), err.Error())
+		})
+	}
+}
+
+func TestLogInternalErrorInterceptor(t *testing.T) {
+	tests := []struct {
+		name    string
+		handler grpc.UnaryHandler
+		logged  bool
+	}{
+		{
+			name: "internal error",
+			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+				return "", errors.New("some internal error")
+			},
+			logged: true,
+		},
+		{
+			name: "non internal error",
+			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+				return "", status.Error(codes.Canceled, "some other error")
+			},
+			logged: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			core, logs := observer.New(zap.ErrorLevel)
+			module := logging.CurrentModule()
+			log = &logging.Logger{
+				SugaredLogger: zap.New(core).Named(module.Name()).Sugar(),
+			}
+			resp, _ := LogInternalErrorInterceptor(context.Background(), nil, nil, tt.handler)
+			assert.Equal(t, "", resp)
+			if tt.logged {
+				assert.Equal(t, 1, logs.Len())
+			} else {
+				assert.Equal(t, 0, logs.Len())
+			}
 		})
 	}
 }

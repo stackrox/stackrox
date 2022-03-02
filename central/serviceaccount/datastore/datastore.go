@@ -2,14 +2,19 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 )
 
 // DataStore is an intermediary to ServiceAccountStorage.
@@ -32,6 +37,25 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		indexer:  indexer,
 		searcher: searcher,
 	}
+	if err := d.buildIndex(); err != nil {
+		return nil, errors.Wrap(err, "failed to build index from existing store")
+	}
+	return d, nil
+}
+
+// NewForTestOnly returns a new instance of DataStore. TO BE USED FOR TESTING PURPOSES ONLY.
+// To make this more explicit, we require passing a testing.T to this version.
+func NewForTestOnly(t *testing.T, db *pkgRocksDB.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
+	testutils.MustBeInTest(t)
+	storage := rocksdb.New(db)
+	indexer := index.New(bleveIndex)
+
+	d := &datastoreImpl{
+		storage:  storage,
+		indexer:  indexer,
+		searcher: search.New(storage, indexer),
+	}
+
 	if err := d.buildIndex(); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
