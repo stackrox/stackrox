@@ -1469,12 +1469,14 @@ commands:
 
       - run:
           name: QA Automation Platform Part 2
+          no_output_timeout: 450m
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
             else
               export CLUSTER=K8S
             fi
+            sleep 10000
             make -C qa-tests-backend sensor-bounce-test
 
       - run:
