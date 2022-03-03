@@ -18,7 +18,6 @@ type context struct {
 	getter         string
 	column         string
 	searchDisabled bool
-	childSkipPk    bool
 }
 
 func (c context) Getter(name string) string {
@@ -41,7 +40,6 @@ func (c context) childContext(name string, searchDisabled bool) context {
 		getter:         c.Getter(name),
 		column:         c.Column(name),
 		searchDisabled: c.searchDisabled || searchDisabled,
-		childSkipPk:    false,
 	}
 }
 
@@ -57,7 +55,7 @@ func Walk(obj reflect.Type, table string) *Schema {
 
 const defaultIndex = "btree"
 
-func getPostgresOptions(tag string, skipPk bool) PostgresOptions {
+func getPostgresOptions(tag string, topLevel bool) PostgresOptions {
 	var opts PostgresOptions
 
 	for _, field := range strings.Split(tag, ",") {
@@ -76,9 +74,7 @@ func getPostgresOptions(tag string, skipPk bool) PostgresOptions {
 			// at which times it needs to use a primary key.  It can also be a child of
 			// alerts.  When it is a child of alerts, we want to ignore the pk of the
 			// process_indicator in favor of the parent_id and generated idx field.
-			if !skipPk {
-				opts.PrimaryKey = true
-			}
+			opts.PrimaryKey = topLevel
 		case field == "unique":
 			opts.Unique = true
 		case field == "":
@@ -121,7 +117,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(structField.Tag.Get("sql"), ctx.childSkipPk)
+		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.ParentSchema == nil)
 		if opts.Ignored {
 			continue
 		}
@@ -191,7 +187,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 
-			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, childSkipPk: true}, childSchema, structField.Type.Elem().Elem())
+			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored}, childSchema, structField.Type.Elem().Elem())
 			continue
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored), schema, structField.Type)
