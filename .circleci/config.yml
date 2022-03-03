@@ -2577,7 +2577,7 @@ jobs:
             - CI_TAG
 
   pre-build-ui:
-    executor: custom
+    executor: stackrox-build
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
@@ -2629,7 +2629,7 @@ jobs:
       - cleanup-clusters-on-fail
 
   pre-build-cli:
-    executor: custom
+    executor: stackrox-build
     resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
@@ -2745,7 +2745,7 @@ jobs:
       - cleanup-clusters-on-fail
 
   build:
-    executor: custom
+    executor: stackrox-build
     resource_class: medium
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
