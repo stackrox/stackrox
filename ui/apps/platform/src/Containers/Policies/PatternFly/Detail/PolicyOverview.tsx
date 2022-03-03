@@ -13,7 +13,7 @@ import {
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
-import MitreAttackVectorsView from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
+import MitreAttackVectorsViewContainer from 'Containers/MitreAttackVectors/MitreAttackVectorsViewContainer';
 
 import { formatCategories, formatType } from '../policies.utils';
 import PolicySeverityLabel from '../PolicySeverityLabel';
@@ -87,7 +87,10 @@ function PolicyOverview({
                 <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
                     MITRE ATT&CK
                 </Title>
-                <MitreAttackVectorsView policyId={policy.id} />
+                <MitreAttackVectorsViewContainer
+                    policyId={policy.id}
+                    policyFormMitreAttackVectors={policy.mitreAttackVectors}
+                />
             </CardBody>
         </Card>
     );
