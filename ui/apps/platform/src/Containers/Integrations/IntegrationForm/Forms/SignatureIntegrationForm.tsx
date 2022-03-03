@@ -234,20 +234,18 @@ function SignatureIntegrationForm({
                                             )}
                                         {isEditable && (
                                             <Flex>
-                                                <FlexItem>
-                                                    <Button
-                                                        variant="link"
-                                                        isInline
-                                                        onClick={() =>
-                                                            arrayHelpers.push({
-                                                                name: '',
-                                                                publicKeyPemEnc: '',
-                                                            })
-                                                        }
-                                                    >
-                                                        Add new public key
-                                                    </Button>
-                                                </FlexItem>
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={() =>
+                                                        arrayHelpers.push({
+                                                            name: '',
+                                                            publicKeyPemEnc: '',
+                                                        })
+                                                    }
+                                                >
+                                                    Add new public key
+                                                </Button>
                                             </Flex>
                                         )}
                                     </>
