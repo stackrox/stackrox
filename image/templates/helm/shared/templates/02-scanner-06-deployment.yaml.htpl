@@ -92,6 +92,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        {{- if ._rox.env.openshift }}
+        - name: ROX_OPENSHIFT_API
+          value: "true"
+        {{- end}}
         {{- include "srox.envVars" (list . "deployment" ._rox.scanner.name ._rox.scanner.name) | nindent 8 }}
         resources:
           {{- ._rox.scanner._resources | nindent 10 }}
