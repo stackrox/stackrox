@@ -78,9 +78,15 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
         history.goBack();
     }
 
+    function scrollToTop() {
+        // wizard does not by default scroll to top of body when navigating to a step
+        document.getElementsByClassName('pf-c-wizard__main')[0].scrollTop = 0;
+    }
+
     function onBack(newStep): void {
         const { id } = newStep;
         setStepId(id);
+        scrollToTop();
     }
 
     function onGoToStep(newStep): void {
@@ -89,12 +95,14 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
         // after having moved backward to step which was valid, but made a change which is not valid?
         // Maybe allow going backward in that situation? For example, from criteria to behavior?
         setStepId(id);
+        scrollToTop();
     }
 
     function onNext(newStep): void {
         const { id } = newStep;
         setStepId(id);
         setStepIdReached(stepIdReached < id ? id : stepIdReached);
+        scrollToTop();
     }
 
     useEffect(() => {
