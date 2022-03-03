@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    Badge,
     Button,
     ButtonVariant,
     Divider,
@@ -53,14 +52,12 @@ function getNewButtonText(type) {
 }
 
 type IntegrationsTableProps = {
-    title: string;
     integrations: Integration[];
     hasMultipleDelete: boolean;
     onDeleteIntegrations: (integration) => void;
 };
 
 function IntegrationsTable({
-    title,
     integrations,
     hasMultipleDelete,
     onDeleteIntegrations,
@@ -91,63 +88,48 @@ function IntegrationsTable({
 
     return (
         <>
-            <Flex className="pf-u-p-md">
-                <FlexItem
-                    spacer={{ default: 'spacerMd' }}
-                    alignSelf={{ default: 'alignSelfCenter' }}
-                >
-                    <Flex alignSelf={{ default: 'alignSelfCenter' }}>
-                        <FlexItem
-                            spacer={{ default: 'spacerMd' }}
-                            alignSelf={{ default: 'alignSelfCenter' }}
-                        >
-                            <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
-                                {title}
-                            </Title>
-                        </FlexItem>
-                        <FlexItem
-                            spacer={{ default: 'spacerMd' }}
-                            alignSelf={{ default: 'alignSelfCenter' }}
-                        >
-                            <Badge isRead>{integrations.length}</Badge>
-                        </FlexItem>
-                    </Flex>
-                </FlexItem>
-                <FlexItem align={{ default: 'alignRight' }}>
-                    <Flex>
-                        {hasSelections && hasMultipleDelete && permissions[source].write && (
-                            <FlexItem spacer={{ default: 'spacerMd' }}>
-                                <Button variant="danger" onClick={onDeleteIntegrationHandler}>
-                                    Delete {numSelected} selected{' '}
-                                    {pluralize('integration', numSelected)}
-                                </Button>
-                            </FlexItem>
-                        )}
-                        {isClusterInitBundle && (
-                            <FlexItem spacer={{ default: 'spacerMd' }}>
-                                <DownloadCAConfigBundle />
-                            </FlexItem>
-                        )}
-                        {permissions[source].write && (
-                            <FlexItem spacer={{ default: 'spacerMd' }}>
-                                <Button
-                                    variant={ButtonVariant.primary}
-                                    component={LinkShim}
-                                    href={getPathToCreate(source, type)}
-                                    data-testid="add-integration"
-                                >
-                                    {newButtonText}
-                                </Button>
-                            </FlexItem>
-                        )}
-                    </Flex>
-                </FlexItem>
-            </Flex>
+            <PageSection variant="light">
+                <Flex>
+                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                        <Title headingLevel="h2">
+                            {integrations.length} {pluralize('results', integrations.length)} found
+                        </Title>
+                    </FlexItem>
+                    <FlexItem align={{ default: 'alignRight' }}>
+                        <Flex>
+                            {hasSelections && hasMultipleDelete && permissions[source].write && (
+                                <FlexItem>
+                                    <Button variant="danger" onClick={onDeleteIntegrationHandler}>
+                                        Delete {numSelected} selected{' '}
+                                        {pluralize('integration', numSelected)}
+                                    </Button>
+                                </FlexItem>
+                            )}
+                            {isClusterInitBundle && (
+                                <FlexItem>
+                                    <DownloadCAConfigBundle />
+                                </FlexItem>
+                            )}
+                            {permissions[source].write && (
+                                <FlexItem>
+                                    <Button
+                                        variant={ButtonVariant.primary}
+                                        component={LinkShim}
+                                        href={getPathToCreate(source, type)}
+                                        data-testid="add-integration"
+                                    >
+                                        {newButtonText}
+                                    </Button>
+                                </FlexItem>
+                            )}
+                        </Flex>
+                    </FlexItem>
+                </Flex>
+            </PageSection>
             <Divider component="div" />
             <PageSection
                 isFilled
                 padding={{ default: 'noPadding' }}
-                hasOverflowScroll
                 variant={PageSectionVariants.light}
             >
                 {integrations.length > 0 ? (

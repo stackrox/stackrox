@@ -27,7 +27,6 @@ import (
 )
 
 var (
-	// TODO: Change the resource to CVE once SAC is in place
 	authorizer = func() authz.Authorizer {
 		if features.VulnRiskManagement.Enabled() {
 			return perrpc.FromMap(map[authz.Authorizer][]string{

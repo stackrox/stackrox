@@ -37,7 +37,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		indexer:  indexer,
 		searcher: searcher,
 	}
-	if err := d.buildIndex(); err != nil {
+	if err := d.buildIndex(context.TODO()); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil
@@ -56,7 +56,7 @@ func NewForTestOnly(t *testing.T, db *pkgRocksDB.RocksDB, bleveIndex bleve.Index
 		searcher: search.New(storage, indexer),
 	}
 
-	if err := d.buildIndex(); err != nil {
+	if err := d.buildIndex(context.TODO()); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil

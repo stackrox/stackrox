@@ -1,13 +1,9 @@
 package env
 
-const (
-	defaultOpenshiftAPI = "false"
-)
-
 var (
-	// OpenshiftAPI is whether or not the k8s listener should talk via the openshift API
-	// ROX_OPENSHIFT_API is referenced in the deploy files, please look before removing
-	OpenshiftAPI = RegisterSetting("ROX_OPENSHIFT_API", WithDefault(defaultOpenshiftAPI), AllowEmpty())
+	// OpenshiftAPI specifies whether the k8s listener should talk via the openshift API.
+	// ROX_OPENSHIFT_API is referenced in the installation files, please be cautious when removing.
+	OpenshiftAPI = RegisterBooleanSetting("ROX_OPENSHIFT_API", false)
 
 	// EnableOpenShiftAuth specifies whether authentication via OpenShift's
 	// built-in OAuth server shall be enabled in Central. Note that just

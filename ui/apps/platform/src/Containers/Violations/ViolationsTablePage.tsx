@@ -2,7 +2,7 @@ import React, { useEffect, useState, ReactElement } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import Raven from 'raven-js';
-import { PageSection, Bullseye, Alert } from '@patternfly/react-core';
+import { PageSection, Bullseye, Alert, Divider, Title } from '@patternfly/react-core';
 
 import { actions as alertActions } from 'reducers/alerts';
 import { SearchEntry, SearchState } from 'reducers/pageSearch';
@@ -21,6 +21,7 @@ import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 
 import './ViolationsTablePage.css';
+import ViolationsBreadcrumbs from './ViolationsBreadcrumbs';
 
 function runAfter5Seconds(fn: () => void) {
     return new Promise(() => {
@@ -158,7 +159,10 @@ function ViolationsTablePage(): ReactElement {
 
     return (
         <>
+            <ViolationsBreadcrumbs />
             <PageSection variant="light" id="violations-table">
+                <Title headingLevel="h1">Violations</Title>
+                <Divider className="pf-u-py-md" />
                 <ReduxSearchInput
                     className="w-full theme-light"
                     searchOptions={searchOptions}
@@ -169,27 +173,31 @@ function ViolationsTablePage(): ReactElement {
                     autoCompleteCategories={['ALERTS']}
                 />
             </PageSection>
-            {currentPageAlertsErrorMessage ? (
-                <Bullseye>
-                    <Alert variant="danger" title={currentPageAlertsErrorMessage} />
-                </Bullseye>
-            ) : (
-                <ViolationsTablePanel
-                    violations={currentPageAlerts}
-                    violationsCount={alertCount}
-                    currentPage={currentPage}
-                    setCurrentPage={setCurrentPage}
-                    resolvableAlerts={resolvableAlerts}
-                    excludableAlerts={excludableAlerts}
-                    perPage={perPage}
-                    setPerPage={setPerPage}
-                    activeSortIndex={activeSortIndex}
-                    setActiveSortIndex={setActiveSortIndex}
-                    activeSortDirection={activeSortDirection}
-                    setActiveSortDirection={setActiveSortDirection}
-                    columns={columns}
-                />
-            )}
+            <PageSection variant="default">
+                {currentPageAlertsErrorMessage ? (
+                    <Bullseye>
+                        <Alert variant="danger" title={currentPageAlertsErrorMessage} />
+                    </Bullseye>
+                ) : (
+                    <PageSection variant="light">
+                        <ViolationsTablePanel
+                            violations={currentPageAlerts}
+                            violationsCount={alertCount}
+                            currentPage={currentPage}
+                            setCurrentPage={setCurrentPage}
+                            resolvableAlerts={resolvableAlerts}
+                            excludableAlerts={excludableAlerts}
+                            perPage={perPage}
+                            setPerPage={setPerPage}
+                            activeSortIndex={activeSortIndex}
+                            setActiveSortIndex={setActiveSortIndex}
+                            activeSortDirection={activeSortDirection}
+                            setActiveSortDirection={setActiveSortDirection}
+                            columns={columns}
+                        />
+                    </PageSection>
+                )}
+            </PageSection>
         </>
     );
 }

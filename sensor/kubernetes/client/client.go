@@ -46,7 +46,7 @@ func mustCreateK8sClient(config *rest.Config) kubernetes.Interface {
 }
 
 func mustCreateOpenshiftRouteClient(config *rest.Config) routeVersioned.Interface {
-	if env.OpenshiftAPI.Setting() != "true" {
+	if !env.OpenshiftAPI.BooleanSetting() {
 		return nil
 	}
 	client, err := routeVersioned.NewForConfig(config)
@@ -57,7 +57,7 @@ func mustCreateOpenshiftRouteClient(config *rest.Config) routeVersioned.Interfac
 }
 
 func mustCreateOpenshiftAppsClient(config *rest.Config) appVersioned.Interface {
-	if env.OpenshiftAPI.Setting() != "true" {
+	if !env.OpenshiftAPI.BooleanSetting() {
 		return nil
 	}
 	client, err := appVersioned.NewForConfig(config)
@@ -68,7 +68,7 @@ func mustCreateOpenshiftAppsClient(config *rest.Config) appVersioned.Interface {
 }
 
 func mustCreateOpenshiftConfigClient(config *rest.Config) configVersioned.Interface {
-	if env.OpenshiftAPI.Setting() != "true" {
+	if !env.OpenshiftAPI.BooleanSetting() {
 		return nil
 	}
 	client, err := configVersioned.NewForConfig(config)

@@ -16,7 +16,7 @@ image:
     tag: [< required "" .ScannerImageTag >]
   scannerDb:
     name: [< required "" .ScannerDBSlimImageRemote >]
-    tag: [< required "" .ScannerDBImageTag >]
+    tag: [< required "" .ScannerImageTag >]
   [< end >]
 ---
 # Add registry defaults

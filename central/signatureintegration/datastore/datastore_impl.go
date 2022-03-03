@@ -27,7 +27,7 @@ func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) 
 		return nil, false, err
 	}
 
-	return d.storage.Get(id)
+	return d.storage.Get(ctx, id)
 }
 
 func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error) {
@@ -36,7 +36,7 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 	}
 
 	var integrations []*storage.SignatureIntegration
-	err := d.storage.Walk(func(integration *storage.SignatureIntegration) error {
+	err := d.storage.Walk(ctx, func(integration *storage.SignatureIntegration) error {
 		integrations = append(integrations, integration)
 		return nil
 	})
@@ -62,14 +62,14 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if err := d.verifyIntegrationIDDoesNotExist(integration.GetId()); err != nil {
+	if err := d.verifyIntegrationIDDoesNotExist(ctx, integration.GetId()); err != nil {
 		if errors.Is(err, errox.AlreadyExists) {
 			return nil, errors.Wrap(err, "collision in generated signature integration id, try again")
 		}
 		return nil, err
 	}
 
-	err := d.storage.Upsert(integration)
+	err := d.storage.Upsert(ctx, integration)
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +88,11 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if err := d.verifyIntegrationIDExists(integration.GetId()); err != nil {
+	if err := d.verifyIntegrationIDExists(ctx, integration.GetId()); err != nil {
 		return err
 	}
 
-	return d.storage.Upsert(integration)
+	return d.storage.Upsert(ctx, integration)
 }
 
 func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id string) error {
@@ -103,15 +103,15 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if err := d.verifyIntegrationIDExists(id); err != nil {
+	if err := d.verifyIntegrationIDExists(ctx, id); err != nil {
 		return err
 	}
 
-	return d.storage.Delete(id)
+	return d.storage.Delete(ctx, id)
 }
 
-func (d *datastoreImpl) verifyIntegrationIDExists(id string) error {
-	_, found, err := d.storage.Get(id)
+func (d *datastoreImpl) verifyIntegrationIDExists(ctx context.Context, id string) error {
+	_, found, err := d.storage.Get(ctx, id)
 	if err != nil {
 		return err
 	} else if !found {
@@ -120,8 +120,8 @@ func (d *datastoreImpl) verifyIntegrationIDExists(id string) error {
 	return nil
 }
 
-func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(id string) error {
-	_, found, err := d.storage.Get(id)
+func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id string) error {
+	_, found, err := d.storage.Get(ctx, id)
 	if err != nil {
 		return err
 	} else if found {

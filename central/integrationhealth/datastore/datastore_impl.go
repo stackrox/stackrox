@@ -28,7 +28,7 @@ func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*stora
 	} else if !ok {
 		return nil, nil
 	}
-	return ds.getIntegrationsOfType(storage.IntegrationHealth_IMAGE_INTEGRATION)
+	return ds.getIntegrationsOfType(ctx, storage.IntegrationHealth_IMAGE_INTEGRATION)
 }
 
 func (ds *datastoreImpl) GetNotifierPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
@@ -37,7 +37,7 @@ func (ds *datastoreImpl) GetNotifierPlugins(ctx context.Context) ([]*storage.Int
 	} else if !ok {
 		return nil, nil
 	}
-	return ds.getIntegrationsOfType(storage.IntegrationHealth_NOTIFIER)
+	return ds.getIntegrationsOfType(ctx, storage.IntegrationHealth_NOTIFIER)
 }
 
 func (ds *datastoreImpl) GetBackupPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
@@ -46,7 +46,7 @@ func (ds *datastoreImpl) GetBackupPlugins(ctx context.Context) ([]*storage.Integ
 	} else if !ok {
 		return nil, nil
 	}
-	return ds.getIntegrationsOfType(storage.IntegrationHealth_BACKUP)
+	return ds.getIntegrationsOfType(ctx, storage.IntegrationHealth_BACKUP)
 }
 
 func (ds *datastoreImpl) UpdateIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error {
@@ -56,7 +56,7 @@ func (ds *datastoreImpl) UpdateIntegrationHealth(ctx context.Context, integratio
 	} else if !ok {
 		return nil
 	}
-	return ds.store.Upsert(integrationHealth)
+	return ds.store.Upsert(ctx, integrationHealth)
 }
 
 func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string) error {
@@ -72,11 +72,11 @@ func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string)
 	} else if !ok {
 		return nil
 	}
-	return ds.store.Delete(id)
+	return ds.store.Delete(ctx, id)
 }
 
 func (ds *datastoreImpl) GetIntegrationHealth(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
-	health, found, err := ds.store.Get(id)
+	health, found, err := ds.store.Get(ctx, id)
 	if !found || err != nil {
 		return nil, false, err
 	}
@@ -114,9 +114,9 @@ func readAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool,
 	}
 }
 
-func (ds *datastoreImpl) getIntegrationsOfType(integrationType storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {
+func (ds *datastoreImpl) getIntegrationsOfType(ctx context.Context, integrationType storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {
 	var integrationHealth []*storage.IntegrationHealth
-	err := ds.store.Walk(func(obj *storage.IntegrationHealth) error {
+	err := ds.store.Walk(ctx, func(obj *storage.IntegrationHealth) error {
 		if obj.GetType() == integrationType {
 			integrationHealth = append(integrationHealth, obj)
 		}
