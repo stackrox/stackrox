@@ -404,8 +404,7 @@ spec:
         path: admissionControl.contactImageScanners
       - description: Maximum timeout period for admission review, upon which admission
           review will fail open. Use it to set request timeouts when you enable inline
-          image scanning. The default kubectl timeout is 30 seconds; taking padding
-          into account, this should not exceed 25 seconds.
+          image scanning.
         displayName: Timeout Seconds
         path: admissionControl.timeoutSeconds
       - description: Settings for the components running on each node in the cluster
