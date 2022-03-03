@@ -11,7 +11,7 @@ GITROOT="$(git rev-parse --show-toplevel)"
 
 # Helper method to call curl command to quay
 function quay_curl {
-    curl --retry 5 -sS --fail -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/rhacs-eng/${1}"
+    curl -sS --fail -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/rhacs-eng/${1}"
 }
 
 # Check image scan results in quay.io and alert on new fixable vulns
@@ -24,7 +24,7 @@ function compare_fixable_vulns {
   if [[ "$(jq -r '.is_manifest_list' <<<"$img_data")" == "true" ]]; then
     img_data="$(quay_curl "${image_name}/tag/?specificTag=${image_tag}-amd64" | jq -r '.tags | first')"
   fi
-  CURRENT_IMAGE="$(jq -r '.image_id' <<<"$img_data")"
+  CURRENT_IMAGE="$(jq -r '.manifest_digest' <<<"$img_data")"
   if [[ -z "$CURRENT_IMAGE" || "$CURRENT_IMAGE" == "null" ]]; then
     echo >&2 "Tag ${image_tag} could not be found for image ${image_name}"
     FAIL_SCRIPT=true
@@ -36,11 +36,11 @@ function compare_fixable_vulns {
   local scan_present
   local count=1
 
-  echo "Getting scan status"
-  scan_present=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
+  echo "Getting scan status for ${image_name}"
+  scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
   until [ "$scan_present" = "scanned" ] || [ "$count" -gt 100 ]; do
     echo "Waiting for scan to complete..."
-    scan_present=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
+    scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
     count=$((count+1))
     sleep 15
   done
@@ -50,8 +50,8 @@ function compare_fixable_vulns {
     echo "${image_name}:${image_tag} scan never completed. Check Quay website."
     FAIL_SCRIPT=true
   else
-    echo "Trying to get any fixable vulns for the scanned image"
-    CURRENT_FIXABLE=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
+    echo "Trying to get any fixable vulns for ${image_name}"
+    CURRENT_FIXABLE=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
 
     # fail the check if fixable vulns are found that are not allowed
     if [[ -n "$CURRENT_FIXABLE" ]]; then
@@ -88,7 +88,7 @@ FAIL_SCRIPT=false
 
 # determine all image tags
 #TODO(do-not-merge): Hack to check if it's working
-RELEASE_TAG=3.68.1-0-g84d393a886
+RELEASE_TAG=latest
 COLLECTOR_TAG=3.6.0
 SCANNER_TAG=2.21.5
 DOCS_PRERELEASE_TAG=d4821715-f57a81c2-b6d8cf96
