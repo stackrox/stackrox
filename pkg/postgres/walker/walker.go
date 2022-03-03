@@ -55,7 +55,7 @@ func Walk(obj reflect.Type, table string) *Schema {
 
 const defaultIndex = "btree"
 
-func getPostgresOptions(tag string) PostgresOptions {
+func getPostgresOptions(tag string, topLevel bool) PostgresOptions {
 	var opts PostgresOptions
 
 	for _, field := range strings.Split(tag, ",") {
@@ -69,7 +69,12 @@ func getPostgresOptions(tag string) PostgresOptions {
 				opts.Index = defaultIndex
 			}
 		case field == "pk":
-			opts.PrimaryKey = true
+			// if we have a child object, we don't want to propagate its primary key
+			// an example of this is process_indicator.  It is its own object
+			// at which times it needs to use a primary key.  It can also be a child of
+			// alerts.  When it is a child of alerts, we want to ignore the pk of the
+			// process_indicator in favor of the parent_id and generated idx field.
+			opts.PrimaryKey = topLevel
 		case field == "unique":
 			opts.Unique = true
 		case field == "":
@@ -112,10 +117,11 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(structField.Tag.Get("sql"))
+		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.ParentSchema == nil)
 		if opts.Ignored {
 			continue
 		}
+
 		searchOpts := getSearchOptions(ctx, structField.Tag.Get("search"))
 
 		field := Field{
