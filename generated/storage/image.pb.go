@@ -739,7 +739,7 @@ func (m *ImageSignatureVerificationData) Clone() *ImageSignatureVerificationData
 	return cloned
 }
 
-// Next Tag: 4
+// Next Tag: 5
 type ImageSignatureVerificationResult struct {
 	VerificationTime *types.Timestamp `protobuf:"bytes,1,opt,name=verification_time,json=verificationTime,proto3" json:"verification_time,omitempty"`
 	// verifier_id correlates to the ID of the signature integration used to verify the signature.
