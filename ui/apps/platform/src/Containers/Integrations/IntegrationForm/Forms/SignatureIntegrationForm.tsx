@@ -10,13 +10,12 @@ import {
     TextInput,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
-
-import FormMessage from 'Components/PatternFly/FormMessage';
 import { FieldArray, FormikProvider } from 'formik';
 import { TrashIcon } from '@patternfly/react-icons';
 
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormMessage from 'Components/PatternFly/FormMessage';
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 import { IntegrationFormProps } from '../integrationFormTypes';
