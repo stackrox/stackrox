@@ -3059,7 +3059,7 @@ jobs:
           label: ci-upgrade-tests
           run-on-master: true
           run-on-tags: true
-          changed-path: '^migrator/.*$'
+          changed-path: '^migrator/.*$|^image/'
 
       - provision-gke-cluster:
           cluster-id: upgrade-test
