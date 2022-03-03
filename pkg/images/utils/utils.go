@@ -119,15 +119,20 @@ func GenerateImageFromStringWithOverride(imageStr, registryOverride string) (*st
 	return image, nil
 }
 
-// GetSHA returns the SHA of the image if it exists
+// GetSHA returns the SHA of the image, if it exists.
 func GetSHA(img *storage.Image) string {
-	if img.GetId() != "" {
-		return img.GetId()
+	return GetSHAFromIDAndMetadata(img.GetId(), img.GetMetadata())
+}
+
+// GetSHAFromIDAndMetadata returns the SHA of the image based on the given ID and metadata, if it exists.
+func GetSHAFromIDAndMetadata(id string, metadata *storage.ImageMetadata) string {
+	if id != "" {
+		return id
 	}
-	if d := img.GetMetadata().GetV2().GetDigest(); d != "" {
+	if d := metadata.GetV2().GetDigest(); d != "" {
 		return d
 	}
-	if d := img.GetMetadata().GetV1().GetDigest(); d != "" {
+	if d := metadata.GetV1().GetDigest(); d != "" {
 		return d
 	}
 	return ""

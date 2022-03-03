@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/scanners/clairify/mock"
 	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -208,4 +209,138 @@ func TestConvertNodeVulnerabilities(t *testing.T) {
 	for i := range scannerVulns {
 		assert.Equal(t, protoVulns[i], convertVulnerability(&scannerVulns[i], storage.EmbeddedVulnerability_NODE_VULNERABILITY))
 	}
+}
+
+func TestConvertFeatures(t *testing.T) {
+	// metadata is based on the fixture used below.
+	metadata := &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Digest: "sha256:idk",
+			Author: "stackrox",
+			Layers: []*storage.ImageLayer{
+				{
+					Instruction: "FROM",
+					Value:       "ubi8",
+					Author:      "Red Hat",
+				},
+				{
+					Instruction: "COPY",
+					Value:       "stackrox.go /",
+					Author:      "StackRox",
+				},
+			},
+			Command: []string{"go", "run", "stackrox.go"},
+		},
+		V2: &storage.V2Metadata{
+			Digest: "sha256:idk",
+		},
+		LayerShas: []string{"sha256:idk0", "sha256:idk1"},
+		Version:   0,
+	}
+
+	features := fixtures.ScannerFeaturesV1()
+
+	expectedFeatures := []*storage.EmbeddedImageScanComponent{
+		{
+			Name:    "rpm",
+			Version: "4.16.0",
+			FixedBy: "4.16.1",
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:               "CVE-2022-1234",
+					Summary:           "This is the worst vulnerability I have ever seen",
+					Link:              "https://access.redhat.com/security/cve/CVE-2022-1234",
+					VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+					Cvss:              6.3,
+					ScoreVersion:      storage.EmbeddedVulnerability_V3,
+					CvssV2: &storage.CVSSV2{
+						Vector:              "AV:A/AC:M/Au:M/C:N/I:P/A:C",
+						AttackVector:        storage.CVSSV2_ATTACK_ADJACENT,
+						AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+						Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+						Confidentiality:     storage.CVSSV2_IMPACT_NONE,
+						Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
+						Availability:        storage.CVSSV2_IMPACT_COMPLETE,
+						ExploitabilityScore: 3.5,
+						ImpactScore:         7.8,
+						Score:               5.4,
+						Severity:            storage.CVSSV2_MEDIUM,
+					},
+					CvssV3: &storage.CVSSV3{
+						Vector:              "CVSS:3.1/AV:A/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:H",
+						ExploitabilityScore: 2.1,
+						ImpactScore:         4.2,
+						AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+						AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+						PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+						UserInteraction:     storage.CVSSV3_UI_NONE,
+						Scope:               storage.CVSSV3_UNCHANGED,
+						Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+						Integrity:           storage.CVSSV3_IMPACT_NONE,
+						Availability:        storage.CVSSV3_IMPACT_HIGH,
+						Score:               6.3,
+						Severity:            storage.CVSSV3_MEDIUM,
+					},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "4.16.1",
+					},
+				},
+				{
+					Cve:               "CVE-2022-1235",
+					Summary:           "This is the second worst vulnerability I have ever seen",
+					Link:              "https://access.redhat.com/security/cve/CVE-2022-1235",
+					VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+					Cvss:              5.4,
+					ScoreVersion:      storage.EmbeddedVulnerability_V2,
+					CvssV2: &storage.CVSSV2{
+						Vector:              "AV:A/AC:M/Au:M/C:N/I:P/A:C",
+						AttackVector:        storage.CVSSV2_ATTACK_ADJACENT,
+						AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+						Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+						Confidentiality:     storage.CVSSV2_IMPACT_NONE,
+						Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
+						Availability:        storage.CVSSV2_IMPACT_COMPLETE,
+						ExploitabilityScore: 3.5,
+						ImpactScore:         7.8,
+						Score:               5.4,
+						Severity:            storage.CVSSV2_MEDIUM,
+					},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{},
+				},
+			},
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 0,
+			},
+			Executables: []*storage.EmbeddedImageScanComponent_Executable{
+				{
+					Path:         "/bin/rpm",
+					Dependencies: []string{"Z2xpYmM:MQ", "bGliLnNv:Mg"},
+				},
+			},
+		},
+		{
+			Name:    "curl",
+			Version: "1",
+			Vulns:   []*storage.EmbeddedVulnerability{},
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 0,
+			},
+			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
+		},
+		{
+			Name:     "java.jar",
+			Version:  "1",
+			Location: "/java/jar/path/java.jar",
+			Source:   storage.SourceType_JAVA,
+			Vulns:    []*storage.EmbeddedVulnerability{},
+			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+				LayerIndex: 1,
+			},
+			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
+		},
+	}
+
+	assert.Equal(t, expectedFeatures, convertFeatures(metadata, features))
 }
