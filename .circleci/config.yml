@@ -2443,11 +2443,11 @@ jobs:
     #         "trigger_on_demand": true,
     #         "workflow_name": "designated_image_test",
     #         "main_image_tag": "3.0.50.1",
-    #         "main_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/main-rhel",
-    #         "roxctl_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/main-rhel",
-    #         "scanner_db_image": "registry1.dsop.io/ironbank/stackrox/stackrox/scanner-db-rhel:2.5.0",
-    #         "scanner_image": "registry1.dsop.io/ironbank/stackrox/stackrox/scanner-rhel:2.5.0",
-    #         "collector_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/collector-rhel",
+    #         "main_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/main",
+    #         "roxctl_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/main",
+    #         "scanner_db_image": "registry1.dsop.io/ironbank/stackrox/stackrox/scanner-db:2.5.0",
+    #         "scanner_image": "registry1.dsop.io/ironbank/stackrox/stackrox/scanner:2.5.0",
+    #         "collector_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/collector",
     #         "registry_username": "<your DSOP registry1 username>",
     #         "registry_password": "<token from registry1>",
     #         "rox_license_key": "<a valid ROX license>"
@@ -2831,8 +2831,6 @@ jobs:
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
 
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
-              # TODO(RS-381): remove this line once Helm charts are updated to respect image flavors
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector:${MAIN_TAG}-slim"
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
             done
 
@@ -4547,12 +4545,7 @@ jobs:
 
             MAIN_TAG=$(make --quiet tag)
             COLLECTOR_TAG=$(make --quiet collector-tag)
-
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/main:$MAIN_TAG" "stackrox.io/main:$MAIN_TAG"
-
-            # RHEL images
-            # For simplicity for customers, tag main as main-rhel as well
-            ./scripts/ci/pull-retag-push.sh "stackrox.io/main:$MAIN_TAG" "stackrox.io/main-rhel:$MAIN_TAG"
 
             # The docs image uses the same tag as main for releases.
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/docs:$MAIN_TAG"   "stackrox.io/docs:$MAIN_TAG"
@@ -4561,11 +4554,6 @@ jobs:
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}"        "collector.stackrox.io/collector:${COLLECTOR_TAG}"
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest"
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"
-
-            # Retag with -rhel suffix for historical reasons
-            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}"        "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}"
-            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest"
-            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim"
 
       - run:
           name: Push collector & scanner images tagged with main-version to stackrox.io
@@ -4582,16 +4570,8 @@ jobs:
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "stackrox.io/scanner-db:${MAIN_TAG}"
 
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "collector.stackrox.io/collector:${MAIN_TAG}"
-            # TODO(RS-381): remove this line once Helm charts are updated to respect image flavors
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector:${MAIN_TAG}-slim"
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector-slim:${MAIN_TAG}"
 
-            # Externally exposed registries require '-rhel' suffix for backwards compatibility with some customers.
-            # TODO(RS-381): drop retagging with -rhel
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${MAIN_TAG}"         "stackrox.io/scanner-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"      "stackrox.io/scanner-db-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}"       "collector.stackrox.io/collector-rhel:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${MAIN_TAG}-slim"  "collector.stackrox.io/collector-rhel:${MAIN_TAG}-slim"
 
       - run:
           name: Push roxctl to stackrox-hub
@@ -4616,8 +4596,6 @@ jobs:
             for release in "$(make --quiet tag)" latest; do
               gsutil cp scripts/offline-bundle/image-bundle.tgz           gs://sr-roxc/${release}/image-bundle.tgz
               gsutil cp scripts/offline-bundle/image-collector-bundle.tgz gs://sr-roxc/${release}/image-collector-bundle.tgz
-              gsutil cp scripts/offline-bundle/image-bundle-rhel.tgz           gs://sr-roxc/${release}/image-bundle-rhel.tgz
-              gsutil cp scripts/offline-bundle/image-collector-bundle-rhel.tgz gs://sr-roxc/${release}/image-collector-bundle-rhel.tgz
             done
 
       - run:
