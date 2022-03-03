@@ -10,7 +10,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 17
+// Next Tag: 18
 message Image {
     string                          id                          = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName                       name                        = 1;
@@ -35,6 +35,7 @@ message Image {
     google.protobuf.Timestamp last_updated                      = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
 
     bool                            not_pullable                = 10;
+    bool                            is_cluster_local            = 17;
 
     reserved 6;  // was map<string,string> clusterns_scopes
     int64                           priority                    = 11;
