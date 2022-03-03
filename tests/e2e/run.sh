@@ -123,12 +123,6 @@ run_roxctl_bats_tests() {
     fi
     [[ -d "$TEST_ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $TEST_ROOT/tests/roxctl/bats-tests/$suite"
 
-    # TODO(RS-449): Move expect installation to the CI image
-    if is_CI; then
-      if ! command -v expect >/dev/null 2>&1; then
-        sudo apt-get update && sudo apt-get install --no-install-recommends -y expect
-      fi
-    fi
     info "Running Bats e2e tests on development roxctl"
     "$TEST_ROOT/tests/roxctl/bats-runner.sh" "$output" "$TEST_ROOT/tests/roxctl/bats-tests/$suite"
 }
