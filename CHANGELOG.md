@@ -32,7 +32,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Note that this only affects users who are storing their policies externally and keeping those policies in sync with Central. There is no action required for users who are not taking this approach.
   - Support for system policies with `policyVersion` unset will be removed in 3.71. All such externally stored policies must be converted to policy version 1.0 or higher. To do so, import the policies into the system, and then export the previously imported policies. The exported policies will now be in supported policy version format (>=1.0), which can be ensured by checking the `policyVersion` field.
 - Vulnerability Risk Assessment: Deferral update requests that are in pending state can now be canceled.
-- API endpoint `api/helm/cluster/add` was deleted.
+- API endpoint `/api/helm/cluster/add` was deleted as not being used in the product.
 
 ## [68.0]
 
