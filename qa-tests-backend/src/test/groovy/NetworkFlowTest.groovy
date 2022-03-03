@@ -253,7 +253,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     //
-    // Test no longer working due to afterglow. See ROX-7305 and ROX-9563
+    // TODO(ROX-9563): Test no longer working due to afterglow. See ROX-7305.
     //
     /*
     @Category([NetworkFlowVisualization])
