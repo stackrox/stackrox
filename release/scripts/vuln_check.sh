@@ -11,7 +11,14 @@ GITROOT="$(git rev-parse --show-toplevel)"
 
 # Helper method to call curl command to quay
 function quay_curl {
-    curl --retry 5 -sS --fail -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/rhacs-eng/${1}"
+    http_response=$(curl --retry 5 -s -v -o response.txt -w "%{http_code}" -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/rhacs-eng/${1}")
+    if [ $http_response != 200 ]; then
+        echo "Server returned error: $http_response"
+        cat response.txt >&2
+        exit $http_response
+    else
+        cat response.txt
+    fi
 }
 
 # Check image scan results in quay.io and alert on new fixable vulns
@@ -95,11 +102,12 @@ DOCS_PRERELEASE_TAG=d4821715-f57a81c2-b6d8cf96
 
 ALLOWED_VULNS=$(jq -c '.[]' "$DIR/allowed_vulns.json")
 
+# check docs image - using the pre-release tag (not the release tag)
+compare_fixable_vulns "docs" "$DOCS_PRERELEASE_TAG"
+
 # check main images
 compare_fixable_vulns "main" "$RELEASE_TAG"
 
-# check docs image - using the pre-release tag (not the release tag)
-compare_fixable_vulns "docs" "$DOCS_PRERELEASE_TAG"
 
 # check collector images
 compare_fixable_vulns "collector" "${COLLECTOR_TAG}-slim"
