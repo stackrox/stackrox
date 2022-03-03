@@ -153,8 +153,7 @@ function PolicyScopeForm() {
                             Use Exclude by scope to exclude entities from your policy. This function
                             is only available for Deploy and Runtime lifecycle stages. You can add
                             multiple scopes and also use regular expressions (RE2 syntax) fo
-                            namespaces and labels. However, you can&apos;t use regular expressions
-                            for selecting deployments.
+                            namespaces and labels.
                         </div>
                     </FlexItem>
                     <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>

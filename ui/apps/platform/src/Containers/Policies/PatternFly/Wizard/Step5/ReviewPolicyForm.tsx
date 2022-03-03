@@ -114,7 +114,7 @@ function ReviewPolicyForm({
                     alignSelf={{ default: 'alignSelfStretch' }}
                     className="review-policy pf-u-p-lg"
                 >
-                    <Flex>
+                    <Flex direction={{ default: 'column', xl: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <Title headingLevel="h2">Review policy</Title>
                             <div className="pf-u-mt-sm">Review policy settings and violations.</div>
