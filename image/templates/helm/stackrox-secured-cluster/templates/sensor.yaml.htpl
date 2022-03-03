@@ -128,7 +128,7 @@ spec:
           value: {{ printf "%s.%s.svc:8443" ._rox.scanner.name .Release.Namespace }}
           {{- end }}
         {{- else }}
-          value: false
+          value: "false"
         {{- end }}
         [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
