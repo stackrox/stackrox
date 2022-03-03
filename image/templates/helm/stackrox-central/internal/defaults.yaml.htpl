@@ -78,12 +78,12 @@ defaults:
 
     dbImage:
       name: [< required "" .ScannerDBImageRemote >]
-      tag: [< required "" .ScannerDBImageTag >]
+      tag: [< required "" .ScannerImageTag >]
 
     [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
     slimDBImage:
       name: [< required "" .ScannerDBSlimImageRemote >]
-      tag: [< required "" .ScannerDBImageTag >]
+      tag: [< required "" .ScannerImageTag >]
     [< end >]
 
   system:
