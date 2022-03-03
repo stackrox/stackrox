@@ -253,6 +253,7 @@ function PolicyDetail({
                             variant={AlertVariant[variant]}
                             title={title}
                             timeout={4000}
+                            onTimeout={() => removeToast(key)}
                             actionClose={
                                 <AlertActionCloseButton
                                     title={title}
