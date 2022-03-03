@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/types"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -74,7 +73,7 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
-				Name:            "cosignPublicKey",
+				Name:            "cosignPublicKeyVerifier",
 				PublicKeyPemEnc: pemPublicKey,
 			},
 		},
@@ -122,7 +121,7 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 	require.NoError(t, err, "creating image with signature")
 
 	cases := map[string]struct {
-		verifier *cosignPublicKey
+		verifier *cosignPublicKeyVerifier
 		img      *storage.Image
 		err      error
 		status   storage.ImageSignatureVerificationResult_Status
@@ -206,118 +205,6 @@ func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
-}
-
-type mockRegistry struct {
-	registryTypes.ImageRegistry
-	cfg *registryTypes.Config
-}
-
-func (m *mockRegistry) Config() *registryTypes.Config {
-	return m.cfg
-}
-
-func TestPublicKey_FetchSignature_Success(t *testing.T) {
-	// TODO: Move to internal repo under our control.
-	cimg, err := imgUtils.GenerateImageFromString("ghcr.io/kyverno/test-verify-image" +
-		"@sha256:b31bfb4d0213f254d361e0079deaaebefa4f82ba7aa76ef82e90b4935ad5b105")
-	require.NoError(t, err, "creating test image")
-	img := types.ToImage(cimg)
-
-	// Values are associated with the
-	// ghcr.io/kyverno/test-verify-image@sha256:b31bfb4d0213f254d361e0079deaaebefa4f82ba7aa76ef82e90b4935ad5b105
-	// image.
-	// For reference, see: https://github.com/orgs/kyverno/packages/container/test-verify-image/5527982?tag=signed
-	rawSig1, err := base64.StdEncoding.DecodeString("MEYCIQCODtbfRxJNas/iy542l8UeZC9KB2/Rz4UFSDEGUfv1JQIhALwQQOmp" +
-		"ew4yJ/IwwHZ36fDnxSScoeANMadpG2j2syO/")
-	require.NoError(t, err, "decoding signature")
-	rawSig2, err := base64.StdEncoding.DecodeString("MEYCIQCqq6tWc/u9fJJorkHxSwhMCzf5Sap3NHfubDbS1aCS+AIhAM2tkIuQ" +
-		"WSc3CryJpkbCYje+w9KkEvSWmD+CgId2SYIq")
-	require.NoError(t, err, "decoding signature")
-	payload1, err := base64.StdEncoding.DecodeString("eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjo" +
-		"iZ2hjci5pby9reXZlcm5vL3Rlc3QtdmVyaWZ5LWltYWdlIn0sImltYWdlIjp7ImRvY2tlci1tYW5pZmVzdC1kaWdlc3QiOiJzaGEyNTY6Yj" +
-		"MxYmZiNGQwMjEzZjI1NGQzNjFlMDA3OWRlYWFlYmVmYTRmODJiYTdhYTc2ZWY4MmU5MGI0OTM1YWQ1YjEwNSJ9LCJ0eXBlIjoiY29zaWduI" +
-		"GNvbnRhaW5lciBpbWFnZSBzaWduYXR1cmUifSwib3B0aW9uYWwiOm51bGx9")
-	require.NoError(t, err, "decoding signature")
-	payload2, err := base64.StdEncoding.DecodeString("eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjo" +
-		"iZ2hjci5pby9reXZlcm5vL3Rlc3QtdmVyaWZ5LWltYWdlIn0sImltYWdlIjp7ImRvY2tlci1tYW5pZmVzdC1kaWdlc3QiOiJzaGEyNTY6Yj" +
-		"MxYmZiNGQwMjEzZjI1NGQzNjFlMDA3OWRlYWFlYmVmYTRmODJiYTdhYTc2ZWY4MmU5MGI0OTM1YWQ1YjEwNSJ9LCJ0eXBlIjoiY29zaWduI" +
-		"GNvbnRhaW5lciBpbWFnZSBzaWduYXR1cmUifSwib3B0aW9uYWwiOm51bGx9")
-	require.NoError(t, err, "decoding signature")
-
-	expectedSignatures := &storage.ImageSignature{
-		Signatures: []*storage.Signature{
-			{
-				Signature: &storage.Signature_Cosign{
-					Cosign: &storage.CosignSignature{
-						RawSignature:     rawSig1,
-						SignaturePayload: payload1,
-					},
-				},
-			},
-			{
-				Signature: &storage.Signature_Cosign{
-					Cosign: &storage.CosignSignature{
-						RawSignature:     rawSig2,
-						SignaturePayload: payload2,
-					},
-				},
-			},
-		},
-	}
-
-	p := &cosignPublicKey{}
-	mockConfig := &registryTypes.Config{
-		Username: "",
-		Password: "",
-		Insecure: false,
-	}
-	reg := &mockRegistry{cfg: mockConfig}
-
-	res, exists := p.FetchSignature(context.Background(), img, reg)
-	assert.True(t, exists)
-	assert.Equal(t, expectedSignatures, res)
-}
-
-func TestPublicKey_FetchSignature_Failure(t *testing.T) {
-	cases := map[string]struct {
-		registry registryTypes.ImageRegistry
-		img      string
-	}{
-		"failed authentication for registry": {
-			registry: &mockRegistry{cfg: &registryTypes.Config{}},
-			img:      "docker.io/private-repo/image:latest",
-		},
-		"failed parse reference": {
-			img: "fa@wrongreference",
-		},
-	}
-	p := &cosignPublicKey{}
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			cimg, err := imgUtils.GenerateImageFromString("nginx")
-			require.NoError(t, err, "creating test image")
-			cimg.Name.FullName = c.img
-			img := types.ToImage(cimg)
-			res, exists := p.FetchSignature(context.Background(), img, c.registry)
-			assert.False(t, exists)
-			assert.Nil(t, res)
-		})
-	}
-}
-
-func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
-	cimg, err := imgUtils.GenerateImageFromString("nginx")
-	require.NoError(t, err, "creating test image")
-	img := types.ToImage(cimg)
-
-	p := &cosignPublicKey{}
-	reg := &mockRegistry{cfg: &registryTypes.Config{}}
-
-	result, exists := p.FetchSignature(context.Background(), img, reg)
-	assert.NoError(t, err)
-	assert.False(t, exists)
-	assert.Nil(t, result)
 }
 
 func generateImageWithCosignSignature(imgString, b64Sig, b64SigPayload string) (*storage.Image, error) {
