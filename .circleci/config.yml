@@ -504,7 +504,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.30
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.30-10-g506a909bfb # TODO(do not merge): After upstream PR is merged, cut a tag and update this
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -517,7 +517,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-build-0.3.30-10-g506a909bfb # TODO(do not merge): After upstream PR is merged, cut a tag and update this
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-build-cci-0.3.30-10-g506a909bfb # TODO(do not merge): After upstream PR is merged, cut a tag and update this
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -5168,9 +5168,9 @@ workflows:
       - openshift-ci-upgrade-test:
           context:
           - quay-rhacs-eng-readonly
-          filters: &roxbotAndOSCIBranches
+          filters: &OSCIBranches
             branches:
-              only: /.*(roxbot|osci).*/
+              only: /.*(osci).*/
           requires:
             - build
 
@@ -5178,7 +5178,7 @@ workflows:
           context:
           - quay-rhacs-eng-readonly
           filters:
-            <<: *roxbotAndOSCIBranches
+            <<: *OSCIBranches
           requires:
             - pre-create-tag
 
