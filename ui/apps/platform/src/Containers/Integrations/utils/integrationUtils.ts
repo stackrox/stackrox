@@ -9,7 +9,8 @@ export type IntegrationSource =
     | 'notifiers'
     | 'imageIntegrations'
     | 'backups'
-    | 'authPlugins';
+    | 'authPlugins'
+    | 'signatureIntegrations';
 export type IntegrationType =
     | 'oidc'
     | 'auth0'
@@ -45,7 +46,8 @@ export type IntegrationType =
     | 'gcs'
     | 'scopedAccess'
     | 'apitoken'
-    | 'clusterInitBundle';
+    | 'clusterInitBundle'
+    | 'signature';
 
 export type Integration = {
     type: IntegrationType;
@@ -72,6 +74,10 @@ export function getIsAPIToken(source: IntegrationSource, type: IntegrationType):
 
 export function getIsClusterInitBundle(source: IntegrationSource, type: IntegrationType): boolean {
     return source === 'authProviders' && type === 'clusterInitBundle';
+}
+
+export function getIsSignatureIntegration(source: IntegrationSource): boolean {
+    return source === 'signatureIntegrations';
 }
 
 /*

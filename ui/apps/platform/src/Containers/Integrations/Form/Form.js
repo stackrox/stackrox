@@ -36,6 +36,7 @@ class Form extends Component {
         }),
         source: PropTypes.oneOf([
             'imageIntegrations',
+            'signatureIntegrations',
             'notifiers',
             'authProviders',
             'clusters',

@@ -11,6 +11,7 @@ const fetchIntegrationsActionMap = {
     authProviders: authActions.fetchAuthProviders.request(),
     backups: integrationsActions.fetchBackups.request(),
     imageIntegrations: integrationsActions.fetchImageIntegrations.request(),
+    signatureIntegrations: integrationsActions.fetchSignatureIntegrations.request(),
     notifiers: integrationsActions.fetchNotifiers.request(),
 };
 
