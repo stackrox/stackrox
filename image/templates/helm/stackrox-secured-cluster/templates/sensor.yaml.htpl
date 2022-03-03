@@ -121,11 +121,15 @@ spec:
           value: "true"
         {{- end}}
         - name: ROX_USE_LOCAL_SCANNER
+        {{- if ._rox.scanner }}
           value: {{ not ._rox.scanner.disable }}
-        {{- if not ._rox.scanner.disable }}
+          {{- if not ._rox.scanner.disable }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
           value: {{ printf "%s.%s.svc:8443" ._rox.scanner.name .Release.Namespace }}
-        {{- end}}
+          {{- end }}
+        {{- else }}
+          value: false
+        {{- end }}
         [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
