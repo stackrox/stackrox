@@ -70,6 +70,9 @@ tests:
     .networkpolicys["scanner-slim"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
 
 - name: "scanner slim service account can access image pull secrets"
+  set:
+    scanner.disable: false
+    scanner.mode: "slim"
   expect: |
     .serviceaccounts["scanner-slim"] | assertThat(. != null)
     .serviceaccounts["scanner-slim"] | .imagePullSecrets[] | select(.name == "secured-cluster-services-main")
@@ -78,8 +81,6 @@ tests:
   tests:
   - name: "when authenticating in image registry with user and password"
     set:
-      scanner.disable: false
-      scanner.mode: "slim"
       imagePullSecrets.username: "imagePullUser"
       imagePullSecrets.password: "imagePullPassword"
     expect: |
@@ -90,14 +91,10 @@ tests:
     tests:
     - name: "when allowNone is true"
       set:
-        scanner.disable: false
-        scanner.mode: "slim"
         imagePullSecrets.allowNone: true
       expect: .serviceaccounts["scanner-slim"] | .imagePullSecrets | assertThat(length == 3)
     - name: "when using existing secrets"
       set:
-        scanner.disable: false
-        scanner.mode: "slim"
         imagePullSecrets.useExisting: "existing-secret1; existing-secret2"
       expect: |
         .serviceaccounts["scanner-slim"] | .imagePullSecrets | assertThat(length == 5)
