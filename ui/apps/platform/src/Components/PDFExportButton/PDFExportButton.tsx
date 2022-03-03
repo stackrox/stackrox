@@ -4,8 +4,21 @@ import { FileText } from 'react-feather';
 
 import Button from 'Components/Button';
 import exportPDF from 'services/PDFExportService';
+import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
 
-const PDFExportButton = ({ fileName, pdfId, startExportingPDF, finishExportingPDF }) => {
+interface PDFExportButtonProps {
+    fileName: string;
+    pdfId: string;
+    startExportingPDF: RequestAction;
+    finishExportingPDF: SuccessAction;
+}
+
+const PDFExportButton = ({
+    fileName,
+    pdfId,
+    startExportingPDF,
+    finishExportingPDF,
+}: PDFExportButtonProps) => {
     function exportPDFFile() {
         exportPDF(fileName, pdfId, startExportingPDF, finishExportingPDF);
     }
@@ -17,13 +30,6 @@ const PDFExportButton = ({ fileName, pdfId, startExportingPDF, finishExportingPD
             onClick={exportPDFFile}
         />
     );
-};
-
-PDFExportButton.propTypes = {
-    fileName: PropTypes.string.isRequired,
-    pdfId: PropTypes.string.isRequired,
-    startExportingPDF: PropTypes.func.isRequired,
-    finishExportingPDF: PropTypes.func.isRequired,
 };
 
 export default PDFExportButton;

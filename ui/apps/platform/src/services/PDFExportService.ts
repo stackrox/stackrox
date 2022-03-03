@@ -6,6 +6,7 @@ import html2canvas from 'html2canvas';
 
 import { getDate, addBrandedTimestampToString } from 'utils/dateUtils';
 import StackroxLogo from 'images/stackrox-logo.png';
+import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
 
 /**
  * Creates a container div HTML element that will wrap around all the content to be exported
@@ -24,7 +25,7 @@ function createPDFContainerElement() {
  *  @param {string} timestamp - The timestamp to display in the top right section of the header
  *  @returns {HTMLElement}
  */
-function createPDFHeaderElement(pdfTitle, timestamp) {
+function createPDFHeaderElement(pdfTitle: string, timestamp: string) {
     const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
             <img alt="stackrox-logo" src=${StackroxLogo} class="h-24" />
             <div class="pr-4 text-right">
@@ -79,7 +80,11 @@ function computeStyles(element) {
  *  @param {HTMLElement} element
  */
 function addElementToRootNode(element) {
-    document.getElementById('root').appendChild(element);
+    const root = document.getElementById('root');
+    if (!root) {
+        throw new Error('Expected DOM to contain element with id "root"');
+    }
+    root.appendChild(element);
 }
 
 /**
@@ -110,7 +115,12 @@ function savePDF(canvas, pdfFileName) {
     pdf.save(pdfFileName);
 }
 
-function exportPDF(fileName, pdfId, startExportingPDF, finishExportingPDF) {
+function exportPDF(
+    fileName: string,
+    pdfId: string,
+    startExportingPDF: RequestAction,
+    finishExportingPDF: SuccessAction
+) {
     // This hides all the pdf generation behind an exporting screen
     startExportingPDF();
 
@@ -128,6 +138,9 @@ function exportPDF(fileName, pdfId, startExportingPDF, finishExportingPDF) {
     // create a clone of the element to be exported and add it to the body of the container
     const pdfBodyElement = createPDFBodyElement();
     const elementToBeExported = document.getElementById(pdfId);
+    if (!elementToBeExported) {
+        throw new Error(`Expected to find DOM element with id ${pdfId}`);
+    }
     const clonedElementToBeExported = elementToBeExported.cloneNode(true);
     pdfBodyElement.appendChild(clonedElementToBeExported);
     pdfContainerElement.appendChild(pdfBodyElement);
