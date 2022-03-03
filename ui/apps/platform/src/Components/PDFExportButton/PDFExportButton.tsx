@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { FileText } from 'react-feather';
 
 import Button from 'Components/Button';

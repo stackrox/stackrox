@@ -16,9 +16,7 @@ export interface MenuOption {
     component?: ReactElement;
 }
 
-interface GroupedMenuOptions {
-    [group: string]: MenuOption[];
-}
+type GroupedMenuOptions = Record<string, MenuOption[]>;
 
 interface MenuProps {
     buttonClass?: string;
