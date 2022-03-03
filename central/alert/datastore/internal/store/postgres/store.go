@@ -557,7 +557,7 @@ create table if not exists alerts_Processes (
     Namespace varchar,
     ContainerStartTime timestamp,
     ImageId varchar,
-    PRIMARY KEY(parent_Id, idx, Id),
+    PRIMARY KEY(parent_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
@@ -585,12 +585,11 @@ func createTableAlertsProcessesLineageInfo(db *pgxpool.Pool) {
 create table if not exists alerts_Processes_LineageInfo (
     parent_parent_Id varchar,
     parent_idx numeric,
-    parent_Id varchar,
     idx numeric,
     ParentUid numeric,
     ParentExecFilePath varchar,
-    PRIMARY KEY(parent_parent_Id, parent_idx, parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx, parent_Id) REFERENCES alerts_Processes(parent_Id, idx, Id) ON DELETE CASCADE
+    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES alerts_Processes(parent_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -1346,7 +1345,7 @@ func insertIntoAlertsProcesses(tx pgx.Tx, obj *storage.ProcessIndicator, parent_
 		obj.GetImageId(),
 	}
 
-	finalStr := "INSERT INTO alerts_Processes (parent_Id, idx, Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(parent_Id, idx, Id) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId"
+	finalStr := "INSERT INTO alerts_Processes (parent_Id, idx, Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId"
 	_, err := tx.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -1355,20 +1354,20 @@ func insertIntoAlertsProcesses(tx pgx.Tx, obj *storage.ProcessIndicator, parent_
 	var query string
 
 	for childIdx, child := range obj.GetSignal().GetLineageInfo() {
-		if err := insertIntoAlertsProcessesLineageInfo(tx, child, parent_Id, idx, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsProcessesLineageInfo(tx, child, parent_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Processes_LineageInfo where parent_parent_Id = $1 AND parent_idx = $2 AND parent_Id = $3 AND idx >= $4"
-	_, err = tx.Exec(context.Background(), query, parent_Id, idx, obj.GetId(), len(obj.GetSignal().GetLineageInfo()))
+	query = "delete from alerts_Processes_LineageInfo where parent_parent_Id = $1 AND parent_idx = $2 AND idx >= $3"
+	_, err = tx.Exec(context.Background(), query, parent_Id, idx, len(obj.GetSignal().GetLineageInfo()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsProcessesLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, parent_parent_Id string, parent_idx int, parent_Id string, idx int) error {
+func insertIntoAlertsProcessesLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, parent_parent_Id string, parent_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -1377,8 +1376,6 @@ func insertIntoAlertsProcessesLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_
 
 		parent_idx,
 
-		parent_Id,
-
 		idx,
 
 		obj.GetParentUid(),
@@ -1386,7 +1383,7 @@ func insertIntoAlertsProcessesLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_
 		obj.GetParentExecFilePath(),
 	}
 
-	finalStr := "INSERT INTO alerts_Processes_LineageInfo (parent_parent_Id, parent_idx, parent_Id, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(parent_parent_Id, parent_idx, parent_Id, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
+	finalStr := "INSERT INTO alerts_Processes_LineageInfo (parent_parent_Id, parent_idx, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4, $5) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
 	_, err := tx.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err

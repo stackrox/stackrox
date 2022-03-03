@@ -18,7 +18,7 @@ type context struct {
 	getter         string
 	column         string
 	searchDisabled bool
-	skipPk         bool
+	childSkipPk    bool
 }
 
 func (c context) Getter(name string) string {
@@ -41,7 +41,7 @@ func (c context) childContext(name string, searchDisabled bool) context {
 		getter:         c.Getter(name),
 		column:         c.Column(name),
 		searchDisabled: c.searchDisabled || searchDisabled,
-		skipPk:         false,
+		childSkipPk:    false,
 	}
 }
 
@@ -57,7 +57,7 @@ func Walk(obj reflect.Type, table string) *Schema {
 
 const defaultIndex = "btree"
 
-func getPostgresOptions(tag string) PostgresOptions {
+func getPostgresOptions(tag string, skipPk bool) PostgresOptions {
 	var opts PostgresOptions
 
 	for _, field := range strings.Split(tag, ",") {
@@ -71,7 +71,14 @@ func getPostgresOptions(tag string) PostgresOptions {
 				opts.Index = defaultIndex
 			}
 		case field == "pk":
-			opts.PrimaryKey = true
+			// if we have a child object, we don't want to propagate its primary key
+			// an example of this is process_indicator.  It is its own object
+			// at which times it needs to use a primary key.  It can also be a child of
+			// alerts.  When it is a child of alerts, we want to ignore the pk of the
+			// process_indicator in favor of the parent_id and generated idx field.
+			if !skipPk {
+				opts.PrimaryKey = true
+			}
 		case field == "unique":
 			opts.Unique = true
 		case field == "":
@@ -114,13 +121,9 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(structField.Tag.Get("sql"))
+		opts := getPostgresOptions(structField.Tag.Get("sql"), ctx.childSkipPk)
 		if opts.Ignored {
 			continue
-		}
-
-		if ctx.skipPk {
-			opts.PrimaryKey = false
 		}
 
 		searchOpts := getSearchOptions(ctx, structField.Tag.Get("search"))
@@ -188,7 +191,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 
-			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, skipPk: true}, childSchema, structField.Type.Elem().Elem())
+			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, childSkipPk: true}, childSchema, structField.Type.Elem().Elem())
 			continue
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored), schema, structField.Type)
