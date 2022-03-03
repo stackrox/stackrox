@@ -23,7 +23,6 @@ import objects.StackroxScannerIntegration
 import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
-import services.PolicyService
 import util.Env
 import util.Helpers
 import util.Timer
@@ -152,16 +151,20 @@ class ImageScanningTest extends BaseSpecification {
             orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
             imageToCleanup = deployment.image
         }
-        integrationIds.each { ImageIntegrationService.deleteImageIntegration(it) }
         if (imageToCleanup != null) {
             ImageService.clearImageCaches()
             try {
+                // Sleep for 10s in order to avoid race condition with processing that is currently in progress
+                println "Sleep for 10s and avoid race condition with reprocessing"
+                sleep(10000)
                 ImageService.deleteImagesWithRetry(SearchServiceOuterClass.RawQuery.newBuilder()
                         .setQuery("Image:${imageToCleanup}").build(), true)
             } catch (e) {
                 println "Image delete threw an exception: ${e}, this is OK for some retry cases."
             }
         }
+        integrationIds.each { ImageIntegrationService.deleteImageIntegration(it) }
+
         if (deleteStackroxScanner) {
             ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         }
@@ -231,7 +234,6 @@ class ImageScanningTest extends BaseSpecification {
         addIntegrationClosure.each {
             def id = it()
             integrationIds.add(id) }
-        PolicyService.reassessPolicies()
         ImageService.scanImage(deployment.image)
         imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
 
