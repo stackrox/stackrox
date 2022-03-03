@@ -112,14 +112,12 @@ spec:
                         type: object
                     type: object
                   timeoutSeconds:
-                    default: 20
+                    default: 3
                     description: Maximum timeout period for admission review, upon
                       which admission review will fail open. Use it to set request
-                      timeouts when you enable inline image scanning. The default
-                      kubectl timeout is 30 seconds; taking padding into account,
-                      this should not exceed 25 seconds.
+                      timeouts when you enable inline image scanning.
                     format: int32
-                    maximum: 25
+                    maximum: 10
                     minimum: 1
                     type: integer
                   tolerations:
