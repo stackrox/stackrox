@@ -3792,7 +3792,7 @@ jobs:
           label: ci-upgrade-tests
           run-on-master: true
           run-on-tags: true
-          changed-path: '^migrator/.*$'
+          changed-path: '^migrator/.*$|^image/'
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-go-mod-cache
