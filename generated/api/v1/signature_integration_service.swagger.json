@@ -227,21 +227,11 @@
         "name": {
           "type": "string"
         },
-        "signatureVerificationConfigs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageSignatureVerificationConfig"
-          }
-        }
-      }
-    },
-    "storageSignatureVerificationConfig": {
-      "type": "object",
-      "properties": {
-        "cosignVerification": {
+        "cosign": {
           "$ref": "#/definitions/storageCosignPublicKeyVerification"
         }
-      }
+      },
+      "title": "This .proto is to be extended in the future with more verification methods(via Rekor endpoint, GPG keys etc.)"
     },
     "v1Empty": {
       "type": "object"
