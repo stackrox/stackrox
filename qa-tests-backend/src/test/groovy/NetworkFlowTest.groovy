@@ -252,6 +252,10 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
+    //
+    // Test no longer working due to afterglow. See ROX-7305 and ROX-9563
+    //
+    /*
     @Category([NetworkFlowVisualization])
     def "Verify one-time connections show at first, but do not appear again"() {
         given:
@@ -267,12 +271,12 @@ class NetworkFlowTest extends BaseSpecification {
         println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
-        //sleep(60000)
 
         then:
         "Wait for collector update and fetch graph again to confirm connection dropped"
-        assert !waitForEdgeUpdate(edges.get(0), 60, 16)
+        assert !waitForEdgeUpdate(edges.get(0))
     }
+    */
 
     @Category([BAT, RUNTIME, NetworkFlowVisualization])
     def "Verify connections between StackRox Services"() {
