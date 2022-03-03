@@ -16,6 +16,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - The Anchore, Tenable, and Docker Trusted Registry integrations will be removed. Please use the ACS Scanner instead as it is more widely supported.
     - Alert and process comments will be removed.
   - `CreateRole` and `UpdateRole` in `/v1/roles/`: `role.access_scope_id` empty value is deprecated, will be set to the unrestricted access scope ID (`io.stackrox.authz.accessscope.unrestricted`) during the adoption period.
+  - API endpoint `/api/helm/cluster/add` was deleted as not being used in the product.
 - Improved accuracy of active component and vulnerability and presented it with higher confidence.
   - Analyzed dependencies between OS components and detected derived active components.
   - Added `Active` state to list of components and list of vulnerabilities under Vulnerability Management within the scope of a specific deployment.
