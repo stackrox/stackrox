@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	stdLog "log"
 	"net/http/httptest"
 	"testing"
@@ -41,7 +41,7 @@ const (
 // registryServerWithImage creates a local registry that can be accessed via a httptest.Server during tests with an
 // image pushed.
 func registryServerWithImage(imgName string) (*httptest.Server, string, error) {
-	nopLog := stdLog.New(ioutil.Discard, "", 0)
+	nopLog := stdLog.New(io.Discard, "", 0)
 	reg := registry.New(registry.Logger(nopLog))
 	srv := httptest.NewServer(reg)
 	imgFullName := fmt.Sprintf("%s/%s", srv.Listener.Addr().String(), imgName)
