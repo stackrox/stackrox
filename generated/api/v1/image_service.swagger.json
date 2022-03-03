@@ -1256,7 +1256,7 @@
           "description": "description is set in the case of an error with the specific error's message. Otherwise, this will not be set."
         }
       },
-      "title": "Next Tag: 4"
+      "title": "Next Tag: 5"
     },
     "storageImageSignatureVerificationResultStatus": {
       "type": "string",
