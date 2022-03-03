@@ -38,6 +38,15 @@ const (
 		"50YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
 )
 
+type mockRegistry struct {
+	registryTypes.ImageRegistry
+	cfg *registryTypes.Config
+}
+
+func (m *mockRegistry) Config() *registryTypes.Config {
+	return m.cfg
+}
+
 // registryServerWithImage creates a local registry that can be accessed via a httptest.Server during tests with an
 // image pushed.
 func registryServerWithImage(imgName string) (*httptest.Server, string, error) {
@@ -97,15 +106,6 @@ func uploadSignatureForImage(imgRef string, b64Sig string, sigPayload []byte) er
 	return nil
 }
 
-type mockRegistry struct {
-	registryTypes.ImageRegistry
-	cfg *registryTypes.Config
-}
-
-func (m *mockRegistry) Config() *registryTypes.Config {
-	return m.cfg
-}
-
 func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	registryServer, imgRef, err := registryServerWithImage("nginx")
 	require.NoError(t, err, "setting up registry")
@@ -148,7 +148,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 		},
 	}
 
-	f := &cosignPublicKeyFetcher{}
+	f := &cosignPublicKeySignatureFetcher{}
 	mockConfig := &registryTypes.Config{
 		Username: "",
 		Password: "",
@@ -178,7 +178,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 			img: "fa@wrongreference",
 		},
 	}
-	f := &cosignPublicKeyFetcher{}
+	f := &cosignPublicKeySignatureFetcher{}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			cimg, err := imgUtils.GenerateImageFromString("nginx")
@@ -201,11 +201,10 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	require.NoError(t, err, "creating test image")
 	img := types.ToImage(cimg)
 
-	f := &cosignPublicKeyFetcher{}
+	f := &cosignPublicKeySignatureFetcher{}
 	reg := &mockRegistry{cfg: &registryTypes.Config{}}
 
 	result, exists := f.FetchSignature(context.Background(), img, reg)
-	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, result)
 }

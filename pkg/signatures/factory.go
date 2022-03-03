@@ -108,5 +108,5 @@ func createVerifiersFromIntegration(integration *storage.SignatureIntegration) [
 // NewSignatureFetcher creates a new signature fetcher capable of fetching a specific signature format for an image.
 // Currently, only cosign public key signatures are supported.
 func NewSignatureFetcher() SignatureFetcher {
-	return newCosignPublicKeyFetcher()
+	return newCosignPublicKeySignatureFetcher()
 }

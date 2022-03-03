@@ -15,18 +15,18 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 )
 
-type cosignPublicKeyFetcher struct{}
+type cosignPublicKeySignatureFetcher struct{}
 
-var _ SignatureFetcher = (*cosignPublicKeyFetcher)(nil)
+var _ SignatureFetcher = (*cosignPublicKeySignatureFetcher)(nil)
 
-func newCosignPublicKeyFetcher() *cosignPublicKeyFetcher {
-	return &cosignPublicKeyFetcher{}
+func newCosignPublicKeySignatureFetcher() *cosignPublicKeySignatureFetcher {
+	return &cosignPublicKeySignatureFetcher{}
 }
 
 // FetchSignature implements the SignatureFetcher interface.
 // The signature associated with the image will be fetched from the given registry.
 // It will return the storage.ImageSignature and a boolean, indicating whether any signatures were found or not.
-func (c *cosignPublicKeyFetcher) FetchSignature(ctx context.Context, image *storage.Image,
+func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, image *storage.Image,
 	registry registryTypes.ImageRegistry) (*storage.ImageSignature, bool) {
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
@@ -64,6 +64,7 @@ func (c *cosignPublicKeyFetcher) FetchSignature(ctx context.Context, image *stor
 		if err != nil {
 			log.Errorf("Error during decoding of raw signature for image %q: %v",
 				imgFullName, err)
+			continue
 		}
 		// Since we are only focusing on public keys, we are ignoring the certificate / rekor bundles associated with
 		// the signature.
