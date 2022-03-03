@@ -271,7 +271,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Wait for collector update and fetch graph again to confirm connection dropped"
-        assert !waitForEdgeUpdate(edges.get(0), 60, 15)
+        assert !waitForEdgeUpdate(edges.get(0), 60, 16)
     }
 
     @Category([BAT, RUNTIME, NetworkFlowVisualization])
