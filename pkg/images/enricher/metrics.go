@@ -20,8 +20,8 @@ type metricsImpl struct {
 	metadataCacheHits   prometheus.Counter
 	metadataCacheMisses prometheus.Counter
 
-	scanTimeDuration  *prometheus.HistogramVec
-	imageVulnDuration *prometheus.HistogramVec
+	scanTimeDuration           *prometheus.HistogramVec
+	imageVulnRetrievalDuration *prometheus.HistogramVec
 }
 
 func (m *metricsImpl) IncrementMetadataCacheHit() {
@@ -41,7 +41,7 @@ func (m *metricsImpl) SetScanDurationTime(start time.Time, scanner string, err e
 }
 
 func (m *metricsImpl) SetImageVulnerabilityRetrievalTime(start time.Time, scanner string, err error) {
-	m.imageVulnDuration.With(prometheus.Labels{"Scanner": scanner, "Error": fmt.Sprintf("%t", err != nil)}).Observe(startTimeToMS(start))
+	m.imageVulnRetrievalDuration.With(prometheus.Labels{"Scanner": scanner, "Error": fmt.Sprintf("%t", err != nil)}).Observe(startTimeToMS(start))
 }
 
 func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
@@ -65,10 +65,10 @@ func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 			Help:      "Amount of time it's taken to scan an image in ms",
 			Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
 		}, []string{"Scanner", "Error"}),
-		imageVulnDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		imageVulnRetrievalDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: pkgMetrics.PrometheusNamespace,
 			Subsystem: subsystem.String(),
-			Name:      "image_vuln_duration",
+			Name:      "image_vuln_retrieval_duration",
 			Help:      "Amount of time it's taken to retrieve vulns for an image in ms",
 			Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
 		}, []string{"Scanner", "Error"}),
@@ -78,7 +78,7 @@ func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 		m.metadataCacheHits,
 		m.metadataCacheMisses,
 		m.scanTimeDuration,
-		m.imageVulnDuration,
+		m.imageVulnRetrievalDuration,
 	)
 
 	return m
