@@ -7,13 +7,13 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	metrics "github.com/stackrox/rox/central/metrics"
-	mappings "github.com/stackrox/rox/central/processindicator/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	mappings "github.com/stackrox/rox/pkg/search/options/processindicators"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
