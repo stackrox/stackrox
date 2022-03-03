@@ -30,4 +30,13 @@ done
 
 docker manifest create "$image" "$arch_image"
 
-docker manifest push "$image"
+# Try pushing manifest a few times for the case when quay.io has issues
+pushed=0
+for i in {1..5}; do
+  if docker manifest push "$image"; then
+    pushed=1
+    break
+  fi
+  sleep 10
+done
+(( pushed ))
