@@ -20,5 +20,8 @@ fi
 if [[ -z "$ROX_ADMIN_PASSWORD" && -f "${K8S_DIR}/central-deploy/password" ]]; then
 	export ROX_ADMIN_PASSWORD="$(cat ${K8S_DIR}/central-deploy/password)"
 fi
+if [[ -z "${ROX_AFTERGLOW_PERIOD}" ]]; then
+    export ROX_AFTERGLOW_PERIOD="${AFTERGLOW_PERIOD:-300}"
+fi
 
 launch_sensor "$K8S_DIR"
