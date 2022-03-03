@@ -18,6 +18,7 @@ func initialize() {
 	ad = New(dackbox.GetGlobalDackBox(),
 		dackbox.GetKeyFence(),
 		globalindex.GetGlobalIndex(),
+		globalindex.GetProcessIndex(),
 		false,
 		riskDS.Singleton(),
 		ranking.ImageRanker(),

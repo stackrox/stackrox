@@ -45,7 +45,7 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, processIndex bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	indexer := imageIndexer.New(bleveIndex)
 
 	searcher := search.New(storage,
@@ -55,7 +55,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		componentIndexer.New(bleveIndex),
 		imageComponentEdgeIndexer.New(bleveIndex),
 		imageIndexer.New(bleveIndex),
-		deploymentIndexer.New(bleveIndex, nil),
+		deploymentIndexer.New(bleveIndex, processIndex),
 		imageCVEEdgeIndexer.New(bleveIndex),
 	)
 	ds := newDatastoreImpl(storage, indexer, searcher, risks, imageRanker, imageComponentRanker)
@@ -67,7 +67,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, processIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	storage := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
-	return newDatastore(dacky, storage, bleveIndex, risks, imageRanker, imageComponentRanker)
+	return newDatastore(dacky, storage, bleveIndex, processIndex, risks, imageRanker, imageComponentRanker)
 }

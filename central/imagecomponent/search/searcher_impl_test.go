@@ -98,7 +98,7 @@ func (suite *ImageComponentSearchTestSuite) SetupSuite() {
 
 	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
 
-	suite.imageDataStore = imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, false, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	suite.imageDataStore = imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, false, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 	suite.nodeDataStore = nodeDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	index := componentIndex.New(bleveIndex)
