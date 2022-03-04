@@ -1,3 +1,28 @@
+// Package errox implements tooling and an interface for project errors
+// handling, and a	list of	base sentinel errors.
+//
+// Usage
+//
+// Base new errors on one of the existing sentinel errors:
+//     ObjectNotFound := errox.NotFound.New("object not found")
+//
+// Classify encountered errors by making them a cause:
+//     err := parse(args)
+//     return errox.InvalidArgs.CausedBy(err)
+//
+// Check error class:
+//     if errors.Is(err, errox.InvalidArgs) ...
+//
+// Format error messages:
+//     return errox.NotFound.New(fmt.Sprintf("file '%s' not found", filename))
+//
+// Create error fabrics for generic errors:
+//     ErrInvalidAlgorithmF := func(alg string) RoxError {
+//         return errox.InvalidArgs.New(
+//             fmt.Sprintf("invalid algorithm %q used", alg))
+//     }
+//     ...
+//     return ErrInvalidAlgorithmF("256")
 package errox
 
 import "fmt"
@@ -15,7 +40,7 @@ type roxError struct {
 	base    error
 }
 
-// Ensure roxError to implement RoxError.
+// Ensure roxError implements RoxError.
 var _ RoxError = (*roxError)(nil)
 
 // makeSentinel returns a new sentinel error. Semantically this is very close to
