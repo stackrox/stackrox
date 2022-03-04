@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { List, ListItem } from '@patternfly/react-core';
+import { List, ListItem, Title } from '@patternfly/react-core';
 
 import { DryRunAlert } from 'services/PoliciesService';
 
@@ -24,7 +24,9 @@ function PreviewViolations({ alertsFromDryRun }: PreviewViolationsProps): ReactE
                 return (
                     // eslint-disable-next-line react/no-array-index-key
                     <div key={alertIndex}>
-                        <div className={className}>{deployment}</div>
+                        <Title headingLevel="h3" className={className}>
+                            {deployment}
+                        </Title>
                         <List>
                             {violations.map((violation, violationIndex) => (
                                 // eslint-disable-next-line react/no-array-index-key
