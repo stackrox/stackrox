@@ -33,6 +33,5 @@ if [ $2 == "--spec" ]; then
     fi
     cypress run --spec "cypress/integration/$3"
 else
-    mkdir -p "${artifacts_dir}"
-    DEBUG="*" cypress "$@" 2> "${artifacts_dir}/cypress.err"
+    DEBUG="*" cypress "$@" 2> /dev/null
 fi
