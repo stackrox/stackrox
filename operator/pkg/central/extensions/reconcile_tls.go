@@ -151,7 +151,7 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) validateInitBundleTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap secretDataMap) error {
+func (r *createCentralTLSExtensionRun) validateInitBundleTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {
 	if err := certgen.VerifyCert(fileMap, fileNamePrefix, r.getValidateInitBundleCert(serviceType)); err != nil {
 		return err
 	}
