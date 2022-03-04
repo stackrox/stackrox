@@ -282,10 +282,7 @@
   {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
   {{ $_ = set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
-{{ end }}
-
-{{ if eq $._rox.scanner.disable false }}
-    {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
+  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 {{ end }}
 [<- end >]
 
