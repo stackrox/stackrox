@@ -201,11 +201,11 @@ func (m message) Bytes() []byte {
 		buf.WriteString("Content-Disposition: inline; filename=logo.png\r\n")
 		buf.WriteString("Content-ID: <logo.png>\r\n")
 		buf.WriteString("X-Attachment-Id: logo.png\r\n")
-		buf.WriteString(fmt.Sprintf("%s\r\n", common.GetLogoBase64()))
+		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", common.GetLogoBase64()))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 		buf.WriteString("Content-Type: text/html; charset=\"utf-8\"\r\n\r\n")
 		buf.WriteString("<img src=\"cid:logo.png\" width=\"20%\" height=\"20%\"><br><br>")
-		buf.WriteString(fmt.Sprintf("<div>%s</div>\r\n", m.Body))
+		buf.WriteString(fmt.Sprintf("\r\n<div>%s</div>\r\n", m.Body))
 	} else {
 		buf.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
 		buf.WriteString(fmt.Sprintf("%s\r\n", m.Body))
@@ -216,7 +216,7 @@ func (m message) Bytes() []byte {
 		buf.WriteString("Content-Type: application/zip\r\n")
 		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
 		buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\r\n", k))
-		buf.WriteString(base64.StdEncoding.EncodeToString(v))
+		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", base64.StdEncoding.EncodeToString(v)))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 	}
 	return buf.Bytes()
