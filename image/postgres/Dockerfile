@@ -21,6 +21,7 @@ ENV PG_MAJOR=14
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
     PGDATA="/var/lib/postgresql/data" \
     POSTGRES_PASSWORD="password"
+    # TODO(ROX-9249): Change to password file later.
     # POSTGRES_PASSWORD_FILE="/run/secrets/stackrox.io/secrets/password"
 
 COPY signatures/RPM-GPG-KEY-PGDG-14 /
