@@ -1,6 +1,6 @@
 import React from 'react';
 import { useField } from 'formik';
-import { TextInput, NumberInput, FormGroup, Select, SelectOption } from '@patternfly/react-core';
+import { TextInput, FormGroup, Select, SelectOption } from '@patternfly/react-core';
 
 import { SubComponent } from 'Containers/Policies/Wizard/Form/descriptors';
 
@@ -22,8 +22,8 @@ function PolicyCriteriaFieldSubInput({
 
     function handleChangeNumberValue(val) {
         const newValue = Number.isNaN(val) ? 0 : Number(val);
-        const { max = 10, min = 0 } = subComponent;
-        if (newValue > max) {
+        const { max, min = 0 } = subComponent;
+        if (max && newValue > max) {
             setValue(max);
         } else if (newValue < min) {
             setValue(min);
