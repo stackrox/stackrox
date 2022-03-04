@@ -1,0 +1,15 @@
+.loading-section .pf-c-spinner {
+  --pf-c-spinner--Color: var(--pf-global--Color--light-100);
+}
+
+.loading-section > div {
+  color: var(--pf-global--Color--light-100);
+}
+
+.loading-section.loading-section-inverted .pf-c-spinner {
+  --pf-c-spinner--Color: var(--pf-global--Color--dark-100);
+}
+
+.loading-section.loading-section-inverted > div {
+  color: var(--pf-global--Color--dark-100);
+}

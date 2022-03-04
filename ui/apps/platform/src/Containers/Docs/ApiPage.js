@@ -26,7 +26,7 @@ function SwaggerBrowser({ uri }) {
         return <div>Unable to load API data.</div>;
     }
     if (loading) {
-        return <LoadingSection />;
+        return <LoadingSection isColorInverted />;
     }
     if (result) {
         return (
