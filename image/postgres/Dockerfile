@@ -25,7 +25,7 @@ ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
 
 COPY signatures/RPM-GPG-KEY-PGDG-14 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
-COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /tmp/
+COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /bundle/postgres-contrib.rpm /tmp/
 COPY --from=extracted_bundle /bundle/etc/postgresql.conf /bundle/etc/pg_hba.conf /etc/
 
 RUN groupadd -g 70 postgres && \
@@ -35,7 +35,7 @@ RUN groupadd -g 70 postgres && \
     dnf install -y \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
-        /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm && \
+        /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     dnf clean all && \
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf && \

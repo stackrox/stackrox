@@ -58,6 +58,8 @@ curl -s -o "${bundle_root}/postgres-server.rpm" \
     "${postgres_url}/postgresql${postgres_major}-server-${postgres_minor}.rpm"
 curl -s -o "${bundle_root}/postgres-libs.rpm" \
     "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
+curl -s -o "${bundle_root}/postgres-contrib.rpm" \
+    "${postgres_url}/postgresql${postgres_major}-contrib-${postgres_minor}.rpm"
 
 # =============================================================================
 
