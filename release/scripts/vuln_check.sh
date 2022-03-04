@@ -19,7 +19,7 @@ function compare_fixable_vulns {
   local image_name=$1
   local image_tag=$2
 
-  echo "Fetching current image id from quay for $image_name:$image_tag"
+  echo "Fetching current image SHA from quay for $image_name:$image_tag"
   img_data="$(quay_curl "${image_name}/tag/?specificTag=${image_tag}" | jq -r '.tags | first')"
   if [[ "$(jq -r '.is_manifest_list' <<<"$img_data")" == "true" ]]; then
     img_data="$(quay_curl "${image_name}/tag/?specificTag=${image_tag}-amd64" | jq -r '.tags | first')"
