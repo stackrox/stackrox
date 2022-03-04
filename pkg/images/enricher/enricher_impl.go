@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -137,11 +138,21 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 	// TODO(dhaus): Will become obsolete once the feature flag for image signature verification is removed.
 	updatedSigVerificationData := false
-	if features.ImageSignatureVerification.Enabled() {
-		// TODO(ROX-9452): Missing fetching of signature incl. updatedSignature flag.
-		updatedSigVerificationData, err = e.enrichWithSignatureVerificationData(ctx, image, false)
-		errorList.AddError(err)
+	updatedSignature := false
 
+	if features.ImageSignatureVerification.Enabled() {
+		updatedSignature, err = e.enrichWithSignature(ctx, image)
+		errorList.AddError(err)
+		// TODO(dhaus): Make sure we check for the right thing here. GetSignature or GetSignature.GetSignatures?
+		if image.GetSignature().GetSignatures() == nil {
+			// TODO(dhaus): Set the image note here.
+			imageNoteSet[storage.Image_MISSING_SIGNATURE] = struct{}{}
+		} else {
+			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE)
+		}
+
+		updatedSigVerificationData, err = e.enrichWithSignatureVerificationData(ctx, image, updatedSignature)
+		errorList.AddError(err)
 		if image.GetSignatureVerificationData() == nil || image.GetSignatureVerificationData().GetResults() == nil {
 			imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
 		} else {
@@ -158,7 +169,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
 	return EnrichmentResult{
-		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone) || updatedSigVerificationData,
+		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone) || updatedSignature || updatedSigVerificationData,
 		ScanResult:   scanResult,
 	}, errorList.ToError()
 }
@@ -185,16 +196,12 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error getting metadata for image: %s", image.GetName().GetFullName()))
 
-	if image.GetName().GetRegistry() == "" {
-		errorList.AddError(errors.New("no registry is indicated for image"))
+	if err := e.checkRegistryForImage(ctx, image); err != nil {
+		errorList.AddError(err)
 		return false, errorList.ToError()
 	}
 
 	registries := e.integrations.RegistrySet()
-	if !ctx.Internal && registries.IsEmpty() {
-		errorList.AddError(errox.NotFound.New(fmt.Sprintf("no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry())))
-		return false, errorList.ToError()
-	}
 
 	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
 	for _, registry := range registries.GetAll() {
@@ -429,7 +436,7 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx EnrichmentContext
 		return false, errors.Wrap(err, "fetching signature integrations")
 	}
 
-	// Timeout is based on benchmark test result for 100 integrations with 500 configs each (roughly 1 sec) + a grace
+	// Timeout is based on benchmark test result for 200 integrations with 1 config each (roughly 1 sec) + a grace
 	// timeout on top. Currently, signature verification is done without remote RPCs, this will need to be
 	// adapted accordingly when RPCs are required (i.e. cosign keyless).
 	verifySignatureCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -444,6 +451,101 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx EnrichmentContext
 		Results: res,
 	}
 	return true, nil
+}
+
+// enrichWithSignature enriches the image with a signature and returns a bool, indicating whether a signature has been
+// updated on the image or not.
+// Based on the given FetchOption, it will try to short-circuit using cached values from existing images where
+// possible.
+func (e *enricherImpl) enrichWithSignature(ctx EnrichmentContext, img *storage.Image) (bool, error) {
+	// Short-circuit if possible.
+	if e.fetchSignatureFromDatabase(img, ctx.FetchOpt) {
+		return false, nil
+	}
+
+	// If no external metadata should be taken into account, we skip the fetching of signatures.
+	if ctx.FetchOpt == NoExternalMetadata {
+		return false, nil
+	}
+
+	// Find out the right registry for the image. This potentially holds shared logic with enrichWithMetadata.
+	fetchSigsErrList := errorhelpers.NewErrorList(fmt.Sprintf("error fetching signature for image %q",
+		img.GetName().GetFullName()))
+
+	if err := e.checkRegistryForImage(ctx, img); err != nil {
+		fetchSigsErrList.AddError(err)
+		return false, fetchSigsErrList.ToError()
+	}
+
+	matchingRegistries := getMatchingRegistries(e.integrations.RegistrySet().GetAll(), img)
+
+	if len(matchingRegistries) == 0 {
+		fetchSigsErrList.AddError(errox.Newf(errox.NotFound, "no matching registries found: please add "+
+			"an image integration for %s", img.GetName().GetFullName()))
+		return false, fetchSigsErrList.ToError()
+	}
+
+	// For now, only supporting a single signature method, so we don't need to take care of creating multiple ones.
+	sigFetcher := signatures.NewSignatureFetcher()
+	previousSigs := img.GetSignature()
+	for _, matchingReg := range matchingRegistries {
+		// TODO(dhaus): Need to check for rate limiting w.r.t registries.
+		// During fetching, there may occur transient errors. If that's the case, we will retry.
+		var sigs []*storage.Signature
+		var err error
+
+		// Honestly, I'm a bit worried about this "Retryable" error. I would like to avoid having something like
+		// "wrong credentials" being a retryable error, which it currently is.
+		// TODO(dhaus): Let me check whether I can fix this.
+		err = retry.WithRetry(func() error {
+			sigs, err = sigFetcher.FetchSignature(context.Background(), img, matchingReg)
+			return err
+		},
+			retry.Tries(2),
+			retry.OnlyRetryableErrors(),
+			retry.OnFailedAttempts(func(err error) {
+				time.Sleep(time.Duration(1) * time.Second)
+			}))
+
+		if err != nil && sigs != nil && len(sigs) > 0 {
+			// TODO(dhaus): Create a test for an image that didn't have signatures beforehand.
+			img.Signature = &storage.ImageSignature{
+				Signatures: append(img.GetSignature().GetSignatures(), sigs...),
+			}
+		}
+	}
+
+	// Do not signal an updated signature when there's no change from the previous signatures.
+	if previousSigs == img.GetSignature() {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (e *enricherImpl) checkRegistryForImage(ctx EnrichmentContext, image *storage.Image) error {
+	if image.GetName().GetRegistry() == "" {
+		return errox.Newf(errox.NotFound,
+			"no registry is indicated for image %q", image.GetName().GetFullName())
+	}
+
+	registries := e.integrations.RegistrySet()
+	if !ctx.Internal && registries.IsEmpty() {
+		return errox.Newf(errox.NotFound,
+			"no image registries are integrated: please add an image integration for %s",
+			image.GetName().GetRegistry())
+	}
+	return nil
+}
+
+func getMatchingRegistries(registries []registryTypes.ImageRegistry, image *storage.Image) []registryTypes.ImageRegistry {
+	var matchingRegistries []registryTypes.ImageRegistry
+	for _, registry := range registries {
+		if registry.Match(image.GetName()) {
+			matchingRegistries = append(matchingRegistries, registry)
+		}
+	}
+	return matchingRegistries
 }
 
 func normalizeVulnerabilities(scan *storage.ImageScan) {

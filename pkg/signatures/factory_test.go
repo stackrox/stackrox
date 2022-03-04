@@ -100,8 +100,8 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	}
 }
 
-func BenchmarkVerifyAgainstSignatureIntegrations_1Integration_2CosignConfigs(b *testing.B) {
-	integrations := createSignatureIntegration(1, 2)
+func BenchmarkVerifyAgainstSignatureIntegrations_1Integration(b *testing.B) {
+	integrations := createSignatureIntegration(1)
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(b, err)
 
@@ -109,8 +109,8 @@ func BenchmarkVerifyAgainstSignatureIntegrations_1Integration_2CosignConfigs(b *
 	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
 }
 
-func BenchmarkVerifyAgainstSignatureIntegrations_10Integrations_20CosignConfigs(b *testing.B) {
-	integrations := createSignatureIntegration(10, 20)
+func BenchmarkVerifyAgainstSignatureIntegrations_10Integrations(b *testing.B) {
+	integrations := createSignatureIntegration(10)
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(b, err)
 
@@ -118,8 +118,8 @@ func BenchmarkVerifyAgainstSignatureIntegrations_10Integrations_20CosignConfigs(
 	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
 }
 
-func BenchmarkVerifyAgainstSignatureIntegrations_100Integrations_200CosignConfigs(b *testing.B) {
-	integrations := createSignatureIntegration(100, 200)
+func BenchmarkVerifyAgainstSignatureIntegrations_100Integrations(b *testing.B) {
+	integrations := createSignatureIntegration(100)
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(b, err)
 
@@ -127,8 +127,8 @@ func BenchmarkVerifyAgainstSignatureIntegrations_100Integrations_200CosignConfig
 	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
 }
 
-func BenchmarkVerifyAgainstSignatureIntegrations_100Integrations_500CosignConfigs(b *testing.B) {
-	integrations := createSignatureIntegration(100, 500)
+func BenchmarkVerifyAgainstSignatureIntegrations_200Integrations(b *testing.B) {
+	integrations := createSignatureIntegration(200)
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(b, err)
 
@@ -142,27 +142,19 @@ func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.Signatu
 	}
 }
 
-func createSignatureIntegration(numberOfIntegrations, numberOfCosignConfigs int) []*storage.SignatureIntegration {
-	successfulCosignConfig := &storage.SignatureVerificationConfig{
-		Config: &storage.SignatureVerificationConfig_CosignVerification{
-			CosignVerification: &storage.CosignPublicKeyVerification{
-				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-					{
-						PublicKeyPemEnc: pemMatchingPubKey,
-					},
-				},
+func createSignatureIntegration(numberOfIntegrations int) []*storage.SignatureIntegration {
+	successfulCosignConfig := &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				PublicKeyPemEnc: pemMatchingPubKey,
 			},
 		},
 	}
 
-	failingCosignConfig := &storage.SignatureVerificationConfig{
-		Config: &storage.SignatureVerificationConfig_CosignVerification{
-			CosignVerification: &storage.CosignPublicKeyVerification{
-				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-					{
-						PublicKeyPemEnc: pemNonMatchingPubKey,
-					},
-				},
+	failingCosignConfig := &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				PublicKeyPemEnc: pemNonMatchingPubKey,
 			},
 		},
 	}
@@ -170,17 +162,16 @@ func createSignatureIntegration(numberOfIntegrations, numberOfCosignConfigs int)
 	integrations := make([]*storage.SignatureIntegration, 0, numberOfIntegrations)
 
 	for i := 0; i < numberOfIntegrations; i++ {
-		verificationConfigs := make([]*storage.SignatureVerificationConfig, 0, numberOfCosignConfigs)
-		for j := 0; j < numberOfCosignConfigs; j++ {
-			if j%2 == 0 {
-				verificationConfigs = append(verificationConfigs, successfulCosignConfig)
-			} else {
-				verificationConfigs = append(verificationConfigs, failingCosignConfig)
-			}
+		var cosignConfig *storage.CosignPublicKeyVerification
+		if i%2 == 0 {
+			cosignConfig = successfulCosignConfig
+		} else {
+			cosignConfig = failingCosignConfig
 		}
+
 		integrations = append(integrations, &storage.SignatureIntegration{
-			Id:                           fmt.Sprintf("sig-integration-%d", i),
-			SignatureVerificationConfigs: verificationConfigs,
+			Id:     fmt.Sprintf("sig-integration-%d", i),
+			Cosign: cosignConfig,
 		})
 	}
 

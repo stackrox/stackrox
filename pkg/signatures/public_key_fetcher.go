@@ -39,7 +39,7 @@ func init() {
 // It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
 func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, image *storage.Image,
-	registry registryTypes.ImageRegistry) (*storage.ImageSignature, error) {
+	registry registryTypes.ImageRegistry) ([]*storage.Signature, error) {
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
 	imgFullName := image.GetName().GetFullName()
@@ -95,9 +95,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, im
 		return nil, nil
 	}
 
-	return &storage.ImageSignature{
-		Signatures: cosignSignatures,
-	}, nil
+	return cosignSignatures, nil
 }
 
 func optionsFromRegistry(registry registryTypes.ImageRegistry) []gcrRemote.Option {
