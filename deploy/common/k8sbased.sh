@@ -497,6 +497,11 @@ function launch_sensor {
       $k8s_dir/sensor-deploy/sensor.sh
     fi
 
+    if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
+       kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+    fi
+
+
     if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${ROX_HOTRELOAD}" == "true" ]]; then
          hotload_binary bin/kubernetes-sensor kubernetes sensor
