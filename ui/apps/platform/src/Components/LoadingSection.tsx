@@ -6,6 +6,8 @@ interface LoadingSectionProps {
     message?: string;
 }
 
+// TODO Note that this is likely a duplicate component of apps/platform/src/Components/Loader.js and
+// should be removed when time.
 const LoadingSection = ({ message = 'Loading...' }: LoadingSectionProps) => (
     <Flex className="pf-u-flex-direction-column pf-u-h-100 pf-u-justify-content-center pf-u-align-items-center">
         <ClipLoader color="white" loading size={20} />
