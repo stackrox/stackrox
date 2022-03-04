@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
@@ -22,7 +23,6 @@ var (
 )
 
 // ScanImage runs the pipeline required to scan an image with a local Scanner.
-// TODO(ROX-9281): add retries for rate-limiting.
 //nolint:revive
 func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	// 1. Check if Central already knows about this image.
@@ -71,17 +71,24 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 		return nil, errors.Wrapf(err, "scan failed for image %s", name)
 	}
 
+	// Image ID may not exist, if this image is not from an active deployment
+	// (for example the Admission Controller checks the image prior to deployment).
+	// Try to determine the SHA with best-effort.
+	sha := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
+
 	// 6. Get the image's vulnerabilities from Central.
 	centralResp, err := centralClient.GetImageVulnerabilitiesInternal(ctx, &v1.GetImageVulnerabilitiesInternalRequest{
-		ImageId:    image.GetId(),
+		ImageId:    sha,
 		ImageName:  image.GetName(),
 		Metadata:   metadata,
 		Components: scanResp.GetComponents(),
 		Notes:      scanResp.GetNotes(),
 	})
 	if err != nil {
+		log.Debugf("Unable to retrieve image vulnerabilities for %s: %v", name, err)
 		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s", name)
 	}
+	log.Debugf("Retrieved image vulnerabilities for %s", name)
 
 	// 7. Return the completely scanned image.
 	return centralResp.GetImage(), nil

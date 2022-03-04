@@ -12,6 +12,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
 
@@ -29,7 +30,16 @@ const (
 	IgnoreExistingImages
 	ForceRefetch
 	ForceRefetchScansOnly
+	ForceRefetchSignaturesOnly
+	ForceRefetchCachedValuesOnly
 )
+
+// forceRefetchCachedValues implies whether the cached values within the database should be skipped and refetched.
+// Note: This does not include the specific FetchOption ForceRefetchScansOnly and ForceRefetchSignaturesOnly, the caller
+// still needs to check for those specifically.
+func (f FetchOption) forceRefetchCachedValues() bool {
+	return f == ForceRefetch || f == ForceRefetchCachedValuesOnly
+}
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
 type EnrichmentContext struct {
@@ -52,7 +62,7 @@ func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
 
 // FetchOnlyIfScanEmpty will use the scan that exists in the image unless the fetch opts prohibit it
 func (e EnrichmentContext) FetchOnlyIfScanEmpty() bool {
-	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch && e.FetchOpt != ForceRefetchScansOnly
+	return e.FetchOpt != IgnoreExistingImages && !e.FetchOpt.forceRefetchCachedValues() && e.FetchOpt != ForceRefetchScansOnly
 }
 
 // EnrichmentResult denotes possible return values of the EnrichImage function.
@@ -81,6 +91,7 @@ const (
 //go:generate mockgen-wrapper
 type ImageEnricher interface {
 	EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
+	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
 }
 
 type cveSuppressor interface {
@@ -89,10 +100,14 @@ type cveSuppressor interface {
 
 type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
+// signatureIntegrationGetter will be used to retrieve all available signature integrations.
+type signatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
+
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
 func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
-	imageGetter imageGetter, healthReporter integrationhealth.Reporter) ImageEnricher {
+	imageGetter imageGetter, healthReporter integrationhealth.Reporter,
+	signatureIntegrationGetter signatureIntegrationGetter) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
@@ -105,6 +120,8 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
+
+		signatureIntegrationGetter: signatureIntegrationGetter,
 
 		imageGetter: imageGetter,
 

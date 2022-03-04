@@ -57,7 +57,7 @@ func LogInternalErrorStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ 
 
 func logErrorIfInternal(err error) {
 	if grpcStatus := ErrToGrpcStatus(err); grpcStatus.Code() == codes.Internal {
-		log.Errorf("Internal error occurred: %+v", err)
+		log.Errorf("Internal error occurred: %v", err)
 	}
 }
 

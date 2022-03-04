@@ -30,12 +30,12 @@ type dataStoreImpl struct {
 	indexer  index.Indexer
 }
 
-func (d *dataStoreImpl) buildIndex() error {
+func (d *dataStoreImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing report configurations")
 
 	var reportConfigs []*storage.ReportConfiguration
-	err := d.reportConfigStore.Walk(func(reportConfig *storage.ReportConfiguration) error {
+	err := d.reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
 		reportConfigs = append(reportConfigs, reportConfig)
 		return nil
 	})
@@ -68,7 +68,7 @@ func (d *dataStoreImpl) GetReportConfiguration(ctx context.Context, id string) (
 	if ok, err := reportConfigSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
 	}
-	return d.reportConfigStore.Get(id)
+	return d.reportConfigStore.Get(ctx, id)
 }
 
 func (d *dataStoreImpl) AddReportConfiguration(ctx context.Context, reportConfig *storage.ReportConfiguration) (string, error) {
@@ -78,7 +78,7 @@ func (d *dataStoreImpl) AddReportConfiguration(ctx context.Context, reportConfig
 	if reportConfig.Id == "" {
 		reportConfig.Id = uuid.NewV4().String()
 	}
-	if err := d.reportConfigStore.Upsert(reportConfig); err != nil {
+	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
 		return "", err
 	}
 	if err := d.indexer.AddReportConfiguration(reportConfig); err != nil {
@@ -96,7 +96,7 @@ func (d *dataStoreImpl) UpdateReportConfiguration(ctx context.Context, reportCon
 		return errors.New("report configuration id field must be set")
 	}
 
-	if err := d.reportConfigStore.Upsert(reportConfig); err != nil {
+	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
 		return err
 	}
 	return d.indexer.AddReportConfiguration(reportConfig)
@@ -106,7 +106,7 @@ func (d *dataStoreImpl) RemoveReportConfiguration(ctx context.Context, id string
 	if err := sac.VerifyAuthzOK(reportConfigSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := d.reportConfigStore.Delete(id); err != nil {
+	if err := d.reportConfigStore.Delete(ctx, id); err != nil {
 		return err
 	}
 	return d.indexer.DeleteReportConfiguration(id)

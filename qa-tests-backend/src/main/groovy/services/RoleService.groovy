@@ -27,19 +27,23 @@ class RoleService extends BaseService {
         }
     }
 
-    static Role createRoleWithPermissionSet(Role role, Map<String, RoleOuterClass.Access> resourceToAccess) {
+    static Role createRoleWithScopeAndPermissionSet(String name, String accessScopeId,
+        Map<String, RoleOuterClass.Access> resourceToAccess) {
+
         def permissionSet = createPermissionSet(
-                "Test Automation Permission Set ${UUID.randomUUID()} for ${role.name}", resourceToAccess)
-        Role r = Role.newBuilder(role)
-                .clearResourceToAccess()
-                .setPermissionSetId(permissionSet.id).build()
+                "Test Automation Permission Set ${UUID.randomUUID()} for ${name}", resourceToAccess)
+        Role role = Role.newBuilder()
+            .setName(name)
+            .setAccessScopeId(accessScopeId)
+            .setPermissionSetId(permissionSet.id)
+            .build()
         getRoleService().createRole(RoleServiceOuterClass.CreateRoleRequest
                 .newBuilder()
-                .setName(r.name)
-                .setRole(r)
+                .setName(role.name)
+                .setRole(role)
                 .build()
         )
-        r
+        role
     }
 
     static deleteRole(String name) {

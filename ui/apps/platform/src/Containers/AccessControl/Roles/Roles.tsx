@@ -14,7 +14,11 @@ import {
 
 import NotFoundMessage from 'Components/NotFoundMessage';
 import { getIsDefaultRoleName } from 'constants/accessControl';
-import { AccessScope, fetchAccessScopes } from 'services/AccessScopesService';
+import {
+    AccessScope,
+    fetchAccessScopes,
+    defaultAccessScopeIds,
+} from 'services/AccessScopesService';
 import { Group, fetchAuthProviders } from 'services/AuthService';
 import { fetchGroups } from 'services/GroupsService';
 import {
@@ -44,7 +48,7 @@ const roleNew: Role = {
     resourceToAccess: {},
     description: '',
     permissionSetId: '',
-    accessScopeId: '',
+    accessScopeId: defaultAccessScopeIds.Unrestricted,
 };
 
 function Roles(): ReactElement {

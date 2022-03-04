@@ -275,7 +275,8 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1234",
 		Type: storage.CVE_NODE_CVE,
 	}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.ClusterCVEParts{CVE: cve}))
+	cveClusters := []*storage.Cluster{{Id: "id"}}
+	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
 
 	expectedCVE := &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -291,7 +292,7 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1234",
 		Type: storage.CVE_IMAGE_CVE,
 	}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.ClusterCVEParts{CVE: cve}))
+	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
 
 	expectedCVE = &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -311,8 +312,8 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1235",
 		Type: storage.CVE_IMAGE_CVE,
 	}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.ClusterCVEParts{CVE: cve}))
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.ClusterCVEParts{CVE: cve2}))
+	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
+	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve2, cveClusters, "fixVersions")))
 
 	expectedCVE = &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -328,8 +329,12 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 	suite.Equal(expectedCVE, storedCVEs[0])
 	suite.Equal(expectedCVE2, storedCVEs[1])
 
+	// CVE datastore will not delete CVEs until they are no longer referenced by cluster/image/node.
+	cveEdges, _ := edgeStore.GetAll()
+	for _, cveEdge := range cveEdges {
+		suite.NoError(edgeStore.Delete(cveEdge.GetId()))
+	}
 	// Delete CVE.
-
 	suite.NoError(datastore.Delete(ctx, cve.GetId()))
 	_, exists, err = datastore.Get(ctx, cve.GetId())
 	suite.NoError(err)

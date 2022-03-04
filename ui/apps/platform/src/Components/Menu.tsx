@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown } from 'react-feather';
 
@@ -8,20 +7,47 @@ import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 const optionsClass =
     'flex items-center relative text-left px-2 py-3 text-sm border-b border-base-400 hover:bg-base-200 capitalize';
 
+export interface MenuOption {
+    className: string;
+    icon: ReactElement;
+    label: string;
+    link?: string;
+    onClick?: React.MouseEventHandler<HTMLButtonElement>;
+    component?: ReactElement;
+}
+
+type GroupedMenuOptions = Record<string, MenuOption[]>;
+
+interface MenuProps {
+    buttonClass?: string;
+    buttonText?: string;
+    buttonTextClassName?: string;
+    buttonIcon?: ReactElement;
+    menuClassName?: string;
+    className?: string;
+    options: GroupedMenuOptions | MenuOption[];
+    disabled?: boolean;
+    // TODO the `grouped` prop should be deprecated in favor of type narrowing once all dependent files are moved to TypeScript
+    grouped?: boolean;
+    tooltip?: string;
+    dataTestId?: string;
+    hideCaret?: boolean;
+}
+
 const Menu = ({
-    buttonClass,
-    buttonText,
-    buttonIcon,
-    menuClassName,
-    className,
     options,
-    disabled,
-    grouped,
-    tooltip,
-    dataTestId,
-    hideCaret,
-    buttonTextClassName,
-}) => {
+    buttonClass = '',
+    buttonText = '',
+    buttonIcon,
+    menuClassName = '',
+    className = '',
+    disabled = false,
+    grouped = false,
+    tooltip = '',
+    dataTestId = 'menu-button',
+    hideCaret = false,
+    buttonTextClassName = '',
+}: MenuProps) => {
     const [isMenuOpen, setMenuState] = useState(false);
 
     const hideMenu = () => {
@@ -41,7 +67,7 @@ const Menu = ({
         }
     };
 
-    function renderOptions(formattedOptions) {
+    function renderOptions(formattedOptions: MenuOption[]) {
         // TO DO: use accessibility friendly semantic HTML elements (<li>, <ul>)
         return formattedOptions.map(
             ({ className: optionClassName, link, label, component, icon, onClick }) => {
@@ -76,7 +102,7 @@ const Menu = ({
         );
     }
 
-    function renderGroupedOptions(formattedOptions) {
+    function renderGroupedOptions(formattedOptions: GroupedMenuOptions) {
         return Object.keys(formattedOptions).map((group) => {
             return (
                 <React.Fragment key={group}>
@@ -111,53 +137,14 @@ const Menu = ({
                         className={`absolute flex flex-col flex-nowrap menu right-0 z-10 min-w-32 bg-base-100 shadow border border-base-400 ${menuClassName}`}
                         data-testid="menu-list"
                     >
-                        {grouped ? renderGroupedOptions(options) : renderOptions(options)}
+                        {grouped
+                            ? renderGroupedOptions(options as GroupedMenuOptions)
+                            : renderOptions(options as MenuOption[])}
                     </div>
                 )}
             </div>
         </Tooltip>
     );
-};
-
-Menu.propTypes = {
-    buttonClass: PropTypes.string,
-    buttonText: PropTypes.string,
-    buttonTextClassName: PropTypes.string,
-    buttonIcon: PropTypes.node,
-    menuClassName: PropTypes.string,
-    className: PropTypes.string,
-    options: PropTypes.oneOfType([
-        PropTypes.arrayOf(
-            PropTypes.shape({
-                className: PropTypes.string,
-                icon: PropTypes.element,
-                label: PropTypes.string,
-                link: PropTypes.string,
-                onClick: PropTypes.func,
-                component: PropTypes.node,
-            })
-        ).isRequired,
-        PropTypes.shape({}),
-    ]).isRequired,
-    disabled: PropTypes.bool,
-    grouped: PropTypes.bool,
-    tooltip: PropTypes.string,
-    dataTestId: PropTypes.string,
-    hideCaret: PropTypes.bool,
-};
-
-Menu.defaultProps = {
-    buttonClass: '',
-    buttonTextClassName: '',
-    buttonText: '',
-    buttonIcon: null,
-    disabled: false,
-    menuClassName: '',
-    className: '',
-    grouped: false,
-    tooltip: '',
-    dataTestId: 'menu-button',
-    hideCaret: false,
 };
 
 export default Menu;

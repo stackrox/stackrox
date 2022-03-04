@@ -55,7 +55,7 @@ func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer,
 		namespaceRanker:   namespaceRanker,
 		idMapStorage:      idMapStorage,
 	}
-	if err := ds.buildIndex(); err != nil {
+	if err := ds.buildIndex(context.TODO()); err != nil {
 		return nil, err
 	}
 	return ds, nil
@@ -84,10 +84,10 @@ type datastoreImpl struct {
 	deployments deploymentDataStore.DataStore
 }
 
-func (b *datastoreImpl) buildIndex() error {
+func (b *datastoreImpl) buildIndex(ctx context.Context) error {
 	log.Info("[STARTUP] Indexing namespaces")
 	var namespaces []*storage.NamespaceMetadata
-	err := b.store.Walk(func(ns *storage.NamespaceMetadata) error {
+	err := b.store.Walk(ctx, func(ns *storage.NamespaceMetadata) error {
 		namespaces = append(namespaces, ns)
 		return nil
 	})
@@ -108,7 +108,7 @@ func (b *datastoreImpl) buildIndex() error {
 
 // GetNamespace returns namespace with given id.
 func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
-	namespace, found, err := b.store.Get(id)
+	namespace, found, err := b.store.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -125,7 +125,7 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 // GetNamespaces retrieves namespaces matching the request from bolt
 func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	var allowedNamespaces []*storage.NamespaceMetadata
-	err := b.store.Walk(func(namespace *storage.NamespaceMetadata) error {
+	err := b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
 		scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
 		if ok, err := namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
 			Allowed(ctx); err != nil || !ok {
@@ -149,7 +149,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(namespace); err != nil {
+	if err := b.store.Upsert(ctx, namespace); err != nil {
 		return err
 	}
 	if b.idMapStorage != nil {
@@ -166,7 +166,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(namespace); err != nil {
+	if err := b.store.Upsert(ctx, namespace); err != nil {
 		return err
 	}
 	return b.indexer.AddNamespaceMetadata(namespace)
@@ -180,7 +180,7 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Delete(id); err != nil {
+	if err := b.store.Delete(ctx, id); err != nil {
 		return err
 	}
 	if b.idMapStorage != nil {

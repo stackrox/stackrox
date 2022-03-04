@@ -56,7 +56,6 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
-	helmHandler "github.com/stackrox/rox/central/helm/handler"
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -484,14 +483,9 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	// The below enrichers handle SAC being off or on.
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
-	)
-	// After auth checks are run, we want to use the client (if available) to add scope checking.
-	config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,
-		centralSAC.GetEnricher().PostAuthContextEnricher,
 	)
 
 	server := pkgGRPC.NewAPI(config)
@@ -679,17 +673,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 				},
 			}),
 			ServerHandler: scannerDefinitionsHandler.Singleton(),
-			Compression:   false,
-		},
-	)
-
-	helmClusterAddRoute := "/api/helm/cluster/add"
-	customRoutes = append(customRoutes,
-		routes.CustomRoute{
-			Route: helmClusterAddRoute,
-			Authorizer: user.With(permissions.Modify(resources.Cluster),
-				permissions.Modify(resources.ServiceIdentity)),
-			ServerHandler: helmHandler.Handler(siStore.Singleton(), clusterService.Singleton()),
 			Compression:   false,
 		},
 	)

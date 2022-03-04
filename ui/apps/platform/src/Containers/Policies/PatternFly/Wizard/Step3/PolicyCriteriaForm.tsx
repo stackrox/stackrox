@@ -46,9 +46,7 @@ function PolicyCriteriaForm() {
     const headingElements = (
         <>
             <Title headingLevel="h2">Policy criteria</Title>
-            <div className="pf-u-mt-sm">
-                Construct policy rules by chaining criteria together with boolean logic.
-            </div>
+            <div className="pf-u-mt-sm">Chain criteria with boolean logic.</div>
         </>
     );
 
@@ -92,7 +90,7 @@ function PolicyCriteriaForm() {
                         <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
                         <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                             <Button variant="secondary" onClick={addNewPolicySection}>
-                                Add a new condition
+                                Add condition
                             </Button>
                         </FlexItem>
                     </Flex>

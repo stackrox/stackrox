@@ -43,6 +43,8 @@ class BaseSpecification extends Specification {
 
     static final String RUN_ID
 
+    public static final String UNRESTRICTED_SCOPE_ID = "io.stackrox.authz.accessscope.unrestricted"
+
     static {
         String idStr
         try {
@@ -125,14 +127,12 @@ class BaseSpecification extends Specification {
             allResources.getResourcesList().each { res ->
                 resourceAccess.put(res, RoleOuterClass.Access.READ_WRITE_ACCESS) }
 
-            testRole = RoleOuterClass.Role.newBuilder()
-                    .setName("Test Automation Role - ${RUN_ID}")
-                    .build()
+            String testRoleName = "Test Automation Role - ${RUN_ID}"
 
-            RoleService.deleteRole(testRole.name)
-            RoleService.createRoleWithPermissionSet(testRole, resourceAccess)
+            RoleService.deleteRole(testRoleName)
+            RoleService.createRoleWithScopeAndPermissionSet(testRoleName, UNRESTRICTED_SCOPE_ID, resourceAccess)
 
-            tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRole.name)
+            tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRoleName)
         }
 
         allAccessToken = tokenResp.token

@@ -107,7 +107,7 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	mockStorage.EXPECT().GetKeysToIndex().Return(nil, nil)
+	mockStorage.EXPECT().GetKeysToIndex(context.TODO()).Return(nil, nil)
 
 	mockCommentsStorage := commentsStoreMocks.NewMockStore(suite.mockCtrl)
 
@@ -137,7 +137,7 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*sto
 	suite.ElementsMatch(resultIDs, indicatorIDs)
 
 	var foundIndicators []*storage.ProcessIndicator
-	err = suite.storage.Walk(func(pi *storage.ProcessIndicator) error {
+	err = suite.storage.Walk(suite.hasReadCtx, func(pi *storage.ProcessIndicator) error {
 		foundIndicators = append(foundIndicators, pi)
 		return nil
 	})
@@ -210,8 +210,8 @@ func (suite *IndicatorDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context,
 func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.setupDataStoreNoPruning()
 
-	roleNone := roletest.NewResolvedRoleWithGlobalScope(role.None, nil)
-	roleAdmin := roletest.NewResolvedRoleWithGlobalScope(role.Admin, utils.FromResourcesWithAccess(resources.AllResourcesModifyPermissions()...))
+	roleNone := roletest.NewResolvedRoleWithDenyAll(role.None, nil)
+	roleAdmin := roletest.NewResolvedRoleWithDenyAll(role.Admin, utils.FromResourcesWithAccess(resources.AllResourcesModifyPermissions()...))
 
 	uid1Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "1", roleNone)
 	uid2Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "2", roleNone)
@@ -460,7 +460,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
 	mockStore, _, _ := suite.setupDataStoreWithMocks()
-	mockStore.EXPECT().Get(gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
+	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
 
 	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasNoneCtx, "hkjddjhk")
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -472,13 +472,13 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	mockStore, _, _ := suite.setupDataStoreWithMocks()
 	testIndicator := &storage.ProcessIndicator{}
 
-	mockStore.EXPECT().Get(gomock.Any()).Return(testIndicator, true, nil)
+	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(testIndicator, true, nil)
 	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasReadCtx, "An Id")
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
 	suite.Equal(testIndicator, indicator)
 
-	mockStore.EXPECT().Get(gomock.Any()).Return(testIndicator, true, nil)
+	mockStore.EXPECT().Get(suite.hasWriteCtx, gomock.Any()).Return(testIndicator, true, nil)
 	indicator, exists, err = suite.datastore.GetProcessIndicator(suite.hasWriteCtx, "beef")
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.True(exists)
@@ -487,7 +487,7 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().UpsertMany(gomock.Any()).Times(0)
+	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
 	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
 
 	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
@@ -499,7 +499,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().UpsertMany(gomock.Any()).Times(0)
+	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
 	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
 
 	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
@@ -511,10 +511,10 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().UpsertMany(gomock.Any()).Return(nil)
+	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil)
 
-	storeMock.EXPECT().AckKeysIndexed("id").Return(nil)
+	storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, "id").Return(nil)
 
 	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{Id: "id"})
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -534,10 +534,10 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	storeMock, indexMock, searchMock := suite.setupDataStoreWithMocks()
 	searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
-	storeMock.EXPECT().DeleteMany(gomock.Any()).Return(nil)
+	storeMock.EXPECT().DeleteMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
 
-	storeMock.EXPECT().AckKeysIndexed("jkldfjk").Return(nil)
+	storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, "jkldfjk").Return(nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, "eoiurvbf")
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -567,7 +567,7 @@ func (suite *ProcessIndicatorReindexSuite) SetupTest() {
 }
 
 func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
-	suite.storage.EXPECT().GetKeysToIndex().Return([]string{"A", "B", "C"}, nil)
+	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
 	pi1 := fixtures.GetProcessIndicator()
@@ -579,22 +579,22 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 
 	processes := []*storage.ProcessIndicator{pi1, pi2, pi3}
 
-	suite.storage.EXPECT().GetMany([]string{"A", "B", "C"}).Return(processes, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(processes, nil, nil)
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
 	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 
 	// Make listAlerts just A,B so C should be deleted
 	processes = processes[:1]
-	suite.storage.EXPECT().GetKeysToIndex().Return([]string{"A", "B", "C"}, nil)
+	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
-	suite.storage.EXPECT().GetMany([]string{"A", "B", "C"}).Return(processes, []int{2}, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(processes, []int{2}, nil)
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
 	suite.indexer.EXPECT().DeleteProcessIndicators([]string{"C"}).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
 	_, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)

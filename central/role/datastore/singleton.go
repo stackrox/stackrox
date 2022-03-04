@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/globaldb"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
@@ -46,10 +48,11 @@ func Singleton() DataStore {
 			}
 		}
 
+		ctx := context.TODO()
 		roles, permissionSets, accessScopes := getDefaultObjects()
-		utils.Must(roleStorage.UpsertMany(roles))
-		utils.Must(permissionSetStorage.UpsertMany(permissionSets))
-		utils.Must(accessScopeStorage.UpsertMany(accessScopes))
+		utils.Must(roleStorage.UpsertMany(ctx, roles))
+		utils.Must(permissionSetStorage.UpsertMany(ctx, permissionSets))
+		utils.Must(accessScopeStorage.UpsertMany(ctx, accessScopes))
 	})
 	return ds
 }
@@ -151,8 +154,9 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		resourceToAccess := permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...)
 
 		role := &storage.Role{
-			Name:        roleName,
-			Description: attributes.description,
+			Name:          roleName,
+			Description:   attributes.description,
+			AccessScopeId: rolePkg.AccessScopeIncludeAll.GetId(),
 		}
 
 		permissionSet := &storage.PermissionSet{
@@ -167,5 +171,9 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		roles = append(roles, role)
 
 	}
-	return roles, permissionSets, []*storage.SimpleAccessScope{rolePkg.AccessScopeExcludeAll}
+	simpleAccessScopes := []*storage.SimpleAccessScope{
+		rolePkg.AccessScopeIncludeAll,
+		rolePkg.AccessScopeExcludeAll}
+
+	return roles, permissionSets, simpleAccessScopes
 }

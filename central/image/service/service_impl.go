@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -31,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/timestamp"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
@@ -72,6 +74,8 @@ var (
 			"/v1.ImageService/UnwatchImage",
 		},
 	})
+
+	reprocessInterval = env.ReprocessInterval.DurationSetting()
 )
 
 // serviceImpl provides APIs for alerts.
@@ -184,6 +188,14 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 	}
 }
 
+func (s *serviceImpl) saveImage(img *storage.Image) error {
+	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
+		return err
+	}
+	return nil
+}
+
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
@@ -201,8 +213,8 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		if err != nil {
 			return nil, err
 		}
-		// If the scan exists, and it is less than the reprocessing interval, then return the scan.
-		// Otherwise, fetch it from the DB.
+		// If the scan exists, return the scan.
+		// Otherwise, run the enrichment pipeline.
 		if exists {
 			return internalScanRespFromImage(img), nil
 		}
@@ -226,12 +238,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest
 	if request.GetImage().GetId() != "" {
-		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-			log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
-		}
+		_ = s.saveImage(img)
 	}
 
-	// This modifies the image object
 	return internalScanRespFromImage(img), nil
 }
 
@@ -251,22 +260,63 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	// Save the image
 	img.Id = utils.GetImageID(img)
 	if img.GetId() != "" {
-		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+		if err := s.saveImage(img); err != nil {
 			return nil, err
 		}
 	}
 	if !request.GetIncludeSnoozed() {
 		utils.FilterSuppressedCVEsNoClone(img)
 	}
+
 	return img, nil
 }
 
 // GetImageVulnerabilitiesInternal retrieves the vulnerabilities related to the image
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
-// TODO(ROX-9281): Implement me.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	return nil, nil
+	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
+		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
+		if pkgUtils.Should(err) == nil {
+			return nil, s.Err()
+		}
+	}
+	defer s.internalScanSemaphore.Release(1)
+
+	// Attempt to pull the image from the store if the ID != "".
+	if request.GetImageId() != "" {
+		img, exists, err := s.datastore.GetImage(ctx, request.GetImageId())
+		if err != nil {
+			return nil, err
+		}
+
+		// This is safe even if img is nil.
+		scanTime := img.GetScan().GetScanTime()
+		// If the scan exists, and reprocessing has not run since, return the scan.
+		// Otherwise, run the enrichment pipeline to ensure we do not return stale data.
+		if exists && timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now()) {
+			return internalScanRespFromImage(img), nil
+		}
+	}
+
+	img := &storage.Image{
+		Id:             request.GetImageId(),
+		Name:           request.GetImageName(),
+		Metadata:       request.GetMetadata(),
+		IsClusterLocal: request.GetIsClusterLocal(),
+	}
+	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
+	if err != nil {
+		return nil, err
+	}
+
+	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
+	// contained a digest
+	if request.GetImageId() != "" {
+		_ = s.saveImage(img)
+	}
+
+	return internalScanRespFromImage(img), nil
 }
 
 // DeleteImages deletes images based on query
@@ -365,7 +415,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 		}, nil
 	}
 
-	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+	if err := s.saveImage(img); err != nil {
 		return nil, errors.Errorf("failed to store image: %v", err)
 	}
 

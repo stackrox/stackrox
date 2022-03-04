@@ -30,7 +30,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 		Resource: "dummy-3", Scope: permissions.GlobalScope,
 	}
 
-	testRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+	testRole := roletest.NewResolvedRoleWithDenyAll("Dummy", nil)
 
 	id := mocks.NewMockIdentity(gomock.NewController(t))
 	ctx := authn.ContextWithIdentity(context.Background(), id, t)
@@ -77,7 +77,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			}, {
 				Resource: nsScopedResource, Access: storage.Access_READ_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
+			ctx: sac.WithNoAccess(ctx),
 			err: errorhelpers.ErrNotAuthorized,
 		},
 		{
@@ -85,14 +85,14 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
+			ctx: sac.WithNoAccess(ctx),
 		},
 		{
 			name: "built-in scoped authz check permissions but nil permissions in ID",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctxWithNoPermissions)),
+			ctx: sac.WithNoAccess(ctxWithNoPermissions),
 			err: errorhelpers.ErrNoCredentials,
 		},
 		{
@@ -102,21 +102,21 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			}, {
 				Resource: nsScopedResource, Access: storage.Access_READ_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACEnabled(ctx)),
+			ctx: sac.WithNoAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
 		},
 		{
 			name: "plugin SAC check only global permissions",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACEnabled(ctx)),
+			ctx: sac.WithNoAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
 		},
 		{
 			name: "plugin SAC check only global permissions",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACEnabled(ctx)),
+			ctx: sac.WithNoAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
 			err: errorhelpers.ErrNotAuthorized,
 		},
 		{
@@ -124,14 +124,14 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithAllAccess(sac.SetContextSACEnabled(ctx)),
+			ctx: sac.WithAllAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
 		},
 		{
 			name: "plugin SAC check only global permissions with errored scope checker",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithGlobalAccessScopeChecker(sac.SetContextSACEnabled(ctx), sac.ErrorAccessScopeCheckerCore(err)),
+			ctx: sac.WithGlobalAccessScopeChecker(sac.SetContextPluginScopedAuthzEnabled(ctx), sac.ErrorAccessScopeCheckerCore(err)),
 			err: err,
 		},
 	}
