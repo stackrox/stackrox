@@ -1,0 +1,51 @@
+ARG BASE_REGISTRY=registry.access.redhat.com
+ARG BASE_IMAGE=ubi8/ubi
+ARG BASE_TAG=8.5
+
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
+#WORKDIR /bundle
+ADD bundle.tar.gz /bundle
+
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+
+LABEL name="central-db" \
+      vendor="StackRox" \
+      maintainer="support@stackrox.com" \
+      summary="Stackrox Central Database for the StackRox Kubernetes Security Platform" \
+      description="This image provides Database services to Stackrox Central in the StackRox Kubernetes Security Platform."
+
+ARG ROX_IMAGE_FLAVOR
+ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
+
+ENV PG_MAJOR=14
+ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
+    PGDATA="/var/lib/postgresql/data" \
+    POSTGRES_PASSWORD="password"
+    # POSTGRES_PASSWORD_FILE="/run/secrets/stackrox.io/secrets/password"
+
+COPY signatures/RPM-GPG-KEY-PGDG-12 /
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /tmp/
+COPY --from=extracted_bundle /bundle/etc/postgresql.conf /bundle/etc/pg_hba.conf /etc/
+
+RUN groupadd -g 70 postgres && \
+    adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
+    dnf upgrade -y && \
+    dnf install -y \
+        ca-certificates libicu systemd-sysv postgresql-server \
+        glibc-locale-source glibc-langpack-en \
+        /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm && \
+    dnf clean all && \
+    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf && \
+    localedef -f UTF-8 -i en_US en_US.UTF-8 && \
+    chown postgres:postgres /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh && \
+    mkdir /docker-entrypoint-initdb.d
+
+USER 70:70
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+EXPOSE 5432
+CMD ["postgres"]
