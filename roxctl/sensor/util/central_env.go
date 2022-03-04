@@ -34,7 +34,7 @@ type CentralEnv struct {
 	Warnings  []string
 }
 
-func getMainImageFromBuildTimeFlavor() string {
+func getMainImageFromBuildTimeImageFlavor() string {
 	var flavor defaults.ImageFlavor
 	if buildinfo.ReleaseBuild {
 		flavor = defaults.RHACSReleaseImageFlavor()
@@ -47,9 +47,14 @@ func getMainImageFromBuildTimeFlavor() string {
 // RetrieveCentralEnvOrDefault populates a `CentralEnv` struct with defaults and warnings. This function fallbacks to
 // legacy APIs if the defaults are not available. Ultimately, it will default values locally when it can't determine
 // configuration from central. Warnings are to be used by the caller to properly display them.
-// If there is an error fetching defaults from the API, *CentralEnv will be nil and the error will be returned.
+// If there is an error fetching defaults from APIs, there WILL be some non-nil *CentralEnv with fallback defaults AND
+// the error.
 func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersServiceClient) (*CentralEnv, error) {
-	env := CentralEnv{}
+	// These are defaults to return in case no used here APIs work or central is too old.
+	env := CentralEnv{
+		MainImage:              getMainImageFromBuildTimeImageFlavor(),
+		KernelSupportAvailable: false,
+	}
 
 	clusterDefaults, err := service.GetClusterDefaults(ctx, &v1.Empty{})
 	if err == nil {
@@ -59,12 +64,11 @@ func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersService
 	} else if status.Convert(err).Code() == codes.Unimplemented {
 		env.Warnings = append(env.Warnings, warningNoClusterDefaultsAPI)
 	} else {
-		return nil, errors.Wrap(err, errorWhenCallingGetClusterDefaults)
+		return &env, errors.Wrap(err, errorWhenCallingGetClusterDefaults)
 	}
 
-	// At this point we know that we're talking to older Central that likely won't accept MainImage = "", therefore we
-	// figure one out from the build-time flavor.
-	env.MainImage = getMainImageFromBuildTimeFlavor()
+	// At this point we know that we're talking to older Central, therefore we tell that we're using MainImage from the
+	// build-time flavor.
 	env.Warnings = append(env.Warnings, fmt.Sprintf(warningLegacyCentralDefaultMain, env.MainImage))
 
 	// Use legacy API to determine if Central has access to kernel drivers.
@@ -73,11 +77,9 @@ func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersService
 		env.KernelSupportAvailable = resp.GetKernelSupportAvailable()
 		return &env, nil
 	} else if status.Convert(err).Code() == codes.Unimplemented {
-		// If all APIs fail, we default KernelSupportAvailable to false and store the error
-		env.KernelSupportAvailable = false
 		env.Warnings = append(env.Warnings, warningKernelSupportAvailableUnimplemented)
 	} else {
-		return nil, errors.Wrap(err, errorWhenCallingGetKernelSupportAvailable)
+		return &env, errors.Wrap(err, errorWhenCallingGetKernelSupportAvailable)
 	}
 
 	return &env, nil

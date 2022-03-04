@@ -36,7 +36,7 @@ Please use --admission-controller-enforce-on-creates instead to suppress this wa
 
 	errorDeprecatedFlag = "Specified deprecated flag %s and new flag %s at the same time"
 
-	warningCentralEnvironmentError = "Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v."
+	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will try use fallback values."
 )
 
 type sensorGenerateCommand struct {
@@ -89,7 +89,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	return nil
 }
 
-func (s *sensorGenerateCommand) setClusterDefaults(envDefaults util.CentralEnv) {
+func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv) {
 	// Here we only set the cluster property, which will be persisted by central.
 	// This is not directly related to fetching the bundle.
 	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
@@ -117,12 +117,14 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
-	env := util.RetrieveCentralEnvOrDefault(ctx, service)
-	s.setClusterDefaults(env)
-
+	env, err := util.RetrieveCentralEnvOrDefault(ctx, service)
+	if err != nil {
+		s.env.Logger().WarnfLn(warningCentralEnvironmentError, err)
+	}
 	for _, warning := range env.Warnings {
 		s.env.Logger().WarnfLn(warning)
 	}
+	s.setClusterDefaults(env)
 
 	id, err := s.createCluster(ctx, service)
 
@@ -170,9 +172,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		s.env.Logger().InfofLn(infoDefaultingToComprehensiveCollector)
 	}
 
-	if env.Error != nil {
-		s.env.Logger().WarnfLn(warningCentralEnvironmentError, env.Error)
-	}
 	return nil
 }
 
