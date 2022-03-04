@@ -5139,19 +5139,11 @@ workflows:
       - openshift-ci-upgrade-test:
           context:
           - quay-rhacs-eng-readonly
-          filters: &OSCIBranches
+          filters:
             branches:
               only: /.*(osci).*/
           requires:
             - build
-
-      - openshift-ci-binary-build-commands:
-          context:
-          - quay-rhacs-eng-readonly
-          filters:
-            <<: *OSCIBranches
-          requires:
-            - pre-create-tag
 
       - retrigger-master-workflow:
           context: custom-executor-pull
