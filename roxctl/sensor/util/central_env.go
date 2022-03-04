@@ -50,7 +50,7 @@ func getMainImageFromBuildTimeImageFlavor() string {
 // If there is an error fetching defaults from APIs, there WILL be some non-nil *CentralEnv with fallback defaults AND
 // the error.
 func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersServiceClient) (*CentralEnv, error) {
-	// These are defaults to return in case no used here APIs work or central is too old.
+	// These are defaults to return in case none of APIs used here works or central is too old.
 	env := CentralEnv{
 		MainImage:              getMainImageFromBuildTimeImageFlavor(),
 		KernelSupportAvailable: false,
@@ -68,7 +68,9 @@ func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersService
 	}
 
 	// At this point we know that we're talking to older Central, therefore we tell that we're using MainImage from the
-	// build-time flavor.
+	// build-time flavor of roxctl. This might be an issue for folks who deployed older Central with `stackrox.io` image
+	// flavor because roxctl will pass that default, and the generated bundle will have image references either from
+	// `rhacs` flavor for the release build or a development one, but not `stackrox.io`.
 	env.Warnings = append(env.Warnings, fmt.Sprintf(warningLegacyCentralDefaultMain, env.MainImage))
 
 	// Use legacy API to determine if Central has access to kernel drivers.
