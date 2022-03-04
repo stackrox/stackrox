@@ -62,8 +62,7 @@ describe('Policies table', () => {
 
         cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
 
-        // TODO why does input element not have aria-selected attribute?
-        cy.get(`thead ${selectors.table.selectCheckbox}`).click();
+        cy.get(`thead ${selectors.table.selectCheckbox}`).should('not.be.checked').click();
         cy.get(selectors.table.bulkActionsDropdownButton).should('be.enabled').click();
         cy.get(`${selectors.table.bulkActionsDropdownItem}:contains("Enable policies")`);
         cy.get(`${selectors.table.bulkActionsDropdownItem}:contains("Disable policies")`);
@@ -78,8 +77,7 @@ describe('Policies table', () => {
 
         cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
 
-        // TODO why does input element not have aria-selected attribute?
-        cy.get(`tbody ${selectors.table.selectCheckbox}:nth(0)`).click();
+        cy.get(`tbody ${selectors.table.selectCheckbox}:nth(0)`).should('not.be.checked').click();
         cy.get(selectors.table.bulkActionsDropdownButton).should('be.enabled');
 
         cy.get(`tbody ${selectors.table.selectCheckbox}:nth(0)`).click();
