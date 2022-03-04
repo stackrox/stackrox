@@ -3,7 +3,7 @@ import { ClipLoader } from 'react-spinners';
 import { Flex } from '@patternfly/react-core';
 
 interface LoadingSectionProps {
-    message: string;
+    message?: string;
 }
 
 const LoadingSection = ({ message = 'Loading...' }: LoadingSectionProps) => (
