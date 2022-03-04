@@ -1,12 +1,15 @@
 package signatures
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
 	stdLog "log"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/crane"
@@ -19,9 +22,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/logging"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 const (
@@ -45,6 +50,18 @@ type mockRegistry struct {
 
 func (m *mockRegistry) Config() *registryTypes.Config {
 	return m.cfg
+}
+
+type mockLogSink struct {
+	io.Writer
+}
+
+func (cw mockLogSink) Close() error {
+	return nil
+}
+
+func (cw mockLogSink) Sync() error {
+	return nil
 }
 
 // registryServerWithImage creates a local registry that can be accessed via a httptest.Server during tests with an
@@ -204,7 +221,29 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	f := &cosignPublicKeySignatureFetcher{}
 	reg := &mockRegistry{cfg: &registryTypes.Config{}}
 
+	// Create a mock logger to check that no error is written to the log.
+	var output bytes.Buffer
+	bWriter := bufio.NewWriter(&output)
+	cfg := zap.NewProductionConfig()
+	err = zap.RegisterSink("customwriter", func(url *url.URL) (zap.Sink, error) {
+		return mockLogSink{bWriter}, nil
+	})
+	require.NoError(t, err)
+	customPath := fmt.Sprintf("%s:whatever", "customwriter")
+	cfg.OutputPaths = []string{customPath}
+	l, err := cfg.Build()
+	require.NoError(t, err)
+	logger := &logging.Logger{
+		SugaredLogger: l.Sugar(),
+	}
+
+	stdLogger := log
+	log = logger
+	defer func() { log = stdLogger }()
+
 	result, exists := f.FetchSignature(context.Background(), img, reg)
 	assert.False(t, exists)
 	assert.Nil(t, result)
+	require.NoError(t, bWriter.Flush(), "writing log output")
+	assert.Empty(t, output.String())
 }
