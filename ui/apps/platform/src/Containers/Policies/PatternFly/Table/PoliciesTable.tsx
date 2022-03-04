@@ -170,7 +170,7 @@ function PoliciesTable({
     }
 
     function onClonePolicy(id: string) {
-        history.replace({
+        history.push({
             pathname: `${policiesBasePath}/${id}`,
             search: 'action=clone',
         });
