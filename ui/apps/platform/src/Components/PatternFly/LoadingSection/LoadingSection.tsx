@@ -8,18 +8,18 @@ interface LoadingSectionProps {
     message?: string;
     /** The size of the Spinner to pass through to the PatternFly component */
     spinnerSize?: 'sm' | 'md' | 'lg' | 'xl';
-    /** Should the color of the Spinner and text be inverted from the default theme? (Defaults to `false`, which results in a white color.) */
-    isColorInverted?: boolean;
+    /** Should the color of the Spinner and text be light or dark? (Defaults to 'light') */
+    variant?: 'light' | 'dark';
 }
 
 const LoadingSection = ({
     message = 'Loading...',
     spinnerSize = 'lg',
-    isColorInverted: invertColors = false,
+    variant = 'light',
 }: LoadingSectionProps) => (
     <Flex
         className={`loading-section ${
-            invertColors ? 'loading-section-inverted' : ''
+            variant === 'light' ? 'pf-m-light' : 'pf-m-dark'
         } pf-u-flex-direction-column pf-u-h-100 pf-u-justify-content-center pf-u-align-items-center`}
     >
         <Spinner aria-valuetext={message} size={spinnerSize} />
