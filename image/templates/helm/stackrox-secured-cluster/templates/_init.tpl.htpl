@@ -278,6 +278,14 @@
   {{ $_ := set $._rox.scanner "disable" true }}
 {{ end }}
 
+{{ if eq ._rox.scanner.disable false}}
+  {{ $centralDeployment := dict }}
+  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $._rox.namespace "central") }}
+  {{ if $centralDeployment.result }}
+    {{ include "srox.fail" "Local scanner is not supported to be deployed within a namespace running Central, Scanner must be deployed with the Central chart. To fix this error set scanner.disable=true and re-deploy." }}
+  {{ end }}
+{{ end }}
+
 {{ if and ._rox.env.openshift (eq ._rox.scanner.disable false) }}
   {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
   {{ $_ = set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
