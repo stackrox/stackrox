@@ -1,22 +1,31 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { FileText, List } from 'react-feather';
 import { connect } from 'react-redux';
 
 import { actions } from 'reducers/pdfDownload';
 import exportPDF from 'services/PDFExportService';
 import downloadCSV from 'services/CSVDownloadService';
-import Menu from 'Components/Menu';
+import Menu, { MenuOption } from 'Components/Menu';
+import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
+
+type ExportMenuProps = {
+    fileName: string;
+    pdfId?: string;
+    csvEndpoint?: string;
+    csvQueryString?: string;
+    startExportingPDF: RequestAction;
+    finishExportingPDF: SuccessAction;
+};
 
 const ExportMenu = ({
     fileName,
     pdfId,
     csvEndpoint,
-    csvQueryString,
+    csvQueryString = '',
     startExportingPDF,
     finishExportingPDF,
-}) => {
-    const options = [];
+}: ExportMenuProps) => {
+    const options: MenuOption[] = [];
     if (pdfId) {
         options.push({
             className: '',
@@ -33,7 +42,7 @@ const ExportMenu = ({
             icon: <List className="h-4 w-4 text-base-600" />,
             label: 'Download CSV',
             onClick: () => {
-                downloadCSV(fileName, csvEndpoint, csvQueryString);
+                return downloadCSV(fileName, csvEndpoint, csvQueryString);
             },
         });
     }
@@ -48,21 +57,6 @@ const ExportMenu = ({
             dataTestId="export-menu"
         />
     );
-};
-
-ExportMenu.propTypes = {
-    fileName: PropTypes.string.isRequired,
-    pdfId: PropTypes.string,
-    csvEndpoint: PropTypes.string,
-    csvQueryString: PropTypes.string,
-    startExportingPDF: PropTypes.func.isRequired,
-    finishExportingPDF: PropTypes.func.isRequired,
-};
-
-ExportMenu.defaultProps = {
-    pdfId: null,
-    csvEndpoint: null,
-    csvQueryString: '',
 };
 
 const mapDispatchToProps = {
