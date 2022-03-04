@@ -1907,6 +1907,7 @@ commands:
       - run:
           name: Deploy Sensor
           command: |
+            export ROX_AFTERGLOW_PERIOD=15
             if [[ "<< parameters.sensor-deploy-flavor >>" == "helm" ]]; then
               echo "Deploying Sensor using Helm ..."
               export SENSOR_HELM_DEPLOY=true
