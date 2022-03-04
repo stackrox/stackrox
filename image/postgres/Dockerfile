@@ -23,16 +23,17 @@ ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
     POSTGRES_PASSWORD="password"
     # POSTGRES_PASSWORD_FILE="/run/secrets/stackrox.io/secrets/password"
 
-COPY signatures/RPM-GPG-KEY-PGDG-12 /
+COPY signatures/RPM-GPG-KEY-PGDG-14 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /tmp/
 COPY --from=extracted_bundle /bundle/etc/postgresql.conf /bundle/etc/pg_hba.conf /etc/
 
 RUN groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
+    rpm --import RPM-GPG-KEY-PGDG-14 && \
     dnf upgrade -y && \
     dnf install -y \
-        ca-certificates libicu systemd-sysv postgresql-server \
+        ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm && \
     dnf clean all && \
@@ -43,9 +44,9 @@ RUN groupadd -g 70 postgres && \
     chmod +x /usr/local/bin/docker-entrypoint.sh && \
     mkdir /docker-entrypoint-initdb.d
 
-USER 70:70
+USER postgres:postgres
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 5432
-CMD ["postgres"]
+CMD ["postgres", "-c", "config_file=/etc/postgresql.conf"]

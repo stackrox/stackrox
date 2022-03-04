@@ -631,9 +631,10 @@ $(CURDIR)/image/postgres/bundle.tar.gz:
 central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
 	docker build \
 		-t stackrox/central-db:$(TAG) \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--file image/postgres/Dockerfile \
 		image/postgres
-	@echo "Built central-db image with tag"
+	@echo "Built central-db image with tag $(TAG)"
 
 ###########
 ## Clean ##

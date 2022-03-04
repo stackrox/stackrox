@@ -2,6 +2,7 @@
 # Creates a tgz bundle of all binary artifacts needed for scanner-db-rhel
 
 set -euo pipefail
+set -x
 
 die() {
     echo >&2 "$@"
@@ -50,7 +51,7 @@ rm -rf "${build_dir}"
 cp -p "${INPUT_ROOT}"/*.conf "${bundle_root}/etc/"
 
 # Get postgres RPMs directly
-postgres_url="https://download.postgresql.org/pub/repos/yum/12/redhat/rhel-${pg_rhel_version}-x86_64"
+postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-x86_64"
 curl -s -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
 curl -s -o "${bundle_root}/postgres-server.rpm" \
