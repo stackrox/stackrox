@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { RedocStandalone } from 'redoc';
 import Raven from 'raven-js';
 
-import LoadingSection from 'Components/LoadingSection';
+import LoadingSection from 'Components/PatternFly/LoadingSection';
 import axios from 'services/instance';
 
 function SwaggerBrowser({ uri }) {
