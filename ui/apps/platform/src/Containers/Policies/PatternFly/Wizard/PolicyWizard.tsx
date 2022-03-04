@@ -189,7 +189,10 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 ),
                                 nextButtonText: 'Save',
                                 canJumpTo: canJumpToAny || stepIdReached >= 5,
-                                enableNext: dirty && isValidOnServer && !isSubmitting,
+                                enableNext:
+                                    (dirty || pageAction === 'clone') &&
+                                    isValidOnServer &&
+                                    !isSubmitting,
                             },
                         ]}
                         onBack={onBack}
