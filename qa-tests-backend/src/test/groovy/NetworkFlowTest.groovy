@@ -698,7 +698,7 @@ class NetworkFlowTest extends BaseSpecification {
                 }
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
-                    println "Deployed namespaces do not contain all namespaces in network policy: ${sourceNamespacesFromNetworkPolicy}"
+                    println "Deployed namespaces do not contain all namespaces found in the network policy"
                     println "The network policy:"
                     print modification
                 }
