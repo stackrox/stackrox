@@ -5157,14 +5157,13 @@ workflows:
       - scan-images-in-quay:
           context:
           - quay-rhacs-eng-readonly
-#          TODO(do-not-merge): Hack to check if it's working
-#          filters:
-#            tags:
-#              only: /.*/
-#            branches:
-#              ignore: /.*/
-#          requires:
-#            - build
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+          requires:
+            - build
 
       - openshift-ci-upgrade-test:
           context:
