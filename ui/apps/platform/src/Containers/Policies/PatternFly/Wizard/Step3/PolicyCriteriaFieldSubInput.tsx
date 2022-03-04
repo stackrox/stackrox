@@ -20,8 +20,8 @@ function PolicyCriteriaFieldSubInput({
     const { value } = field;
     const { setValue } = helper;
 
-    function handleChangeNumberValue(e) {
-        const newValue = Number.isNaN(e.target.value) ? 0 : Number(e.target.value);
+    function handleChangeNumberValue(val) {
+        const newValue = Number.isNaN(val) ? 0 : Number(val);
         const { max = 10, min = 0 } = subComponent;
         if (newValue > max) {
             setValue(max);
@@ -41,14 +41,6 @@ function PolicyCriteriaFieldSubInput({
         setIsSelectOpen(!isSelectOpen);
     }
 
-    function handleOnMinus(step = 1) {
-        return () => setValue((Number(value) - step).toFixed(1));
-    }
-
-    function handleOnPlus(step = 1) {
-        return () => setValue((Number(value) + step).toFixed(1));
-    }
-
     /* eslint-disable default-case */
     switch (subComponent.type) {
         case 'text':
@@ -66,19 +58,22 @@ function PolicyCriteriaFieldSubInput({
             );
         case 'number':
             return (
-                <NumberInput
+                <TextInput
                     value={Number(value)}
+                    type="number"
+                    id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeNumberValue}
-                    min={subComponent.min}
-                    max={subComponent.max}
-                    onPlus={handleOnPlus(subComponent.step)}
-                    onMinus={handleOnMinus(subComponent.step)}
+                    className="pf-u-w-25"
                 />
             );
         case 'select':
             return (
-                <FormGroup label={subComponent.label} fieldId={name} className="pf-u-flex-1">
+                <FormGroup
+                    label={subComponent.label}
+                    fieldId={name}
+                    className="pf-u-flex-1 pf-u-w-0"
+                >
                     <Select
                         onToggle={handleOnToggleSelect}
                         onSelect={handleChangeSelect}
