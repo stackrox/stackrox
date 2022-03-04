@@ -149,7 +149,7 @@ function ReviewPolicyForm({
                     <Flex
                         direction={{ default: 'column' }}
                         alignSelf={{ default: 'alignSelfStretch' }}
-                        className="preview-violations pf-u-p-lg"
+                        className="preview-violations pf-u-p-lg pf-u-w-50"
                     >
                         <Title headingLevel="h2">Preview violations</Title>
                         <div className="pf-u-mb-md pf-u-mt-sm">
