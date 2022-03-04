@@ -1,6 +1,7 @@
 package errox
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -42,4 +43,38 @@ func TestRoxErrorIs(t *testing.T) {
 	assert.ErrorIs(t, errors.WithMessage(movieNotFound, "message"), fileNotFound)
 
 	assert.NotErrorIs(t, errors.WithMessage(googleNotFound, "message"), fileNotFound)
+}
+
+func TestErrorMessage(t *testing.T) {
+	{
+		err := NotFound
+		assert.Equal(t, "not found", err.Error())
+	}
+
+	{
+		mine := NotFound.New("cannot load")
+		assert.Equal(t, "cannot load", mine.Error())
+	}
+}
+
+func TestCausedBy(t *testing.T) {
+	{
+		errInvalidAlgorithmF := func(alg string) RoxError {
+			return InvalidArgs.New(fmt.Sprintf("invalid hashing algorithm %q used", alg))
+		}
+		assert.Equal(t, "invalid hashing algorithm \"SHA255\" used: only SHA256 is supported",
+			errInvalidAlgorithmF("SHA255").CausedBy("only SHA256 is supported").Error())
+
+		assert.ErrorIs(t, errInvalidAlgorithmF("SHA255"), InvalidArgs)
+	}
+
+	{
+		assert.Equal(t, "not found: your fault",
+			NotFound.CausedBy(errors.New("your fault")).Error())
+	}
+
+	{
+		err := NotFound.New("lost forever").CausedBy("swallowed by Kraken")
+		assert.ErrorIs(t, err, NotFound)
+	}
 }

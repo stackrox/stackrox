@@ -49,8 +49,8 @@ var (
 
 // GenericNoValidRole wraps NoValidRole with a generic error message.
 func GenericNoValidRole() error {
-	return NoValidRole.New("access for this user is not authorized: no valid role, " +
-		"please contact your system administrator")
+	return NoValidRole.New("access for this user is not authorized: no valid role," +
+		" please contact your system administrator")
 }
 
 // NewErrNotAuthorized wraps NotAuthorized into an explanation.
