@@ -2,7 +2,6 @@ package augmentedobjs
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -213,23 +212,22 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 
 	if features.ImageSignatureVerification.Enabled() {
 		// Since policies query for image verification status as a single boolean field, we add it to the image here.
-		verifiedBy := []string{}
-		for _, result := range image.GetSignatureVerificationData().GetResults() {
+		for i, result := range image.GetSignatureVerificationData().GetResults() {
 			if result.GetVerifierId() != "" && result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-				verifiedBy = append(verifiedBy, result.GetVerifierId())
+				err := obj.AddPlainObjAt(
+					&imageSignatureVerification{
+						VerifiedBy: result.GetVerifierId(),
+					},
+					pathutil.FieldStep("SignatureVerificationData"),
+					pathutil.FieldStep("Results"),
+					pathutil.IndexStep(i),
+					pathutil.FieldStep(imageSignatureVerifiedKey),
+				)
+				if err != nil {
+					return nil, utils.Should(err)
+				}
 			}
 		}
-
-		err := obj.AddPlainObjAt(
-			&imageSignatureVerification{
-				VerifiedBy: strings.Join(verifiedBy, ","),
-			},
-			pathutil.FieldStep(imageSignatureVerifiedKey),
-		)
-		if err != nil {
-			return nil, utils.Should(err)
-		}
-
 	}
 
 	return obj, nil

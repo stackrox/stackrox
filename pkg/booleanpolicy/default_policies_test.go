@@ -2141,32 +2141,32 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 	for _, testCase := range []struct {
 		value           string
 		negate          bool
-		expectedMatches []string
+		expectedMatches set.FrozenStringSet
 	}{
 		{
 			value:           "verifier0",
 			negate:          false,
-			expectedMatches: []string{"verified_by_0"},
+			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
+		},
+		{
+			value:           "verifier1",
+			negate:          false,
+			expectedMatches: set.NewFrozenStringSet(),
+		},
+		{
+			value:           "verifier2",
+			negate:          false,
+			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
 		},
 		{
 			value:           "verifier3",
 			negate:          false,
-			expectedMatches: []string{"verified_by_3"},
-		},
-		{
-			value:           "verifier2,verifier3",
-			negate:          false,
-			expectedMatches: []string{"verified_by_2_and_3"},
+			expectedMatches: set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3"),
 		},
 		{
 			value:           "unverifier",
 			negate:          true,
-			expectedMatches: []string{"unverified_image", "image_no_results", "verified_by_0", "verified_by_3", "verified_by_2_and_3"},
-		},
-		{
-			value:           "verifier4",
-			negate:          false,
-			expectedMatches: []string{},
+			expectedMatches: set.NewFrozenStringSet("unverified_image", "image_no_results"),
 		},
 	} {
 		c := testCase
@@ -2174,27 +2174,31 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		suite.Run(fmt.Sprintf("ImageMatcher %+v", c), func() {
 			imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageSignatureVerified, c.value, c.negate))
 			suite.NoError(err)
-			imgMatched := set.NewStringSet()
 			for _, img := range images {
 				violations, err := imgMatcher.MatchImage(nil, img)
 				suite.NoError(err)
 				if len(violations.AlertViolations) > 0 {
-					imgMatched.Add(img.GetName().GetFullName())
-					suite.Len(violations.AlertViolations, 1)
-					verifiedBy := []string{}
+					if c.negate {
+						suite.False(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match", img.GetName().GetFullName())
+					} else {
+						suite.True(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match", img.GetName().GetFullName())
+					}
+
+					messages := set.NewStringSet()
 					for _, r := range img.GetSignatureVerificationData().GetResults() {
 						if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-							verifiedBy = append(verifiedBy, r.GetVerifierId())
+							messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
 						}
 					}
-					if len(verifiedBy) > 0 {
-						suite.Equal(fmt.Sprintf("Image signature is verified by %s", strings.Join(verifiedBy, ",")), violations.AlertViolations[0].GetMessage())
-					} else {
-						suite.Equal("Image signature is unverified", violations.AlertViolations[0].GetMessage())
+					for _, violation := range violations.AlertViolations {
+						if messages.Cardinality() > 0 {
+							suite.True(messages.Contains(violation.GetMessage()), "Message not found", violation.GetMessage())
+						} else {
+							suite.Equal("Image signature is unverified", violation.GetMessage())
+						}
 					}
 				}
 			}
-			suite.ElementsMatch(imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
 		})
 	}
 }
