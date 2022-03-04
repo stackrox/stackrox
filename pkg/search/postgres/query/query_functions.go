@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/parse"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -18,26 +17,31 @@ import (
 
 type queryFunction func(table string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error)
 
-var datatypeToQueryFunc = map[v1.SearchDataType]queryFunction{
-	v1.SearchDataType_SEARCH_STRING:   newStringQuery,
-	v1.SearchDataType_SEARCH_BOOL:     newBoolQuery,
-	v1.SearchDataType_SEARCH_NUMERIC:  newNumericQuery,
-	v1.SearchDataType_SEARCH_DATETIME: newTimeQuery,
-	v1.SearchDataType_SEARCH_ENUM:     newEnumQuery,
-	// Map type is handled specially.
+var datatypeToQueryFunc = map[walker.DataType]queryFunction{
+	walker.String:      newStringQuery,
+	walker.Bool:        newBoolQuery,
+	walker.StringArray: newStringArrayQuery,
+	walker.DateTime:    newTimeQuery,
+	walker.Enum:        newEnumQuery,
+
+	// TODOs
+	// walker.Numeric:
+	// walker.Integer:
+	// walker.Int:
+	// walker.IntArray:
 }
 
 func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string) (*QueryEntry, error) {
 	// Special case: wildcard
 	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
-		return handleExistenceQueries(dbField.ColumnName, field, value), nil
+		return handleExistenceQueries(dbField.ColumnName, value), nil
 	}
 
 	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
-	return datatypeToQueryFunc[field.GetType()](dbField.ColumnName, field, trimmedValue, modifiers...)
+	return datatypeToQueryFunc[dbField.DataType](dbField.ColumnName, field, trimmedValue, modifiers...)
 }
 
-func handleExistenceQueries(root string, field *pkgSearch.Field, value string) *QueryEntry {
+func handleExistenceQueries(root string, value string) *QueryEntry {
 	switch value {
 	case pkgSearch.WildcardString:
 		return &QueryEntry{
@@ -53,15 +57,27 @@ func handleExistenceQueries(root string, field *pkgSearch.Field, value string) *
 	return nil
 }
 
-func newStringQuery(columnName string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
+func newStringArrayQuery(columnName string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
+	return newStringQueryHelper(value, func(operator string) string {
+		return fmt.Sprintf("$$ %s ANY(%s)", operator, columnName)
+	}, queryModifiers...)
+
+}
+
+func newStringQuery(columnName string, _ *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
+	return newStringQueryHelper(value, func(operator string) string {
+		return fmt.Sprintf("%s %s $$", columnName, operator)
+	}, queryModifiers...)
+}
+
+func newStringQueryHelper(value string, constructQuery func(operator string) string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
 	if len(value) == 0 {
 		return nil, errors.New("value in search query cannot be empty")
 	}
 
-	root := columnName
 	if len(queryModifiers) == 0 {
 		return &QueryEntry{
-			Query:  columnName + " ilike $$",
+			Query:  constructQuery("ilike"),
 			Values: []interface{}{value + "%"},
 		}, nil
 	}
@@ -77,12 +93,12 @@ func newStringQuery(columnName string, field *pkgSearch.Field, value string, que
 	switch queryModifiers[0] {
 	case pkgSearch.Regex:
 		return &QueryEntry{
-			Query:  root + fmt.Sprintf(" %s~* $$", negationString),
+			Query:  constructQuery(fmt.Sprintf("%s~*", negationString)),
 			Values: []interface{}{value},
 		}, nil
 	case pkgSearch.Equality:
 		return &QueryEntry{
-			Query:  root + fmt.Sprintf(" %s= $$", negationString),
+			Query:  constructQuery(fmt.Sprintf(" %s=", negationString)),
 			Values: []interface{}{value},
 		}, nil
 	}
@@ -100,7 +116,7 @@ func newBoolQuery(table string, field *pkgSearch.Field, value string, modifiers 
 		return nil, err
 	}
 	// explicitly apply equality check
-	return newStringQuery(table, field, fmt.Sprintf("%t", res), pkgSearch.Equality)
+	return newStringQuery(table, field, strconv.FormatBool(res), pkgSearch.Equality)
 }
 
 func enumEquality(columnName string, field *pkgSearch.Field, enumValues []int32) (*QueryEntry, error) {

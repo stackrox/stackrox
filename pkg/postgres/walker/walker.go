@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	timestampType = reflect.TypeOf(&types.Timestamp{})
+	timestampType = reflect.TypeOf((*types.Timestamp)(nil))
 )
 
 type context struct {

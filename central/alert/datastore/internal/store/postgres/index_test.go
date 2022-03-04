@@ -17,9 +17,17 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var (
+	ctx = context.Background()
+)
+
 type AlertsIndexSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+
+	pool    *pgxpool.Pool
+	store   Store
+	indexer *indexerImpl
 }
 
 func TestAlertsIndex(t *testing.T) {
@@ -34,41 +42,39 @@ func (s *AlertsIndexSuite) SetupTest() {
 		s.T().Skip("Skip postgres index tests")
 		s.T().SkipNow()
 	}
+
+	source := pgtest.GetConnectionString(s.T())
+	config, err := pgxpool.ParseConfig(source)
+	s.Require().NoError(err)
+	s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
+	s.Require().NoError(err)
+
+	Destroy(ctx, s.pool)
+	s.store = New(ctx, s.pool)
+	s.indexer = NewIndexer(s.pool)
 }
 
 func (s *AlertsIndexSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
+	s.pool.Close()
 }
 
 func (s *AlertsIndexSuite) TestIndex() {
-	ctx := context.Background()
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
-	s.NoError(err)
-	defer pool.Close()
-
-	Destroy(ctx, pool)
-	store := New(ctx, pool)
-	indexer := NewIndexer(pool)
 
 	alert := fixtures.GetAlert()
-	foundAlert, exists, err := store.Get(ctx, alert.GetId())
+	foundAlert, exists, err := s.store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundAlert)
 
-	s.NoError(store.Upsert(ctx, alert))
-	foundAlert, exists, err = store.Get(ctx, alert.GetId())
+	s.NoError(s.store.Upsert(ctx, alert))
+	foundAlert, exists, err = s.store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(alert, foundAlert)
 
 	// Common alert searches
-	results, err := indexer.Search(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
+	results, err := s.indexer.Search(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 1)
 
@@ -77,7 +83,7 @@ func (s *AlertsIndexSuite) TestIndex() {
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 		ProtoQuery()
-	results, err = indexer.Search(q)
+	results, err = s.indexer.Search(q)
 	s.NoError(err)
 	s.Len(results, 1)
 }

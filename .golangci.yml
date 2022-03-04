@@ -2,6 +2,8 @@ run:
   timeout: 5m
   skip-dirs:
   - pkg/complianceoperator/api
+  build-tags:
+  - sql_integration
 
 issues:
   exclude-use-default: false
