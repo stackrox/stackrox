@@ -1,6 +1,0 @@
-@container (min-width: 992px) {
-    .scope-inclusions-grid.pf-l-grid,
-    .scope-exclusions-grid.pf-l-grid {
-        grid-template-columns: repeat(6, [col-start] 1fr);
-    }
-}

@@ -128,7 +128,7 @@ function PolicyCriteriaFieldInput({
                         onSelect={handleChangeSelectMultiple}
                         isOpen={isSelectOpen}
                         isDisabled={readOnly}
-                        selections={value.value}
+                        selections={value.value === '' ? [] : value.value}
                         onClear={handleChangeSelectedValue([])}
                         placeholderText={descriptor.placeholder}
                         variant={SelectVariant.typeaheadMulti}
