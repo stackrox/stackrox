@@ -145,22 +145,20 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	require.NoError(t, uploadSignatureForImage(imgRef, sig1, sigPayload1), "uploading signature")
 	require.NoError(t, uploadSignatureForImage(imgRef, sig2, sigPayload2), "uploading signature")
 
-	expectedSignatures := &storage.ImageSignature{
-		Signatures: []*storage.Signature{
-			{
-				Signature: &storage.Signature_Cosign{
-					Cosign: &storage.CosignSignature{
-						RawSignature:     rawSig1,
-						SignaturePayload: sigPayload1,
-					},
+	expectedSignatures := []*storage.Signature{
+		{
+			Signature: &storage.Signature_Cosign{
+				Cosign: &storage.CosignSignature{
+					RawSignature:     rawSig1,
+					SignaturePayload: sigPayload1,
 				},
 			},
-			{
-				Signature: &storage.Signature_Cosign{
-					Cosign: &storage.CosignSignature{
-						RawSignature:     rawSig2,
-						SignaturePayload: sigPayload2,
-					},
+		},
+		{
+			Signature: &storage.Signature_Cosign{
+				Cosign: &storage.CosignSignature{
+					RawSignature:     rawSig2,
+					SignaturePayload: sigPayload2,
 				},
 			},
 		},

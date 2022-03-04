@@ -16,7 +16,7 @@ var (
 
 // SignatureVerifier is responsible for verifying signatures using a specific signature verification method.
 type SignatureVerifier interface {
-	// VerifySignature will take a raw signature and verify it using a specific verification method.
+	// VerifySignature will take an image and verify its signature using a specific verification method.
 	// It will return a storage.ImageSignatureVerificationResult_Status and
 	// an error if the verification was unsuccessful.
 	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error)
@@ -46,7 +46,7 @@ func NewSignatureFetcher() SignatureFetcher {
 func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration,
 	image *storage.Image) []*storage.ImageSignatureVerificationResult {
 	verifiers := createVerifiersFromIntegration(integration)
-	var results []storage.ImageSignatureVerificationResult
+	var results []*storage.ImageSignatureVerificationResult
 	for _, verifier := range verifiers {
 		res, err := verifier.VerifySignature(ctx, image)
 		// We do not currently support specifying which specific method within an image signature integration should
