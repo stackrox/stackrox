@@ -67,7 +67,8 @@ function PolicyCriteriaFieldInput({
                     onChange={handleChangeValue}
                 />
             );
-        case 'radioGroup':
+        case 'radioGroup': {
+            const booleanValue = value.value === true || value.value === 'true';
             return (
                 <ToggleGroup>
                     {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
@@ -76,12 +77,13 @@ function PolicyCriteriaFieldInput({
                             text={text}
                             buttonId={text}
                             isDisabled={readOnly}
-                            isSelected={value.value === radioValue}
+                            isSelected={booleanValue === radioValue}
                             onChange={handleChangeSelectedValue(radioValue)}
                         />
                     ))}
                 </ToggleGroup>
             );
+        }
         case 'number':
             return (
                 <TextInput
@@ -128,7 +130,7 @@ function PolicyCriteriaFieldInput({
                         onSelect={handleChangeSelectMultiple}
                         isOpen={isSelectOpen}
                         isDisabled={readOnly}
-                        selections={value.value}
+                        selections={value.value === '' ? [] : value.value}
                         onClear={handleChangeSelectedValue([])}
                         placeholderText={descriptor.placeholder}
                         variant={SelectVariant.typeaheadMulti}
