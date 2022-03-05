@@ -9,13 +9,7 @@ message SignatureIntegration {
     string id   = 1;
     string name = 2;
 
-    repeated SignatureVerificationConfig signature_verification_configs = 3;
-}
-
-message SignatureVerificationConfig {
-    oneof config {
-        CosignPublicKeyVerification cosign_verification = 1;
-    }
+    CosignPublicKeyVerification cosign = 3;
 }
 
 message CosignPublicKeyVerification {

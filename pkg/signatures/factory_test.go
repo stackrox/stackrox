@@ -39,26 +39,18 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6
 	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
 	require.NoError(t, err, "creating test image")
 
-	successfulCosignConfig := &storage.SignatureVerificationConfig{
-		Config: &storage.SignatureVerificationConfig_CosignVerification{
-			CosignVerification: &storage.CosignPublicKeyVerification{
-				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-					{
-						PublicKeyPemEnc: b64MatchingPubKey,
-					},
-				},
+	successfulCosignConfig := &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				PublicKeyPemEnc: b64MatchingPubKey,
 			},
 		},
 	}
 
-	failingCosignConfig := &storage.SignatureVerificationConfig{
-		Config: &storage.SignatureVerificationConfig_CosignVerification{
-			CosignVerification: &storage.CosignPublicKeyVerification{
-				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-					{
-						PublicKeyPemEnc: b64NonMatchingPubKey,
-					},
-				},
+	failingCosignConfig := &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				PublicKeyPemEnc: b64NonMatchingPubKey,
 			},
 		},
 	}
@@ -69,10 +61,8 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6
 	}{
 		"successful verification": {
 			integration: &storage.SignatureIntegration{
-				Id: "successful",
-				SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
-					successfulCosignConfig,
-				},
+				Id:     "successful",
+				Cosign: successfulCosignConfig,
 			},
 			results: []storage.ImageSignatureVerificationResult{
 				{
@@ -83,48 +73,12 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6
 		},
 		"failing verification": {
 			integration: &storage.SignatureIntegration{
-				Id: "failure",
-				SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
-					failingCosignConfig,
-				},
+				Id:     "failure",
+				Cosign: failingCosignConfig,
 			},
 			results: []storage.ImageSignatureVerificationResult{
 				{
 					VerifierId:  "failure",
-					Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-					Description: "1 error occurred:\n\t* failed to verify signature\n\n",
-				},
-			},
-		},
-		"mix of failing and successful verification": {
-			integration: &storage.SignatureIntegration{
-				Id: "success-failure",
-				SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
-					failingCosignConfig, successfulCosignConfig,
-				},
-			},
-			results: []storage.ImageSignatureVerificationResult{
-				{
-					VerifierId: "success-failure",
-					Status:     storage.ImageSignatureVerificationResult_VERIFIED,
-				},
-			},
-		},
-		"multiple failing verification results": {
-			integration: &storage.SignatureIntegration{
-				Id: "multiple-failures",
-				SignatureVerificationConfigs: []*storage.SignatureVerificationConfig{
-					failingCosignConfig, failingCosignConfig,
-				},
-			},
-			results: []storage.ImageSignatureVerificationResult{
-				{
-					VerifierId:  "multiple-failures",
-					Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-					Description: "1 error occurred:\n\t* failed to verify signature\n\n",
-				},
-				{
-					VerifierId:  "multiple-failures",
 					Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 					Description: "1 error occurred:\n\t* failed to verify signature\n\n",
 				},
