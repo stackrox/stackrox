@@ -103,6 +103,12 @@ export type PolicySection = {
     policyGroups: PolicyGroup[];
 };
 
+export type ValueObj = {
+    source?: string;
+    key?: string;
+    value?: string;
+};
+
 export type PolicyGroup = {
     fieldName: string;
     booleanOperator: PolicyBooleanOperator;
@@ -113,7 +119,7 @@ export type PolicyGroup = {
 export type PolicyBooleanOperator = 'OR' | 'AND';
 
 export type PolicyValue = {
-    value: string;
+    value: string | ValueObj;
 };
 
 // TODO supersedes MitreAttackVectorId in src/services/MitreService.ts
