@@ -6,7 +6,7 @@ import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService'
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { getClientWizardPolicy, getServerPolicy } from '../../policies.utils';
+import { getServerPolicy } from '../../policies.utils';
 import PolicyDetailContent from '../../Detail/PolicyDetailContent';
 import PreviewViolations from './PreviewViolations';
 
