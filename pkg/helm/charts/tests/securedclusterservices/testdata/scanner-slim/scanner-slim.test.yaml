@@ -121,3 +121,13 @@ tests:
   expect: |
     .deployments["sensor"].spec.template.spec.containers[0].env[] |
       select(.name == "ROX_SCANNER_GRPC_ENDPOINT") | assertThat(.value == "scanner.custom-ns.svc:8443")
+
+- name: "Test customize"
+  values:
+    scanner:
+      disable: false
+    customize:
+      envVars:
+        FOO: bar
+    expect: |
+      envVars(.deployments.scanner; "scanner")["FOO"] | assertThat(. == "bar")
