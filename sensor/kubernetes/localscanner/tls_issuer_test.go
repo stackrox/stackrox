@@ -332,7 +332,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 	}{
 		"wrong owner for scanner secret":                 {secretNames: []string{"scanner-tls"}},
 		"wrong owner for scanner db secret":              {secretNames: []string{"scanner-db-tls"}},
-		"wrong owner for scanner and scanner db secrets": {secretNames: []string{"scanner-tls", "scanner-db-slim-tls"}},
+		"wrong owner for scanner and scanner db secrets": {secretNames: []string{"scanner-tls", "scanner-db-tls"}},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
