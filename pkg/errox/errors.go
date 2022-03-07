@@ -1,5 +1,9 @@
 package errox
 
+import (
+	"fmt"
+)
+
 // Sentinel errors for generic error classes.
 //
 // Note that error messages are the only reliable indicator of the error type
@@ -47,28 +51,32 @@ var (
 	// When adding a new error please update the translators in this package (gRPC, etc.).
 )
 
-// GenericNoValidRole wraps NoValidRole with a generic error message.
+// GenericNoValidRole wraps ErrNoValidRole with a generic error message.
 func GenericNoValidRole() error {
-	return NoValidRole.New("access for this user is not authorized: no valid role," +
-		" please contact your system administrator")
+	return fmt.Errorf("access for this user is not authorized: %w, please contact your system administrator",
+		NoValidRole)
 }
 
-// NewErrNotAuthorized wraps NotAuthorized into an explanation.
+func explain(err error, explanation string) error {
+	return fmt.Errorf("%w: %s", err, explanation)
+}
+
+// NewErrNotAuthorized wraps ErrNotAuthorized into an explanation.
 func NewErrNotAuthorized(explanation string) error {
-	return NotAuthorized.CausedBy(explanation)
+	return explain(NotAuthorized, explanation)
 }
 
-// NewErrNoCredentials wraps NoCredentials into an explanation.
+// NewErrNoCredentials wraps ErrNoCredentials into an explanation.
 func NewErrNoCredentials(explanation string) error {
-	return NoCredentials.CausedBy(explanation)
+	return explain(NoCredentials, explanation)
 }
 
-// NewErrInvariantViolation wraps InvariantViolation into an explanation.
+// NewErrInvariantViolation wraps ErrInvariantViolation into an explanation.
 func NewErrInvariantViolation(explanation string) error {
-	return InvariantViolation.CausedBy(explanation)
+	return explain(InvariantViolation, explanation)
 }
 
-// NewErrInvalidArgs wraps InvalidArgs into an explanation.
+// NewErrInvalidArgs wraps ErrInvalidArgs into an explanation.
 func NewErrInvalidArgs(explanation string) error {
-	return InvalidArgs.CausedBy(explanation)
+	return explain(InvalidArgs, explanation)
 }

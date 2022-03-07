@@ -6,5 +6,5 @@ import (
 
 var (
 	// ErrResourceAccessDenied is the error when permission is denied for a SAC reason.
-	ErrResourceAccessDenied = errox.NotAuthorized.New("access to resource denied")
+	ErrResourceAccessDenied = errox.New(errox.NotAuthorized, "access to resource denied")
 )
