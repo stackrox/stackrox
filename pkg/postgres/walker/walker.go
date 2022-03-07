@@ -117,7 +117,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.ParentSchema == nil)
+		opts := getPostgresOptions(structField.Tag.Get("sql"), len(schema.Parents) == 0)
 		if opts.Ignored {
 			continue
 		}
@@ -161,7 +161,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			}
 
 			childSchema := &Schema{
-				ParentSchema: schema,
+				Parents:      []*Schema{schema},
 				Table:        tableName(schema.Table, field.Name),
 				Type:         elemType.String(),
 				ObjectGetter: ctx.Getter(field.Name),
