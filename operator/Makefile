@@ -336,8 +336,9 @@ upgrade-via-olm: kuttl
 # Commands to enter local Python virtual environment and get needed dependencies there.
 ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip==21.3.1 setuptools==60.2.0 ;\
-	pip3 install -r bundle_helpers/requirements.txt
+	pip3 install --user --upgrade pip==21.3.1 setuptools==60.2.0 ;\
+	pip3 install --user -r bundle_helpers/requirements.txt ;\
+	export PYTHONPATH=$$(python3 -c 'import site; print(site.USER_SITE)'):$$PYTHONPATH
 
 .PHONY: bundle
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
