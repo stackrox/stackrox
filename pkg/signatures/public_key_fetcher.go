@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"net/http"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -13,6 +14,7 @@ import (
 	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
 	"github.com/stackrox/rox/generated/storage"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/retry"
 )
 
 type cosignPublicKeySignatureFetcher struct{}
@@ -23,18 +25,28 @@ func newCosignPublicKeySignatureFetcher() *cosignPublicKeySignatureFetcher {
 	return &cosignPublicKeySignatureFetcher{}
 }
 
+var (
+	insecureDefaultTransport *http.Transport
+)
+
+func init() {
+	insecureDefaultTransport = gcrRemote.DefaultTransport.Clone()
+	insecureDefaultTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+}
+
 // FetchSignature implements the SignatureFetcher interface.
 // The signature associated with the image will be fetched from the given registry.
-// It will return the storage.ImageSignature and a boolean, indicating whether any signatures were found or not.
+// It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
+// NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
 func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, image *storage.Image,
-	registry registryTypes.ImageRegistry) (*storage.ImageSignature, bool) {
+	registry registryTypes.ImageRegistry) (*storage.ImageSignature, error) {
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
 	imgFullName := image.GetName().GetFullName()
 	imgRef, err := name.ParseReference(imgFullName)
 	if err != nil {
 		log.Errorf("Parsing image reference %q: %v", imgFullName, err)
-		return nil, false
+		return nil, err
 	}
 
 	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
@@ -48,12 +60,12 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, im
 	//  https://github.com/sigstore/cosign/blob/44f3814667ba6a398aef62814cabc82aee4896e5/pkg/cosign/fetch.go#L84-L86
 	if err != nil && !strings.Contains(err.Error(), "no signatures associated") {
 		log.Errorf("Fetching signature for image %q: %v", imgFullName, err)
-		return nil, false
+		return nil, retry.MakeRetryable(err)
 	}
 
 	// Short-circuit if no signatures are associated with the image.
 	if len(signedPayloads) == 0 {
-		return nil, false
+		return nil, nil
 	}
 
 	cosignSignatures := make([]*storage.Signature, 0, len(signedPayloads))
@@ -80,33 +92,30 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, im
 
 	// Since we are skipping invalid base64 signatures, need to check the length of the result.
 	if len(cosignSignatures) == 0 {
-		return nil, false
+		return nil, nil
 	}
 
 	return &storage.ImageSignature{
 		Signatures: cosignSignatures,
-	}, true
+	}, nil
 }
 
 func optionsFromRegistry(registry registryTypes.ImageRegistry) []gcrRemote.Option {
-	registryCfg := &registryTypes.Config{}
-	if cfg := registry.Config(); cfg != nil {
-		registryCfg = cfg
-	}
-	authCfg := authn.AuthConfig{
-		Username: registryCfg.Username,
-		Password: registryCfg.Password,
+	registryCfg := registry.Config()
+	if registryCfg == nil {
+		return nil
 	}
 
-	auth := authn.FromConfig(authCfg)
-
-	// By default, the proxy will be taken from environment, assuming this will be in line with our general proxy
-	// strategy.
-	transport := gcrRemote.DefaultTransport
-	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: registryCfg.Insecure}
-
-	return []gcrRemote.Option{
-		gcrRemote.WithAuth(auth),
-		gcrRemote.WithTransport(transport),
+	var opts []gcrRemote.Option
+	if registryCfg.Username != "" {
+		opts = append(opts, gcrRemote.WithAuth(authn.FromConfig(authn.AuthConfig{
+			Username: registryCfg.Username,
+			Password: registryCfg.Password,
+		})))
 	}
+	if registryCfg.Insecure {
+		opts = append(opts, gcrRemote.WithTransport(insecureDefaultTransport))
+	}
+
+	return opts
 }

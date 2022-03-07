@@ -24,6 +24,7 @@ import (
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -173,8 +174,8 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	}
 	reg := &mockRegistry{cfg: mockConfig}
 
-	res, exists := f.FetchSignature(context.Background(), img, reg)
-	assert.True(t, exists)
+	res, err := f.FetchSignature(context.Background(), img, reg)
+	assert.NoError(t, err)
 	assert.Equal(t, expectedSignatures, res)
 }
 
@@ -184,12 +185,14 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	defer registryServer.Close()
 
 	cases := map[string]struct {
-		registry registryTypes.ImageRegistry
-		img      string
+		registry  registryTypes.ImageRegistry
+		img       string
+		retryable bool
 	}{
 		"non-existing repository": {
-			registry: &mockRegistry{cfg: &registryTypes.Config{}},
-			img:      fmt.Sprintf("%s/%s", registryServer.Listener.Addr().String(), "some/private/repo"),
+			registry:  &mockRegistry{cfg: &registryTypes.Config{}},
+			img:       fmt.Sprintf("%s/%s", registryServer.Listener.Addr().String(), "some/private/repo"),
+			retryable: true,
 		},
 		"failed parse reference": {
 			img: "fa@wrongreference",
@@ -202,9 +205,10 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 			require.NoError(t, err, "creating test image")
 			cimg.Name.FullName = c.img
 			img := types.ToImage(cimg)
-			res, exists := f.FetchSignature(context.Background(), img, c.registry)
-			assert.False(t, exists)
+			res, err := f.FetchSignature(context.Background(), img, c.registry)
 			assert.Nil(t, res)
+			require.Error(t, err)
+			assert.Equal(t, c.retryable, retry.IsRetryable(err))
 		})
 	}
 }
@@ -241,8 +245,8 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	log = logger
 	defer func() { log = stdLogger }()
 
-	result, exists := f.FetchSignature(context.Background(), img, reg)
-	assert.False(t, exists)
+	result, err := f.FetchSignature(context.Background(), img, reg)
+	assert.NoError(t, err)
 	assert.Nil(t, result)
 	require.NoError(t, bWriter.Flush(), "writing log output")
 	assert.Empty(t, output.String())
