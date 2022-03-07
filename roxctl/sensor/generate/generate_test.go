@@ -40,7 +40,7 @@ type getKernelSupportFn func() (*v1.KernelSupportAvailableResponse, error)
 type postClusterFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
 type getDefaultsFn func() (*v1.ClusterDefaultsResponse, error)
 
-func (m *mockClustersServiceServer) GetClusterDefaults(ctx context.Context, in *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
+func (m *mockClustersServiceServer) GetClusterDefaultValues(ctx context.Context, in *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
 	return m.getDefaultsInjectedFn()
 }
 
@@ -144,7 +144,7 @@ func legacyKernelSupport(flag bool) func() (*v1.KernelSupportAvailableResponse, 
 
 func getDefaultsUnimplemented() func() (*v1.ClusterDefaultsResponse, error) {
 	return func() (*v1.ClusterDefaultsResponse, error) {
-		return nil, status.Error(codes.Unimplemented, "GetClusterDefaults unimplemented")
+		return nil, status.Error(codes.Unimplemented, "GetClusterDefaultValues unimplemented")
 	}
 }
 
