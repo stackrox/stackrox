@@ -5,12 +5,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ ._rox.scanner.name }}-config
+  name: scanner-config
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "configmap" (print ._rox.scanner.name "-config")) | nindent 4 }}
+    {{- include "srox.labels" (list . "configmap" "scanner-config") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "configmap" (print ._rox.scanner.name "-config")) | nindent 4 }}
+    {{- include "srox.annotations" (list . "configmap" "scanner-config") | nindent 4 }}
 data:
   config.yaml: |
     {{- tpl (.Files.Get "config-templates/scanner/config.yaml.tpl") . | nindent 4 }}
