@@ -32,6 +32,12 @@ func NewSignatureVerifier(config *storage.CosignPublicKeyVerification) (Signatur
 	return newCosignPublicKeyVerifier(config)
 }
 
+// NewSignatureFetcher creates a new signature fetcher capable of fetching a specific signature format for an image.
+// Currently, only cosign public key signatures are supported.
+func NewSignatureFetcher() SignatureFetcher {
+	return newCosignPublicKeySignatureFetcher()
+}
+
 // VerifyAgainstSignatureIntegration is a wrapper that will verify an image signature with SignatureVerifier's created
 // based off of the configuration within the storage.SignatureIntegration.
 // NOTE: No error will be returned if the SignatureVerifier's creation failed or the signature verification itself
@@ -103,10 +109,4 @@ func createVerifiersFromIntegration(integration *storage.SignatureIntegration) [
 	}
 
 	return verifiers
-}
-
-// NewSignatureFetcher creates a new signature fetcher capable of fetching a specific signature format for an image.
-// Currently, only cosign public key signatures are supported.
-func NewSignatureFetcher() SignatureFetcher {
-	return newCosignPublicKeySignatureFetcher()
 }
