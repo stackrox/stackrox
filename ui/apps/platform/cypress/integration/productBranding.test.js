@@ -19,6 +19,9 @@ function visitDashboard() {
     cy.wait('@summaryCounts');
 }
 
+// TODO The behavior when and invalid or undefined value is sent from the server is
+// handled in the 'useBranding.test.js' unit test. These tests should be updated to be
+// more focused on page specific items.
 const setBrandingAsRedHat = () => overrideBranding('RHACS_BRANDING');
 const setBrandingAsOpenSource = () => overrideBranding('STACKROX_BRANDING');
 const setBrandingAsInvalid = () => overrideBranding('404_BRANDING');
