@@ -259,7 +259,9 @@ type ExposureRoute struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
-// ScannerComponentSpec defines settings for the "scanner" component.
+// Note the following struct should mostly match LocalScannerComponentSpec.
+
+// ScannerComponentSpec defines settings for the central "scanner" component.
 type ScannerComponentSpec struct {
 	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
 	// (not recommended).
