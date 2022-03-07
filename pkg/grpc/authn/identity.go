@@ -24,6 +24,8 @@ type Identity interface {
 	Service() *storage.ServiceIdentity
 	Attributes() map[string][]string
 
+	NotBefore() time.Time
 	Expiry() time.Time
+
 	ExternalAuthProvider() authproviders.Provider
 }

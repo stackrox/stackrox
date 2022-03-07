@@ -247,6 +247,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ClusterCertExpiryStatus", []string{
 		"sensorCertExpiry: Time",
+		"sensorCertNotBefore: Time",
 	}))
 	utils.Must(builder.AddType("ClusterHealthStatus", []string{
 		"admissionControlHealthInfo: AdmissionControlHealthInfo",
@@ -3265,6 +3266,11 @@ func (resolver *Resolver) wrapClusterCertExpiryStatuses(values []*storage.Cluste
 
 func (resolver *clusterCertExpiryStatusResolver) SensorCertExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSensorCertExpiry()
+	return timestamp(value)
+}
+
+func (resolver *clusterCertExpiryStatusResolver) SensorCertNotBefore(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSensorCertNotBefore()
 	return timestamp(value)
 }
 

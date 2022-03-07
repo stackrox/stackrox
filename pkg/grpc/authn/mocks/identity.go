@@ -107,6 +107,20 @@ func (mr *MockIdentityMockRecorder) FullName() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FullName", reflect.TypeOf((*MockIdentity)(nil).FullName))
 }
 
+// NotBefore mocks base method.
+func (m *MockIdentity) NotBefore() time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NotBefore")
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// NotBefore indicates an expected call of NotBefore.
+func (mr *MockIdentityMockRecorder) NotBefore() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotBefore", reflect.TypeOf((*MockIdentity)(nil).NotBefore))
+}
+
 // Permissions mocks base method.
 func (m *MockIdentity) Permissions() map[string]storage.Access {
 	m.ctrl.T.Helper()

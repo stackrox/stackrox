@@ -15,17 +15,19 @@ import (
 
 // Identity identifies a particular certificate.
 type Identity struct {
-	Subject Subject
-	Serial  *big.Int
-	Expiry  time.Time
+	Subject   Subject
+	Serial    *big.Int
+	NotBefore time.Time
+	Expiry    time.Time
 }
 
 // IdentityFromCert returns an mTLS (mutual TLS) identity for the given certificate.
 func IdentityFromCert(cert requestinfo.CertInfo) Identity {
 	return Identity{
-		Subject: convertCertSubject(cert.Subject),
-		Serial:  cert.SerialNumber,
-		Expiry:  cert.NotAfter,
+		Subject:   convertCertSubject(cert.Subject),
+		Serial:    cert.SerialNumber,
+		NotBefore: cert.NotBefore,
+		Expiry:    cert.NotAfter,
 	}
 }
 

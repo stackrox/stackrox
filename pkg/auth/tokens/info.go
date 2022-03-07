@@ -16,6 +16,11 @@ type TokenInfo struct {
 	Sources []Source
 }
 
+// NotBefore returns the start time of the token.
+func (i *TokenInfo) NotBefore() time.Time {
+	return i.Claims.NotBefore.Time()
+}
+
 // Expiry returns the expiry time of the token.
 func (i *TokenInfo) Expiry() time.Time {
 	if i.Claims.Expiry == nil {

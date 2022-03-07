@@ -52,6 +52,10 @@ func (i *identity) Service() *storage.ServiceIdentity {
 	return nil
 }
 
+func (i *identity) NotBefore() time.Time {
+	return i.info.NotBefore
+}
+
 func (i *identity) Expiry() time.Time {
 	return i.info.NotAfter
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
@@ -105,14 +106,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		}
 	}
 
-	if expiry := identity.Expiry(); !expiry.IsZero() {
-		converted, err := types.TimestampProto(expiry)
-		if err != nil {
-			log.Warnf("Failed to convert expiry of sensor cert (%v) from cluster %s to proto: %v", expiry, cluster.GetId(), err)
-		} else {
-			if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), &storage.ClusterCertExpiryStatus{SensorCertExpiry: converted}); err != nil {
-				log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
-			}
+	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
+		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v",
+			identity.NotBefore(), identity.Expiry(), cluster.GetId(), err)
+	} else if expiryStatus != nil {
+		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
+			log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
 		}
 	}
 
@@ -125,6 +124,37 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())
 
 	return s.manager.HandleConnection(server.Context(), sensorHello, cluster, eventPipeline, server)
+}
+
+func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpiryStatus, error) {
+	expiry := identity.Expiry()
+	notBefore := identity.NotBefore()
+
+	if expiry.IsZero() && notBefore.IsZero() {
+		return nil, nil
+	}
+
+	expiryStatus := &storage.ClusterCertExpiryStatus{}
+
+	var multiErr error
+
+	if !expiry.IsZero() {
+		expiryTimestamp, err := types.TimestampProto(expiry)
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		} else {
+			expiryStatus.SensorCertExpiry = expiryTimestamp
+		}
+	}
+	if !notBefore.IsZero() {
+		notBeforeTimestamp, err := types.TimestampProto(notBefore)
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		} else {
+			expiryStatus.SensorCertNotBefore = notBeforeTimestamp
+		}
+	}
+	return expiryStatus, multiErr
 }
 
 func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {

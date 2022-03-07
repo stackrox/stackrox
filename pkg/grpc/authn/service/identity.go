@@ -45,6 +45,10 @@ func (i identity) User() *storage.UserInfo {
 	return nil // services is not a user
 }
 
+func (i identity) NotBefore() time.Time {
+	return i.id.NotBefore
+}
+
 func (i identity) Expiry() time.Time {
 	return i.id.Expiry
 }
