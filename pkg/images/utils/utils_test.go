@@ -250,7 +250,7 @@ func TestDropImageTagAndDigest(t *testing.T) {
 			expectedImage: "docker.io/library/nginx",
 			expectedError: nil,
 		},
-		"no domain, library with tag and sha": {
+		"No domain, library with tag and sha": {
 			image:         "library/nginx:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
 			expectedImage: "library/nginx",
 			expectedError: nil,
@@ -269,6 +269,15 @@ func TestDropImageTagAndDigest(t *testing.T) {
 			image:         "docker.io/nginx:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
 			expectedImage: "docker.io/nginx",
 			expectedError: nil,
+		},
+		"docker.io domain, no repository with tag": {
+			image:         "docker.io/nginx:tag",
+			expectedImage: "docker.io/nginx",
+			expectedError: nil,
+		},
+		"Just sha": {
+			image:         "8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
+			expectedError: errors.New("invalid image name '8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'"),
 		},
 	}
 	for name, c := range cases {

@@ -252,6 +252,10 @@ func DropImageTagAndDigest(image string) (string, error) {
 		return image, errors.Wrapf(err, "invalid image name '%s'", image)
 	}
 
+	if _, ok := ref.(reference.Named); !ok {
+		return image, errors.Errorf("invalid image name '%s'", image)
+	}
+
 	domain := reference.Domain(ref.(reference.Named))
 	path := reference.Path(ref.(reference.Named))
 	familiarName := reference.FamiliarName(ref.(reference.Named))
