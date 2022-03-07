@@ -34,7 +34,7 @@ export type SignatureIntegration = {
 
 export const validationSchema = yup.object().shape({
     id: yup.string().trim(),
-    name: yup.string().trim().required('Name is required'),
+    name: yup.string().trim().required('Integration name is required'),
     cosign: yup.object().shape({
         publicKeys: yup.array().of(
             yup.object().shape({

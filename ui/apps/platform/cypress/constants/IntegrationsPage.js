@@ -121,4 +121,7 @@ export const labels = {
         syslog: 'Syslog',
         teams: 'Microsoft Teams',
     },
+    signatureIntegrations: {
+        signature: 'Signature',
+    },
 };
