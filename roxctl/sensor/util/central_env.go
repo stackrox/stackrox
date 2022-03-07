@@ -56,7 +56,7 @@ func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersService
 		KernelSupportAvailable: false,
 	}
 
-	clusterDefaults, err := service.GetClusterDefaults(ctx, &v1.Empty{})
+	clusterDefaults, err := service.GetClusterDefaultValues(ctx, &v1.Empty{})
 	if err == nil {
 		env.KernelSupportAvailable = clusterDefaults.GetKernelSupportAvailable()
 		env.MainImage = clusterDefaults.GetMainImageRepository()
