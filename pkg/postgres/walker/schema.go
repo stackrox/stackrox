@@ -108,6 +108,23 @@ func (s *Schema) ParentKeys() []Field {
 	return pks
 }
 
+// ParentKeysAsMap are the keys from the parent schemas that should be defined
+// as foreign keys for the current schema
+func (s *Schema) ParentKeysAsMap() map[string][]Field {
+	pks := make(map[string][]Field)
+	for _, parent := range s.Parents {
+		currPks := parent.ResolvedPrimaryKeys()
+		for idx := range currPks {
+			pk := &currPks[idx]
+			pk.Reference = pk.ColumnName
+			pk.Name = parentify(pk.Name)
+			pk.ColumnName = parentify(pk.ColumnName)
+		}
+		pks[parent.Table] = currPks
+	}
+	return pks
+}
+
 // ResolvedPrimaryKeys are all the primary keys of the current schema which is the union
 // of keys from the parent schemas and also any local keys
 func (s *Schema) ResolvedPrimaryKeys() []Field {

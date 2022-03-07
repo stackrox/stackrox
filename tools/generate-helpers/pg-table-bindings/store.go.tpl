@@ -88,9 +88,9 @@ create table if not exists {{$schema.Table}} (
 {{- range $idx, $field := $schema.ResolvedFields }}
     {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
-    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}){{ if $schema.ParentSchema }},
-    {{- $pks := $schema.ParentKeys }}
-    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$schema.ParentSchema.Table}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
+    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}){{ if gt (len $schema.Parents) 0 }},{{end}}
+    {{- range $parent, $pks := $schema.ParentKeysAsMap }}
+    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$parent}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
     {{- end }}
 )
 `
@@ -125,8 +125,8 @@ create table if not exists {{$schema.Table}} (
 {{- define "insertObject"}}
 {{- $schema := . }}
 
-func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.ParentSchema}}, idx int{{end}}) error {
-    {{if not $schema.ParentSchema }}
+func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}) error {
+    {{if not $schema.Parents }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
         return marshalErr
