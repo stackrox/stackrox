@@ -8,7 +8,9 @@ interface LoadingSectionProps {
     message?: string;
     /** The size of the Spinner to pass through to the PatternFly component */
     spinnerSize?: 'sm' | 'md' | 'lg' | 'xl';
-    /** Should the color of the Spinner and text be light or dark? (Defaults to 'light') */
+    /** Should the color of the Spinner and text be light or dark? (Defaults to 'light')
+     * Note that 'light' means that the text and spinner will be light in color.
+     */
     variant?: 'light' | 'dark';
 }
 
