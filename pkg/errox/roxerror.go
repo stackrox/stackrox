@@ -1,5 +1,5 @@
 // Package errox implements tooling and an interface for project errors
-// handling, and a	list of	base sentinel errors.
+// handling, and a list of base sentinel errors.
 //
 // Usage
 //
