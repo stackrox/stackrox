@@ -58,13 +58,13 @@ func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 	return &serviceCertificatesRepoSecretsImpl{
 		secrets: map[storage.ServiceType]serviceCertSecretSpec{
 			storage.ServiceType_SCANNER_SERVICE: {
-				secretName:          "scanner-slim-tls",
+				secretName:          "scanner-tls",
 				caCertFileName:      mtls.CACertFileName,
 				serviceCertFileName: mtls.ServiceCertFileName,
 				serviceKeyFileName:  mtls.ServiceKeyFileName,
 			},
 			storage.ServiceType_SCANNER_DB_SERVICE: {
-				secretName:          "scanner-db-slim-tls",
+				secretName:          "scanner-db-tls",
 				caCertFileName:      mtls.CACertFileName,
 				serviceCertFileName: mtls.ServiceCertFileName,
 				serviceKeyFileName:  mtls.ServiceKeyFileName,
