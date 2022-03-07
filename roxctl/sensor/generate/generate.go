@@ -36,7 +36,10 @@ Please use --admission-controller-enforce-on-creates instead to suppress this wa
 
 	errorDeprecatedFlag = "Specified deprecated flag %s and new flag %s at the same time"
 
-	warningCentralEnvironmentError = "Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v."
+	mainImageRepository = "main-image-repository"
+	slimCollector       = "slim-collector"
+
+	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " and " + slimCollector + " settings."
 )
 
 type sensorGenerateCommand struct {
@@ -89,7 +92,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	return nil
 }
 
-func (s *sensorGenerateCommand) setClusterDefaults(envDefaults util.CentralEnv) {
+func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv) {
 	// Here we only set the cluster property, which will be persisted by central.
 	// This is not directly related to fetching the bundle.
 	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
@@ -117,12 +120,14 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
-	env := util.RetrieveCentralEnvOrDefault(ctx, service)
-	s.setClusterDefaults(env)
-
+	env, err := util.RetrieveCentralEnvOrDefault(ctx, service)
+	if err != nil {
+		s.env.Logger().WarnfLn(warningCentralEnvironmentError, err)
+	}
 	for _, warning := range env.Warnings {
 		s.env.Logger().WarnfLn(warning)
 	}
+	s.setClusterDefaults(env)
 
 	id, err := s.createCluster(ctx, service)
 
@@ -170,9 +175,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		s.env.Logger().InfofLn(infoDefaultingToComprehensiveCollector)
 	}
 
-	if env.Error != nil {
-		s.env.Logger().WarnfLn(warningCentralEnvironmentError, env.Error)
-	}
 	return nil
 }
 
@@ -202,8 +204,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&generateCmd.continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, "main-image-repository", "", "image repository sensor should be deployed with (if unset, a default will be used)")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, a default will be derived according to the effective --main-image-repository value)")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "image repository sensor should be deployed with (if unset, a default will be used)")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value)")
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
 
@@ -216,7 +218,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 
-	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, "slim-collector", "Use slim collector in deployment bundle")
+	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle")
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
 	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))

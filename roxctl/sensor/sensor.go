@@ -18,7 +18,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	c.AddCommand(
 		generate.Command(cliEnvironment),
-		getbundle.Command(),
+		getbundle.Command(cliEnvironment),
 		generatecerts.Command(),
 	)
 	flags.AddTimeoutWithDefault(c, 30*time.Second)

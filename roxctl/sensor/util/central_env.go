@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -14,10 +15,10 @@ import (
 const (
 	warningKernelSupportAvailableUnimplemented = `Central does not support API for checking if kernel support is available. Not using a slim collector image.
 Please upgrade Central if slim collector images shall be used.`
-	warningFailedAToGetKernelSupportAvailable = "Failed to retrieve KernelSupportAvailable property from Central"
-	warningLegacyCentralDefaultMain           = "Central is running on a legacy version, main will be defaulted to %s if no override is provided"
-	warningNoClusterDefaultsAPI               = "Central does not implement /v1/cluster-defaults API"
-	warningFailedToCallClusterDefaultsAPI     = "Failed to retrieve data from /v1/cluster-defaults API"
+	errorWhenCallingGetKernelSupportAvailable = "error checking kernel support availability via /v1/clusters-env/kernel-support-available Central endpoint"
+	warningLegacyCentralDefaultMain           = "Central is running on a legacy version, main will be defaulted to %s unless overridden by user."
+	warningNoClusterDefaultsAPI               = "Central does not implement /v1/cluster-defaults API, this is likely an older Central version."
+	errorWhenCallingGetClusterDefaults        = "error obtaining default cluster settings from /v1/cluster-defaults Central endpoint"
 )
 
 // CentralEnv contains information about Central's runtime environment.
@@ -31,25 +32,9 @@ type CentralEnv struct {
 	// If connecting to a newer (>= 3.69) version of central MainImage will be empty.
 	MainImage string
 	Warnings  []string
-	Error     error
 }
 
-func (e *CentralEnv) fetchClusterDefaults(ctx context.Context, service v1.ClustersServiceClient) error {
-	clusterDefault, err := service.GetClusterDefaults(ctx, &v1.Empty{})
-	if status.Convert(err).Code() == codes.Unimplemented {
-		e.Warnings = append(e.Warnings, warningNoClusterDefaultsAPI)
-	} else {
-		e.Warnings = append(e.Warnings, fmt.Sprintf("%s: %s", warningFailedToCallClusterDefaultsAPI, err))
-	}
-
-	if err != nil {
-		return err
-	}
-	e.KernelSupportAvailable = clusterDefault.GetKernelSupportAvailable()
-	return nil
-}
-
-func (e *CentralEnv) getMainImageFromFlavor() string {
+func getMainImageFromBuildTimeImageFlavor() string {
 	var flavor defaults.ImageFlavor
 	if buildinfo.ReleaseBuild {
 		flavor = defaults.RHACSReleaseImageFlavor()
@@ -59,42 +44,45 @@ func (e *CentralEnv) getMainImageFromFlavor() string {
 	return flavor.MainImageNoTag()
 }
 
-func (e *CentralEnv) fetchClusterDefaultsLegacy(ctx context.Context, service v1.ClustersServiceClient) {
-	resp, err := service.GetKernelSupportAvailable(ctx, &v1.Empty{})
-	if err != nil {
-		if status.Convert(err).Code() == codes.Unimplemented {
-			e.Warnings = append(e.Warnings, warningKernelSupportAvailableUnimplemented)
-		} else {
-			e.Warnings = append(e.Warnings, warningFailedAToGetKernelSupportAvailable)
-		}
-		// If all APIs fail, we default KernelSupportAvailable to false and store the error
-		e.KernelSupportAvailable = false
-		e.Error = err
+// RetrieveCentralEnvOrDefault populates a `CentralEnv` struct with defaults and warnings. This function fallbacks to
+// legacy APIs if the defaults are not available. Ultimately, it will default values locally when it can't determine
+// configuration from central. Warnings are to be used by the caller to properly display them.
+// If there is an error fetching defaults from APIs, there WILL be some non-nil *CentralEnv with fallback defaults AND
+// the error.
+func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersServiceClient) (*CentralEnv, error) {
+	// These are defaults to return in case none of APIs used here works or central is too old.
+	env := CentralEnv{
+		MainImage:              getMainImageFromBuildTimeImageFlavor(),
+		KernelSupportAvailable: false,
+	}
+
+	clusterDefaults, err := service.GetClusterDefaults(ctx, &v1.Empty{})
+	if err == nil {
+		env.KernelSupportAvailable = clusterDefaults.GetKernelSupportAvailable()
+		env.MainImage = clusterDefaults.GetMainImageRepository()
+		return &env, nil
+	} else if status.Convert(err).Code() == codes.Unimplemented {
+		env.Warnings = append(env.Warnings, warningNoClusterDefaultsAPI)
 	} else {
-		e.KernelSupportAvailable = resp.KernelSupportAvailable
+		return &env, errors.Wrap(err, errorWhenCallingGetClusterDefaults)
 	}
 
-	// MainImage is only set if roxctl is communicating with a legacy version of central that most likely won't
-	// be able to accept empty main image in PostCluster request.
-	mainImage := e.getMainImageFromFlavor()
-	e.Warnings = append(e.Warnings, fmt.Sprintf(warningLegacyCentralDefaultMain, mainImage))
-	e.MainImage = mainImage
-}
+	// At this point we know that we're talking to older Central, therefore we tell that we're using MainImage from the
+	// build-time flavor of roxctl. This might be an issue for folks who deployed older Central with `stackrox.io` image
+	// flavor because roxctl will pass that default, and the generated bundle will have image references either from
+	// `rhacs` flavor for the release build or a development one, but not `stackrox.io`.
+	env.Warnings = append(env.Warnings, fmt.Sprintf(warningLegacyCentralDefaultMain, env.MainImage))
 
-func (e *CentralEnv) populateCentralEnv(ctx context.Context, service v1.ClustersServiceClient) {
-	err := e.fetchClusterDefaults(ctx, service)
-	if err != nil {
-		e.fetchClusterDefaultsLegacy(ctx, service)
+	// Use legacy API to determine if Central has access to kernel drivers.
+	resp, err := service.GetKernelSupportAvailable(ctx, &v1.Empty{})
+	if err == nil {
+		env.KernelSupportAvailable = resp.GetKernelSupportAvailable()
+		return &env, nil
+	} else if status.Convert(err).Code() == codes.Unimplemented {
+		env.Warnings = append(env.Warnings, warningKernelSupportAvailableUnimplemented)
+	} else {
+		return &env, errors.Wrap(err, errorWhenCallingGetKernelSupportAvailable)
 	}
-}
 
-// RetrieveCentralEnvOrDefault is a convenience function wrapping `PopulateCentralEnv`. It populates a fresh `CentralEnv`
-// struct with defaults and warnings. This function fallbacks to legacy APIs if the defaults are not available.
-// Ultimately, it will default values locally when it can't determine configuration from central.
-// Warnings are to be used by the caller to properly display them.
-// If there is an error fetching defaults from the API the error will be returned in `CentralEnv`.
-func RetrieveCentralEnvOrDefault(ctx context.Context, service v1.ClustersServiceClient) CentralEnv {
-	env := CentralEnv{}
-	env.populateCentralEnv(ctx, service)
-	return env
+	return &env, nil
 }
