@@ -410,7 +410,7 @@ export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
     } else if (key) {
         valueStr = `${key}=${value}`;
     }
-    return valueStr || '';
+    return valueStr ?? '';
 }
 
 function postFormatNestedPolicyFields(policy: Policy): Policy {
