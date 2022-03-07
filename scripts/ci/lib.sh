@@ -64,7 +64,7 @@ setup_deployment_env() {
     ci_export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 }
 
-install_built_roxctl_in_gopath() {
+install_roxctl_in_gopath() {
     require_environment "GOPATH"
 
     local bin_os
@@ -76,11 +76,20 @@ install_built_roxctl_in_gopath() {
         die "Only linux or darwin are supported for this test"
     fi
 
-    local roxctl="$SCRIPTS_ROOT/bin/$bin_os/roxctl"
+    local REPO=rhacs-eng
+    local main_image_tag="${MAIN_IMAGE_TAG:-$(make --quiet tag)}"
+    local main_image_repo="${MAIN_IMAGE_REPO:-quay.io/$REPO/main}"
 
-    require_executable "$roxctl" "roxctl should be built"
+    require_environment QUAY_RHACS_ENG_RO_USERNAME
+    require_environment QUAY_RHACS_ENG_RO_PASSWORD
+    docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
 
-    cp "$roxctl" "$GOPATH/bin/roxctl"
+    local container_id
+    container_id=$(docker create "${main_image_repo}:${main_image_tag}")
+    docker cp "$container_id:/assets/downloads/cli/roxctl-${bin_os}" "$GOPATH/bin/roxctl"
+    chmod 0755 "$GOPATH/bin/roxctl"
+
+    roxctl version
 }
 
 get_central_debug_dump() {
@@ -186,6 +195,29 @@ push_matching_collector_scanner_images() {
         "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
         "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
     done
+}
+
+install_ossls() {
+    if command -v ossls >/dev/null 2>&1; then
+        info "ossls is already installed"
+        ossls version
+        exit 0
+    fi
+
+    info "Installing ossls"
+
+    is_linux || {
+        die "Only linux is supported"
+    }
+
+    require_environment "GITHUB_OAUTH_TOKEN"
+    require_environment "SCRATCH_BIN"
+
+    wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.5/fetch_linux_amd64
+    install fetch_linux_amd64 "$SCRATCH_BIN/fetch"
+    fetch --repo="https://github.com/stackrox/ossls" --tag="0.10.1" --release-asset="ossls_linux_amd64" .
+    install ossls_linux_amd64 "$SCRATCH_BIN/ossls"
+    ossls version
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

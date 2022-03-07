@@ -141,10 +141,10 @@ refreshAlpineBaseImage: &refreshAlpineBaseImage
 
 setupRoxctl: &setupRoxctl
   run:
-    name: Setup Roxctl from bin
+    name: Setup Roxctl
     command: |
       source scripts/ci/lib.sh
-      install_built_roxctl_in_gopath
+      install_roxctl_in_gopath
 
 setupLicense: &setupLicense
   run:
@@ -491,6 +491,12 @@ parameters:
     type: string
     # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
     default: '^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
+  enable_build:
+    type: boolean
+    default: false
+  tag:
+    type: string
+    default: ""
 
 orbs:
   win: circleci/windows@2.2.0
@@ -2566,6 +2572,20 @@ jobs:
           command: |
             make --quiet tag | tee CI_TAG_TMP
             mv CI_TAG_TMP CI_TAG
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - CI_TAG
+
+  create-tag-from-pipeline-parameters:
+    executor: custom
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Take build tag from GHA
+          command: |
+            echo "<< pipeline.parameters.tag >>" | tee CI_TAG
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
@@ -4832,8 +4852,7 @@ workflows:
   version: 2
 
   build_all:
-    when:
-      not: << pipeline.parameters.trigger_on_demand >>
+    when: << pipeline.parameters.enable_build >>
     jobs:
       - slack-notify:
           filters:
@@ -5174,3 +5193,29 @@ workflows:
     jobs:
       - designated-image-tests:
           context: quay-rhacs-eng-readonly
+
+  # To trigger e2e tests:
+  #
+  #   curl -X POST --header 'Content-Type: application/json' \
+  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d '{
+  #     "branch": "<your branch>",
+  #     "parameters": {
+  #         "trigger_on_demand": true,
+  #         "workflow_name": "e2e-tests",
+  #         "tag": "<tag to test>"
+  #     }
+  # }'
+
+  e2e_tests:
+    when:
+      equal: [ "e2e-tests", << pipeline.parameters.workflow_name >> ]
+    jobs:
+      - create-tag-from-pipeline-parameters:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - provision-gke-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            - provision-gke-api-e2e-tests
