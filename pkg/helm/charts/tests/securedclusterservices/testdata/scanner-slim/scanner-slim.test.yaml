@@ -113,18 +113,11 @@ tests:
         select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value == false)
 
 - name: "sensor connects to local scanner using the correct GRPC endpoint"
-  tests:
-  - name: "env var is missing when scanner is disabled"
-    set:
-      scanner.disable: true
-    expect: |
-      [.deployments["sensor"].spec.template.spec.containers[0].env[] | select(.name == "ROX_SCANNER_GRPC_ENDPOINT")] | assertThat(length == 0)
-  - name: "when scanner is enabled"
-    release:
-      namespace: custom-ns
-    set:
-      allowNonstandardNamespace: true
-      scanner.disable: false
-    expect: |
-      .deployments["sensor"].spec.template.spec.containers[0].env[] |
-        select(.name == "ROX_SCANNER_GRPC_ENDPOINT") | assertThat(.value == "scanner.custom-ns.svc:8443")
+  release:
+    namespace: custom-ns
+  set:
+    allowNonstandardNamespace: true
+    scanner.disable: false
+  expect: |
+    .deployments["sensor"].spec.template.spec.containers[0].env[] |
+      select(.name == "ROX_SCANNER_GRPC_ENDPOINT") | assertThat(.value == "scanner.custom-ns.svc:8443")
