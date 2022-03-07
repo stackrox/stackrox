@@ -9,7 +9,6 @@ import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import PolicyOverview from './PolicyOverview';
 import BooleanPolicyLogicSection from '../Wizard/Step3/BooleanPolicyLogicSection';
-import { postFormatExclusionField } from '../policies.utils';
 import PolicyScopeSection from './PolicyScopeSection';
 import PolicyBehaviorSection from './PolicyBehaviorSection';
 
