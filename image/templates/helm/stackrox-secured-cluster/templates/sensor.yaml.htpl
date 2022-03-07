@@ -125,7 +125,7 @@ spec:
           value: {{ not ._rox.scanner.disable }}
           {{- if not ._rox.scanner.disable }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
-          value: {{ printf "%s.%s.svc:8443" ._rox.scanner.name .Release.Namespace }}
+          value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}
           {{- end }}
         {{- else }}
           value: "false"
