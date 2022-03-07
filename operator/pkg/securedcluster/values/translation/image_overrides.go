@@ -7,5 +7,7 @@ var (
 		images.Main:          "image.main.fullRef",
 		images.CollectorSlim: "image.collector.slim.fullRef",
 		images.CollectorFull: "image.collector.full.fullRef",
+		images.Scanner:       "image.scanner.fullRef",
+		images.ScannerDB:     "image.scannerDb.fullRef",
 	}
 )
