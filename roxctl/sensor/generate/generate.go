@@ -36,7 +36,10 @@ Please use --admission-controller-enforce-on-creates instead to suppress this wa
 
 	errorDeprecatedFlag = "Specified deprecated flag %s and new flag %s at the same time"
 
-	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will try use fallback values."
+	mainImageRepository = "main-image-repository"
+	slimCollector       = "slim-collector"
+
+	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " and " + slimCollector + " settings."
 )
 
 type sensorGenerateCommand struct {
@@ -201,7 +204,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&generateCmd.continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, "main-image-repository", "", "image repository sensor should be deployed with (if unset, a default will be used)")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "image repository sensor should be deployed with (if unset, a default will be used)")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, a default will be derived according to the effective --main-image-repository value)")
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
@@ -215,7 +218,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 
-	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, "slim-collector", "Use slim collector in deployment bundle")
+	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle")
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
 	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))
