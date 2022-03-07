@@ -8,7 +8,7 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { AUTH_STATUS } from 'reducers/auth';
 import { getHasReadPermission } from 'reducers/roles';
-import LoadingSection from 'Components/LoadingSection';
+import LoadingSection from 'Components/PatternFly/LoadingSection';
 
 class ProtectedRoute extends Component {
     static propTypes = {
