@@ -31,7 +31,7 @@ const rhacsBranding: BrandingAssets = {
     type: 'RHACS_BRANDING',
     logoSvg: rhacsLogoSvg,
     logoPng: rhacsLogoPng,
-    logoAltText: 'Red Hat Advanced Cluster Security',
+    logoAltText: 'Red Hat Advanced Cluster Security Logo',
     basePageTitle: 'Red Hat Advanced Cluster Security',
     favicon: rhacsFavicon,
 };
@@ -40,7 +40,7 @@ const stackroxBranding: BrandingAssets = {
     type: 'STACKROX_BRANDING',
     logoSvg: stackroxLogoSvg,
     logoPng: stackroxLogoPng,
-    logoAltText: 'StackRox',
+    logoAltText: 'StackRox Logo',
     basePageTitle: 'StackRox',
     favicon: stackroxFavicon,
 };
