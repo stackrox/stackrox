@@ -77,7 +77,6 @@ preamble() {
         die "Only linux or darwin are supported for this test"
     fi
 
-    require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl"
     require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader"
 
     info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"

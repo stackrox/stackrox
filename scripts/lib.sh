@@ -68,6 +68,10 @@ is_OPENSHIFT_CI() {
     [[ "${OPENSHIFT_CI:-}" == "true" ]]
 }
 
+is_GITHUB_ACTIONS() {
+    [[ "${GITHUB_ACTIONS:-}" == "true" ]]
+}
+
 is_darwin() {
     uname -a | grep -i darwin >/dev/null 2>&1
 }
