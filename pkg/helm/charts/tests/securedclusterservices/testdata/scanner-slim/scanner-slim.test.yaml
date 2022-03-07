@@ -96,3 +96,28 @@ tests:
         .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 5)
         .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret1")
         .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret2")
+
+- name: "sensor only connects to local scanner when it is enabled"
+  tests:
+  - name: "local scanner enabled"
+    set:
+      scanner.disable: false
+    expect: |
+      .deployments["sensor"].spec.template.spec.containers[0].env[] |
+        select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value)
+  - name: "local scanner disabled"
+    set:
+      scanner.disable: true
+    expect: |
+      .deployments["sensor"].spec.template.spec.containers[0].env[] |
+        select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value == false)
+
+- name: "sensor connects to local scanner using the correct GRPC endpoint"
+  release:
+    namespace: custom-ns
+  set:
+    allowNonstandardNamespace: true
+    scanner.disable: false
+  expect: |
+    .deployments["sensor"].spec.template.spec.containers[0].env[] |
+      select(.name == "ROX_SCANNER_GRPC_ENDPOINT") | assertThat(.value == "scanner.custom-ns.svc:8443")
