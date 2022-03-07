@@ -4,6 +4,7 @@ import { FileText } from 'react-feather';
 import Button from 'Components/Button';
 import exportPDF from 'services/PDFExportService';
 import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
+import useBranding from 'hooks/useBranding';
 
 interface PDFExportButtonProps {
     fileName: string;
@@ -18,8 +19,9 @@ const PDFExportButton = ({
     startExportingPDF,
     finishExportingPDF,
 }: PDFExportButtonProps) => {
+    const branding = useBranding();
     function exportPDFFile() {
-        exportPDF(fileName, pdfId, startExportingPDF, finishExportingPDF);
+        exportPDF(fileName, pdfId, branding, startExportingPDF, finishExportingPDF);
     }
     return (
         <Button
