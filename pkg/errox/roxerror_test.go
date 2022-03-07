@@ -1,7 +1,7 @@
 package errox
 
 import (
-	"fmt"
+	"os"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -18,10 +18,10 @@ func TestRoxErrorIs(t *testing.T) {
 	errNotFound1 := makeSentinel("base not found")
 	assert.NotErrorIs(t, errNotFound, errNotFound1)
 
-	fileNotFound := errNotFound.New("file not found")
-	cpuNotFound := errNotFound.New("CPU not found")
-	googleNotFound := errNotFound.New("Google not found")
-	movieNotFound := fileNotFound.New("movie not found")
+	fileNotFound := New(errNotFound, "file not found")
+	cpuNotFound := New(errNotFound, "CPU not found")
+	googleNotFound := New(errNotFound, "Google not found")
+	movieNotFound := New(fileNotFound, "movie not found")
 
 	assert.ErrorIs(t, fileNotFound, errNotFound)
 	assert.ErrorIs(t, googleNotFound, errNotFound)
@@ -52,29 +52,19 @@ func TestErrorMessage(t *testing.T) {
 	}
 
 	{
-		mine := NotFound.New("cannot load")
+		mine := New(NotFound, "cannot load")
 		assert.Equal(t, "cannot load", mine.Error())
 	}
-}
 
-func TestCausedBy(t *testing.T) {
 	{
-		errInvalidAlgorithmF := func(alg string) RoxError {
-			return InvalidArgs.New(fmt.Sprintf("invalid hashing algorithm %q used", alg))
-		}
-		assert.Equal(t, "invalid hashing algorithm \"SHA255\" used: only SHA256 is supported",
-			errInvalidAlgorithmF("SHA255").CausedBy("only SHA256 is supported").Error())
-
-		assert.ErrorIs(t, errInvalidAlgorithmF("SHA255"), InvalidArgs)
+		err := Newf(InvalidArgs, "custom %s", "message")
+		assert.Equal(t, "custom message", err.Error())
+		assert.ErrorIs(t, err, InvalidArgs)
 	}
 
 	{
-		assert.Equal(t, "not found: your fault",
-			NotFound.CausedBy(errors.New("your fault")).Error())
-	}
-
-	{
-		err := NotFound.New("lost forever").CausedBy("swallowed by Kraken")
-		assert.ErrorIs(t, err, NotFound)
+		err := New(os.ErrClosed, "not open")
+		assert.Equal(t, "not open", err.Error())
+		assert.ErrorIs(t, err, os.ErrClosed)
 	}
 }
