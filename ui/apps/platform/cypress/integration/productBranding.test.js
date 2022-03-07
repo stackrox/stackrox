@@ -19,13 +19,8 @@ function visitDashboard() {
     cy.wait('@summaryCounts');
 }
 
-// TODO The behavior when and invalid or undefined value is sent from the server is
-// handled in the 'useBranding.test.js' unit test. These tests should be updated to be
-// more focused on page specific items.
 const setBrandingAsRedHat = () => overrideBranding('RHACS_BRANDING');
 const setBrandingAsOpenSource = () => overrideBranding('STACKROX_BRANDING');
-const setBrandingAsInvalid = () => overrideBranding('404_BRANDING');
-const setBrandingAsUnspecified = () => overrideBranding(undefined);
 
 describe('Login page product branding checks', () => {
     it('Should render the login page with Red Hat ACS branding', () => {
@@ -70,28 +65,6 @@ describe('Authenticated page product branding checks', () => {
 
     it('should display the Open Source branding on the main dashboard', () => {
         setBrandingAsOpenSource();
-        visitDashboard();
-
-        cy.title().should('eq', `Dashboard | ${stackRoxTitleText}`);
-
-        // Ensure only the correct logo exists on the page
-        cy.get(selectors.stackroxLogoImage);
-        cy.get(selectors.rhacsLogoImage).should('not.exist');
-    });
-
-    it('should display Open Source branding when no value is specified from server', () => {
-        setBrandingAsUnspecified();
-        visitDashboard();
-
-        cy.title().should('eq', `Dashboard | ${stackRoxTitleText}`);
-
-        // Ensure only the correct logo exists on the page
-        cy.get(selectors.stackroxLogoImage);
-        cy.get(selectors.rhacsLogoImage).should('not.exist');
-    });
-
-    it('should display Open Source branding when the server value is invalid', () => {
-        setBrandingAsInvalid();
         visitDashboard();
 
         cy.title().should('eq', `Dashboard | ${stackRoxTitleText}`);
