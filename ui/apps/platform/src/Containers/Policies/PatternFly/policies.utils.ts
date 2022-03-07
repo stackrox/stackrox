@@ -1,6 +1,7 @@
 import isPlainObject from 'lodash/isPlainObject';
 import pluralize from 'pluralize';
 import qs, { ParsedQs } from 'qs';
+import cloneDeep from 'lodash/cloneDeep';
 
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
@@ -13,6 +14,8 @@ import {
     PolicyExcludedDeployment,
     PolicyExclusion,
     Policy,
+    ValueObj,
+    PolicyValue,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -296,12 +299,139 @@ export const initialExcludedDeployment: WizardExcludedDeployment = {
     scope: initialScope,
 };
 
-export function getClientWizardPolicy(policy): Policy {
-    return preFormatExclusionField(policy);
+// TODO: work with API to update contract for returning number comparison fields
+//   until that improves, we short-circuit those fields here
+const nonStandardNumberFields = [
+    'CVSS',
+    'Container CPU Request',
+    'Container CPU Limit',
+    'Container Memory Request',
+    'Container Memory Limit',
+    'Replicas',
+    'Severity',
+];
+
+function isCompoundField(fieldName = '') {
+    const compoundValueFields = [
+        'Disallowed Annotation',
+        'Disallowed Image Label',
+        'Dockerfile Line',
+        'Environment Variable',
+        'Image Component',
+        'Required Annotation',
+        'Required Image Label',
+        'Required Label',
+    ];
+
+    return compoundValueFields.includes(fieldName);
 }
 
-export function getServerPolicy(policy): Policy {
-    return postFormatExclusionField(policy);
+const numericCompRe =
+    /^([><=]+)?\D*(?=.)(([+-]?([0-9]*)(\.([0-9]+))?)|(UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL))$/;
+
+export function parseNumericComparisons(str): [string, string] {
+    const matches: string[] = str.match(numericCompRe);
+    return [matches[1], matches[2]];
+}
+
+export function parseValueStr(value, fieldName): ValueObj {
+    // TODO: work with API to update contract for returning number comparison fields
+    //   until that improves, we short-circuit those fields here
+
+    if (nonStandardNumberFields.includes(fieldName)) {
+        const [comparison, num] = parseNumericComparisons(value);
+        return comparison
+            ? {
+                  key: comparison,
+                  value: num,
+              }
+            : {
+                  key: '=',
+                  value: num,
+              };
+    }
+    if (typeof value === 'string' && isCompoundField(fieldName)) {
+        // handle all other string fields
+        const valueArr = value.split('=');
+        // for nested policy criteria fields
+        if (valueArr.length === 2) {
+            return {
+                key: valueArr[0],
+                value: valueArr[1],
+            };
+        }
+        // for the Environment Variable policy criteria
+        if (valueArr.length === 3) {
+            return {
+                source: valueArr[0],
+                key: valueArr[1],
+                value: valueArr[2],
+            };
+        }
+    }
+    return {
+        value,
+    };
+}
+
+function preFormatNestedPolicyFields(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const clientPolicy = cloneDeep(policy);
+    // itreating through each value in a policy group in a policy section to parse value string
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values, fieldName } = policyGroup;
+            values.forEach((value, valueIdx) => {
+                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] =
+                    parseValueStr(value.value, fieldName) as PolicyValue;
+            });
+        });
+    });
+    return clientPolicy;
+}
+
+export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
+    if (!valueObj) {
+        return '';
+    }
+    const { source, key = '', value = '' } = valueObj;
+    let valueStr = value;
+
+    if (nonStandardNumberFields.includes(fieldName)) {
+        // TODO: work with API to update contract for returning number comparison fields
+        //   until that improves, we short-circuit those fields here
+        valueStr = key !== '=' ? `${key}${value}` : `${value}`;
+    } else if (source || fieldName === 'Environment Variable') {
+        valueStr = `${source || ''}=${key}=${value}`;
+    } else if (key) {
+        valueStr = `${key}=${value}`;
+    }
+    return valueStr || '';
+}
+
+function postFormatNestedPolicyFields(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const serverPolicy = cloneDeep(policy);
+    // itereating through each value in a policy group in a policy section to format to a flat value string
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values } = policyGroup;
+            values.forEach((value, valueIdx) => {
+                serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] = {
+                    value: formatValueStr(value as ValueObj, policyGroup.fieldName),
+                };
+            });
+        });
+    });
+    return serverPolicy;
 }
 
 /*
@@ -342,5 +472,17 @@ function postFormatExclusionField(policy): Policy {
         );
     }
 
+    return serverPolicy;
+}
+
+export function getClientWizardPolicy(policy): Policy {
+    let formattedPolicy = preFormatExclusionField(policy);
+    formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
+    return formattedPolicy;
+}
+
+export function getServerPolicy(policy): Policy {
+    let serverPolicy = postFormatExclusionField(policy);
+    serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }

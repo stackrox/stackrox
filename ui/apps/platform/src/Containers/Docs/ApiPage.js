@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { RedocStandalone } from 'redoc';
 import Raven from 'raven-js';
 
-import LoadingSection from 'Components/LoadingSection';
+import LoadingSection from 'Components/PatternFly/LoadingSection';
 import axios from 'services/instance';
 
 function SwaggerBrowser({ uri }) {
@@ -26,7 +26,7 @@ function SwaggerBrowser({ uri }) {
         return <div>Unable to load API data.</div>;
     }
     if (loading) {
-        return <LoadingSection />;
+        return <LoadingSection variant="dark" />;
     }
     if (result) {
         return (

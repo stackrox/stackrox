@@ -18,9 +18,8 @@
 /* for large size screens, change the policy sections to be width limited */
 @media (min-width: 992px) {
     .policy-section-card {
-        /* this is the same as pf-u-w-66 */
-        min-width: 360px;
-        max-width: 360px;
+        min-width: 450px;
+        max-width: 450px;
         height: 100%;
     }
 

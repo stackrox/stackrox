@@ -2,6 +2,9 @@ package extensions
 
 import (
 	"context"
+	"crypto/x509"
+	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
@@ -20,6 +23,12 @@ import (
 
 const (
 	numServiceCertDataEntries = 3 // cert pem + key pem + ca pem
+	// InitBundleReconcilePeriod is the maximum period required for reconciliation of an init bundle.
+	// It must be sufficient to renew an ephemeral init bundle certificate which has relatively short lifetime (within a matter of hours).
+	// NB: keep in sync with crypto.ephemeralProfileWithExpirationInHoursCertLifetime
+	InitBundleReconcilePeriod   = 1 * time.Hour
+	initBundleGracePeriod       = 90 * time.Minute // half of cert validity period
+	fixExistingInitBundleSecret = true
 )
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
@@ -28,7 +37,7 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client) extensions.Reconcil
 	return wrapExtension(reconcileCentralTLS, client)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
 		centralObj:          c,
@@ -65,18 +74,17 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fixExistingInitBundleSecret := true
 	for _, serviceType := range centralsensor.AllSecuredClusterServices {
 		slugCaseService := services.ServiceTypeToSlugName(serviceType)
 		secretName := slugCaseService + "-tls"
 		validateFunc := func(fileMap types.SecretDataMap, _ bool) error {
-			return r.validateServiceTLSData(serviceType, slugCaseService+"-", fileMap)
+			return r.validateInitBundleTLSData(serviceType, slugCaseService+"-", fileMap)
 		}
 		generateFunc := func() (types.SecretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
 		if err := r.ReconcileSecret(ctx, secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
-			return errors.Wrapf(err, "reconciling %s secret ", slugCaseService)
+			return errors.Wrapf(err, "reconciling %s secret", secretName)
 		}
 	}
 
@@ -139,6 +147,41 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 	}
 	if err := certgen.VerifyCACertInFileMap(fileMap, r.ca); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (r *createCentralTLSExtensionRun) validateInitBundleTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {
+	if err := certgen.VerifyCert(fileMap, fileNamePrefix, r.getValidateInitBundleCert(serviceType)); err != nil {
+		return err
+	}
+	if err := certgen.VerifyCACertInFileMap(fileMap, r.ca); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *createCentralTLSExtensionRun) getValidateInitBundleCert(serviceType storage.ServiceType) certgen.ValidateCertFunc {
+	validateService := certgen.GetValidateServiceCertFunc(r.ca, serviceType)
+	return func(certificate *x509.Certificate) error {
+		if err := validateService(certificate); err != nil {
+			return err
+		}
+		if err := checkInitBundleCertRenewal(certificate, time.Now()); err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func checkInitBundleCertRenewal(certificate *x509.Certificate, currentTime time.Time) error {
+	startTime := certificate.NotBefore
+	if currentTime.Before(startTime) {
+		return fmt.Errorf("init bundle secret requires update, certificate lifetime starts in the future, not before: %s", startTime)
+	}
+	refreshTime := certificate.NotAfter.Add(-initBundleGracePeriod)
+	if currentTime.After(refreshTime) {
+		return fmt.Errorf("init bundle secret requires update, certificate is expired (or going to expire soon), not after: %s, renew threshold: %s", certificate.NotAfter, refreshTime)
 	}
 	return nil
 }
