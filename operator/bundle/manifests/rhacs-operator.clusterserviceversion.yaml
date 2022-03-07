@@ -2,19 +2,44 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: "[\n  {\n    \"apiVersion\": \"platform.stackrox.io/v1alpha1\",\n\
-      \    \"kind\": \"Central\",\n    \"metadata\": {\n      \"name\": \"stackrox-central-services\"\
-      ,\n      \"namespace\": \"stackrox\"\n    },\n    \"spec\": {\n      \"central\"\
-      : {\n        \"exposure\": {\n          \"route\": {\n            \"enabled\"\
-      : true\n          }\n        }\n      }\n    }\n  },\n  {\n    \"apiVersion\"\
-      : \"platform.stackrox.io/v1alpha1\",\n    \"kind\": \"SecuredCluster\",\n  \
-      \  \"metadata\": {\n      \"name\": \"stackrox-secured-cluster-services\",\n\
-      \      \"namespace\": \"stackrox\"\n    },\n    \"spec\": {\n      \"clusterName\"\
-      : \"my-cluster\"\n    }\n  }\n]"
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "platform.stackrox.io/v1alpha1",
+          "kind": "Central",
+          "metadata": {
+            "name": "stackrox-central-services",
+            "namespace": "stackrox"
+          },
+          "spec": {
+            "central": {
+              "exposure": {
+                "route": {
+                  "enabled": true
+                }
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "platform.stackrox.io/v1alpha1",
+          "kind": "SecuredCluster",
+          "metadata": {
+            "name": "stackrox-secured-cluster-services",
+            "namespace": "stackrox"
+          },
+          "spec": {
+            "clusterName": "my-cluster",
+            "scanner": {
+              "scannerComponent": "Enabled"
+            }
+          }
+        }
+      ]
     capabilities: Seamless Upgrades
     categories: Security
     containerImage: docker.io/stackrox/stackrox-operator:0.0.1
-    createdAt: '1999-12-31T23:59:59Z'
+    createdAt: "1999-12-31T23:59:59Z"
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the
       services necessary to secure each of your OpenShift and Kubernetes clusters.
     operatorframework.io/suggested-namespace: rhacs-operator
@@ -23,7 +48,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     support: Red Hat
   name: rhacs-operator.v0.0.1
-  namespace: placeholder
+  namespace: openshift-operators
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
@@ -58,13 +83,144 @@ spec:
           all user interaction.
         displayName: Central Component Settings
         path: central
+      - description: Specify a secret that contains the administrator password in
+          the "password" data item. If omitted, the operator will auto-generate a
+          password and store it in the "password" item in the "central-htpasswd" secret.
+        displayName: Administrator Password
+        path: central.adminPasswordSecret
+      - displayName: Enabled
+        path: central.exposure.loadBalancer.enabled
+      - displayName: Enabled
+        path: central.exposure.nodePort.enabled
+      - description: Expose Central through an OpenShift route.
+        displayName: Route
+        path: central.exposure.route
+      - displayName: Enabled
+        path: central.exposure.route.enabled
+      - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
+          storage location of persistent data. Recommended for most users.
+        displayName: Persistent volume claim
+        path: central.persistence.persistentVolumeClaim
+      - description: The name of the PVC to manage persistent data. If no PVC with
+          the given name exists, it will be created. Defaults to "stackrox-db" if
+          not set.
+        displayName: Claim Name
+        path: central.persistence.persistentVolumeClaim.claimName
+      - description: Custom labels to set on all managed objects.
+        displayName: Labels
+        path: customize.labels
+      - description: Configures whether Red Hat Advanced Cluster Security should run
+          in online or offline (disconnected) mode. In offline mode, automatic updates
+          of vulnerability definitions and kernel modules are disabled.
+        displayName: Connectivity Policy
+        path: egress.connectivityPolicy
+      - description: Set this to true to have the operator create SecurityContextConstraints
+          (SCCs) for the operands. This isn't usually needed, and may interfere with
+          other workloads.
+        displayName: Create SecurityContextConstraints for Operand
+        path: misc.createSCCs
+      - description: Controls the number of analyzer replicas and autoscaling.
+        displayName: Scaling
+        path: scanner.analyzer.scaling
+      - description: When enabled, the number of analyzer replicas is managed dynamically
+          based on the load, within the limits specified below.
+        displayName: Autoscaling
+        path: scanner.analyzer.scaling.autoScaling
+      - description: If you do not want to deploy the Red Hat Advanced Cluster Security
+          Scanner, you can disable it here (not recommended). If you do so, all the
+          settings in this section will have no effect.
+        displayName: Scanner Component
+        path: scanner.scannerComponent
+      - description: Here you can configure if you want to expose central through
+          a node port, a load balancer, or an OpenShift route.
+        displayName: Exposure
+        path: central.exposure
+      - description: Expose Central through a load balancer service.
+        displayName: Load Balancer
+        path: central.exposure.loadBalancer
+      - description: Defaults to 443 if not set.
+        displayName: Port
+        path: central.exposure.loadBalancer.port
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true
+      - description: Use this to specify an explicit node port. Most users should
+          leave this empty.
+        displayName: Port
+        path: central.exposure.nodePort.port
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true
+      - description: The size of the persistent volume when created through the claim.
+          If a claim was automatically created, this can be used after the initial
+          deployment to resize (grow) the volume (only supported by some storage class
+          controllers).
+        displayName: Size
+        path: central.persistence.persistentVolumeClaim.size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Custom annotations to set on all managed objects.
+        displayName: Annotations
+        path: customize.annotations
       - description: Settings for the Scanner component, which is responsible for
           vulnerability scanning of container images.
         displayName: Scanner Component Settings
         path: scanner
+      - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
+        displayName: Analyzer
+        path: scanner.analyzer
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
+      - description: When autoscaling is disabled, the number of replicas will always
+          be configured to match this value.
+        displayName: Default Replicas
+        path: scanner.analyzer.scaling.replicas
+      - description: By default, Central will only serve an internal TLS certificate,
+          which means that you will need to handle TLS termination at the ingress
+          or load balancer level. If you want to terminate TLS in Central and serve
+          a custom server certificate, you can specify a secret containing the certificate
+          and private key here.
+        displayName: User-facing TLS certificate secret
+        path: central.defaultTLSSecret
+      - description: If you have a static IP address reserved for your load balancer,
+          you can enter it here.
+        displayName: IP
+        path: central.exposure.loadBalancer.ip
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true
+      - description: Expose Central through a node port.
+        displayName: Node Port
+        path: central.exposure.nodePort
+      - description: The name of the storage class to use for the PVC. If your cluster
+          is not configured with a default storage class, you must select a value
+          here.
+        displayName: Storage Class
+        path: central.persistence.persistentVolumeClaim.storageClassName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:StorageClass
+      - description: Custom environment variables to set on managed pods' containers.
+        displayName: Environment Variables
+        path: customize.envVars
       - description: Settings related to outgoing network traffic.
         displayName: Egress
         path: egress
+      - displayName: Autoscaling Minimum Replicas
+        path: scanner.analyzer.scaling.minReplicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
+      - description: Settings pertaining to the database used by the Red Hat Advanced
+          Cluster Security Scanner.
+        displayName: DB
+        path: scanner.db
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
+      - description: Configures how Central should store its persistent data. You
+          can choose between using a persistent volume claim (recommended default),
+          and a host path.
+        displayName: Persistence
+        path: central.persistence
+      - displayName: Autoscaling Maximum Replicas
+        path: scanner.analyzer.scaling.maxReplicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls
@@ -84,27 +240,14 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Specify a secret that contains the administrator password in
-          the "password" data item. If omitted, the operator will auto-generate a
-          password and store it in the "password" item in the "central-htpasswd" secret.
-        displayName: Administrator Password
-        path: central.adminPasswordSecret
-      - description: Here you can configure if you want to expose central through
-          a node port, a load balancer, or an OpenShift route.
-        displayName: Exposure
-        path: central.exposure
-      - description: By default, Central will only serve an internal TLS certificate,
-          which means that you will need to handle TLS termination at the ingress
-          or load balancer level. If you want to terminate TLS in Central and serve
-          a custom server certificate, you can specify a secret containing the certificate
-          and private key here.
-        displayName: User-facing TLS certificate secret
-        path: central.defaultTLSSecret
-      - description: Configures how Central should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          and a host path.
-        displayName: Persistence
-        path: central.persistence
+      - description: Stores persistent data on a directory on the host. This is not
+          recommended, and should only be used together with a node selector (only
+          available in YAML view).
+        displayName: Host path
+        path: central.persistence.hostPath
+      - description: The path on the host running Central.
+        displayName: Path
+        path: central.persistence.hostPath.path
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -112,14 +255,48 @@ spec:
         path: central.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: Allows overriding the default resource settings for this component.
+          Please consult the documentation for an overview of default resource requirements
+          and a sizing guide.
+        displayName: Resources
+        path: scanner.analyzer.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: Allows overriding the default resource settings for this component.
+          Please consult the documentation for an overview of default resource requirements
+          and a sizing guide.
+        displayName: Resources
+        path: scanner.db.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: If you want this component to only run on specific nodes, you
           can configure a node selector here.
         displayName: Node Selector
         path: central.nodeSelector
       - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
+        path: scanner.analyzer.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
+        path: scanner.db.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
         displayName: Tolerations
         path: central.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: scanner.analyzer.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: scanner.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: Disable admin password generation. Do not use this for first-time
@@ -139,163 +316,11 @@ spec:
         path: central.defaultTLSSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Expose Central through an OpenShift route.
-        displayName: Route
-        path: central.exposure.route
-      - description: Expose Central through a load balancer service.
-        displayName: Load Balancer
-        path: central.exposure.loadBalancer
-      - description: Expose Central through a node port.
-        displayName: Node Port
-        path: central.exposure.nodePort
-      - displayName: Enabled
-        path: central.exposure.loadBalancer.enabled
-      - description: Defaults to 443 if not set.
-        displayName: Port
-        path: central.exposure.loadBalancer.port
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.loadBalancer.enabled:true
-      - description: If you have a static IP address reserved for your load balancer,
-          you can enter it here.
-        displayName: IP
-        path: central.exposure.loadBalancer.ip
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.loadBalancer.enabled:true
-      - displayName: Enabled
-        path: central.exposure.nodePort.enabled
-      - description: Use this to specify an explicit node port. Most users should
-          leave this empty.
-        displayName: Port
-        path: central.exposure.nodePort.port
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
-      - displayName: Enabled
-        path: central.exposure.route.enabled
-      - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
-          storage location of persistent data. Recommended for most users.
-        displayName: Persistent volume claim
-        path: central.persistence.persistentVolumeClaim
-      - description: Stores persistent data on a directory on the host. This is not
-          recommended, and should only be used together with a node selector (only
-          available in YAML view).
-        displayName: Host path
-        path: central.persistence.hostPath
-      - description: The path on the host running Central.
-        displayName: Path
-        path: central.persistence.hostPath.path
-      - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "stackrox-db" if
-          not set.
-        displayName: Claim Name
-        path: central.persistence.persistentVolumeClaim.claimName
-      - description: The size of the persistent volume when created through the claim.
-          If a claim was automatically created, this can be used after the initial
-          deployment to resize (grow) the volume (only supported by some storage class
-          controllers).
-        displayName: Size
-        path: central.persistence.persistentVolumeClaim.size
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The name of the storage class to use for the PVC. If your cluster
-          is not configured with a default storage class, you must select a value
-          here.
-        displayName: Storage Class
-        path: central.persistence.persistentVolumeClaim.storageClassName
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:StorageClass
-      - description: Custom labels to set on all managed objects.
-        displayName: Labels
-        path: customize.labels
-      - description: Custom annotations to set on all managed objects.
-        displayName: Annotations
-        path: customize.annotations
-      - description: Custom environment variables to set on managed pods' containers.
-        displayName: Environment Variables
-        path: customize.envVars
-      - description: Configures whether Red Hat Advanced Cluster Security should run
-          in online or offline (disconnected) mode. In offline mode, automatic updates
-          of vulnerability definitions and kernel modules are disabled.
-        displayName: Connectivity Policy
-        path: egress.connectivityPolicy
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Set this to true to have the operator create SecurityContextConstraints
-          (SCCs) for the operands. This isn't usually needed, and may interfere with
-          other workloads.
-        displayName: Create SecurityContextConstraints for Operand
-        path: misc.createSCCs
-      - description: If you do not want to deploy the Red Hat Advanced Cluster Security
-          Scanner, you can disable it here (not recommended). If you do so, all the
-          settings in this section will have no effect.
-        displayName: Scanner Component
-        path: scanner.scannerComponent
-      - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
-        displayName: Analyzer
-        path: scanner.analyzer
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scanner.scannerComponent:Enabled
-      - description: Settings pertaining to the database used by the Red Hat Advanced
-          Cluster Security Scanner.
-        displayName: DB
-        path: scanner.db
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scanner.scannerComponent:Enabled
-      - description: Controls the number of analyzer replicas and autoscaling.
-        displayName: Scaling
-        path: scanner.analyzer.scaling
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
-        displayName: Resources
-        path: scanner.analyzer.resources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
-        displayName: Node Selector
-        path: scanner.analyzer.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
-        displayName: Tolerations
-        path: scanner.analyzer.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: When enabled, the number of analyzer replicas is managed dynamically
-          based on the load, within the limits specified below.
-        displayName: Autoscaling
-        path: scanner.analyzer.scaling.autoScaling
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
-        displayName: Default Replicas
-        path: scanner.analyzer.scaling.replicas
-      - displayName: Autoscaling Minimum Replicas
-        path: scanner.analyzer.scaling.minReplicas
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scanner.analyzer.scaling.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
-        path: scanner.analyzer.scaling.maxReplicas
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scanner.analyzer.scaling.autoScaling:Enabled
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
-        displayName: Resources
-        path: scanner.db.resources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
-        displayName: Node Selector
-        path: scanner.db.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
-        displayName: Tolerations
-        path: scanner.db.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
@@ -328,12 +353,57 @@ spec:
         name: sensor
         version: v1
       specDescriptors:
+      - description: Set this to 'true' to enable preventive policy enforcement for
+          object creations.
+        displayName: Listen On Creates
+        path: admissionControl.listenOnCreates
+      - description: Whether collection of Kubernetes audit logs should be enabled
+          or disabled. Currently, this is only supported on OpenShift 4, and trying
+          to enable it on non-OpenShift 4 clusters will result in an error. Use the
+          'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+        displayName: Collection
+        path: auditLogs.collection
       - description: 'The unique name of this cluster, as it will be shown in the
           Red Hat Advanced Cluster Security UI. Note: Once a name is set here, you
           will not be able to change it again. You will need to delete and re-create
           this object in order to register a cluster with a new name.'
         displayName: Cluster Name
         path: clusterName
+      - description: Custom labels to set on all managed objects.
+        displayName: Labels
+        path: customize.labels
+      - description: Set this to true to have the operator create SecurityContextConstraints
+          (SCCs) for the operands. This isn't usually needed, and may interfere with
+          other workloads.
+        displayName: Create SecurityContextConstraints for Operand
+        path: misc.createSCCs
+      - description: Settings for the Collector container, which is responsible for
+          collecting process and networking activity at the host level.
+        displayName: Collector Settings
+        path: perNode.collector
+      - description: The method for system-level data collection. Kernel module is
+          recommended. If you select "NoCollection", you will not be able to see any
+          information about network activity and process executions. The remaining
+          settings in these section will not have any effect.
+        displayName: Collection
+        path: perNode.collector.collection
+      - description: Controls the number of analyzer replicas and autoscaling.
+        displayName: Scaling
+        path: scanner.analyzer.scaling
+      - description: When enabled, the number of analyzer replicas is managed dynamically
+          based on the load, within the limits specified below.
+        displayName: Autoscaling
+        path: scanner.analyzer.scaling.autoScaling
+      - description: If you do not want to deploy the Red Hat Advanced Cluster Security
+          Scanner, you can disable it here (not recommended). If you do so, all the
+          settings in this section will have no effect.
+        displayName: Scanner Component
+        path: scanner.scannerComponent
+      - description: "Set this to 'true' to enable preventive policy enforcement for
+          object updates. \n Note: this will not have any effect unless 'Listen On
+          Creates' is set to 'true' as well."
+        displayName: Listen On Updates
+        path: admissionControl.listenOnUpdates
       - description: 'The endpoint of the Red Hat Advanced Cluster Security Central
           instance to connect to, including the port number. If using a non-gRPC capable
           load balancer, use the WebSocket protocol by prefixing the endpoint address
@@ -341,6 +411,48 @@ spec:
           to a Central instance running in the same namespace.'
         displayName: Central Endpoint
         path: centralEndpoint
+      - description: Custom annotations to set on all managed objects.
+        displayName: Annotations
+        path: customize.annotations
+      - description: The image flavor to use for collector. "Regular" images are bigger
+          in size, but contain kernel modules for most kernels. If you use the "Slim"
+          image flavor, you must ensure that your Central instance is connected to
+          the internet, or regularly receives Collector Support Package updates (for
+          further instructions, please refer to the documentation).
+        displayName: Image Flavor
+        path: perNode.collector.imageFlavor
+      - description: Settings for the Compliance container, which is responsible for
+          checking host-level configurations.
+        displayName: Compliance Settings
+        path: perNode.compliance
+      - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
+        displayName: Analyzer
+        path: scanner.analyzer
+      - description: When autoscaling is disabled, the number of replicas will always
+          be configured to match this value.
+        displayName: Default Replicas
+        path: scanner.analyzer.scaling.replicas
+      - description: Set this to 'true' to enable monitoring and enforcement for Kubernetes
+          events (port-forward and exec).
+        displayName: Listen On Events
+        path: admissionControl.listenOnEvents
+      - description: Custom environment variables to set on managed pods' containers.
+        displayName: Environment Variables
+        path: customize.envVars
+      - description: To ensure comprehensive monitoring of your cluster activity,
+          Red Hat Advanced Cluster Security will run services on every node in the
+          cluster, including tainted nodes by default. If you do not want this behavior,
+          please select 'AvoidTaints' here.
+        displayName: Taint Toleration
+        path: perNode.taintToleration
+      - displayName: Autoscaling Minimum Replicas
+        path: scanner.analyzer.scaling.minReplicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
+      - description: Settings pertaining to the database used by the Red Hat Advanced
+          Cluster Security Scanner.
+        displayName: DB
+        path: scanner.db
       - description: Settings for the Sensor component.
         displayName: Sensor Settings
         path: sensor
@@ -348,13 +460,35 @@ spec:
           for preventive policy enforcement, and for Kubernetes event monitoring.
         displayName: Admission Control Settings
         path: admissionControl
+      - description: Should inline scanning be performed on previously unscanned images
+          during a deployments admission review.
+        displayName: Contact Image Scanners
+        path: admissionControl.contactImageScanners
+      - displayName: Autoscaling Maximum Replicas
+        path: scanner.analyzer.scaling.maxReplicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
+      - description: Maximum timeout period for admission review, upon which admission
+          review will fail open. Use it to set request timeouts when you enable inline
+          image scanning.
+        displayName: Timeout Seconds
+        path: admissionControl.timeoutSeconds
       - description: Settings for the components running on each node in the cluster
           (Collector and Compliance).
         displayName: Per Node Settings
         path: perNode
+      - description: Enables teams to bypass admission control in a monitored manner
+          in the event of an emergency.
+        displayName: Bypass
+        path: admissionControl.bypass
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
+      - description: Settings for the local Scanner component, which is responsible
+          for vulnerability scanning of container images stored in a cluster-local
+          image repository.
+        displayName: Local Scanner Component Settings
+        path: scanner
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls
@@ -374,32 +508,6 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Set this to 'true' to enable preventive policy enforcement for
-          object creations.
-        displayName: Listen On Creates
-        path: admissionControl.listenOnCreates
-      - description: "Set this to 'true' to enable preventive policy enforcement for\
-          \ object updates. \n Note: this will not have any effect unless 'Listen\
-          \ On Creates' is set to 'true' as well."
-        displayName: Listen On Updates
-        path: admissionControl.listenOnUpdates
-      - description: Set this to 'true' to enable monitoring and enforcement for Kubernetes
-          events (port-forward and exec).
-        displayName: Listen On Events
-        path: admissionControl.listenOnEvents
-      - description: Should inline scanning be performed on previously unscanned images
-          during a deployments admission review.
-        displayName: Contact Image Scanners
-        path: admissionControl.contactImageScanners
-      - description: Maximum timeout period for admission review, upon which admission
-          review will fail open. Use it to set request timeouts when you enable inline
-          image scanning.
-        displayName: Timeout Seconds
-        path: admissionControl.timeoutSeconds
-      - description: Enables teams to bypass admission control in a monitored manner
-          in the event of an emergency.
-        displayName: Bypass
-        path: admissionControl.bypass
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -407,68 +515,6 @@ spec:
         path: admissionControl.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: If you want this component to only run on specific nodes, you
-          can configure a node selector here.
-        displayName: Node Selector
-        path: admissionControl.nodeSelector
-      - description: If you want this component to only run on specific nodes, you
-          can configure tolerations of tainted nodes.
-        displayName: Tolerations
-        path: admissionControl.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: Whether collection of Kubernetes audit logs should be enabled
-          or disabled. Currently, this is only supported on OpenShift 4, and trying
-          to enable it on non-OpenShift 4 clusters will result in an error. Use the
-          'Auto' setting to enable it on compatible environments, and disable it elsewhere.
-        displayName: Collection
-        path: auditLogs.collection
-      - description: Custom labels to set on all managed objects.
-        displayName: Labels
-        path: customize.labels
-      - description: Custom annotations to set on all managed objects.
-        displayName: Annotations
-        path: customize.annotations
-      - description: Custom environment variables to set on managed pods' containers.
-        displayName: Environment Variables
-        path: customize.envVars
-      - description: The name of the referenced secret.
-        displayName: Name
-        path: imagePullSecrets[0].name
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Set this to true to have the operator create SecurityContextConstraints
-          (SCCs) for the operands. This isn't usually needed, and may interfere with
-          other workloads.
-        displayName: Create SecurityContextConstraints for Operand
-        path: misc.createSCCs
-      - description: Settings for the Collector container, which is responsible for
-          collecting process and networking activity at the host level.
-        displayName: Collector Settings
-        path: perNode.collector
-      - description: Settings for the Compliance container, which is responsible for
-          checking host-level configurations.
-        displayName: Compliance Settings
-        path: perNode.compliance
-      - description: To ensure comprehensive monitoring of your cluster activity,
-          Red Hat Advanced Cluster Security will run services on every node in the
-          cluster, including tainted nodes by default. If you do not want this behavior,
-          please select 'AvoidTaints' here.
-        displayName: Taint Toleration
-        path: perNode.taintToleration
-      - description: The method for system-level data collection. Kernel module is
-          recommended. If you select "NoCollection", you will not be able to see any
-          information about network activity and process executions. The remaining
-          settings in these section will not have any effect.
-        displayName: Collection
-        path: perNode.collector.collection
-      - description: The image flavor to use for collector. "Regular" images are bigger
-          in size, but contain kernel modules for most kernels. If you use the "Slim"
-          image flavor, you must ensure that your Central instance is connected to
-          the internet, or regularly receives Collector Support Package updates (for
-          further instructions, please refer to the documentation).
-        displayName: Image Flavor
-        path: perNode.collector.imageFlavor
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -487,9 +533,35 @@ spec:
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
         displayName: Resources
+        path: scanner.analyzer.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: Allows overriding the default resource settings for this component.
+          Please consult the documentation for an overview of default resource requirements
+          and a sizing guide.
+        displayName: Resources
+        path: scanner.db.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: Allows overriding the default resource settings for this component.
+          Please consult the documentation for an overview of default resource requirements
+          and a sizing guide.
+        displayName: Resources
         path: sensor.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
+        path: admissionControl.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
+        path: scanner.analyzer.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure a node selector here.
+        displayName: Node Selector
+        path: scanner.db.nodeSelector
       - description: If you want this component to only run on specific nodes, you
           can configure a node selector here.
         displayName: Node Selector
@@ -497,9 +569,32 @@ spec:
       - description: If you want this component to only run on specific nodes, you
           can configure tolerations of tainted nodes.
         displayName: Tolerations
+        path: admissionControl.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: scanner.analyzer.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: scanner.db.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
         path: sensor.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: The name of the referenced secret.
+        displayName: Name
+        path: imagePullSecrets[0].name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
@@ -512,80 +607,76 @@ spec:
         displayName: Cluster Name
         path: clusterName
       version: v1alpha1
-  description: "## Why use Red Hat Advanced Cluster Security for Kubernetes?\n\nProtecting\
-    \ cloud-native applications requires significant changes in how we approach security\u2014\
-    we must apply controls earlier in the application development life cycle, use\
-    \ the infrastructure itself to apply controls, and keep up with increasingly rapid\
-    \ release schedules.\n\n\nRed Hat\xAE Advanced Cluster Security for Kubernetes,\
-    \ powered by StackRox technology, protects your vital applications across build,\
-    \ deploy, and runtime. Our software deploys in your infrastructure and integrates\
-    \ with your DevOps tooling and workflows to deliver better security and compliance.\
-    \ The policy engine includes hundreds of built-in controls to enforce DevOps and\
-    \ security best practices, industry standards such as CIS Benchmarks and National\
-    \ Institute of Standards Technology (NIST) guidelines, configuration management\
-    \ of both containers and Kubernetes, and runtime security.\n\nRed Hat Advanced\
-    \ Cluster Security for Kubernetes provides a Kubernetes-native architecture for\
-    \ container security, enabling DevOps and InfoSec teams to operationalize security.\n\
-    \n## Features and Benefits\n\n**Kubernetes-native security:**\n1. Increases protection.\n\
-    1. Eliminates blind spots, providing staff with insights into critical vulnerabilities\
-    \ and threat vectors.\n1. Reduces time and costs.\n1. Reduces the time and effort\
-    \ needed to implement security and streamlines security analysis, investigation,\
-    \ and remediation using the rich context Kubernetes provides.\n1. Increases scalability\
-    \ and portability.\n1. Provides scalability and resiliency native to Kubernetes,\
-    \ avoiding operational conflict and complexity that can result from out-of-band\
-    \ security controls.\n\n## Using the RHACS Operator\n\n**RHACS comes with two\
-    \ custom resources:**\n\n1. **Central Services** - Central is a deployment required\
-    \ on only one cluster in your environment. Users interact with RHACS via the user\
-    \ interface or APIs on Central. Central also sends notifications for violations\
-    \ and interacts with integrations. Users may select exposures for Central that\
-    \ best meet their environment.\n\n2. **Secured Cluster Services** - Secured cluster\
-    \ services are placed on each cluster you manage and report back to Central. These\
-    \ services allow users to enforce policies and monitor your OpenShift and Kubernetes\
-    \ clusters. Secured Cluster Services come as two Deployments (Sensor and Admission\
-    \ Controller) and one DaemonSet (Collector).\n\n### Central Services Explained\n\
-    \n| Service                          | Deployment Type | Description     |\n|\
-    \ :------------------------------- | :-------------- | :-------------- |\n| Central\
-    \                          | Deployment      | Users interact with Red Hat Advanced\
-    \ Cluster Security through the user interface or APIs on Central. Central also\
-    \ sends notifications for violations and interacts with integrations. |\n| Scanner\
-    \                          | Deployment      | Scanner is a Red Hat developed\
-    \ and certified image scanner. Scanner analyzes and reports vulnerabilities for\
-    \ images. Scanner uses HPA to scale the number of replicas based on workload.\
-    \ |\n| Scanner DB                       | Deployment      | Scanner DB is a cache\
-    \ for vulnerability definitions to serve vulnerability scanning use cases throughout\
-    \ the software development life cycle. |\n\n### Secured Cluster Services Explained\n\
-    \n| Service                          | Deployment Type | Description     |\n|\
-    \ :------------------------------- | :-------------- | :-------------- |\n| Sensor\
-    \                           | Deployment      | Sensor analyzes and monitors Kubernetes\
-    \ in secured clusters. |\n| Collector                        | DaemonSet     \
-    \  | Analyzes and monitors container activity on Kubernetes nodes.|\n| Admission\
-    \ Controller             | Deployment      | ValidatingWebhookConfiguration for\
-    \ enforcing policies in the deploy lifecycle. |\n\n### Central Custom Resource\n\
-    \nCentral Services is the configuration template for RHACS Central deployment.\
-    \ For all customization options, please visit the RHACS documentation.\n\n###\
-    \ SecuredCluster Custom Resource\n\nSecuredCluster is the configuration template\
-    \ for the RHACS Secured Cluster services.\n\n#### Installation Prerequisites\n\
-    \nBefore deploying a SecuredCluster resource, you need to create a cluster init\
-    \ bundle secret.\n\n- **Through the RHACS UI:** To create a cluster init bundle\
-    \ secret through the RHACS UI, navigate to `Platform Configuration > Clusters`,\
-    \ and then click `Manage Tokens` in the top-right corner. Select `Cluster Init\
-    \ Bundle`, and click `Generate Bundle`. Select `Download Kubernetes secrets file`,\
-    \ and store the file under a name of your choice (for example, `cluster-init-secrets.yaml`).\n\
-    - **Through the `roxctl` CLI:** To create a cluster init bundle secret through\
-    \ the `roxctl` command-line interface, run `roxctl central init-bundles generate\
-    \ <name> --output-secrets <file name>`. Choose any `name` and `file name` that\
-    \ you like.\n\nRun `oc project` and check that it reports the correct namespace\
-    \ where you intend to deploy SecuredCluster. In case you want to install SecuredCluster\
-    \ to a different namespace, select it by running `oc project <namespace>`.\nThen,\
-    \ run `oc create -f init-bundle.yaml`. If you have chosen a name other than `init-bundle.yaml`,\
-    \ specify that file name instead.\n\n#### Required Fields\n\nThe following attributes\
-    \ are required to be specified. For all customization options, please visit the\
-    \ RHACS documentation.\n\n| Parameter          | Description     |\n| :-----------------\
-    \ | :-------------- |\n| `clusterName`      | The name given to this secured cluster.\
-    \ The cluster will appear with this name in RHACS user interface. |\n| `centralEndpoint`\
-    \  | This field should specify the address of the Central endpoint, including\
-    \ the port number. `centralEndpoint` may be omitted if this SecuredCluster Custom\
-    \ Resource is in the same cluster and namespace as Central. |\n"
+  description: |
+    ## Why use Red Hat Advanced Cluster Security for Kubernetes?
+
+    Protecting cloud-native applications requires significant changes in how we approach security—we must apply controls earlier in the application development life cycle, use the infrastructure itself to apply controls, and keep up with increasingly rapid release schedules.
+
+
+    Red Hat® Advanced Cluster Security for Kubernetes, powered by StackRox technology, protects your vital applications across build, deploy, and runtime. Our software deploys in your infrastructure and integrates with your DevOps tooling and workflows to deliver better security and compliance. The policy engine includes hundreds of built-in controls to enforce DevOps and security best practices, industry standards such as CIS Benchmarks and National Institute of Standards Technology (NIST) guidelines, configuration management of both containers and Kubernetes, and runtime security.
+
+    Red Hat Advanced Cluster Security for Kubernetes provides a Kubernetes-native architecture for container security, enabling DevOps and InfoSec teams to operationalize security.
+
+    ## Features and Benefits
+
+    **Kubernetes-native security:**
+    1. Increases protection.
+    1. Eliminates blind spots, providing staff with insights into critical vulnerabilities and threat vectors.
+    1. Reduces time and costs.
+    1. Reduces the time and effort needed to implement security and streamlines security analysis, investigation, and remediation using the rich context Kubernetes provides.
+    1. Increases scalability and portability.
+    1. Provides scalability and resiliency native to Kubernetes, avoiding operational conflict and complexity that can result from out-of-band security controls.
+
+    ## Using the RHACS Operator
+
+    **RHACS comes with two custom resources:**
+
+    1. **Central Services** - Central is a deployment required on only one cluster in your environment. Users interact with RHACS via the user interface or APIs on Central. Central also sends notifications for violations and interacts with integrations. Users may select exposures for Central that best meet their environment.
+
+    2. **Secured Cluster Services** - Secured cluster services are placed on each cluster you manage and report back to Central. These services allow users to enforce policies and monitor your OpenShift and Kubernetes clusters. Secured Cluster Services come as two Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).
+
+    ### Central Services Explained
+
+    | Service                          | Deployment Type | Description     |
+    | :------------------------------- | :-------------- | :-------------- |
+    | Central                          | Deployment      | Users interact with Red Hat Advanced Cluster Security through the user interface or APIs on Central. Central also sends notifications for violations and interacts with integrations. |
+    | Scanner                          | Deployment      | Scanner is a Red Hat developed and certified image scanner. Scanner analyzes and reports vulnerabilities for images. Scanner uses HPA to scale the number of replicas based on workload. |
+    | Scanner DB                       | Deployment      | Scanner DB is a cache for vulnerability definitions to serve vulnerability scanning use cases throughout the software development life cycle. |
+
+    ### Secured Cluster Services Explained
+
+    | Service                          | Deployment Type | Description     |
+    | :------------------------------- | :-------------- | :-------------- |
+    | Sensor                           | Deployment      | Sensor analyzes and monitors Kubernetes in secured clusters. |
+    | Collector                        | DaemonSet       | Analyzes and monitors container activity on Kubernetes nodes.|
+    | Admission Controller             | Deployment      | ValidatingWebhookConfiguration for enforcing policies in the deploy lifecycle. |
+
+    ### Central Custom Resource
+
+    Central Services is the configuration template for RHACS Central deployment. For all customization options, please visit the RHACS documentation.
+
+    ### SecuredCluster Custom Resource
+
+    SecuredCluster is the configuration template for the RHACS Secured Cluster services.
+
+    #### Installation Prerequisites
+
+    Before deploying a SecuredCluster resource, you need to create a cluster init bundle secret.
+
+    - **Through the RHACS UI:** To create a cluster init bundle secret through the RHACS UI, navigate to `Platform Configuration > Clusters`, and then click `Manage Tokens` in the top-right corner. Select `Cluster Init Bundle`, and click `Generate Bundle`. Select `Download Kubernetes secrets file`, and store the file under a name of your choice (for example, `cluster-init-secrets.yaml`).
+    - **Through the `roxctl` CLI:** To create a cluster init bundle secret through the `roxctl` command-line interface, run `roxctl central init-bundles generate <name> --output-secrets <file name>`. Choose any `name` and `file name` that you like.
+
+    Run `oc project` and check that it reports the correct namespace where you intend to deploy SecuredCluster. In case you want to install SecuredCluster to a different namespace, select it by running `oc project <namespace>`.
+    Then, run `oc create -f init-bundle.yaml`. If you have chosen a name other than `init-bundle.yaml`, specify that file name instead.
+
+    #### Required Fields
+
+    The following attributes are required to be specified. For all customization options, please visit the RHACS documentation.
+
+    | Parameter          | Description     |
+    | :----------------- | :-------------- |
+    | `clusterName`      | The name given to this secured cluster. The cluster will appear with this name in RHACS user interface. |
+    | `centralEndpoint`  | This field should specify the address of the Central endpoint, including the port number. `centralEndpoint` may be omitted if this SecuredCluster Custom Resource is in the same cluster and namespace as Central. |
   displayName: Advanced Cluster Security for Kubernetes
   icon:
   - base64data: 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
@@ -741,7 +832,7 @@ spec:
       permissions:
       - rules:
         - apiGroups:
-          - ''
+          - ""
           resources:
           - configmaps
           verbs:
@@ -765,7 +856,7 @@ spec:
           - patch
           - delete
         - apiGroups:
-          - ''
+          - ""
           resources:
           - events
           verbs:
@@ -833,4 +924,3 @@ spec:
     targetPort: 9443
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-platform-stackrox-io-v1alpha1-central
-

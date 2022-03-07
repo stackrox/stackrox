@@ -63,20 +63,25 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Kubernetes Audit Logs Ingestion Settings"
 	AuditLogs *AuditLogsSpec `json:"auditLogs,omitempty"`
 
+	// Settings for the local Scanner component, which is responsible for vulnerability scanning of container
+	// images stored in a cluster-local image repository.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Local Scanner Component Settings"
+	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
+
 	// Allows you to specify additional trusted Root CAs.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8
 	TLS *TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
 	// Miscellaneous settings.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Misc *MiscSpec `json:"misc,omitempty"`
 }
 
@@ -293,6 +298,44 @@ const (
 // Pointer returns the given CollectorImageFlavor as a pointer, needed in k8s resource structs.
 func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
 	return &c
+}
+
+// Note the following struct should mostly match ScannerComponentSpec.
+
+// LocalScannerComponentSpec defines settings for the local "scanner" component.
+type LocalScannerComponentSpec struct {
+	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
+	// (not recommended).
+	// If you do so, all the settings in this section will have no effect.
+	//+kubebuilder:default=AutoSense
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
+	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
+
+	// Settings pertaining to the analyzer deployment, such as for autoscaling.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Analyzer *ScannerAnalyzerComponent `json:"analyzer,omitempty"`
+
+	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB"
+	DB *DeploymentSpec `json:"db,omitempty"`
+}
+
+// LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
+//+kubebuilder:validation:Enum=AutoSense;Enabled;Disabled
+type LocalScannerComponentPolicy string
+
+const (
+	// LocalScannerComponentAutoSense means that scanner should be installed,
+	// unless there is a Central resource in the same namespace.
+	// In that case typically a central scanner will be deployed as a component of Central.
+	LocalScannerComponentAutoSense LocalScannerComponentPolicy = "AutoSense"
+	// LocalScannerComponentDisabled means that scanner should not be installed.
+	LocalScannerComponentDisabled LocalScannerComponentPolicy = "Disabled"
+)
+
+// Pointer returns the pointer of the policy.
+func (l LocalScannerComponentPolicy) Pointer() *LocalScannerComponentPolicy {
+	return &l
 }
 
 // -------------------------------------------------------------

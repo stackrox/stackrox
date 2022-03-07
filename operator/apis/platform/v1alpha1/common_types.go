@@ -156,7 +156,7 @@ type ScannerAnalyzerScaling struct {
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 }
 
-// AutoScalingPolicy is a type for values of spec.scannerSpec.replicas.autoScaling.
+// AutoScalingPolicy is a type for values of spec.scanner.analyzer.replicas.autoScaling.
 //+kubebuilder:validation:Enum=Enabled;Disabled
 type AutoScalingPolicy string
 
