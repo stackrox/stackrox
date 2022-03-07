@@ -14,7 +14,7 @@ const selectMetadata = createSelector([selectors.getMetadata], (metadata: Metada
 
 export interface BrandingAssets {
     /** The branding value returned from Central used to generate assets */
-    type: ProductBranding;
+    type: ProductBranding | null;
     /** The source path to the main branding logo in SVG format */
     logoSvg: string;
     /** The source path to the main branding logo in PNG format */
@@ -45,6 +45,17 @@ const stackroxBranding: BrandingAssets = {
     favicon: stackroxFavicon,
 };
 
+// Empty asset values to prevent incorrect branding in the case of a logic change that
+// would cause the default case to fire.
+const fallbackAssets: BrandingAssets = {
+    type: null,
+    logoSvg: '',
+    logoPng: '',
+    logoAltText: '',
+    basePageTitle: '',
+    favicon: '',
+};
+
 function useBranding(): BrandingAssets {
     const { productBranding }: Metadata = useSelector(selectMetadata);
 
@@ -56,9 +67,9 @@ function useBranding(): BrandingAssets {
         default:
             // eslint-disable-next-line no-console
             console.warn(
-                `An invalid value for 'productBranding' was returned from Central, defaulting to open source branding.`
+                `An invalid value for 'productBranding' was returned from Central, page assets may be missing.`
             );
-            return stackroxBranding;
+            return fallbackAssets;
     }
 }
 
