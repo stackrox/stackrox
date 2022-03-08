@@ -42,9 +42,7 @@ func (s *MultikeyStoreSuite) TearDownTest() {
 func (s *MultikeyStoreSuite) TestStore() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
+	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
 	s.NoError(err)
 	defer pool.Close()
@@ -53,13 +51,13 @@ func (s *MultikeyStoreSuite) TestStore() {
 	store := New(pool)
 
 	testMultiKeyStruct := fixtures.GetTestMultiKeyStruct()
-	foundTestMultiKeyStruct, exists, err := store.Get(testMultiKeyStruct.GetId())
+	foundTestMultiKeyStruct, exists, err := store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestMultiKeyStruct)
 
 	s.NoError(store.Upsert(testMultiKeyStruct))
-	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetId())
+	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(testMultiKeyStruct, foundTestMultiKeyStruct)
@@ -68,18 +66,18 @@ func (s *MultikeyStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(testMultiKeyStructCount, 1)
 
-	testMultiKeyStructExists, err := store.Exists(testMultiKeyStruct.GetId())
+	testMultiKeyStructExists, err := store.Exists(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(testMultiKeyStructExists)
 	s.NoError(store.Upsert(testMultiKeyStruct))
 
-	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetId())
+	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(testMultiKeyStruct, foundTestMultiKeyStruct)
 
-	s.NoError(store.Delete(testMultiKeyStruct.GetId()))
-	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetId())
+	s.NoError(store.Delete(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2()))
+	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestMultiKeyStruct)

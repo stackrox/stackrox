@@ -36,6 +36,10 @@ var (
 	table = "process_indicators"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "ProcessIndicator")
+}
+
 type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
@@ -229,8 +233,6 @@ func insertIntoProcessIndicatorsLineageInfo(tx pgx.Tx, obj *storage.ProcessSigna
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "ProcessIndicator")
-
 	createTableProcessIndicators(db)
 
 	return &storeImpl{

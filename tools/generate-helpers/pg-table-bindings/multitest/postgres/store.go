@@ -32,6 +32,10 @@ var (
 	table = "multikey"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "TestMultiKeyStruct")
+}
+
 type Store interface {
 	Count() (int, error)
 	Exists(key1 string, key2 string) (bool, error)
@@ -207,8 +211,6 @@ func insertIntoMultikeyNested(tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested,
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "TestMultiKeyStruct")
-
 	createTableMultikey(db)
 
 	return &storeImpl{

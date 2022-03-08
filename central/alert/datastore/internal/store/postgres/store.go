@@ -36,6 +36,10 @@ var (
 	table = "alerts"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "Alert")
+}
+
 type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
@@ -1394,8 +1398,6 @@ func insertIntoAlertsProcessesLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "Alert")
-
 	createTableAlerts(db)
 
 	return &storeImpl{

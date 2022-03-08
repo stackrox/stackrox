@@ -42,9 +42,7 @@ func (s *AlertsStoreSuite) TearDownTest() {
 func (s *AlertsStoreSuite) TestStore() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
+	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
 	s.NoError(err)
 	defer pool.Close()

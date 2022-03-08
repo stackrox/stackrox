@@ -53,6 +53,10 @@ var (
     table = "{{.Table}}"
 )
 
+func init() {
+    globaldb.RegisterTable(table, "{{.TrimmedType}}")
+}
+
 type Store interface {
     Count() (int, error)
     Exists({{template "paramList" $pks}}) (bool, error)
@@ -176,8 +180,6 @@ func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-    globaldb.RegisterTable(table, "{{.TrimmedType}}")
-
     {{template "createFunctionName" .Schema}}(db)
 
     return &storeImpl{
