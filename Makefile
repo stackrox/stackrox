@@ -2,7 +2,7 @@ include $(CURDIR)/make/env.mk
 
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
-BASE_DIR=$(CURDIR)
+BASE_DIR=$(CURDIR) 
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
