@@ -255,9 +255,19 @@ func TestDropImageTagAndDigest(t *testing.T) {
 			expectedImage: "library/nginx",
 			expectedError: nil,
 		},
+		"Repository with multiple levels and tag": {
+			image:         "docker.io/more/than/three/levels/main:tag",
+			expectedImage: "docker.io/more/than/three/levels/main",
+			expectedError: nil,
+		},
 		"stackrox.io domain with tag and sha": {
 			image:         "stackrox.io/path/main:tag@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
 			expectedImage: "stackrox.io/path/main",
+			expectedError: nil,
+		},
+		"stackrox.io domain with 'library' path and tag": {
+			image:         "stackrox.io/library/main:tag",
+			expectedImage: "stackrox.io/library/main",
 			expectedError: nil,
 		},
 		"quay.io domain with tag and sha": {
@@ -277,7 +287,7 @@ func TestDropImageTagAndDigest(t *testing.T) {
 		},
 		"Just sha": {
 			image:         "8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993",
-			expectedError: errors.New("invalid image name '8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'"),
+			expectedError: errors.New("unsupported image name format '8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993'"),
 		},
 	}
 	for name, c := range cases {

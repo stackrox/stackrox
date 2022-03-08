@@ -256,22 +256,25 @@ func DropImageTagAndDigest(image string) (string, error) {
 		return image, errors.Errorf("unsupported image name format '%s'", image)
 	}
 
-	domain := reference.Domain(ref.(reference.Named))
-	path := reference.Path(ref.(reference.Named))
-	familiarName := reference.FamiliarName(ref.(reference.Named))
+	namedReference := ref.(reference.Named)
+	domain := reference.Domain(namedReference)
+	path := reference.Path(namedReference)
+	familiarName := reference.FamiliarName(namedReference)
 	// If 'image' is already in familiar format
 	if image == reference.FamiliarString(ref) {
 		return familiarName, nil
 	}
-	// If it does not have a domain, but it has a repository
-	if strings.HasPrefix(image, path) {
-		return path, nil
+	if len(namedReference.Name()) > len(familiarName) {
+		// If it does not have a domain, but it has a repository
+		if strings.HasPrefix(image, path) {
+			return path, nil
+		}
+		// If we have 'docker.io' as domain but not the 'library' repository
+		// e.g. docker.io/nginx
+		domainAndName := fmt.Sprintf("%s/%s", domain, familiarName)
+		if strings.HasPrefix(image, domainAndName) {
+			return domainAndName, nil
+		}
 	}
-	// If we have 'docker.io' as domain but not the 'library' repository
-	// e.g. docker.io/nginx
-	domainAndName := fmt.Sprintf("%s/%s", domain, familiarName)
-	if strings.HasPrefix(image, domainAndName) {
-		return domainAndName, nil
-	}
-	return ref.(reference.Named).Name(), nil
+	return namedReference.Name(), nil
 }

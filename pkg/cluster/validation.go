@@ -39,16 +39,16 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		errorList.AddString("Cluster name is required")
 	}
 	if cluster.GetMainImage() != "" {
-		if image, err := utils.DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
+		if imageWithoutTag, err := utils.DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
 			errorList.AddError(err)
-		} else if image != cluster.GetMainImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
+		} else if imageWithoutTag != cluster.GetMainImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
 			errorList.AddString("main image should not contain tags or digests")
 		}
 	}
 	if cluster.GetCollectorImage() != "" {
-		if image, err := utils.DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
+		if imageWithoutTag, err := utils.DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
 			errorList.AddError(err)
-		} else if image != cluster.GetCollectorImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
+		} else if imageWithoutTag != cluster.GetCollectorImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
 			errorList.AddString("collector image should not contain tags or digests")
 		}
 	}
