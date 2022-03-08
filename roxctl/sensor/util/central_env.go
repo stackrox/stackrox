@@ -15,10 +15,10 @@ import (
 const (
 	warningKernelSupportAvailableUnimplemented = `Central does not support API for checking if kernel support is available. Not using a slim collector image.
 Please upgrade Central if slim collector images shall be used.`
-	errorWhenCallingGetKernelSupportAvailable = "error checking kernel support availability via /v1/clusters-env/kernel-support-available Central endpoint"
-	warningLegacyCentralDefaultMain           = "Central is running on a legacy version, main will be defaulted to %s unless overridden by user."
-	warningNoClusterDefaultsAPI               = "Central does not implement /v1/cluster-defaults API, this is likely an older Central version."
-	errorWhenCallingGetClusterDefaults        = "error obtaining default cluster settings from /v1/cluster-defaults Central endpoint"
+	errorWhenCallingGetKernelSupportAvailable = "error checking kernel support availability via GetKernelSupportAvailable Central gRPC method"
+	warningLegacyCentralDefaultMain           = "Central is running on a legacy version, main image will be defaulted to %s unless overridden by user."
+	warningNoClusterDefaultsAPI               = "Central does not implement GetClusterDefaultValutes gRPC method, this is likely an older Central version."
+	errorWhenCallingGetClusterDefaults        = "error obtaining default cluster settings from GetClusterDefaultValutes Central gRPC method"
 )
 
 // CentralEnv contains information about Central's runtime environment.
