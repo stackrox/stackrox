@@ -345,13 +345,13 @@ func (s *storeImpl) Walk(fn func(obj *storage.TestMultiKeyStruct) error) error {
 //// Used for testing
 
 func dropTableMultikey(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE multikey CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS multikey CASCADE")
 	dropTableMultikeyNested(db)
 
 }
 
 func dropTableMultikeyNested(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE multikey_Nested CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS multikey_Nested CASCADE")
 
 }
 

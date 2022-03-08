@@ -429,13 +429,13 @@ func (s *storeImpl) Walk(fn func(obj *storage.TestSingleKeyStruct) error) error 
 //// Used for testing
 
 func dropTableSinglekey(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE singlekey CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS singlekey CASCADE")
 	dropTableSinglekeyNested(db)
 
 }
 
 func dropTableSinglekeyNested(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE singlekey_Nested CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS singlekey_Nested CASCADE")
 
 }
 

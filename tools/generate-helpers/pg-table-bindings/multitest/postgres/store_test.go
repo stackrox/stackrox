@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -50,7 +51,9 @@ func (s *MultikeyStoreSuite) TestStore() {
 	Destroy(pool)
 	store := New(pool)
 
-	testMultiKeyStruct := fixtures.GetTestMultiKeyStruct()
+	testMultiKeyStruct := &storage.TestMultiKeyStruct{}
+	s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
 	foundTestMultiKeyStruct, exists, err := store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.False(exists)
