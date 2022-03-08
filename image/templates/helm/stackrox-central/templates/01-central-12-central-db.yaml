@@ -1,8 +1,15 @@
+{{- include "srox.init" . -}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central-db
-  namespace: stackrox
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "deployment" "central-db") | nindent 4 }}
+    app: central-db
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "central-db") | nindent 4 }}
 spec:
   replicas: 1
   minReadySeconds: 15
@@ -13,20 +20,24 @@ spec:
     type: Recreate
   template:
     metadata:
-      namespace: stackrox
+      namespace: {{ .Release.Namespace }}
       labels:
         app: central-db
+        {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
     spec:
       imagePullSecrets:
-      # Deployment todo
-      - name: stackrox
+      {{- range $secretName := ._rox.imagePullSecrets._names }}
+      - name: {{ quote $secretName }}
+      {{- end }}
       containers:
       - name: central-db
         image: stackrox/sandbox:postgres-14-stat-wal3
         env:
         # Very not production
         - name: POSTGRES_HOST_AUTH_METHOD
-          value: "trust"
+          value: "password"
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
         ports:
@@ -45,32 +56,9 @@ spec:
           name: disk
       volumes:
       - name: disk
+        {{ if ._rox.central.persistence._pvcCfg -}}
         persistentVolumeClaim:
           claimName: central-db
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: central-db
-  namespace: stackrox
-spec:
-  ports:
-  - name: tcp-db # needed?
-    port: 5432
-    protocol: TCP
-    targetPort: postgresql
-  selector:
-    app: central-db
-  type: ClusterIP
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: central-db
-  namespace: stackrox
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
+        {{ else }}
+        emptyDir: {}
+        {{- end }}
