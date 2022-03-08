@@ -110,7 +110,7 @@ tests:
       scanner.disable: true
     expect: |
       .deployments["sensor"].spec.template.spec.containers[0].env[] |
-        select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value == false)
+        select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value == "false")
 
 - name: "sensor connects to local scanner using the correct GRPC endpoint"
   release:
