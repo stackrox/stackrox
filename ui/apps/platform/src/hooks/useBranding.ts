@@ -1,3 +1,4 @@
+import React from 'react';
 import { useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
 import { selectors } from 'reducers';
@@ -71,6 +72,22 @@ function useBranding(): BrandingAssets {
             );
             return fallbackAssets;
     }
+}
+
+/**
+ * Wrapper to create a HOC that allows usage of the `useBranding` logic in class components.
+ * Note that any `branding` prop passed to this wrapped component will be overwritten.
+ *
+ * @param Component A React component that has a required `branding` prop
+ * @returns A component with the `branding` prop provided by the `useBranding` hook
+ */
+export function withBranding<Props extends { branding: BrandingAssets }>(
+    Component: React.ComponentType<Props>
+) {
+    return function HOCBranded(props: Omit<Props, 'branding'>) {
+        const branding = useBranding();
+        return React.createElement(Component, { ...(props as Props), branding }, null);
+    };
 }
 
 export default useBranding;
