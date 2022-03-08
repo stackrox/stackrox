@@ -36,6 +36,10 @@ var (
 	table = "secrets"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "Secret")
+}
+
 type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
@@ -462,8 +466,6 @@ func insertIntoSecretsDeploymentRelationships(tx pgx.Tx, obj *storage.SecretDepl
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "Secret")
-
 	createTableSecrets(db)
 
 	return &storeImpl{

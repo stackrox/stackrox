@@ -36,6 +36,10 @@ var (
 	table = "singlekey"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "TestSingleKeyStruct")
+}
+
 type Store interface {
 	Count() (int, error)
 	Exists(key string) (bool, error)
@@ -217,8 +221,6 @@ func insertIntoSinglekeyNested(tx pgx.Tx, obj *storage.TestSingleKeyStruct_Neste
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "TestSingleKeyStruct")
-
 	createTableSinglekey(db)
 
 	return &storeImpl{
