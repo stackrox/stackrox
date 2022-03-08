@@ -18,13 +18,12 @@ func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client,
 	}
 	scannerComponent := s.Spec.Scanner.ScannerComponent
 
-	siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, s.GetNamespace())
-	if err != nil {
-		return false, errors.Wrap(err, "auto-sensing local scanner support")
-	}
-
 	switch *scannerComponent {
 	case platform.LocalScannerComponentAutoSense:
+		siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, s.GetNamespace())
+		if err != nil {
+			return false, errors.Wrap(err, "auto-sensing local scanner support")
+		}
 		return !siblingCentralPresent, nil
 	case platform.LocalScannerComponentDisabled:
 		return false, nil
