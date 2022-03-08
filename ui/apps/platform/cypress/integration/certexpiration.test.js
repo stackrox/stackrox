@@ -38,7 +38,7 @@ describe('Cert Expiration Banner', () => {
             cy.get(selectors.centralCertExpiryBanner)
                 .invoke('text')
                 .then((text) => {
-                    expect(text).to.include('The StackRox Central certificate expires in 23 hours');
+                    expect(text).to.include('Central certificate expires in 23 hours');
                     expect(text).to.include('Contact your administrator');
                 });
             cy.get(selectors.centralCertExpiryBanner).find('button').should('not.exist');
@@ -92,7 +92,7 @@ describe('Cert Expiration Banner', () => {
             cy.get(selectors.scannerCertExpiryBanner)
                 .invoke('text')
                 .then((text) => {
-                    expect(text).to.include('The StackRox Scanner certificate expires in 23 hours');
+                    expect(text).to.include('Scanner certificate expires in 23 hours');
                     expect(text).to.include('Contact your administrator');
                 });
             cy.get(selectors.scannerCertExpiryBanner).find('button').should('not.exist');
