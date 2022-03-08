@@ -39,3 +39,17 @@ func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, enabled, "Expected Scanner to be disabled if Central is present")
 }
+
+func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
+	client := testutils.NewFakeClientBuilder(t, &platform.Central{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "another-namespace",
+			Name:      "central",
+		},
+		Spec: platform.CentralSpec{},
+	}).Build()
+
+	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	require.NoError(t, err)
+	require.True(t, enabled, "Expected Scanner to be enabled if Central is deployed in a different namespace")
+}

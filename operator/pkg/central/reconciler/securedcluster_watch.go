@@ -12,7 +12,7 @@ import (
 // handleSiblingCentrals returns an event handler which generates reconcile requests for
 // every (typically one) Central resource which resides in the same namespace as the
 // observed SecuredCluster resource.
-// TODO(porridge): merge with handleSiblingSecuredClusters once we have generics
+// TODO(ROX-9617): merge with handleSiblingSecuredClusters once we have generics
 func handleSiblingCentrals(manager controllerruntime.Manager) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(securedCluster ctrlClient.Object) []reconcile.Request {
 		centralList := &platform.CentralList{}

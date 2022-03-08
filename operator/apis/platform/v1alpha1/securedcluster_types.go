@@ -63,7 +63,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Kubernetes Audit Logs Ingestion Settings"
 	AuditLogs *AuditLogsSpec `json:"auditLogs,omitempty"`
 
-	// Settings for the local Scanner component, which is responsible for vulnerability scanning of container
+	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
 	// images stored in a cluster-local image repository.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Local Scanner Component Settings"
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
@@ -300,9 +300,10 @@ func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
 	return &c
 }
 
-// Note the following struct should mostly match ScannerComponentSpec.
+// Note the following struct should mostly match ScannerComponentSpec for the Central's type. Different Scanner
+// types struct are maintained because of UI exposed documentation differences.
 
-// LocalScannerComponentSpec defines settings for the local "scanner" component.
+// LocalScannerComponentSpec defines settings for the "scanner" component.
 type LocalScannerComponentSpec struct {
 	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
 	// (not recommended).
@@ -321,7 +322,7 @@ type LocalScannerComponentSpec struct {
 }
 
 // LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
-//+kubebuilder:validation:Enum=AutoSense;Enabled;Disabled
+//+kubebuilder:validation:Enum=AutoSense;Disabled
 type LocalScannerComponentPolicy string
 
 const (
