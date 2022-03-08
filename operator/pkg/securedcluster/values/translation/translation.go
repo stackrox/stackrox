@@ -327,8 +327,7 @@ func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 		sc.Spec.Scanner = &platform.LocalScannerComponentSpec{}
 	}
 	if sc.Spec.Scanner.ScannerComponent == nil {
-		defaultScanner := platform.LocalScannerComponentAutoSense
-		sc.Spec.Scanner.ScannerComponent = &defaultScanner
+		sc.Spec.Scanner.ScannerComponent = platform.LocalScannerComponentAutoSense.Pointer()
 	}
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}

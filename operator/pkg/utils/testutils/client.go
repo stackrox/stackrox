@@ -16,10 +16,8 @@ import (
 func NewFakeClientBuilder(t *testing.T, objects ...ctrlClient.Object) *fake.ClientBuilder {
 	testutils.MustBeInTest(t)
 	scheme := runtime.NewScheme()
-	err := platform.AddToScheme(scheme)
-	require.NoError(t, err)
-	err = clientgoscheme.AddToScheme(scheme)
-	require.NoError(t, err)
+	require.NoError(t, platform.AddToScheme(scheme))
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...)
 }

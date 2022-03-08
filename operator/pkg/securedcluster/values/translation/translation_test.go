@@ -542,7 +542,7 @@ func (s TranslationTestSuite) TestTranslate() {
 				delete(got, "meta")
 			}
 
-			// TODO: Remove if feature flag gets enabled
+			// TODO(ROX-8466): Remove if feature flag gets enabled
 			if buildinfo.ReleaseBuild {
 				delete(wantAsValues, "scanner")
 			}
