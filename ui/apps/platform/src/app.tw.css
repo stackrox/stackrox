@@ -787,7 +787,7 @@ h6 {
 .redoc-wrap {
     /* TODO: discover a way to export CSS vars from our tailwind-config package
        for now, repeating light theme colors here,
-       because Redoc components unreadable with StackRox dark theme,
+       because Redoc components unreadable with classic dark theme,
        their styles need to be tuned
     */
 
