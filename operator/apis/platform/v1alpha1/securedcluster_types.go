@@ -300,7 +300,8 @@ func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
 	return &c
 }
 
-// Note the following struct should mostly match ScannerComponentSpec for the Central's type.
+// Note the following struct should mostly match ScannerComponentSpec for the Central's type. Different Scanner
+// types struct are maintained because of UI exposed documentation differences.
 
 // LocalScannerComponentSpec defines settings for the "scanner" component.
 type LocalScannerComponentSpec struct {
