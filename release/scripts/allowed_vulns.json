@@ -48,7 +48,7 @@
         "reason": "This is a Quay false fixable on ubi8:8.5"
     },
     {
-        "vuln": "pyup.io-38834 (CVE-2021-33503)",
+        "vuln": "pyup.io-43975 (CVE-2021-33503)",
         "image": ".*",
         "tag": ".*",
         "reason": "This is a Quay false fixable on ubi8:8.5"
