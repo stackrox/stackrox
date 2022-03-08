@@ -116,7 +116,7 @@ function PolicyScopeCard({
                                     placeholderText="Select a cluster"
                                 >
                                     {clusters.map((cluster) => (
-                                        <SelectOption key={cluster.name} value={cluster.name}>
+                                        <SelectOption key={cluster.name} value={cluster.id}>
                                             {cluster.name}
                                         </SelectOption>
                                     ))}
