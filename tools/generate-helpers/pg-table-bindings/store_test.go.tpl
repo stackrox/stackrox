@@ -1,3 +1,9 @@
+
+{{define "paramList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.LocalPrimaryKeys}}{{if $idx}}, {{end}}{{$name}}.Get{{$pk.Name|upperCamelCase}}(){{end}}{{end}}
+
+{{- $ := . }}
+{{- $name := .TrimmedType|lowerCamelCase }}
+
 {{- $namePrefix := .Table|upperCamelCase}}
 
 //go:build sql_integration
@@ -42,9 +48,7 @@ func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
+	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
 	s.NoError(err)
 	defer pool.Close()
@@ -52,34 +56,34 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	Destroy(pool)
 	store := New(pool)
 
-	{{.TrimmedType|lowerCamelCase}} := fixtures.Get{{.TrimmedType}}()
-	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get({{.TrimmedType|lowerCamelCase}}.GetId())
+	{{$name}} := fixtures.Get{{.TrimmedType}}()
+	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get({{template "paramList" $}})
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-	s.NoError(store.Upsert({{.TrimmedType|lowerCamelCase}}))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{.TrimmedType|lowerCamelCase}}.GetId())
+	s.NoError(store.Upsert({{$name}}))
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
-	s.Equal({{.TrimmedType|lowerCamelCase}}, found{{.TrimmedType|upperCamelCase}})
+	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	{{.TrimmedType|lowerCamelCase}}Count, err := store.Count()
+	{{$name}}Count, err := store.Count()
 	s.NoError(err)
-	s.Equal({{.TrimmedType|lowerCamelCase}}Count, 1)
+	s.Equal({{$name}}Count, 1)
 
-	{{.TrimmedType|lowerCamelCase}}Exists, err := store.Exists({{.TrimmedType|lowerCamelCase}}.GetId())
+	{{$name}}Exists, err := store.Exists({{template "paramList" $}})
 	s.NoError(err)
-	s.True({{.TrimmedType|lowerCamelCase}}Exists)
-	s.NoError(store.Upsert({{.TrimmedType|lowerCamelCase}}))
+	s.True({{$name}}Exists)
+	s.NoError(store.Upsert({{$name}}))
 
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{.TrimmedType|lowerCamelCase}}.GetId())
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
-	s.Equal({{.TrimmedType|lowerCamelCase}}, found{{.TrimmedType|upperCamelCase}})
+	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	s.NoError(store.Delete({{.TrimmedType|lowerCamelCase}}.GetId()))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{.TrimmedType|lowerCamelCase}}.GetId())
+	s.NoError(store.Delete({{template "paramList" $}}))
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{template "paramList" $}})
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
