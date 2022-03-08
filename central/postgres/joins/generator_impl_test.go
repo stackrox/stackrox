@@ -116,7 +116,7 @@ func TestJoinGeneratorForSingleParent(t *testing.T) {
 
 func TestJoinGeneratorForMultipleParents(t *testing.T) {
 	t.Parallel()
-	
+
 	father := getSchema("father")
 	mother := getSchema("mother")
 	child := getSchema("child", father, mother)
