@@ -1,6 +1,7 @@
 package extensions
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -141,6 +142,10 @@ func TestCreateCentralTLS(t *testing.T) {
 
 	for name, c := range cases {
 		c := c
+		if strings.Contains(name, "init bundle secrets should be created") {
+			// See ROX-9023.
+			continue
+		}
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
