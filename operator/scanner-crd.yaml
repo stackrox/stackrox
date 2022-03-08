@@ -1,0 +1,11 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  namespace: stackrox
+  name: stackrox-secured-cluster-services
+spec:
+  clusterName: my-cluster
+  scanner:
+    scannerComponent: AutoSense
+  centralEndpoint: <OpenShift Route>:443
+

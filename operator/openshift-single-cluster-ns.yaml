@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: qa
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0
+        ports:
+        - containerPort: 80
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-deployment
+  namespace: qa
+  labels:
+    app: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+      - name: jenkins
+        image: image-registry.openshift-image-registry.svc:5000/qa/sandbox:jenkins-agent-maven-35-rhel7
+        ports:
+        - containerPort: 80
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-deployment
+  namespace: qa
+  labels:
+    app: nodejs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodejs
+  template:
+    metadata:
+      labels:
+        app: nodejs
+    spec:
+      containers:
+      - name: nodejs
+        image: image-registry.openshift-image-registry.svc:5000/qa/sandbox:nodejs-10
+        ports:
+        - containerPort: 80
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log4j-deployment
+  namespace: qa
+  labels:
+    app: log4j
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log4j
+  template:
+    metadata:
+      labels:
+        app: log4j
+    spec:
+      containers:
+      - name: log4j
+        image: image-registry.openshift-image-registry.svc:5000/qa/sandbox:log4j-2-12-2
+        ports:
+        - containerPort: 80
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash-deployment
+  namespace: qa
+  labels:
+    app: logstash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+    spec:
+      containers:
+      - name: logstash
+        image: image-registry.openshift-image-registry.svc:5000/qa/logstash:7.13.3
+        ports:
+        - containerPort: 80
+
