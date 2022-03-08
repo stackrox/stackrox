@@ -103,12 +103,12 @@ create table if not exists process_indicators (
 func createTableProcessIndicatorsLineageInfo(db *pgxpool.Pool) {
 	table := `
 create table if not exists process_indicators_LineageInfo (
-    parent_Id varchar,
+    process_indicators_Id varchar,
     idx numeric,
     ParentUid numeric,
     ParentExecFilePath varchar,
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
+    PRIMARY KEY(process_indicators_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (process_indicators_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
 )
 `
 
@@ -196,7 +196,7 @@ func insertIntoProcessIndicators(tx pgx.Tx, obj *storage.ProcessIndicator) error
 		}
 	}
 
-	query = "delete from process_indicators_LineageInfo where parent_Id = $1 AND idx >= $2"
+	query = "delete from process_indicators_LineageInfo where process_indicators_Id = $1 AND idx >= $2"
 	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetSignal().GetLineageInfo()))
 	if err != nil {
 		return err
@@ -204,12 +204,12 @@ func insertIntoProcessIndicators(tx pgx.Tx, obj *storage.ProcessIndicator) error
 	return nil
 }
 
-func insertIntoProcessIndicatorsLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, parent_Id string, idx int) error {
+func insertIntoProcessIndicatorsLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, process_indicators_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 
-		parent_Id,
+		process_indicators_Id,
 
 		idx,
 
@@ -218,7 +218,7 @@ func insertIntoProcessIndicatorsLineageInfo(tx pgx.Tx, obj *storage.ProcessSigna
 		obj.GetParentExecFilePath(),
 	}
 
-	finalStr := "INSERT INTO process_indicators_LineageInfo (parent_Id, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
+	finalStr := "INSERT INTO process_indicators_LineageInfo (process_indicators_Id, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4) ON CONFLICT(process_indicators_Id, idx) DO UPDATE SET process_indicators_Id = EXCLUDED.process_indicators_Id, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
 	_, err := tx.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
