@@ -21,7 +21,7 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "persistentvolume" $pvName) | nindent 4 }}
   annotations:
-    {{- include "s" (list rox.annotations. "persistentvolume" $pvName) | nindent 4 }}
+    {{- include "srox.annotations" (list . "persistentvolume" $pvName) | nindent 4 }}
     "helm.sh/hook": "pre-install,pre-upgrade"
     "helm.sh/resource-policy": keep
     "helm.sh/hook-delete-policy": never
