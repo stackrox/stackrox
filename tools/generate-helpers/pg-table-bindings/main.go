@@ -56,7 +56,6 @@ func renderFile(templateMap map[string]interface{}, temp *template.Template, tem
 		return err
 	}
 	file := buf.Bytes()
-	fmt.Println(string(file))
 
 	formatted, err := imports.Process(templateFileName, file, nil)
 	if err != nil {
