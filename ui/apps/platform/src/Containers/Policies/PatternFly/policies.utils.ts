@@ -154,15 +154,15 @@ export function formatEventSource(eventSource: PolicyEventSource): string {
 // exclusions
 
 export function getExcludedDeployments(exclusions: PolicyExclusion[]): PolicyExcludedDeployment[] {
-    const excludedDeployments: PolicyExcludedDeployment[] = [];
+    const excludedDeploymentScopes: PolicyExcludedDeployment[] = [];
 
     exclusions.forEach(({ deployment }) => {
         if (deployment?.name || deployment?.scope) {
-            excludedDeployments.push(deployment);
+            excludedDeploymentScopes.push(deployment);
         }
     });
 
-    return excludedDeployments;
+    return excludedDeploymentScopes;
 }
 
 export function getExcludedImageNames(exclusions: PolicyExclusion[]): string[] {
@@ -410,7 +410,7 @@ export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
     } else if (key) {
         valueStr = `${key}=${value}`;
     }
-    return valueStr || '';
+    return valueStr ?? '';
 }
 
 function postFormatNestedPolicyFields(policy: Policy): Policy {
@@ -454,7 +454,7 @@ function preFormatExclusionField(policy): Policy {
 /*
  * Merge client-wizard excludedDeploymentScopes and excludedImageNames properties into server exclusions property.
  */
-function postFormatExclusionField(policy): Policy {
+export function postFormatExclusionField(policy): Policy {
     const serverPolicy: Policy = { ...policy };
     serverPolicy.exclusions = [];
 

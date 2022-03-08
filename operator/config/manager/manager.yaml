@@ -34,7 +34,9 @@ spec:
         env:
         - name: RELATED_IMAGE_MAIN
         - name: RELATED_IMAGE_SCANNER
+        - name: RELATED_IMAGE_SCANNER_SLIM
         - name: RELATED_IMAGE_SCANNER_DB
+        - name: RELATED_IMAGE_SCANNER_DB_SLIM
         - name: RELATED_IMAGE_COLLECTOR_SLIM
         - name: RELATED_IMAGE_COLLECTOR_FULL
         - name: RELATED_IMAGE_ROXCTL

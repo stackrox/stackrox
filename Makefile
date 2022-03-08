@@ -615,6 +615,19 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
 	docker tag stackrox/grpc-server:$(TAG) quay.io/$(QUAY_REPO)/grpc-server:$(TAG)
+
+$(CURDIR)/image/postgres/bundle.tar.gz:
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
+
+.PHONY: central-db-image
+central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
+	docker build \
+		-t stackrox/central-db:$(TAG) \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		--file image/postgres/Dockerfile \
+		image/postgres
+	@echo "Built central-db image with tag $(TAG)"
+
 ###########
 ## Clean ##
 ###########
@@ -628,7 +641,7 @@ clean-image:
 	git clean -xf image/bin
 	git clean -xdf image/ui image/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
-	rm -f $(CURDIR)/image/rhel/bundle.tar.gz
+	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
 
 .PHONY: tag
