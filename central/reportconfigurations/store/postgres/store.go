@@ -18,22 +18,22 @@ import (
 )
 
 const (
-	countStmt  = "SELECT COUNT(*) FROM report_configs"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM report_configs WHERE Id = $1)"
+	countStmt  = "SELECT COUNT(*) FROM reportconfigs"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM reportconfigs WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM report_configs WHERE Id = $1"
-	deleteStmt  = "DELETE FROM report_configs WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM report_configs"
-	getIDsStmt  = "SELECT Id FROM report_configs"
-	getManyStmt = "SELECT serialized FROM report_configs WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM reportconfigs WHERE Id = $1"
+	deleteStmt  = "DELETE FROM reportconfigs WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM reportconfigs"
+	getIDsStmt  = "SELECT Id FROM reportconfigs"
+	getManyStmt = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM report_configs WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM reportconfigs WHERE Id = ANY($1::text[])"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "report_configs"
+	table = "reportconfigs"
 )
 
 func init() {
@@ -61,9 +61,9 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableReportConfigs(db *pgxpool.Pool) {
+func createTableReportconfigs(db *pgxpool.Pool) {
 	table := `
-create table if not exists report_configs (
+create table if not exists reportconfigs (
     Id varchar,
     Name varchar,
     Description varchar,
@@ -103,7 +103,7 @@ create table if not exists report_configs (
 
 }
 
-func insertIntoReportConfigs(tx pgx.Tx, obj *storage.ReportConfiguration) error {
+func insertIntoReportconfigs(tx pgx.Tx, obj *storage.ReportConfiguration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -156,7 +156,7 @@ func insertIntoReportConfigs(tx pgx.Tx, obj *storage.ReportConfiguration) error 
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_configs (Id, Name, Description, Type, VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport, VulnReportFilters_Severities, ScopeId, EmailConfig_NotifierId, EmailConfig_MailingLists, Schedule_IntervalType, Schedule_Hour, Schedule_Minute, Schedule_Weekly_Day, Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus, LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg, LastSuccessfulRunTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Type = EXCLUDED.Type, VulnReportFilters_Fixability = EXCLUDED.VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport = EXCLUDED.VulnReportFilters_SinceLastReport, VulnReportFilters_Severities = EXCLUDED.VulnReportFilters_Severities, ScopeId = EXCLUDED.ScopeId, EmailConfig_NotifierId = EXCLUDED.EmailConfig_NotifierId, EmailConfig_MailingLists = EXCLUDED.EmailConfig_MailingLists, Schedule_IntervalType = EXCLUDED.Schedule_IntervalType, Schedule_Hour = EXCLUDED.Schedule_Hour, Schedule_Minute = EXCLUDED.Schedule_Minute, Schedule_Weekly_Day = EXCLUDED.Schedule_Weekly_Day, Schedule_DaysOfWeek_Days = EXCLUDED.Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days = EXCLUDED.Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus = EXCLUDED.LastRunStatus_ReportStatus, LastRunStatus_LastRunTime = EXCLUDED.LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg = EXCLUDED.LastRunStatus_ErrorMsg, LastSuccessfulRunTime = EXCLUDED.LastSuccessfulRunTime, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO reportconfigs (Id, Name, Description, Type, VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport, VulnReportFilters_Severities, ScopeId, EmailConfig_NotifierId, EmailConfig_MailingLists, Schedule_IntervalType, Schedule_Hour, Schedule_Minute, Schedule_Weekly_Day, Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus, LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg, LastSuccessfulRunTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Type = EXCLUDED.Type, VulnReportFilters_Fixability = EXCLUDED.VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport = EXCLUDED.VulnReportFilters_SinceLastReport, VulnReportFilters_Severities = EXCLUDED.VulnReportFilters_Severities, ScopeId = EXCLUDED.ScopeId, EmailConfig_NotifierId = EXCLUDED.EmailConfig_NotifierId, EmailConfig_MailingLists = EXCLUDED.EmailConfig_MailingLists, Schedule_IntervalType = EXCLUDED.Schedule_IntervalType, Schedule_Hour = EXCLUDED.Schedule_Hour, Schedule_Minute = EXCLUDED.Schedule_Minute, Schedule_Weekly_Day = EXCLUDED.Schedule_Weekly_Day, Schedule_DaysOfWeek_Days = EXCLUDED.Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days = EXCLUDED.Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus = EXCLUDED.LastRunStatus_ReportStatus, LastRunStatus_LastRunTime = EXCLUDED.LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg = EXCLUDED.LastRunStatus_ErrorMsg, LastSuccessfulRunTime = EXCLUDED.LastSuccessfulRunTime, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func insertIntoReportConfigs(tx pgx.Tx, obj *storage.ReportConfiguration) error 
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	createTableReportConfigs(db)
+	createTableReportconfigs(db)
 
 	return &storeImpl{
 		db: db,
@@ -184,7 +184,7 @@ func (s *storeImpl) upsert(objs ...*storage.ReportConfiguration) error {
 			return err
 		}
 
-		if err := insertIntoReportConfigs(tx, obj); err != nil {
+		if err := insertIntoReportconfigs(tx, obj); err != nil {
 			if err := tx.Rollback(context.Background()); err != nil {
 				return err
 			}
@@ -374,13 +374,13 @@ func (s *storeImpl) Walk(fn func(obj *storage.ReportConfiguration) error) error 
 
 //// Used for testing
 
-func dropTableReportConfigs(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS report_configs CASCADE")
+func dropTableReportconfigs(db *pgxpool.Pool) {
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS reportconfigs CASCADE")
 
 }
 
 func Destroy(db *pgxpool.Pool) {
-	dropTableReportConfigs(db)
+	dropTableReportconfigs(db)
 }
 
 //// Stubs for satisfying legacy interfaces

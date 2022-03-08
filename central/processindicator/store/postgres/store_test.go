@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -50,7 +51,9 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	Destroy(pool)
 	store := New(pool)
 
-	processIndicator := fixtures.GetProcessIndicator()
+	processIndicator := &storage.ProcessIndicator{}
+	s.NoError(testutils.FullInit(processIndicator, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
 	foundProcessIndicator, exists, err := store.Get(processIndicator.GetId())
 	s.NoError(err)
 	s.False(exists)

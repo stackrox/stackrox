@@ -17,16 +17,16 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ReportConfigsStoreSuite struct {
+type ReportconfigsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 }
 
-func TestReportConfigsStore(t *testing.T) {
-	suite.Run(t, new(ReportConfigsStoreSuite))
+func TestReportconfigsStore(t *testing.T) {
+	suite.Run(t, new(ReportconfigsStoreSuite))
 }
 
-func (s *ReportConfigsStoreSuite) SetupTest() {
+func (s *ReportconfigsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -36,11 +36,11 @@ func (s *ReportConfigsStoreSuite) SetupTest() {
 	}
 }
 
-func (s *ReportConfigsStoreSuite) TearDownTest() {
+func (s *ReportconfigsStoreSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ReportConfigsStoreSuite) TestStore() {
+func (s *ReportconfigsStoreSuite) TestStore() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
