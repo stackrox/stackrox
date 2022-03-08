@@ -63,8 +63,20 @@ func (s *Schema) Print() {
 	}
 }
 
-func parentify(name string) string {
-	return "parent_" + name
+// tryParentify attempts to convert the specified field to a reference. If the field is already a reference in
+// the referenced schema, it is used as is.
+func tryParentify(field *Field, parentSchema *Schema) {
+	if field.Reference == "" {
+		field.Reference = field.ColumnName
+		field.Name = parentify(parentSchema.Table, field.Name)
+		field.ColumnName = parentify(parentSchema.Table, field.ColumnName)
+	} else {
+		field.Reference = field.ColumnName
+	}
+}
+
+func parentify(parent, name string) string {
+	return parent + "_" + name
 }
 
 // ResolvedFields is the total set of fields for the schema including
@@ -73,18 +85,16 @@ func (s *Schema) ResolvedFields() []Field {
 	var pks []Field
 	for _, parent := range s.Parents {
 		pks = parent.ResolvedPrimaryKeys()
+		for idx := range pks {
+			pk := &pks[idx]
+			tryParentify(pk, parent)
+			pk.ObjectGetter = ObjectGetter{
+				variable: true,
+				value:    pk.Name,
+			}
+		}
 	}
 
-	for idx := range pks {
-		pk := &pks[idx]
-		pk.Reference = pk.ColumnName
-		pk.Name = parentify(pk.Name)
-		pk.ObjectGetter = ObjectGetter{
-			variable: true,
-			value:    pk.Name,
-		}
-		pk.ColumnName = parentify(pk.ColumnName)
-	}
 	pks = append(pks, s.Fields...)
 	if len(s.Parents) == 0 {
 		pks = append(pks, serializedField)
@@ -100,9 +110,7 @@ func (s *Schema) ParentKeys() []Field {
 		pks = parent.ResolvedPrimaryKeys()
 		for idx := range pks {
 			pk := &pks[idx]
-			pk.Reference = pk.ColumnName
-			pk.Name = parentify(pk.Name)
-			pk.ColumnName = parentify(pk.ColumnName)
+			tryParentify(pk, parent)
 		}
 	}
 	return pks
@@ -116,9 +124,7 @@ func (s *Schema) ParentKeysAsMap() map[string][]Field {
 		currPks := parent.ResolvedPrimaryKeys()
 		for idx := range currPks {
 			pk := &currPks[idx]
-			pk.Reference = pk.ColumnName
-			pk.Name = parentify(pk.Name)
-			pk.ColumnName = parentify(pk.ColumnName)
+			tryParentify(pk, parent)
 		}
 		pks[parent.Table] = currPks
 	}
