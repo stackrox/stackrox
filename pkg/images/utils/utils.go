@@ -253,7 +253,7 @@ func DropImageTagAndDigest(image string) (string, error) {
 	}
 
 	if _, ok := ref.(reference.Named); !ok {
-		return image, errors.Errorf("invalid image name '%s'", image)
+		return image, errors.Errorf("unsupported image name format '%s'", image)
 	}
 
 	domain := reference.Domain(ref.(reference.Named))
