@@ -2214,7 +2214,7 @@ jobs:
           command: make go-unit-tests GOTAGS=release
       - post-go-unit-tests:
           path: go-unit-release-junit-reports
-  go-postgres-tests-release:
+  go-postgres-tests:
     docker:
       - image: quay.io/rhacs-eng/apollo-ci:0.3.31
         auth:
@@ -4924,7 +4924,7 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - go-unit-tests-release:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - go-postgres-tests-release:
+      - go-postgres-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - shell-unit-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
