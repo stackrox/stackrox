@@ -1,5 +1,5 @@
 
-{{define "paramList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.LocalPrimaryKeys}}{{if $idx}}, {{end}}{{$name}}.Get{{$pk.Name|upperCamelCase}}(){{end}}{{end}}
+{{define "paramList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.LocalPrimaryKeys}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
 
 {{- $ := . }}
 {{- $name := .TrimmedType|lowerCamelCase }}
@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -56,7 +57,9 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	Destroy(pool)
 	store := New(pool)
 
-	{{$name}} := fixtures.Get{{.TrimmedType}}()
+	{{$name}} := &{{.Type}}{}
+	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
 	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get({{template "paramList" $}})
 	s.NoError(err)
 	s.False(exists)

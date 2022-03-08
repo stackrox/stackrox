@@ -674,7 +674,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.Secret) error) error {
 //// Used for testing
 
 func dropTableSecrets(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE secrets CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS secrets CASCADE")
 	dropTableSecretsFiles(db)
 	dropTableSecretsContainerRelationships(db)
 	dropTableSecretsDeploymentRelationships(db)
@@ -682,23 +682,23 @@ func dropTableSecrets(db *pgxpool.Pool) {
 }
 
 func dropTableSecretsFiles(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE secrets_Files CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS secrets_Files CASCADE")
 	dropTableSecretsFilesRegistries(db)
 
 }
 
 func dropTableSecretsFilesRegistries(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE secrets_Files_Registries CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS secrets_Files_Registries CASCADE")
 
 }
 
 func dropTableSecretsContainerRelationships(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE secrets_ContainerRelationships CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS secrets_ContainerRelationships CASCADE")
 
 }
 
 func dropTableSecretsDeploymentRelationships(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE secrets_DeploymentRelationships CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS secrets_DeploymentRelationships CASCADE")
 
 }
 

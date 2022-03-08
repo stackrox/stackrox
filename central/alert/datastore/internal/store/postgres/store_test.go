@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -50,7 +51,9 @@ func (s *AlertsStoreSuite) TestStore() {
 	Destroy(pool)
 	store := New(pool)
 
-	alert := fixtures.GetAlert()
+	alert := &storage.Alert{}
+	s.NoError(testutils.FullInit(alert, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
 	foundAlert, exists, err := store.Get(alert.GetId())
 	s.NoError(err)
 	s.False(exists)

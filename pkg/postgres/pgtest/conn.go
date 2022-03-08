@@ -2,6 +2,7 @@ package pgtest
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"k8s.io/utils/env"
@@ -9,7 +10,10 @@ import (
 
 // GetConnectionString returns a connection string for integration testing with Postgres
 func GetConnectionString(_ *testing.T) string {
-	user := env.GetString("POSTGRES_USER", "postgres")
+	user := os.Getenv("USER")
+	if _, ok := os.LookupEnv("CI"); ok {
+		user = "postgres"
+	}
 	pass := env.GetString("POSTGRES_PASSWORD", "")
 	database := env.GetString("POSTGRES_DB", "postgres")
 	host := env.GetString("POSTGRES_HOST", "localhost")

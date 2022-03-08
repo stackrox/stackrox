@@ -56,6 +56,7 @@ func renderFile(templateMap map[string]interface{}, temp *template.Template, tem
 		return err
 	}
 	file := buf.Bytes()
+	fmt.Println(string(file))
 
 	formatted, err := imports.Process(templateFileName, file, nil)
 	if err != nil {
@@ -110,11 +111,13 @@ func main() {
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
 			return err
 		}
-		if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
-			return err
-		}
 		if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
 			return err
+		}
+		if props.SearchCategory != "" {
+			if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
