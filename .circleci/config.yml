@@ -2221,6 +2221,8 @@ jobs:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
       - image: postgres:14.2-alpine
+        environment:
+          POSTGRES_PASSWORD: password
     resource_class: large
     environment:
       ROX_IMAGE_FLAVOR: stackrox.io
