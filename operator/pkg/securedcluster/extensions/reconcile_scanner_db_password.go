@@ -23,9 +23,9 @@ func (s *securedClusterWithScannerBearer) IsScannerEnabled() bool {
 	return s.scannerEnabled
 }
 
-// ReconcileScannerExtension returns an extension that takes care of creating the scanner-db-password
+// ReconcileLocalScannerDBPasswordExtension returns an extension that takes care of creating the scanner-db-password
 // secret ahead of time.
-func ReconcileScannerExtension(client ctrlClient.Client) extensions.ReconcileExtension {
+func ReconcileLocalScannerDBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
 	return wrapExtension(reconcile, client)
 }
 

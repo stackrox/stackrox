@@ -8,8 +8,9 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// AutoSenseLocalScannerSupport detects whether the local scanner is enabled or not. If a Central instance is found
-// in the same namespace it returns false.
+// AutoSenseLocalScannerSupport detects whether the local scanner should be enabled or not.
+// Takes into account the setting in provided SecuredCluster CR as well as the presence of a Central instance in the same namespace.
+// Modifies the provided SecuredCluster object to set a default Spec.Scanner if missing.
 func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (bool, error) {
 	if s.Spec.Scanner == nil {
 		s.Spec.Scanner = &platform.LocalScannerComponentSpec{
@@ -22,7 +23,7 @@ func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client,
 	case platform.LocalScannerComponentAutoSense:
 		siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, s.GetNamespace())
 		if err != nil {
-			return false, errors.Wrap(err, "auto-sensing local scanner support")
+			return false, errors.Wrap(err, "detecting presence of a Central CR in the same namespace")
 		}
 		return !siblingCentralPresent, nil
 	case platform.LocalScannerComponentDisabled:
