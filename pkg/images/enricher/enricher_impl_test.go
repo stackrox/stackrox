@@ -6,16 +6,19 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	mocks2 "github.com/stackrox/rox/pkg/registries/mocks"
+	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
-	mocks3 "github.com/stackrox/rox/pkg/scanners/mocks"
+	"github.com/stackrox/rox/pkg/retry"
+	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	scannertypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
@@ -33,6 +36,12 @@ func emptySignatureIntegrationGetter(ctx context.Context) ([]*storage.SignatureI
 func imageGetterFromImage(image *storage.Image) imageGetter {
 	return func(ctx context.Context, id string) (*storage.Image, bool, error) {
 		return image, true, nil
+	}
+}
+
+func fakeSignatureFetcherFactory(fake fakeSigFetcher) signatureFetcherFactory {
+	return func() signatures.SignatureFetcher {
+		return &fake
 	}
 }
 
@@ -168,6 +177,26 @@ func (f *fakeCVESuppressorV2) EnrichImageWithSuppressedCVEs(image *storage.Image
 			}
 		}
 	}
+}
+
+var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
+
+type fakeSigFetcher struct {
+	sigs      []*storage.Signature
+	fail      bool
+	retryable bool
+}
+
+func (f *fakeSigFetcher) FetchSignature(ctx context.Context, image *storage.Image,
+	registry types.ImageRegistry) ([]*storage.Signature, error) {
+	if f.fail {
+		err := errors.New("some error")
+		if f.retryable {
+			err = retry.MakeRetryable(err)
+		}
+		return nil, err
+	}
+	return f.sigs, nil
 }
 
 func TestEnricherFlow(t *testing.T) {
@@ -350,19 +379,18 @@ func TestEnricherFlow(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			set := mocks.NewMockSet(ctrl)
 
 			fsr := newFakeRegistryScanner(opts{})
-			registrySet := mocks2.NewMockSet(ctrl)
+			registrySet := registryMocks.NewMockSet(ctrl)
 			if !c.shortCircuitRegistry {
-				registrySet.EXPECT().IsEmpty().Return(false)
-				registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
-				set.EXPECT().RegistrySet().Return(registrySet)
+				registrySet.EXPECT().IsEmpty().AnyTimes().Return(false)
+				registrySet.EXPECT().GetAll().AnyTimes().Return([]types.ImageRegistry{fsr})
+				set.EXPECT().RegistrySet().AnyTimes().Return(registrySet)
 			}
 
-			scannerSet := mocks3.NewMockSet(ctrl)
+			scannerSet := scannerMocks.NewMockSet(ctrl)
 			if !c.shortCircuitScanner {
 				scannerSet.EXPECT().IsEmpty().Return(false)
 				scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr})
@@ -403,14 +431,13 @@ func TestCVESuppression(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	fsr := newFakeRegistryScanner(opts{})
-	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
 
-	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr})
 
@@ -444,13 +471,12 @@ func TestCVESuppression(t *testing.T) {
 
 func TestZeroIntegrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
-	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(true)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
-	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(true)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{}).AnyTimes()
 
@@ -476,12 +502,11 @@ func TestZeroIntegrations(t *testing.T) {
 
 func TestZeroIntegrationsInternal(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
-	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
-	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
@@ -504,13 +529,12 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 
 func TestRegistryMissingFromImage(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
-	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
 	fsr := newFakeRegistryScanner(opts{})
-	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
@@ -537,14 +561,13 @@ func TestRegistryMissingFromImage(t *testing.T) {
 
 func TestZeroRegistryIntegrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
-	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(true)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
 	fsr := newFakeRegistryScanner(opts{})
-	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
@@ -571,16 +594,15 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 
 func TestNoMatchingRegistryIntegration(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	fsr := newFakeRegistryScanner(opts{
 		notMatch: true,
 	})
-	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
 
-	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
@@ -606,14 +628,13 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 
 func TestZeroScannerIntegrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	fsr := newFakeRegistryScanner(opts{})
-	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet := registryMocks.NewMockSet(ctrl)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
 	registrySet.EXPECT().IsEmpty().Return(false)
 
-	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{}).AnyTimes()
 	scannerSet.EXPECT().IsEmpty().Return(true)
 
@@ -743,4 +764,100 @@ func TestFillScanStats(t *testing.T) {
 			assert.Equal(t, c.expectedFixableVulns, c.image.GetFixableCves())
 		})
 	}
+}
+
+func TestEnrichWithSignature(t *testing.T) {
+	cases := map[string]struct {
+		img             *storage.Image
+		imgGetter       imageGetter
+		sigFetchFactory signatureFetcherFactory
+		expectedSigs    []*storage.Signature
+		err             error
+		updated         bool
+		ctx             EnrichmentContext
+	}{
+		"signatures found without pre-existing signatures": {
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
+			sigFetchFactory: fakeSignatureFetcherFactory(fakeSigFetcher{sigs: []*storage.Signature{
+				createSignature("rawsignature", "rawpayload")}}),
+			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			updated:      true,
+		},
+		"signatures found with pre-existing signatures": {
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}, Signature: &storage.ImageSignature{
+				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			}},
+			sigFetchFactory: fakeSignatureFetcherFactory(fakeSigFetcher{sigs: []*storage.Signature{
+				createSignature("new-rawsignature", "new-rawpayload")}}),
+			expectedSigs: []*storage.Signature{createSignature("new-rawsignature", "new-rawpayload")},
+			updated:      true,
+			ctx:          EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
+		},
+		"fetched signatures are equal to pre-existing signatures": {
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}, Signature: &storage.ImageSignature{
+				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			}},
+			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
+			sigFetchFactory: fakeSignatureFetcherFactory(fakeSigFetcher{sigs: []*storage.Signature{
+				createSignature("rawsignature", "rawpayload")}}),
+			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+		},
+		"no external metadata enrichment context": {
+			ctx: EnrichmentContext{FetchOpt: NoExternalMetadata},
+		},
+		"cached values should be used": {
+			ctx: EnrichmentContext{FetchOpt: UseCachesIfPossible},
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			imgGetter: imageGetterFromImage(&storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}, Signature: &storage.ImageSignature{
+				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			}}),
+			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+		},
+		"fetched signatures contains duplicate": {
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
+			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
+			sigFetchFactory: fakeSignatureFetcherFactory(fakeSigFetcher{sigs: []*storage.Signature{
+				createSignature("rawsignature", "rawpayload"),
+				createSignature("rawsignature", "rawpayload")}}),
+			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			updated:      true,
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	fsr := newFakeRegistryScanner(opts{})
+	registrySetMock := registryMocks.NewMockSet(ctrl)
+	registrySetMock.EXPECT().IsEmpty().AnyTimes().Return(false)
+	registrySetMock.EXPECT().GetAll().AnyTimes().Return([]types.ImageRegistry{fsr})
+
+	integrationsSetMock := mocks.NewMockSet(ctrl)
+	integrationsSetMock.EXPECT().RegistrySet().AnyTimes().Return(registrySetMock)
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			e := enricherImpl{
+				integrations:            integrationsSetMock,
+				signatureFetcherFactory: c.sigFetchFactory,
+				imageGetter:             c.imgGetter,
+			}
+			updated, err := e.enrichWithSignature(c.ctx, c.img)
+			assert.Equal(t, c.err, err)
+			assert.Equal(t, c.updated, updated)
+			assert.ElementsMatch(t, c.img.GetSignature().GetSignatures(), c.expectedSigs)
+		})
+	}
+}
+
+func TestEnrichWithSignatureVerificationData(t *testing.T) {
+
+}
+
+func createSignature(sig, payload string) *storage.Signature {
+	return &storage.Signature{Signature: &storage.Signature_Cosign{
+		Cosign: &storage.CosignSignature{
+			RawSignature:     []byte(sig),
+			SignaturePayload: []byte(payload),
+		},
+	}}
 }

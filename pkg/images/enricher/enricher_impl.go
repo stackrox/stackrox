@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -52,6 +53,7 @@ type enricherImpl struct {
 	metadataCache   expiringcache.Cache
 
 	signatureIntegrationGetter signatureIntegrationGetter
+	signatureFetcherFactory    signatureFetcherFactory
 
 	imageGetter imageGetter
 
@@ -458,17 +460,16 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx EnrichmentContext
 // Based on the given FetchOption, it will try to short-circuit using cached values from existing images where
 // possible.
 func (e *enricherImpl) enrichWithSignature(ctx EnrichmentContext, img *storage.Image) (bool, error) {
-	// Short-circuit if possible.
-	if e.fetchSignatureFromDatabase(img, ctx.FetchOpt) {
-		return false, nil
-	}
-
 	// If no external metadata should be taken into account, we skip the fetching of signatures.
 	if ctx.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
 
-	// Find out the right registry for the image. This potentially holds shared logic with enrichWithMetadata.
+	// Short-circuit if possible.
+	if e.fetchSignatureFromDatabase(img, ctx.FetchOpt) {
+		return false, nil
+	}
+
 	fetchSigsErrList := errorhelpers.NewErrorList(fmt.Sprintf("error fetching signature for image %q",
 		img.GetName().GetFullName()))
 
@@ -477,28 +478,21 @@ func (e *enricherImpl) enrichWithSignature(ctx EnrichmentContext, img *storage.I
 		return false, fetchSigsErrList.ToError()
 	}
 
-	matchingRegistries := getMatchingRegistries(e.integrations.RegistrySet().GetAll(), img)
-
-	if len(matchingRegistries) == 0 {
-		fetchSigsErrList.AddError(errox.Newf(errox.NotFound, "no matching registries found: please add "+
-			"an image integration for %s", img.GetName().GetFullName()))
+	matchingRegistries, err := getMatchingRegistries(e.integrations.RegistrySet().GetAll(), img)
+	if err != nil {
+		fetchSigsErrList.AddError(err)
 		return false, fetchSigsErrList.ToError()
 	}
 
-	// For now, only supporting a single signature method, so we don't need to take care of creating multiple ones.
-	sigFetcher := signatures.NewSignatureFetcher()
-	previousSigs := img.GetSignature()
+	var fetchedSignatures []*storage.Signature
 	for _, matchingReg := range matchingRegistries {
 		// TODO(dhaus): Need to check for rate limiting w.r.t registries.
-		// During fetching, there may occur transient errors. If that's the case, we will retry.
-		var sigs []*storage.Signature
-		var err error
-
 		// Honestly, I'm a bit worried about this "Retryable" error. I would like to avoid having something like
 		// "wrong credentials" being a retryable error, which it currently is.
 		// TODO(dhaus): Let me check whether I can fix this.
-		err = retry.WithRetry(func() error {
-			sigs, err = sigFetcher.FetchSignature(context.Background(), img, matchingReg)
+		// During fetching, there may occur transient errors. If that's the case, we will retry.
+		err := retry.WithRetry(func() error {
+			fetchedSignatures, err = e.fetchSignature(img, matchingReg, fetchedSignatures)
 			return err
 		},
 			retry.Tries(2),
@@ -506,21 +500,46 @@ func (e *enricherImpl) enrichWithSignature(ctx EnrichmentContext, img *storage.I
 			retry.OnFailedAttempts(func(err error) {
 				time.Sleep(time.Duration(1) * time.Second)
 			}))
-
-		if err != nil && sigs != nil && len(sigs) > 0 {
-			// TODO(dhaus): Create a test for an image that didn't have signatures beforehand.
-			img.Signature = &storage.ImageSignature{
-				Signatures: append(img.GetSignature().GetSignatures(), sigs...),
-			}
+		if err != nil {
+			log.Errorf("Error fetching signature for image %q from registry %q: %v",
+				img.GetName().GetFullName(), matchingReg.Name(), err)
+			continue
 		}
 	}
 
-	// Do not signal an updated signature when there's no change from the previous signatures.
-	if previousSigs == img.GetSignature() {
-		return false, nil
+	img.Signature = &storage.ImageSignature{
+		Signatures: fetchedSignatures,
+	}
+	return true, nil
+}
+
+func (e *enricherImpl) fetchSignature(img *storage.Image, registry registryTypes.ImageRegistry,
+	fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
+	fetcher := e.signatureFetcherFactory()
+	sigs, err := fetcher.FetchSignature(context.Background(), img, registry)
+	if err != nil {
+		return fetchedSignatures, err
+	}
+	if sigs == nil || len(sigs) == 0 {
+		return fetchedSignatures, nil
 	}
 
-	return true, nil
+	for _, sig := range sigs {
+		if !containsSignature(sig, fetchedSignatures) {
+			fetchedSignatures = append(fetchedSignatures, sig)
+		}
+	}
+
+	return fetchedSignatures, nil
+}
+
+func containsSignature(sig *storage.Signature, list []*storage.Signature) bool {
+	for _, s := range list {
+		if proto.Equal(s, sig) {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *enricherImpl) checkRegistryForImage(ctx EnrichmentContext, image *storage.Image) error {
@@ -538,14 +557,21 @@ func (e *enricherImpl) checkRegistryForImage(ctx EnrichmentContext, image *stora
 	return nil
 }
 
-func getMatchingRegistries(registries []registryTypes.ImageRegistry, image *storage.Image) []registryTypes.ImageRegistry {
+func getMatchingRegistries(registries []registryTypes.ImageRegistry,
+	image *storage.Image) ([]registryTypes.ImageRegistry, error) {
 	var matchingRegistries []registryTypes.ImageRegistry
 	for _, registry := range registries {
 		if registry.Match(image.GetName()) {
 			matchingRegistries = append(matchingRegistries, registry)
 		}
 	}
-	return matchingRegistries
+
+	if len(matchingRegistries) == 0 {
+		return nil, errox.Newf(errox.NotFound, "no matching registries found: please add "+
+			"an image integration for %s", image.GetName().GetFullName())
+	}
+
+	return matchingRegistries, nil
 }
 
 func normalizeVulnerabilities(scan *storage.ImageScan) {

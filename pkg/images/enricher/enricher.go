@@ -12,6 +12,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/signatures"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
@@ -103,6 +104,9 @@ type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, err
 // signatureIntegrationGetter will be used to retrieve all available signature integrations.
 type signatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
 
+// signatureFetcherFactory will be used to create a signatures.SignatureFetcher.
+type signatureFetcherFactory func() signatures.SignatureFetcher
+
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
 func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
@@ -122,6 +126,7 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		metadataCache:   metadataCache,
 
 		signatureIntegrationGetter: signatureIntegrationGetter,
+		signatureFetcherFactory:    signatures.NewSignatureFetcher,
 
 		imageGetter: imageGetter,
 
