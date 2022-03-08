@@ -18,7 +18,7 @@ function PolicyScopeSection({
     exclusions,
     clusters,
 }: PolicyScopeSectionProps): React.ReactElement {
-    const excludedDeployments = getExcludedDeployments(exclusions);
+    const excludedDeploymentScopes = getExcludedDeployments(exclusions);
     const excludedImageNames = getExcludedImageNames(exclusions);
     return (
         <>
@@ -44,13 +44,13 @@ function PolicyScopeSection({
                     </Grid>
                 </>
             )}
-            {excludedDeployments?.length !== 0 && (
+            {excludedDeploymentScopes?.length !== 0 && (
                 <>
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
                         Scope exclusions
                     </Title>
                     <Grid hasGutter md={12} xl={6}>
-                        {excludedDeployments.map((excludedDeployment, index) => (
+                        {excludedDeploymentScopes.map((excludedDeployment, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
                                 <Card isFlat>
