@@ -21,8 +21,10 @@ func replicasPrinter(fieldMap map[string][]string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if r.Replicas, err = strconv.ParseInt(replicas, 10, 64); err != nil {
+	replicasFloat, err := strconv.ParseFloat(replicas, 64)
+	if err != nil {
 		return nil, err
 	}
+	r.Replicas = int64(replicasFloat)
 	return executeTemplate(replicasTemplate, r)
 }
