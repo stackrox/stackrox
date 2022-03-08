@@ -30,7 +30,7 @@ function SwaggerBrowser({ uri }) {
     }
     if (result) {
         return (
-            // Redoc components unreadable with StackRox dark theme, their styles need to be tuned
+            // Redoc components unreadable with classic dark theme, their styles need to be tuned
             <RedocStandalone spec={result.data} />
         );
     }
