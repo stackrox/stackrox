@@ -300,7 +300,7 @@ func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
 	return &c
 }
 
-// Note the following struct should mostly match ScannerComponentSpec.
+// Note the following struct should mostly match ScannerComponentSpec for the Central's type.
 
 // LocalScannerComponentSpec defines settings for the local "scanner" component.
 type LocalScannerComponentSpec struct {
@@ -321,7 +321,7 @@ type LocalScannerComponentSpec struct {
 }
 
 // LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
-//+kubebuilder:validation:Enum=AutoSense;Enabled;Disabled
+//+kubebuilder:validation:Enum=AutoSense;Disabled
 type LocalScannerComponentPolicy string
 
 const (

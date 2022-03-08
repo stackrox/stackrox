@@ -259,7 +259,7 @@ type ExposureRoute struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
-// Note the following struct should mostly match LocalScannerComponentSpec.
+// Note the following struct should mostly match LocalScannerComponentSpec for the SecuredCluster type.
 
 // ScannerComponentSpec defines settings for the central "scanner" component.
 type ScannerComponentSpec struct {
