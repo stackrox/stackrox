@@ -37,6 +37,7 @@ COPY --from=extracted_bundle /usr/lib64/libsnappy.so.1 /usr/lib64/libsnappy.so.1
 COPY --from=extracted_bundle /usr/lib64/libstdc++.so.6 /usr/lib64/libstdc++.so.6
 COPY --from=extracted_bundle /usr/lib64/libzstd.so.1 /usr/lib64/libzstd.so.1
 COPY --from=extracted_bundle /usr/lib64/libz.so.1 /usr/lib64/libz.so.1
+COPY --from=extracted_bundle /usr/lib64/libgcc_s.so.1 /usr/lib64/libgcc_s.so.1
 
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \
