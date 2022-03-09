@@ -18,6 +18,7 @@ package postgres
 import (
     "context"
     "fmt"
+    "strings"
     "time"
 
     "github.com/gogo/protobuf/proto"
@@ -51,6 +52,15 @@ var (
     log = logging.LoggerForModule()
 
     table = "{{.Table}}"
+
+    // just starting this here for now.  may be a candidate for env var
+    batchLimit = 100
+
+    // just starting this here for now.  may be a candidate for env var
+    // using copyFrom, we may not even want to batch.  It would probably be simpler
+    // to deal with failures if we just sent it all.  Something to think about as we
+    // proceed and move into more e2e and larger performance testing
+    batchSize = 1000
 )
 
 func init() {
@@ -178,6 +188,107 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 
 {{ template "insertObject" .Schema }}
 
+{{- define "copyFunctionName"}}{{- $schema := . }}copyInto{{$schema.Table|upperCamelCase}}
+{{- end}}
+
+{{- define "copyObject"}}
+{{- $schema := . }}
+func (s *storeImpl) {{ template "copyFunctionName" $schema }}(tx pgx.Tx, {{ range $idx, $field := $schema.ParentKeys }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+
+    inputRows := [][]interface{}{}
+
+    {{if not $schema.ParentSchema }}
+    // this is a copy so first we must delete the rows and re-add them
+    // which is essentially the desired behaviour of an upsert.
+    var deletes []string
+    {{end}}
+
+
+    // Todo: I'm sure there is a cleaner way to do this.
+    copyCols := []string{}
+    columns := "{{template "commaSeparatedColumns" $schema.ResolvedFields }}"
+    columns = strings.ToLower(columns)
+
+    copyCols = strings.Split(columns, ",")
+
+    for i := range copyCols {
+    	copyCols[i] = strings.TrimSpace(copyCols[i])
+    }
+
+    lowerTable := strings.ToLower("{{$schema.Table}}")
+
+    i := 0;
+
+    {{if not $schema.ParentSchema }}
+    for _, obj := range objs {
+    {{else}}
+    for idx, obj := range objs {
+    {{end}}
+        i++
+
+        {{if not $schema.ParentSchema }}
+        serialized, marshalErr := obj.Marshal()
+        if marshalErr != nil {
+            return marshalErr
+        }
+        {{end}}
+
+        inputRows = append(inputRows, []interface{}{
+            {{ range $idx, $field := $schema.ResolvedFields }}
+            {{if eq $field.DataType "datetime"}}
+            pgutils.NilOrStringTimestamp({{$field.Getter "obj"}}),
+            {{- else}}
+            {{$field.Getter "obj"}},{{end}}
+            {{end}}
+        })
+
+        {{if not $schema.ParentSchema }}
+        // Add the id to be deleted.
+        deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+        {{end}}
+
+        // if we hit our batch size we need to push the data
+        if i % batchSize == 0 || i == len(objs) {
+            // copy doesn't upsert so have to delete first.  parent deletion cascades so only need to
+            // delete for the top level parent
+            {{if not $schema.ParentSchema }}
+            s.DeleteMany(deletes)
+            // clear the inserts and vals for the next batch
+            deletes = nil
+            {{end}}
+
+            _, err := tx.CopyFrom(context.Background(), pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+
+            if err != nil {
+                return err
+            }
+
+            // clear the input rows for the next batch
+            inputRows = [][]interface{}{}
+        }
+    }
+
+    {{if $schema.Children}}
+    {{if not $schema.ParentSchema }}
+    for _, obj := range objs {
+    {{else}}
+    for idx, obj := range objs {
+    {{end}}
+        {{range $idx, $child := $schema.Children}}
+        if err := s.{{ template "copyFunctionName" $child }}(tx{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
+            return err
+        }
+        {{- end}}
+    }
+    {{end}}
+
+    return nil
+}
+{{range $idx, $child := $schema.Children}}{{ template "copyObject" $child }}{{end}}
+{{- end}}
+
+{{ template "copyObject" .Schema }}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
     {{template "createFunctionName" .Schema}}(ctx, db)
@@ -187,8 +298,29 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
     }
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
-    conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+func (s *storeImpl) copyFrom(objs ...*{{.Type}}) error {
+    conn, release := s.acquireConn(ops.Get, "{{.TrimmedType}}")
+    defer release()
+
+    tx, err := conn.Begin(context.Background())
+    if err != nil {
+        return err
+    }
+
+    if err := s.{{ template "copyFunctionName" .Schema }}(tx, objs...); err != nil {
+        if err := tx.Rollback(context.Background()); err != nil {
+            return err
+        }
+        return err
+    }
+    if err := tx.Commit(context.Background()); err != nil {
+        return err
+    }
+    return nil
+}
+
+func (s *storeImpl) upsert(objs ...*{{.Type}}) error {
+    conn, release := s.acquireConn(ops.Get, "{{.TrimmedType}}")
     defer release()
 
     for _, obj := range objs {
@@ -219,7 +351,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
 
-    return s.upsert(ctx, objs...)
+    if len(objs) < batchLimit {
+        return s.upsert(objs...)
+    } else {
+        return s.copyFrom(objs...)
+    }
 }
 
 // Count returns the number of objects in the store

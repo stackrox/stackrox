@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -92,5 +93,18 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
+
+	var {{.TrimmedType|lowerCamelCase}}s []*{{.Type}}
+    for i := 0; i < 1000; i++ {
+        {{.TrimmedType|lowerCamelCase}} := fixtures.Get{{.TrimmedType}}()
+        {{.TrimmedType|lowerCamelCase}}.Id = uuid.NewV4().String()
+        {{.TrimmedType|lowerCamelCase}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
+    }
+
+    s.NoError(store.UpsertMany({{.TrimmedType|lowerCamelCase}}s))
+
+    {{.TrimmedType|lowerCamelCase}}Count, err = store.Count()
+    s.NoError(err)
+    s.Equal({{.TrimmedType|lowerCamelCase}}Count, 1000)
 }
 
