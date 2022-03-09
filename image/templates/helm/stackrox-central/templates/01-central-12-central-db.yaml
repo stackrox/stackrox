@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
       - name: central-db
-        {{/* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
+        {{- /* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
         image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
         env:
         - name: POSTGRES_HOST_AUTH_METHOD
@@ -96,6 +96,6 @@ metadata:
     "helm.sh/resource-policy": keep
 type: Opaque
 stringData:
-  {{/* TODO(ROX-9249): Create password */}}
+  {{- /* TODO(ROX-9249): Create password */}}
   password: SpTasCsKwRorXdFor$Now8
 {{- end }}
