@@ -257,14 +257,15 @@ func DropImageTagAndDigest(image string) (string, error) {
 	}
 
 	namedReference := ref.(reference.Named)
-	domain := reference.Domain(namedReference)
-	path := reference.Path(namedReference)
 	familiarName := reference.FamiliarName(namedReference)
 	// If 'image' is already in familiar format
 	if image == reference.FamiliarString(ref) {
 		return familiarName, nil
 	}
+	// If image is partially familiar format: e.g. docker.io/nginx or library/nginx.
 	if len(namedReference.Name()) > len(familiarName) {
+		domain := reference.Domain(namedReference)
+		path := reference.Path(namedReference)
 		// If it does not have a domain, but it has a repository
 		if strings.HasPrefix(image, path) {
 			return path, nil
