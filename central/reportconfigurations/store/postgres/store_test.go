@@ -41,46 +41,48 @@ func (s *ReportconfigsStoreSuite) TearDownTest() {
 }
 
 func (s *ReportconfigsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	reportConfiguration := &storage.ReportConfiguration{}
 	s.NoError(testutils.FullInit(reportConfiguration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundReportConfiguration, exists, err := store.Get(reportConfiguration.GetId())
+	foundReportConfiguration, exists, err := store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundReportConfiguration)
 
-	s.NoError(store.Upsert(reportConfiguration))
-	foundReportConfiguration, exists, err = store.Get(reportConfiguration.GetId())
+	s.NoError(store.Upsert(ctx, reportConfiguration))
+	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(reportConfiguration, foundReportConfiguration)
 
-	reportConfigurationCount, err := store.Count()
+	reportConfigurationCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(reportConfigurationCount, 1)
 
-	reportConfigurationExists, err := store.Exists(reportConfiguration.GetId())
+	reportConfigurationExists, err := store.Exists(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.True(reportConfigurationExists)
-	s.NoError(store.Upsert(reportConfiguration))
+	s.NoError(store.Upsert(ctx, reportConfiguration))
 
-	foundReportConfiguration, exists, err = store.Get(reportConfiguration.GetId())
+	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(reportConfiguration, foundReportConfiguration)
 
-	s.NoError(store.Delete(reportConfiguration.GetId()))
-	foundReportConfiguration, exists, err = store.Get(reportConfiguration.GetId())
+	s.NoError(store.Delete(ctx, reportConfiguration.GetId()))
+	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundReportConfiguration)

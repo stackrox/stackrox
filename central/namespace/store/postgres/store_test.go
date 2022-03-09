@@ -41,46 +41,48 @@ func (s *NamespacesStoreSuite) TearDownTest() {
 }
 
 func (s *NamespacesStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	namespaceMetadata := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(namespaceMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundNamespaceMetadata, exists, err := store.Get(namespaceMetadata.GetId())
+	foundNamespaceMetadata, exists, err := store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNamespaceMetadata)
 
-	s.NoError(store.Upsert(namespaceMetadata))
-	foundNamespaceMetadata, exists, err = store.Get(namespaceMetadata.GetId())
+	s.NoError(store.Upsert(ctx, namespaceMetadata))
+	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(namespaceMetadata, foundNamespaceMetadata)
 
-	namespaceMetadataCount, err := store.Count()
+	namespaceMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(namespaceMetadataCount, 1)
 
-	namespaceMetadataExists, err := store.Exists(namespaceMetadata.GetId())
+	namespaceMetadataExists, err := store.Exists(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
 	s.True(namespaceMetadataExists)
-	s.NoError(store.Upsert(namespaceMetadata))
+	s.NoError(store.Upsert(ctx, namespaceMetadata))
 
-	foundNamespaceMetadata, exists, err = store.Get(namespaceMetadata.GetId())
+	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(namespaceMetadata, foundNamespaceMetadata)
 
-	s.NoError(store.Delete(namespaceMetadata.GetId()))
-	foundNamespaceMetadata, exists, err = store.Get(namespaceMetadata.GetId())
+	s.NoError(store.Delete(ctx, namespaceMetadata.GetId()))
+	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNamespaceMetadata)

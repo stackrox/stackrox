@@ -41,46 +41,48 @@ func (s *ApitokensStoreSuite) TearDownTest() {
 }
 
 func (s *ApitokensStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	tokenMetadata := &storage.TokenMetadata{}
 	s.NoError(testutils.FullInit(tokenMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundTokenMetadata, exists, err := store.Get(tokenMetadata.GetId())
+	foundTokenMetadata, exists, err := store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTokenMetadata)
 
-	s.NoError(store.Upsert(tokenMetadata))
-	foundTokenMetadata, exists, err = store.Get(tokenMetadata.GetId())
+	s.NoError(store.Upsert(ctx, tokenMetadata))
+	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(tokenMetadata, foundTokenMetadata)
 
-	tokenMetadataCount, err := store.Count()
+	tokenMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(tokenMetadataCount, 1)
 
-	tokenMetadataExists, err := store.Exists(tokenMetadata.GetId())
+	tokenMetadataExists, err := store.Exists(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.True(tokenMetadataExists)
-	s.NoError(store.Upsert(tokenMetadata))
+	s.NoError(store.Upsert(ctx, tokenMetadata))
 
-	foundTokenMetadata, exists, err = store.Get(tokenMetadata.GetId())
+	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(tokenMetadata, foundTokenMetadata)
 
-	s.NoError(store.Delete(tokenMetadata.GetId()))
-	foundTokenMetadata, exists, err = store.Get(tokenMetadata.GetId())
+	s.NoError(store.Delete(ctx, tokenMetadata.GetId()))
+	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTokenMetadata)

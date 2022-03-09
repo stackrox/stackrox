@@ -41,46 +41,48 @@ func (s *SignatureintegrationsStoreSuite) TearDownTest() {
 }
 
 func (s *SignatureintegrationsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	signatureIntegration := &storage.SignatureIntegration{}
 	s.NoError(testutils.FullInit(signatureIntegration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundSignatureIntegration, exists, err := store.Get(signatureIntegration.GetId())
+	foundSignatureIntegration, exists, err := store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSignatureIntegration)
 
-	s.NoError(store.Upsert(signatureIntegration))
-	foundSignatureIntegration, exists, err = store.Get(signatureIntegration.GetId())
+	s.NoError(store.Upsert(ctx, signatureIntegration))
+	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(signatureIntegration, foundSignatureIntegration)
 
-	signatureIntegrationCount, err := store.Count()
+	signatureIntegrationCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(signatureIntegrationCount, 1)
 
-	signatureIntegrationExists, err := store.Exists(signatureIntegration.GetId())
+	signatureIntegrationExists, err := store.Exists(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.True(signatureIntegrationExists)
-	s.NoError(store.Upsert(signatureIntegration))
+	s.NoError(store.Upsert(ctx, signatureIntegration))
 
-	foundSignatureIntegration, exists, err = store.Get(signatureIntegration.GetId())
+	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(signatureIntegration, foundSignatureIntegration)
 
-	s.NoError(store.Delete(signatureIntegration.GetId()))
-	foundSignatureIntegration, exists, err = store.Get(signatureIntegration.GetId())
+	s.NoError(store.Delete(ctx, signatureIntegration.GetId()))
+	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSignatureIntegration)

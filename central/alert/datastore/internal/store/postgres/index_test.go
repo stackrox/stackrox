@@ -41,6 +41,7 @@ func (s *AlertsIndexSuite) TearDownTest() {
 }
 
 func (s *AlertsIndexSuite) TestIndex() {
+	ctx := context.Background()
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	if err != nil {
@@ -50,18 +51,18 @@ func (s *AlertsIndexSuite) TestIndex() {
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 	indexer := NewIndexer(pool)
 
 	alert := fixtures.GetAlert()
-	foundAlert, exists, err := store.Get(alert.GetId())
+	foundAlert, exists, err := store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundAlert)
 
-	s.NoError(store.Upsert(alert))
-	foundAlert, exists, err = store.Get(alert.GetId())
+	s.NoError(store.Upsert(ctx, alert))
+	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(alert, foundAlert)

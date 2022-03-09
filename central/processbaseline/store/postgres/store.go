@@ -41,27 +41,27 @@ func init() {
 }
 
 type Store interface {
-	Count() (int, error)
-	Exists(id string) (bool, error)
-	Get(id string) (*storage.ProcessBaseline, bool, error)
-	Upsert(obj *storage.ProcessBaseline) error
-	UpsertMany(objs []*storage.ProcessBaseline) error
-	Delete(id string) error
-	GetIDs() ([]string, error)
-	GetMany(ids []string) ([]*storage.ProcessBaseline, []int, error)
-	DeleteMany(ids []string) error
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error)
+	Upsert(ctx context.Context, obj *storage.ProcessBaseline) error
+	UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error
+	Delete(ctx context.Context, id string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(fn func(obj *storage.ProcessBaseline) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ProcessBaseline) error) error
 
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableProcessbaselines(db *pgxpool.Pool) {
+func createTableProcessbaselines(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processbaselines (
     Id varchar,
@@ -78,23 +78,23 @@ create table if not exists processbaselines (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableProcessbaselinesElements(db)
-	createTableProcessbaselinesElementGraveyard(db)
+	createTableProcessbaselinesElements(ctx, db)
+	createTableProcessbaselinesElementGraveyard(ctx, db)
 }
 
-func createTableProcessbaselinesElements(db *pgxpool.Pool) {
+func createTableProcessbaselinesElements(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processbaselines_Elements (
     processbaselines_Id varchar,
@@ -106,7 +106,7 @@ create table if not exists processbaselines_Elements (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -116,14 +116,14 @@ create table if not exists processbaselines_Elements (
 		"create index if not exists processbaselinesElements_idx on processbaselines_Elements using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func createTableProcessbaselinesElementGraveyard(db *pgxpool.Pool) {
+func createTableProcessbaselinesElementGraveyard(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processbaselines_ElementGraveyard (
     processbaselines_Id varchar,
@@ -135,7 +135,7 @@ create table if not exists processbaselines_ElementGraveyard (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -145,14 +145,14 @@ create table if not exists processbaselines_ElementGraveyard (
 		"create index if not exists processbaselinesElementGraveyard_idx on processbaselines_ElementGraveyard using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func insertIntoProcessbaselines(tx pgx.Tx, obj *storage.ProcessBaseline) error {
+func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.ProcessBaseline) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -161,30 +161,20 @@ func insertIntoProcessbaselines(tx pgx.Tx, obj *storage.ProcessBaseline) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		obj.GetId(),
-
 		obj.GetKey().GetDeploymentId(),
-
 		obj.GetKey().GetContainerName(),
-
 		obj.GetKey().GetClusterId(),
-
 		obj.GetKey().GetNamespace(),
-
 		pgutils.NilOrStringTimestamp(obj.GetCreated()),
-
 		pgutils.NilOrStringTimestamp(obj.GetUserLockedTimestamp()),
-
 		pgutils.NilOrStringTimestamp(obj.GetStackRoxLockedTimestamp()),
-
 		pgutils.NilOrStringTimestamp(obj.GetLastUpdate()),
-
 		serialized,
 	}
 
 	finalStr := "INSERT INTO processbaselines (Id, Key_DeploymentId, Key_ContainerName, Key_ClusterId, Key_Namespace, Created, UserLockedTimestamp, StackRoxLockedTimestamp, LastUpdate, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ContainerName = EXCLUDED.Key_ContainerName, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, Created = EXCLUDED.Created, UserLockedTimestamp = EXCLUDED.UserLockedTimestamp, StackRoxLockedTimestamp = EXCLUDED.StackRoxLockedTimestamp, LastUpdate = EXCLUDED.LastUpdate, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -192,46 +182,42 @@ func insertIntoProcessbaselines(tx pgx.Tx, obj *storage.ProcessBaseline) error {
 	var query string
 
 	for childIdx, child := range obj.GetElements() {
-		if err := insertIntoProcessbaselinesElements(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoProcessbaselinesElements(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from processbaselines_Elements where processbaselines_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetElements()))
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetElements()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetElementGraveyard() {
-		if err := insertIntoProcessbaselinesElementGraveyard(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoProcessbaselinesElementGraveyard(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from processbaselines_ElementGraveyard where processbaselines_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetElementGraveyard()))
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetElementGraveyard()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoProcessbaselinesElements(tx pgx.Tx, obj *storage.BaselineElement, processbaselines_Id string, idx int) error {
+func insertIntoProcessbaselinesElements(ctx context.Context, tx pgx.Tx, obj *storage.BaselineElement, processbaselines_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		processbaselines_Id,
-
 		idx,
-
 		obj.GetElement().GetProcessName(),
-
 		obj.GetAuto(),
 	}
 
 	finalStr := "INSERT INTO processbaselines_Elements (processbaselines_Id, idx, Element_ProcessName, Auto) VALUES($1, $2, $3, $4) ON CONFLICT(processbaselines_Id, idx) DO UPDATE SET processbaselines_Id = EXCLUDED.processbaselines_Id, idx = EXCLUDED.idx, Element_ProcessName = EXCLUDED.Element_ProcessName, Auto = EXCLUDED.Auto"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -239,22 +225,18 @@ func insertIntoProcessbaselinesElements(tx pgx.Tx, obj *storage.BaselineElement,
 	return nil
 }
 
-func insertIntoProcessbaselinesElementGraveyard(tx pgx.Tx, obj *storage.BaselineElement, processbaselines_Id string, idx int) error {
+func insertIntoProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, obj *storage.BaselineElement, processbaselines_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		processbaselines_Id,
-
 		idx,
-
 		obj.GetElement().GetProcessName(),
-
 		obj.GetAuto(),
 	}
 
 	finalStr := "INSERT INTO processbaselines_ElementGraveyard (processbaselines_Id, idx, Element_ProcessName, Auto) VALUES($1, $2, $3, $4) ON CONFLICT(processbaselines_Id, idx) DO UPDATE SET processbaselines_Id = EXCLUDED.processbaselines_Id, idx = EXCLUDED.idx, Element_ProcessName = EXCLUDED.Element_ProcessName, Auto = EXCLUDED.Auto"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -263,54 +245,54 @@ func insertIntoProcessbaselinesElementGraveyard(tx pgx.Tx, obj *storage.Baseline
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
-	createTableProcessbaselines(db)
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	createTableProcessbaselines(ctx, db)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func (s *storeImpl) upsert(objs ...*storage.ProcessBaseline) error {
-	conn, release := s.acquireConn(ops.Get, "ProcessBaseline")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(context.Background())
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
 
-		if err := insertIntoProcessbaselines(tx, obj); err != nil {
-			if err := tx.Rollback(context.Background()); err != nil {
+		if err := insertIntoProcessbaselines(ctx, tx, obj); err != nil {
+			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
 			return err
 		}
-		if err := tx.Commit(context.Background()); err != nil {
+		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *storeImpl) Upsert(obj *storage.ProcessBaseline) error {
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ProcessBaseline")
 
-	return s.upsert(obj)
+	return s.upsert(ctx, obj)
 }
 
-func (s *storeImpl) UpsertMany(objs []*storage.ProcessBaseline) error {
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ProcessBaseline")
 
-	return s.upsert(objs...)
+	return s.upsert(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
-func (s *storeImpl) Count() (int, error) {
+func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ProcessBaseline")
 
-	row := s.db.QueryRow(context.Background(), countStmt)
+	row := s.db.QueryRow(ctx, countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -319,10 +301,10 @@ func (s *storeImpl) Count() (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(id string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessBaseline")
 
-	row := s.db.QueryRow(context.Background(), existsStmt, id)
+	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -331,13 +313,13 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(id string) (*storage.ProcessBaseline, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessBaseline")
 
-	conn, release := s.acquireConn(ops.Get, "ProcessBaseline")
+	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
 	defer release()
 
-	row := conn.QueryRow(context.Background(), getStmt, id)
+	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -350,9 +332,9 @@ func (s *storeImpl) Get(id string) (*storage.ProcessBaseline, bool, error) {
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
+	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -360,23 +342,23 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(id string) error {
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ProcessBaseline")
 
-	conn, release := s.acquireConn(ops.Remove, "ProcessBaseline")
+	conn, release := s.acquireConn(ctx, ops.Remove, "ProcessBaseline")
 	defer release()
 
-	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
 }
 
 // GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ProcessBaselineIDs")
 
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -393,13 +375,13 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessBaseline, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ProcessBaseline")
 
-	conn, release := s.acquireConn(ops.GetMany, "ProcessBaseline")
+	conn, release := s.acquireConn(ctx, ops.GetMany, "ProcessBaseline")
 	defer release()
 
-	rows, err := conn.Query(context.Background(), getManyStmt, ids)
+	rows, err := conn.Query(ctx, getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -435,20 +417,20 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessBaseline, []int, er
 }
 
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ids []string) error {
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessBaseline")
 
-	conn, release := s.acquireConn(ops.RemoveMany, "ProcessBaseline")
+	conn, release := s.acquireConn(ctx, ops.RemoveMany, "ProcessBaseline")
 	defer release()
-	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(fn func(obj *storage.ProcessBaseline) error) error {
-	rows, err := s.db.Query(context.Background(), walkStmt)
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseline) error) error {
+	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
@@ -471,35 +453,35 @@ func (s *storeImpl) Walk(fn func(obj *storage.ProcessBaseline) error) error {
 
 //// Used for testing
 
-func dropTableProcessbaselines(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS processbaselines CASCADE")
-	dropTableProcessbaselinesElements(db)
-	dropTableProcessbaselinesElementGraveyard(db)
+func dropTableProcessbaselines(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processbaselines CASCADE")
+	dropTableProcessbaselinesElements(ctx, db)
+	dropTableProcessbaselinesElementGraveyard(ctx, db)
 
 }
 
-func dropTableProcessbaselinesElements(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS processbaselines_Elements CASCADE")
+func dropTableProcessbaselinesElements(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processbaselines_Elements CASCADE")
 
 }
 
-func dropTableProcessbaselinesElementGraveyard(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS processbaselines_ElementGraveyard CASCADE")
+func dropTableProcessbaselinesElementGraveyard(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processbaselines_ElementGraveyard CASCADE")
 
 }
 
-func Destroy(db *pgxpool.Pool) {
-	dropTableProcessbaselines(db)
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableProcessbaselines(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex() ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }

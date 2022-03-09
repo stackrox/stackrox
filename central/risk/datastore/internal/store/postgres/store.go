@@ -41,27 +41,27 @@ func init() {
 }
 
 type Store interface {
-	Count() (int, error)
-	Exists(id string) (bool, error)
-	Get(id string) (*storage.Risk, bool, error)
-	Upsert(obj *storage.Risk) error
-	UpsertMany(objs []*storage.Risk) error
-	Delete(id string) error
-	GetIDs() ([]string, error)
-	GetMany(ids []string) ([]*storage.Risk, []int, error)
-	DeleteMany(ids []string) error
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.Risk, bool, error)
+	Upsert(ctx context.Context, obj *storage.Risk) error
+	UpsertMany(ctx context.Context, objs []*storage.Risk) error
+	Delete(ctx context.Context, id string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Risk, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(fn func(obj *storage.Risk) error) error
+	Walk(ctx context.Context, fn func(obj *storage.Risk) error) error
 
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableRisk(db *pgxpool.Pool) {
+func createTableRisk(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk (
     Id varchar,
@@ -75,22 +75,22 @@ create table if not exists risk (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableRiskResults(db)
+	createTableRiskResults(ctx, db)
 }
 
-func createTableRiskResults(db *pgxpool.Pool) {
+func createTableRiskResults(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk_Results (
     risk_Id varchar,
@@ -102,7 +102,7 @@ create table if not exists risk_Results (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -112,15 +112,15 @@ create table if not exists risk_Results (
 		"create index if not exists riskResults_idx on risk_Results using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableRiskResultsFactors(db)
+	createTableRiskResultsFactors(ctx, db)
 }
 
-func createTableRiskResultsFactors(db *pgxpool.Pool) {
+func createTableRiskResultsFactors(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk_Results_Factors (
     risk_Id varchar,
@@ -133,7 +133,7 @@ create table if not exists risk_Results_Factors (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -143,14 +143,14 @@ create table if not exists risk_Results_Factors (
 		"create index if not exists riskResultsFactors_idx on risk_Results_Factors using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func insertIntoRisk(tx pgx.Tx, obj *storage.Risk) error {
+func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -159,24 +159,17 @@ func insertIntoRisk(tx pgx.Tx, obj *storage.Risk) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		obj.GetId(),
-
 		obj.GetSubject().GetId(),
-
 		obj.GetSubject().GetNamespace(),
-
 		obj.GetSubject().GetClusterId(),
-
 		obj.GetSubject().GetType(),
-
 		obj.GetScore(),
-
 		serialized,
 	}
 
 	finalStr := "INSERT INTO risk (Id, Subject_Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Id = EXCLUDED.Subject_Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -184,35 +177,31 @@ func insertIntoRisk(tx pgx.Tx, obj *storage.Risk) error {
 	var query string
 
 	for childIdx, child := range obj.GetResults() {
-		if err := insertIntoRiskResults(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoRiskResults(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from risk_Results where risk_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetResults()))
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetResults()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoRiskResults(tx pgx.Tx, obj *storage.Risk_Result, risk_Id string, idx int) error {
+func insertIntoRiskResults(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result, risk_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		risk_Id,
-
 		idx,
-
 		obj.GetName(),
-
 		obj.GetScore(),
 	}
 
 	finalStr := "INSERT INTO risk_Results (risk_Id, idx, Name, Score) VALUES($1, $2, $3, $4) ON CONFLICT(risk_Id, idx) DO UPDATE SET risk_Id = EXCLUDED.risk_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Score = EXCLUDED.Score"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -220,37 +209,32 @@ func insertIntoRiskResults(tx pgx.Tx, obj *storage.Risk_Result, risk_Id string, 
 	var query string
 
 	for childIdx, child := range obj.GetFactors() {
-		if err := insertIntoRiskResultsFactors(tx, child, risk_Id, idx, childIdx); err != nil {
+		if err := insertIntoRiskResultsFactors(ctx, tx, child, risk_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from risk_Results_Factors where risk_Id = $1 AND risk_Results_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(context.Background(), query, risk_Id, idx, len(obj.GetFactors()))
+	_, err = tx.Exec(ctx, query, risk_Id, idx, len(obj.GetFactors()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoRiskResultsFactors(tx pgx.Tx, obj *storage.Risk_Result_Factor, risk_Id string, risk_Results_idx int, idx int) error {
+func insertIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result_Factor, risk_Id string, risk_Results_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		risk_Id,
-
 		risk_Results_idx,
-
 		idx,
-
 		obj.GetMessage(),
-
 		obj.GetUrl(),
 	}
 
 	finalStr := "INSERT INTO risk_Results_Factors (risk_Id, risk_Results_idx, idx, Message, Url) VALUES($1, $2, $3, $4, $5) ON CONFLICT(risk_Id, risk_Results_idx, idx) DO UPDATE SET risk_Id = EXCLUDED.risk_Id, risk_Results_idx = EXCLUDED.risk_Results_idx, idx = EXCLUDED.idx, Message = EXCLUDED.Message, Url = EXCLUDED.Url"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -259,54 +243,54 @@ func insertIntoRiskResultsFactors(tx pgx.Tx, obj *storage.Risk_Result_Factor, ri
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
-	createTableRisk(db)
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	createTableRisk(ctx, db)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func (s *storeImpl) upsert(objs ...*storage.Risk) error {
-	conn, release := s.acquireConn(ops.Get, "Risk")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Risk) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "Risk")
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(context.Background())
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
 
-		if err := insertIntoRisk(tx, obj); err != nil {
-			if err := tx.Rollback(context.Background()); err != nil {
+		if err := insertIntoRisk(ctx, tx, obj); err != nil {
+			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
 			return err
 		}
-		if err := tx.Commit(context.Background()); err != nil {
+		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *storeImpl) Upsert(obj *storage.Risk) error {
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Risk) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Risk")
 
-	return s.upsert(obj)
+	return s.upsert(ctx, obj)
 }
 
-func (s *storeImpl) UpsertMany(objs []*storage.Risk) error {
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Risk) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Risk")
 
-	return s.upsert(objs...)
+	return s.upsert(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
-func (s *storeImpl) Count() (int, error) {
+func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Risk")
 
-	row := s.db.QueryRow(context.Background(), countStmt)
+	row := s.db.QueryRow(ctx, countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -315,10 +299,10 @@ func (s *storeImpl) Count() (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(id string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Risk")
 
-	row := s.db.QueryRow(context.Background(), existsStmt, id)
+	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -327,13 +311,13 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(id string) (*storage.Risk, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Risk, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Risk")
 
-	conn, release := s.acquireConn(ops.Get, "Risk")
+	conn, release := s.acquireConn(ctx, ops.Get, "Risk")
 	defer release()
 
-	row := conn.QueryRow(context.Background(), getStmt, id)
+	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -346,9 +330,9 @@ func (s *storeImpl) Get(id string) (*storage.Risk, bool, error) {
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
+	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -356,23 +340,23 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(id string) error {
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Risk")
 
-	conn, release := s.acquireConn(ops.Remove, "Risk")
+	conn, release := s.acquireConn(ctx, ops.Remove, "Risk")
 	defer release()
 
-	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
 }
 
 // GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.RiskIDs")
 
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -389,13 +373,13 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Risk, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Risk")
 
-	conn, release := s.acquireConn(ops.GetMany, "Risk")
+	conn, release := s.acquireConn(ctx, ops.GetMany, "Risk")
 	defer release()
 
-	rows, err := conn.Query(context.Background(), getManyStmt, ids)
+	rows, err := conn.Query(ctx, getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -431,20 +415,20 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
 }
 
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ids []string) error {
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Risk")
 
-	conn, release := s.acquireConn(ops.RemoveMany, "Risk")
+	conn, release := s.acquireConn(ctx, ops.RemoveMany, "Risk")
 	defer release()
-	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(fn func(obj *storage.Risk) error) error {
-	rows, err := s.db.Query(context.Background(), walkStmt)
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Risk) error) error {
+	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
@@ -467,35 +451,35 @@ func (s *storeImpl) Walk(fn func(obj *storage.Risk) error) error {
 
 //// Used for testing
 
-func dropTableRisk(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS risk CASCADE")
-	dropTableRiskResults(db)
+func dropTableRisk(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk CASCADE")
+	dropTableRiskResults(ctx, db)
 
 }
 
-func dropTableRiskResults(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS risk_Results CASCADE")
-	dropTableRiskResultsFactors(db)
+func dropTableRiskResults(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk_Results CASCADE")
+	dropTableRiskResultsFactors(ctx, db)
 
 }
 
-func dropTableRiskResultsFactors(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS risk_Results_Factors CASCADE")
+func dropTableRiskResultsFactors(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk_Results_Factors CASCADE")
 
 }
 
-func Destroy(db *pgxpool.Pool) {
-	dropTableRisk(db)
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableRisk(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex() ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }

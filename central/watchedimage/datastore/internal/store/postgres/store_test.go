@@ -41,46 +41,48 @@ func (s *WatchedimagesStoreSuite) TearDownTest() {
 }
 
 func (s *WatchedimagesStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	watchedImage := &storage.WatchedImage{}
 	s.NoError(testutils.FullInit(watchedImage, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundWatchedImage, exists, err := store.Get(watchedImage.GetName())
+	foundWatchedImage, exists, err := store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundWatchedImage)
 
-	s.NoError(store.Upsert(watchedImage))
-	foundWatchedImage, exists, err = store.Get(watchedImage.GetName())
+	s.NoError(store.Upsert(ctx, watchedImage))
+	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(watchedImage, foundWatchedImage)
 
-	watchedImageCount, err := store.Count()
+	watchedImageCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(watchedImageCount, 1)
 
-	watchedImageExists, err := store.Exists(watchedImage.GetName())
+	watchedImageExists, err := store.Exists(ctx, watchedImage.GetName())
 	s.NoError(err)
 	s.True(watchedImageExists)
-	s.NoError(store.Upsert(watchedImage))
+	s.NoError(store.Upsert(ctx, watchedImage))
 
-	foundWatchedImage, exists, err = store.Get(watchedImage.GetName())
+	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(watchedImage, foundWatchedImage)
 
-	s.NoError(store.Delete(watchedImage.GetName()))
-	foundWatchedImage, exists, err = store.Get(watchedImage.GetName())
+	s.NoError(store.Delete(ctx, watchedImage.GetName()))
+	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundWatchedImage)

@@ -15,6 +15,7 @@ import (
 )
 
 func TestStore(t *testing.T) {
+	ctx := context.Background()
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(t, err)
@@ -22,20 +23,20 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	multiKey := &storage.TestMultiKeyStruct{
 		Key1: "key1",
 		Key2: "key2",
 	}
-	dep, exists, err := store.Get(multiKey.GetKey1(), multiKey.GetKey2())
+	dep, exists, err := store.Get(ctx, multiKey.GetKey1(), multiKey.GetKey2())
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, dep)
 
-	assert.NoError(t, store.Upsert(multiKey))
-	dep, exists, err = store.Get(multiKey.GetKey1(), multiKey.GetKey2())
+	assert.NoError(t, store.Upsert(ctx, multiKey))
+	dep, exists, err = store.Get(ctx, multiKey.GetKey1(), multiKey.GetKey2())
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, multiKey, dep)
