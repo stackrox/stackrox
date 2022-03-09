@@ -148,8 +148,8 @@ func (i *imageScanCommand) Validate() error {
 	if i.printer == nil {
 		// TODO(ROX-8303): this can be removed once the old output format is fully deprecated
 		if i.format != "" && i.format != "json" && i.format != "csv" {
-			return errox.Newf(errox.InvalidArgs, "invalid output format %q used. You can "+
-				"only specify json or csv", i.format)
+			return errox.InvalidArgs.New(fmt.Sprintf("invalid output format %q used. You can "+
+				"only specify json or csv", i.format))
 		}
 	}
 	return nil

@@ -64,7 +64,7 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 		return nil, err
 	}
 	if !found {
-		return nil, errox.New(errox.NotFound, "network baseline for the deployment does not exist")
+		return nil, errox.NotFound.New("network baseline for the deployment does not exist")
 	}
 
 	// Got the baseline, check status of each passed in peer
