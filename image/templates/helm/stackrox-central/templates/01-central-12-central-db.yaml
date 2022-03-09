@@ -96,5 +96,6 @@ metadata:
     "helm.sh/resource-policy": keep
 type: Opaque
 stringData:
+  {{/* TODO(ROX-9249): Create password */}}
   password: SpTasCsKwRorXdFor$Now8
 {{- end }}
