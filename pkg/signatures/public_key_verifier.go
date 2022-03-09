@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"fmt"
 
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/hashicorp/go-multierror"
@@ -54,7 +53,7 @@ func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*c
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
 		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
-			return nil, errox.InvariantViolation.New(fmt.Sprintf("failed to decode PEM block containing public key %q", publicKey.GetName()))
+			return nil, errox.InvariantViolation.Newf("failed to decode PEM block containing public key %q", publicKey.GetName())
 		}
 
 		parsedKey, err := x509.ParsePKIXPublicKey(keyBlock.Bytes)
@@ -148,8 +147,8 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 	// See: https://github.com/google/go-containerregistry/blob/main/pkg/v1/hash.go#L78
 	// We should keep this check although, in case there are changes in the library.
 	if hash.Algorithm != sha256Algo {
-		return nil, gcrv1.Hash{}, errInvalidHashAlgo.New(fmt.Sprintf(
-			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm))
+		return nil, gcrv1.Hash{}, errInvalidHashAlgo.Newf(
+			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm)
 	}
 
 	// Each signature contains the base64 encoded version of it and the associated payload.
