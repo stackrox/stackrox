@@ -30,7 +30,7 @@ var (
 	defaultSortOption = &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),
 	}
-	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap).Remove(search.RiskScore)
+	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap)
 	nodeOnlyOptionsMap  = search.Difference(
 		nodeMappings.OptionsMap,
 		search.CombineOptionsMaps(

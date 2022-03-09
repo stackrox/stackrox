@@ -91,7 +91,7 @@ func (suite *ImageSearcherTestSuite) TestRiskOrdering() {
 		Pagination: &v1.QueryPagination{
 			SortOptions: []*v1.QuerySortOption{
 				{
-					Field: search.Priority.String(),
+					Field: search.ImagePriority.String(),
 				},
 			},
 		},
@@ -105,7 +105,7 @@ func (suite *ImageSearcherTestSuite) TestRiskOrdering() {
 	q.Pagination = &v1.QueryPagination{
 		SortOptions: []*v1.QuerySortOption{
 			{
-				Field:    search.Priority.String(),
+				Field:    search.ImagePriority.String(),
 				Reversed: true,
 			},
 		},
@@ -119,7 +119,7 @@ func (suite *ImageSearcherTestSuite) TestRiskOrdering() {
 	q.Pagination = &v1.QueryPagination{
 		SortOptions: []*v1.QuerySortOption{
 			{
-				Field: search.Priority.String(),
+				Field: search.ImagePriority.String(),
 			},
 		},
 	}

@@ -36,11 +36,11 @@ import (
 
 var (
 	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.Priority.String(),
+		Field:    search.DeploymentPriority.String(),
 		Reversed: false,
 	}
 
-	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap).Remove(search.RiskScore)
+	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap)
 	imageOnlyOptionsMap = search.Difference(
 		imageMappings.OptionsMap,
 		search.CombineOptionsMaps(
@@ -50,7 +50,7 @@ var (
 			imageCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
 		),
-	).Remove(search.RiskScore)
+	)
 	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap,
 		search.CombineOptionsMaps(
 			imageOnlyOptionsMap,

@@ -64,7 +64,7 @@ const riskTableColumnDescriptors = [
     },
     {
         Header: 'Priority',
-        searchField: 'Priority',
+        searchField: 'Deployment Risk Priority',
         accessor: 'deployment.priority',
         Cell: ({ value }) => {
             const asInt = parseInt(value, 10);

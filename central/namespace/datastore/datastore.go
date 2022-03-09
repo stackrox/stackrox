@@ -272,7 +272,7 @@ func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider gra
 }
 
 func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	prioritySortedSearcher := sorted.Searcher(searcher, search.Priority, namespaceRanker)
+	prioritySortedSearcher := sorted.Searcher(searcher, search.NamespacePriority, namespaceRanker)
 
 	return derivedfields.CountSortedSearcher(prioritySortedSearcher, map[string]counter.DerivedFieldCounter{
 		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToDeploymentPath, deploymentSAC.GetSACFilter()),

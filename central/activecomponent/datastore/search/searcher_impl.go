@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap).Remove(search.RiskScore)
+	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

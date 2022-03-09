@@ -124,10 +124,17 @@ var (
 	// PolicyViolated is a fake search field to filter deployments that have violation.
 	// This is handled/supported only by deployments sub-resolver of policy resolver.
 	// Note that 'Policy Violated=false' is not yet supported.
-	PolicyViolated                = newFieldLabel("Policy Violated")
-	Port                          = newFieldLabel("Port")
-	PortProtocol                  = newFieldLabel("Port Protocol")
+	PolicyViolated = newFieldLabel("Policy Violated")
+	Port           = newFieldLabel("Port")
+	PortProtocol   = newFieldLabel("Port Protocol")
+	// Priority is used in risk datastore internally.
 	Priority                      = newFieldLabel("Priority")
+	ClusterPriority               = newFieldLabel("Cluster Risk Priority")
+	NamespacePriority             = newFieldLabel("Namespace Risk Priority")
+	NodePriority                  = newFieldLabel("Node Risk Priority")
+	DeploymentPriority            = newFieldLabel("Deployment Risk Priority")
+	ImagePriority                 = newFieldLabel("Image Risk Priority")
+	ComponentPriority             = newFieldLabel("Component Risk Priority")
 	Privileged                    = newFieldLabel("Privileged")
 	ProcessTag                    = newFieldLabel("Process Tag")
 	ReadOnlyRootFilesystem        = newFieldLabel("Read Only Root Filesystem")
@@ -216,8 +223,12 @@ var (
 	Inactive = newFieldLabel("Inactive Deployment")
 
 	// Risk Search Fields
-	RiskScore       = newFieldLabel("Risk Score")
-	RiskSubjectType = newFieldLabel("Risk Subject Type")
+	RiskScore           = newFieldLabel("Risk Score")
+	NodeRiskScore       = newFieldLabel("Node Risk Score")
+	DeploymentRiskScore = newFieldLabel("Deployment Risk Score")
+	ImageRiskScore      = newFieldLabel("Image Risk Score")
+	ComponentRiskScore  = newFieldLabel("Component Risk Score")
+	RiskSubjectType     = newFieldLabel("Risk Subject Type")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 

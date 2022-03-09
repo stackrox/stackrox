@@ -21,7 +21,7 @@ import {
 } from 'utils/searchUtils';
 import RiskTable from './RiskTable';
 
-const DEFAULT_RISK_SORT = [{ id: 'Priority', desc: false }];
+const DEFAULT_RISK_SORT = [{ id: 'Deployment Risk Priority', desc: false }];
 function RiskTablePanel({
     history,
     selectedDeploymentId,
