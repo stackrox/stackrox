@@ -14,12 +14,11 @@
 //     if errors.Is(err, errox.InvalidArgs) ...
 //
 // Format error messages:
-//     return errox.NotFound.New(fmt.Sprintf("file '%s' not found", filename))
+//     return errox.NotFound.Newf("file %q not found", filename)
 //
 // Create error factories for generic errors:
 //     ErrInvalidAlgorithmF := func(alg string) RoxError {
-//         return errox.InvalidArgs.New(
-//             fmt.Sprintf("invalid algorithm %q used", alg))
+//         return errox.InvalidArgs.Newf("invalid algorithm %q used", alg)
 //     }
 //     ...
 //     return ErrInvalidAlgorithmF("256")
@@ -32,6 +31,7 @@ type RoxError interface {
 	error
 	Unwrap() error
 	New(message string) *roxError
+	Newf(format string, args ...interface{}) *roxError
 	CausedBy(cause interface{}) error
 }
 
@@ -69,6 +69,18 @@ func (e *roxError) Unwrap() error {
 //     errors.Is(ErrRecordNotFound, errox.NotFound)    // true
 func (e *roxError) New(message string) *roxError {
 	return &roxError{message, e}
+}
+
+// Newf creates an error based on the existing roxError, but with the
+// personalized formatted error message. Essentially, it allows to preserve the
+// error's base error in the chain but hide its message.
+//
+// Example:
+//     ErrRecordNotFound := errox.NotFound.Newf("record <%d> not found", recordIndex)
+//     ErrRecordNotFound.Error() == "record <5> not found" // true
+//     errors.Is(ErrRecordNotFound, errox.NotFound)        // true
+func (e *roxError) Newf(format string, args ...interface{}) *roxError {
+	return e.New(fmt.Sprintf(format, args...))
 }
 
 // CausedBy adds a cause to the roxError. The resulting message is a combination
