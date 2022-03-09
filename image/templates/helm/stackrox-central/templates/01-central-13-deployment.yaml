@@ -143,8 +143,10 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
+        {{- if ._rox.central.enableCentralDB }}
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
+        {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
@@ -195,9 +197,11 @@ spec:
       - name: endpoints-config-volume
         configMap:
           name: central-endpoints
+      {{- if ._rox.central.enableCentralDB }}
       - name: central-db-password
         secret:
           secretName: central-db-password
+      {{- end }}
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
