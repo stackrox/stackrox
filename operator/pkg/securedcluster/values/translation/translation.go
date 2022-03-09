@@ -323,12 +323,7 @@ func (t Translator) getLocalScannerComponentValues(ctx context.Context, securedC
 // Sets defaults that might not be applied on the resource due to ROX-8046.
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
-	if sc.Spec.Scanner == nil {
-		sc.Spec.Scanner = &platform.LocalScannerComponentSpec{}
-	}
-	if sc.Spec.Scanner.ScannerComponent == nil {
-		sc.Spec.Scanner.ScannerComponent = platform.LocalScannerComponentAutoSense.Pointer()
-	}
+	scanner.SetScannerDefaults(&sc.Spec)
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}

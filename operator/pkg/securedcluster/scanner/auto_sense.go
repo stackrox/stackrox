@@ -12,14 +12,10 @@ import (
 // Takes into account the setting in provided SecuredCluster CR as well as the presence of a Central instance in the same namespace.
 // Modifies the provided SecuredCluster object to set a default Spec.Scanner if missing.
 func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (bool, error) {
-	if s.Spec.Scanner == nil {
-		s.Spec.Scanner = &platform.LocalScannerComponentSpec{
-			ScannerComponent: platform.LocalScannerComponentAutoSense.Pointer(),
-		}
-	}
-	scannerComponent := s.Spec.Scanner.ScannerComponent
+	SetScannerDefaults(&s.Spec)
+	scannerComponent := *s.Spec.Scanner.ScannerComponent
 
-	switch *scannerComponent {
+	switch scannerComponent {
 	case platform.LocalScannerComponentAutoSense:
 		siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, s.GetNamespace())
 		if err != nil {
@@ -30,7 +26,7 @@ func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client,
 		return false, nil
 	}
 
-	return false, errors.Errorf("invalid spec.scanner.scannerComponent %q", *scannerComponent)
+	return false, errors.Errorf("invalid spec.scanner.scannerComponent %q", scannerComponent)
 }
 
 func isSiblingCentralPresent(ctx context.Context, client ctrlClient.Client, namespace string) (bool, error) {
