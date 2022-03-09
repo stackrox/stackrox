@@ -8,8 +8,6 @@ import rhacsFavicon from 'images/rh-favicon.ico';
 import stackroxFavicon from 'images/sr-favicon.ico';
 import rhacsLogoSvg from 'images/RHACS-Logo.svg';
 import stackroxLogoSvg from 'images/StackRox-Logo.svg';
-import rhacsLogoPng from 'images/RHACS-Logo.png';
-import stackroxLogoPng from 'images/stackrox-logo.png';
 
 const selectMetadata = createSelector([selectors.getMetadata], (metadata: Metadata) => metadata);
 
@@ -18,8 +16,6 @@ export interface BrandingAssets {
     type: ProductBranding | null;
     /** The source path to the main branding logo in SVG format */
     logoSvg: string;
-    /** The source path to the main branding logo in PNG format */
-    logoPng: string;
     /** Alt text for the main branding logo */
     logoAltText: string;
     /** Value to use as the base in the <title> element */
@@ -31,7 +27,6 @@ export interface BrandingAssets {
 const rhacsBranding: BrandingAssets = {
     type: 'RHACS_BRANDING',
     logoSvg: rhacsLogoSvg,
-    logoPng: rhacsLogoPng,
     logoAltText: 'Red Hat Advanced Cluster Security Logo',
     basePageTitle: 'Red Hat Advanced Cluster Security',
     favicon: rhacsFavicon,
@@ -40,7 +35,6 @@ const rhacsBranding: BrandingAssets = {
 const stackroxBranding: BrandingAssets = {
     type: 'STACKROX_BRANDING',
     logoSvg: stackroxLogoSvg,
-    logoPng: stackroxLogoPng,
     logoAltText: 'StackRox Logo',
     basePageTitle: 'StackRox',
     favicon: stackroxFavicon,
@@ -51,7 +45,6 @@ const stackroxBranding: BrandingAssets = {
 const fallbackAssets: BrandingAssets = {
     type: null,
     logoSvg: '',
-    logoPng: '',
     logoAltText: '',
     basePageTitle: '',
     favicon: '',

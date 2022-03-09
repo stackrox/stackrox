@@ -44,7 +44,7 @@ class WorkflowPDFExportButton extends Component {
         pdfTitle: PropTypes.string,
         // Note: The shape of the branding type is incomplete
         branding: PropTypes.shape({
-            logoPng: PropTypes.string,
+            logoSvg: PropTypes.string,
         }),
     };
 
@@ -63,7 +63,7 @@ class WorkflowPDFExportButton extends Component {
         className: '',
         pdfTitle: '',
         branding: {
-            logoPng: '',
+            logoSvg: '',
         },
     };
 
@@ -73,7 +73,7 @@ class WorkflowPDFExportButton extends Component {
 
         const promises = [];
         const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
-            <img alt="stackrox-logo" src=${this.props.branding.logoPng} class="h-24" />
+            <img alt="stackrox-logo" src=${this.props.branding.logoSvg} class="h-20 pl-2" />
             <div class="pr-4 text-right">
                 <div class="text-2xl">${this.props.pdfTitle}</div>
                 <div class="pt-2 text-xl">${dateFns.format(new Date(), 'MM/DD/YYYY')}</div>
