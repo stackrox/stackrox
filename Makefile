@@ -626,7 +626,9 @@ central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--file image/postgres/Dockerfile \
 		image/postgres
+ifdef CI
 	docker tag stackrox/central-db:$(TAG) quay.io/$(QUAY_REPO)/central-db:$(TAG)
+endif
 	@echo "Built central-db image with tag $(TAG)"
 
 ###########
