@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
-	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
@@ -54,6 +53,8 @@ type enricherImpl struct {
 
 	signatureIntegrationGetter signatureIntegrationGetter
 	signatureFetcherFactory    signatureFetcherFactory
+	signatureVerifier          signatureVerifierForIntegrations
+	signatureFetcherLimiter    *rate.Limiter
 
 	imageGetter imageGetter
 
@@ -138,7 +139,6 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 		delete(imageNoteSet, storage.Image_MISSING_SCAN_DATA)
 	}
 
-	// TODO(dhaus): Will become obsolete once the feature flag for image signature verification is removed.
 	updatedSigVerificationData := false
 	updatedSignature := false
 
@@ -153,7 +153,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 		updatedSigVerificationData, err = e.enrichWithSignatureVerificationData(ctx, image, updatedSignature)
 		errorList.AddError(err)
-		if image.GetSignatureVerificationData() == nil || image.GetSignatureVerificationData().GetResults() == nil {
+		if image.GetSignatureVerificationData().GetResults() == nil {
 			imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
 		} else {
 			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA)
@@ -327,7 +327,7 @@ func (e *enricherImpl) fetchSignatureFromDatabase(img *storage.Image, option Fet
 		return false
 	}
 
-	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetSignature() != nil {
+	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetSignature().GetSignatures() != nil {
 		img.Signature = existingImage.GetSignature()
 		return true
 	}
@@ -339,7 +339,7 @@ func (e *enricherImpl) fetchSignatureVerificationDataFromDatabase(img *storage.I
 		return false
 	}
 
-	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetSignature() != nil {
+	if existingImage, exists := e.fetchFromDatabase(img, option); exists && existingImage.GetSignatureVerificationData().GetResults() != nil {
 		img.SignatureVerificationData = existingImage.GetSignatureVerificationData()
 		return true
 	}
@@ -420,13 +420,13 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 // possible.
 func (e *enricherImpl) enrichWithSignatureVerificationData(ctx EnrichmentContext, img *storage.Image,
 	updatedSignature bool) (bool, error) {
-	// Do not fetch signature verification data from database if the signature was updated for the image.
-	if !updatedSignature && e.fetchSignatureVerificationDataFromDatabase(img, ctx.FetchOpt) {
+	// If no external metadata should be taken into account, we skip the verification.
+	if ctx.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
 
-	// If no external metadata should be taken into account, we skip the verification.
-	if ctx.FetchOpt == NoExternalMetadata {
+	// Do not fetch signature verification data from database if the signature was updated for the image.
+	if !updatedSignature && e.fetchSignatureVerificationDataFromDatabase(img, ctx.FetchOpt) {
 		return false, nil
 	}
 
@@ -436,13 +436,26 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx EnrichmentContext
 		return false, errors.Wrap(err, "fetching signature integrations")
 	}
 
+	// Short-circuit if no integrations are available.
+	if len(sigIntegrations) == 0 {
+		// If no signature integrations are available, we need to delete any existing verification results from the
+		// image and signal an update to the verification data.
+		if len(img.GetSignatureVerificationData().GetResults()) != 0 {
+			img.SignatureVerificationData = nil
+			return true, nil
+		}
+		// If no integrations are available and no pre-existing results, short-circuit and don't signal updated
+		// verification results.
+		return false, nil
+	}
+
 	// Timeout is based on benchmark test result for 200 integrations with 1 config each (roughly 1 sec) + a grace
 	// timeout on top. Currently, signature verification is done without remote RPCs, this will need to be
 	// changed accordingly when RPCs are required (i.e. cosign keyless).
 	verifySignatureCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res := signatures.VerifyAgainstSignatureIntegrations(verifySignatureCtx, sigIntegrations, img)
+	res := e.signatureVerifier(verifySignatureCtx, sigIntegrations, img)
 	if res == nil {
 		return false, nil
 	}
@@ -484,10 +497,8 @@ func (e *enricherImpl) enrichWithSignature(ctx EnrichmentContext, img *storage.I
 
 	var fetchedSignatures []*storage.Signature
 	for _, matchingReg := range matchingRegistries {
-		// TODO(dhaus): Need to check for rate limiting w.r.t registries.
-		// Honestly, I'm a bit worried about this "Retryable" error. I would like to avoid having something like
-		// "wrong credentials" being a retryable error, which it currently is.
-		// TODO(dhaus): Let me check whether I can fix this.
+		// Wait until limiter allows entrance.
+		_ = e.signatureFetcherLimiter.Wait(context.Background())
 		// During fetching, there may occur transient errors. If that's the case, we will retry.
 		err := retry.WithRetry(func() error {
 			fetchedSignatures, err = e.fetchSignature(img, matchingReg, fetchedSignatures)

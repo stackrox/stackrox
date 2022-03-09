@@ -152,8 +152,6 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm))
 	}
 
-	// TODO(dhaus): Need to create a test case for an image with no signature associated being added here.
-
 	// Each signature contains the base64 encoded version of it and the associated payload.
 	// In the future, this will also include potential rekor bundles for keyless verification.
 	signatures := make([]oci.Signature, 0, len(image.GetSignature().GetSignatures()))
