@@ -4,12 +4,14 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// GetAlert returns a Mock Alert
-func GetAlert() *storage.Alert {
+// GetScopedDeploymentAlert returns a Mock alert attached to a deployment belonging to the input scope
+func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *storage.Alert {
 	return &storage.Alert{
-		Id: "Alert1",
+		Id: ID, //"Alert1",
 		Violations: []*storage.Alert_Violation{
 			{
 				Message: "Deployment is affected by 'CVE-2017-15804'",
@@ -38,9 +40,9 @@ func GetAlert() *storage.Alert {
 			Deployment: &storage.Alert_Deployment{
 				Name:        "nginx_server",
 				Id:          "s79mdvmb6dsl",
-				ClusterId:   "prod cluster",
+				ClusterId:   clusterID, //"prod cluster",
 				ClusterName: "prod cluster",
-				Namespace:   "stackrox",
+				Namespace:   namespace, //"stackrox",
 				Labels: map[string]string{
 					"com.docker.stack.namespace":    "prevent",
 					"com.docker.swarm.service.name": "prevent_sensor",
@@ -58,6 +60,11 @@ func GetAlert() *storage.Alert {
 	}
 }
 
+// GetAlert returns a Mock Alert
+func GetAlert() *storage.Alert {
+	return GetScopedDeploymentAlert("Alert1", "prod cluster", "stackrox")
+}
+
 // GetAlertWithMitre returns a mock Alert with MITRE ATT&CK
 func GetAlertWithMitre() *storage.Alert {
 	alert := GetAlert()
@@ -67,8 +74,13 @@ func GetAlertWithMitre() *storage.Alert {
 
 // GetResourceAlert returns a Mock Alert with a resource entity
 func GetResourceAlert() *storage.Alert {
+	return GetScopedResourceAlert("some-resource-alert-on-secret", "cluster-id", "stackrox")
+}
+
+// GetScopedResourceAlert returns a Mock alert with a resource entity belonging to the input scope
+func GetScopedResourceAlert(ID string, clusterID string, namespace string) *storage.Alert {
 	return &storage.Alert{
-		Id: "some-resource-alert-on-secret",
+		Id: ID, //"some-resource-alert-on-secret",
 		Violations: []*storage.Alert_Violation{
 			{
 				Message: "Access to secret \"my-secret\" in \"cluster-id / stackrox\"",
@@ -95,9 +107,9 @@ func GetResourceAlert() *storage.Alert {
 			Resource: &storage.Alert_Resource{
 				ResourceType: storage.Alert_Resource_SECRETS,
 				Name:         "my-secret",
-				ClusterId:    "cluster-id",
+				ClusterId:    clusterID, //"cluster-id",
 				ClusterName:  "prod cluster",
-				Namespace:    "stackrox",
+				Namespace:    namespace, //"stackrox",
 				NamespaceId:  "aaaa-bbbb-cccc-dddd",
 			},
 		},
@@ -118,4 +130,28 @@ func GetAlertWithID(id string) *storage.Alert {
 	alert := GetAlert()
 	alert.Id = id
 	return alert
+}
+
+func GetSACTestAlertSet() []*storage.Alert {
+	alerts := make([]*storage.Alert, 0, 19)
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceA))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceA))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceA))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceA))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceA))
+	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceA))
+	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceA))
+	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceA))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceB))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceB))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceB))
+	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceB))
+	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster1, testutils.NamespaceB))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB))
+	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB))
+	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB))
+	alerts = append(alerts, GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceC))
+	alerts = append(alerts, GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceC))
+	alerts = append(alerts, GetImageAlert())
+	return alerts
 }
