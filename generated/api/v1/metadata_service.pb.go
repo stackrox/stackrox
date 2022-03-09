@@ -63,9 +63,9 @@ func (Metadata_LicenseStatus) EnumDescriptor() ([]byte, []int) {
 type Metadata_ProductBranding int32
 
 const (
-	// Open source StackRox branding
+	// Open source, community StackRox product branding
 	Metadata_STACKROX_BRANDING Metadata_ProductBranding = 0
-	// The official RHACS branding
+	// Commercial RHACS product branding
 	Metadata_RHACS_BRANDING Metadata_ProductBranding = 1
 )
 
