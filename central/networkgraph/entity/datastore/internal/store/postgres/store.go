@@ -41,27 +41,27 @@ func init() {
 }
 
 type Store interface {
-	Count() (int, error)
-	Exists(infoId string) (bool, error)
-	Get(infoId string) (*storage.NetworkEntity, bool, error)
-	Upsert(obj *storage.NetworkEntity) error
-	UpsertMany(objs []*storage.NetworkEntity) error
-	Delete(infoId string) error
-	GetIDs() ([]string, error)
-	GetMany(ids []string) ([]*storage.NetworkEntity, []int, error)
-	DeleteMany(ids []string) error
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, infoId string) (bool, error)
+	Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error)
+	Upsert(ctx context.Context, obj *storage.NetworkEntity) error
+	UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error
+	Delete(ctx context.Context, infoId string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.NetworkEntity, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(fn func(obj *storage.NetworkEntity) error) error
+	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error
 
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableNetworkentity(db *pgxpool.Pool) {
+func createTableNetworkentity(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists networkentity (
     Info_Type integer,
@@ -78,22 +78,22 @@ create table if not exists networkentity (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableNetworkentityListenPorts(db)
+	createTableNetworkentityListenPorts(ctx, db)
 }
 
-func createTableNetworkentityListenPorts(db *pgxpool.Pool) {
+func createTableNetworkentityListenPorts(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists networkentity_ListenPorts (
     networkentity_Info_Id varchar,
@@ -105,7 +105,7 @@ create table if not exists networkentity_ListenPorts (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -115,14 +115,14 @@ create table if not exists networkentity_ListenPorts (
 		"create index if not exists networkentityListenPorts_idx on networkentity_ListenPorts using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func insertIntoNetworkentity(tx pgx.Tx, obj *storage.NetworkEntity) error {
+func insertIntoNetworkentity(ctx context.Context, tx pgx.Tx, obj *storage.NetworkEntity) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -131,30 +131,20 @@ func insertIntoNetworkentity(tx pgx.Tx, obj *storage.NetworkEntity) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		obj.GetInfo().GetType(),
-
 		obj.GetInfo().GetId(),
-
 		obj.GetInfo().GetDeployment().GetName(),
-
 		obj.GetInfo().GetDeployment().GetNamespace(),
-
 		obj.GetInfo().GetDeployment().GetCluster(),
-
 		obj.GetInfo().GetExternalSource().GetName(),
-
 		obj.GetInfo().GetExternalSource().GetCidr(),
-
 		obj.GetInfo().GetExternalSource().GetDefault(),
-
 		obj.GetScope().GetClusterId(),
-
 		serialized,
 	}
 
 	finalStr := "INSERT INTO networkentity (Info_Type, Info_Id, Info_Deployment_Name, Info_Deployment_Namespace, Info_Deployment_Cluster, Info_ExternalSource_Name, Info_ExternalSource_Cidr, Info_ExternalSource_Default, Scope_ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Info_Id) DO UPDATE SET Info_Type = EXCLUDED.Info_Type, Info_Id = EXCLUDED.Info_Id, Info_Deployment_Name = EXCLUDED.Info_Deployment_Name, Info_Deployment_Namespace = EXCLUDED.Info_Deployment_Namespace, Info_Deployment_Cluster = EXCLUDED.Info_Deployment_Cluster, Info_ExternalSource_Name = EXCLUDED.Info_ExternalSource_Name, Info_ExternalSource_Cidr = EXCLUDED.Info_ExternalSource_Cidr, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, Scope_ClusterId = EXCLUDED.Scope_ClusterId, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -162,35 +152,31 @@ func insertIntoNetworkentity(tx pgx.Tx, obj *storage.NetworkEntity) error {
 	var query string
 
 	for childIdx, child := range obj.GetInfo().GetDeployment().GetListenPorts() {
-		if err := insertIntoNetworkentityListenPorts(tx, child, obj.GetInfo().GetId(), childIdx); err != nil {
+		if err := insertIntoNetworkentityListenPorts(ctx, tx, child, obj.GetInfo().GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from networkentity_ListenPorts where networkentity_Info_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetInfo().GetId(), len(obj.GetInfo().GetDeployment().GetListenPorts()))
+	_, err = tx.Exec(ctx, query, obj.GetInfo().GetId(), len(obj.GetInfo().GetDeployment().GetListenPorts()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoNetworkentityListenPorts(tx pgx.Tx, obj *storage.NetworkEntityInfo_Deployment_ListenPort, networkentity_Id string, idx int) error {
+func insertIntoNetworkentityListenPorts(ctx context.Context, tx pgx.Tx, obj *storage.NetworkEntityInfo_Deployment_ListenPort, networkentity_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		networkentity_Id,
-
 		idx,
-
 		obj.GetPort(),
-
 		obj.GetL4Protocol(),
 	}
 
 	finalStr := "INSERT INTO networkentity_ListenPorts (networkentity_Info_Id, idx, Port, L4Protocol) VALUES($1, $2, $3, $4) ON CONFLICT(networkentity_Info_Id, idx) DO UPDATE SET networkentity_Info_Id = EXCLUDED.networkentity_Info_Id, idx = EXCLUDED.idx, Port = EXCLUDED.Port, L4Protocol = EXCLUDED.L4Protocol"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -199,54 +185,54 @@ func insertIntoNetworkentityListenPorts(tx pgx.Tx, obj *storage.NetworkEntityInf
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
-	createTableNetworkentity(db)
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	createTableNetworkentity(ctx, db)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func (s *storeImpl) upsert(objs ...*storage.NetworkEntity) error {
-	conn, release := s.acquireConn(ops.Get, "NetworkEntity")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkEntity) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "NetworkEntity")
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(context.Background())
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
 
-		if err := insertIntoNetworkentity(tx, obj); err != nil {
-			if err := tx.Rollback(context.Background()); err != nil {
+		if err := insertIntoNetworkentity(ctx, tx, obj); err != nil {
+			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
 			return err
 		}
-		if err := tx.Commit(context.Background()); err != nil {
+		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *storeImpl) Upsert(obj *storage.NetworkEntity) error {
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkEntity) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkEntity")
 
-	return s.upsert(obj)
+	return s.upsert(ctx, obj)
 }
 
-func (s *storeImpl) UpsertMany(objs []*storage.NetworkEntity) error {
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkEntity")
 
-	return s.upsert(objs...)
+	return s.upsert(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
-func (s *storeImpl) Count() (int, error) {
+func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NetworkEntity")
 
-	row := s.db.QueryRow(context.Background(), countStmt)
+	row := s.db.QueryRow(ctx, countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -255,10 +241,10 @@ func (s *storeImpl) Count() (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(infoId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkEntity")
 
-	row := s.db.QueryRow(context.Background(), existsStmt, infoId)
+	row := s.db.QueryRow(ctx, existsStmt, infoId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -267,13 +253,13 @@ func (s *storeImpl) Exists(infoId string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(infoId string) (*storage.NetworkEntity, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")
 
-	conn, release := s.acquireConn(ops.Get, "NetworkEntity")
+	conn, release := s.acquireConn(ctx, ops.Get, "NetworkEntity")
 	defer release()
 
-	row := conn.QueryRow(context.Background(), getStmt, infoId)
+	row := conn.QueryRow(ctx, getStmt, infoId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -286,9 +272,9 @@ func (s *storeImpl) Get(infoId string) (*storage.NetworkEntity, bool, error) {
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
+	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -296,23 +282,23 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(infoId string) error {
+func (s *storeImpl) Delete(ctx context.Context, infoId string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkEntity")
 
-	conn, release := s.acquireConn(ops.Remove, "NetworkEntity")
+	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkEntity")
 	defer release()
 
-	if _, err := conn.Exec(context.Background(), deleteStmt, infoId); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, infoId); err != nil {
 		return err
 	}
 	return nil
 }
 
 // GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NetworkEntityIDs")
 
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -329,13 +315,13 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkEntity, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NetworkEntity, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkEntity")
 
-	conn, release := s.acquireConn(ops.GetMany, "NetworkEntity")
+	conn, release := s.acquireConn(ctx, ops.GetMany, "NetworkEntity")
 	defer release()
 
-	rows, err := conn.Query(context.Background(), getManyStmt, ids)
+	rows, err := conn.Query(ctx, getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -371,20 +357,20 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkEntity, []int, erro
 }
 
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ids []string) error {
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkEntity")
 
-	conn, release := s.acquireConn(ops.RemoveMany, "NetworkEntity")
+	conn, release := s.acquireConn(ctx, ops.RemoveMany, "NetworkEntity")
 	defer release()
-	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(fn func(obj *storage.NetworkEntity) error) error {
-	rows, err := s.db.Query(context.Background(), walkStmt)
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error {
+	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
@@ -407,29 +393,29 @@ func (s *storeImpl) Walk(fn func(obj *storage.NetworkEntity) error) error {
 
 //// Used for testing
 
-func dropTableNetworkentity(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS networkentity CASCADE")
-	dropTableNetworkentityListenPorts(db)
+func dropTableNetworkentity(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkentity CASCADE")
+	dropTableNetworkentityListenPorts(ctx, db)
 
 }
 
-func dropTableNetworkentityListenPorts(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS networkentity_ListenPorts CASCADE")
+func dropTableNetworkentityListenPorts(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkentity_ListenPorts CASCADE")
 
 }
 
-func Destroy(db *pgxpool.Pool) {
-	dropTableNetworkentity(db)
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableNetworkentity(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex() ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }

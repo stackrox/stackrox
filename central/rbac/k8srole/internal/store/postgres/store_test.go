@@ -41,46 +41,48 @@ func (s *K8srolesStoreSuite) TearDownTest() {
 }
 
 func (s *K8srolesStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	k8SRole := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(k8SRole, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundK8SRole, exists, err := store.Get(k8SRole.GetId())
+	foundK8SRole, exists, err := store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundK8SRole)
 
-	s.NoError(store.Upsert(k8SRole))
-	foundK8SRole, exists, err = store.Get(k8SRole.GetId())
+	s.NoError(store.Upsert(ctx, k8SRole))
+	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(k8SRole, foundK8SRole)
 
-	k8SRoleCount, err := store.Count()
+	k8SRoleCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(k8SRoleCount, 1)
 
-	k8SRoleExists, err := store.Exists(k8SRole.GetId())
+	k8SRoleExists, err := store.Exists(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.True(k8SRoleExists)
-	s.NoError(store.Upsert(k8SRole))
+	s.NoError(store.Upsert(ctx, k8SRole))
 
-	foundK8SRole, exists, err = store.Get(k8SRole.GetId())
+	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(k8SRole, foundK8SRole)
 
-	s.NoError(store.Delete(k8SRole.GetId()))
-	foundK8SRole, exists, err = store.Get(k8SRole.GetId())
+	s.NoError(store.Delete(ctx, k8SRole.GetId()))
+	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundK8SRole)

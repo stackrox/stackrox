@@ -20,6 +20,8 @@ var (
 )
 
 func TestStore(t *testing.T) {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(t, err)
@@ -27,23 +29,25 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	testStruct := singleKey.Clone()
-	dep, exists, err := store.Get(testStruct.GetKey())
+	dep, exists, err := store.Get(ctx, testStruct.GetKey())
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, dep)
 
-	assert.NoError(t, store.Upsert(testStruct))
-	dep, exists, err = store.Get(testStruct.GetKey())
+	assert.NoError(t, store.Upsert(ctx, testStruct))
+	dep, exists, err = store.Get(ctx, testStruct.GetKey())
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, testStruct, dep)
 }
 
 func TestIndex(t *testing.T) {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(t, err)
@@ -51,11 +55,11 @@ func TestIndex(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	testStruct := singleKey.Clone()
-	assert.NoError(t, store.Upsert(testStruct))
+	assert.NoError(t, store.Upsert(ctx, testStruct))
 
 	cases := []struct {
 		name         string

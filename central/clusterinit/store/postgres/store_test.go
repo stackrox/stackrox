@@ -41,46 +41,48 @@ func (s *ClusterinitbundlesStoreSuite) TearDownTest() {
 }
 
 func (s *ClusterinitbundlesStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	initBundleMeta := &storage.InitBundleMeta{}
 	s.NoError(testutils.FullInit(initBundleMeta, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundInitBundleMeta, exists, err := store.Get(initBundleMeta.GetId())
+	foundInitBundleMeta, exists, err := store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundInitBundleMeta)
 
-	s.NoError(store.Upsert(initBundleMeta))
-	foundInitBundleMeta, exists, err = store.Get(initBundleMeta.GetId())
+	s.NoError(store.Upsert(ctx, initBundleMeta))
+	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(initBundleMeta, foundInitBundleMeta)
 
-	initBundleMetaCount, err := store.Count()
+	initBundleMetaCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(initBundleMetaCount, 1)
 
-	initBundleMetaExists, err := store.Exists(initBundleMeta.GetId())
+	initBundleMetaExists, err := store.Exists(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.True(initBundleMetaExists)
-	s.NoError(store.Upsert(initBundleMeta))
+	s.NoError(store.Upsert(ctx, initBundleMeta))
 
-	foundInitBundleMeta, exists, err = store.Get(initBundleMeta.GetId())
+	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(initBundleMeta, foundInitBundleMeta)
 
-	s.NoError(store.Delete(initBundleMeta.GetId()))
-	foundInitBundleMeta, exists, err = store.Get(initBundleMeta.GetId())
+	s.NoError(store.Delete(ctx, initBundleMeta.GetId()))
+	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundInitBundleMeta)

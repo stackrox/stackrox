@@ -41,46 +41,48 @@ func (s *NetworkentityStoreSuite) TearDownTest() {
 }
 
 func (s *NetworkentityStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	networkEntity := &storage.NetworkEntity{}
 	s.NoError(testutils.FullInit(networkEntity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundNetworkEntity, exists, err := store.Get(networkEntity.GetInfo().GetId())
+	foundNetworkEntity, exists, err := store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
 
-	s.NoError(store.Upsert(networkEntity))
-	foundNetworkEntity, exists, err = store.Get(networkEntity.GetInfo().GetId())
+	s.NoError(store.Upsert(ctx, networkEntity))
+	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(networkEntity, foundNetworkEntity)
 
-	networkEntityCount, err := store.Count()
+	networkEntityCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(networkEntityCount, 1)
 
-	networkEntityExists, err := store.Exists(networkEntity.GetInfo().GetId())
+	networkEntityExists, err := store.Exists(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.True(networkEntityExists)
-	s.NoError(store.Upsert(networkEntity))
+	s.NoError(store.Upsert(ctx, networkEntity))
 
-	foundNetworkEntity, exists, err = store.Get(networkEntity.GetInfo().GetId())
+	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(networkEntity, foundNetworkEntity)
 
-	s.NoError(store.Delete(networkEntity.GetInfo().GetId()))
-	foundNetworkEntity, exists, err = store.Get(networkEntity.GetInfo().GetId())
+	s.NoError(store.Delete(ctx, networkEntity.GetInfo().GetId()))
+	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
