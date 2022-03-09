@@ -5138,9 +5138,8 @@ workflows:
           filters:
             tags:
               only: /.*/
-            # temporarily enable scanning to test the false fixable:
-            # branches:
-            #   ignore: /.*/
+            branches:
+              ignore: /.*/
           requires:
             - build
 
