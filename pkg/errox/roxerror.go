@@ -31,7 +31,7 @@ import "fmt"
 type RoxError interface {
 	error
 	Unwrap() error
-	New(message string) RoxError
+	New(message string) *roxError
 	CausedBy(cause interface{}) error
 }
 
@@ -45,7 +45,7 @@ var _ RoxError = (*roxError)(nil)
 
 // makeSentinel returns a new sentinel error. Semantically this is very close to
 // `errors.New(message)` from the standard library.
-func makeSentinel(message string) RoxError {
+func makeSentinel(message string) *roxError {
 	return &roxError{message, nil}
 }
 
@@ -60,14 +60,14 @@ func (e *roxError) Unwrap() error {
 }
 
 // New creates an error based on the existing roxError, but with the
-// personalized error message. Essentially, it allows for preserving the error
-// base error in the chain but hide its message.
+// personalized error message. Essentially, it allows for preserving the
+// error's base error in the chain but hide its message.
 //
 // Example:
 //     ErrRecordNotFound := errox.NotFound.New("record not found")
 //     ErrRecordNotFound.Error() == "record not found" // true
 //     errors.Is(ErrRecordNotFound, errox.NotFound)    // true
-func (e *roxError) New(message string) RoxError {
+func (e *roxError) New(message string) *roxError {
 	return &roxError{message, e}
 }
 
