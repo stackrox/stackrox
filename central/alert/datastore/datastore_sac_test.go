@@ -15,11 +15,12 @@ import (
 	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -81,18 +82,27 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	// END engine specific code
 
 	s.datastore, err = New(*s.storage, s.comments, *s.indexer, *s.search)
+	s.NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), resources.Alert.GetResource())
 }
 
 func (s *alertDatastoreSACTestSuite) TearDownSuite() {
-	var err error
-	err = rocksdb.CloseAndRemove(s.engine)
+	err := rocksdb.CloseAndRemove(s.engine)
 	s.NoError(err)
 }
 
 func (s *alertDatastoreSACTestSuite) SetupTest() {
 	s.testAlertIDs = make([]string, 0)
+
+	// Inject test data set for search tests
+	alerts := fixtures.GetSACTestAlertSet()
+	for _, alert := range alerts {
+		err := s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
+		s.NoError(err)
+		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
+		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
+	}
 }
 
 func (s *alertDatastoreSACTestSuite) TearDownTest() {
@@ -113,8 +123,8 @@ func (s *alertDatastoreSACTestSuite) cleanupAlert(ID string) {
 }
 
 func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
-	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB)
-	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB)
+	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
 	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
 	s.comments.EXPECT().RemoveAlertComments(alert1.Id).AnyTimes().Return(nil)
@@ -238,19 +248,21 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB)
+			var err error
+			alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.comments.EXPECT().RemoveAlertComments(alert1.Id).AnyTimes().Return(nil)
 			s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
-			s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
+			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
 			defer s.cleanupAlert(alert1.Id)
-			alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB)
+			s.NoError(err)
+			alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.comments.EXPECT().RemoveAlertComments(alert2.Id).AnyTimes().Return(nil)
 			s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
-			s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
+			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
 			defer s.cleanupAlert(alert2.Id)
+			s.NoError(err)
 
 			ctx := s.testContexts[c.scopeKey]
-			var err error
 			err = s.datastore.MarkAlertStale(ctx, alert1.GetId())
 			if !c.expectError {
 				s.NoError(err)
@@ -275,14 +287,17 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 	// Inject two scoped alerts to the storage
 	// The test will validate, depending on the scope present in the operation context,
 	// whether the data should be seen by the requester or not
-	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB)
-	s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
+	var err error
+	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
 	s.comments.EXPECT().RemoveAlertComments(alert1.Id).AnyTimes().Return(nil)
 	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
-	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testutils.Cluster2, testutils.NamespaceB)
-	s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
+	s.NoError(err)
+	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
 	s.comments.EXPECT().RemoveAlertComments(alert2.Id).AnyTimes().Return(nil)
 	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+	s.NoError(err)
 
 	cases := map[string]crudTest{
 		"(full) read-only can read": {
@@ -369,25 +384,25 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 	"Cluster1 read-write access should only see Cluster1 alerts": {
 		scopeKey: testutils.Cluster1ReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster1: {
-				testutils.NamespaceA: 8,
-				testutils.NamespaceB: 5,
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
+				testconsts.NamespaceB: 5,
 			},
 		},
 	},
 	"Cluster1 and NamespaceA read-write access should only see Cluster1 and NamespaceA alerts": {
 		scopeKey: testutils.Cluster1NamespaceAReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster1: {
-				testutils.NamespaceA: 8,
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
 			},
 		},
 	},
 	"Cluster1 and NamespaceB read-write access should only see Cluster1 and NamespaceB alerts": {
 		scopeKey: testutils.Cluster1NamespaceBReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster1: {
-				testutils.NamespaceB: 5,
+			testconsts.Cluster1: {
+				testconsts.NamespaceB: 5,
 			},
 		},
 	},
@@ -398,34 +413,34 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 	"Cluster1 and Namespaces A and B read-write access should only appropriate cluster/namespace alerts": {
 		scopeKey: testutils.Cluster1NamespacesABReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster1: {
-				testutils.NamespaceA: 8,
-				testutils.NamespaceB: 5,
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
+				testconsts.NamespaceB: 5,
 			},
 		},
 	},
 	"Cluster1 and Namespaces A and C read-write access should only appropriate cluster/namespace alerts": {
 		scopeKey: testutils.Cluster1NamespacesACReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster1: {
-				testutils.NamespaceA: 8,
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
 			},
 		},
 	},
 	"Cluster1 and Namespaces B and C read-write access should only appropriate cluster/namespace alerts": {
 		scopeKey: testutils.Cluster1NamespacesBCReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster1: {
-				testutils.NamespaceB: 5,
+			testconsts.Cluster1: {
+				testconsts.NamespaceB: 5,
 			},
 		},
 	},
 	"Cluster2 read-write access should only see Cluster2 alerts": {
 		scopeKey: testutils.Cluster2ReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster2: {
-				testutils.NamespaceB: 3,
-				testutils.NamespaceC: 2,
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
+				testconsts.NamespaceC: 2,
 			},
 		},
 	},
@@ -436,41 +451,41 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 	"Cluster2 and NamespaceB read-write access should only see Cluster2 and NamespaceB alerts": {
 		scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster2: {
-				testutils.NamespaceB: 3,
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
 			},
 		},
 	},
 	"Cluster2 and NamespaceC read-write access should only see Cluster2 and NamespaceC alert": {
 		scopeKey: testutils.Cluster2NamespaceCReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster2: {
-				testutils.NamespaceC: 2,
+			testconsts.Cluster2: {
+				testconsts.NamespaceC: 2,
 			},
 		},
 	},
 	"Cluster2 and Namespaces A and B read-write access should only appropriate cluster/namespace alerts": {
 		scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster2: {
-				testutils.NamespaceB: 3,
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
 			},
 		},
 	},
 	"Cluster2 and Namespaces A and C read-write access should only appropriate cluster/namespace alerts": {
 		scopeKey: testutils.Cluster2NamespacesACReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster2: {
-				testutils.NamespaceC: 2,
+			testconsts.Cluster2: {
+				testconsts.NamespaceC: 2,
 			},
 		},
 	},
 	"Cluster2 and Namespaces B and C read-write access should only appropriate cluster/namespace alerts": {
 		scopeKey: testutils.Cluster2NamespacesBCReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster2: {
-				testutils.NamespaceB: 3,
-				testutils.NamespaceC: 2,
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
+				testconsts.NamespaceC: 2,
 			},
 		},
 	},
@@ -505,13 +520,13 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster1: {
-				testutils.NamespaceA: 8,
-				testutils.NamespaceB: 5,
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
+				testconsts.NamespaceB: 5,
 			},
-			testutils.Cluster2: {
-				testutils.NamespaceB: 3,
-				testutils.NamespaceC: 2,
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
+				testconsts.NamespaceC: 2,
 			},
 			"": {"": 1},
 		},
@@ -521,13 +536,13 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			testutils.Cluster1: {
-				testutils.NamespaceA: 8,
-				testutils.NamespaceB: 5,
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
+				testconsts.NamespaceB: 5,
 			},
-			testutils.Cluster2: {
-				testutils.NamespaceB: 3,
-				testutils.NamespaceC: 2,
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
+				testconsts.NamespaceC: 2,
 			},
 			"": {"": 1},
 		},
@@ -584,12 +599,6 @@ func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResu
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedSearch() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertScopedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchTest(c)
@@ -598,12 +607,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedSearch() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertUnrestrictedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchTest(c)
@@ -630,12 +633,6 @@ func (s *alertDatastoreSACTestSuite) runCountTest(testparams alertSACSearchResul
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedCount() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertScopedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runCountTest(c)
@@ -644,12 +641,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedCount() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCount() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertUnrestrictedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runCountTest(c)
@@ -666,12 +657,6 @@ func (s *alertDatastoreSACTestSuite) runCountAlertsTest(testparams alertSACSearc
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedCountAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertScopedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runCountAlertsTest(c)
@@ -680,12 +665,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedCountAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCountAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertUnrestrictedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runCountAlertsTest(c)
@@ -732,12 +711,6 @@ func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSear
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertScopedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchAlertsTest(c)
@@ -746,12 +719,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertUnrestrictedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchAlertsTest(c)
@@ -787,12 +754,6 @@ func (s *alertDatastoreSACTestSuite) runSearchListAlertsTest(testparams alertSAC
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchListAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertScopedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchListAlertsTest(c)
@@ -801,12 +762,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchListAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchListAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchListAlertsTest(c)
@@ -823,12 +778,6 @@ func (s *alertDatastoreSACTestSuite) runListAlertsTest(testparams alertSACSearch
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedListAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertScopedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runListAlertsTest(c)
@@ -837,12 +786,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedListAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedListAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runListAlertsTest(c)
@@ -887,12 +830,6 @@ func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACS
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchRawAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertScopedSACSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchRawAlertsTest(c)
@@ -901,12 +838,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchRawAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchRawAlerts() {
-	alerts := fixtures.GetSACTestAlertSet()
-	for _, alert := range alerts {
-		s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
-		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
-	}
 	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runSearchRawAlertsTest(c)
