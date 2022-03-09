@@ -60,8 +60,10 @@ spec:
   resources:
     requests:
       storage: {{ include "srox.formatStorageSize" $pvcCfg.size }}
+{{ if ._rox.central.enableCentralDB -}}
 ---
-apiVersion: v1
+{{/* TODO(): Configure PVC for both Central and Central DB */}}
+  apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: central-db
@@ -82,4 +84,5 @@ spec:
   resources:
     requests:
       storage: {{ include "srox.formatStorageSize" $pvcCfg.size }}
+{{- end }}
 {{- end }}

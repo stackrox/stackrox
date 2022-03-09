@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-
+{{ if ._rox.central.enableCentralDB -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,15 +27,11 @@ spec:
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
     spec:
-      imagePullSecrets:
-      {{- range $secretName := ._rox.imagePullSecrets._names }}
-      - name: {{ quote $secretName }}
-      {{- end }}
       containers:
       - name: central-db
-        image: stackrox/sandbox:postgres-14-stat-wal3
+        {{/* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
+        image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
         env:
-        # Very not production
         - name: POSTGRES_HOST_AUTH_METHOD
           value: "password"
         - name: PGDATA
@@ -101,3 +97,4 @@ metadata:
 type: Opaque
 stringData:
   password: SpTasCsKwRorXdFor$Now8
+{{- end }}

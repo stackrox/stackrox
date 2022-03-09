@@ -98,6 +98,9 @@ central:
       enabled: true
     {{ end }}
   {{- end }}
+  {{- if .K8sConfig.EnableCentralDB }}
+  enableCentralDB: true
+  {{- end }}
 
 scanner:
   # IMPORTANT: If you do not wish to run StackRox Scanner, change the value on the following

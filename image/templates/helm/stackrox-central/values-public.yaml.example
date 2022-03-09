@@ -248,6 +248,9 @@
 #       mount:
 #         mountPath: /etc/my-config-data
 #
+#   # Setting enableCentralDB to true enables dedicated a Postgres database for Central
+#   enableCentralDB: false
+#
 # # Public configuration options for the StackRox Scanner.
 # scanner:
 #   # disable=true will cause the StackRox Kubernetes Security Platform to be

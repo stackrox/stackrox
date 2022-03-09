@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 
 function realpath {
 	[[ -n "$1" ]] || return 0
@@ -183,6 +182,10 @@ function launch_central {
 
     if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
+    fi
+
+    if [[ "${ENABLE_CENTRAL_DB}" == "true" ]]; then
+        add_args "--enable-central-db"
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"

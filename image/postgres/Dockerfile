@@ -19,7 +19,6 @@ ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 ENV PG_MAJOR=14
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
-    PGDATA="/var/lib/postgresql/data" \
     POSTGRES_PASSWORD_FILE="/run/secrets/stackrox.io/secrets/password"
 
 COPY signatures/RPM-GPG-KEY-PGDG-14 /

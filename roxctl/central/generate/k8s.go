@@ -94,6 +94,8 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 
 	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
 
+	flagWrap.BoolVar(&k8sConfig.EnableCentralDB, "enable-central-db", false, "whether to enable central-db", "central")
+
 	return c
 }
 
