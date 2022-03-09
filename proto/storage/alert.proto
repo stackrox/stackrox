@@ -99,7 +99,7 @@ message Alert {
     }
 
     string                    id                = 1 [(gogoproto.moretags) = 'sensorhash:"ignore" sql:"pk"']; // Internal use only
-    Policy                    policy            = 2;
+    Policy                    policy            = 2 [(gogoproto.moretags) = 'sql:"ignore_pk"'];
     LifecycleStage            lifecycle_stage   = 3;
 
     oneof Entity {
