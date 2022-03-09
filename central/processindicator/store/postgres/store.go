@@ -441,13 +441,13 @@ func (s *storeImpl) Walk(fn func(obj *storage.ProcessIndicator) error) error {
 //// Used for testing
 
 func dropTableProcessIndicators(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE process_indicators CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS process_indicators CASCADE")
 	dropTableProcessIndicatorsLineageInfo(db)
 
 }
 
 func dropTableProcessIndicatorsLineageInfo(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE process_indicators_LineageInfo CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS process_indicators_LineageInfo CASCADE")
 
 }
 

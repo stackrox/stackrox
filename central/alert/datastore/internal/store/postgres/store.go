@@ -1606,7 +1606,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.Alert) error) error {
 //// Used for testing
 
 func dropTableAlerts(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts CASCADE")
 	dropTableAlertsWhitelists(db)
 	dropTableAlertsExclusions(db)
 	dropTableAlertsScope(db)
@@ -1619,66 +1619,66 @@ func dropTableAlerts(db *pgxpool.Pool) {
 }
 
 func dropTableAlertsWhitelists(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Whitelists CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_Whitelists CASCADE")
 
 }
 
 func dropTableAlertsExclusions(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Exclusions CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_Exclusions CASCADE")
 
 }
 
 func dropTableAlertsScope(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Scope CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_Scope CASCADE")
 
 }
 
 func dropTableAlertsPolicySections(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_PolicySections CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_PolicySections CASCADE")
 	dropTableAlertsPolicySectionsPolicyGroups(db)
 
 }
 
 func dropTableAlertsPolicySectionsPolicyGroups(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_PolicySections_PolicyGroups CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_PolicySections_PolicyGroups CASCADE")
 	dropTableAlertsPolicySectionsPolicyGroupsValues(db)
 
 }
 
 func dropTableAlertsPolicySectionsPolicyGroupsValues(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_PolicySections_PolicyGroups_Values CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_PolicySections_PolicyGroups_Values CASCADE")
 
 }
 
 func dropTableAlertsMitreAttackVectors(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_MitreAttackVectors CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_MitreAttackVectors CASCADE")
 
 }
 
 func dropTableAlertsContainers(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Containers CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_Containers CASCADE")
 
 }
 
 func dropTableAlertsViolations(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Violations CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_Violations CASCADE")
 	dropTableAlertsViolationsAttrs(db)
 
 }
 
 func dropTableAlertsViolationsAttrs(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Violations_Attrs CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_Violations_Attrs CASCADE")
 
 }
 
 func dropTableAlertsProcesses(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Processes CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_Processes CASCADE")
 	dropTableAlertsProcessesLineageInfo(db)
 
 }
 
 func dropTableAlertsProcessesLineageInfo(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Processes_LineageInfo CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS alerts_Processes_LineageInfo CASCADE")
 
 }
 
