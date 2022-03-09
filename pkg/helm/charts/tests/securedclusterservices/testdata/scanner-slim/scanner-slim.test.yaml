@@ -29,7 +29,7 @@ tests:
     scanner.disable: false
   expectError: true
   expect: |
-    .error | assertThat(contains("Local scanner was enabled but is only supported on OpenShift."))
+    .error | assertThat(contains("Scanner was enabled but is only supported on OpenShift."))
 
 - name: "scanner can override image config"
   set:
