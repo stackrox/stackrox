@@ -41,46 +41,48 @@ func (s *RolebindingsStoreSuite) TearDownTest() {
 }
 
 func (s *RolebindingsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	k8SRoleBinding := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(k8SRoleBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundK8SRoleBinding, exists, err := store.Get(k8SRoleBinding.GetId())
+	foundK8SRoleBinding, exists, err := store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundK8SRoleBinding)
 
-	s.NoError(store.Upsert(k8SRoleBinding))
-	foundK8SRoleBinding, exists, err = store.Get(k8SRoleBinding.GetId())
+	s.NoError(store.Upsert(ctx, k8SRoleBinding))
+	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(k8SRoleBinding, foundK8SRoleBinding)
 
-	k8SRoleBindingCount, err := store.Count()
+	k8SRoleBindingCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(k8SRoleBindingCount, 1)
 
-	k8SRoleBindingExists, err := store.Exists(k8SRoleBinding.GetId())
+	k8SRoleBindingExists, err := store.Exists(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
 	s.True(k8SRoleBindingExists)
-	s.NoError(store.Upsert(k8SRoleBinding))
+	s.NoError(store.Upsert(ctx, k8SRoleBinding))
 
-	foundK8SRoleBinding, exists, err = store.Get(k8SRoleBinding.GetId())
+	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(k8SRoleBinding, foundK8SRoleBinding)
 
-	s.NoError(store.Delete(k8SRoleBinding.GetId()))
-	foundK8SRoleBinding, exists, err = store.Get(k8SRoleBinding.GetId())
+	s.NoError(store.Delete(ctx, k8SRoleBinding.GetId()))
+	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundK8SRoleBinding)

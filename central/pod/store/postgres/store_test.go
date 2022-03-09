@@ -41,46 +41,48 @@ func (s *PodsStoreSuite) TearDownTest() {
 }
 
 func (s *PodsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	pod := &storage.Pod{}
 	s.NoError(testutils.FullInit(pod, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundPod, exists, err := store.Get(pod.GetId())
+	foundPod, exists, err := store.Get(ctx, pod.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPod)
 
-	s.NoError(store.Upsert(pod))
-	foundPod, exists, err = store.Get(pod.GetId())
+	s.NoError(store.Upsert(ctx, pod))
+	foundPod, exists, err = store.Get(ctx, pod.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(pod, foundPod)
 
-	podCount, err := store.Count()
+	podCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(podCount, 1)
 
-	podExists, err := store.Exists(pod.GetId())
+	podExists, err := store.Exists(ctx, pod.GetId())
 	s.NoError(err)
 	s.True(podExists)
-	s.NoError(store.Upsert(pod))
+	s.NoError(store.Upsert(ctx, pod))
 
-	foundPod, exists, err = store.Get(pod.GetId())
+	foundPod, exists, err = store.Get(ctx, pod.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(pod, foundPod)
 
-	s.NoError(store.Delete(pod.GetId()))
-	foundPod, exists, err = store.Get(pod.GetId())
+	s.NoError(store.Delete(ctx, pod.GetId()))
+	foundPod, exists, err = store.Get(ctx, pod.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPod)

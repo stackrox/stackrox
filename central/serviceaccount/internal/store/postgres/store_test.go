@@ -41,46 +41,48 @@ func (s *ServiceaccountsStoreSuite) TearDownTest() {
 }
 
 func (s *ServiceaccountsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	serviceAccount := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(serviceAccount, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundServiceAccount, exists, err := store.Get(serviceAccount.GetId())
+	foundServiceAccount, exists, err := store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundServiceAccount)
 
-	s.NoError(store.Upsert(serviceAccount))
-	foundServiceAccount, exists, err = store.Get(serviceAccount.GetId())
+	s.NoError(store.Upsert(ctx, serviceAccount))
+	foundServiceAccount, exists, err = store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(serviceAccount, foundServiceAccount)
 
-	serviceAccountCount, err := store.Count()
+	serviceAccountCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(serviceAccountCount, 1)
 
-	serviceAccountExists, err := store.Exists(serviceAccount.GetId())
+	serviceAccountExists, err := store.Exists(ctx, serviceAccount.GetId())
 	s.NoError(err)
 	s.True(serviceAccountExists)
-	s.NoError(store.Upsert(serviceAccount))
+	s.NoError(store.Upsert(ctx, serviceAccount))
 
-	foundServiceAccount, exists, err = store.Get(serviceAccount.GetId())
+	foundServiceAccount, exists, err = store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(serviceAccount, foundServiceAccount)
 
-	s.NoError(store.Delete(serviceAccount.GetId()))
-	foundServiceAccount, exists, err = store.Get(serviceAccount.GetId())
+	s.NoError(store.Delete(ctx, serviceAccount.GetId()))
+	foundServiceAccount, exists, err = store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundServiceAccount)

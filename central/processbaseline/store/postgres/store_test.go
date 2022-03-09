@@ -41,46 +41,48 @@ func (s *ProcessbaselinesStoreSuite) TearDownTest() {
 }
 
 func (s *ProcessbaselinesStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	processBaseline := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(processBaseline, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundProcessBaseline, exists, err := store.Get(processBaseline.GetId())
+	foundProcessBaseline, exists, err := store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessBaseline)
 
-	s.NoError(store.Upsert(processBaseline))
-	foundProcessBaseline, exists, err = store.Get(processBaseline.GetId())
+	s.NoError(store.Upsert(ctx, processBaseline))
+	foundProcessBaseline, exists, err = store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processBaseline, foundProcessBaseline)
 
-	processBaselineCount, err := store.Count()
+	processBaselineCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(processBaselineCount, 1)
 
-	processBaselineExists, err := store.Exists(processBaseline.GetId())
+	processBaselineExists, err := store.Exists(ctx, processBaseline.GetId())
 	s.NoError(err)
 	s.True(processBaselineExists)
-	s.NoError(store.Upsert(processBaseline))
+	s.NoError(store.Upsert(ctx, processBaseline))
 
-	foundProcessBaseline, exists, err = store.Get(processBaseline.GetId())
+	foundProcessBaseline, exists, err = store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processBaseline, foundProcessBaseline)
 
-	s.NoError(store.Delete(processBaseline.GetId()))
-	foundProcessBaseline, exists, err = store.Get(processBaseline.GetId())
+	s.NoError(store.Delete(ctx, processBaseline.GetId()))
+	foundProcessBaseline, exists, err = store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessBaseline)

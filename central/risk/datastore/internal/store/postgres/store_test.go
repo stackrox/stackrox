@@ -41,46 +41,48 @@ func (s *RiskStoreSuite) TearDownTest() {
 }
 
 func (s *RiskStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	risk := &storage.Risk{}
 	s.NoError(testutils.FullInit(risk, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundRisk, exists, err := store.Get(risk.GetId())
+	foundRisk, exists, err := store.Get(ctx, risk.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundRisk)
 
-	s.NoError(store.Upsert(risk))
-	foundRisk, exists, err = store.Get(risk.GetId())
+	s.NoError(store.Upsert(ctx, risk))
+	foundRisk, exists, err = store.Get(ctx, risk.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(risk, foundRisk)
 
-	riskCount, err := store.Count()
+	riskCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(riskCount, 1)
 
-	riskExists, err := store.Exists(risk.GetId())
+	riskExists, err := store.Exists(ctx, risk.GetId())
 	s.NoError(err)
 	s.True(riskExists)
-	s.NoError(store.Upsert(risk))
+	s.NoError(store.Upsert(ctx, risk))
 
-	foundRisk, exists, err = store.Get(risk.GetId())
+	foundRisk, exists, err = store.Get(ctx, risk.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(risk, foundRisk)
 
-	s.NoError(store.Delete(risk.GetId()))
-	foundRisk, exists, err = store.Get(risk.GetId())
+	s.NoError(store.Delete(ctx, risk.GetId()))
+	foundRisk, exists, err = store.Get(ctx, risk.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundRisk)
