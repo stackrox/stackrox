@@ -20,7 +20,7 @@ var (
 // This is derived from walking the go struct
 type Schema struct {
 	Table        string
-	ParentSchema *Schema
+	Parents      []*Schema
 	Fields       []Field
 	Children     []*Schema
 	Type         string
@@ -63,29 +63,40 @@ func (s *Schema) Print() {
 	}
 }
 
-func parent(name string) string {
-	return "parent_" + name
+// tryParentify attempts to convert the specified field to a reference. If the field is already a reference in
+// the referenced schema, it is used as is.
+func tryParentify(field *Field, parentSchema *Schema) {
+	if field.Reference == "" {
+		field.Reference = field.ColumnName
+		field.Name = parentify(parentSchema.Table, field.Name)
+		field.ColumnName = parentify(parentSchema.Table, field.ColumnName)
+	} else {
+		field.Reference = field.ColumnName
+	}
+}
+
+func parentify(parent, name string) string {
+	return parent + "_" + name
 }
 
 // ResolvedFields is the total set of fields for the schema including
 // fields that are derived from the parent schemas. e.g. parent primary keys, array indexes, etc
 func (s *Schema) ResolvedFields() []Field {
 	var pks []Field
-	if s.ParentSchema != nil {
-		pks = s.ParentSchema.ResolvedPrimaryKeys()
-	}
-	for idx := range pks {
-		pk := &pks[idx]
-		pk.Reference = pk.ColumnName
-		pk.Name = parent(pk.Name)
-		pk.ObjectGetter = ObjectGetter{
-			variable: true,
-			value:    pk.Name,
+	for _, parent := range s.Parents {
+		pks = parent.ResolvedPrimaryKeys()
+		for idx := range pks {
+			pk := &pks[idx]
+			tryParentify(pk, parent)
+			pk.ObjectGetter = ObjectGetter{
+				variable: true,
+				value:    pk.Name,
+			}
 		}
-		pk.ColumnName = parent(pk.ColumnName)
 	}
+
 	pks = append(pks, s.Fields...)
-	if s.ParentSchema == nil {
+	if len(s.Parents) == 0 {
 		pks = append(pks, serializedField)
 	}
 	return pks
@@ -94,15 +105,28 @@ func (s *Schema) ResolvedFields() []Field {
 // ParentKeys are the keys from the parent schemas that should be defined
 // as foreign keys for the current schema
 func (s *Schema) ParentKeys() []Field {
-	if s.ParentSchema == nil {
-		return nil
+	var pks []Field
+	for _, parent := range s.Parents {
+		pks = parent.ResolvedPrimaryKeys()
+		for idx := range pks {
+			pk := &pks[idx]
+			tryParentify(pk, parent)
+		}
 	}
-	pks := s.ParentSchema.ResolvedPrimaryKeys()
-	for idx := range pks {
-		pk := &pks[idx]
-		pk.Reference = pk.ColumnName
-		pk.Name = parent(pk.Name)
-		pk.ColumnName = parent(pk.ColumnName)
+	return pks
+}
+
+// ParentKeysAsMap are the keys from the parent schemas that should be defined
+// as foreign keys for the current schema
+func (s *Schema) ParentKeysAsMap() map[string][]Field {
+	pks := make(map[string][]Field)
+	for _, parent := range s.Parents {
+		currPks := parent.ResolvedPrimaryKeys()
+		for idx := range currPks {
+			pk := &currPks[idx]
+			tryParentify(pk, parent)
+		}
+		pks[parent.Table] = currPks
 	}
 	return pks
 }

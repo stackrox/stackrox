@@ -227,18 +227,7 @@
         "name": {
           "type": "string"
         },
-        "signatureVerificationConfigs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageSignatureVerificationConfig"
-          }
-        }
-      }
-    },
-    "storageSignatureVerificationConfig": {
-      "type": "object",
-      "properties": {
-        "cosignVerification": {
+        "cosign": {
           "$ref": "#/definitions/storageCosignPublicKeyVerification"
         }
       }

@@ -684,10 +684,10 @@ class NetworkFlowTest extends BaseSpecification {
                     null
 
             if (allowAllIngress) {
-                print "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
+                println "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
                 assert it."spec"."ingress" == [[:]]
             } else if (outNodes.size() > 0) {
-                print "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
+                println "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
                         "sources from graph"
                 def sourceDeploymentsFromGraph = outNodes.findAll { it.deploymentName }*.deploymentName
                 def sourceDeploymentsFromNetworkPolicy = ingressPodSelectors.collect {
@@ -697,9 +697,14 @@ class NetworkFlowTest extends BaseSpecification {
                     it."namespaceSelector"."matchLabels"."namespace.metadata.stackrox.io/name"
                 }
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
+                if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
+                    println "Deployed namespaces do not contain all namespaces found in the network policy"
+                    println "The network policy:"
+                    print modification
+                }
                 assert deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)
             } else {
-                print "${deploymentName} has no incoming connections - ensure ingress spec is empty"
+                println "${deploymentName} has no incoming connections - ensure ingress spec is empty"
                 assert it."spec"."ingress" == [] || it."spec"."ingress" == null
             }
         }

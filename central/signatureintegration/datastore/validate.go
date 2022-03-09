@@ -33,20 +33,12 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		err := errors.New("name field must be set")
 		multiErr = multierror.Append(multiErr, err)
 	}
-	if len(integration.GetSignatureVerificationConfigs()) == 0 {
+	if integration.GetCosign() == nil {
 		err := errors.New("integration must have at least one signature verification config")
 		multiErr = multierror.Append(multiErr, err)
-	}
-	for _, verificationConfig := range integration.GetSignatureVerificationConfigs() {
-		switch cfg := verificationConfig.GetConfig().(type) {
-		case *storage.SignatureVerificationConfig_CosignVerification:
-			err := validateCosignVerification(cfg.CosignVerification)
-			if err != nil {
-				multiErr = multierror.Append(multiErr, err)
-			}
-		default:
-			// Should theoretically never happen.
-			err := errors.Errorf("invalid type for signature verification config: %T", cfg)
+	} else {
+		err := validateCosignVerification(integration.GetCosign())
+		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}
@@ -63,6 +55,11 @@ func validateCosignVerification(config *storage.CosignPublicKeyVerification) err
 		multiErr = multierror.Append(multiErr, err)
 	}
 	for _, publicKey := range publicKeys {
+		if publicKey.GetName() == "" {
+			err := errors.New("public key name should be filled")
+			multiErr = multierror.Append(multiErr, err)
+		}
+
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
 		if !signatures.IsValidPublicKeyPEMBlock(keyBlock, rest) {
 			err := errors.Errorf("failed to decode PEM block containing public key %q", publicKey.GetName())

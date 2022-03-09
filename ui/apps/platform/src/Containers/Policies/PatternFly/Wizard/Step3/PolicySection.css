@@ -11,15 +11,15 @@
     padding-top: var(--pf-global--spacer--md);
 }
 
-#policy-sections article.pf-c-card {
-    min-width: fit-content;
+#policy-sections article.pf-c-card.policy-section-card {
+    width: 100%;
 }
 
 /* for large size screens, change the policy sections to be width limited */
 @media (min-width: 992px) {
     .policy-section-card {
-        /* this is the same as pf-u-w-66 */
-        width: calc(100% / 3 * 2);
+        min-width: 450px;
+        max-width: 450px;
         height: 100%;
     }
 

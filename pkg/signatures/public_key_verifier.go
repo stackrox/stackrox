@@ -32,11 +32,11 @@ var (
 	errCorruptedSignature    = errors.New("corrupted signature")
 )
 
-type publicKeyVerifier struct {
+type cosignPublicKeyVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
 }
 
-var _ SignatureVerifier = (*publicKeyVerifier)(nil)
+var _ SignatureVerifier = (*cosignPublicKeyVerifier)(nil)
 
 // IsValidPublicKeyPEMBlock is a helper function which checks whether public key PEM block was successfully decoded.
 func IsValidPublicKeyPEMBlock(keyBlock *pem.Block, rest []byte) bool {
@@ -46,7 +46,7 @@ func IsValidPublicKeyPEMBlock(keyBlock *pem.Block, rest []byte) bool {
 // newCosignPublicKeyVerifier creates a public key verifier with the given Cosign configuration. The provided public keys
 // MUST be valid PEM encoded ones.
 // It will return an error if the provided public keys could not be parsed.
-func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*publicKeyVerifier, error) {
+func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*cosignPublicKeyVerifier, error) {
 	publicKeys := config.GetPublicKeys()
 	parsedKeys := make([]crypto.PublicKey, 0, len(publicKeys))
 	for _, publicKey := range publicKeys {
@@ -63,55 +63,14 @@ func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*p
 		parsedKeys = append(parsedKeys, parsedKey)
 	}
 
-	return &publicKeyVerifier{parsedPublicKeys: parsedKeys}, nil
-}
-
-func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, gcrv1.Hash, error) {
-	imgSHA := imgUtils.GetSHA(image)
-	// If there is no digest associated with the image, we cannot safely do signature and claim verification.
-	if imgSHA == "" {
-		return nil, gcrv1.Hash{}, errNoImageSHA
-	}
-
-	// The hash is required for claim verification.
-	hash, err := gcrv1.NewHash(imgSHA)
-	if err != nil {
-		return nil, gcrv1.Hash{}, errox.Newf(errHashCreation, err.Error())
-	}
-
-	// Theoretically, this should never happen, as gcrv1.NewHash _currently_ doesn't support any other hash algorithm.
-	// See: https://github.com/google/go-containerregistry/blob/main/pkg/v1/hash.go#L78
-	// We should keep this check although, in case there are changes in the library.
-	if hash.Algorithm != sha256Algo {
-		return nil, gcrv1.Hash{}, errox.Newf(errInvalidHashAlgo,
-			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm)
-	}
-
-	// Each signature contains the base64 encoded version of it and the associated payload.
-	// In the future, this will also include potential rekor bundles for keyless verification.
-	signatures := make([]oci.Signature, 0, len(image.GetSignature().GetSignatures()))
-	for _, imgSig := range image.GetSignature().GetSignatures() {
-		if imgSig.GetCosign() == nil {
-			continue
-		}
-		b64Sig := base64.StdEncoding.EncodeToString(imgSig.GetCosign().GetRawSignature())
-
-		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig)
-		if err != nil {
-			// Theoretically, this error should never happen, as the only error currently occurs when using options,
-			// which we do not use _yet_. When introducing support for rekor bundles, this could potentially error.
-			return nil, gcrv1.Hash{}, errox.Newf(errCorruptedSignature, err.Error())
-		}
-		signatures = append(signatures, sig)
-	}
-
-	return signatures, hash, nil
+	return &cosignPublicKeyVerifier{parsedPublicKeys: parsedKeys}, nil
 }
 
 // VerifySignature implements the SignatureVerifier interface.
 // The signature of the image will be verified using cosign. It will include the verification via public key
 // as well as the claim verification of the payload of the signature.
-func (c *publicKeyVerifier) VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
+func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
+	image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
 	// Short circuit if we do not have any public keys configured to verify against.
 	if len(c.parsedPublicKeys) == 0 {
 		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, errNoKeysToVerifyAgainst
@@ -169,4 +128,46 @@ func getVerificationResultStatusFromErr(err error) storage.ImageSignatureVerific
 	}
 
 	return storage.ImageSignatureVerificationResult_GENERIC_ERROR
+}
+
+func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, gcrv1.Hash, error) {
+	imgSHA := imgUtils.GetSHA(image)
+	// If there is no digest associated with the image, we cannot safely do signature and claim verification.
+	if imgSHA == "" {
+		return nil, gcrv1.Hash{}, errNoImageSHA
+	}
+
+	// The hash is required for claim verification.
+	hash, err := gcrv1.NewHash(imgSHA)
+	if err != nil {
+		return nil, gcrv1.Hash{}, errox.Newf(errHashCreation, err.Error())
+	}
+
+	// Theoretically, this should never happen, as gcrv1.NewHash _currently_ doesn't support any other hash algorithm.
+	// See: https://github.com/google/go-containerregistry/blob/main/pkg/v1/hash.go#L78
+	// We should keep this check although, in case there are changes in the library.
+	if hash.Algorithm != sha256Algo {
+		return nil, gcrv1.Hash{}, errox.Newf(errInvalidHashAlgo,
+			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm)
+	}
+
+	// Each signature contains the base64 encoded version of it and the associated payload.
+	// In the future, this will also include potential rekor bundles for keyless verification.
+	signatures := make([]oci.Signature, 0, len(image.GetSignature().GetSignatures()))
+	for _, imgSig := range image.GetSignature().GetSignatures() {
+		if imgSig.GetCosign() == nil {
+			continue
+		}
+		b64Sig := base64.StdEncoding.EncodeToString(imgSig.GetCosign().GetRawSignature())
+
+		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig)
+		if err != nil {
+			// Theoretically, this error should never happen, as the only error currently occurs when using options,
+			// which we do not use _yet_. When introducing support for rekor bundles, this could potentially error.
+			return nil, gcrv1.Hash{}, errox.Newf(errCorruptedSignature, err.Error())
+		}
+		signatures = append(signatures, sig)
+	}
+
+	return signatures, hash, nil
 }

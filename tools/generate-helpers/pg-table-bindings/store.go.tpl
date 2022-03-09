@@ -1,6 +1,6 @@
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.Name}} = ${{add $idx 1}}{{end}}{{end}}
+{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
+{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
+{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
@@ -40,10 +40,10 @@ const (
         walkStmt = "SELECT serialized FROM {{.Table}}"
 
 {{- if $singlePK }}
-        getIDsStmt = "SELECT {{$singlePK.Name}} FROM {{.Table}}"
-        getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.Name}} = ANY($1::text[])"
+        getIDsStmt = "SELECT {{$singlePK.ColumnName}} FROM {{.Table}}"
+        getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 
-        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.Name}} = ANY($1::text[])"
+        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 {{- end }}
 )
 
@@ -52,6 +52,10 @@ var (
 
     table = "{{.Table}}"
 )
+
+func init() {
+    globaldb.RegisterTable(table, "{{.TrimmedType}}")
+}
 
 type Store interface {
     Count() (int, error)
@@ -88,9 +92,9 @@ create table if not exists {{$schema.Table}} (
 {{- range $idx, $field := $schema.ResolvedFields }}
     {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
-    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}){{ if $schema.ParentSchema }},
-    {{- $pks := $schema.ParentKeys }}
-    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$schema.ParentSchema.Table}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
+    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}){{ if gt (len $schema.Parents) 0 }},{{end}}
+    {{- range $parent, $pks := $schema.ParentKeysAsMap }}
+    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$parent}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
     {{- end }}
 )
 `
@@ -125,8 +129,8 @@ create table if not exists {{$schema.Table}} (
 {{- define "insertObject"}}
 {{- $schema := . }}
 
-func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.ParentSchema}}, idx int{{end}}) error {
-    {{if not $schema.ParentSchema }}
+func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}) error {
+    {{if not $schema.Parents }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
         return marshalErr
@@ -176,8 +180,6 @@ func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-    globaldb.RegisterTable(table, "{{.TrimmedType}}")
-
     {{template "createFunctionName" .Schema}}(db)
 
     return &storeImpl{
@@ -391,7 +393,7 @@ func (s *storeImpl) Walk(fn func(obj *{{.Type}}) error) error {
 {{- define "dropTable"}}
 {{- $schema := . }}
 func {{ template "dropTableFunctionName" $schema }}(db *pgxpool.Pool) {
-    _, _ = db.Exec(context.Background(), "DROP TABLE {{$schema.Table}} CASCADE")
+    _, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
     {{range $idx, $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(db)
     {{end}}
 }

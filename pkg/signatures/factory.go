@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 )
 
 var (
@@ -22,16 +22,20 @@ type SignatureVerifier interface {
 	VerifySignature(ctx context.Context, image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error)
 }
 
+// SignatureFetcher is responsible for fetching raw signatures supporting multiple specific signature formats.
+type SignatureFetcher interface {
+	FetchSignature(ctx context.Context, image *storage.Image, registry registryTypes.ImageRegistry) (*storage.ImageSignature, error)
+}
+
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.
-func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (SignatureVerifier, error) {
-	switch cfg := config.GetConfig().(type) {
-	case *storage.SignatureVerificationConfig_CosignVerification:
-		return newCosignPublicKeyVerifier(cfg.CosignVerification)
-	default:
-		// Should theoretically never happen.
-		return nil, errox.Newf(errox.InvariantViolation,
-			"invalid type for signature verification config: %T", cfg)
-	}
+func NewSignatureVerifier(config *storage.CosignPublicKeyVerification) (SignatureVerifier, error) {
+	return newCosignPublicKeyVerifier(config)
+}
+
+// NewSignatureFetcher creates a new signature fetcher capable of fetching a specific signature format for an image.
+// Currently, only cosign public key signatures are supported.
+func NewSignatureFetcher() SignatureFetcher {
+	return newCosignPublicKeySignatureFetcher()
 }
 
 // VerifyAgainstSignatureIntegration is a wrapper that will verify an image signature with SignatureVerifier's created
@@ -41,17 +45,7 @@ func NewSignatureVerifier(config *storage.SignatureVerificationConfig) (Signatur
 // the storage.ImageSignatureVerificationResult.
 func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration,
 	image *storage.Image) []storage.ImageSignatureVerificationResult {
-	verifiers := make([]SignatureVerifier, 0, len(integration.GetSignatureVerificationConfigs()))
-	for _, config := range integration.GetSignatureVerificationConfigs() {
-		verifier, err := NewSignatureVerifier(config)
-		if err != nil {
-			log.Errorf("Error during creation of the signature verifier for signature integration %q: %v",
-				integration.GetId(), err)
-			continue
-		}
-		verifiers = append(verifiers, verifier)
-	}
-
+	verifiers := createVerifiersFromIntegration(integration)
 	var results []storage.ImageSignatureVerificationResult
 	for _, verifier := range verifiers {
 		res, err := verifier.VerifySignature(ctx, image)
@@ -98,4 +92,21 @@ func VerifyAgainstSignatureIntegrations(ctx context.Context, integrations []*sto
 		results[integration] = verificationResults
 	}
 	return results, verifierCreationErrs
+}
+
+func createVerifiersFromIntegration(integration *storage.SignatureIntegration) []SignatureVerifier {
+	verifiers := make([]SignatureVerifier, 0)
+
+	// This method will later be extended with other verification methods.
+	if integration.GetCosign() != nil {
+		verifier, err := NewSignatureVerifier(integration.GetCosign())
+		if err != nil {
+			log.Errorf("Error during creation of the signature verifier for signature integration %q: %v",
+				integration.GetId(), err)
+		} else {
+			verifiers = append(verifiers, verifier)
+		}
+	}
+
+	return verifiers
 }
