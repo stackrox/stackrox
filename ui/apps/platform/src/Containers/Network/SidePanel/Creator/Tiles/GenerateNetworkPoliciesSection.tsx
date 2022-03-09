@@ -21,7 +21,7 @@ function GenerateNetworkPoliciesSection(): ReactElement {
                 Generate a set of recommended network policies based on your environment&apos;s
                 configuration. Select a time window for the network connections you would like to
                 capture and generate policies on, and then apply them directly or share them with
-                share them with your team.
+                your team.
             </div>
             <GenerateButton />
         </div>
