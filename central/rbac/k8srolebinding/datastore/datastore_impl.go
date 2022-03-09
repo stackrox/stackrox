@@ -37,7 +37,7 @@ func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	err := d.storage.Walk(ctx, func(binding *storage.K8SRoleBinding) error {
 		bindings = append(bindings, binding)
 		if len(bindings) == batchSize {
-			if err := d.indexer.AddK8sRoleBindings(bindings); err != nil {
+			if err := d.indexer.AddK8SRoleBindings(bindings); err != nil {
 				return err
 			}
 			bindings = bindings[:0]
@@ -48,7 +48,7 @@ func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := d.indexer.AddK8sRoleBindings(bindings); err != nil {
+	if err := d.indexer.AddK8SRoleBindings(bindings); err != nil {
 		return err
 	}
 	log.Infof("[STARTUP] Successfully indexed %d rolebindings", count)
@@ -86,7 +86,7 @@ func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.
 	if err := d.storage.Upsert(ctx, request); err != nil {
 		return err
 	}
-	return d.indexer.AddK8sRoleBinding(request)
+	return d.indexer.AddK8SRoleBinding(request)
 }
 
 func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error {
@@ -99,7 +99,7 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 	if err := d.storage.Delete(ctx, id); err != nil {
 		return err
 	}
-	return d.indexer.DeleteK8sRoleBinding(id)
+	return d.indexer.DeleteK8SRoleBinding(id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
