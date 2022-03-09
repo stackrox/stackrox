@@ -770,10 +770,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
 		"licenseStatus: Metadata_LicenseStatus!",
+		"productBranding: Metadata_ProductBranding!",
 		"releaseBuild: Boolean!",
 		"version: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_ProductBranding(0)))
 	utils.Must(builder.AddType("MitreAttackVector", []string{
 		"tactic: MitreTactic",
 		"techniques: [MitreTechnique]!",
@@ -7394,6 +7396,11 @@ func (resolver *metadataResolver) LicenseStatus(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *metadataResolver) ProductBranding(ctx context.Context) string {
+	value := resolver.data.GetProductBranding()
+	return value.String()
+}
+
 func (resolver *metadataResolver) ReleaseBuild(ctx context.Context) bool {
 	value := resolver.data.GetReleaseBuild()
 	return value
@@ -7418,6 +7425,24 @@ func toMetadata_LicenseStatuses(values *[]string) []v1.Metadata_LicenseStatus {
 	output := make([]v1.Metadata_LicenseStatus, len(*values))
 	for i, v := range *values {
 		output[i] = toMetadata_LicenseStatus(&v)
+	}
+	return output
+}
+
+func toMetadata_ProductBranding(value *string) v1.Metadata_ProductBranding {
+	if value != nil {
+		return v1.Metadata_ProductBranding(v1.Metadata_ProductBranding_value[*value])
+	}
+	return v1.Metadata_ProductBranding(0)
+}
+
+func toMetadata_ProductBrandings(values *[]string) []v1.Metadata_ProductBranding {
+	if values == nil {
+		return nil
+	}
+	output := make([]v1.Metadata_ProductBranding, len(*values))
+	for i, v := range *values {
+		output[i] = toMetadata_ProductBranding(&v)
 	}
 	return output
 }
