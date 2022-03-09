@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
@@ -145,9 +145,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	if features.ImageSignatureVerification.Enabled() {
 		updatedSignature, err = e.enrichWithSignature(ctx, image)
 		errorList.AddError(err)
-		// TODO(dhaus): Make sure we check for the right thing here. GetSignature or GetSignature.GetSignatures?
 		if image.GetSignature().GetSignatures() == nil {
-			// TODO(dhaus): Set the image note here.
 			imageNoteSet[storage.Image_MISSING_SIGNATURE] = struct{}{}
 		} else {
 			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE)
@@ -440,7 +438,7 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx EnrichmentContext
 
 	// Timeout is based on benchmark test result for 200 integrations with 1 config each (roughly 1 sec) + a grace
 	// timeout on top. Currently, signature verification is done without remote RPCs, this will need to be
-	// adapted accordingly when RPCs are required (i.e. cosign keyless).
+	// changed accordingly when RPCs are required (i.e. cosign keyless).
 	verifySignatureCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -525,21 +523,12 @@ func (e *enricherImpl) fetchSignature(img *storage.Image, registry registryTypes
 	}
 
 	for _, sig := range sigs {
-		if !containsSignature(sig, fetchedSignatures) {
+		if !protoutils.ContainsStorageSignatureInSlice(sig, fetchedSignatures) {
 			fetchedSignatures = append(fetchedSignatures, sig)
 		}
 	}
 
 	return fetchedSignatures, nil
-}
-
-func containsSignature(sig *storage.Signature, list []*storage.Signature) bool {
-	for _, s := range list {
-		if proto.Equal(s, sig) {
-			return true
-		}
-	}
-	return false
 }
 
 func (e *enricherImpl) checkRegistryForImage(ctx EnrichmentContext, image *storage.Image) error {
