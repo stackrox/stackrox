@@ -36,10 +36,12 @@ func TestMetadataIsSetCorrectly(t *testing.T) {
 	assert.Equal(t, buildinfo.BuildFlavor, metadataWithAuth.GetBuildFlavor())
 	assert.Equal(t, buildinfo.ReleaseBuild, metadataWithAuth.GetReleaseBuild())
 	assert.Equal(t, version.GetMainVersion(), metadataWithAuth.GetVersion())
+	assert.Equal(t, v1.Metadata_RHACS_BRANDING, metadataWithAuth.GetProductBranding())
 
 	// Test that an unauthenticated connection doesn't get the version.
 	metadataWithoutAuth := getMetadata(t, testutils.UnauthenticatedGRPCConnectionToCentral(t))
 	assert.Equal(t, buildinfo.BuildFlavor, metadataWithoutAuth.GetBuildFlavor())
 	assert.Equal(t, buildinfo.ReleaseBuild, metadataWithoutAuth.GetReleaseBuild())
 	assert.Equal(t, "", metadataWithoutAuth.GetVersion())
+	assert.Equal(t, v1.Metadata_RHACS_BRANDING, metadataWithAuth.GetProductBranding())
 }
