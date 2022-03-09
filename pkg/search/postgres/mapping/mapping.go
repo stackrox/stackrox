@@ -12,7 +12,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// RegisterCategoryToTable attributes a search category to a table schema
+// RegisterCategoryToTable attributes a search category to a table schema.
 func RegisterCategoryToTable(category v1.SearchCategory, table *walker.Schema) {
 	if val, ok := categoryToTableMap[category]; ok {
 		log.Fatalf("Cannot register category %s with table %s, it is already registered with %s", category, table, val)
@@ -20,7 +20,7 @@ func RegisterCategoryToTable(category v1.SearchCategory, table *walker.Schema) {
 	categoryToTableMap[category] = table
 }
 
-// GetTableFromCategory returns the schema based on the category
+// GetTableFromCategory returns the schema based on the category.
 func GetTableFromCategory(category v1.SearchCategory) *walker.Schema {
 	return categoryToTableMap[category]
 }

@@ -2848,8 +2848,10 @@ jobs:
 
             REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
             for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"         "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}"      "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-slim:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner-slim:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db-slim:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db-slim:${MAIN_TAG}"
 
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
@@ -4587,8 +4589,10 @@ jobs:
             SCANNER_VERSION="$(make --quiet scanner-tag)"
             COLLECTOR_VERSION="$(make --quiet collector-tag)"
 
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "stackrox.io/scanner:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "stackrox.io/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"         "stackrox.io/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}"      "stackrox.io/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-slim:${SCANNER_VERSION}"    "stackrox.io/scanner-slim:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db-slim:${SCANNER_VERSION}" "stackrox.io/scanner-db-slim:${MAIN_TAG}"
 
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "collector.stackrox.io/collector:${MAIN_TAG}"
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector-slim:${MAIN_TAG}"

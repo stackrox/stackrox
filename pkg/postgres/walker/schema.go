@@ -66,13 +66,12 @@ func (s *Schema) Print() {
 // tryParentify attempts to convert the specified field to a reference. If the field is already a reference in
 // the referenced schema, it is used as is.
 func tryParentify(field *Field, parentSchema *Schema) {
+	referencedColName := field.ColumnName
 	if field.Reference == "" {
-		field.Reference = field.ColumnName
 		field.Name = parentify(parentSchema.Table, field.Name)
-		field.ColumnName = parentify(parentSchema.Table, field.ColumnName)
-	} else {
-		field.Reference = field.ColumnName
+		field.ColumnName = parentify(parentSchema.Table, referencedColName)
 	}
+	field.Reference = referencedColName
 }
 
 func parentify(parent, name string) string {
@@ -80,7 +79,7 @@ func parentify(parent, name string) string {
 }
 
 // ResolvedFields is the total set of fields for the schema including
-// fields that are derived from the parent schemas. e.g. parent primary keys, array indexes, etc
+// fields that are derived from the parent schemas. e.g. parent primary keys, array indexes, etc.
 func (s *Schema) ResolvedFields() []Field {
 	var pks []Field
 	for _, parent := range s.Parents {
@@ -103,7 +102,7 @@ func (s *Schema) ResolvedFields() []Field {
 }
 
 // ParentKeys are the keys from the parent schemas that should be defined
-// as foreign keys for the current schema
+// as foreign keys for the current schema.
 func (s *Schema) ParentKeys() []Field {
 	var pks []Field
 	for _, parent := range s.Parents {
@@ -116,8 +115,8 @@ func (s *Schema) ParentKeys() []Field {
 	return pks
 }
 
-// ParentKeysAsMap are the keys from the parent schemas that should be defined
-// as foreign keys for the current schema
+// ParentKeysAsMap returns the keys from the parent schemas that should be defined
+// as foreign keys for the current schema mapped by parent schema.
 func (s *Schema) ParentKeysAsMap() map[string][]Field {
 	pks := make(map[string][]Field)
 	for _, parent := range s.Parents {
@@ -129,6 +128,50 @@ func (s *Schema) ParentKeysAsMap() map[string][]Field {
 		pks[parent.Table] = currPks
 	}
 	return pks
+}
+
+// ForeignKeysReferencesTo returns the foreign keys of the current schema referencing specified schema name.
+func (s *Schema) ForeignKeysReferencesTo(tableName string) []Field {
+	if len(s.Parents) == 0 {
+		return nil
+	}
+
+	var pSchema *Schema
+	for i := 0; i < len(s.Parents); i++ {
+		if s.Parents[i].Table == tableName {
+			pSchema = s.Parents[i]
+			break
+		}
+	}
+	if pSchema == nil {
+		return nil
+	}
+
+	// Only get the immediate references, and not the resolved ones.
+	pks := pSchema.LocalPrimaryKeys()
+	for idx := range pks {
+		fk := &pks[idx]
+		tryParentify(fk, pSchema)
+	}
+	// If we are here, it means all references to the required referenced table have been computed. Hence, stop.
+	return pks
+}
+
+// ForeignKeys are the foreign keys in current schema.
+func (s *Schema) ForeignKeys() []Field {
+	if len(s.Parents) == 0 {
+		return nil
+	}
+	var fks []Field
+	for _, parent := range s.Parents {
+		pks := parent.LocalPrimaryKeys()
+		for idx := range pks {
+			pk := &pks[idx]
+			tryParentify(pk, parent)
+		}
+		fks = append(fks, pks...)
+	}
+	return fks
 }
 
 // ResolvedPrimaryKeys are all the primary keys of the current schema which is the union
