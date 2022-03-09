@@ -164,7 +164,7 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 		if err != nil {
 			// Theoretically, this error should never happen, as the only error currently occurs when using options,
 			// which we do not use _yet_. When introducing support for rekor bundles, this could potentially error.
-			return nil, gcrv1.Hash{}, errCorruptedSignature.New(err.Error())
+			return nil, gcrv1.Hash{}, errCorruptedSignature.CausedBy(err)
 		}
 		signatures = append(signatures, sig)
 	}
