@@ -37,7 +37,7 @@ var (
 )
 
 func init() {
-	globaldb.RegisterTable(table, "K8SRoleBinding")
+	globaldb.RegisterTable(table, "K8sRoleBinding")
 }
 
 type Store interface {
@@ -204,7 +204,7 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRoleBinding) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "K8SRoleBinding")
+	conn, release := s.acquireConn(ctx, ops.Get, "K8sRoleBinding")
 	defer release()
 
 	for _, obj := range objs {
@@ -227,20 +227,20 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRoleBinding)
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.K8SRoleBinding) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "K8SRoleBinding")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "K8sRoleBinding")
 
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.K8SRoleBinding) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "K8SRoleBinding")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "K8sRoleBinding")
 
 	return s.upsert(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "K8SRoleBinding")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "K8sRoleBinding")
 
 	row := s.db.QueryRow(ctx, countStmt)
 	var count int
@@ -252,7 +252,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "K8SRoleBinding")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "K8sRoleBinding")
 
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
@@ -264,9 +264,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "K8SRoleBinding")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "K8sRoleBinding")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "K8SRoleBinding")
+	conn, release := s.acquireConn(ctx, ops.Get, "K8sRoleBinding")
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, id)
@@ -293,9 +293,9 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "K8SRoleBinding")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "K8sRoleBinding")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "K8SRoleBinding")
+	conn, release := s.acquireConn(ctx, ops.Remove, "K8sRoleBinding")
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
@@ -326,9 +326,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "K8SRoleBinding")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "K8sRoleBinding")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "K8SRoleBinding")
+	conn, release := s.acquireConn(ctx, ops.GetMany, "K8sRoleBinding")
 	defer release()
 
 	rows, err := conn.Query(ctx, getManyStmt, ids)
@@ -368,9 +368,9 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRo
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "K8SRoleBinding")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "K8sRoleBinding")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "K8SRoleBinding")
+	conn, release := s.acquireConn(ctx, ops.RemoveMany, "K8sRoleBinding")
 	defer release()
 	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err

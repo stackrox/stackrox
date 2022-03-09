@@ -100,7 +100,7 @@ func main() {
 
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,
-			"TrimmedType":    stringutils.GetAfter(props.Type, "."),
+			"TrimmedType":    stringutils.GetAfter(typ, "."),
 			"Table":          props.Table,
 			"Schema":         schema,
 			"SearchCategory": fmt.Sprintf("SearchCategory_%s", props.SearchCategory),

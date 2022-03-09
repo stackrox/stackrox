@@ -1,9 +1,10 @@
-package rocksdb
+package store
 
 import (
 	"context"
 	"testing"
 
+	store "github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -19,7 +20,7 @@ func TestFullStoreImpl(t *testing.T) {
 	require.NoError(t, err)
 	defer rocksdbtest.TearDownRocksDB(db)
 
-	store := NewFullStore(db)
+	store := NewFullStore(store.New(db))
 	alert := fixtures.GetAlert()
 	listAlert := convert.AlertToListAlert(alert)
 

@@ -53,37 +53,37 @@ func (s *RolebindingsStoreSuite) TestStore() {
 	Destroy(ctx, pool)
 	store := New(ctx, pool)
 
-	k8SRoleBinding := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(k8SRoleBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	k8sRoleBinding := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(k8sRoleBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundK8SRoleBinding, exists, err := store.Get(ctx, k8SRoleBinding.GetId())
+	foundK8sRoleBinding, exists, err := store.Get(ctx, k8sRoleBinding.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundK8SRoleBinding)
+	s.Nil(foundK8sRoleBinding)
 
-	s.NoError(store.Upsert(ctx, k8SRoleBinding))
-	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
+	s.NoError(store.Upsert(ctx, k8sRoleBinding))
+	foundK8sRoleBinding, exists, err = store.Get(ctx, k8sRoleBinding.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(k8SRoleBinding, foundK8SRoleBinding)
+	s.Equal(k8sRoleBinding, foundK8sRoleBinding)
 
-	k8SRoleBindingCount, err := store.Count(ctx)
+	k8sRoleBindingCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(k8SRoleBindingCount, 1)
+	s.Equal(k8sRoleBindingCount, 1)
 
-	k8SRoleBindingExists, err := store.Exists(ctx, k8SRoleBinding.GetId())
+	k8sRoleBindingExists, err := store.Exists(ctx, k8sRoleBinding.GetId())
 	s.NoError(err)
-	s.True(k8SRoleBindingExists)
-	s.NoError(store.Upsert(ctx, k8SRoleBinding))
+	s.True(k8sRoleBindingExists)
+	s.NoError(store.Upsert(ctx, k8sRoleBinding))
 
-	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
+	foundK8sRoleBinding, exists, err = store.Get(ctx, k8sRoleBinding.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(k8SRoleBinding, foundK8SRoleBinding)
+	s.Equal(k8sRoleBinding, foundK8sRoleBinding)
 
-	s.NoError(store.Delete(ctx, k8SRoleBinding.GetId()))
-	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
+	s.NoError(store.Delete(ctx, k8sRoleBinding.GetId()))
+	foundK8sRoleBinding, exists, err = store.Get(ctx, k8sRoleBinding.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundK8SRoleBinding)
+	s.Nil(foundK8sRoleBinding)
 }
