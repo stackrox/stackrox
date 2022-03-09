@@ -11,12 +11,12 @@ const CredentialExpiryBanners = () => {
     return (
         <>
             <CredentialExpiry
-                component="StackRox Central"
+                component="Central"
                 expiryFetchFunc={fetchCentralCertExpiry}
                 downloadYAMLFunc={generateCentralCertSecret}
             />
             <CredentialExpiry
-                component="StackRox Scanner"
+                component="Scanner"
                 expiryFetchFunc={fetchScannerCertExpiry}
                 downloadYAMLFunc={generateScannerCertSecret}
             />
