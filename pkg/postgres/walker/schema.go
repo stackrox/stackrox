@@ -210,10 +210,11 @@ type SearchField struct {
 
 // PostgresOptions is the parsed representation of the sql tag on the struct field
 type PostgresOptions struct {
-	Ignored    bool
-	Index      string
-	PrimaryKey bool
-	Unique     bool
+	Ignored          bool
+	Index            string
+	PrimaryKey       bool
+	Unique           bool
+	IgnorePrimaryKey bool
 }
 
 // ObjectGetter is wrapper around determining how to represent the variable in the
