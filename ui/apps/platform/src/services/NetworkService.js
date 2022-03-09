@@ -64,7 +64,7 @@ export function fetchBaselineComparison({ deploymentId }) {
 
 // TODO: wire this through redux saga, like the `fetchBaselineComparison` above
 /*
- * Fetches the diff view of flows between the network policies last applied by ACS to the
+ * Fetches the diff view of flows between the network policies last applied to the
  * specified deployment and the previous state before that application.
  *
  * @returns {Promise<Object, Error>}
