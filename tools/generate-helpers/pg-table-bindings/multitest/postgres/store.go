@@ -32,6 +32,10 @@ var (
 	table = "multikey"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "TestMultiKeyStruct")
+}
+
 type Store interface {
 	Count() (int, error)
 	Exists(key1 string, key2 string) (bool, error)
@@ -90,13 +94,13 @@ create table if not exists multikey (
 func createTableMultikeyNested(db *pgxpool.Pool) {
 	table := `
 create table if not exists multikey_Nested (
-    parent_Key1 varchar,
-    parent_Key2 varchar,
+    multikey_Key1 varchar,
+    multikey_Key2 varchar,
     idx numeric,
     Nested varchar,
     Nested2_Nested2 varchar,
-    PRIMARY KEY(parent_Key1, parent_Key2, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Key1, parent_Key2) REFERENCES multikey(Key1, Key2) ON DELETE CASCADE
+    PRIMARY KEY(multikey_Key1, multikey_Key2, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (multikey_Key1, multikey_Key2) REFERENCES multikey(Key1, Key2) ON DELETE CASCADE
 )
 `
 
@@ -172,7 +176,7 @@ func insertIntoMultikey(tx pgx.Tx, obj *storage.TestMultiKeyStruct) error {
 		}
 	}
 
-	query = "delete from multikey_Nested where parent_Key1 = $1 AND parent_Key2 = $2 AND idx >= $3"
+	query = "delete from multikey_Nested where multikey_Key1 = $1 AND multikey_Key2 = $2 AND idx >= $3"
 	_, err = tx.Exec(context.Background(), query, obj.GetKey1(), obj.GetKey2(), len(obj.GetNested()))
 	if err != nil {
 		return err
@@ -180,14 +184,14 @@ func insertIntoMultikey(tx pgx.Tx, obj *storage.TestMultiKeyStruct) error {
 	return nil
 }
 
-func insertIntoMultikeyNested(tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested, parent_Key1 string, parent_Key2 string, idx int) error {
+func insertIntoMultikeyNested(tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested, multikey_Key1 string, multikey_Key2 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 
-		parent_Key1,
+		multikey_Key1,
 
-		parent_Key2,
+		multikey_Key2,
 
 		idx,
 
@@ -196,7 +200,7 @@ func insertIntoMultikeyNested(tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested,
 		obj.GetNested2().GetNested2(),
 	}
 
-	finalStr := "INSERT INTO multikey_Nested (parent_Key1, parent_Key2, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4, $5) ON CONFLICT(parent_Key1, parent_Key2, idx) DO UPDATE SET parent_Key1 = EXCLUDED.parent_Key1, parent_Key2 = EXCLUDED.parent_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
+	finalStr := "INSERT INTO multikey_Nested (multikey_Key1, multikey_Key2, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4, $5) ON CONFLICT(multikey_Key1, multikey_Key2, idx) DO UPDATE SET multikey_Key1 = EXCLUDED.multikey_Key1, multikey_Key2 = EXCLUDED.multikey_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
 	_, err := tx.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -207,8 +211,6 @@ func insertIntoMultikeyNested(tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested,
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "TestMultiKeyStruct")
-
 	createTableMultikey(db)
 
 	return &storeImpl{
@@ -343,13 +345,13 @@ func (s *storeImpl) Walk(fn func(obj *storage.TestMultiKeyStruct) error) error {
 //// Used for testing
 
 func dropTableMultikey(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE multikey CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS multikey CASCADE")
 	dropTableMultikeyNested(db)
 
 }
 
 func dropTableMultikeyNested(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE multikey_Nested CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS multikey_Nested CASCADE")
 
 }
 

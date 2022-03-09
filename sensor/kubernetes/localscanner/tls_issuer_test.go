@@ -253,17 +253,17 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 		"no secrets": {k8sClientConfig: fakeK8sClientConfig{}},
 		"corrupted data in scanner secret": {
 			k8sClientConfig: fakeK8sClientConfig{
-				secretsData: map[string]map[string][]byte{"scanner-slim-tls": nil},
+				secretsData: map[string]map[string][]byte{"scanner-tls": nil},
 			},
 		},
 		"corrupted data in scanner DB secret": {
 			k8sClientConfig: fakeK8sClientConfig{
-				secretsData: map[string]map[string][]byte{"scanner-db-slim-tls": nil},
+				secretsData: map[string]map[string][]byte{"scanner-db-tls": nil},
 			},
 		},
 		"corrupted data in all local scanner secrets": {
 			k8sClientConfig: fakeK8sClientConfig{
-				secretsData: map[string]map[string][]byte{"scanner-slim-tls": nil, "scanner-db-slim-tls": nil},
+				secretsData: map[string]map[string][]byte{"scanner-tls": nil, "scanner-db-tls": nil},
 			},
 		},
 		"refresh failure and retries": {k8sClientConfig: fakeK8sClientConfig{}, numFailedResponses: 2},
@@ -310,13 +310,13 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			for _, secret := range secrets.Items {
 				var expectedCert *mtls.IssuedCert
 				switch secretName := secret.GetName(); secretName {
-				case "scanner-slim-tls":
+				case "scanner-tls":
 					expectedCert = scannerCert
-				case "scanner-db-slim-tls":
+				case "scanner-db-tls":
 					expectedCert = scannerDBCert
 				default:
 					s.Require().Failf("expected secret name should be either %q or %q, found %q instead",
-						"scanner-slim-tls", "scanner-db-slim-tls", secretName)
+						"scanner-tls", "scanner-db-tls", secretName)
 				}
 				s.Equal(ca.CertPEM(), secret.Data[mtls.CACertFileName])
 				s.Equal(expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
@@ -330,9 +330,9 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 	testCases := map[string]struct {
 		secretNames []string
 	}{
-		"wrong owner for scanner secret":                 {secretNames: []string{"scanner-slim-tls"}},
-		"wrong owner for scanner db secret":              {secretNames: []string{"scanner-db-slim-tls"}},
-		"wrong owner for scanner and scanner db secrets": {secretNames: []string{"scanner-slim-tls", "scanner-db-slim-tls"}},
+		"wrong owner for scanner secret":                 {secretNames: []string{"scanner-tls"}},
+		"wrong owner for scanner db secret":              {secretNames: []string{"scanner-db-tls"}},
+		"wrong owner for scanner and scanner db secrets": {secretNames: []string{"scanner-tls", "scanner-db-tls"}},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {

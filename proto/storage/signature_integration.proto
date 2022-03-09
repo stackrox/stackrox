@@ -3,19 +3,15 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "gogoproto/gogo.proto";
+
 package storage;
 
 message SignatureIntegration {
-    string id   = 1;
-    string name = 2;
+    string id   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
 
-    repeated SignatureVerificationConfig signature_verification_configs = 3;
-}
-
-message SignatureVerificationConfig {
-    oneof config {
-        CosignPublicKeyVerification cosign_verification = 1;
-    }
+    CosignPublicKeyVerification cosign = 3;
 }
 
 message CosignPublicKeyVerification {

@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -42,9 +43,7 @@ func (s *SinglekeyStoreSuite) TearDownTest() {
 func (s *SinglekeyStoreSuite) TestStore() {
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
+	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
 	s.NoError(err)
 	defer pool.Close()
@@ -52,14 +51,16 @@ func (s *SinglekeyStoreSuite) TestStore() {
 	Destroy(pool)
 	store := New(pool)
 
-	testSingleKeyStruct := fixtures.GetTestSingleKeyStruct()
-	foundTestSingleKeyStruct, exists, err := store.Get(testSingleKeyStruct.GetId())
+	testSingleKeyStruct := &storage.TestSingleKeyStruct{}
+	s.NoError(testutils.FullInit(testSingleKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	foundTestSingleKeyStruct, exists, err := store.Get(testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestSingleKeyStruct)
 
 	s.NoError(store.Upsert(testSingleKeyStruct))
-	foundTestSingleKeyStruct, exists, err = store.Get(testSingleKeyStruct.GetId())
+	foundTestSingleKeyStruct, exists, err = store.Get(testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(testSingleKeyStruct, foundTestSingleKeyStruct)
@@ -68,18 +69,18 @@ func (s *SinglekeyStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(testSingleKeyStructCount, 1)
 
-	testSingleKeyStructExists, err := store.Exists(testSingleKeyStruct.GetId())
+	testSingleKeyStructExists, err := store.Exists(testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(testSingleKeyStructExists)
 	s.NoError(store.Upsert(testSingleKeyStruct))
 
-	foundTestSingleKeyStruct, exists, err = store.Get(testSingleKeyStruct.GetId())
+	foundTestSingleKeyStruct, exists, err = store.Get(testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(testSingleKeyStruct, foundTestSingleKeyStruct)
 
-	s.NoError(store.Delete(testSingleKeyStruct.GetId()))
-	foundTestSingleKeyStruct, exists, err = store.Get(testSingleKeyStruct.GetId())
+	s.NoError(store.Delete(testSingleKeyStruct.GetKey()))
+	foundTestSingleKeyStruct, exists, err = store.Get(testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestSingleKeyStruct)

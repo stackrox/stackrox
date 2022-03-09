@@ -1,3 +1,4 @@
+//go:build sql_integration
 // +build sql_integration
 
 package postgres
@@ -10,19 +11,16 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStore(t *testing.T) {
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
-	if err != nil {
-		panic(err)
-	}
-	defer pool.Close()
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
 
 	Destroy(pool)
 	store := New(pool)

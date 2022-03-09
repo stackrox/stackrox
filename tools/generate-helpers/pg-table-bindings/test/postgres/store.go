@@ -36,6 +36,10 @@ var (
 	table = "singlekey"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "TestSingleKeyStruct")
+}
+
 type Store interface {
 	Count() (int, error)
 	Exists(key string) (bool, error)
@@ -101,12 +105,12 @@ create table if not exists singlekey (
 func createTableSinglekeyNested(db *pgxpool.Pool) {
 	table := `
 create table if not exists singlekey_Nested (
-    parent_Key varchar,
+    singlekey_Key varchar,
     idx numeric,
     Nested varchar,
     Nested2_Nested2 varchar,
-    PRIMARY KEY(parent_Key, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Key) REFERENCES singlekey(Key) ON DELETE CASCADE
+    PRIMARY KEY(singlekey_Key, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (singlekey_Key) REFERENCES singlekey(Key) ON DELETE CASCADE
 )
 `
 
@@ -184,7 +188,7 @@ func insertIntoSinglekey(tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
 		}
 	}
 
-	query = "delete from singlekey_Nested where parent_Key = $1 AND idx >= $2"
+	query = "delete from singlekey_Nested where singlekey_Key = $1 AND idx >= $2"
 	_, err = tx.Exec(context.Background(), query, obj.GetKey(), len(obj.GetNested()))
 	if err != nil {
 		return err
@@ -192,12 +196,12 @@ func insertIntoSinglekey(tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
 	return nil
 }
 
-func insertIntoSinglekeyNested(tx pgx.Tx, obj *storage.TestSingleKeyStruct_Nested, parent_Key string, idx int) error {
+func insertIntoSinglekeyNested(tx pgx.Tx, obj *storage.TestSingleKeyStruct_Nested, singlekey_Key string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 
-		parent_Key,
+		singlekey_Key,
 
 		idx,
 
@@ -206,7 +210,7 @@ func insertIntoSinglekeyNested(tx pgx.Tx, obj *storage.TestSingleKeyStruct_Neste
 		obj.GetNested2().GetNested2(),
 	}
 
-	finalStr := "INSERT INTO singlekey_Nested (parent_Key, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4) ON CONFLICT(parent_Key, idx) DO UPDATE SET parent_Key = EXCLUDED.parent_Key, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
+	finalStr := "INSERT INTO singlekey_Nested (singlekey_Key, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4) ON CONFLICT(singlekey_Key, idx) DO UPDATE SET singlekey_Key = EXCLUDED.singlekey_Key, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
 	_, err := tx.Exec(context.Background(), finalStr, values...)
 	if err != nil {
 		return err
@@ -217,8 +221,6 @@ func insertIntoSinglekeyNested(tx pgx.Tx, obj *storage.TestSingleKeyStruct_Neste
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "TestSingleKeyStruct")
-
 	createTableSinglekey(db)
 
 	return &storeImpl{
@@ -427,13 +429,13 @@ func (s *storeImpl) Walk(fn func(obj *storage.TestSingleKeyStruct) error) error 
 //// Used for testing
 
 func dropTableSinglekey(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE singlekey CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS singlekey CASCADE")
 	dropTableSinglekeyNested(db)
 
 }
 
 func dropTableSinglekeyNested(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE singlekey_Nested CASCADE")
+	_, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS singlekey_Nested CASCADE")
 
 }
 

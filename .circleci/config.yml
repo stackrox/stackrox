@@ -2214,6 +2214,26 @@ jobs:
           command: make go-unit-tests GOTAGS=release
       - post-go-unit-tests:
           path: go-unit-release-junit-reports
+  go-postgres-tests:
+    docker:
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.31
+        auth:
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
+      - image: postgres:14.2-alpine
+        environment:
+          POSTGRES_PASSWORD: password
+    resource_class: large
+    environment:
+      ROX_IMAGE_FLAVOR: stackrox.io
+    steps:
+    - pre-go-unit-tests
+    - run:
+        name: Run Go postgres unit tests
+        command:  make go-postgres-unit-tests
+    - post-go-unit-tests:
+        path: go-unit-release-junit-reports
+
 
   shell-unit-tests:
     executor: custom
@@ -4907,6 +4927,8 @@ workflows:
       - go-unit-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - go-unit-tests-release:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - go-postgres-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - shell-unit-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx

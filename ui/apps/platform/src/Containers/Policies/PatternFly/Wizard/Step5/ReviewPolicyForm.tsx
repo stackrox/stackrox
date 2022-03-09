@@ -6,7 +6,7 @@ import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService'
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { getServerPolicy } from '../../policies.utils';
+import { getServerPolicy, postFormatExclusionField } from '../../policies.utils';
 import PolicyDetailContent from '../../Detail/PolicyDetailContent';
 import PreviewViolations from './PreviewViolations';
 
@@ -140,7 +140,7 @@ function ReviewPolicyForm({
                 </Flex>
                 <Divider component="div" />
                 <FlexItem className="pf-u-p-lg">
-                    <PolicyDetailContent policy={getServerPolicy(values)} isReview />
+                    <PolicyDetailContent policy={postFormatExclusionField(values)} isReview />
                 </FlexItem>
             </Flex>
             {showPolicyResults && (
@@ -149,7 +149,7 @@ function ReviewPolicyForm({
                     <Flex
                         direction={{ default: 'column' }}
                         alignSelf={{ default: 'alignSelfStretch' }}
-                        className="preview-violations pf-u-p-lg"
+                        className="preview-violations pf-u-p-lg pf-u-w-50"
                     >
                         <Title headingLevel="h2">Preview violations</Title>
                         <div className="pf-u-mb-md pf-u-mt-sm">

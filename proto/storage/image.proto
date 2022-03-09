@@ -252,5 +252,5 @@ message ImageCVEEdge {
 }
 
 message WatchedImage {
-  string name            = 1;
+  string name            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
 }
