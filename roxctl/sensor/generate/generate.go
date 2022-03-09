@@ -74,7 +74,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-		return errox.Newf(errox.InvalidArgs, errorDeprecatedFlag, "--create-admission-controller", "--admission-controller-listen-on-creates")
+		return errox.InvalidArgs.New(fmt.Sprintf(errorDeprecatedFlag, "--create-admission-controller", "--admission-controller-listen-on-creates"))
 	}
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerCreateSet)
@@ -83,7 +83,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-		return errox.Newf(errox.InvalidArgs, errorDeprecatedFlag, "--admission-controller-enabled", "--admission-controller-enforce-on-creates")
+		return errox.InvalidArgs.New(fmt.Sprintf(errorDeprecatedFlag, "--admission-controller-enabled", "--admission-controller-enforce-on-creates"))
 	}
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
@@ -155,7 +155,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 				}
 			}
 			if id == "" {
-				return errox.Newf(errox.NotFound, "error finding preexisting cluster with name %q", s.cluster.GetName())
+				return errox.NotFound.New(fmt.Sprintf("error finding preexisting cluster with name %q", s.cluster.GetName()))
 			}
 		} else {
 			return errors.Wrap(err, "error creating cluster")
