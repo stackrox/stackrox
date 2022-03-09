@@ -88,8 +88,8 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.32.1
-	github.com/russellhaering/gosaml2 v0.6.0
-	github.com/russellhaering/goxmldsig v1.1.1
+	github.com/russellhaering/gosaml2 v0.7.0
+	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
 	github.com/sigstore/cosign v1.5.1
 	github.com/sigstore/sigstore v1.1.1-0.20220130134424-bae9b66b8442
