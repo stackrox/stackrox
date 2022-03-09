@@ -596,7 +596,12 @@ describe('Cluster Health', () => {
             admissionControlStatus,
         } = expectedInSide;
 
-        it(`should appear in the form for ${clusterName}`, () => {
+        it(`should appear in the form for ${clusterName}`, {
+            retries: {
+                runMode: 1,
+                openMode: 0,
+            },
+        }, () => {
             visitClusterByNameWithFixtureMetadataDatetime(
                 clusterName,
                 fixturePath,
