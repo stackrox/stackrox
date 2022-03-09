@@ -787,8 +787,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return booleanValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{},
-		negationForbidden, operatorsForbidden,
+		[]RuntimeFieldType{}, operatorsForbidden,
 	)
 
 	return f

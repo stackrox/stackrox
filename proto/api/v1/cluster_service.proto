@@ -80,7 +80,7 @@ service ClustersService {
         };
     }
 
-    // GetKernelSupportAvailable is deprecated in favor of GetClusterDefaults.
+    // GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
     rpc GetKernelSupportAvailable(Empty) returns (KernelSupportAvailableResponse) {
         option deprecated = true;
         option (google.api.http) = {
@@ -88,7 +88,7 @@ service ClustersService {
         };
     }
 
-    rpc GetClusterDefaults(Empty) returns (ClusterDefaultsResponse) {
+    rpc GetClusterDefaultValues(Empty) returns (ClusterDefaultsResponse) {
         option (google.api.http) = {
             get: "/v1/cluster-defaults"
         };

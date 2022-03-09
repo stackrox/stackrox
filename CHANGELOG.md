@@ -12,7 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `collector-rhel`, `main-rhel`, `scanner-rhel`, and `scanner-db-rhel` images are not published any more. These images were identical to non-rhel ones since version 3.66.
 - Increased default Scanner memory limit from 3000 MiB to 4GiB.
 - API changes/deprecations:
-  - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaults (GET /v1/cluster-defaults)` instead.
+  - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaultValues (GET /v1/cluster-defaults)` instead.
   - The following features have been deprecated and will be removed in version 3.71.0:
     - The external authorization plugin for scoped access control will be removed. Please use the existing in-product scoped access control.
     - The Anchore, Tenable, and Docker Trusted Registry integrations will be removed. Please use the ACS Scanner instead as it is more widely supported.

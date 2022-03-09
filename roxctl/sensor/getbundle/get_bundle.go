@@ -3,7 +3,6 @@ package getbundle
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
@@ -26,7 +26,7 @@ Use --slim-collector=false if that is not desired.`
 Use --slim-collector if that is not desired.`
 )
 
-func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, createUpgraderSA bool, slimCollectorP *bool, istioVersion string) error {
+func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, createUpgraderSA bool, slimCollectorP *bool, istioVersion string, logger environment.Logger) error {
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
@@ -54,9 +54,9 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 		cluster := resp.GetCluster()
 		slimCollector = cluster.GetSlimCollector()
 		if slimCollector {
-			fmt.Fprintln(os.Stderr, infoDefaultingToSlimCollector)
+			logger.InfofLn(infoDefaultingToSlimCollector)
 		} else {
-			fmt.Fprintln(os.Stderr, infoDefaultingToComprehensiveCollector)
+			logger.InfofLn(infoDefaultingToComprehensiveCollector)
 		}
 	}
 
@@ -72,14 +72,11 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 	}
 
 	if slimCollector {
-		env := util.RetrieveCentralEnvOrDefault(ctx, service)
-		if !env.KernelSupportAvailable {
-			fmt.Fprintf(os.Stderr, "%s\n\n", util.WarningSlimCollectorModeWithoutKernelSupport)
-		}
-		if env.Error != nil {
-			fmt.Fprintf(os.Stderr, `WARNING: Sensor bundle has been created successfully, but it was not possible to retrieve Central's
-  runtime environment information: %v.
-`, env.Error)
+		env, err := util.RetrieveCentralEnvOrDefault(ctx, service)
+		if err != nil {
+			logger.WarnfLn("Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v.", err)
+		} else if !env.KernelSupportAvailable {
+			logger.WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
 		}
 	}
 
@@ -87,7 +84,7 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 }
 
 // Command defines the deploy command tree
-func Command() *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var createUpgraderSA bool
 	var outputDir string
 	var slimCollector *bool
@@ -101,7 +98,7 @@ func Command() *cobra.Command {
 				return errors.Errorf("Expected exactly one argument, but %d were provided", len(args))
 			}
 
-			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion); err != nil {
+			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment.Logger()); err != nil {
 				return errors.Wrap(err, "error downloading sensor bundle")
 			}
 			return nil
