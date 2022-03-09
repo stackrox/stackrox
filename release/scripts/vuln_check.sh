@@ -11,7 +11,7 @@ GITROOT="$(git rev-parse --show-toplevel)"
 
 # Helper method to call curl command to quay
 function quay_curl {
-    curl --http1.1 -sS --fail -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/rhacs-eng/${1}"
+    curl -sS --fail -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/rhacs-eng/${1}"
 }
 
 # Check image scan results in quay.io and alert on new fixable vulns
