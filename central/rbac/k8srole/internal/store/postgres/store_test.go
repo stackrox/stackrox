@@ -53,37 +53,37 @@ func (s *K8srolesStoreSuite) TestStore() {
 	Destroy(ctx, pool)
 	store := New(ctx, pool)
 
-	k8sRole := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(k8sRole, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	k8SRole := &storage.K8SRole{}
+	s.NoError(testutils.FullInit(k8SRole, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundK8sRole, exists, err := store.Get(ctx, k8sRole.GetId())
+	foundK8SRole, exists, err := store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundK8sRole)
+	s.Nil(foundK8SRole)
 
-	s.NoError(store.Upsert(ctx, k8sRole))
-	foundK8sRole, exists, err = store.Get(ctx, k8sRole.GetId())
+	s.NoError(store.Upsert(ctx, k8SRole))
+	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(k8sRole, foundK8sRole)
+	s.Equal(k8SRole, foundK8SRole)
 
-	k8sRoleCount, err := store.Count(ctx)
+	k8SRoleCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(k8sRoleCount, 1)
+	s.Equal(k8SRoleCount, 1)
 
-	k8sRoleExists, err := store.Exists(ctx, k8sRole.GetId())
+	k8SRoleExists, err := store.Exists(ctx, k8SRole.GetId())
 	s.NoError(err)
-	s.True(k8sRoleExists)
-	s.NoError(store.Upsert(ctx, k8sRole))
+	s.True(k8SRoleExists)
+	s.NoError(store.Upsert(ctx, k8SRole))
 
-	foundK8sRole, exists, err = store.Get(ctx, k8sRole.GetId())
+	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(k8sRole, foundK8sRole)
+	s.Equal(k8SRole, foundK8SRole)
 
-	s.NoError(store.Delete(ctx, k8sRole.GetId()))
-	foundK8sRole, exists, err = store.Get(ctx, k8sRole.GetId())
+	s.NoError(store.Delete(ctx, k8SRole.GetId()))
+	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundK8sRole)
+	s.Nil(foundK8SRole)
 }

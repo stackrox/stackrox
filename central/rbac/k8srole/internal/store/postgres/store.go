@@ -37,7 +37,7 @@ var (
 )
 
 func init() {
-	globaldb.RegisterTable(table, "K8sRole")
+	globaldb.RegisterTable(table, "K8SRole")
 }
 
 type Store interface {
@@ -200,7 +200,7 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRole) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "K8sRole")
+	conn, release := s.acquireConn(ctx, ops.Get, "K8SRole")
 	defer release()
 
 	for _, obj := range objs {
@@ -223,20 +223,20 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRole) error 
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.K8SRole) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "K8sRole")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "K8SRole")
 
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.K8SRole) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "K8sRole")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "K8SRole")
 
 	return s.upsert(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "K8sRole")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "K8SRole")
 
 	row := s.db.QueryRow(ctx, countStmt)
 	var count int
@@ -248,7 +248,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "K8sRole")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "K8SRole")
 
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
@@ -260,9 +260,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.K8SRole, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "K8sRole")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "K8SRole")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "K8sRole")
+	conn, release := s.acquireConn(ctx, ops.Get, "K8SRole")
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, id)
@@ -289,9 +289,9 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "K8sRole")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "K8SRole")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "K8sRole")
+	conn, release := s.acquireConn(ctx, ops.Remove, "K8SRole")
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
@@ -322,9 +322,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRole, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "K8sRole")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "K8SRole")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "K8sRole")
+	conn, release := s.acquireConn(ctx, ops.GetMany, "K8SRole")
 	defer release()
 
 	rows, err := conn.Query(ctx, getManyStmt, ids)
@@ -364,9 +364,9 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRo
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "K8sRole")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "K8SRole")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "K8sRole")
+	conn, release := s.acquireConn(ctx, ops.RemoveMany, "K8SRole")
 	defer release()
 	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err

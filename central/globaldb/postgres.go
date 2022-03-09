@@ -2,16 +2,20 @@ package globaldb
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	registeredTables = make(map[string]registeredTable)
 
-	postgresDB *pgxpool.Pool
-	pgSync     sync.Once
+	postgresOpenRetries        = 10
+	postgresTimeBetweenRetries = 10 * time.Second
+	postgresDB                 *pgxpool.Pool
+	pgSync                     sync.Once
 )
 
 type registeredTable struct {
@@ -41,11 +45,18 @@ func GetPostgres() *pgxpool.Pool {
 		source := "host=localhost port=5432 database=postgres user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
 		config, err := pgxpool.ParseConfig(source)
 		if err != nil {
-			panic(err)
+			log.Fatalf("Could not parse postgres config: %v", err)
 		}
-		postgresDB, err = pgxpool.ConnectConfig(context.Background(), config)
-		if err != nil {
-			panic(err)
+
+		if err := retry.WithRetry(func() error {
+			postgresDB, err = pgxpool.ConnectConfig(context.Background(), config)
+			return err
+		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
+			time.Sleep(postgresTimeBetweenRetries)
+		}), retry.OnFailedAttempts(func(err error) {
+			log.Errorf("open database: %v", err)
+		})); err != nil {
+			log.Fatalf("Timed out trying to open database: %v", err)
 		}
 	})
 	return postgresDB

@@ -33,32 +33,32 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "K8sRoleBinding")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "K8SRoleBinding")
 
 	return postgres.RunCountRequest(v1.SearchCategory_ROLEBINDINGS, q, b.db, mappings.OptionsMap)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "K8sRoleBinding")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "K8SRoleBinding")
 
 	return postgres.RunSearchRequest(v1.SearchCategory_ROLEBINDINGS, q, b.db, mappings.OptionsMap)
 }
 
 //// Stubs for satisfying interfaces
 
-func (b *indexerImpl) AddK8sRoleBinding(deployment *storage.K8SRoleBinding) error {
+func (b *indexerImpl) AddK8SRoleBinding(deployment *storage.K8SRoleBinding) error {
 	return nil
 }
 
-func (b *indexerImpl) AddK8sRoleBindings(_ []*storage.K8SRoleBinding) error {
+func (b *indexerImpl) AddK8SRoleBindings(_ []*storage.K8SRoleBinding) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteK8sRoleBinding(id string) error {
+func (b *indexerImpl) DeleteK8SRoleBinding(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteK8sRoleBindings(_ []string) error {
+func (b *indexerImpl) DeleteK8SRoleBindings(_ []string) error {
 	return nil
 }
 
