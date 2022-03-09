@@ -59,7 +59,7 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
                 setUndoModification(response);
             })
             .catch((err) => {
-                // if there is no ACS-applied undo record, that is returned as an error
+                // if there is application-applied undo record, that is returned as an error
                 // so we filter that type of error out, before throwing
                 if (!err?.response?.data?.message?.includes('no undo record stored')) {
                     throw Error('Error retrieving possible undo network policy');
@@ -89,8 +89,8 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
                 </PanelHead>
                 {!!undoModification && (
                     <p className="px-3 py-2">
-                        The last policy applied through Red Hat Advanced Cluster Security was
-                        applied by <strong>{undoModification?.undoRecord?.user}</strong> on{' '}
+                        The last network policy was applied by{' '}
+                        <strong>{undoModification?.undoRecord?.user}</strong> on{' '}
                         <strong>
                             {getDateTime(undoModification?.undoRecord?.applyTimestamp || '')}
                         </strong>
