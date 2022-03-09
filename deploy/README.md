@@ -28,4 +28,3 @@ Most environment variables can be found in [common/env.sh](common/env.sh).
 | `REGISTRY_USERNAME`  | `string`                   | Set docker registry username to pull the docker.io/stackrox/main image. |
 | `REGISTRY_PASSWORD`  | `string`                   | Set docker registry password to pull the docker.io/stackrox/main image.  |
 | `STORAGE`            | `none`  \| `pvc`           | Defines which storage to use for the Central database, to preserve data between Central restarts it is recommended to use `pvc`.                                                |
-| `ENABLE_CENTRAL_DB`  | `true`  \| `false`         | Enable Central DB. |

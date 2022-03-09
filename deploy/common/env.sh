@@ -78,6 +78,3 @@ elif [[ -n "$ROX_DEFAULT_TLS_KEY_FILE" ]]; then
 else
 	echo "No default TLS certificates provided"
 fi
-
-export ENABLE_CENTRAL_DB="${ENABLE_CENTRAL_DB:-false}"
-echo "ENABLE_CENTRAL_DB set to ${ENABLE_CENTRAL_DB}"
