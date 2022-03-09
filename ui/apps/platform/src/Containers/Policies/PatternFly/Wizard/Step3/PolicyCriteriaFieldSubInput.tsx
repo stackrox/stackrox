@@ -2,7 +2,7 @@ import React from 'react';
 import { useField } from 'formik';
 import { TextInput, FormGroup, Select, SelectOption } from '@patternfly/react-core';
 
-import { SubComponent } from 'Containers/Policies/Wizard/Form/descriptors';
+import { SubComponent } from 'Containers/Policies/Wizard/Form/descriptor';
 
 type PolicyCriteriaFieldSubInputProps = {
     subComponent: SubComponent;

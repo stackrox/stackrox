@@ -14,7 +14,7 @@ import {
 import { TrashIcon, PlusIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
-import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptor';
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaFieldValue from './PolicyCriteriaFieldValue';
 import AndOrOperatorField from './AndOrOperatorField';

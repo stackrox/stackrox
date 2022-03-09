@@ -15,7 +15,7 @@ import {
 import { PencilAltIcon, TrashIcon, CheckIcon } from '@patternfly/react-icons';
 
 import { Policy } from 'types/policy.proto';
-import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptor';
 
 import PolicyGroupCard from './PolicyGroupCard';
 import PolicySectionDropTarget from './PolicySectionDropTarget';

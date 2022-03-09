@@ -8,8 +8,8 @@ import {
     policyConfigurationDescriptor,
     networkDetectionDescriptor,
     auditLogDescriptor,
-    Descriptor,
 } from 'Containers/Policies/Wizard/Form/descriptors';
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptor';
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';

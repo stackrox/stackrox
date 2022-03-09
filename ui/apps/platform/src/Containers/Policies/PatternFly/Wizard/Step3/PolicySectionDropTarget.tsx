@@ -5,7 +5,7 @@ import { useDrop } from 'react-dnd';
 import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
-import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptor';
 import './PolicySectionDropTarget.css';
 
 function getEmptyPolicyFieldCard(fieldKey) {

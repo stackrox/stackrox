@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExpandableSection } from '@patternfly/react-core';
 
-import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptor';
 import PolicyCriteriaKey from './PolicyCriteriaKey';
 
 type PolicyCriteriaCategoryProps = {

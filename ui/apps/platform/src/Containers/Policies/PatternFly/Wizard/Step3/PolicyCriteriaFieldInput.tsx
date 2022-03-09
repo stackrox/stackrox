@@ -10,7 +10,7 @@ import {
     SelectVariant,
 } from '@patternfly/react-core';
 
-import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptor';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 
 type PolicyCriteriaFieldInputProps = {

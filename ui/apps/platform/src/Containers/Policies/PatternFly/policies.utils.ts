@@ -429,6 +429,7 @@ function postFormatNestedPolicyFields(policy: Policy): Policy {
                     value: formatValueStr(value as ValueObj, policyGroup.fieldName),
                 };
             });
+            delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
         });
     });
     return serverPolicy;

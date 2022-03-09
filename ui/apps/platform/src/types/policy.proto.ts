@@ -1,3 +1,4 @@
+import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptor';
 import { PermissionLevel } from './rbac.proto';
 
 export type ListPolicy = {
@@ -112,6 +113,7 @@ export type ValueObj = {
 export type PolicyGroup = {
     fieldName: string;
     booleanOperator: PolicyBooleanOperator;
+    fieldKey?: Descriptor;
     negate: boolean;
     values: PolicyValue[];
 };
