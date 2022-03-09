@@ -233,9 +233,6 @@ func getSchema(curr string, parents ...*walker.Schema) *walker.Schema {
 			{
 				Name:       "id",
 				ColumnName: "id",
-				Schema: &walker.Schema{
-					Table: curr,
-				},
 				Options: walker.PostgresOptions{
 					PrimaryKey: true,
 				},
@@ -243,9 +240,6 @@ func getSchema(curr string, parents ...*walker.Schema) *walker.Schema {
 			{
 				Name:       "name",
 				ColumnName: "name",
-				Schema: &walker.Schema{
-					Table: curr,
-				},
 			},
 		},
 	}

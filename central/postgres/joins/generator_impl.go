@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -27,16 +28,14 @@ type join struct {
 	rhs *joinPart
 }
 
-type joins struct {
-	joins []*join
-}
+type joins []*join
 
 func (j *joins) toSQLJoinClauseParts() *sqlJoinClauseParts {
 	if j == nil {
 		return nil
 	}
-	tables, joinsAsStr := make([]string, 0, len(j.joins)), make([]string, 0, len(j.joins))
-	for _, currJoin := range j.joins {
+	tables, joinsAsStr := make([]string, 0, 2*len(*j)), make([]string, 0, len(*j))
+	for _, currJoin := range *j {
 		lhs, rhs := currJoin.lhs, currJoin.rhs
 		if lhs.table == rhs.table {
 			utils.Should(errors.Errorf("LHS table alias %s cannot be the same as RHS table alias %s", lhs.table, rhs.table))
@@ -106,22 +105,21 @@ func (j *joinGeneratorImpl) generateJoinsForDBSchema(schemas map[string]*walker.
 				continue
 			}
 			currJoins := &joins{}
-			if search(srcSchema, dstSchema, currJoins, make(map[string]struct{})) {
+			if search(srcSchema, dstSchema, currJoins, set.NewStringSet()) {
 				upsertPathsAndSubPaths(currJoins.toSQLJoinClauseParts(), j.joins)
 			}
 		}
 	}
 }
 
-func search(currSchema, dstSchema *walker.Schema, joins *joins, visited map[string]struct{}) bool {
+func search(currSchema, dstSchema *walker.Schema, joins *joins, visited set.StringSet) bool {
 	if currSchema == nil || dstSchema == nil {
 		return false
 	}
 
-	if _, ok := visited[currSchema.Table]; ok {
+	if !visited.Add(currSchema.Table) {
 		return false
 	}
-	visited[currSchema.Table] = struct{}{}
 
 	if currSchema.Table == dstSchema.Table {
 		return true
@@ -137,7 +135,7 @@ func search(currSchema, dstSchema *walker.Schema, joins *joins, visited map[stri
 
 		// Since we are going from child to parent, foreign keys in current schema map to primary keys in parent.
 		for _, fk := range currSchema.ForeignKeysReferencesTo(parent.Table) {
-			joins.joins = append(joins.joins, &join{
+			*joins = append(*joins, &join{
 				lhs: &joinPart{
 					table:      currSchema.Table,
 					columnName: fk.ColumnName,
@@ -158,7 +156,7 @@ func search(currSchema, dstSchema *walker.Schema, joins *joins, visited map[stri
 
 		// Since we are going from parent to child, primary keys in current schema map to foreign keys in child.
 		for _, fk := range child.ForeignKeysReferencesTo(currSchema.Table) {
-			joins.joins = append(joins.joins, &join{
+			*joins = append(*joins, &join{
 				lhs: &joinPart{
 					table:      currSchema.Table,
 					columnName: fk.Reference,
