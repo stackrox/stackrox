@@ -529,7 +529,7 @@ func (e *enricherImpl) fetchSignature(img *storage.Image, registry registryTypes
 	if err != nil {
 		return fetchedSignatures, err
 	}
-	if sigs == nil || len(sigs) == 0 {
+	if len(sigs) == 0 {
 		return fetchedSignatures, nil
 	}
 
