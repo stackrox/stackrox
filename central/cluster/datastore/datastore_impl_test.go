@@ -46,7 +46,7 @@ import (
 
 const (
 	fakeClusterID   = "FAKECLUSTERID"
-	mainImage       = "docker.io/stackrox/rox:latest"
+	mainImage       = "docker.io/stackrox/rox"
 	centralEndpoint = "central.stackrox:443"
 )
 
@@ -1211,11 +1211,31 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 			expectedError: false,
 		},
 		{
+			name: "Non-trivial image managed by Helm",
+			cluster: &storage.Cluster{
+				MainImage:          "stackrox/main:1.2",
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+				ManagedBy:          storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			},
+			expectedError: false,
+		},
+		{
 			name: "Non-trivial image",
 			cluster: &storage.Cluster{
 				MainImage:          "stackrox/main:1.2",
 				Name:               "name",
 				CentralApiEndpoint: "central:443",
+			},
+			expectedError: true,
+		},
+		{
+			name: "Moderately complex image managed by Helm",
+			cluster: &storage.Cluster{
+				MainImage:          "stackrox.io/main:1.2.512-125125",
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+				ManagedBy:          storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 			},
 			expectedError: false,
 		},
@@ -1226,6 +1246,16 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 				Name:               "name",
 				CentralApiEndpoint: "central:443",
 			},
+			expectedError: true,
+		},
+		{
+			name: "Image with SHA managed by Helm",
+			cluster: &storage.Cluster{
+				MainImage:          "stackrox.io/main@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+				ManagedBy:          storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			},
 			expectedError: false,
 		},
 		{
@@ -1235,7 +1265,7 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 				Name:               "name",
 				CentralApiEndpoint: "central:443",
 			},
-			expectedError: false,
+			expectedError: true,
 		},
 		{
 			name: "Invalid image - contains spaces",
