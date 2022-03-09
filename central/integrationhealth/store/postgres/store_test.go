@@ -41,46 +41,48 @@ func (s *IntegrationhealthStoreSuite) TearDownTest() {
 }
 
 func (s *IntegrationhealthStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	integrationHealth := &storage.IntegrationHealth{}
 	s.NoError(testutils.FullInit(integrationHealth, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundIntegrationHealth, exists, err := store.Get(integrationHealth.GetId())
+	foundIntegrationHealth, exists, err := store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundIntegrationHealth)
 
-	s.NoError(store.Upsert(integrationHealth))
-	foundIntegrationHealth, exists, err = store.Get(integrationHealth.GetId())
+	s.NoError(store.Upsert(ctx, integrationHealth))
+	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(integrationHealth, foundIntegrationHealth)
 
-	integrationHealthCount, err := store.Count()
+	integrationHealthCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(integrationHealthCount, 1)
 
-	integrationHealthExists, err := store.Exists(integrationHealth.GetId())
+	integrationHealthExists, err := store.Exists(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(integrationHealthExists)
-	s.NoError(store.Upsert(integrationHealth))
+	s.NoError(store.Upsert(ctx, integrationHealth))
 
-	foundIntegrationHealth, exists, err = store.Get(integrationHealth.GetId())
+	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(integrationHealth, foundIntegrationHealth)
 
-	s.NoError(store.Delete(integrationHealth.GetId()))
-	foundIntegrationHealth, exists, err = store.Get(integrationHealth.GetId())
+	s.NoError(store.Delete(ctx, integrationHealth.GetId()))
+	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundIntegrationHealth)

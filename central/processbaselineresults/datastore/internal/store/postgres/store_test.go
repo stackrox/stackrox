@@ -41,46 +41,48 @@ func (s *ProcesswhitelistresultsStoreSuite) TearDownTest() {
 }
 
 func (s *ProcesswhitelistresultsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	processBaselineResults := &storage.ProcessBaselineResults{}
 	s.NoError(testutils.FullInit(processBaselineResults, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundProcessBaselineResults, exists, err := store.Get(processBaselineResults.GetDeploymentId())
+	foundProcessBaselineResults, exists, err := store.Get(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessBaselineResults)
 
-	s.NoError(store.Upsert(processBaselineResults))
-	foundProcessBaselineResults, exists, err = store.Get(processBaselineResults.GetDeploymentId())
+	s.NoError(store.Upsert(ctx, processBaselineResults))
+	foundProcessBaselineResults, exists, err = store.Get(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processBaselineResults, foundProcessBaselineResults)
 
-	processBaselineResultsCount, err := store.Count()
+	processBaselineResultsCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(processBaselineResultsCount, 1)
 
-	processBaselineResultsExists, err := store.Exists(processBaselineResults.GetDeploymentId())
+	processBaselineResultsExists, err := store.Exists(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)
 	s.True(processBaselineResultsExists)
-	s.NoError(store.Upsert(processBaselineResults))
+	s.NoError(store.Upsert(ctx, processBaselineResults))
 
-	foundProcessBaselineResults, exists, err = store.Get(processBaselineResults.GetDeploymentId())
+	foundProcessBaselineResults, exists, err = store.Get(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processBaselineResults, foundProcessBaselineResults)
 
-	s.NoError(store.Delete(processBaselineResults.GetDeploymentId()))
-	foundProcessBaselineResults, exists, err = store.Get(processBaselineResults.GetDeploymentId())
+	s.NoError(store.Delete(ctx, processBaselineResults.GetDeploymentId()))
+	foundProcessBaselineResults, exists, err = store.Get(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessBaselineResults)

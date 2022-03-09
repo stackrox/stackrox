@@ -636,6 +636,8 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Category([BAT])
     def "Verify generated network policies"() {
+        // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
+        Assume.assumeFalse(ClusterService.isEKS())
         given:
         "Get current state of network graph"
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()

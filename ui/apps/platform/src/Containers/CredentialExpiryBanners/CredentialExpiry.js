@@ -59,7 +59,7 @@ const CredentialExpiry = ({
     );
     const message = (
         <span className="flex-1 text-center">
-            The {component} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
+            {component} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
             {format(expirationDate, 'MMMM D, YYYY')} (at {format(expirationDate, 'h:mm a')}).{' '}
             {hasServiceIdentityWritePermission ? (
                 <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>

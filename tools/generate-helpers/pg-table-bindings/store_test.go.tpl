@@ -47,46 +47,48 @@ func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
 }
 
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
+    ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	{{$name}} := &{{.Type}}{}
 	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get({{template "paramList" $}})
+	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-	s.NoError(store.Upsert({{$name}}))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{template "paramList" $}})
+	s.NoError(store.Upsert(ctx, {{$name}}))
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
 	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	{{$name}}Count, err := store.Count()
+	{{$name}}Count, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal({{$name}}Count, 1)
 
-	{{$name}}Exists, err := store.Exists({{template "paramList" $}})
+	{{$name}}Exists, err := store.Exists(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True({{$name}}Exists)
-	s.NoError(store.Upsert({{$name}}))
+	s.NoError(store.Upsert(ctx, {{$name}}))
 
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{template "paramList" $}})
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
 	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	s.NoError(store.Delete({{template "paramList" $}}))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{template "paramList" $}})
+	s.NoError(store.Delete(ctx, {{template "paramList" $}}))
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})

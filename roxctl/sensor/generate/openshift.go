@@ -1,6 +1,8 @@
 package generate
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
@@ -33,7 +35,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 	case 4:
 		s.cluster.Type = storage.ClusterType_OPENSHIFT4_CLUSTER
 	default:
-		return errox.Newf(errox.InvalidArgs, "invalid OpenShift version %d, supported values are '3' and '4'", s.openshiftVersion)
+		return errox.InvalidArgs.New(fmt.Sprintf("invalid OpenShift version %d, supported values are '3' and '4'", s.openshiftVersion))
 	}
 
 	if s.admissionControllerEvents == nil {
@@ -41,7 +43,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 	} else if *s.admissionControllerEvents && s.cluster.Type == storage.ClusterType_OPENSHIFT_CLUSTER {
 		// The below `Validate` call would also catch this, but catching it here allows us to print more
 		// CLI-relevant error messages that reference flag names.
-		return errox.New(errox.InvalidArgs, errorAdmCntrlNotSupportedOnOpenShift3x)
+		return errox.InvalidArgs.New(errorAdmCntrlNotSupportedOnOpenShift3x)
 	}
 	s.cluster.AdmissionControllerEvents = *s.admissionControllerEvents
 
@@ -50,7 +52,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 	if s.disableAuditLogCollection == nil {
 		s.disableAuditLogCollection = pointers.Bool(s.cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER)
 	} else if !*s.disableAuditLogCollection && s.cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER {
-		return errox.New(errox.InvalidArgs, errorAuditLogsNotSupportedOnOpenShift3x)
+		return errox.InvalidArgs.New(errorAuditLogsNotSupportedOnOpenShift3x)
 	}
 
 	s.cluster.DynamicConfig.DisableAuditLogs = *s.disableAuditLogCollection

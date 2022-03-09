@@ -41,46 +41,48 @@ func (s *MultikeyStoreSuite) TearDownTest() {
 }
 
 func (s *MultikeyStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	testMultiKeyStruct := &storage.TestMultiKeyStruct{}
 	s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundTestMultiKeyStruct, exists, err := store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
+	foundTestMultiKeyStruct, exists, err := store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestMultiKeyStruct)
 
-	s.NoError(store.Upsert(testMultiKeyStruct))
-	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
+	s.NoError(store.Upsert(ctx, testMultiKeyStruct))
+	foundTestMultiKeyStruct, exists, err = store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(testMultiKeyStruct, foundTestMultiKeyStruct)
 
-	testMultiKeyStructCount, err := store.Count()
+	testMultiKeyStructCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(testMultiKeyStructCount, 1)
 
-	testMultiKeyStructExists, err := store.Exists(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
+	testMultiKeyStructExists, err := store.Exists(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(testMultiKeyStructExists)
-	s.NoError(store.Upsert(testMultiKeyStruct))
+	s.NoError(store.Upsert(ctx, testMultiKeyStruct))
 
-	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
+	foundTestMultiKeyStruct, exists, err = store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(testMultiKeyStruct, foundTestMultiKeyStruct)
 
-	s.NoError(store.Delete(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2()))
-	foundTestMultiKeyStruct, exists, err = store.Get(testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
+	s.NoError(store.Delete(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2()))
+	foundTestMultiKeyStruct, exists, err = store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestMultiKeyStruct)

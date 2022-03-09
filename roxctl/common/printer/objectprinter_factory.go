@@ -17,8 +17,8 @@ var (
 )
 
 func unsupportedOutputFormatError(format string, supportedFormats []string) error {
-	return errox.Newf(errox.InvalidArgs, "unsupported output format used: %q. Choose one of %s",
-		format, strings.Join(supportedFormats, " | "))
+	return errox.InvalidArgs.New(fmt.Sprintf("unsupported output format used: %q. Choose one of %s",
+		format, strings.Join(supportedFormats, " | ")))
 }
 
 // ObjectPrinterFactory holds all flags for specific printers implementing ObjectPrinter as well as the output format flag
@@ -63,15 +63,15 @@ func NewObjectPrinterFactory(defaultOutputFormat string, customPrinterFactories 
 		if _, ok := factoryMap[supportedFormatString]; !ok {
 			factoryMap[supportedFormatString] = factory
 		} else {
-			return nil, errox.Newf(errox.InvariantViolation, "tried to register two printer "+
+			return nil, errox.InvariantViolation.New(fmt.Sprintf("tried to register two printer "+
 				"factories which support the same output formats %q: %T and %T",
-				supportedFormatString, factory, factoryMap[supportedFormatString])
+				supportedFormatString, factory, factoryMap[supportedFormatString]))
 		}
 	}
 
 	if len(factoryMap) == 0 {
-		return nil, errox.Newf(errox.InvariantViolation, "no custom printer factory added. You must specify at least one "+
-			"custom printer factory that supports the %q output format", defaultOutputFormat)
+		return nil, errox.InvariantViolation.New(fmt.Sprintf("no custom printer factory added. You must specify at least one "+
+			"custom printer factory that supports the %q output format", defaultOutputFormat))
 	}
 
 	o.RegisteredPrinterFactories = factoryMap

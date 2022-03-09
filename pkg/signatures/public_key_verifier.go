@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
 
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/hashicorp/go-multierror"
@@ -26,10 +27,10 @@ const (
 
 var (
 	errNoImageSHA            = errors.New("no image SHA found")
-	errInvalidHashAlgo       = errors.New("invalid hash algorithm used")
+	errInvalidHashAlgo       = errox.InvalidArgs.New("invalid hash algorithm used")
 	errNoKeysToVerifyAgainst = errors.New("no keys to verify against")
-	errHashCreation          = errors.New("creating hash")
-	errCorruptedSignature    = errors.New("corrupted signature")
+	errHashCreation          = errox.InvariantViolation.New("creating hash")
+	errCorruptedSignature    = errox.InvariantViolation.New("corrupted signature")
 )
 
 type cosignPublicKeyVerifier struct {
@@ -53,7 +54,7 @@ func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*c
 		// We expect the key to be PEM encoded. There should be no rest returned after decoding.
 		keyBlock, rest := pem.Decode([]byte(publicKey.GetPublicKeyPemEnc()))
 		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
-			return nil, errox.Newf(errox.InvariantViolation, "failed to decode PEM block containing public key %q", publicKey.GetName())
+			return nil, errox.InvariantViolation.New(fmt.Sprintf("failed to decode PEM block containing public key %q", publicKey.GetName()))
 		}
 
 		parsedKey, err := x509.ParsePKIXPublicKey(keyBlock.Bytes)
@@ -140,15 +141,15 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 	// The hash is required for claim verification.
 	hash, err := gcrv1.NewHash(imgSHA)
 	if err != nil {
-		return nil, gcrv1.Hash{}, errox.Newf(errHashCreation, err.Error())
+		return nil, gcrv1.Hash{}, errHashCreation.New(err.Error())
 	}
 
 	// Theoretically, this should never happen, as gcrv1.NewHash _currently_ doesn't support any other hash algorithm.
 	// See: https://github.com/google/go-containerregistry/blob/main/pkg/v1/hash.go#L78
 	// We should keep this check although, in case there are changes in the library.
 	if hash.Algorithm != sha256Algo {
-		return nil, gcrv1.Hash{}, errox.Newf(errInvalidHashAlgo,
-			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm)
+		return nil, gcrv1.Hash{}, errInvalidHashAlgo.New(fmt.Sprintf(
+			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm))
 	}
 
 	// Each signature contains the base64 encoded version of it and the associated payload.
@@ -164,7 +165,7 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 		if err != nil {
 			// Theoretically, this error should never happen, as the only error currently occurs when using options,
 			// which we do not use _yet_. When introducing support for rekor bundles, this could potentially error.
-			return nil, gcrv1.Hash{}, errox.Newf(errCorruptedSignature, err.Error())
+			return nil, gcrv1.Hash{}, errCorruptedSignature.New(err.Error())
 		}
 		signatures = append(signatures, sig)
 	}

@@ -41,46 +41,48 @@ func (s *NetworkbaselineStoreSuite) TearDownTest() {
 }
 
 func (s *NetworkbaselineStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	networkBaseline := &storage.NetworkBaseline{}
 	s.NoError(testutils.FullInit(networkBaseline, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundNetworkBaseline, exists, err := store.Get(networkBaseline.GetDeploymentId())
+	foundNetworkBaseline, exists, err := store.Get(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkBaseline)
 
-	s.NoError(store.Upsert(networkBaseline))
-	foundNetworkBaseline, exists, err = store.Get(networkBaseline.GetDeploymentId())
+	s.NoError(store.Upsert(ctx, networkBaseline))
+	foundNetworkBaseline, exists, err = store.Get(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(networkBaseline, foundNetworkBaseline)
 
-	networkBaselineCount, err := store.Count()
+	networkBaselineCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(networkBaselineCount, 1)
 
-	networkBaselineExists, err := store.Exists(networkBaseline.GetDeploymentId())
+	networkBaselineExists, err := store.Exists(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)
 	s.True(networkBaselineExists)
-	s.NoError(store.Upsert(networkBaseline))
+	s.NoError(store.Upsert(ctx, networkBaseline))
 
-	foundNetworkBaseline, exists, err = store.Get(networkBaseline.GetDeploymentId())
+	foundNetworkBaseline, exists, err = store.Get(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(networkBaseline, foundNetworkBaseline)
 
-	s.NoError(store.Delete(networkBaseline.GetDeploymentId()))
-	foundNetworkBaseline, exists, err = store.Get(networkBaseline.GetDeploymentId())
+	s.NoError(store.Delete(ctx, networkBaseline.GetDeploymentId()))
+	foundNetworkBaseline, exists, err = store.Get(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkBaseline)
