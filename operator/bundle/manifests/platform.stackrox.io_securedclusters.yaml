@@ -460,7 +460,7 @@ spec:
                     type: string
                 type: object
               scanner:
-                description: Settings for the local Scanner component, which is responsible
+                description: Settings for the Scanner component, which is responsible
                   for vulnerability scanning of container images stored in a cluster-local
                   image repository.
                 properties:
@@ -672,7 +672,6 @@ spec:
                       effect.
                     enum:
                     - AutoSense
-                    - Enabled
                     - Disabled
                     type: string
                 type: object

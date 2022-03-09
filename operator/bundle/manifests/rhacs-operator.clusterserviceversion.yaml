@@ -355,10 +355,10 @@ spec:
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
-      - description: Settings for the local Scanner component, which is responsible
-          for vulnerability scanning of container images stored in a cluster-local
-          image repository.
-        displayName: Local Scanner Component Settings
+      - description: Settings for the Scanner component, which is responsible for
+          vulnerability scanning of container images stored in a cluster-local image
+          repository.
+        displayName: Scanner Component Settings
         path: scanner
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
