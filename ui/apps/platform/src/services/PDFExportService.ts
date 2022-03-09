@@ -24,11 +24,17 @@ function createPDFContainerElement() {
  *  @param {string} pdfTitle - The title to display in the top right section of the header
  *  @param {string} timestamp - The timestamp to display in the top right section of the header
  *  @param {string} logoSrc - The full path to the logo image to use as part of the header.
+ *  @param {string} logoAlt - Alt text for the provided logo
  *  @returns {HTMLElement}
  */
-function createPDFHeaderElement(pdfTitle: string, timestamp: string, logoSrc: string) {
+function createPDFHeaderElement(
+    pdfTitle: string,
+    timestamp: string,
+    logoSrc: string,
+    logoAlt: string
+) {
     const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
-            <img alt="stackrox-logo" src=${logoSrc} class="h-24" />
+            <img alt=${logoAlt}src=${logoSrc} class="h-20 pl-2" />
             <div class="pr-4 text-right">
                 <div class="text-2xl">${pdfTitle}</div>
                 <div class="pt-2 text-xl">${timestamp}</div>
@@ -134,7 +140,12 @@ function exportPDF(
     const pdfContainerElement = createPDFContainerElement();
 
     // add the StackRox header to the container element
-    const pdfHeaderElement = createPDFHeaderElement(pdfTitle, currentTimestamp, branding.logoPng);
+    const pdfHeaderElement = createPDFHeaderElement(
+        pdfTitle,
+        currentTimestamp,
+        branding.logoSvg,
+        branding.logoAltText
+    );
     pdfContainerElement.appendChild(pdfHeaderElement);
 
     // create a clone of the element to be exported and add it to the body of the container
