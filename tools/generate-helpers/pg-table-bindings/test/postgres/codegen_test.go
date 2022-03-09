@@ -1,3 +1,4 @@
+//go:build sql_integration
 // +build sql_integration
 
 package postgres
@@ -6,101 +7,74 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	singleKey = &storage.TestSingleKeyStruct{
-		Key: "key1",
-		Name: "name",
-		StringSlice: []string {
-			"slice1", "slice2",
-		},
-		Bool: true,
-		Uint64: 16,
-		Int64: 32,
-		Float: 4.56,
-		Labels: map[string]string {
-			"key1": "value1",
-			"key2": "value2",
-		},
-		Timestamp: &types.Timestamp{
-			Seconds:              1645640515,
-			Nanos:                0,
-		},
-		Enum: storage.TestSingleKeyStruct_ENUM1,
-		Enums: []storage.TestSingleKeyStruct_Enum {
-			storage.TestSingleKeyStruct_ENUM1,
-			storage.TestSingleKeyStruct_ENUM2,
-		},
-	}
+	singleKey = fixtures.GetTestSingleKeyStruct()
 )
 
 func TestStore(t *testing.T) {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
-	if err != nil {
-		panic(err)
-	}
-	defer pool.Close()
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	testStruct := singleKey.Clone()
-	dep, exists, err := store.Get(testStruct.GetKey())
+	dep, exists, err := store.Get(ctx, testStruct.GetKey())
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, dep)
 
-	assert.NoError(t, store.Upsert(testStruct))
-	dep, exists, err = store.Get(testStruct.GetKey())
+	assert.NoError(t, store.Upsert(ctx, testStruct))
+	dep, exists, err = store.Get(ctx, testStruct.GetKey())
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, testStruct, dep)
 }
 
 func TestIndex(t *testing.T) {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
-	if err != nil {
-		panic(err)
-	}
-	defer pool.Close()
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	testStruct := singleKey.Clone()
-	assert.NoError(t, store.Upsert(testStruct))
+	assert.NoError(t, store.Upsert(ctx, testStruct))
 
 	cases := []struct {
-		name string
+		name         string
 		queryBuilder *search.QueryBuilder
-		numResults int
-	} {
+		numResults   int
+	}{
 		{
-			name: "basic string match",
+			name:         "basic string match",
 			queryBuilder: search.NewQueryBuilder().AddExactMatches(search.TestKey, testStruct.GetKey()),
-			numResults: 1,
+			numResults:   1,
 		},
 		{
-			name: "basic string no match",
+			name:         "basic string no match",
 			queryBuilder: search.NewQueryBuilder().AddExactMatches(search.TestKey, "nomatch"),
-			numResults: 0,
+			numResults:   0,
 		},
 
 		// TODO
@@ -138,33 +112,6 @@ func TestIndex(t *testing.T) {
 		//	queryBuilder: search.NewQueryBuilder().AddExactMatches(search.TestStringSlice, "nomatch"),
 		//	numResults: 0,
 		//},
-
-		/*
-		singleKey = &storage.TestSingleKeyStruct{
-				Key: "key1",
-				Name: "name",
-				StringSlice: []string {
-					"slice1", "slice2",
-				},
-				Bool: true,
-				Uint64: 16,
-				Int64: 32,
-				Float: 4.56,
-				Labels: map[string]string {
-					"key1": "value1",
-					"key2": "value2",
-				},
-				Timestamp: &types.Timestamp{
-					Seconds:              1645640515,
-					Nanos:                0,
-				},
-				Enum: storage.TestSingleKeyStruct_ENUM1,
-				Enums: []storage.TestSingleKeyStruct_Enum {
-					storage.TestSingleKeyStruct_ENUM1,
-					storage.TestSingleKeyStruct_ENUM2,
-				},
-			}
-		 */
 	}
 	index := NewIndexer(pool)
 	for _, c := range cases {

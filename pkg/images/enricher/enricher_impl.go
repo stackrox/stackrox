@@ -19,14 +19,20 @@ import (
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scanners/clairify"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
 
 const (
 	// The number of consecutive errors for a scanner or registry that cause its health status to be UNHEALTHY
 	consecutiveErrorThreshold = 3
+)
+
+var (
+	_ ImageEnricher = (*enricherImpl)(nil)
 )
 
 type enricherImpl struct {
@@ -51,6 +57,57 @@ type enricherImpl struct {
 	asyncRateLimiter *rate.Limiter
 
 	metrics metrics
+}
+
+// EnrichWithVulnerabilities enriches the given image with vulnerabilities.
+func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
+	scanners := e.integrations.ScannerSet()
+	if scanners.IsEmpty() {
+		return EnrichmentResult{
+			ScanResult: ScanNotDone,
+		}, errors.New("no image scanners are integrated")
+	}
+
+	for _, imageScanner := range scanners.GetAll() {
+		scanner := imageScanner.GetScanner()
+		if vulnScanner, ok := scanner.(scannerTypes.ImageVulnerabilityGetter); ok {
+			// Clairify is the only supported ImageVulnerabilityGetter at this time.
+			if scanner.Type() != clairify.TypeString {
+				log.Errorf("unexpected image vulnerability getter: %s [%s]", scanner.Name(), scanner.Type())
+				continue
+			}
+
+			res, err := e.enrichWithVulnerabilities(scanner.Name(), imageScanner.DataSource(), vulnScanner, image, components, notes)
+			if err != nil {
+				return EnrichmentResult{
+					ScanResult: ScanNotDone,
+				}, errors.Wrapf(err, "retrieving image vulnerabilities from %s [%s]", scanner.Name(), scanner.Type())
+			}
+
+			return EnrichmentResult{
+				ImageUpdated: res != ScanNotDone,
+				ScanResult:   res,
+			}, nil
+		}
+	}
+
+	return EnrichmentResult{
+		ScanResult: ScanNotDone,
+	}, errors.New("no image vulnerability retrievers are integrated")
+}
+
+func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource *storage.DataSource, scanner scannerTypes.ImageVulnerabilityGetter,
+	image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (ScanResult, error) {
+	scanStartTime := time.Now()
+	scan, err := scanner.GetVulnerabilities(image, components, notes)
+	e.metrics.SetImageVulnerabilityRetrievalTime(scanStartTime, scannerName, err)
+	if err != nil || scan == nil {
+		return ScanNotDone, err
+	}
+
+	enrichImage(image, scan, dataSource)
+
+	return ScanSucceeded, nil
 }
 
 // EnrichImage enriches an image with the integration set present.
@@ -123,7 +180,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 
 	registries := e.integrations.RegistrySet()
 	if !ctx.Internal && registries.IsEmpty() {
-		errorList.AddError(errox.Newf(errox.NotFound, "no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry()))
+		errorList.AddError(errox.NotFound.New(fmt.Sprintf("no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry())))
 		return false, errorList.ToError()
 	}
 
@@ -343,17 +400,22 @@ func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, imageScanner
 		return ScanNotDone, nil
 	}
 
-	// normalize the vulns
+	enrichImage(image, scan, imageScanner.DataSource())
+
+	return ScanSucceeded, nil
+}
+
+func enrichImage(image *storage.Image, scan *storage.ImageScan, dataSource *storage.DataSource) {
+	// Normalize the vulnerabilities.
 	normalizeVulnerabilities(scan)
 
-	scan.DataSource = imageScanner.DataSource()
+	scan.DataSource = dataSource
 
 	// Assume:
 	//  scan != nil
 	//  no error scanning.
 	image.Scan = scan
 	FillScanStats(image)
-	return ScanSucceeded, nil
 }
 
 // FillScanStats fills in the higher level stats from the scan data.

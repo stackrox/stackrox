@@ -20,7 +20,7 @@ enum SubjectKind {
 // Properties of an individual k8s Role or ClusterRole.
 //////////////////////////////////////////
 message K8sRole {
-    string id                               = 1 [(gogoproto.moretags) = "search:\"Role ID,hidden\""];
+    string id                               = 1 [(gogoproto.moretags) = 'search:"Role ID,hidden" sql:"pk"'];
     string name                             = 2 [(gogoproto.moretags) = "search:\"Role\""];
     string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
@@ -47,7 +47,7 @@ message PolicyRule {
 // Properties of an individual k8s RoleBinding or ClusterRoleBinding.
 //////////////////////////////////////////
 message K8sRoleBinding {
-    string id                               = 1 [(gogoproto.moretags) = "search:\"Role Binding ID,hidden\""];
+    string id                               = 1 [(gogoproto.moretags) = 'search:"Role Binding ID,hidden" sql:"pk"'];
     string name                             = 2 [(gogoproto.moretags) = "search:\"Role Binding\""];
     string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];

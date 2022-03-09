@@ -5,14 +5,20 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+
+## [69.0]
+
+- `collector` image with `-slim` in the image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
+- `collector-rhel`, `main-rhel`, `scanner-rhel`, and `scanner-db-rhel` images are not published any more. These images were identical to non-rhel ones since version 3.66.
 - Increased default Scanner memory limit from 3000 MiB to 4GiB.
 - API changes/deprecations:
-  - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaults (GET /v1/cluster-defaults)` instead.
+  - `GetKernelSupportAvailable (GET /v1/clusters-env/kernel-support-available)` is deprecated, use `GetClusterDefaultValues (GET /v1/cluster-defaults)` instead.
   - The following features have been deprecated and will be removed in version 3.71.0:
     - The external authorization plugin for scoped access control will be removed. Please use the existing in-product scoped access control.
     - The Anchore, Tenable, and Docker Trusted Registry integrations will be removed. Please use the ACS Scanner instead as it is more widely supported.
     - Alert and process comments will be removed.
   - `CreateRole` and `UpdateRole` in `/v1/roles/`: `role.access_scope_id` empty value is deprecated, will be set to the unrestricted access scope ID (`io.stackrox.authz.accessscope.unrestricted`) during the adoption period.
+  - API endpoint `/api/helm/cluster/add` was deleted as not being used in the product.
 - Improved accuracy of active component and vulnerability and presented it with higher confidence.
   - Analyzed dependencies between OS components and detected derived active components.
   - Added `Active` state to list of components and list of vulnerabilities under Vulnerability Management within the scope of a specific deployment.

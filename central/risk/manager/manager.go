@@ -215,7 +215,7 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 	return nil
 }
 
-// ReprocessImageRisk will reprocess risk of the passed image and save the results.
+// CalculateRiskAndUpsertImage will reprocess risk of the passed image and save the results.
 func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
 

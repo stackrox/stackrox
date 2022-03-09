@@ -157,6 +157,7 @@ export const policies = {
     dryrun: '/v1/policies/dryrunjob',
     export: '/v1/policies/export',
     import: '/v1/policies/import',
+    reassess: '/v1/policies/reassess',
 };
 
 export const roles = {

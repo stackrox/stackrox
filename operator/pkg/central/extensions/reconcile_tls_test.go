@@ -1,7 +1,9 @@
 package extensions
 
 import (
+	"crypto/x509"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
@@ -145,6 +147,72 @@ func TestCreateCentralTLS(t *testing.T) {
 			t.Parallel()
 
 			testSecretReconciliation(t, reconcileCentralTLS, c)
+		})
+	}
+}
+
+func TestRenewInitBundle(t *testing.T) {
+	type renewInitBundleTestCase struct {
+		now                string
+		notBefore          string
+		notAfter           string
+		expectError        bool
+		expectErrorMessage string
+	}
+
+	cases := map[string]renewInitBundleTestCase{
+		"should NOT refresh init-bundle when the certificate remains valid": {
+			now:         "2021-02-11T12:00:00.000Z",
+			notBefore:   "2021-02-11T00:00:00.000Z",
+			notAfter:    "2021-02-11T23:59:59.000Z",
+			expectError: false,
+		},
+		"should refresh init-bundle when the certificate is already expired": {
+			now:                "2021-02-11T12:00:00.000Z",
+			notBefore:          "2021-02-11T00:00:00.000Z",
+			notAfter:           "2021-02-11T11:00:00.000Z",
+			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 11:00:00 +0000 UTC, renew threshold: 2021-02-11 09:30:00 +0000 UTC",
+		},
+		"should refresh init-bundle when the certificate lifetime is not started": {
+			now:                "2021-02-11T12:00:00.000Z",
+			notBefore:          "2021-02-11T22:00:00.000Z",
+			notAfter:           "2021-02-11T23:59:59.000Z",
+			expectErrorMessage: "init bundle secret requires update, certificate lifetime starts in the future, not before: 2021-02-11 22:00:00 +0000 UTC",
+		},
+		"should refresh init-bundle when the certificate expires within the reconciliation period": {
+			now:                "2021-02-11T12:00:00.000Z",
+			notBefore:          "2021-02-11T00:00:00.000Z",
+			notAfter:           "2021-02-11T12:30:00.000Z",
+			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 12:30:00 +0000 UTC, renew threshold: 2021-02-11 11:00:00 +0000 UTC",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			notBefore, err := time.Parse(time.RFC3339, c.notBefore)
+			require.NoError(t, err)
+			notAfter, err := time.Parse(time.RFC3339, c.notAfter)
+			require.NoError(t, err)
+			cert := &x509.Certificate{
+				NotBefore: notBefore,
+				NotAfter:  notAfter,
+			}
+			now, err := time.Parse(time.RFC3339, c.now)
+			require.NoError(t, err)
+
+			if c.expectErrorMessage != "" {
+				c.expectError = true
+			}
+
+			if c.expectError {
+				if c.expectErrorMessage != "" {
+					assert.EqualError(t, checkInitBundleCertRenewal(cert, now), c.expectErrorMessage)
+				} else {
+					assert.Error(t, checkInitBundleCertRenewal(cert, now))
+				}
+			} else {
+				assert.NoError(t, checkInitBundleCertRenewal(cert, now))
+			}
 		})
 	}
 }

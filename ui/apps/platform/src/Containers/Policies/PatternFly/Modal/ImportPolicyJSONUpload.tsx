@@ -57,7 +57,7 @@ function ImportPolicyJSONUpload({
     return (
         <>
             <ModalBoxBody>
-                Upload a policy JSON file to import one or more ACS policies
+                Upload a policy JSON file to import a previously exported security policy
                 <FileUpload
                     id="policies-json-import"
                     type="text"

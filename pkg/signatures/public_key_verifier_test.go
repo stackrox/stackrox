@@ -73,7 +73,7 @@ func TestPublicKeyVerifier_VerifySignature_Success(t *testing.T) {
 	pubKeyVerifier, err := newCosignPublicKeyVerifier(&storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
-				Name:            "publicKey",
+				Name:            "cosignPublicKeyVerifier",
 				PublicKeyPemEnc: pemPublicKey,
 			},
 		},
@@ -121,7 +121,7 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 	require.NoError(t, err, "creating image with signature")
 
 	cases := map[string]struct {
-		verifier *publicKeyVerifier
+		verifier *cosignPublicKeyVerifier
 		img      *storage.Image
 		err      error
 		status   storage.ImageSignatureVerificationResult_Status

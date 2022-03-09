@@ -163,8 +163,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		return nil, errors.Wrap(err, "creating central client")
 	}
 
-	if features.LocalImageScanning.Enabled() && (helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
-		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL) {
+	if features.LocalImageScanning.Enabled() && securedClusterIsNotManagedManually(helmManagedConfig) && env.UseLocalScanner.BooleanSetting() {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
 			localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace, podName))
@@ -199,4 +198,9 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	s.AddAPIServices(apiServices...)
 	return s, nil
+}
+
+func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
+	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
+		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }

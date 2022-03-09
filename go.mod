@@ -7,7 +7,7 @@ go 1.16
 require github.com/stackrox/scanner v0.0.0-20220214215744-13c0e1db0298
 
 require (
-	cloud.google.com/go/compute v1.3.0
+	cloud.google.com/go/compute v1.5.0
 	cloud.google.com/go/containeranalysis v0.1.1
 	cloud.google.com/go/storage v1.19.0
 	github.com/BurntSushi/toml v1.0.0
@@ -27,7 +27,7 @@ require (
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
-	github.com/containers/image/v5 v5.19.1
+	github.com/containers/image/v5 v5.20.0
 	github.com/coreos/go-oidc/v3 v3.1.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/couchbase/moss v0.1.0 // indirect
@@ -88,8 +88,8 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.32.1
-	github.com/russellhaering/gosaml2 v0.6.0
-	github.com/russellhaering/goxmldsig v1.1.1
+	github.com/russellhaering/gosaml2 v0.7.0
+	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
 	github.com/sigstore/cosign v1.5.1
 	github.com/sigstore/sigstore v1.1.1-0.20220130134424-bae9b66b8442
@@ -110,15 +110,15 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.20.0
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
-	golang.org/x/net v0.0.0-20220127074510-2fabfed7e28f
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
+	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
 	golang.org/x/tools v0.1.8
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.67.0
-	google.golang.org/genproto v0.0.0-20220207164111-0872dc986b00
+	google.golang.org/api v0.71.0
+	google.golang.org/genproto v0.0.0-20220304144024-325a89244dc8
 	google.golang.org/grpc v1.44.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5

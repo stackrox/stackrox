@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -40,46 +41,48 @@ func (s *AlertsStoreSuite) TearDownTest() {
 }
 
 func (s *AlertsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	s.Require().NoError(err)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
-	alert := fixtures.GetAlert()
-	foundAlert, exists, err := store.Get(alert.GetId())
+	alert := &storage.Alert{}
+	s.NoError(testutils.FullInit(alert, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	foundAlert, exists, err := store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundAlert)
 
-	s.NoError(store.Upsert(alert))
-	foundAlert, exists, err = store.Get(alert.GetId())
+	s.NoError(store.Upsert(ctx, alert))
+	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(alert, foundAlert)
 
-	alertCount, err := store.Count()
+	alertCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(alertCount, 1)
 
-	alertExists, err := store.Exists(alert.GetId())
+	alertExists, err := store.Exists(ctx, alert.GetId())
 	s.NoError(err)
 	s.True(alertExists)
-	s.NoError(store.Upsert(alert))
+	s.NoError(store.Upsert(ctx, alert))
 
-	foundAlert, exists, err = store.Get(alert.GetId())
+	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(alert, foundAlert)
 
-	s.NoError(store.Delete(alert.GetId()))
-	foundAlert, exists, err = store.Get(alert.GetId())
+	s.NoError(store.Delete(ctx, alert.GetId()))
+	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundAlert)

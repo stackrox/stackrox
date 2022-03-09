@@ -6,7 +6,7 @@ import { Policy } from 'Containers/Violations/types/violationTypes';
 import Fields from 'Containers/Policies/Wizard/Details/Fields';
 import ConfigurationFields from 'Containers/Policies/Wizard/Details/ConfigurationFields';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
-import MitreAttackVectors from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
+import MitreAttackVectorsViewContainer from 'Containers/MitreAttackVectors/MitreAttackVectorsViewContainer';
 
 type PolicyDetailsProps = {
     policy: Policy;
@@ -30,7 +30,7 @@ function PolicyDetails({ policy }: PolicyDetailsProps): ReactElement {
                 <FlexItem>
                     <Title headingLevel="h3">MITRE ATT&CK</Title>
                     <div className="pf-u-mt-md">
-                        {!!policy.id && <MitreAttackVectors policyId={policy.id} />}
+                        {!!policy.id && <MitreAttackVectorsViewContainer policyId={policy.id} />}
                     </div>
                 </FlexItem>
             </Flex>

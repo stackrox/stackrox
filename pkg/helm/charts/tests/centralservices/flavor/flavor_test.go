@@ -26,7 +26,6 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 		ScannerDBSlimImageName: "scanner-slim",
 		ScannerDBImageName:     "custom-scanner-db",
 
-		ScannerDBImageTag: "3.2.1",
 		ChartRepo: defaults.ChartRepo{
 			URL: "url",
 		},
@@ -44,7 +43,6 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
 			values.ImageTag = "custom-main"
 			values.ScannerImageTag = "custom-scanner"
-			values.ScannerDBImageTag = "custom-scanner-db"
 		},
 		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
 	})

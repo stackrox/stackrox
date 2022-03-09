@@ -10,7 +10,7 @@ import { Alert, Button, Title, TitleSizes } from '@patternfly/react-core';
 import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
 import { ThemeContext } from 'Containers/ThemeProvider';
-import LoadingSection from 'Components/LoadingSection';
+import LoadingSection from 'Components/PatternFly/LoadingSection';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxPasswordField from 'Components/forms/ReduxPasswordField';

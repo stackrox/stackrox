@@ -273,15 +273,24 @@
 {{/* Disable local scanner on non-OpenShift clusters by default. */}}
 {{ if not ._rox.env.openshift }}
   {{ if eq $._rox.scanner.disable false }}
-    {{ include "srox.fail" (printf "Local scanner was enabled but is only supported on OpenShift. Set scanner.disable=true to continue." ) }}
+    {{ include "srox.fail" (printf "Scanner was enabled but is only supported on OpenShift. Set scanner.disable=true to continue." ) }}
   {{ end }}
   {{ $_ := set $._rox.scanner "disable" true }}
+{{ end }}
+
+{{ if eq ._rox.scanner.disable false }}
+  {{ $centralDeployment := dict }}
+  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
+  {{ if $centralDeployment.result }}
+    {{ include "srox.fail" "Scanner is not supported to be deployed using this chart within a namespace running Central, must instead be deployed using the Central chart. To fix this error set scanner.disable=true and re-deploy." }}
+  {{ end }}
 {{ end }}
 
 {{ if and ._rox.env.openshift (eq ._rox.scanner.disable false) }}
   {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
   {{ $_ = set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
+  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 {{ end }}
 [<- end >]
 

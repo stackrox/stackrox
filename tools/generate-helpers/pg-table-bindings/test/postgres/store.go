@@ -36,28 +36,32 @@ var (
 	table = "singlekey"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "TestSingleKeyStruct")
+}
+
 type Store interface {
-	Count() (int, error)
-	Exists(key string) (bool, error)
-	Get(key string) (*storage.TestSingleKeyStruct, bool, error)
-	Upsert(obj *storage.TestSingleKeyStruct) error
-	UpsertMany(objs []*storage.TestSingleKeyStruct) error
-	Delete(key string) error
-	GetIDs() ([]string, error)
-	GetMany(ids []string) ([]*storage.TestSingleKeyStruct, []int, error)
-	DeleteMany(ids []string) error
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, key string) (bool, error)
+	Get(ctx context.Context, key string) (*storage.TestSingleKeyStruct, bool, error)
+	Upsert(ctx context.Context, obj *storage.TestSingleKeyStruct) error
+	UpsertMany(ctx context.Context, objs []*storage.TestSingleKeyStruct) error
+	Delete(ctx context.Context, key string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.TestSingleKeyStruct, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(fn func(obj *storage.TestSingleKeyStruct) error) error
+	Walk(ctx context.Context, fn func(obj *storage.TestSingleKeyStruct) error) error
 
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableSinglekey(db *pgxpool.Pool) {
+func createTableSinglekey(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists singlekey (
     Key varchar,
@@ -80,7 +84,7 @@ create table if not exists singlekey (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -90,27 +94,27 @@ create table if not exists singlekey (
 		"create index if not exists singlekey_Key on singlekey using hash(Key)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableSinglekeyNested(db)
+	createTableSinglekeyNested(ctx, db)
 }
 
-func createTableSinglekeyNested(db *pgxpool.Pool) {
+func createTableSinglekeyNested(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists singlekey_Nested (
-    parent_Key varchar,
+    singlekey_Key varchar,
     idx numeric,
     Nested varchar,
     Nested2_Nested2 varchar,
-    PRIMARY KEY(parent_Key, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Key) REFERENCES singlekey(Key) ON DELETE CASCADE
+    PRIMARY KEY(singlekey_Key, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (singlekey_Key) REFERENCES singlekey(Key) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -120,14 +124,14 @@ create table if not exists singlekey_Nested (
 		"create index if not exists singlekeyNested_idx on singlekey_Nested using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func insertIntoSinglekey(tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
+func insertIntoSinglekey(ctx context.Context, tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -136,42 +140,26 @@ func insertIntoSinglekey(tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		obj.GetKey(),
-
 		obj.GetName(),
-
 		obj.GetStringSlice(),
-
 		obj.GetBool(),
-
 		obj.GetUint64(),
-
 		obj.GetInt64(),
-
 		obj.GetFloat(),
-
 		obj.GetLabels(),
-
 		pgutils.NilOrStringTimestamp(obj.GetTimestamp()),
-
 		obj.GetEnum(),
-
 		obj.GetEnums(),
-
 		obj.GetEmbedded().GetEmbedded(),
-
 		obj.GetOneofstring(),
-
 		obj.GetOneofnested().GetNested(),
-
 		obj.GetOneofnested().GetNested2().GetNested2(),
-
 		serialized,
 	}
 
 	finalStr := "INSERT INTO singlekey (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, Oneofnested_Nested2_Nested2, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, Oneofnested_Nested2_Nested2 = EXCLUDED.Oneofnested_Nested2_Nested2, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -179,35 +167,31 @@ func insertIntoSinglekey(tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
 	var query string
 
 	for childIdx, child := range obj.GetNested() {
-		if err := insertIntoSinglekeyNested(tx, child, obj.GetKey(), childIdx); err != nil {
+		if err := insertIntoSinglekeyNested(ctx, tx, child, obj.GetKey(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from singlekey_Nested where parent_Key = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetKey(), len(obj.GetNested()))
+	query = "delete from singlekey_Nested where singlekey_Key = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetKey(), len(obj.GetNested()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoSinglekeyNested(tx pgx.Tx, obj *storage.TestSingleKeyStruct_Nested, parent_Key string, idx int) error {
+func insertIntoSinglekeyNested(ctx context.Context, tx pgx.Tx, obj *storage.TestSingleKeyStruct_Nested, singlekey_Key string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Key,
-
+		singlekey_Key,
 		idx,
-
 		obj.GetNested(),
-
 		obj.GetNested2().GetNested2(),
 	}
 
-	finalStr := "INSERT INTO singlekey_Nested (parent_Key, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4) ON CONFLICT(parent_Key, idx) DO UPDATE SET parent_Key = EXCLUDED.parent_Key, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO singlekey_Nested (singlekey_Key, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4) ON CONFLICT(singlekey_Key, idx) DO UPDATE SET singlekey_Key = EXCLUDED.singlekey_Key, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -216,56 +200,54 @@ func insertIntoSinglekeyNested(tx pgx.Tx, obj *storage.TestSingleKeyStruct_Neste
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "TestSingleKeyStruct")
-
-	createTableSinglekey(db)
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	createTableSinglekey(ctx, db)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func (s *storeImpl) upsert(objs ...*storage.TestSingleKeyStruct) error {
-	conn, release := s.acquireConn(ops.Get, "TestSingleKeyStruct")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestSingleKeyStruct) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "TestSingleKeyStruct")
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(context.Background())
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
 
-		if err := insertIntoSinglekey(tx, obj); err != nil {
-			if err := tx.Rollback(context.Background()); err != nil {
+		if err := insertIntoSinglekey(ctx, tx, obj); err != nil {
+			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
 			return err
 		}
-		if err := tx.Commit(context.Background()); err != nil {
+		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *storeImpl) Upsert(obj *storage.TestSingleKeyStruct) error {
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestSingleKeyStruct) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TestSingleKeyStruct")
 
-	return s.upsert(obj)
+	return s.upsert(ctx, obj)
 }
 
-func (s *storeImpl) UpsertMany(objs []*storage.TestSingleKeyStruct) error {
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestSingleKeyStruct) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestSingleKeyStruct")
 
-	return s.upsert(objs...)
+	return s.upsert(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
-func (s *storeImpl) Count() (int, error) {
+func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "TestSingleKeyStruct")
 
-	row := s.db.QueryRow(context.Background(), countStmt)
+	row := s.db.QueryRow(ctx, countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -274,10 +256,10 @@ func (s *storeImpl) Count() (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(key string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, key string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestSingleKeyStruct")
 
-	row := s.db.QueryRow(context.Background(), existsStmt, key)
+	row := s.db.QueryRow(ctx, existsStmt, key)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -286,13 +268,13 @@ func (s *storeImpl) Exists(key string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(key string) (*storage.TestSingleKeyStruct, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, key string) (*storage.TestSingleKeyStruct, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestSingleKeyStruct")
 
-	conn, release := s.acquireConn(ops.Get, "TestSingleKeyStruct")
+	conn, release := s.acquireConn(ctx, ops.Get, "TestSingleKeyStruct")
 	defer release()
 
-	row := conn.QueryRow(context.Background(), getStmt, key)
+	row := conn.QueryRow(ctx, getStmt, key)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -305,9 +287,9 @@ func (s *storeImpl) Get(key string) (*storage.TestSingleKeyStruct, bool, error) 
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
+	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -315,23 +297,23 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(key string) error {
+func (s *storeImpl) Delete(ctx context.Context, key string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestSingleKeyStruct")
 
-	conn, release := s.acquireConn(ops.Remove, "TestSingleKeyStruct")
+	conn, release := s.acquireConn(ctx, ops.Remove, "TestSingleKeyStruct")
 	defer release()
 
-	if _, err := conn.Exec(context.Background(), deleteStmt, key); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, key); err != nil {
 		return err
 	}
 	return nil
 }
 
 // GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TestSingleKeyStructIDs")
 
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -348,13 +330,13 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ids []string) ([]*storage.TestSingleKeyStruct, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestSingleKeyStruct, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestSingleKeyStruct")
 
-	conn, release := s.acquireConn(ops.GetMany, "TestSingleKeyStruct")
+	conn, release := s.acquireConn(ctx, ops.GetMany, "TestSingleKeyStruct")
 	defer release()
 
-	rows, err := conn.Query(context.Background(), getManyStmt, ids)
+	rows, err := conn.Query(ctx, getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -390,20 +372,20 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.TestSingleKeyStruct, []int
 }
 
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ids []string) error {
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TestSingleKeyStruct")
 
-	conn, release := s.acquireConn(ops.RemoveMany, "TestSingleKeyStruct")
+	conn, release := s.acquireConn(ctx, ops.RemoveMany, "TestSingleKeyStruct")
 	defer release()
-	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(fn func(obj *storage.TestSingleKeyStruct) error) error {
-	rows, err := s.db.Query(context.Background(), walkStmt)
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestSingleKeyStruct) error) error {
+	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
@@ -426,29 +408,29 @@ func (s *storeImpl) Walk(fn func(obj *storage.TestSingleKeyStruct) error) error 
 
 //// Used for testing
 
-func dropTableSinglekey(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE singlekey CASCADE")
-	dropTableSinglekeyNested(db)
+func dropTableSinglekey(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS singlekey CASCADE")
+	dropTableSinglekeyNested(ctx, db)
 
 }
 
-func dropTableSinglekeyNested(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE singlekey_Nested CASCADE")
+func dropTableSinglekeyNested(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS singlekey_Nested CASCADE")
 
 }
 
-func Destroy(db *pgxpool.Pool) {
-	dropTableSinglekey(db)
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableSinglekey(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex() ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }

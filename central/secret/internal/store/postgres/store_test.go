@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -40,46 +41,48 @@ func (s *SecretsStoreSuite) TearDownTest() {
 }
 
 func (s *SecretsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	s.Require().NoError(err)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
-	secret := fixtures.GetSecret()
-	foundSecret, exists, err := store.Get(secret.GetId())
+	secret := &storage.Secret{}
+	s.NoError(testutils.FullInit(secret, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	foundSecret, exists, err := store.Get(ctx, secret.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSecret)
 
-	s.NoError(store.Upsert(secret))
-	foundSecret, exists, err = store.Get(secret.GetId())
+	s.NoError(store.Upsert(ctx, secret))
+	foundSecret, exists, err = store.Get(ctx, secret.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(secret, foundSecret)
 
-	secretCount, err := store.Count()
+	secretCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(secretCount, 1)
 
-	secretExists, err := store.Exists(secret.GetId())
+	secretExists, err := store.Exists(ctx, secret.GetId())
 	s.NoError(err)
 	s.True(secretExists)
-	s.NoError(store.Upsert(secret))
+	s.NoError(store.Upsert(ctx, secret))
 
-	foundSecret, exists, err = store.Get(secret.GetId())
+	foundSecret, exists, err = store.Get(ctx, secret.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(secret, foundSecret)
 
-	s.NoError(store.Delete(secret.GetId()))
-	foundSecret, exists, err = store.Get(secret.GetId())
+	s.NoError(store.Delete(ctx, secret.GetId()))
+	foundSecret, exists, err = store.Get(ctx, secret.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSecret)

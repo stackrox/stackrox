@@ -81,7 +81,7 @@ message NetworkEntityInfo {
     }
 
     Type               type            = 1;
-    string             id              = 2;
+    string             id              = 2 [(gogoproto.moretags) = 'sql:"pk"'];
 
     oneof desc {
         Deployment     deployment      = 3;
