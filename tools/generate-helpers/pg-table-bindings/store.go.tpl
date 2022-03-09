@@ -1,6 +1,6 @@
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.Name}} = ${{add $idx 1}}{{end}}{{end}}
+{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
+{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
+{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
@@ -40,10 +40,10 @@ const (
         walkStmt = "SELECT serialized FROM {{.Table}}"
 
 {{- if $singlePK }}
-        getIDsStmt = "SELECT {{$singlePK.Name}} FROM {{.Table}}"
-        getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.Name}} = ANY($1::text[])"
+        getIDsStmt = "SELECT {{$singlePK.ColumnName}} FROM {{.Table}}"
+        getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 
-        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.Name}} = ANY($1::text[])"
+        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 {{- end }}
 )
 
@@ -393,7 +393,7 @@ func (s *storeImpl) Walk(fn func(obj *{{.Type}}) error) error {
 {{- define "dropTable"}}
 {{- $schema := . }}
 func {{ template "dropTableFunctionName" $schema }}(db *pgxpool.Pool) {
-    _, _ = db.Exec(context.Background(), "DROP TABLE {{$schema.Table}} CASCADE")
+    _, _ = db.Exec(context.Background(), "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
     {{range $idx, $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(db)
     {{end}}
 }
