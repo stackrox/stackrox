@@ -146,7 +146,7 @@ func createTableAlertsWhitelists(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Whitelists (
     alerts_Id varchar,
-    idx numeric,
+    idx integer,
     Name varchar,
     Deployment_Name varchar,
     Deployment_Scope_Cluster varchar,
@@ -181,7 +181,7 @@ func createTableAlertsExclusions(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Exclusions (
     alerts_Id varchar,
-    idx numeric,
+    idx integer,
     Name varchar,
     Deployment_Name varchar,
     Deployment_Scope_Cluster varchar,
@@ -216,7 +216,7 @@ func createTableAlertsScope(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Scope (
     alerts_Id varchar,
-    idx numeric,
+    idx integer,
     Cluster varchar,
     Namespace varchar,
     Label_Key varchar,
@@ -247,7 +247,7 @@ func createTableAlertsPolicySections(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_PolicySections (
     alerts_Id varchar,
-    idx numeric,
+    idx integer,
     SectionName varchar,
     PRIMARY KEY(alerts_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
@@ -276,8 +276,8 @@ func createTableAlertsPolicySectionsPolicyGroups(ctx context.Context, db *pgxpoo
 	table := `
 create table if not exists alerts_PolicySections_PolicyGroups (
     alerts_Id varchar,
-    alerts_PolicySections_idx numeric,
-    idx numeric,
+    alerts_PolicySections_idx integer,
+    idx integer,
     FieldName varchar,
     BooleanOperator integer,
     Negate bool,
@@ -308,9 +308,9 @@ func createTableAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, db *
 	table := `
 create table if not exists alerts_PolicySections_PolicyGroups_Values (
     alerts_Id varchar,
-    alerts_PolicySections_idx numeric,
-    alerts_PolicySections_PolicyGroups_idx numeric,
-    idx numeric,
+    alerts_PolicySections_idx integer,
+    alerts_PolicySections_PolicyGroups_idx integer,
+    idx integer,
     Value varchar,
     PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx) REFERENCES alerts_PolicySections_PolicyGroups(alerts_Id, alerts_PolicySections_idx, idx) ON DELETE CASCADE
@@ -338,7 +338,7 @@ func createTableAlertsMitreAttackVectors(ctx context.Context, db *pgxpool.Pool) 
 	table := `
 create table if not exists alerts_MitreAttackVectors (
     alerts_Id varchar,
-    idx numeric,
+    idx integer,
     Tactic varchar,
     Techniques text[],
     PRIMARY KEY(alerts_Id, idx),
@@ -367,7 +367,7 @@ func createTableAlertsContainers(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Containers (
     alerts_Id varchar,
-    idx numeric,
+    idx integer,
     Image_Id varchar,
     Image_Name_Registry varchar,
     Image_Name_Remote varchar,
@@ -402,19 +402,19 @@ func createTableAlertsViolations(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Violations (
     alerts_Id varchar,
-    idx numeric,
+    idx integer,
     Message varchar,
     NetworkFlowInfo_Protocol integer,
     NetworkFlowInfo_Source_Name varchar,
     NetworkFlowInfo_Source_EntityType integer,
     NetworkFlowInfo_Source_DeploymentNamespace varchar,
     NetworkFlowInfo_Source_DeploymentType varchar,
-    NetworkFlowInfo_Source_Port numeric,
+    NetworkFlowInfo_Source_Port integer,
     NetworkFlowInfo_Destination_Name varchar,
     NetworkFlowInfo_Destination_EntityType integer,
     NetworkFlowInfo_Destination_DeploymentNamespace varchar,
     NetworkFlowInfo_Destination_DeploymentType varchar,
-    NetworkFlowInfo_Destination_Port numeric,
+    NetworkFlowInfo_Destination_Port integer,
     Type integer,
     Time timestamp,
     PRIMARY KEY(alerts_Id, idx),
@@ -444,8 +444,8 @@ func createTableAlertsViolationsAttrs(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Violations_Attrs (
     alerts_Id varchar,
-    alerts_Violations_idx numeric,
-    idx numeric,
+    alerts_Violations_idx integer,
+    idx integer,
     Key varchar,
     Value varchar,
     PRIMARY KEY(alerts_Id, alerts_Violations_idx, idx),
@@ -474,7 +474,7 @@ func createTableAlertsProcesses(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Processes (
     alerts_Id varchar,
-    idx numeric,
+    idx integer,
     Id varchar,
     DeploymentId varchar,
     ContainerName varchar,
@@ -486,9 +486,9 @@ create table if not exists alerts_Processes (
     Signal_Name varchar,
     Signal_Args varchar,
     Signal_ExecFilePath varchar,
-    Signal_Pid numeric,
-    Signal_Uid numeric,
-    Signal_Gid numeric,
+    Signal_Pid integer,
+    Signal_Uid integer,
+    Signal_Gid integer,
     Signal_Lineage text[],
     Signal_Scraped bool,
     ClusterId varchar,
@@ -522,9 +522,9 @@ func createTableAlertsProcessesLineageInfo(ctx context.Context, db *pgxpool.Pool
 	table := `
 create table if not exists alerts_Processes_LineageInfo (
     alerts_Id varchar,
-    alerts_Processes_idx numeric,
-    idx numeric,
-    ParentUid numeric,
+    alerts_Processes_idx integer,
+    idx integer,
+    ParentUid integer,
     ParentExecFilePath varchar,
     PRIMARY KEY(alerts_Id, alerts_Processes_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_Processes_idx) REFERENCES alerts_Processes(alerts_Id, idx) ON DELETE CASCADE

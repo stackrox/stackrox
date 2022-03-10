@@ -204,11 +204,6 @@ func generateSelectFields(schema *walker.Schema, q *v1.Query, optionsMap searchP
 	for _, pk := range schema.LocalPrimaryKeys() {
 		values = append(values, pk.ColumnName)
 	}
-	if len(values) > 1 {
-		values = []string{
-			fmt.Sprintf("distinct(%s)", strings.Join(values, ", ")),
-		}
-	}
 	if selectType == VALUE {
 		paths = append(values, "serialized")
 	} else {
@@ -372,8 +367,9 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 
 	var searchResults []searchPkg.Result
 
+	numPrimaryKeys := len(schema.LocalPrimaryKeys())
 	// only support fields for now
-	highlightedResults := make([]interface{}, len(query.Select.Fields)+len(schema.LocalPrimaryKeys()))
+	highlightedResults := make([]interface{}, len(query.Select.Fields)+numPrimaryKeys)
 	for i := range highlightedResults {
 		highlightedResults[i] = pointers.String("")
 	}
@@ -381,13 +377,17 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 		if err := rows.Scan(highlightedResults...); err != nil {
 			return nil, err
 		}
+		idParts := make([]string, 0, numPrimaryKeys)
+		for i := 0; i < numPrimaryKeys; i++ {
+			idParts = append(idParts, valueFromStringPtrInterface(highlightedResults[i]))
+		}
 		result := searchPkg.Result{
-			ID: valueFromStringPtrInterface(highlightedResults[0]),
+			ID: strings.Join(idParts, "+"), // TODO: figure out what separator to use
 		}
 		if len(query.Select.Fields) > 0 {
 			result.Matches = make(map[string][]string)
 			for i, field := range query.Select.Fields {
-				result.Matches[field.FieldPath] = []string{valueFromStringPtrInterface(highlightedResults[i+1])}
+				result.Matches[field.FieldPath] = []string{valueFromStringPtrInterface(highlightedResults[i+numPrimaryKeys])}
 			}
 		}
 		searchResults = append(searchResults, result)

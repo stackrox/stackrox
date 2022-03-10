@@ -104,15 +104,12 @@ func (s *Schema) ResolvedFields() []Field {
 // ParentKeys are the keys from the parent schemas that should be defined
 // as foreign keys for the current schema.
 func (s *Schema) ParentKeys() []Field {
-	var pks []Field
-	for _, parent := range s.Parents {
-		pks = parent.ResolvedPrimaryKeys()
-		for idx := range pks {
-			pk := &pks[idx]
-			tryParentify(pk, parent)
-		}
+	var fields []Field
+	pksAsMap := s.ParentKeysAsMap()
+	for _, pks := range pksAsMap {
+		fields = append(fields, pks...)
 	}
-	return pks
+	return fields
 }
 
 // ParentKeysAsMap returns the keys from the parent schemas that should be defined

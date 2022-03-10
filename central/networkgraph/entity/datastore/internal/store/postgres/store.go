@@ -97,8 +97,8 @@ func createTableNetworkentityListenPorts(ctx context.Context, db *pgxpool.Pool) 
 	table := `
 create table if not exists networkentity_ListenPorts (
     networkentity_Info_Id varchar,
-    idx numeric,
-    Port numeric,
+    idx integer,
+    Port integer,
     L4Protocol integer,
     PRIMARY KEY(networkentity_Info_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (networkentity_Info_Id) REFERENCES networkentity(Info_Id) ON DELETE CASCADE

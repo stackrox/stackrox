@@ -70,7 +70,7 @@ create table if not exists namespaces (
     ClusterName varchar,
     Labels jsonb,
     CreationTime timestamp,
-    Priority numeric,
+    Priority integer,
     Annotations jsonb,
     serialized bytea,
     PRIMARY KEY(Id)

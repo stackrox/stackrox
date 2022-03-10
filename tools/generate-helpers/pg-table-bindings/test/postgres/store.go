@@ -68,8 +68,8 @@ create table if not exists singlekey (
     Name varchar UNIQUE,
     StringSlice text[],
     Bool bool,
-    Uint64 numeric,
-    Int64 numeric,
+    Uint64 integer,
+    Int64 integer,
     Float numeric,
     Labels jsonb,
     Timestamp timestamp,
@@ -106,7 +106,7 @@ func createTableSinglekeyNested(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists singlekey_Nested (
     singlekey_Key varchar,
-    idx numeric,
+    idx integer,
     Nested varchar,
     Nested2_Nested2 varchar,
     PRIMARY KEY(singlekey_Key, idx),

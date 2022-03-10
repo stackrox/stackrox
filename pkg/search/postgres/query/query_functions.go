@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/parse"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -18,26 +17,37 @@ import (
 
 type queryFunction func(table string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error)
 
-var datatypeToQueryFunc = map[v1.SearchDataType]queryFunction{
-	v1.SearchDataType_SEARCH_STRING:   newStringQuery,
-	v1.SearchDataType_SEARCH_BOOL:     newBoolQuery,
-	v1.SearchDataType_SEARCH_NUMERIC:  newNumericQuery,
-	v1.SearchDataType_SEARCH_DATETIME: newTimeQuery,
-	v1.SearchDataType_SEARCH_ENUM:     newEnumQuery,
-	// Map type is handled specially.
+var datatypeToQueryFunc = map[walker.DataType]queryFunction{
+	walker.String:      newStringQuery,
+	walker.Bool:        newBoolQuery,
+	walker.StringArray: newStringArrayQuery,
+	walker.DateTime:    newTimeQuery,
+	walker.Enum:        newEnumQuery,
+	walker.Integer:     newNumericQuery,
+	walker.Numeric:     newNumericQuery,
+	// Map is handled separately.
+
+	// TODOs
+	// walker.Numeric:
+	// walker.Integer:
+	// walker.IntArray:
 }
 
 func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string) (*QueryEntry, error) {
 	// Special case: wildcard
 	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
-		return handleExistenceQueries(dbField.ColumnName, field, value), nil
+		return handleExistenceQueries(dbField.ColumnName, value), nil
+	}
+
+	if dbField.DataType == walker.Map {
+		return newMapQuery(dbField.ColumnName, field, value)
 	}
 
 	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
-	return datatypeToQueryFunc[field.GetType()](dbField.ColumnName, field, trimmedValue, modifiers...)
+	return datatypeToQueryFunc[dbField.DataType](dbField.ColumnName, field, trimmedValue, modifiers...)
 }
 
-func handleExistenceQueries(root string, field *pkgSearch.Field, value string) *QueryEntry {
+func handleExistenceQueries(root string, value string) *QueryEntry {
 	switch value {
 	case pkgSearch.WildcardString:
 		return &QueryEntry{
@@ -53,15 +63,24 @@ func handleExistenceQueries(root string, field *pkgSearch.Field, value string) *
 	return nil
 }
 
-func newStringQuery(columnName string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
+func newStringArrayQuery(columnName string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
+	stringQuery, err := newStringQuery("elem", field, value, queryModifiers...)
+	if err != nil {
+		return nil, err
+	}
+	// We need to unnest the string array and see if at least one element in the array matches the query
+	stringQuery.Query = fmt.Sprintf("exists (select * from unnest(%s) as elem where %s)", columnName, stringQuery.Query)
+	return stringQuery, nil
+}
+
+func newStringQuery(columnName string, _ *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
 	if len(value) == 0 {
 		return nil, errors.New("value in search query cannot be empty")
 	}
 
-	root := columnName
 	if len(queryModifiers) == 0 {
 		return &QueryEntry{
-			Query:  columnName + " ilike $$",
+			Query:  fmt.Sprintf("%s ilike $$", columnName),
 			Values: []interface{}{value + "%"},
 		}, nil
 	}
@@ -74,15 +93,22 @@ func newStringQuery(columnName string, field *pkgSearch.Field, value string, que
 		queryModifiers = queryModifiers[1:]
 	}
 
+	if len(queryModifiers) == 0 {
+		return &QueryEntry{
+			Query:  fmt.Sprintf("NOT (%s ilike $$)", columnName),
+			Values: []interface{}{value + "%"},
+		}, nil
+	}
+
 	switch queryModifiers[0] {
 	case pkgSearch.Regex:
 		return &QueryEntry{
-			Query:  root + fmt.Sprintf(" %s~* $$", negationString),
+			Query:  fmt.Sprintf("%s %s~* $$", columnName, negationString),
 			Values: []interface{}{value},
 		}, nil
 	case pkgSearch.Equality:
 		return &QueryEntry{
-			Query:  root + fmt.Sprintf(" %s= $$", negationString),
+			Query:  fmt.Sprintf("%s %s= $$", columnName, negationString),
 			Values: []interface{}{value},
 		}, nil
 	}
@@ -91,7 +117,7 @@ func newStringQuery(columnName string, field *pkgSearch.Field, value string, que
 	return nil, err
 }
 
-func newBoolQuery(table string, field *pkgSearch.Field, value string, modifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
+func newBoolQuery(column string, field *pkgSearch.Field, value string, modifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
 	if len(modifiers) > 0 {
 		return nil, errors.Errorf("modifiers for bool query not allowed: %+v", modifiers)
 	}
@@ -100,7 +126,7 @@ func newBoolQuery(table string, field *pkgSearch.Field, value string, modifiers 
 		return nil, err
 	}
 	// explicitly apply equality check
-	return newStringQuery(table, field, fmt.Sprintf("%t", res), pkgSearch.Equality)
+	return newStringQuery(column, field, strconv.FormatBool(res), pkgSearch.Equality)
 }
 
 func enumEquality(columnName string, field *pkgSearch.Field, enumValues []int32) (*QueryEntry, error) {

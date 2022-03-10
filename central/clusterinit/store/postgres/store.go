@@ -95,7 +95,7 @@ func createTableClusterinitbundlesAttributes(ctx context.Context, db *pgxpool.Po
 	table := `
 create table if not exists clusterinitbundles_Attributes (
     clusterinitbundles_Id varchar,
-    idx numeric,
+    idx integer,
     Key varchar,
     Value varchar,
     PRIMARY KEY(clusterinitbundles_Id, idx),

@@ -90,7 +90,7 @@ func createTableSignatureintegrationsPublicKeys(ctx context.Context, db *pgxpool
 	table := `
 create table if not exists signatureintegrations_PublicKeys (
     signatureintegrations_Id varchar,
-    idx numeric,
+    idx integer,
     Name varchar,
     PublicKeyPemEnc varchar,
     PRIMARY KEY(signatureintegrations_Id, idx),

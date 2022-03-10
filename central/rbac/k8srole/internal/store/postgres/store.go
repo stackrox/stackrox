@@ -97,7 +97,7 @@ func createTableK8srolesRules(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists k8sroles_Rules (
     k8sroles_Id varchar,
-    idx numeric,
+    idx integer,
     Verbs text[],
     ApiGroups text[],
     Resources text[],

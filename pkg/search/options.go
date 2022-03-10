@@ -255,6 +255,7 @@ var (
 	// Test Search Fields
 	TestKey         = newFieldLabel("Test Key")
 	TestName        = newFieldLabel("Test Name")
+	TestString      = newFieldLabel("Test String")
 	TestStringSlice = newFieldLabel("Test String Slice")
 	TestBool        = newFieldLabel("Test Bool")
 	TestUint64      = newFieldLabel("Test Uint64")

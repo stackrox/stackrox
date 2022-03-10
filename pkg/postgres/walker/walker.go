@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	timestampType = reflect.TypeOf(&types.Timestamp{})
+	timestampType = reflect.TypeOf((*types.Timestamp)(nil))
 )
 
 type context struct {
@@ -193,20 +193,19 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 					PrimaryKey: true,
 				},
 			}
-			childSchema.AddFieldWithType(idxField, Numeric)
+			childSchema.AddFieldWithType(idxField, Integer)
 
 			// Take all the primary keys of the parent and copy them into the child schema
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 
 			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, ignorePK: opts.IgnorePrimaryKey}, childSchema, structField.Type.Elem().Elem())
-			continue
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts.IgnorePrimaryKey), schema, structField.Type)
-		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
+		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
 			enum, ok := reflect.Zero(structField.Type).Interface().(protoreflect.ProtoEnum)
 			if !ok {
-				schema.AddFieldWithType(field, Numeric)
+				schema.AddFieldWithType(field, Integer)
 				continue
 			}
 			_, err := protoreflect.GetEnumDescriptor(enum)
@@ -214,40 +213,41 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				panic(err)
 			}
 			schema.AddFieldWithType(field, Enum)
-			continue
+		case reflect.Float32, reflect.Float64:
+			schema.AddFieldWithType(field, Numeric)
 		case reflect.Interface:
 			// If it is a oneof then call XXX_OneofWrappers to get the types.
 			// The return values is a slice of interfaces that are nil type pointers
-			if structField.Tag.Get("protobuf_oneof") != "" {
-				ptrToOriginal := reflect.PtrTo(original)
+			if structField.Tag.Get("protobuf_oneof") == "" {
+				panic("non-oneof interface is not handled")
 
-				methodName := fmt.Sprintf("Get%s", field.Name)
-				oneofGetter, ok := ptrToOriginal.MethodByName(methodName)
-				if !ok {
-					panic("didn't find oneof function, did the naming change?")
-				}
-				oneofInterfaces := oneofGetter.Func.Call([]reflect.Value{reflect.New(original)})
-				if len(oneofInterfaces) != 1 {
-					panic(fmt.Sprintf("found %d interfaces returned from oneof getter", len(oneofInterfaces)))
-				}
-
-				oneofInterface := oneofInterfaces[0].Type()
-
-				method, ok := ptrToOriginal.MethodByName("XXX_OneofWrappers")
-				if !ok {
-					panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", original.Name()))
-				}
-				out := method.Func.Call([]reflect.Value{reflect.New(original)})
-				actualOneOfFields := out[0].Interface().([]interface{})
-				for _, f := range actualOneOfFields {
-					typ := reflect.TypeOf(f)
-					if typ.Implements(oneofInterface) {
-						handleStruct(ctx, schema, typ.Elem())
-					}
-				}
-				continue
 			}
-			panic("non-oneof interface is not handled")
+			ptrToOriginal := reflect.PtrTo(original)
+
+			methodName := fmt.Sprintf("Get%s", field.Name)
+			oneofGetter, ok := ptrToOriginal.MethodByName(methodName)
+			if !ok {
+				panic("didn't find oneof function, did the naming change?")
+			}
+			oneofInterfaces := oneofGetter.Func.Call([]reflect.Value{reflect.New(original)})
+			if len(oneofInterfaces) != 1 {
+				panic(fmt.Sprintf("found %d interfaces returned from oneof getter", len(oneofInterfaces)))
+			}
+
+			oneofInterface := oneofInterfaces[0].Type()
+
+			method, ok := ptrToOriginal.MethodByName("XXX_OneofWrappers")
+			if !ok {
+				panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", original.Name()))
+			}
+			out := method.Func.Call([]reflect.Value{reflect.New(original)})
+			actualOneOfFields := out[0].Interface().([]interface{})
+			for _, f := range actualOneOfFields {
+				typ := reflect.TypeOf(f)
+				if typ.Implements(oneofInterface) {
+					handleStruct(ctx, schema, typ.Elem())
+				}
+			}
 		default:
 			panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), field.Name))
 		}

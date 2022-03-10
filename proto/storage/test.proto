@@ -97,6 +97,8 @@ message TestMultiKeyStruct {
   Enum enum                           = 10 [(gogoproto.moretags) = 'search:"Test Enum"'];
   repeated Enum enums                 = 11 [(gogoproto.moretags) = 'search:"Test Enum Slice"'];
 
+  string string = 16 [(gogoproto.moretags) = 'search:"Test String"'];
+
   message Embedded {
     string embedded = 1;
     message Embedded2 {
