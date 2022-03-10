@@ -67,9 +67,9 @@ function cluster_is_openshift {
 function port-forward-central {
   # operates against current kube context
   pkill -f 'port-forward.*stackrox.*svc/central' || true
+  sleep 2
   kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
-  sleep 3
-
+  sleep 2
   pgrep -fl 'port-forward.*stackrox.*svc/central' || {
     warning "Port forwarding to central has failed"
     cat /tmp/central.log
