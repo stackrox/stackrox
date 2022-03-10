@@ -1099,6 +1099,7 @@ export const auditLogDescriptor: Descriptor[] = [
         shortName: 'Kubernetes resource',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
+        placeholder: 'Select a resource',
         options: [
             {
                 label: 'Config maps',
@@ -1117,6 +1118,7 @@ export const auditLogDescriptor: Descriptor[] = [
         shortName: 'Kubernetes API verb',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
+        placeholder: 'Select an API verb',
         options: APIVerbs,
         canBooleanLogic: false,
     },
