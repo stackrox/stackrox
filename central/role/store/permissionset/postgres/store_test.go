@@ -86,4 +86,17 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPermissionSet)
+
+	var permissionSets []*storage.PermissionSet
+	for i := 0; i < 200; i++ {
+		permissionSet := &storage.PermissionSet{}
+		s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		permissionSets = append(permissionSets, permissionSet)
+	}
+
+	s.NoError(store.UpsertMany(ctx, permissionSets))
+
+	permissionSetCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(permissionSetCount, 200)
 }

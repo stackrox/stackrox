@@ -86,4 +86,17 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSimpleAccessScope)
+
+	var simpleAccessScopes []*storage.SimpleAccessScope
+	for i := 0; i < 200; i++ {
+		simpleAccessScope := &storage.SimpleAccessScope{}
+		s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		simpleAccessScopes = append(simpleAccessScopes, simpleAccessScope)
+	}
+
+	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
+
+	simpleAccessScopeCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(simpleAccessScopeCount, 200)
 }
