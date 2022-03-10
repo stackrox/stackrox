@@ -9,7 +9,6 @@ import (
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -164,7 +163,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		return nil, errors.Wrap(err, "creating central client")
 	}
 
-	if features.LocalImageScanning.Enabled() && !cluster.IsManagerManualOrUnknown(helmManagedConfig.GetManagedBy()) && env.UseLocalScanner.BooleanSetting() {
+	if features.LocalImageScanning.Enabled() && securedClusterIsNotManagedManually(helmManagedConfig) && env.UseLocalScanner.BooleanSetting() {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
 			localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace, podName))
@@ -199,4 +198,9 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	s.AddAPIServices(apiServices...)
 	return s, nil
+}
+
+func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
+	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
+		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }
