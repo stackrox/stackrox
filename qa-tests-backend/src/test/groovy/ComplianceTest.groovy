@@ -1344,7 +1344,7 @@ class ComplianceTest extends BaseSpecification {
         when:
         "starting a new cluster and re-running compliance"
         def otherClusterName = "aNewCluster"
-        ClusterService.createCluster(otherClusterName, "stackrox/main", "central.stackrox:443")
+        ClusterService.createCluster(otherClusterName, "stackrox/main:latest", "central.stackrox:443")
         withRetry(10, 2) {
             def clusters = ClusterService.getClusters()
             assert clusters.size() > 1

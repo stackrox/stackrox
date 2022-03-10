@@ -99,6 +99,7 @@ any_version_slim="${any_version}[0-9]+\-slim"
 }
 
 @test "roxctl sensor generate: should fail if main image is provided with tag" {
+  skip "#TODO(RS-389): once we no longer accept tags in the main image this test should pass"
   generate_bundle k8s "--main-image-repository=example.com/stackrox/main:1.2.3" --name "$cluster_name"
   assert_failure
 }
