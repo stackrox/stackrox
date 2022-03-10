@@ -148,7 +148,7 @@ function PolicyCriteriaFieldInput({
                         isDisabled={readOnly}
                         selections={value.value === '' ? [] : value.value}
                         onClear={handleChangeSelectedValue([])}
-                        placeholderText={descriptor.placeholder}
+                        placeholderText={descriptor.placeholder || 'Select one or more options'}
                         variant={SelectVariant.typeaheadMulti}
                     >
                         {descriptor.options?.map((option) => (
