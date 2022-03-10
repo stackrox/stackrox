@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -71,7 +70,7 @@ func createNumericQuery(root string, _ *search.Field, prefix string, value float
 	}
 }
 
-func newNumericQuery(table string, dbField *walker.Field, field *search.Field, value string, modifiers ...search.QueryModifier) (*QueryEntry, error) {
+func newNumericQuery(table string, field *search.Field, value string, modifiers ...search.QueryModifier) (*QueryEntry, error) {
 	if len(modifiers) > 0 {
 		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", modifiers)
 	}

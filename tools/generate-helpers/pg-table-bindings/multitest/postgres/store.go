@@ -61,13 +61,14 @@ create table if not exists multikey (
     Key2 varchar,
     StringSlice text[],
     Bool bool,
-    Uint64 numeric,
-    Int64 numeric,
+    Uint64 integer,
+    Int64 integer,
     Float numeric,
     Labels jsonb,
     Timestamp timestamp,
     Enum integer,
     Enums int[],
+    String_ varchar,
     Embedded_Embedded varchar,
     Oneofstring varchar,
     Oneofnested_Nested varchar,
@@ -96,7 +97,7 @@ func createTableMultikeyNested(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists multikey_Nested (
     multikey_Key1 varchar,
     multikey_Key2 varchar,
-    idx numeric,
+    idx integer,
     Nested varchar,
     Nested2_Nested2 varchar,
     PRIMARY KEY(multikey_Key1, multikey_Key2, idx),
@@ -141,13 +142,14 @@ func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKe
 		pgutils.NilOrStringTimestamp(obj.GetTimestamp()),
 		obj.GetEnum(),
 		obj.GetEnums(),
+		obj.GetString_(),
 		obj.GetEmbedded().GetEmbedded(),
 		obj.GetOneofstring(),
 		obj.GetOneofnested().GetNested(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO multikey (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO multikey (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
