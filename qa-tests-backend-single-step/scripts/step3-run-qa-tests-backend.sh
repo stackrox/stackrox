@@ -18,7 +18,11 @@ REGISTRY_USERNAME="$(pass quay-io-ro-username)"; export REGISTRY_USERNAME
 REGISTRY_PASSWORD="$(pass quay-io-ro-password)"; export REGISTRY_PASSWORD
 
 # Disabling build to accelerate dev loop -- takes 3-5 minutes on my laptop
-#make style proto-generated-srcs
+if false; then
+  make style proto-generated-srcs
+else
+  echo "SKIPPING BUILD TO SPEEDUP DEV LOOP"
+fi
 
 export KUBECONTEXT=/tmp/kubeconfig
 export AWS_ECR_REGISTRY_NAME="051999192406"
