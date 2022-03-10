@@ -42,7 +42,7 @@ func RegisterTable(table string, objType string) {
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
-		source := "host=localhost port=5432 database=postgres user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
+		source := "host=central-db.stackrox port=5432 database=postgres user=postgres password=SpTasCsKwRorXdFor$Now8 sslmode=disable statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
 		config, err := pgxpool.ParseConfig(source)
 		if err != nil {
 			log.Fatalf("Could not parse postgres config: %v", err)
