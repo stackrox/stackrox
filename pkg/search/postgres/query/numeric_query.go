@@ -34,12 +34,21 @@ var (
 		})
 		return validPrefixes
 	}()
+
+	prefixesToInversions = func() map[string]string {
+		out := make(map[string]string)
+		for _, pAndI := range prefixesAndInversions {
+			out[pAndI.prefix] = pAndI.inversion
+			out[pAndI.inversion] = pAndI.prefix
+		}
+		return out
+	}()
 )
 
 func parseNumericPrefix(value string) (prefix string, trimmedValue string) {
 	for _, prefix := range validPrefixesSortedByLengthDec {
 		if strings.HasPrefix(value, prefix) {
-			return prefix, strings.TrimPrefix(value, prefix)
+			return prefix, strings.TrimSpace(strings.TrimPrefix(value, prefix))
 		}
 	}
 	return "", value
@@ -51,6 +60,10 @@ func parseNumericStringToFloat(s string) (float64, error) {
 		return 0, err
 	}
 	return val, nil
+}
+
+func invertNumericPrefix(prefix string) string {
+	return prefixesToInversions[prefix]
 }
 
 func createNumericQuery(root string, _ *search.Field, prefix string, value float64) *QueryEntry {
