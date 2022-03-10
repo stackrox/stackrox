@@ -582,8 +582,8 @@ func (e *enricherImpl) fetchAndAppendSignatures(ctx context.Context, img *storag
 
 func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	if image.GetName().GetRegistry() == "" {
-		return errox.Newf(errox.NotFound,
-			"no registry is indicated for image %q", image.GetName().GetFullName())
+		return errox.NotFound.CausedBy(fmt.Sprintf("no registry is indicated for image %q",
+			image.GetName().GetFullName()))
 	}
 	return nil
 }
@@ -595,8 +595,7 @@ func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) (registrie
 	}
 
 	if registrySet.IsEmpty() {
-		return nil, errox.New(errox.NotFound,
-			"no image registries are integrated: please add an image integration")
+		return nil, errox.NotFound.CausedBy("no image registries are integrated: please add an image integration")
 	}
 
 	return registrySet, nil
@@ -612,8 +611,8 @@ func getMatchingRegistries(registries []registryTypes.ImageRegistry,
 	}
 
 	if len(matchingRegistries) == 0 {
-		return nil, errox.Newf(errox.NotFound, "no matching registries found: please add "+
-			"an image integration for %q", image.GetName().GetFullName())
+		return nil, errox.NotFound.CausedBy(fmt.Sprintf("no matching registries found: please add "+
+			"an image integration for %q", image.GetName().GetFullName()))
 	}
 
 	return matchingRegistries, nil

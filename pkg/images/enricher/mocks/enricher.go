@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -99,4 +100,41 @@ func (m *MockcveSuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) 
 func (mr *MockcveSuppressorMockRecorder) EnrichImageWithSuppressedCVEs(image interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithSuppressedCVEs", reflect.TypeOf((*MockcveSuppressor)(nil).EnrichImageWithSuppressedCVEs), image)
+}
+
+// MocksignatureVerifierForIntegrations is a mock of signatureVerifierForIntegrations interface.
+type MocksignatureVerifierForIntegrations struct {
+	ctrl     *gomock.Controller
+	recorder *MocksignatureVerifierForIntegrationsMockRecorder
+}
+
+// MocksignatureVerifierForIntegrationsMockRecorder is the mock recorder for MocksignatureVerifierForIntegrations.
+type MocksignatureVerifierForIntegrationsMockRecorder struct {
+	mock *MocksignatureVerifierForIntegrations
+}
+
+// NewMocksignatureVerifierForIntegrations creates a new mock instance.
+func NewMocksignatureVerifierForIntegrations(ctrl *gomock.Controller) *MocksignatureVerifierForIntegrations {
+	mock := &MocksignatureVerifierForIntegrations{ctrl: ctrl}
+	mock.recorder = &MocksignatureVerifierForIntegrationsMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MocksignatureVerifierForIntegrations) EXPECT() *MocksignatureVerifierForIntegrationsMockRecorder {
+	return m.recorder
+}
+
+// verifySignatureAgainstIntegrations mocks base method.
+func (m *MocksignatureVerifierForIntegrations) verifySignatureAgainstIntegrations(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "verifySignatureAgainstIntegrations", ctx, integrations, image)
+	ret0, _ := ret[0].([]*storage.ImageSignatureVerificationResult)
+	return ret0
+}
+
+// verifySignatureAgainstIntegrations indicates an expected call of verifySignatureAgainstIntegrations.
+func (mr *MocksignatureVerifierForIntegrationsMockRecorder) verifySignatureAgainstIntegrations(ctx, integrations, image interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "verifySignatureAgainstIntegrations", reflect.TypeOf((*MocksignatureVerifierForIntegrations)(nil).verifySignatureAgainstIntegrations), ctx, integrations, image)
 }
