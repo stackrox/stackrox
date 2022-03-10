@@ -598,6 +598,7 @@ describe('Cluster Health', () => {
 
         it(
             `should appear in the form for ${clusterName}`,
+            // TODO(ROX-9546): Debug why we have network error here and remove retries
             {
                 retries: {
                     runMode: 1,
