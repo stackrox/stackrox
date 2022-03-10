@@ -1,5 +1,5 @@
 // Package errox implements tooling and an interface for project errors
-// handling, and a	list of	base sentinel errors.
+// handling, and a list of base sentinel errors.
 //
 // Usage
 //
@@ -16,7 +16,7 @@
 // Format error messages:
 //     return errox.NotFound.New(fmt.Sprintf("file '%s' not found", filename))
 //
-// Create error fabrics for generic errors:
+// Create error factories for generic errors:
 //     ErrInvalidAlgorithmF := func(alg string) RoxError {
 //         return errox.InvalidArgs.New(
 //             fmt.Sprintf("invalid algorithm %q used", alg))
