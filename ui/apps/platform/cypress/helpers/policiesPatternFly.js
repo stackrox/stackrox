@@ -48,6 +48,20 @@ export function searchPolicies(category, value) {
     cy.wait('@getPoliciesWithSearchQuery');
 }
 
+export function goToFirstPolicy() {
+    cy.intercept('GET', api.policies.policy).as('getPolicy');
+    cy.get(selectors.tableFirstRowName).click();
+    cy.wait('@getPolicy');
+}
+
+export function editFirstPolicyFromTable() {
+    doPolicyRowAction(selectors.tableFirstRow, 'Edit');
+}
+
+export function cloneFirstPolicyFromTable() {
+    doPolicyRowAction(selectors.tableFirstRow, 'Clone');
+}
+
 // Actions on policy detail page
 
 export function doPolicyPageAction(titleOfActionItem) {
@@ -57,8 +71,14 @@ export function doPolicyPageAction(titleOfActionItem) {
 
 export function clonePolicy() {}
 
-export function editPolicy() {}
+export function editPolicy() {
+    cy.get(selectors.page.editPolicyButton).click();
+}
 
 // Actions on policy wizard page
+
+export function goToStep3() {
+    cy.get(selectors.wizard.step3Button).click();
+}
 
 export function savePolicy() {}
