@@ -92,7 +92,7 @@ function PolicyCriteriaFieldInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
-                    placeholder={descriptor.placeholder}
+                    // placeholder={descriptor.placeholder}
                 />
             );
         case 'select':

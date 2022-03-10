@@ -51,7 +51,7 @@ function PolicyCriteriaFieldSubInput({
                         type="text"
                         id={name}
                         isDisabled={readOnly}
-                        placeholder={subComponent.placeholder}
+                        // placeholder={subComponent.placeholder}
                         onChange={(v) => setValue(v)}
                     />
                 </FormGroup>
