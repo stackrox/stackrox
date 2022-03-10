@@ -74,7 +74,7 @@ func SimpleInitializer() BasicTypeInitializer {
 }
 
 // UniqueInitializer returns a UniqueTypeInitializer that initializes all fields of basic types with a simple non-zero
-// value (1 for integer fields, 1.0 for float fields, true for boolean fields, "a" for string fields).
+// value (1 for integer fields, 1.0 for float fields, true for boolean fields, a new UUID for string fields).
 func UniqueInitializer() BasicTypeInitializer {
 	return uniqueInitializer{}
 }
