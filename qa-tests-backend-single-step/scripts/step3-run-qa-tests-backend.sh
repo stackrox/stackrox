@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run E2E tests (Groovy + Spock + Fabric8 + Gradle)
-set -eu
+set -eux
 source "scripts/common.sh"
 source "scripts/config.sh"
 
@@ -28,7 +28,7 @@ export CLUSTER="OPENSHIFT"
 export AWS_ECR_REGISTRY_NAME="051999192406"
 export AWS_ECR_REGISTRY_REGION="us-east-2"
 
-AWS_ECR_DOCKER_PULL_PASSWORD="$(aws ecr get-login-password)"
+AWS_ECR_DOCKER_PULL_PASSWORD="$(aws ecr get-login-password)" || true
 export AWS_ECR_DOCKER_PULL_PASSWORD
 
 CENTRAL_USERNAME="admin"
