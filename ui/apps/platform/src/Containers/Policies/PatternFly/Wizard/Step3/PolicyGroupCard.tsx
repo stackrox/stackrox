@@ -142,21 +142,23 @@ function PolicyGroupCard({
                         );
                     })}
                     {/* this is because there can't be multiple boolean values */}
-                    {!readOnly && descriptor.type !== 'radioGroup' && (
-                        <Flex
-                            direction={{ default: 'column' }}
-                            alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-u-pt-sm"
-                        >
-                            <Button
-                                onClick={handleAddValue}
-                                variant="plain"
-                                // dataTestId="add-policy-field-value-btn"
+                    {!readOnly &&
+                        descriptor.type !== 'radioGroup' &&
+                        descriptor.type !== 'radioGroupString' && (
+                            <Flex
+                                direction={{ default: 'column' }}
+                                alignItems={{ default: 'alignItemsCenter' }}
+                                className="pf-u-pt-sm"
                             >
-                                <PlusIcon />
-                            </Button>
-                        </Flex>
-                    )}
+                                <Button
+                                    onClick={handleAddValue}
+                                    variant="plain"
+                                    // dataTestId="add-policy-field-value-btn"
+                                >
+                                    <PlusIcon />
+                                </Button>
+                            </Flex>
+                        )}
                 </CardBody>
             </Card>
             {(policyGroups.length - 1 !== groupIndex || !readOnly) && (
