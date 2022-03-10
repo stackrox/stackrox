@@ -20,24 +20,6 @@ Plan for running //rox/qa-tests-backend tests locally against a remote cluster:
 3. Use the test image to build test prerequisites and setup test harness
 4. Use the test image to run //row/qa-tests-backend
 
-2021-11-18 Thursday
--------------------
-
-https://app.circleci.com/pipelines/github/stackrox/rox/64605/workflows/3014576f-6092-48a4-ae32-14ba372d7195
-
-### ROSA
-
-https://console.redhat.com/acs-1637278575
-
-### OSD-on-AWS
-
-https://qaprodauth.console.redhat.com/acs-1637278573
-
-### OSD-on-GCP
-
-https://qaprodauth.console.redhat.com/acs-1637278584
-
-
 References
 ----------
 
