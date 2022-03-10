@@ -58,7 +58,7 @@ helm_template_central() {
     --set imagePullSecrets.allowNone=true \
     --output-dir="$out_dir/rendered"
   assert_success
-  assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/01-central-12-deployment.yaml"
+  assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/01-central-13-deployment.yaml"
   assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"
 }
 
@@ -179,7 +179,7 @@ assert_components_registry() {
     regex="$(image_reference_regex "$registry_slug" "$image" "$version_regex")"
     case $component in
       main)
-        assert_registry_version_file "${dir}/01-central-12-deployment.yaml" 0 "central" "$regex"
+        assert_registry_version_file "${dir}/01-central-13-deployment.yaml" 0 "central" "$regex"
         ;;
       scanner)
         assert_registry_version_file "${dir}/02-scanner-06-deployment.yaml" 0 "scanner" "$regex"

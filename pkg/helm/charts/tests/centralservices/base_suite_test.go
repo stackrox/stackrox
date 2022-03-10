@@ -59,6 +59,7 @@ central:
   exposure:
     loadBalancer:
       enabled: true
+  enableCentralDB: true
 scanner:
   dbPassword:
     value: "db password"
@@ -90,6 +91,7 @@ central:
   exposure:
     loadBalancer:
       enabled: true
+  enableCentralDB: true
 enableOpenShiftMonitoring: true
 `
 )
