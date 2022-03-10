@@ -89,7 +89,7 @@ function IntegrationsListPage({
                 <Title headingLevel="h1">
                     {isSignatureIntegration ? 'Signature' : ''} Integrations
                 </Title>
-                <Title headingLevel="h2">{typeLabel}</Title>
+                {!isSignatureIntegration && <Title headingLevel="h2">{typeLabel}</Title>}
             </PageSection>
             <PageSection variant="default">
                 <IntegrationsTable
