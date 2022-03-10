@@ -2475,11 +2475,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - AUTH0_SUPPORT: false
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3052,6 +3048,22 @@ jobs:
       - provision-gke-cluster:
           cluster-id: api-e2e-tests
 
+  provision-gke-postgres-api-e2e-tests:
+    executor: custom
+    resource_class: small
+    environment:
+      - GCP_IMAGE_TYPE: "COS"
+      - POD_SECURITY_POLICIES: "true"
+    steps:
+      - checkout
+      - check-backend-changes
+      - check-to-run:
+          label: ci-postgres-tests
+          run-on-master: false
+          run-on-tags: false
+      - provision-gke-cluster:
+          cluster-id: postgres-api-e2e-tests
+
   provision-gke-kernel-api-e2e-tests:
     executor: custom
     resource_class: small
@@ -3522,13 +3534,8 @@ jobs:
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
       - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - SENSOR_HELM_DEPLOY: true
-      - ROX_ACTIVE_VULN_MANAGEMENT: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3681,11 +3688,6 @@ jobs:
       - SCANNER_SUPPORT: true
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
-      - ROX_EVENT_TIMELINE_UI: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
@@ -3753,11 +3755,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3767,6 +3765,32 @@ jobs:
           determine-whether-to-run:
             - check-label-to-skip-tests:
                 label: ci-no-qa-tests
+
+  gke-postgres-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - GCP_IMAGE_TYPE: "COS"
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_BASELINE_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
+      - ROX_POSTGRES_DATASTORE: true
+
+    steps:
+      - run-qa-tests:
+          cluster-id: postgres-api-e2e-tests
+          sensor-deploy-flavor: helm
+          determine-whether-to-run:
+            - check-to-run:
+                label: ci-postgres-tests
+                run-on-master: false
+                run-on-tags: false
           use-websocket: true
 
   gke-kernel-api-e2e-tests:
@@ -3780,14 +3804,9 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_ROCKSDB: true
       - OUTPUT_FORMAT: helm
       - SENSOR_HELM_DEPLOY: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3924,16 +3943,11 @@ jobs:
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ROX_SENSOR_DETECTION: true
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - SENSOR_HELM_DEPLOY: true
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3952,14 +3966,9 @@ jobs:
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ROX_SENSOR_DETECTION: true
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3982,11 +3991,7 @@ jobs:
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -4076,11 +4081,7 @@ jobs:
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -4187,11 +4188,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
 
@@ -4229,14 +4226,8 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_GRAPH_PORTS: true
-      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
-      - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
-
 
     steps:
       - run-qa-tests:
@@ -4460,13 +4451,8 @@ jobs:
       LOAD_BALANCER: lb
       ADMISSION_CONTROLLER: "true"
       ADMISSION_CONTROLLER_UPDATES: "true"
-      ROX_NETWORK_DETECTION_BASELINE_SIMULATION: "true"
-      ROX_NETWORK_DETECTION_BLOCKED_FLOWS: "true"
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
       IS_RACE_BUILD: "true"
-      ROX_VULN_RISK_MANAGEMENT: "true"
-      ROX_VULN_REPORTING: "true"
       ROX_VERIFY_IMAGE_SIGNATURE: "true"
 
 
@@ -4787,12 +4773,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_GRAPH_PORTS: true
-      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
-      - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
 
@@ -4833,12 +4814,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_GRAPH_PORTS: true
-      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
-      - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -4970,6 +4946,14 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-e2e-tests
+      - provision-gke-postgres-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-postgres-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-postgres-api-e2e-tests
       - provision-gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-kernel-api-e2e-tests:
