@@ -12,8 +12,6 @@
 {{- if eq (len $pks) 1 }}
 {{ $singlePK = index $pks 0 }}
 {{- end }}
-//value of singlePK
-//{{ $singlePK }}
 
 package postgres
 
@@ -199,6 +197,8 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     inputRows := [][]interface{}{}
 
+    var err error
+
     {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
     // this is a copy so first we must delete the rows and re-add them
     // which is essentially the desired behaviour of an upsert.
@@ -252,21 +252,27 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         // Add the id to be deleted.
         deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
         {{else}}
-        s.Delete(ctx, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+        err = s.Delete(ctx, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+        if err != nil {
+            return err
+        }
         {{end}}
         {{end}}
 
         // if we hit our batch size we need to push the data
         if i % batchSize == 0 || i == len(objs) {
-            // copy doesn't upsert so have to delete first.  parent deletion cascades so only need to
+            // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
             {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
-            s.DeleteMany(ctx, deletes)
+            err = s.DeleteMany(ctx, deletes)
+            if err != nil {
+                return err
+            }
             // clear the inserts and vals for the next batch
             deletes = nil
             {{end}}
 
-            _, err := tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+            _, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
 
             if err != nil {
                 return err
