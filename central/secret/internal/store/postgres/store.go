@@ -100,7 +100,7 @@ func createTableSecretsFiles(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists secrets_Files (
     secrets_Id varchar,
-    idx numeric,
+    idx integer,
     Name varchar,
     Type integer,
     Cert_Subject_CommonName varchar,
@@ -152,8 +152,8 @@ func createTableSecretsFilesRegistries(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists secrets_Files_Registries (
     secrets_Id varchar,
-    secrets_Files_idx numeric,
-    idx numeric,
+    secrets_Files_idx integer,
+    idx integer,
     Name varchar,
     Username varchar,
     PRIMARY KEY(secrets_Id, secrets_Files_idx, idx),
@@ -182,7 +182,7 @@ func createTableSecretsContainerRelationships(ctx context.Context, db *pgxpool.P
 	table := `
 create table if not exists secrets_ContainerRelationships (
     secrets_Id varchar,
-    idx numeric,
+    idx integer,
     Id varchar,
     Path varchar,
     PRIMARY KEY(secrets_Id, idx),
@@ -211,7 +211,7 @@ func createTableSecretsDeploymentRelationships(ctx context.Context, db *pgxpool.
 	table := `
 create table if not exists secrets_DeploymentRelationships (
     secrets_Id varchar,
-    idx numeric,
+    idx integer,
     Id varchar,
     Name varchar,
     PRIMARY KEY(secrets_Id, idx),

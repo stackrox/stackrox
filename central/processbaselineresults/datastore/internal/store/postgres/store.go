@@ -91,7 +91,7 @@ func createTableProcesswhitelistresultsBaselineStatuses(ctx context.Context, db 
 	table := `
 create table if not exists processwhitelistresults_BaselineStatuses (
     processwhitelistresults_DeploymentId varchar,
-    idx numeric,
+    idx integer,
     ContainerName varchar,
     BaselineStatus integer,
     AnomalousProcessesExecuted bool,

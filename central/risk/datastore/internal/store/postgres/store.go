@@ -94,7 +94,7 @@ func createTableRiskResults(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk_Results (
     risk_Id varchar,
-    idx numeric,
+    idx integer,
     Name varchar,
     Score numeric,
     PRIMARY KEY(risk_Id, idx),
@@ -124,8 +124,8 @@ func createTableRiskResultsFactors(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk_Results_Factors (
     risk_Id varchar,
-    risk_Results_idx numeric,
-    idx numeric,
+    risk_Results_idx integer,
+    idx integer,
     Message varchar,
     Url varchar,
     PRIMARY KEY(risk_Id, risk_Results_idx, idx),

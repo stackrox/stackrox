@@ -98,7 +98,7 @@ func createTableRolebindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists rolebindings_Subjects (
     rolebindings_Id varchar,
-    idx numeric,
+    idx integer,
     Id varchar,
     Kind integer,
     Name varchar,

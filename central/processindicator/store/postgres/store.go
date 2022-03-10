@@ -75,9 +75,9 @@ create table if not exists process_indicators (
     Signal_Name varchar,
     Signal_Args varchar,
     Signal_ExecFilePath varchar,
-    Signal_Pid numeric,
-    Signal_Uid numeric,
-    Signal_Gid numeric,
+    Signal_Pid integer,
+    Signal_Uid integer,
+    Signal_Gid integer,
     Signal_Lineage text[],
     Signal_Scraped bool,
     ClusterId varchar,
@@ -108,8 +108,8 @@ func createTableProcessIndicatorsLineageInfo(ctx context.Context, db *pgxpool.Po
 	table := `
 create table if not exists process_indicators_LineageInfo (
     process_indicators_Id varchar,
-    idx numeric,
-    ParentUid numeric,
+    idx integer,
+    ParentUid integer,
     ParentExecFilePath varchar,
     PRIMARY KEY(process_indicators_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (process_indicators_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
