@@ -63,3 +63,16 @@ function assert_file_exists {
 function cluster_is_openshift {
   kubectl config view | grep -q devshift-org
 }
+
+function port-forward-central {
+  # operates against current kube context
+  pkill -f 'port-forward.*stackrox.*svc/central'
+  kc port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
+  sleep 1
+  pgrep -fl 'port-forward.*stackrox.*svc/central'
+  cat /tmp/central.log
+  open localhost:8443 &
+  CENTRAL_USERNAME="admin"
+  CENTRAL_PASSWORD=$(cat "$GOPATH/src/github.com/stackrox/stackrox/deploy/openshift/central-deploy/password")
+  echo "Login to Central with ($CENTRAL_USERNAME, $CENTRAL_PASSWORD)"
+}

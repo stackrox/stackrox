@@ -24,14 +24,22 @@ else
   echo "SKIPPING BUILD TO SPEEDUP DEV LOOP"
 fi
 
-export KUBECONTEXT=/tmp/kubeconfig
+export CLUSTER="OPENSHIFT"
 export AWS_ECR_REGISTRY_NAME="051999192406"
 export AWS_ECR_REGISTRY_REGION="us-east-2"
+
 AWS_ECR_DOCKER_PULL_PASSWORD="$(aws ecr get-login-password)"
 export AWS_ECR_DOCKER_PULL_PASSWORD
 
-# QUAY_USERNAME="$(pass quay-io-ro-username)"; export QUAY_USERNAME
-# QUAY_PASSWORD="$(pass quay-io-ro-password)"; export QUAY_PASSWORD
+CENTRAL_USERNAME="admin"
+CENTRAL_PASSWORD=$(cat "$GOPATH/src/github.com/stackrox/stackrox/deploy/openshift/central-deploy/password")
+export ROX_PASSWORD="$CENTRAL_PASSWORD"
+
+QUAY_USERNAME="$(pass quay-io-ro-username)"
+QUAY_PASSWORD="$(pass quay-io-ro-password)"
+export QUAY_USERNAME QUAY_PASSWORD
+
+port-forward-central
 
 gradle test --tests='ImageScanningTest'
 #gradle test --tests='ImageScanningTest.Image metadata from registry test'
