@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -76,6 +77,47 @@ func tlsHandshakeErrorHandler(conn net.Conn, e error) {
 
 	log.Debugf("TLS record header '%s ...' from %q is invalid: %v", recordHdrErr.RecordHeader, conn.RemoteAddr(), e)
 	_ = recordHdrErr.Conn.Close()
+}
+
+func isMisdirectedRequest(req *http.Request) bool {
+	if req.TLS == nil {
+		return false // we can only detect misdirected requests with TLS
+	}
+	if !req.ProtoAtLeast(2, 0) {
+		return false // connection caolescing requires HTTP/2.0 or higher
+	}
+	tlsServerName := req.TLS.ServerName
+	if tlsServerName == "" {
+		return false // need an SNI ServerName
+	}
+	httpHostName := stringutils.GetUpTo(req.Host, ":") // may be of form host:port
+	if httpHostName == "" {
+		return false // need a HTTP Host or :authority header
+	}
+	if tlsServerName == httpHostName {
+		return false
+	}
+	// Even if hostname and server name are distinct, let's limit ourselves to only classifying requests
+	// as positively misdirected if the discrepancy can be explained by a wildcard cert.
+	tlsServerNameDomain := stringutils.GetAfter(tlsServerName, ".")
+	if tlsServerNameDomain == "" {
+		return false
+	}
+	httpHostNameDomain := stringutils.GetAfter(httpHostName, ".")
+	if httpHostNameDomain == "" {
+		return false
+	}
+	return tlsServerNameDomain == httpHostNameDomain
+}
+
+func denyMisdirectedRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if isMisdirectedRequest(req) {
+			http.Error(w, "received connection for unexpected hostname", http.StatusMisdirectedRequest)
+			return
+		}
+		next.ServeHTTP(w, req)
+	})
 }
 
 func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server) (net.Addr, []serverAndListener, error) {
@@ -142,6 +184,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			} else {
 				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
 			}
+			httpSrv.Handler = denyMisdirectedRequest(httpSrv.Handler)
 		}
 		result = append(result, serverAndListener{
 			srv:      httpSrv,
