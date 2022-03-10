@@ -36,11 +36,11 @@ import (
 
 var (
 	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.Priority.String(),
+		Field:    search.DeploymentPriority.String(),
 		Reversed: false,
 	}
 
-	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap).Remove(search.RiskScore)
+	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap)
 	imageOnlyOptionsMap = search.Difference(
 		imageMappings.OptionsMap,
 		search.CombineOptionsMaps(
@@ -50,7 +50,7 @@ var (
 			imageCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
 		),
-	).Remove(search.RiskScore)
+	)
 	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap,
 		search.CombineOptionsMaps(
 			imageOnlyOptionsMap,
@@ -185,7 +185,7 @@ func formatSearcher(graphProvider graph.Provider,
 		imageCVEEdgeSearcher)
 	filteredSearcher := filtered.Searcher(edgefields.HandleCVEEdgeSearchQuery(compoundSearcher), deploymentSAC.GetSACFilter()) // Make the UnsafeSearcher safe.
 	// To transform Image to Image Registry, Image Remote, and Image Tag.
-	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher, imageMappings.OptionsMap)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher, deploymentMappings.OptionsMap)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortFieldSearcher)
 	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

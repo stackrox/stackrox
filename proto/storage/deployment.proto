@@ -34,7 +34,7 @@ message Deployment {
     repeated Container containers              = 11;
     reserved 12;
     map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
-    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority,hidden\" hash:\"ignore\""];
+    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Deployment Risk Priority,hidden\" hash:\"ignore\""];
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = "search:\"Image Pull Secret\""];
     string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
@@ -48,7 +48,7 @@ message Deployment {
     repeated PortConfig ports                  = 24 [(gogoproto.moretags) = "policy:\"Ports\""];
 
     int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\" sensorhash:\"ignore\""]; // Internal use only
-    float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Risk Score,hidden\" policy:\",ignore\""];
+    float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Deployment Risk Score,hidden\" policy:\",ignore\""];
 
     repeated string process_tags               = 30 [(gogoproto.moretags) = "search:\"Process Tag,store\""];
 }
