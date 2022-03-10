@@ -6,9 +6,9 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
-	postgresPermissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
-	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
-	postgresRoleStore "github.com/stackrox/rox/central/role/store/role/postgres"
+	PermissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
+	permissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
+	postgresRolePGStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
@@ -29,17 +29,17 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		var roleStorage roleStore.Store
-		var permissionSetStorage permissionSetStore.Store
+		var permissionSetStorage permissionSetPGStore.Store
 		var accessScopeStorage simpleAccessScopeStore.Store
 		if features.PostgresDatastore.Enabled() {
-			roleStorage = postgresRoleStore.New(context.TODO(), globaldb.GetPostgres())
-			permissionSetStorage = postgresPermissionSetStore.New(context.TODO(), globaldb.GetPostgres())
+			roleStorage = postgresRolePGStore.New(context.TODO(), globaldb.GetPostgres())
+			permissionSetStorage = PermissionSetPGStore.New(context.TODO(), globaldb.GetPostgres())
 			accessScopeStorage = postgresSimpleAccessScopeStore.New(context.TODO(), globaldb.GetPostgres())
 		} else {
 			var err error
 			roleStorage, err = roleStore.New(globaldb.GetRocksDB())
 			utils.CrashOnError(err)
-			permissionSetStorage, err = permissionSetStore.New(globaldb.GetRocksDB())
+			permissionSetStorage, err = permissionSetPGStore.New(globaldb.GetRocksDB())
 			utils.CrashOnError(err)
 			accessScopeStorage, err = simpleAccessScopeStore.New(globaldb.GetRocksDB())
 			utils.CrashOnError(err)
