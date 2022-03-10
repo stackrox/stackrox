@@ -94,7 +94,7 @@ func createTableSimpleaccessscopesIncludedNamespaces(ctx context.Context, db *pg
 	table := `
 create table if not exists simpleaccessscopes_IncludedNamespaces (
     simpleaccessscopes_Id varchar,
-    idx numeric,
+    idx integer,
     ClusterName varchar,
     NamespaceName varchar,
     PRIMARY KEY(simpleaccessscopes_Id, idx),
@@ -123,7 +123,7 @@ func createTableSimpleaccessscopesClusterLabelSelectors(ctx context.Context, db 
 	table := `
 create table if not exists simpleaccessscopes_ClusterLabelSelectors (
     simpleaccessscopes_Id varchar,
-    idx numeric,
+    idx integer,
     PRIMARY KEY(simpleaccessscopes_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
 )
@@ -151,8 +151,8 @@ func createTableSimpleaccessscopesClusterLabelSelectorsRequirements(ctx context.
 	table := `
 create table if not exists simpleaccessscopes_ClusterLabelSelectors_Requirements (
     simpleaccessscopes_Id varchar,
-    simpleaccessscopes_ClusterLabelSelectors_idx numeric,
-    idx numeric,
+    simpleaccessscopes_ClusterLabelSelectors_idx integer,
+    idx integer,
     Key varchar,
     Op integer,
     Values text[],
@@ -182,7 +182,7 @@ func createTableSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, d
 	table := `
 create table if not exists simpleaccessscopes_NamespaceLabelSelectors (
     simpleaccessscopes_Id varchar,
-    idx numeric,
+    idx integer,
     PRIMARY KEY(simpleaccessscopes_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
 )
@@ -210,8 +210,8 @@ func createTableSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx contex
 	table := `
 create table if not exists simpleaccessscopes_NamespaceLabelSelectors_Requirements (
     simpleaccessscopes_Id varchar,
-    simpleaccessscopes_NamespaceLabelSelectors_idx numeric,
-    idx numeric,
+    simpleaccessscopes_NamespaceLabelSelectors_idx integer,
+    idx integer,
     Key varchar,
     Op integer,
     Values text[],
