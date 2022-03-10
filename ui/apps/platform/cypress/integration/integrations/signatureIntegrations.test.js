@@ -15,7 +15,6 @@ const visitSignatureIntegrationsUrl = `${url}/signatureIntegrations/signature`;
 function assertSignatureIntegrationTable() {
     const label = labels.signatureIntegrations.signature;
     cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
-    cy.get(`${selectors.title2}:contains("${label}")`);
 }
 
 function visitSignatureIntegrations() {
