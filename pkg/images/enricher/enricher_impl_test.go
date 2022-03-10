@@ -502,7 +502,7 @@ func TestZeroIntegrations(t *testing.T) {
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment errors: [error getting metadata for image:  error: no image registries are integrated: please add an image integration, error scanning image:  error: no image scanners are integrated]"
+	expectedErrMsg := "image enrichment errors: [error getting metadata for image:  error: not found: no image registries are integrated: please add an image integration, error scanning image:  error: no image scanners are integrated]"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.False(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)
@@ -562,7 +562,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := fmt.Sprintf("image enrichment error: error getting metadata for image: "+
-		"testimage error: no registry is indicated for image %q", img.GetName().GetFullName())
+		"testimage error: not found: no registry is indicated for image %q", img.GetName().GetFullName())
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.True(t, results.ImageUpdated)
 	assert.Equal(t, ScanSucceeded, results.ScanResult)
@@ -595,7 +595,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no image registries are integrated: please add an image integration"
+	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: not found: no image registries are integrated: please add an image integration"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.True(t, results.ImageUpdated)
 	assert.Equal(t, ScanSucceeded, results.ScanResult)
