@@ -84,6 +84,22 @@ function PolicyCriteriaFieldInput({
                 </ToggleGroup>
             );
         }
+        case 'radioGroupString': {
+            return (
+                <ToggleGroup>
+                    {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
+                        <ToggleGroupItem
+                            key={text}
+                            text={text}
+                            buttonId={text}
+                            isDisabled={readOnly}
+                            isSelected={value.value === radioValue}
+                            onChange={handleChangeSelectedValue(radioValue)}
+                        />
+                    ))}
+                </ToggleGroup>
+            );
+        }
         case 'number':
             return (
                 <TextInput
@@ -132,7 +148,7 @@ function PolicyCriteriaFieldInput({
                         isDisabled={readOnly}
                         selections={value.value === '' ? [] : value.value}
                         onClear={handleChangeSelectedValue([])}
-                        placeholderText={descriptor.placeholder}
+                        placeholderText={descriptor.placeholder || 'Select one or more options'}
                         variant={SelectVariant.typeaheadMulti}
                     >
                         {descriptor.options?.map((option) => (
