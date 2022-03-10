@@ -52,6 +52,7 @@ spec:
           name: disk
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
+      serviceAccountName: central-db
       volumes:
       - name: disk
         {{ if ._rox.central.persistence._pvcCfg -}}
