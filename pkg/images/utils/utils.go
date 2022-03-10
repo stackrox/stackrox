@@ -243,39 +243,3 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 		}
 	}
 }
-
-// DropImageTagAndDigest drops the tag or digests of a given image.
-// If the image is not a properly formatted image returns an error
-func DropImageTagAndDigest(image string) (string, error) {
-	ref, err := reference.ParseAnyReference(image)
-	if err != nil {
-		return image, errors.Wrapf(err, "invalid image name '%s'", image)
-	}
-
-	if _, ok := ref.(reference.Named); !ok {
-		return image, errors.Errorf("unsupported image name format '%s'", image)
-	}
-
-	namedReference := ref.(reference.Named)
-	familiarName := reference.FamiliarName(namedReference)
-	// If 'image' is already in familiar format
-	if image == reference.FamiliarString(ref) {
-		return familiarName, nil
-	}
-	// If image is partially familiar format: e.g. docker.io/nginx or library/nginx.
-	if len(namedReference.Name()) > len(familiarName) {
-		domain := reference.Domain(namedReference)
-		path := reference.Path(namedReference)
-		// If it does not have a domain, but it has a repository
-		if strings.HasPrefix(image, path) {
-			return path, nil
-		}
-		// If we have 'docker.io' as domain but not the 'library' repository
-		// e.g. docker.io/nginx
-		domainAndName := fmt.Sprintf("%s/%s", domain, familiarName)
-		if strings.HasPrefix(image, domainAndName) {
-			return domainAndName, nil
-		}
-	}
-	return namedReference.Name(), nil
-}
