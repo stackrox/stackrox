@@ -537,7 +537,8 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 	var fetchedSignatures []*storage.Signature
 	for _, matchingReg := range matchingRegistries {
 		// During fetching, there may occur transient errors. If that's the case, we will retry.
-		err = retry.WithRetry(func() error {
+		// We can ignore the returned error since it will be already logged by the signatures.SignatureFetcher.
+		_ = retry.WithRetry(func() error {
 			// Wait until limiter allows entrance.
 			err := e.signatureFetcherLimiter.Wait(ctx)
 			if err != nil {
@@ -549,13 +550,13 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 			retry.Tries(2),
 			retry.OnlyRetryableErrors(),
 			retry.OnFailedAttempts(func(err error) {
-				time.Sleep(time.Duration(1) * time.Second)
+				time.Sleep(500 * time.Millisecond)
 			}))
-		if err != nil {
-			log.Errorf("Error fetching signature for image %q from registry %q: %v",
-				img.GetName().GetFullName(), matchingReg.Name(), err)
-			continue
-		}
+	}
+
+	// Do not signal updates when no signatures have been fetched.
+	if len(fetchedSignatures) == 0 {
+		return false, nil
 	}
 
 	img.Signature = &storage.ImageSignature{

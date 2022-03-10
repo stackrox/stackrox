@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/sigstore/cosign/pkg/cosign"
 	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
 	"github.com/stackrox/rox/generated/storage"
@@ -60,7 +61,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	//  https://github.com/sigstore/cosign/blob/44f3814667ba6a398aef62814cabc82aee4896e5/pkg/cosign/fetch.go#L84-L86
 	if err != nil && !strings.Contains(err.Error(), "no signatures associated") {
 		log.Errorf("Fetching signature for image %q: %v", imgFullName, err)
-		return nil, retry.MakeRetryable(err)
+		return nil, makeTransientErrorRetryable(err)
 	}
 
 	// Short-circuit if no signatures are associated with the image.
@@ -96,6 +97,21 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	}
 
 	return cosignSignatures, nil
+}
+
+// makeTransientErrorRetryable ensures that only transient errors are made retryable.
+// Note: This takes into account the definition of the transport.Error, you can find more here:
+// https://github.com/google/go-containerregistry/blob/f1fa40b162a1601a863364e8a2f63bbb9e4ff36e/pkg/v1/remote/transport/error.go#L90
+func makeTransientErrorRetryable(err error) error {
+	transportErr, ok := err.(*transport.Error)
+	// We don't expect any transient errors that are coming from cosign at the moment.
+	if !ok {
+		return err
+	}
+	if transportErr.Temporary() {
+		return retry.MakeRetryable(err)
+	}
+	return err
 }
 
 func optionsFromRegistry(registry registryTypes.ImageRegistry) []gcrRemote.Option {

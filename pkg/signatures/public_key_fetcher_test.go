@@ -183,14 +183,12 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	defer registryServer.Close()
 
 	cases := map[string]struct {
-		registry  registryTypes.ImageRegistry
-		img       string
-		retryable bool
+		registry registryTypes.ImageRegistry
+		img      string
 	}{
 		"non-existing repository": {
-			registry:  &mockRegistry{cfg: &registryTypes.Config{}},
-			img:       fmt.Sprintf("%s/%s", registryServer.Listener.Addr().String(), "some/private/repo"),
-			retryable: true,
+			registry: &mockRegistry{cfg: &registryTypes.Config{}},
+			img:      fmt.Sprintf("%s/%s", registryServer.Listener.Addr().String(), "some/private/repo"),
 		},
 		"failed parse reference": {
 			img: "fa@wrongreference",
@@ -206,7 +204,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 			res, err := f.FetchSignatures(context.Background(), img, c.registry)
 			assert.Nil(t, res)
 			require.Error(t, err)
-			assert.Equal(t, c.retryable, retry.IsRetryable(err))
+			assert.False(t, retry.IsRetryable(err))
 		})
 	}
 }
