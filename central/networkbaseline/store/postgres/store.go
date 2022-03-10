@@ -95,7 +95,7 @@ func createTableNetworkbaselinePeers(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists networkbaseline_Peers (
     networkbaseline_DeploymentId varchar,
-    idx numeric,
+    idx integer,
     Entity_Info_Type integer,
     Entity_Info_Id varchar,
     Entity_Info_Deployment_Name varchar,
@@ -133,9 +133,9 @@ func createTableNetworkbaselinePeersListenPorts(ctx context.Context, db *pgxpool
 	table := `
 create table if not exists networkbaseline_Peers_ListenPorts (
     networkbaseline_DeploymentId varchar,
-    networkbaseline_Peers_idx numeric,
-    idx numeric,
-    Port numeric,
+    networkbaseline_Peers_idx integer,
+    idx integer,
+    Port integer,
     L4Protocol integer,
     PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_Peers_idx) REFERENCES networkbaseline_Peers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
@@ -163,10 +163,10 @@ func createTableNetworkbaselinePeersProperties(ctx context.Context, db *pgxpool.
 	table := `
 create table if not exists networkbaseline_Peers_Properties (
     networkbaseline_DeploymentId varchar,
-    networkbaseline_Peers_idx numeric,
-    idx numeric,
+    networkbaseline_Peers_idx integer,
+    idx integer,
     Ingress bool,
-    Port numeric,
+    Port integer,
     Protocol integer,
     PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_Peers_idx) REFERENCES networkbaseline_Peers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
@@ -194,7 +194,7 @@ func createTableNetworkbaselineForbiddenPeers(ctx context.Context, db *pgxpool.P
 	table := `
 create table if not exists networkbaseline_ForbiddenPeers (
     networkbaseline_DeploymentId varchar,
-    idx numeric,
+    idx integer,
     Entity_Info_Type integer,
     Entity_Info_Id varchar,
     Entity_Info_Deployment_Name varchar,
@@ -232,9 +232,9 @@ func createTableNetworkbaselineForbiddenPeersListenPorts(ctx context.Context, db
 	table := `
 create table if not exists networkbaseline_ForbiddenPeers_ListenPorts (
     networkbaseline_DeploymentId varchar,
-    networkbaseline_ForbiddenPeers_idx numeric,
-    idx numeric,
-    Port numeric,
+    networkbaseline_ForbiddenPeers_idx integer,
+    idx integer,
+    Port integer,
     L4Protocol integer,
     PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx) REFERENCES networkbaseline_ForbiddenPeers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
@@ -262,10 +262,10 @@ func createTableNetworkbaselineForbiddenPeersProperties(ctx context.Context, db 
 	table := `
 create table if not exists networkbaseline_ForbiddenPeers_Properties (
     networkbaseline_DeploymentId varchar,
-    networkbaseline_ForbiddenPeers_idx numeric,
-    idx numeric,
+    networkbaseline_ForbiddenPeers_idx integer,
+    idx integer,
     Ingress bool,
-    Port numeric,
+    Port integer,
     Protocol integer,
     PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx) REFERENCES networkbaseline_ForbiddenPeers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE

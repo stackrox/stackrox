@@ -98,7 +98,7 @@ func createTableProcessbaselinesElements(ctx context.Context, db *pgxpool.Pool) 
 	table := `
 create table if not exists processbaselines_Elements (
     processbaselines_Id varchar,
-    idx numeric,
+    idx integer,
     Element_ProcessName varchar,
     Auto bool,
     PRIMARY KEY(processbaselines_Id, idx),
@@ -127,7 +127,7 @@ func createTableProcessbaselinesElementGraveyard(ctx context.Context, db *pgxpoo
 	table := `
 create table if not exists processbaselines_ElementGraveyard (
     processbaselines_Id varchar,
-    idx numeric,
+    idx integer,
     Element_ProcessName varchar,
     Auto bool,
     PRIMARY KEY(processbaselines_Id, idx),

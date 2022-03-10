@@ -109,7 +109,7 @@ func createTablePolicyWhitelists(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_Whitelists (
     policy_Id varchar,
-    idx numeric,
+    idx integer,
     Name varchar,
     Deployment_Name varchar,
     Deployment_Scope_Cluster varchar,
@@ -144,7 +144,7 @@ func createTablePolicyExclusions(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_Exclusions (
     policy_Id varchar,
-    idx numeric,
+    idx integer,
     Name varchar,
     Deployment_Name varchar,
     Deployment_Scope_Cluster varchar,
@@ -179,7 +179,7 @@ func createTablePolicyScope(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_Scope (
     policy_Id varchar,
-    idx numeric,
+    idx integer,
     Cluster varchar,
     Namespace varchar,
     Label_Key varchar,
@@ -210,7 +210,7 @@ func createTablePolicyPolicySections(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_PolicySections (
     policy_Id varchar,
-    idx numeric,
+    idx integer,
     SectionName varchar,
     PRIMARY KEY(policy_Id, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
@@ -239,8 +239,8 @@ func createTablePolicyPolicySectionsPolicyGroups(ctx context.Context, db *pgxpoo
 	table := `
 create table if not exists policy_PolicySections_PolicyGroups (
     policy_Id varchar,
-    policy_PolicySections_idx numeric,
-    idx numeric,
+    policy_PolicySections_idx integer,
+    idx integer,
     FieldName varchar,
     BooleanOperator integer,
     Negate bool,
@@ -271,9 +271,9 @@ func createTablePolicyPolicySectionsPolicyGroupsValues(ctx context.Context, db *
 	table := `
 create table if not exists policy_PolicySections_PolicyGroups_Values (
     policy_Id varchar,
-    policy_PolicySections_idx numeric,
-    policy_PolicySections_PolicyGroups_idx numeric,
-    idx numeric,
+    policy_PolicySections_idx integer,
+    policy_PolicySections_PolicyGroups_idx integer,
+    idx integer,
     Value varchar,
     PRIMARY KEY(policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx) REFERENCES policy_PolicySections_PolicyGroups(policy_Id, policy_PolicySections_idx, idx) ON DELETE CASCADE
@@ -301,7 +301,7 @@ func createTablePolicyMitreAttackVectors(ctx context.Context, db *pgxpool.Pool) 
 	table := `
 create table if not exists policy_MitreAttackVectors (
     policy_Id varchar,
-    idx numeric,
+    idx integer,
     Tactic varchar,
     Techniques text[],
     PRIMARY KEY(policy_Id, idx),
