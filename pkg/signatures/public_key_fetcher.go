@@ -38,7 +38,7 @@ func init() {
 // The signature associated with the image will be fetched from the given registry.
 // It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
-func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, image *storage.Image,
+func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
 	registry registryTypes.ImageRegistry) ([]*storage.Signature, error) {
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.

@@ -104,12 +104,16 @@ type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, err
 // signatureIntegrationGetter will be used to retrieve all available signature integrations.
 type signatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
 
-// signatureFetcherFactory will be used to create a signatures.SignatureFetcher.
-type signatureFetcherFactory func() signatures.SignatureFetcher
+type signatureVerifierForIntegrations interface {
+	verifySignatureAgainstIntegrations(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
+}
 
-// signatureVerifierForIntegrations will be used to fetch verification results for an image against a set of
-// signature integrations.
-type signatureVerifierForIntegrations func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
+type prodSignatureVerifier struct{}
+
+func (p *prodSignatureVerifier) verifySignatureAgainstIntegrations(ctx context.Context,
+	integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+	return signatures.VerifyAgainstSignatureIntegrations(ctx, integrations, image)
+}
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
@@ -130,9 +134,9 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		metadataCache:   metadataCache,
 
 		signatureIntegrationGetter: signatureIntegrationGetter,
-		signatureFetcherFactory:    signatures.NewSignatureFetcher,
-		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
+		signatureVerifier:          &prodSignatureVerifier{},
 		signatureFetcherLimiter:    rate.NewLimiter(rate.Every(500*time.Millisecond), 3),
+		signatureFetcher:           signatures.NewSignatureFetcher(),
 
 		imageGetter: imageGetter,
 

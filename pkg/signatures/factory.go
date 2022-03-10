@@ -24,7 +24,7 @@ type SignatureVerifier interface {
 
 // SignatureFetcher is responsible for fetching raw signatures supporting multiple specific signature formats.
 type SignatureFetcher interface {
-	FetchSignature(ctx context.Context, image *storage.Image, registry registryTypes.ImageRegistry) ([]*storage.Signature, error)
+	FetchSignatures(ctx context.Context, image *storage.Image, registry registryTypes.ImageRegistry) ([]*storage.Signature, error)
 }
 
 // NewSignatureVerifier creates a new signature verifier capable of verifying signatures against the provided config.

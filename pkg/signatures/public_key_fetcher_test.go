@@ -172,7 +172,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	}
 	reg := &mockRegistry{cfg: mockConfig}
 
-	res, err := f.FetchSignature(context.Background(), img, reg)
+	res, err := f.FetchSignatures(context.Background(), img, reg)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSignatures, res)
 }
@@ -203,7 +203,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 			require.NoError(t, err, "creating test image")
 			cimg.Name.FullName = c.img
 			img := types.ToImage(cimg)
-			res, err := f.FetchSignature(context.Background(), img, c.registry)
+			res, err := f.FetchSignatures(context.Background(), img, c.registry)
 			assert.Nil(t, res)
 			require.Error(t, err)
 			assert.Equal(t, c.retryable, retry.IsRetryable(err))
@@ -243,7 +243,7 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	log = logger
 	defer func() { log = stdLogger }()
 
-	result, err := f.FetchSignature(context.Background(), img, reg)
+	result, err := f.FetchSignatures(context.Background(), img, reg)
 	assert.NoError(t, err)
 	assert.Nil(t, result)
 	require.NoError(t, bWriter.Flush(), "writing log output")

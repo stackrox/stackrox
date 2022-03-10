@@ -41,10 +41,35 @@ func imageGetterFromImage(image *storage.Image) imageGetter {
 	}
 }
 
-func fakeSignatureFetcherFactory(fake fakeSigFetcher) signatureFetcherFactory {
-	return func() signatures.SignatureFetcher {
-		return &fake
+var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
+
+type fakeSigFetcher struct {
+	sigs      []*storage.Signature
+	fail      bool
+	retryable bool
+}
+
+func (f *fakeSigFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
+	registry types.ImageRegistry) ([]*storage.Signature, error) {
+	if f.fail {
+		err := errors.New("some error")
+		if f.retryable {
+			err = retry.MakeRetryable(err)
+		}
+		return nil, err
 	}
+	return f.sigs, nil
+}
+
+var _ signatureVerifierForIntegrations = (*fakeSignatureVerifierForIntegrations)(nil)
+
+type fakeSignatureVerifierForIntegrations struct {
+	f func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
+}
+
+func (f *fakeSignatureVerifierForIntegrations) verifySignatureAgainstIntegrations(ctx context.Context,
+	integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+	return f.f(ctx, integrations, image)
 }
 
 var _ scannertypes.Scanner = (*fakeScanner)(nil)
@@ -179,26 +204,6 @@ func (f *fakeCVESuppressorV2) EnrichImageWithSuppressedCVEs(image *storage.Image
 			}
 		}
 	}
-}
-
-var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
-
-type fakeSigFetcher struct {
-	sigs      []*storage.Signature
-	fail      bool
-	retryable bool
-}
-
-func (f *fakeSigFetcher) FetchSignature(ctx context.Context, image *storage.Image,
-	registry types.ImageRegistry) ([]*storage.Signature, error) {
-	if f.fail {
-		err := errors.New("some error")
-		if f.retryable {
-			err = retry.MakeRetryable(err)
-		}
-		return nil, err
-	}
-	return f.sigs, nil
 }
 
 func TestEnricherFlow(t *testing.T) {
@@ -496,7 +501,7 @@ func TestZeroIntegrations(t *testing.T) {
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment errors: [error getting metadata for image:  error: no image registries are integrated: please add an image integration for reg, error scanning image:  error: no image scanners are integrated]"
+	expectedErrMsg := "image enrichment errors: [error getting metadata for image:  error: no image registries are integrated: please add an image integration, error scanning image:  error: no image scanners are integrated]"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.False(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)
@@ -589,7 +594,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no image registries are integrated: please add an image integration for reg"
+	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no image registries are integrated: please add an image integration"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.True(t, results.ImageUpdated)
 	assert.Equal(t, ScanSucceeded, results.ScanResult)
@@ -772,17 +777,17 @@ func TestFillScanStats(t *testing.T) {
 func TestEnrichWithSignature(t *testing.T) {
 	cases := map[string]struct {
 		img             *storage.Image
-		imgGetter       imageGetter
-		sigFetchFactory signatureFetcherFactory
+		sigFetcher      signatures.SignatureFetcher
 		expectedSigs    []*storage.Signature
 		updated         bool
 		ctx             EnrichmentContext
+		useCachedValues bool
 	}{
 		"signatures found without pre-existing signatures": {
 			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
-			sigFetchFactory: fakeSignatureFetcherFactory(fakeSigFetcher{sigs: []*storage.Signature{
-				createSignature("rawsignature", "rawpayload")}}),
+			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
+				createSignature("rawsignature", "rawpayload")}},
 			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
 			updated:      true,
 		},
@@ -790,8 +795,8 @@ func TestEnrichWithSignature(t *testing.T) {
 			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}, Signature: &storage.ImageSignature{
 				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
 			}},
-			sigFetchFactory: fakeSignatureFetcherFactory(fakeSigFetcher{sigs: []*storage.Signature{
-				createSignature("new-rawsignature", "new-rawpayload")}}),
+			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
+				createSignature("new-rawsignature", "new-rawpayload")}},
 			expectedSigs: []*storage.Signature{createSignature("new-rawsignature", "new-rawpayload")},
 			updated:      true,
 			ctx:          EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
@@ -801,27 +806,18 @@ func TestEnrichWithSignature(t *testing.T) {
 		},
 		"cached values should be respected": {
 			ctx: EnrichmentContext{FetchOpt: UseCachesIfPossible},
-			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
-			imgGetter: imageGetterFromImage(&storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}, Signature: &storage.ImageSignature{
+			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}, Signature: &storage.ImageSignature{
 				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
-			}}),
-			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
-		},
-		"cached values should be respected but no signatures exist for the image": {
-			ctx:       EnrichmentContext{FetchOpt: UseCachesIfPossible},
-			img:       &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
-			imgGetter: imageGetterFromImage(&storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}),
-			sigFetchFactory: fakeSignatureFetcherFactory(fakeSigFetcher{sigs: []*storage.Signature{
-				createSignature("rawsignature", "rawpayload")}}),
-			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
-			updated:      true,
+			}},
+			expectedSigs:    []*storage.Signature{createSignature("rawsignature", "rawpayload")},
+			useCachedValues: true,
 		},
 		"fetched signatures contains duplicate": {
 			img: &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
-			sigFetchFactory: fakeSignatureFetcherFactory(fakeSigFetcher{sigs: []*storage.Signature{
+			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload"),
-				createSignature("rawsignature", "rawpayload")}}),
+				createSignature("rawsignature", "rawpayload")}},
 			expectedSigs: []*storage.Signature{createSignature("rawsignature", "rawpayload")},
 			updated:      true,
 		},
@@ -840,11 +836,10 @@ func TestEnrichWithSignature(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e := enricherImpl{
 				integrations:            integrationsSetMock,
-				signatureFetcherFactory: c.sigFetchFactory,
-				imageGetter:             c.imgGetter,
+				signatureFetcher:        c.sigFetcher,
 				signatureFetcherLimiter: rate.NewLimiter(rate.Every(10*time.Millisecond), 1),
 			}
-			updated, err := e.enrichWithSignature(c.ctx, c.img)
+			updated, err := e.enrichWithSignature(context.Background(), c.ctx, c.img, c.useCachedValues)
 			assert.NoError(t, err)
 			assert.Equal(t, c.updated, updated)
 			assert.ElementsMatch(t, c.expectedSigs, c.img.GetSignature().GetSignatures())
@@ -892,7 +887,8 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 			e := enricherImpl{
 				integrations: c.integrationSet,
 			}
-			updated, err := e.enrichWithSignature(EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly}, c.img)
+			updated, err := e.enrichWithSignature(context.Background(),
+				EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly}, c.img, false)
 			require.Error(t, err)
 			assert.False(t, updated)
 		})
@@ -902,22 +898,22 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 func TestEnrichWithSignatureVerificationData(t *testing.T) {
 	cases := map[string]struct {
 		img                         *storage.Image
-		imgGetter                   imageGetter
 		sigVerifier                 signatureVerifierForIntegrations
 		sigIntegrationGetter        signatureIntegrationGetter
 		expectedVerificationResults []*storage.ImageSignatureVerificationResult
 		updatedSignature            bool
 		updated                     bool
 		ctx                         EnrichmentContext
+		useCachedValues             bool
 	}{
 		"verification result found without pre-existing verification results": {
 			img: &storage.Image{Id: "id"},
-			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+			sigVerifier: &fakeSignatureVerifierForIntegrations{f: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
 				return []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier1",
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				}
-			},
+			}},
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
 				createSignatureVerificationResult("verifier1",
@@ -933,12 +929,12 @@ func TestEnrichWithSignatureVerificationData(t *testing.T) {
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				},
 			}},
-			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+			sigVerifier: &fakeSignatureVerifierForIntegrations{f: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
 				return []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier2",
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				}
-			},
+			}},
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier2", false),
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
 				createSignatureVerificationResult("verifier2",
@@ -970,12 +966,12 @@ func TestEnrichWithSignatureVerificationData(t *testing.T) {
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				},
 			}},
-			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+			sigVerifier: &fakeSignatureVerifierForIntegrations{f: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
 				return []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier2",
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				}
-			},
+			}},
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier2", false),
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
 				createSignatureVerificationResult("verifier2",
@@ -984,37 +980,20 @@ func TestEnrichWithSignatureVerificationData(t *testing.T) {
 			ctx:              EnrichmentContext{FetchOpt: UseCachesIfPossible},
 			updatedSignature: true,
 			updated:          true,
+			useCachedValues:  true,
 		},
 		"cached values should be respected": {
-			img: &storage.Image{Id: "id"},
-			imgGetter: imageGetterFromImage(&storage.Image{Id: "id", SignatureVerificationData: &storage.ImageSignatureVerificationData{
+			img: &storage.Image{Id: "id", SignatureVerificationData: &storage.ImageSignatureVerificationData{
 				Results: []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier1",
 						storage.ImageSignatureVerificationResult_VERIFIED),
-				},
-			}}),
-			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
-				createSignatureVerificationResult("verifier1",
-					storage.ImageSignatureVerificationResult_VERIFIED),
-			},
+				}}},
 			ctx: EnrichmentContext{FetchOpt: UseCachesIfPossible},
-		},
-		"cached values should be respected but no verification result exists for the image": {
-			img:       &storage.Image{Id: "id"},
-			imgGetter: imageGetterFromImage(&storage.Image{Id: "id"}),
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
 				createSignatureVerificationResult("verifier1",
 					storage.ImageSignatureVerificationResult_VERIFIED),
 			},
-			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
-			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
-				return []*storage.ImageSignatureVerificationResult{
-					createSignatureVerificationResult("verifier1",
-						storage.ImageSignatureVerificationResult_VERIFIED),
-				}
-			},
-			ctx:     EnrichmentContext{FetchOpt: UseCachesIfPossible},
-			updated: true,
+			useCachedValues: true,
 		},
 		"no external metadata should be respected": {
 			img: &storage.Image{Id: "id"},
@@ -1026,11 +1005,11 @@ func TestEnrichWithSignatureVerificationData(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e := enricherImpl{
 				signatureIntegrationGetter: c.sigIntegrationGetter,
-				imageGetter:                c.imgGetter,
 				signatureVerifier:          c.sigVerifier,
 			}
 
-			updated, err := e.enrichWithSignatureVerificationData(c.ctx, c.img, c.updatedSignature)
+			updated, err := e.enrichWithSignatureVerificationData(context.Background(), c.ctx, c.img,
+				c.useCachedValues, c.updatedSignature)
 			assert.NoError(t, err)
 			assert.Equal(t, c.updated, updated)
 			assert.ElementsMatch(t, c.expectedVerificationResults, c.img.GetSignatureVerificationData().GetResults())
@@ -1044,7 +1023,8 @@ func TestEnrichWithSignatureVerificationData_Failure(t *testing.T) {
 	}
 	img := &storage.Image{Id: "id"}
 
-	updated, err := e.enrichWithSignatureVerificationData(EnrichmentContext{FetchOpt: ForceRefetch}, img, false)
+	updated, err := e.enrichWithSignatureVerificationData(context.Background(),
+		EnrichmentContext{FetchOpt: ForceRefetch}, img, false, false)
 	require.Error(t, err)
 	assert.False(t, updated)
 }
