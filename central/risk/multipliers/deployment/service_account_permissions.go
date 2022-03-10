@@ -52,6 +52,7 @@ func NewSAPermissionsMultiplier(roleStore roleStore.DataStore, bindingStore bind
 
 // Score takes a deployment and evaluates its risk based on the permissions granted to the deployment's service account
 func (c *saPermissionsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
+	// TODO(ROX-9637)
 	if features.PostgresDatastore.Enabled() {
 		return nil
 	}
