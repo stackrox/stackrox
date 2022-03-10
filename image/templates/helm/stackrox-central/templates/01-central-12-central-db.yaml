@@ -1,0 +1,101 @@
+{{- include "srox.init" . -}}
+{{ if ._rox.central.enableCentralDB -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: central-db
+    {{- include "srox.labels" (list . "deployment" "central-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "central-db") | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: central-db
+        {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
+    spec:
+      containers:
+      - name: central-db
+        {{- /* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
+        image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
+        env:
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "password"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        ports:
+        - containerPort: 5432
+          name: postgresql
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: 4Gi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: disk
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+      volumes:
+      - name: disk
+        {{ if ._rox.central.persistence._pvcCfg -}}
+        persistentVolumeClaim:
+          claimName: central-db
+        {{ else }}
+        emptyDir: {}
+        {{- end }}
+      - name: central-db-password
+        secret:
+          secretName: central-db-password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "central-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "central-db") | nindent 4 }}
+spec:
+  ports:
+  - name: tcp-db
+    port: 5432
+    protocol: TCP
+    targetPort: postgresql
+  selector:
+    app: central-db
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-db-password
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "secret" "central-db-password") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "secret" "central-db-password") | nindent 4 }}
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/resource-policy": keep
+type: Opaque
+stringData:
+  {{- /* TODO(ROX-9249): Create password */}}
+  password: SpTasCsKwRorXdFor$Now8
+{{- end }}

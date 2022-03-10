@@ -292,6 +292,7 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 					"enabled": k8s.evaluateToString(ctx, "service", "central-loadbalancer", `{.spec.type}`, "") == "NodePort",
 				},
 			},
+			"enableCentralDB": k8s.evaluateToString(ctx, "service", "central-db", `{.spec.type}`, "") != "",
 		},
 		"scanner": scannerConfig,
 		"customize": map[string]interface{}{

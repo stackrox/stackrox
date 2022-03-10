@@ -67,6 +67,7 @@ central:
     route:
       enabled: null # bool
   extraMounts: null # [dict]
+  enableCentralDB: null # bool
 
 customize:
   labels: {} # dict
