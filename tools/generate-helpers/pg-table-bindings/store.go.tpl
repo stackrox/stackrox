@@ -12,6 +12,8 @@
 {{- if eq (len $pks) 1 }}
 {{ $singlePK = index $pks 0 }}
 {{- end }}
+//value of singlePK
+//{{ $singlePK }}
 
 package postgres
 
@@ -197,7 +199,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     inputRows := [][]interface{}{}
 
-    {{if not $schema.Parents }}
+    {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
     // this is a copy so first we must delete the rows and re-add them
     // which is essentially the desired behaviour of an upsert.
     var deletes []string
@@ -225,6 +227,9 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     for idx, obj := range objs {
     {{end}}
         i++
+        //Todo: Figure out how to more cleanly template around this issue.
+        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+
 
         {{if not $schema.Parents }}
         serialized, marshalErr := obj.Marshal()
@@ -242,16 +247,20 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             {{end}}
         })
 
-        {{if not $schema.Parents }}
+        {{ if not $schema.Parents }}
+        {{if eq (len $schema.LocalPrimaryKeys) 1}}
         // Add the id to be deleted.
         deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+        {{else}}
+        s.Delete(ctx, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+        {{end}}
         {{end}}
 
         // if we hit our batch size we need to push the data
         if i % batchSize == 0 || i == len(objs) {
             // copy doesn't upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
-            {{if not $schema.Parents }}
+            {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
             s.DeleteMany(ctx, deletes)
             // clear the inserts and vals for the next batch
             deletes = nil

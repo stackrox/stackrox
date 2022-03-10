@@ -86,4 +86,17 @@ func (s *PodsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPod)
+
+	var pods []*storage.Pod
+	for i := 0; i < 200; i++ {
+		pod := &storage.Pod{}
+		s.NoError(testutils.FullInit(pod, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		pods = append(pods, pod)
+	}
+
+	s.NoError(store.UpsertMany(ctx, pods))
+
+	podCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(podCount, 200)
 }

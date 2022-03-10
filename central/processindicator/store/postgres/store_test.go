@@ -86,4 +86,17 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessIndicator)
+
+	var processIndicators []*storage.ProcessIndicator
+	for i := 0; i < 200; i++ {
+		processIndicator := &storage.ProcessIndicator{}
+		s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		processIndicators = append(processIndicators, processIndicator)
+	}
+
+	s.NoError(store.UpsertMany(ctx, processIndicators))
+
+	processIndicatorCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(processIndicatorCount, 200)
 }

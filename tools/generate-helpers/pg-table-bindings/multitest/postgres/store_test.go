@@ -86,4 +86,17 @@ func (s *MultikeyStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestMultiKeyStruct)
+
+	var testMultiKeyStructs []*storage.TestMultiKeyStruct
+	for i := 0; i < 200; i++ {
+		testMultiKeyStruct := &storage.TestMultiKeyStruct{}
+		s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		testMultiKeyStructs = append(testMultiKeyStructs, testMultiKeyStruct)
+	}
+
+	s.NoError(store.UpsertMany(ctx, testMultiKeyStructs))
+
+	testMultiKeyStructCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(testMultiKeyStructCount, 200)
 }

@@ -86,4 +86,17 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundReportConfiguration)
+
+	var reportConfigurations []*storage.ReportConfiguration
+	for i := 0; i < 200; i++ {
+		reportConfiguration := &storage.ReportConfiguration{}
+		s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		reportConfigurations = append(reportConfigurations, reportConfiguration)
+	}
+
+	s.NoError(store.UpsertMany(ctx, reportConfigurations))
+
+	reportConfigurationCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(reportConfigurationCount, 200)
 }

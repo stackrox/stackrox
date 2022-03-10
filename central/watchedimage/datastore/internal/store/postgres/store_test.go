@@ -86,4 +86,17 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundWatchedImage)
+
+	var watchedImages []*storage.WatchedImage
+	for i := 0; i < 200; i++ {
+		watchedImage := &storage.WatchedImage{}
+		s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		watchedImages = append(watchedImages, watchedImage)
+	}
+
+	s.NoError(store.UpsertMany(ctx, watchedImages))
+
+	watchedImageCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(watchedImageCount, 200)
 }

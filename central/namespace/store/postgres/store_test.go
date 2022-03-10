@@ -86,4 +86,17 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNamespaceMetadata)
+
+	var namespaceMetadatas []*storage.NamespaceMetadata
+	for i := 0; i < 200; i++ {
+		namespaceMetadata := &storage.NamespaceMetadata{}
+		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
+	}
+
+	s.NoError(store.UpsertMany(ctx, namespaceMetadatas))
+
+	namespaceMetadataCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(namespaceMetadataCount, 200)
 }

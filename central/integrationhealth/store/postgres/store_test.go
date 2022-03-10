@@ -86,4 +86,17 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundIntegrationHealth)
+
+	var integrationHealths []*storage.IntegrationHealth
+	for i := 0; i < 200; i++ {
+		integrationHealth := &storage.IntegrationHealth{}
+		s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		integrationHealths = append(integrationHealths, integrationHealth)
+	}
+
+	s.NoError(store.UpsertMany(ctx, integrationHealths))
+
+	integrationHealthCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(integrationHealthCount, 200)
 }

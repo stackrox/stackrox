@@ -86,4 +86,17 @@ func (s *RolebindingsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundK8SRoleBinding)
+
+	var k8SRoleBindings []*storage.K8SRoleBinding
+	for i := 0; i < 200; i++ {
+		k8SRoleBinding := &storage.K8SRoleBinding{}
+		s.NoError(testutils.FullInit(k8SRoleBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		k8SRoleBindings = append(k8SRoleBindings, k8SRoleBinding)
+	}
+
+	s.NoError(store.UpsertMany(ctx, k8SRoleBindings))
+
+	k8SRoleBindingCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(k8SRoleBindingCount, 200)
 }

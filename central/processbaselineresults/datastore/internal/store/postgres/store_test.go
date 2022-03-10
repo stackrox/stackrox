@@ -86,4 +86,17 @@ func (s *ProcesswhitelistresultsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessBaselineResults)
+
+	var processBaselineResultss []*storage.ProcessBaselineResults
+	for i := 0; i < 200; i++ {
+		processBaselineResults := &storage.ProcessBaselineResults{}
+		s.NoError(testutils.FullInit(processBaselineResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		processBaselineResultss = append(processBaselineResultss, processBaselineResults)
+	}
+
+	s.NoError(store.UpsertMany(ctx, processBaselineResultss))
+
+	processBaselineResultsCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(processBaselineResultsCount, 200)
 }
