@@ -181,6 +181,17 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'docker.username', Header: 'Username' },
         ],
     },
+    signatureIntegrations: {
+        signature: [
+            { accessor: 'name', Header: 'Name' },
+            {
+                accessor: (data) => {
+                    return data.cosign ? 'Cosign' : '';
+                },
+                Header: 'Verification methods',
+            },
+        ],
+    },
     backups: {
         s3: [
             { accessor: 'name', Header: 'Name' },

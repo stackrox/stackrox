@@ -7,6 +7,7 @@ export function visitIntegrationsUrl(url) {
     cy.intercept('GET', api.integrations.externalBackups).as('getBackupIntegrations');
     cy.intercept('GET', api.integrations.imageIntegrations).as('getImageIntegrations');
     cy.intercept('GET', api.integrations.notifiers).as('getNotifierIntegrations');
+    // TODO: add signature integrations after ROX_VERIFY_IMAGE_SIGNATURE is enabled by default
 
     cy.visit(url);
 
