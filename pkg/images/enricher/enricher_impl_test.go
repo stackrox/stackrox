@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
@@ -868,17 +869,21 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 	cases := map[string]struct {
 		img            *storage.Image
 		integrationSet integration.Set
+		err            error
 	}{
 		"no registry set for the image": {
 			img: &storage.Image{Id: "id"},
+			err: errox.NotFound,
 		},
 		"no registry available": {
 			img:            &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 			integrationSet: emptyIntegrationSetMock,
+			err:            errox.NotFound,
 		},
 		"no matching registry found": {
 			img:            &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 			integrationSet: nonMatchingIntegrationSetMock,
+			err:            errox.NotFound,
 		},
 	}
 
@@ -891,6 +896,7 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 				EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly}, c.img, false)
 			require.Error(t, err)
 			assert.False(t, updated)
+			assert.ErrorIs(t, err, c.err)
 		})
 	}
 }

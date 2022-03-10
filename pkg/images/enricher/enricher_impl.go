@@ -154,7 +154,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	if features.ImageSignatureVerification.Enabled() {
 		didUpdateSignature, err := e.enrichWithSignature(context.TODO(), ctx, image, useCachedSignature)
 		errorList.AddError(err)
-		if image.GetSignature().GetSignatures() == nil {
+		if len(image.GetSignature().GetSignatures()) == 0 {
 			imageNoteSet[storage.Image_MISSING_SIGNATURE] = struct{}{}
 		} else {
 			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE)
@@ -164,7 +164,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 		didUpdateSigVerificationData, err := e.enrichWithSignatureVerificationData(context.TODO(), ctx, image,
 			useCachedSignatureVerificationData, didUpdateSignature)
 		errorList.AddError(err)
-		if image.GetSignatureVerificationData().GetResults() == nil {
+		if len(image.GetSignatureVerificationData().GetResults()) == 0 {
 			imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
 		} else {
 			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA)
@@ -519,36 +519,30 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, nil
 	}
 
-	fetchSigsErrList := errorhelpers.NewErrorList(fmt.Sprintf("error fetching signature for image %q",
-		img.GetName().GetFullName()))
-
 	if err := e.checkRegistryForImage(img); err != nil {
-		fetchSigsErrList.AddError(err)
-		return false, fetchSigsErrList.ToError()
+		return false, errors.Wrapf(err, "error checking registry for image %q", img.GetName().GetFullName())
 	}
 
 	registrySet, err := e.getRegistriesForContext(enrichmentContext)
 	if err != nil {
-		fetchSigsErrList.AddError(err)
-		return false, fetchSigsErrList.ToError()
+		return false, errors.Wrap(err, "error getting registries for context")
 	}
 
 	matchingRegistries, err := getMatchingRegistries(registrySet.GetAll(), img)
 	if err != nil {
-		fetchSigsErrList.AddError(err)
-		return false, fetchSigsErrList.ToError()
+		return false, errors.Wrapf(err, "error getting matching registries for image %q",
+			img.GetName().GetFullName())
 	}
 
 	var fetchedSignatures []*storage.Signature
 	for _, matchingReg := range matchingRegistries {
-		// Wait until limiter allows entrance.
-		err := e.signatureFetcherLimiter.Wait(ctx)
-		if err != nil {
-			fetchSigsErrList.AddError(err)
-			return false, fetchSigsErrList.ToError()
-		}
 		// During fetching, there may occur transient errors. If that's the case, we will retry.
 		err = retry.WithRetry(func() error {
+			// Wait until limiter allows entrance.
+			err := e.signatureFetcherLimiter.Wait(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "error waiting for rate limiter for registry %q", matchingReg.Name())
+			}
 			fetchedSignatures, err = e.fetchAndAppendSignatures(ctx, img, matchingReg, fetchedSignatures)
 			return err
 		},
@@ -575,9 +569,6 @@ func (e *enricherImpl) fetchAndAppendSignatures(ctx context.Context, img *storag
 	sigs, err := e.signatureFetcher.FetchSignatures(ctx, img, registry)
 	if err != nil {
 		return fetchedSignatures, err
-	}
-	if len(sigs) == 0 {
-		return fetchedSignatures, nil
 	}
 
 	for _, sig := range sigs {
@@ -622,7 +613,7 @@ func getMatchingRegistries(registries []registryTypes.ImageRegistry,
 
 	if len(matchingRegistries) == 0 {
 		return nil, errox.Newf(errox.NotFound, "no matching registries found: please add "+
-			"an image integration for %s", image.GetName().GetFullName())
+			"an image integration for %q", image.GetName().GetFullName())
 	}
 
 	return matchingRegistries, nil
