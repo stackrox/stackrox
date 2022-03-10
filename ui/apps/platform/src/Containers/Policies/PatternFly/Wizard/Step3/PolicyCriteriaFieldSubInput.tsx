@@ -20,18 +20,6 @@ function PolicyCriteriaFieldSubInput({
     const { value } = field;
     const { setValue } = helper;
 
-    function handleChangeNumberValue(val) {
-        const newValue = Number.isNaN(val) ? 0 : Number(val);
-        const { max, min = 0 } = subComponent;
-        if (max && newValue > max) {
-            setValue(max);
-        } else if (newValue < min) {
-            setValue(min);
-        } else {
-            setValue(newValue);
-        }
-    }
-
     function handleChangeSelect(e, val) {
         setIsSelectOpen(false);
         setValue(val);
@@ -59,11 +47,12 @@ function PolicyCriteriaFieldSubInput({
         case 'number':
             return (
                 <TextInput
-                    value={Number(value)}
+                    value={value}
                     type="number"
                     id={name}
                     isDisabled={readOnly}
-                    onChange={handleChangeNumberValue}
+                    onChange={(v) => setValue(v)}
+                    placeholder="(ex. 5)"
                     className="pf-u-w-25"
                 />
             );
