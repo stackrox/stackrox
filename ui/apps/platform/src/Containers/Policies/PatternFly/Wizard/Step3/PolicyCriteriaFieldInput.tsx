@@ -108,7 +108,7 @@ function PolicyCriteriaFieldInput({
                         isOpen={isSelectOpen}
                         isDisabled={readOnly}
                         selections={value.value}
-                        placeholderText={descriptor.placeholder}
+                        placeholderText={descriptor.placeholder || 'Select an option'}
                     >
                         {descriptor?.options?.map((option) => (
                             <SelectOption key={option.value} value={option.value}>
