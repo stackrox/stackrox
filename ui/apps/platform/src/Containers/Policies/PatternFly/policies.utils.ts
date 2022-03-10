@@ -429,9 +429,6 @@ function postFormatNestedPolicyFields(policy: Policy): Policy {
                     value: formatValueStr(value as ValueObj, policyGroup.fieldName),
                 };
             });
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
         });
     });
     return serverPolicy;
