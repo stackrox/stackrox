@@ -16,7 +16,6 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -94,17 +93,17 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-	var {{.TrimmedType|lowerCamelCase}}s []*{{.Type}}
-    for i := 0; i < 1000; i++ {
-        {{.TrimmedType|lowerCamelCase}} := fixtures.Get{{.TrimmedType}}()
-        {{.TrimmedType|lowerCamelCase}}.Id = uuid.NewV4().String()
-        {{.TrimmedType|lowerCamelCase}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
+	var {{$name}}s []*{{.Type}}
+    for i := 0; i < 200; i++ {
+        {{$name}} := &{{.Type}}{}
+        s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+        {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
     }
 
-    s.NoError(store.UpsertMany({{.TrimmedType|lowerCamelCase}}s))
+    s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
 
-    {{.TrimmedType|lowerCamelCase}}Count, err = store.Count()
+    {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)
-    s.Equal({{.TrimmedType|lowerCamelCase}}Count, 1000)
+    s.Equal({{.TrimmedType|lowerCamelCase}}Count, 200)
 }
 

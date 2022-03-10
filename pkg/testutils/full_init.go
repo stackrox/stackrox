@@ -6,11 +6,18 @@ import (
 	"strings"
 	"unicode"
 	"unsafe"
+
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // BasicTypeInitializer prescribes how to initialize a struct field with a given type.
 type BasicTypeInitializer interface {
 	Value(ty reflect.Type, fieldPath []reflect.StructField) interface{}
+}
+
+// UniqueTypeInitializer prescribes how to initialize a struct field with a given type.
+type UniqueTypeInitializer interface {
+	ValueUnique(ty reflect.Type, fieldPath []reflect.StructField) interface{}
 }
 
 type zeroInitializer struct{}
@@ -42,10 +49,34 @@ func (simpleInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField)
 	return nil
 }
 
+type uniqueInitializer struct{}
+
+func (uniqueInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField) interface{} {
+	switch ty.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return 1
+	case reflect.Float32, reflect.Float64:
+		return 1.0
+	case reflect.Complex64, reflect.Complex128:
+		return 1.0i
+	case reflect.Bool:
+		return true
+	case reflect.String:
+		return uuid.NewV4().String()
+	}
+	return nil
+}
+
 // SimpleInitializer returns a BasicTypeInitializer that initializes all fields of basic types with a simple non-zero
 // value (1 for integer fields, 1.0 for float fields, true for boolean fields, "a" for string fields).
 func SimpleInitializer() BasicTypeInitializer {
 	return simpleInitializer{}
+}
+
+// UniqueInitializer returns a UniqueTypeInitializer that initializes all fields of basic types with a simple non-zero
+// value (1 for integer fields, 1.0 for float fields, true for boolean fields, "a" for string fields).
+func UniqueInitializer() BasicTypeInitializer {
+	return uniqueInitializer{}
 }
 
 // FieldFilter determines whether or not to include a field.

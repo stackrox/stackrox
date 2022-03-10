@@ -193,11 +193,11 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 
 {{- define "copyObject"}}
 {{- $schema := . }}
-func (s *storeImpl) {{ template "copyFunctionName" $schema }}(tx pgx.Tx, {{ range $idx, $field := $schema.ParentKeys }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, {{ range $idx, $field := $schema.ParentKeys }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
 
     inputRows := [][]interface{}{}
 
-    {{if not $schema.ParentSchema }}
+    {{if not $schema.Parents }}
     // this is a copy so first we must delete the rows and re-add them
     // which is essentially the desired behaviour of an upsert.
     var deletes []string
@@ -219,14 +219,14 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(tx pgx.Tx, {{ rang
 
     i := 0;
 
-    {{if not $schema.ParentSchema }}
+    {{if not $schema.Parents }}
     for _, obj := range objs {
     {{else}}
     for idx, obj := range objs {
     {{end}}
         i++
 
-        {{if not $schema.ParentSchema }}
+        {{if not $schema.Parents }}
         serialized, marshalErr := obj.Marshal()
         if marshalErr != nil {
             return marshalErr
@@ -236,13 +236,13 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(tx pgx.Tx, {{ rang
         inputRows = append(inputRows, []interface{}{
             {{ range $idx, $field := $schema.ResolvedFields }}
             {{if eq $field.DataType "datetime"}}
-            pgutils.NilOrStringTimestamp({{$field.Getter "obj"}}),
+            pgutils.NilOrTime({{$field.Getter "obj"}}),
             {{- else}}
             {{$field.Getter "obj"}},{{end}}
             {{end}}
         })
 
-        {{if not $schema.ParentSchema }}
+        {{if not $schema.Parents }}
         // Add the id to be deleted.
         deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
         {{end}}
@@ -251,13 +251,13 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(tx pgx.Tx, {{ rang
         if i % batchSize == 0 || i == len(objs) {
             // copy doesn't upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
-            {{if not $schema.ParentSchema }}
-            s.DeleteMany(deletes)
+            {{if not $schema.Parents }}
+            s.DeleteMany(ctx, deletes)
             // clear the inserts and vals for the next batch
             deletes = nil
             {{end}}
 
-            _, err := tx.CopyFrom(context.Background(), pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+            _, err := tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
 
             if err != nil {
                 return err
@@ -269,13 +269,13 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(tx pgx.Tx, {{ rang
     }
 
     {{if $schema.Children}}
-    {{if not $schema.ParentSchema }}
+    {{if not $schema.Parents }}
     for _, obj := range objs {
     {{else}}
     for idx, obj := range objs {
     {{end}}
         {{range $idx, $child := $schema.Children}}
-        if err := s.{{ template "copyFunctionName" $child }}(tx{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
+        if err := s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
         {{- end}}
@@ -298,29 +298,29 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
     }
 }
 
-func (s *storeImpl) copyFrom(objs ...*{{.Type}}) error {
-    conn, release := s.acquireConn(ops.Get, "{{.TrimmedType}}")
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
+    conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
     defer release()
 
-    tx, err := conn.Begin(context.Background())
+    tx, err := conn.Begin(ctx)
     if err != nil {
         return err
     }
 
-    if err := s.{{ template "copyFunctionName" .Schema }}(tx, objs...); err != nil {
-        if err := tx.Rollback(context.Background()); err != nil {
+    if err := s.{{ template "copyFunctionName" .Schema }}(ctx, tx, objs...); err != nil {
+        if err := tx.Rollback(ctx); err != nil {
             return err
         }
         return err
     }
-    if err := tx.Commit(context.Background()); err != nil {
+    if err := tx.Commit(ctx); err != nil {
         return err
     }
     return nil
 }
 
-func (s *storeImpl) upsert(objs ...*{{.Type}}) error {
-    conn, release := s.acquireConn(ops.Get, "{{.TrimmedType}}")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
+    conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
     defer release()
 
     for _, obj := range objs {
@@ -352,9 +352,9 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
 
     if len(objs) < batchLimit {
-        return s.upsert(objs...)
+        return s.upsert(ctx, objs...)
     } else {
-        return s.copyFrom(objs...)
+        return s.copyFrom(ctx, objs...)
     }
 }
 

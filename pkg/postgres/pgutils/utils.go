@@ -2,6 +2,7 @@ package pgutils
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
@@ -33,4 +34,16 @@ func NilOrStringTimestamp(t *types.Timestamp) *string {
 	}
 	s := t.String()
 	return &s
+}
+
+// NilOrTime allows for a proto timestamp to be stored a timestamp type in Postgres
+func NilOrTime(t *types.Timestamp) *time.Time {
+	if t == nil {
+		return nil
+	}
+	ts, err := types.TimestampFromProto(t)
+	if err != nil {
+		return nil
+	}
+	return &ts
 }
