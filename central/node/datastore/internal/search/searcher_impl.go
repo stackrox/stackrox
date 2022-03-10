@@ -30,7 +30,7 @@ var (
 	defaultSortOption = &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),
 	}
-	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap).Remove(search.RiskScore)
+	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap)
 	nodeOnlyOptionsMap  = search.Difference(
 		nodeMappings.OptionsMap,
 		search.CombineOptionsMaps(
@@ -147,7 +147,7 @@ func formatSearcher(cveIndexer blevesearch.UnsafeSearcher,
 	)
 	filteredSearcher := filtered.Searcher(edgefields.HandleCVEEdgeSearchQuery(compoundSearcher), nodeSAC.GetSACFilter())
 	// To transform Component sort field to Component+Component Version.
-	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher, componentMappings.OptionsMap)
+	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher, nodeMappings.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher
