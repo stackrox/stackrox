@@ -5,12 +5,12 @@ Overview
 
     1. Setup local dev environment for Groovy test invocation
     2. Install ACS on test cluster
-    3. Setup test fixtures
+    3. Setup test fixtures (nothing needed yet... revisit if needed for other tests investigation)
     4. Run a single Groovy test
 
 Plan for running //rox/qa-tests-backend tests locally against a remote cluster:
 
-1. Build a test runtime image (use rox-ci-image)
+1. Build a test runtime image (maybe use rox-ci-image)
   - java, gradle, groovy, ...                          <- dockerfile
   - env vars for quay.io                               <- pass
   - docker build time working directory                -> /build

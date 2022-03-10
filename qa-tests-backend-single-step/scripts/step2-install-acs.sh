@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eux
+set -eu
 source "scripts/common.sh"
 source "scripts/config.sh"
 
