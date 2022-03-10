@@ -14,6 +14,7 @@ const selectIntegrations = createStructuredSelector({
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
     featureFlags: selectors.getFeatureFlags,
+    signatureIntegrations: selectors.getSignatureIntegrations,
 });
 
 export type UseIntegrations = {
@@ -32,6 +33,7 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
         notifiers,
         backups,
         imageIntegrations,
+        signatureIntegrations,
     } = useSelector(selectIntegrations);
 
     function findIntegrations() {
@@ -59,6 +61,9 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
             }
             case 'imageIntegrations': {
                 return imageIntegrations.filter(typeLowerMatches);
+            }
+            case 'signatureIntegrations': {
+                return signatureIntegrations;
             }
             default: {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

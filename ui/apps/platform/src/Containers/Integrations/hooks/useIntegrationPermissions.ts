@@ -38,6 +38,10 @@ const useIntegrationPermissions = (): UseIntegrationPermissionsResponse => {
             write: getHasReadWritePermission('AuthPlugin', userRolePermissions),
             read: getHasReadPermission('AuthPlugin', userRolePermissions),
         },
+        signatureIntegrations: {
+            write: getHasReadWritePermission('SignatureIntegration', userRolePermissions),
+            read: getHasReadPermission('SignatureIntegration', userRolePermissions),
+        },
     };
 };
 

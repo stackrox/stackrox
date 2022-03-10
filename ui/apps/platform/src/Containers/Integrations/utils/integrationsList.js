@@ -171,6 +171,14 @@ const integrationsList = {
             disabled: false,
         },
     ],
+    signatureIntegrations: [
+        {
+            label: 'Signature',
+            type: 'signature',
+            source: 'signatureIntegrations',
+            image: redhat,
+        },
+    ],
     notifiers: [
         {
             label: 'Slack',
