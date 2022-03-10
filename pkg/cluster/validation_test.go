@@ -9,7 +9,7 @@ import (
 
 var validCluster = &storage.Cluster{
 	Name:               "cluster-name",
-	MainImage:          "stackrox.io/main",
+	MainImage:          "stackrox.io/main:3.0.55.0",
 	CentralApiEndpoint: "central.stackrox:443",
 	Type:               storage.ClusterType_OPENSHIFT4_CLUSTER,
 }
@@ -26,38 +26,18 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = "invalid image"
 			},
-			expectedErrors: []string{"invalid image name 'invalid image': invalid reference format"},
+			expectedErrors: []string{"invalid main image 'invalid image': invalid reference format"},
 		},
 		"Cluster with empty main image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = ""
 			},
 		},
-		"Cluster with main image with tag should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
-			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.MainImage = "docker.io/stackrox/main:some_tag"
-				// cluster.MainImage = "image"
-			},
-			expectedErrors: []string{"main image should not contain tags or digests"},
-		},
-		"Cluster with main image with sha should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
-			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.MainImage = "docker.io/stackrox/main@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993"
-			},
-			expectedErrors: []string{"main image should not contain tags or digests"},
-		},
-		"Cluster with collector image with tag should fail when ManagedBy is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
+		"Cluster with configured collector image tag should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
-				cluster.HelmConfig = &storage.CompleteClusterConfig{} // Not really needed since ManagedBy is checked first
 			},
-			expectedErrors: []string{"collector image should not contain tags or digests"},
-		},
-		"Cluster with collector image with sha should fail when Managedby is set to ManagerType_MANAGER_TYPE_UNKNOWN": {
-			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CollectorImage = "docker.io/stackrox/collector@sha256:8755ac54265892c5aea311e3d73ad771dcbb270d022b1c8cf9cdbf3218b46993"
-			},
-			expectedErrors: []string{"collector image should not contain tags or digests"},
+			expectedErrors: []string{"collector image may not specify a tag.  Please remove tag '3.2.0-slim' to continue"},
 		},
 		"Cluster with configured collector image without tag is valid": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -68,7 +48,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "invalid image"
 			},
-			expectedErrors: []string{"invalid image name 'invalid image': invalid reference format"},
+			expectedErrors: []string{"invalid collector image 'invalid image': invalid reference format"},
 		},
 		"Cluster with empty collector image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -77,7 +57,6 @@ func TestPartialValidation(t *testing.T) {
 		},
 		"Helm Managed cluster with configured collector image tag is allowed": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.ManagedBy = storage.ManagerType_MANAGER_TYPE_HELM_CHART
 				cluster.HelmConfig = &storage.CompleteClusterConfig{}
 				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
 			},
