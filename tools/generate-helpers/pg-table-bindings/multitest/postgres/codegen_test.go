@@ -1,3 +1,4 @@
+//go:build sql_integration
 // +build sql_integration
 
 package postgres
@@ -10,34 +11,32 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStore(t *testing.T) {
+	ctx := context.Background()
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
-	if err != nil {
-		panic(err)
-	}
-	defer pool.Close()
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
 	multiKey := &storage.TestMultiKeyStruct{
 		Key1: "key1",
 		Key2: "key2",
 	}
-	dep, exists, err := store.Get(multiKey.GetKey1(), multiKey.GetKey2())
+	dep, exists, err := store.Get(ctx, multiKey.GetKey1(), multiKey.GetKey2())
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, dep)
 
-	assert.NoError(t, store.Upsert(multiKey))
-	dep, exists, err = store.Get(multiKey.GetKey1(), multiKey.GetKey2())
+	assert.NoError(t, store.Upsert(ctx, multiKey))
+	dep, exists, err = store.Get(ctx, multiKey.GetKey1(), multiKey.GetKey2())
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, multiKey, dep)

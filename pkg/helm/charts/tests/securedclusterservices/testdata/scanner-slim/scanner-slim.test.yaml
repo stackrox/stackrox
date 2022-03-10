@@ -29,7 +29,7 @@ tests:
     scanner.disable: false
   expectError: true
   expect: |
-    .error | assertThat(contains("Local scanner was enabled but is only supported on OpenShift."))
+    .error | assertThat(contains("Scanner was enabled but is only supported on OpenShift."))
 
 - name: "scanner can override image config"
   set:
@@ -110,7 +110,7 @@ tests:
       scanner.disable: true
     expect: |
       .deployments["sensor"].spec.template.spec.containers[0].env[] |
-        select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value == false)
+        select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value == "false")
 
 - name: "sensor connects to local scanner using the correct GRPC endpoint"
   release:
@@ -121,3 +121,13 @@ tests:
   expect: |
     .deployments["sensor"].spec.template.spec.containers[0].env[] |
       select(.name == "ROX_SCANNER_GRPC_ENDPOINT") | assertThat(.value == "scanner.custom-ns.svc:8443")
+
+- name: "Test customize for local scanner"
+  values:
+    scanner:
+      disable: false
+    customize:
+      envVars:
+        FOO: bar
+    expect: |
+      envVars(.deployments.scanner; "scanner")["FOO"] | assertThat(. == "bar")

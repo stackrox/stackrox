@@ -10,9 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -28,20 +26,27 @@ type mockClustersServiceServer struct {
 	v1.ClustersServiceServer
 
 	// injected behavior
-	kernelSupport         bool
-	postClusterInjectedFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
+	getKernelSupportInjectedFn getKernelSupportFn
+	getDefaultsInjectedFn      getDefaultsFn
+	postClusterInjectedFn      postClusterFn
 
 	// spy properties
-	clusterSent      []storage.Cluster
-	getClusterCalled bool
+	clusterSent                     []storage.Cluster
+	getClusterCalled                bool
+	getKernelSupportAvailableCalled bool
 }
 
+type getKernelSupportFn func() (*v1.KernelSupportAvailableResponse, error)
 type postClusterFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
+type getDefaultsFn func() (*v1.ClusterDefaultsResponse, error)
+
+func (m *mockClustersServiceServer) GetClusterDefaultValues(ctx context.Context, in *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
+	return m.getDefaultsInjectedFn()
+}
 
 func (m *mockClustersServiceServer) GetKernelSupportAvailable(ctx context.Context, in *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
-	return &v1.KernelSupportAvailableResponse{
-		KernelSupportAvailable: m.kernelSupport,
-	}, nil
+	m.getKernelSupportAvailableCalled = true
+	return m.getKernelSupportInjectedFn()
 }
 
 func (m *mockClustersServiceServer) PostCluster(ctx context.Context, cluster *storage.Cluster) (*v1.ClusterResponse, error) {
@@ -78,13 +83,16 @@ type closeFunction = func()
 
 // createGRPCMockClustersService will create an in-memory gRPC server serving mockClustersServiceServer
 // NOTE: Ensure that you ALWAYS call the closeFunction to clean up the test setup
-func (s *sensorGenerateTestSuite) createGRPCMockClustersService(kernelSupport bool, postClusterF postClusterFn) (*grpc.ClientConn, closeFunction, *mockClustersServiceServer) {
+func (s *sensorGenerateTestSuite) createGRPCMockClustersService(getDefaultsF getDefaultsFn, postClusterF postClusterFn) (*grpc.ClientConn, closeFunction, *mockClustersServiceServer) {
 	// create an in-memory listener that does not require exposing any ports on the host
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
 	server := grpc.NewServer()
-	mock := mockClustersServiceServer{kernelSupport: kernelSupport, postClusterInjectedFn: postClusterF}
+	mock := mockClustersServiceServer{
+		getDefaultsInjectedFn: getDefaultsF,
+		postClusterInjectedFn: postClusterF,
+	}
 	v1.RegisterClustersServiceServer(server, &mock)
 
 	// start the server
@@ -109,9 +117,9 @@ func (s *sensorGenerateTestSuite) newTestMockEnvironmentWithConn(conn *grpc.Clie
 	return mocks.NewEnvWithConn(conn, s.T())
 }
 
-func (s *sensorGenerateTestSuite) createMockedCommand(kernelSupport bool, postClusterF postClusterFn) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
+func (s *sensorGenerateTestSuite) createMockedCommand(getDefaultsF getDefaultsFn, postClusterF postClusterFn) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
 	var out, errOut *bytes.Buffer
-	conn, closeF, mock := s.createGRPCMockClustersService(kernelSupport, postClusterF)
+	conn, closeF, mock := s.createGRPCMockClustersService(getDefaultsF, postClusterF)
 	cmd := s.cmd
 	cmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 	return out, errOut, closeF, cmd, mock
@@ -126,6 +134,28 @@ var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration
 	return nil
 }
 
+func legacyKernelSupport(flag bool) func() (*v1.KernelSupportAvailableResponse, error) {
+	return func() (*v1.KernelSupportAvailableResponse, error) {
+		return &v1.KernelSupportAvailableResponse{
+			KernelSupportAvailable: flag,
+		}, nil
+	}
+}
+
+func getDefaultsUnimplemented() func() (*v1.ClusterDefaultsResponse, error) {
+	return func() (*v1.ClusterDefaultsResponse, error) {
+		return nil, status.Error(codes.Unimplemented, "GetClusterDefaultValues unimplemented")
+	}
+}
+
+func getDefaultsFake(kernelSupport bool) func() (*v1.ClusterDefaultsResponse, error) {
+	return func() (*v1.ClusterDefaultsResponse, error) {
+		return &v1.ClusterDefaultsResponse{
+			KernelSupportAvailable: kernelSupport,
+		}, nil
+	}
+}
+
 // postClusterFake base fake function for service.PostCluster that returns the same cluster with fake id
 func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	cluster.Id = "test-id"
@@ -134,29 +164,9 @@ func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	}, nil
 }
 
-// postClusterLegacyCentralFake fake legacy central function for service.PostCluster that returns validation error if main is empty
-func postClusterLegacyCentralFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
-	if cluster.MainImage == "" {
-		return nil, status.Error(codes.Internal, "Cluster Validation error: invalid main image '': invalid reference format")
-	}
-	return postClusterFake(cluster)
-}
-
 // postClusterAlreadyExistsFake fake function for service.PostCluster that always returns error codes.AlreadyExists
 func postClusterAlreadyExistsFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	return nil, status.Error(codes.AlreadyExists, "Cluster Exists")
-}
-
-// getMainImageFromBuildFlag is necessary because we run tests both in release and non-release mode.
-// roxctl will select different images based on the build type if communicating with a legacy central
-func getMainImageFromBuildFlag() string {
-	var flavor defaults.ImageFlavor
-	if buildinfo.ReleaseBuild {
-		flavor = defaults.RHACSReleaseImageFlavor()
-	} else {
-		flavor = defaults.DevelopmentBuildImageFlavor()
-	}
-	return flavor.MainImageNoTag()
 }
 
 func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
@@ -207,7 +217,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, _, closeF, generateCmd, mock := s.createMockedCommand(true, testCase.postClusterF)
+			_, _, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(true), testCase.postClusterF)
 			defer closeF()
 
 			// Setup generateCmd
@@ -236,55 +246,63 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 	}
 }
 
-func (s *sensorGenerateTestSuite) TestResendClusterIfLegacyCentral() {
+func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
 	testCases := map[string]struct {
-		postClusterF postClusterFn
+		getDefaultsF      getDefaultsFn
+		mainImageOverride string
 
 		// expected
-		expectClustersSent int
-		expectMainImages   []string
-		expectWarning      *expectedWarning
+		expectPostedClusterMainImage string
 	}{
-		"Legacy central: PostCluster is called twice": {
-			postClusterF:       postClusterLegacyCentralFake,
-			expectClustersSent: 2,
-			expectMainImages:   []string{"", getMainImageFromBuildFlag()},
-			expectWarning:      &expectedWarning{"Running older version of central"},
+		"Without override: send empty main image": {
+			getDefaultsF:                 getDefaultsFake(true),
+			mainImageOverride:            "",
+			expectPostedClusterMainImage: "",
 		},
-		"New central: PostCluster is called once with empty MainImage": {
-			postClusterF:       postClusterFake,
-			expectClustersSent: 1,
-			expectMainImages:   []string{""},
-			expectWarning:      nil,
+		"With override: send main image provided": {
+			getDefaultsF:                 getDefaultsFake(true),
+			mainImageOverride:            "some.registry.io/stackrox/main",
+			expectPostedClusterMainImage: "some.registry.io/stackrox/main",
 		},
 	}
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(true, testCase.postClusterF)
+			_, _, closeF, generateCmd, mock := s.createMockedCommand(testCase.getDefaultsF, postClusterFake)
 			defer closeF()
+			mock.getKernelSupportInjectedFn = legacyKernelSupport(true)
 
 			// Setup generateCmd
 			generateCmd.timeout = time.Duration(5) * time.Second
 			generateCmd.getBundleFn = emptyGetBundle
+			generateCmd.cluster.MainImage = testCase.mainImageOverride
 
 			// Create cluster
 			err := generateCmd.fullClusterCreation()
+			s.Require().NoError(err, "shouldn't fail creating cluster")
 
-			// Assertions
-			s.Require().NoError(err)
-
-			if testCase.expectWarning != nil {
-				s.Assert().Contains(errOut.String(), testCase.expectWarning.messageTemplate)
-			}
-
-			s.Assert().Len(mock.clusterSent, testCase.expectClustersSent)
-			for i, mainImage := range testCase.expectMainImages {
-				s.Assert().Equal(mock.clusterSent[i].MainImage, mainImage)
-			}
+			// Check that correct main image was posted
+			s.Require().Len(mock.clusterSent, 1)
+			s.Require().Equal(testCase.expectPostedClusterMainImage, mock.clusterSent[0].MainImage)
 		})
 	}
+}
 
+func (s *sensorGenerateTestSuite) TestLegacyAPICalledIfGetClustersUnimplemented() {
+	_, _, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsUnimplemented(), postClusterFake)
+	defer closeF()
+	mock.getKernelSupportInjectedFn = legacyKernelSupport(true)
+
+	// Setup generateCmd
+	generateCmd.timeout = time.Duration(5) * time.Second
+	generateCmd.getBundleFn = emptyGetBundle
+
+	// Create cluster
+	err := generateCmd.fullClusterCreation()
+	s.Require().NoError(err, "shouldn't fail creating cluster")
+
+	// Check that legacy API was called
+	s.Require().True(mock.getKernelSupportAvailableCalled)
 }
 
 func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
@@ -334,7 +352,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(testCase.serverHasKernelSupport, postClusterFake)
+			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(testCase.serverHasKernelSupport), postClusterFake)
 			defer closeF()
 
 			// Setup generateCmd

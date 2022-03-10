@@ -36,110 +36,48 @@ var (
 	table = "alerts"
 )
 
+func init() {
+	globaldb.RegisterTable(table, "Alert")
+}
+
 type Store interface {
-	Count() (int, error)
-	Exists(id string) (bool, error)
-	Get(id string) (*storage.Alert, bool, error)
-	Upsert(obj *storage.Alert) error
-	UpsertMany(objs []*storage.Alert) error
-	Delete(id string) error
-	GetIDs() ([]string, error)
-	GetMany(ids []string) ([]*storage.Alert, []int, error)
-	DeleteMany(ids []string) error
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.Alert, bool, error)
+	Upsert(ctx context.Context, obj *storage.Alert) error
+	UpsertMany(ctx context.Context, objs []*storage.Alert) error
+	Delete(ctx context.Context, id string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Alert, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(fn func(obj *storage.Alert) error) error
+	Walk(ctx context.Context, fn func(obj *storage.Alert) error) error
 
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableAlerts(db *pgxpool.Pool) {
+func createTableAlerts(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts (
     Id varchar,
     Policy_Id varchar,
-    Policy_Name varchar,
+    Policy_Name varchar UNIQUE,
     Policy_Description varchar,
     Policy_Rationale varchar,
     Policy_Remediation varchar,
     Policy_Disabled bool,
     Policy_Categories text[],
-    Policy_Fields_ImageName_Registry varchar,
-    Policy_Fields_ImageName_Remote varchar,
-    Policy_Fields_ImageName_Tag varchar,
-    Policy_Fields_ImageAgeDays numeric,
-    Policy_Fields_LineRule_Instruction varchar,
-    Policy_Fields_LineRule_Value varchar,
-    Policy_Fields_Cvss_Op integer,
-    Policy_Fields_Cvss_Value numeric,
-    Policy_Fields_Cve varchar,
-    Policy_Fields_Component_Name varchar,
-    Policy_Fields_Component_Version varchar,
-    Policy_Fields_ScanAgeDays numeric,
-    Policy_Fields_NoScanExists bool,
-    Policy_Fields_Env_Key varchar,
-    Policy_Fields_Env_Value varchar,
-    Policy_Fields_Env_EnvVarSource integer,
-    Policy_Fields_Command varchar,
-    Policy_Fields_Args varchar,
-    Policy_Fields_Directory varchar,
-    Policy_Fields_User varchar,
-    Policy_Fields_VolumePolicy_Name varchar,
-    Policy_Fields_VolumePolicy_Source varchar,
-    Policy_Fields_VolumePolicy_Destination varchar,
-    Policy_Fields_VolumePolicy_ReadOnly bool,
-    Policy_Fields_VolumePolicy_Type varchar,
-    Policy_Fields_PortPolicy_Port numeric,
-    Policy_Fields_PortPolicy_Protocol varchar,
-    Policy_Fields_RequiredLabel_Key varchar,
-    Policy_Fields_RequiredLabel_Value varchar,
-    Policy_Fields_RequiredLabel_EnvVarSource integer,
-    Policy_Fields_RequiredAnnotation_Key varchar,
-    Policy_Fields_RequiredAnnotation_Value varchar,
-    Policy_Fields_RequiredAnnotation_EnvVarSource integer,
-    Policy_Fields_DisallowedAnnotation_Key varchar,
-    Policy_Fields_DisallowedAnnotation_Value varchar,
-    Policy_Fields_DisallowedAnnotation_EnvVarSource integer,
-    Policy_Fields_Privileged bool,
-    Policy_Fields_DropCapabilities text[],
-    Policy_Fields_AddCapabilities text[],
-    Policy_Fields_ContainerResourcePolicy_CpuResourceRequest_Op integer,
-    Policy_Fields_ContainerResourcePolicy_CpuResourceRequest_Value numeric,
-    Policy_Fields_ContainerResourcePolicy_CpuResourceLimit_Op integer,
-    Policy_Fields_ContainerResourcePolicy_CpuResourceLimit_Value numeric,
-    Policy_Fields_ContainerResourcePolicy_MemoryResourceRequest_Op integer,
-    Policy_Fields_ContainerResourcePolicy_MemoryResourceRequest_Value numeric,
-    Policy_Fields_ContainerResourcePolicy_MemoryResourceLimit_Op integer,
-    Policy_Fields_ContainerResourcePolicy_MemoryResourceLimit_Value numeric,
-    Policy_Fields_ProcessPolicy_Name varchar,
-    Policy_Fields_ProcessPolicy_Args varchar,
-    Policy_Fields_ProcessPolicy_Ancestor varchar,
-    Policy_Fields_ProcessPolicy_Uid varchar,
-    Policy_Fields_ReadOnlyRootFs bool,
-    Policy_Fields_FixedBy varchar,
-    Policy_Fields_PortExposurePolicy_ExposureLevels int[],
-    Policy_Fields_PermissionPolicy_PermissionLevel integer,
-    Policy_Fields_HostMountPolicy_ReadOnly bool,
-    Policy_Fields_WhitelistEnabled bool,
-    Policy_Fields_RequiredImageLabel_Key varchar,
-    Policy_Fields_RequiredImageLabel_Value varchar,
-    Policy_Fields_RequiredImageLabel_EnvVarSource integer,
-    Policy_Fields_DisallowedImageLabel_Key varchar,
-    Policy_Fields_DisallowedImageLabel_Value varchar,
-    Policy_Fields_DisallowedImageLabel_EnvVarSource integer,
     Policy_LifecycleStages int[],
     Policy_EventSource integer,
     Policy_Severity integer,
     Policy_EnforcementActions int[],
     Policy_Notifiers text[],
     Policy_LastUpdated timestamp,
-    Policy_SORTName varchar,
-    Policy_SORTLifecycleStage varchar,
-    Policy_SORTEnforcement bool,
     Policy_PolicyVersion varchar,
     Policy_CriteriaLocked bool,
     Policy_MitreVectorsLocked bool,
@@ -182,32 +120,32 @@ create table if not exists alerts (
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableAlertsWhitelists(db)
-	createTableAlertsExclusions(db)
-	createTableAlertsScope(db)
-	createTableAlertsPolicySections(db)
-	createTableAlertsMitreAttackVectors(db)
-	createTableAlertsContainers(db)
-	createTableAlertsViolations(db)
-	createTableAlertsProcesses(db)
+	createTableAlertsWhitelists(ctx, db)
+	createTableAlertsExclusions(ctx, db)
+	createTableAlertsScope(ctx, db)
+	createTableAlertsPolicySections(ctx, db)
+	createTableAlertsMitreAttackVectors(ctx, db)
+	createTableAlertsContainers(ctx, db)
+	createTableAlertsViolations(ctx, db)
+	createTableAlertsProcesses(ctx, db)
 }
 
-func createTableAlertsWhitelists(db *pgxpool.Pool) {
+func createTableAlertsWhitelists(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Whitelists (
-    parent_Id varchar,
+    alerts_Id varchar,
     idx numeric,
     Name varchar,
     Deployment_Name varchar,
@@ -217,12 +155,12 @@ create table if not exists alerts_Whitelists (
     Deployment_Scope_Label_Value varchar,
     Image_Name varchar,
     Expiration timestamp,
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -232,17 +170,17 @@ create table if not exists alerts_Whitelists (
 		"create index if not exists alertsWhitelists_idx on alerts_Whitelists using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func createTableAlertsExclusions(db *pgxpool.Pool) {
+func createTableAlertsExclusions(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Exclusions (
-    parent_Id varchar,
+    alerts_Id varchar,
     idx numeric,
     Name varchar,
     Deployment_Name varchar,
@@ -252,12 +190,12 @@ create table if not exists alerts_Exclusions (
     Deployment_Scope_Label_Value varchar,
     Image_Name varchar,
     Expiration timestamp,
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -267,28 +205,28 @@ create table if not exists alerts_Exclusions (
 		"create index if not exists alertsExclusions_idx on alerts_Exclusions using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func createTableAlertsScope(db *pgxpool.Pool) {
+func createTableAlertsScope(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Scope (
-    parent_Id varchar,
+    alerts_Id varchar,
     idx numeric,
     Cluster varchar,
     Namespace varchar,
     Label_Key varchar,
     Label_Value varchar,
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -298,25 +236,25 @@ create table if not exists alerts_Scope (
 		"create index if not exists alertsScope_idx on alerts_Scope using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func createTableAlertsPolicySections(db *pgxpool.Pool) {
+func createTableAlertsPolicySections(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_PolicySections (
-    parent_Id varchar,
+    alerts_Id varchar,
     idx numeric,
     SectionName varchar,
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -326,29 +264,29 @@ create table if not exists alerts_PolicySections (
 		"create index if not exists alertsPolicySections_idx on alerts_PolicySections using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableAlertsPolicySectionsPolicyGroups(db)
+	createTableAlertsPolicySectionsPolicyGroups(ctx, db)
 }
 
-func createTableAlertsPolicySectionsPolicyGroups(db *pgxpool.Pool) {
+func createTableAlertsPolicySectionsPolicyGroups(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_PolicySections_PolicyGroups (
-    parent_parent_Id varchar,
-    parent_idx numeric,
+    alerts_Id varchar,
+    alerts_PolicySections_idx numeric,
     idx numeric,
     FieldName varchar,
     BooleanOperator integer,
     Negate bool,
-    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES alerts_PolicySections(parent_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_PolicySections_idx) REFERENCES alerts_PolicySections(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -358,28 +296,28 @@ create table if not exists alerts_PolicySections_PolicyGroups (
 		"create index if not exists alertsPolicySectionsPolicyGroups_idx on alerts_PolicySections_PolicyGroups using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableAlertsPolicySectionsPolicyGroupsValues(db)
+	createTableAlertsPolicySectionsPolicyGroupsValues(ctx, db)
 }
 
-func createTableAlertsPolicySectionsPolicyGroupsValues(db *pgxpool.Pool) {
+func createTableAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_PolicySections_PolicyGroups_Values (
-    parent_parent_parent_Id varchar,
-    parent_parent_idx numeric,
-    parent_idx numeric,
+    alerts_Id varchar,
+    alerts_PolicySections_idx numeric,
+    alerts_PolicySections_PolicyGroups_idx numeric,
     idx numeric,
     Value varchar,
-    PRIMARY KEY(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_parent_Id, parent_parent_idx, parent_idx) REFERENCES alerts_PolicySections_PolicyGroups(parent_parent_Id, parent_idx, idx) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx) REFERENCES alerts_PolicySections_PolicyGroups(alerts_Id, alerts_PolicySections_idx, idx) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -389,26 +327,26 @@ create table if not exists alerts_PolicySections_PolicyGroups_Values (
 		"create index if not exists alertsPolicySectionsPolicyGroupsValues_idx on alerts_PolicySections_PolicyGroups_Values using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func createTableAlertsMitreAttackVectors(db *pgxpool.Pool) {
+func createTableAlertsMitreAttackVectors(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_MitreAttackVectors (
-    parent_Id varchar,
+    alerts_Id varchar,
     idx numeric,
     Tactic varchar,
     Techniques text[],
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -418,17 +356,17 @@ create table if not exists alerts_MitreAttackVectors (
 		"create index if not exists alertsMitreAttackVectors_idx on alerts_MitreAttackVectors using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func createTableAlertsContainers(db *pgxpool.Pool) {
+func createTableAlertsContainers(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Containers (
-    parent_Id varchar,
+    alerts_Id varchar,
     idx numeric,
     Image_Id varchar,
     Image_Name_Registry varchar,
@@ -438,12 +376,12 @@ create table if not exists alerts_Containers (
     Image_NotPullable bool,
     Image_IsClusterLocal bool,
     Name varchar,
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -453,17 +391,17 @@ create table if not exists alerts_Containers (
 		"create index if not exists alertsContainers_idx on alerts_Containers using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func createTableAlertsViolations(db *pgxpool.Pool) {
+func createTableAlertsViolations(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Violations (
-    parent_Id varchar,
+    alerts_Id varchar,
     idx numeric,
     Message varchar,
     NetworkFlowInfo_Protocol integer,
@@ -479,12 +417,12 @@ create table if not exists alerts_Violations (
     NetworkFlowInfo_Destination_Port numeric,
     Type integer,
     Time timestamp,
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -494,28 +432,28 @@ create table if not exists alerts_Violations (
 		"create index if not exists alertsViolations_idx on alerts_Violations using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableAlertsViolationsAttrs(db)
+	createTableAlertsViolationsAttrs(ctx, db)
 }
 
-func createTableAlertsViolationsAttrs(db *pgxpool.Pool) {
+func createTableAlertsViolationsAttrs(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Violations_Attrs (
-    parent_parent_Id varchar,
-    parent_idx numeric,
+    alerts_Id varchar,
+    alerts_Violations_idx numeric,
     idx numeric,
     Key varchar,
     Value varchar,
-    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES alerts_Violations(parent_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, alerts_Violations_idx, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_Violations_idx) REFERENCES alerts_Violations(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -525,17 +463,17 @@ create table if not exists alerts_Violations_Attrs (
 		"create index if not exists alertsViolationsAttrs_idx on alerts_Violations_Attrs using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func createTableAlertsProcesses(db *pgxpool.Pool) {
+func createTableAlertsProcesses(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Processes (
-    parent_Id varchar,
+    alerts_Id varchar,
     idx numeric,
     Id varchar,
     DeploymentId varchar,
@@ -557,12 +495,12 @@ create table if not exists alerts_Processes (
     Namespace varchar,
     ContainerStartTime timestamp,
     ImageId varchar,
-    PRIMARY KEY(parent_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -572,28 +510,28 @@ create table if not exists alerts_Processes (
 		"create index if not exists alertsProcesses_idx on alerts_Processes using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
-	createTableAlertsProcessesLineageInfo(db)
+	createTableAlertsProcessesLineageInfo(ctx, db)
 }
 
-func createTableAlertsProcessesLineageInfo(db *pgxpool.Pool) {
+func createTableAlertsProcessesLineageInfo(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Processes_LineageInfo (
-    parent_parent_Id varchar,
-    parent_idx numeric,
+    alerts_Id varchar,
+    alerts_Processes_idx numeric,
     idx numeric,
     ParentUid numeric,
     ParentExecFilePath varchar,
-    PRIMARY KEY(parent_parent_Id, parent_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES alerts_Processes(parent_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, alerts_Processes_idx, idx),
+    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_Processes_idx) REFERENCES alerts_Processes(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 
-	_, err := db.Exec(context.Background(), table)
+	_, err := db.Exec(ctx, table)
 	if err != nil {
 		panic("error creating table: " + table)
 	}
@@ -603,14 +541,14 @@ create table if not exists alerts_Processes_LineageInfo (
 		"create index if not exists alertsProcessesLineageInfo_idx on alerts_Processes_LineageInfo using btree(idx)",
 	}
 	for _, index := range indexes {
-		if _, err := db.Exec(context.Background(), index); err != nil {
+		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
 
 }
 
-func insertIntoAlerts(tx pgx.Tx, obj *storage.Alert) error {
+func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -619,246 +557,62 @@ func insertIntoAlerts(tx pgx.Tx, obj *storage.Alert) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
 		obj.GetId(),
-
 		obj.GetPolicy().GetId(),
-
 		obj.GetPolicy().GetName(),
-
 		obj.GetPolicy().GetDescription(),
-
 		obj.GetPolicy().GetRationale(),
-
 		obj.GetPolicy().GetRemediation(),
-
 		obj.GetPolicy().GetDisabled(),
-
 		obj.GetPolicy().GetCategories(),
-
-		obj.GetPolicy().GetFields().GetImageName().GetRegistry(),
-
-		obj.GetPolicy().GetFields().GetImageName().GetRemote(),
-
-		obj.GetPolicy().GetFields().GetImageName().GetTag(),
-
-		obj.GetPolicy().GetFields().GetImageAgeDays(),
-
-		obj.GetPolicy().GetFields().GetLineRule().GetInstruction(),
-
-		obj.GetPolicy().GetFields().GetLineRule().GetValue(),
-
-		obj.GetPolicy().GetFields().GetCvss().GetOp(),
-
-		obj.GetPolicy().GetFields().GetCvss().GetValue(),
-
-		obj.GetPolicy().GetFields().GetCve(),
-
-		obj.GetPolicy().GetFields().GetComponent().GetName(),
-
-		obj.GetPolicy().GetFields().GetComponent().GetVersion(),
-
-		obj.GetPolicy().GetFields().GetScanAgeDays(),
-
-		obj.GetPolicy().GetFields().GetNoScanExists(),
-
-		obj.GetPolicy().GetFields().GetEnv().GetKey(),
-
-		obj.GetPolicy().GetFields().GetEnv().GetValue(),
-
-		obj.GetPolicy().GetFields().GetEnv().GetEnvVarSource(),
-
-		obj.GetPolicy().GetFields().GetCommand(),
-
-		obj.GetPolicy().GetFields().GetArgs(),
-
-		obj.GetPolicy().GetFields().GetDirectory(),
-
-		obj.GetPolicy().GetFields().GetUser(),
-
-		obj.GetPolicy().GetFields().GetVolumePolicy().GetName(),
-
-		obj.GetPolicy().GetFields().GetVolumePolicy().GetSource(),
-
-		obj.GetPolicy().GetFields().GetVolumePolicy().GetDestination(),
-
-		obj.GetPolicy().GetFields().GetVolumePolicy().GetReadOnly(),
-
-		obj.GetPolicy().GetFields().GetVolumePolicy().GetType(),
-
-		obj.GetPolicy().GetFields().GetPortPolicy().GetPort(),
-
-		obj.GetPolicy().GetFields().GetPortPolicy().GetProtocol(),
-
-		obj.GetPolicy().GetFields().GetRequiredLabel().GetKey(),
-
-		obj.GetPolicy().GetFields().GetRequiredLabel().GetValue(),
-
-		obj.GetPolicy().GetFields().GetRequiredLabel().GetEnvVarSource(),
-
-		obj.GetPolicy().GetFields().GetRequiredAnnotation().GetKey(),
-
-		obj.GetPolicy().GetFields().GetRequiredAnnotation().GetValue(),
-
-		obj.GetPolicy().GetFields().GetRequiredAnnotation().GetEnvVarSource(),
-
-		obj.GetPolicy().GetFields().GetDisallowedAnnotation().GetKey(),
-
-		obj.GetPolicy().GetFields().GetDisallowedAnnotation().GetValue(),
-
-		obj.GetPolicy().GetFields().GetDisallowedAnnotation().GetEnvVarSource(),
-
-		obj.GetPolicy().GetFields().GetPrivileged(),
-
-		obj.GetPolicy().GetFields().GetDropCapabilities(),
-
-		obj.GetPolicy().GetFields().GetAddCapabilities(),
-
-		obj.GetPolicy().GetFields().GetContainerResourcePolicy().GetCpuResourceRequest().GetOp(),
-
-		obj.GetPolicy().GetFields().GetContainerResourcePolicy().GetCpuResourceRequest().GetValue(),
-
-		obj.GetPolicy().GetFields().GetContainerResourcePolicy().GetCpuResourceLimit().GetOp(),
-
-		obj.GetPolicy().GetFields().GetContainerResourcePolicy().GetCpuResourceLimit().GetValue(),
-
-		obj.GetPolicy().GetFields().GetContainerResourcePolicy().GetMemoryResourceRequest().GetOp(),
-
-		obj.GetPolicy().GetFields().GetContainerResourcePolicy().GetMemoryResourceRequest().GetValue(),
-
-		obj.GetPolicy().GetFields().GetContainerResourcePolicy().GetMemoryResourceLimit().GetOp(),
-
-		obj.GetPolicy().GetFields().GetContainerResourcePolicy().GetMemoryResourceLimit().GetValue(),
-
-		obj.GetPolicy().GetFields().GetProcessPolicy().GetName(),
-
-		obj.GetPolicy().GetFields().GetProcessPolicy().GetArgs(),
-
-		obj.GetPolicy().GetFields().GetProcessPolicy().GetAncestor(),
-
-		obj.GetPolicy().GetFields().GetProcessPolicy().GetUid(),
-
-		obj.GetPolicy().GetFields().GetReadOnlyRootFs(),
-
-		obj.GetPolicy().GetFields().GetFixedBy(),
-
-		obj.GetPolicy().GetFields().GetPortExposurePolicy().GetExposureLevels(),
-
-		obj.GetPolicy().GetFields().GetPermissionPolicy().GetPermissionLevel(),
-
-		obj.GetPolicy().GetFields().GetHostMountPolicy().GetReadOnly(),
-
-		obj.GetPolicy().GetFields().GetWhitelistEnabled(),
-
-		obj.GetPolicy().GetFields().GetRequiredImageLabel().GetKey(),
-
-		obj.GetPolicy().GetFields().GetRequiredImageLabel().GetValue(),
-
-		obj.GetPolicy().GetFields().GetRequiredImageLabel().GetEnvVarSource(),
-
-		obj.GetPolicy().GetFields().GetDisallowedImageLabel().GetKey(),
-
-		obj.GetPolicy().GetFields().GetDisallowedImageLabel().GetValue(),
-
-		obj.GetPolicy().GetFields().GetDisallowedImageLabel().GetEnvVarSource(),
-
 		obj.GetPolicy().GetLifecycleStages(),
-
 		obj.GetPolicy().GetEventSource(),
-
 		obj.GetPolicy().GetSeverity(),
-
 		obj.GetPolicy().GetEnforcementActions(),
-
 		obj.GetPolicy().GetNotifiers(),
-
 		pgutils.NilOrStringTimestamp(obj.GetPolicy().GetLastUpdated()),
-
-		obj.GetPolicy().GetSORTName(),
-
-		obj.GetPolicy().GetSORTLifecycleStage(),
-
-		obj.GetPolicy().GetSORTEnforcement(),
-
 		obj.GetPolicy().GetPolicyVersion(),
-
 		obj.GetPolicy().GetCriteriaLocked(),
-
 		obj.GetPolicy().GetMitreVectorsLocked(),
-
 		obj.GetPolicy().GetIsDefault(),
-
 		obj.GetLifecycleStage(),
-
 		obj.GetDeployment().GetId(),
-
 		obj.GetDeployment().GetName(),
-
 		obj.GetDeployment().GetType(),
-
 		obj.GetDeployment().GetNamespace(),
-
 		obj.GetDeployment().GetNamespaceId(),
-
 		obj.GetDeployment().GetLabels(),
-
 		obj.GetDeployment().GetClusterId(),
-
 		obj.GetDeployment().GetClusterName(),
-
 		obj.GetDeployment().GetAnnotations(),
-
 		obj.GetDeployment().GetInactive(),
-
 		obj.GetImage().GetId(),
-
 		obj.GetImage().GetName().GetRegistry(),
-
 		obj.GetImage().GetName().GetRemote(),
-
 		obj.GetImage().GetName().GetTag(),
-
 		obj.GetImage().GetName().GetFullName(),
-
 		obj.GetImage().GetNotPullable(),
-
 		obj.GetImage().GetIsClusterLocal(),
-
 		obj.GetResource().GetResourceType(),
-
 		obj.GetResource().GetName(),
-
 		obj.GetResource().GetClusterId(),
-
 		obj.GetResource().GetClusterName(),
-
 		obj.GetResource().GetNamespace(),
-
 		obj.GetResource().GetNamespaceId(),
-
 		obj.GetProcessViolation().GetMessage(),
-
 		obj.GetEnforcement().GetAction(),
-
 		obj.GetEnforcement().GetMessage(),
-
 		pgutils.NilOrStringTimestamp(obj.GetTime()),
-
 		pgutils.NilOrStringTimestamp(obj.GetFirstOccurred()),
-
 		pgutils.NilOrStringTimestamp(obj.GetResolvedAt()),
-
 		obj.GetState(),
-
 		pgutils.NilOrStringTimestamp(obj.GetSnoozeTill()),
-
 		obj.GetTags(),
-
 		serialized,
 	}
 
-	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Rationale, Policy_Remediation, Policy_Disabled, Policy_Categories, Policy_Fields_ImageName_Registry, Policy_Fields_ImageName_Remote, Policy_Fields_ImageName_Tag, Policy_Fields_ImageAgeDays, Policy_Fields_LineRule_Instruction, Policy_Fields_LineRule_Value, Policy_Fields_Cvss_Op, Policy_Fields_Cvss_Value, Policy_Fields_Cve, Policy_Fields_Component_Name, Policy_Fields_Component_Version, Policy_Fields_ScanAgeDays, Policy_Fields_NoScanExists, Policy_Fields_Env_Key, Policy_Fields_Env_Value, Policy_Fields_Env_EnvVarSource, Policy_Fields_Command, Policy_Fields_Args, Policy_Fields_Directory, Policy_Fields_User, Policy_Fields_VolumePolicy_Name, Policy_Fields_VolumePolicy_Source, Policy_Fields_VolumePolicy_Destination, Policy_Fields_VolumePolicy_ReadOnly, Policy_Fields_VolumePolicy_Type, Policy_Fields_PortPolicy_Port, Policy_Fields_PortPolicy_Protocol, Policy_Fields_RequiredLabel_Key, Policy_Fields_RequiredLabel_Value, Policy_Fields_RequiredLabel_EnvVarSource, Policy_Fields_RequiredAnnotation_Key, Policy_Fields_RequiredAnnotation_Value, Policy_Fields_RequiredAnnotation_EnvVarSource, Policy_Fields_DisallowedAnnotation_Key, Policy_Fields_DisallowedAnnotation_Value, Policy_Fields_DisallowedAnnotation_EnvVarSource, Policy_Fields_Privileged, Policy_Fields_DropCapabilities, Policy_Fields_AddCapabilities, Policy_Fields_ContainerResourcePolicy_CpuResourceRequest_Op, Policy_Fields_ContainerResourcePolicy_CpuResourceRequest_Value, Policy_Fields_ContainerResourcePolicy_CpuResourceLimit_Op, Policy_Fields_ContainerResourcePolicy_CpuResourceLimit_Value, Policy_Fields_ContainerResourcePolicy_MemoryResourceRequest_Op, Policy_Fields_ContainerResourcePolicy_MemoryResourceRequest_Value, Policy_Fields_ContainerResourcePolicy_MemoryResourceLimit_Op, Policy_Fields_ContainerResourcePolicy_MemoryResourceLimit_Value, Policy_Fields_ProcessPolicy_Name, Policy_Fields_ProcessPolicy_Args, Policy_Fields_ProcessPolicy_Ancestor, Policy_Fields_ProcessPolicy_Uid, Policy_Fields_ReadOnlyRootFs, Policy_Fields_FixedBy, Policy_Fields_PortExposurePolicy_ExposureLevels, Policy_Fields_PermissionPolicy_PermissionLevel, Policy_Fields_HostMountPolicy_ReadOnly, Policy_Fields_WhitelistEnabled, Policy_Fields_RequiredImageLabel_Key, Policy_Fields_RequiredImageLabel_Value, Policy_Fields_RequiredImageLabel_EnvVarSource, Policy_Fields_DisallowedImageLabel_Key, Policy_Fields_DisallowedImageLabel_Value, Policy_Fields_DisallowedImageLabel_EnvVarSource, Policy_LifecycleStages, Policy_EventSource, Policy_Severity, Policy_EnforcementActions, Policy_Notifiers, Policy_LastUpdated, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, Policy_PolicyVersion, Policy_CriteriaLocked, Policy_MitreVectorsLocked, Policy_IsDefault, LifecycleStage, Deployment_Id, Deployment_Name, Deployment_Type, Deployment_Namespace, Deployment_NamespaceId, Deployment_Labels, Deployment_ClusterId, Deployment_ClusterName, Deployment_Annotations, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Resource_ResourceType, Resource_Name, Resource_ClusterId, Resource_ClusterName, Resource_Namespace, Resource_NamespaceId, ProcessViolation_Message, Enforcement_Action, Enforcement_Message, Time, FirstOccurred, ResolvedAt, State, SnoozeTill, Tags, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79, $80, $81, $82, $83, $84, $85, $86, $87, $88, $89, $90, $91, $92, $93, $94, $95, $96, $97, $98, $99, $100, $101, $102, $103, $104, $105, $106, $107, $108, $109, $110, $111, $112, $113, $114, $115, $116, $117, $118) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Rationale = EXCLUDED.Policy_Rationale, Policy_Remediation = EXCLUDED.Policy_Remediation, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_Fields_ImageName_Registry = EXCLUDED.Policy_Fields_ImageName_Registry, Policy_Fields_ImageName_Remote = EXCLUDED.Policy_Fields_ImageName_Remote, Policy_Fields_ImageName_Tag = EXCLUDED.Policy_Fields_ImageName_Tag, Policy_Fields_ImageAgeDays = EXCLUDED.Policy_Fields_ImageAgeDays, Policy_Fields_LineRule_Instruction = EXCLUDED.Policy_Fields_LineRule_Instruction, Policy_Fields_LineRule_Value = EXCLUDED.Policy_Fields_LineRule_Value, Policy_Fields_Cvss_Op = EXCLUDED.Policy_Fields_Cvss_Op, Policy_Fields_Cvss_Value = EXCLUDED.Policy_Fields_Cvss_Value, Policy_Fields_Cve = EXCLUDED.Policy_Fields_Cve, Policy_Fields_Component_Name = EXCLUDED.Policy_Fields_Component_Name, Policy_Fields_Component_Version = EXCLUDED.Policy_Fields_Component_Version, Policy_Fields_ScanAgeDays = EXCLUDED.Policy_Fields_ScanAgeDays, Policy_Fields_NoScanExists = EXCLUDED.Policy_Fields_NoScanExists, Policy_Fields_Env_Key = EXCLUDED.Policy_Fields_Env_Key, Policy_Fields_Env_Value = EXCLUDED.Policy_Fields_Env_Value, Policy_Fields_Env_EnvVarSource = EXCLUDED.Policy_Fields_Env_EnvVarSource, Policy_Fields_Command = EXCLUDED.Policy_Fields_Command, Policy_Fields_Args = EXCLUDED.Policy_Fields_Args, Policy_Fields_Directory = EXCLUDED.Policy_Fields_Directory, Policy_Fields_User = EXCLUDED.Policy_Fields_User, Policy_Fields_VolumePolicy_Name = EXCLUDED.Policy_Fields_VolumePolicy_Name, Policy_Fields_VolumePolicy_Source = EXCLUDED.Policy_Fields_VolumePolicy_Source, Policy_Fields_VolumePolicy_Destination = EXCLUDED.Policy_Fields_VolumePolicy_Destination, Policy_Fields_VolumePolicy_ReadOnly = EXCLUDED.Policy_Fields_VolumePolicy_ReadOnly, Policy_Fields_VolumePolicy_Type = EXCLUDED.Policy_Fields_VolumePolicy_Type, Policy_Fields_PortPolicy_Port = EXCLUDED.Policy_Fields_PortPolicy_Port, Policy_Fields_PortPolicy_Protocol = EXCLUDED.Policy_Fields_PortPolicy_Protocol, Policy_Fields_RequiredLabel_Key = EXCLUDED.Policy_Fields_RequiredLabel_Key, Policy_Fields_RequiredLabel_Value = EXCLUDED.Policy_Fields_RequiredLabel_Value, Policy_Fields_RequiredLabel_EnvVarSource = EXCLUDED.Policy_Fields_RequiredLabel_EnvVarSource, Policy_Fields_RequiredAnnotation_Key = EXCLUDED.Policy_Fields_RequiredAnnotation_Key, Policy_Fields_RequiredAnnotation_Value = EXCLUDED.Policy_Fields_RequiredAnnotation_Value, Policy_Fields_RequiredAnnotation_EnvVarSource = EXCLUDED.Policy_Fields_RequiredAnnotation_EnvVarSource, Policy_Fields_DisallowedAnnotation_Key = EXCLUDED.Policy_Fields_DisallowedAnnotation_Key, Policy_Fields_DisallowedAnnotation_Value = EXCLUDED.Policy_Fields_DisallowedAnnotation_Value, Policy_Fields_DisallowedAnnotation_EnvVarSource = EXCLUDED.Policy_Fields_DisallowedAnnotation_EnvVarSource, Policy_Fields_Privileged = EXCLUDED.Policy_Fields_Privileged, Policy_Fields_DropCapabilities = EXCLUDED.Policy_Fields_DropCapabilities, Policy_Fields_AddCapabilities = EXCLUDED.Policy_Fields_AddCapabilities, Policy_Fields_ContainerResourcePolicy_CpuResourceRequest_Op = EXCLUDED.Policy_Fields_ContainerResourcePolicy_CpuResourceRequest_Op, Policy_Fields_ContainerResourcePolicy_CpuResourceRequest_Value = EXCLUDED.Policy_Fields_ContainerResourcePolicy_CpuResourceRequest_Value, Policy_Fields_ContainerResourcePolicy_CpuResourceLimit_Op = EXCLUDED.Policy_Fields_ContainerResourcePolicy_CpuResourceLimit_Op, Policy_Fields_ContainerResourcePolicy_CpuResourceLimit_Value = EXCLUDED.Policy_Fields_ContainerResourcePolicy_CpuResourceLimit_Value, Policy_Fields_ContainerResourcePolicy_MemoryResourceRequest_Op = EXCLUDED.Policy_Fields_ContainerResourcePolicy_MemoryResourceRequest_Op, Policy_Fields_ContainerResourcePolicy_MemoryResourceRequest_Value = EXCLUDED.Policy_Fields_ContainerResourcePolicy_MemoryResourceRequest_Value, Policy_Fields_ContainerResourcePolicy_MemoryResourceLimit_Op = EXCLUDED.Policy_Fields_ContainerResourcePolicy_MemoryResourceLimit_Op, Policy_Fields_ContainerResourcePolicy_MemoryResourceLimit_Value = EXCLUDED.Policy_Fields_ContainerResourcePolicy_MemoryResourceLimit_Value, Policy_Fields_ProcessPolicy_Name = EXCLUDED.Policy_Fields_ProcessPolicy_Name, Policy_Fields_ProcessPolicy_Args = EXCLUDED.Policy_Fields_ProcessPolicy_Args, Policy_Fields_ProcessPolicy_Ancestor = EXCLUDED.Policy_Fields_ProcessPolicy_Ancestor, Policy_Fields_ProcessPolicy_Uid = EXCLUDED.Policy_Fields_ProcessPolicy_Uid, Policy_Fields_ReadOnlyRootFs = EXCLUDED.Policy_Fields_ReadOnlyRootFs, Policy_Fields_FixedBy = EXCLUDED.Policy_Fields_FixedBy, Policy_Fields_PortExposurePolicy_ExposureLevels = EXCLUDED.Policy_Fields_PortExposurePolicy_ExposureLevels, Policy_Fields_PermissionPolicy_PermissionLevel = EXCLUDED.Policy_Fields_PermissionPolicy_PermissionLevel, Policy_Fields_HostMountPolicy_ReadOnly = EXCLUDED.Policy_Fields_HostMountPolicy_ReadOnly, Policy_Fields_WhitelistEnabled = EXCLUDED.Policy_Fields_WhitelistEnabled, Policy_Fields_RequiredImageLabel_Key = EXCLUDED.Policy_Fields_RequiredImageLabel_Key, Policy_Fields_RequiredImageLabel_Value = EXCLUDED.Policy_Fields_RequiredImageLabel_Value, Policy_Fields_RequiredImageLabel_EnvVarSource = EXCLUDED.Policy_Fields_RequiredImageLabel_EnvVarSource, Policy_Fields_DisallowedImageLabel_Key = EXCLUDED.Policy_Fields_DisallowedImageLabel_Key, Policy_Fields_DisallowedImageLabel_Value = EXCLUDED.Policy_Fields_DisallowedImageLabel_Value, Policy_Fields_DisallowedImageLabel_EnvVarSource = EXCLUDED.Policy_Fields_DisallowedImageLabel_EnvVarSource, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_EventSource = EXCLUDED.Policy_EventSource, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_Notifiers = EXCLUDED.Policy_Notifiers, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, Policy_PolicyVersion = EXCLUDED.Policy_PolicyVersion, Policy_CriteriaLocked = EXCLUDED.Policy_CriteriaLocked, Policy_MitreVectorsLocked = EXCLUDED.Policy_MitreVectorsLocked, Policy_IsDefault = EXCLUDED.Policy_IsDefault, LifecycleStage = EXCLUDED.LifecycleStage, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Type = EXCLUDED.Deployment_Type, Deployment_Namespace = EXCLUDED.Deployment_Namespace, Deployment_NamespaceId = EXCLUDED.Deployment_NamespaceId, Deployment_Labels = EXCLUDED.Deployment_Labels, Deployment_ClusterId = EXCLUDED.Deployment_ClusterId, Deployment_ClusterName = EXCLUDED.Deployment_ClusterName, Deployment_Annotations = EXCLUDED.Deployment_Annotations, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_NotPullable = EXCLUDED.Image_NotPullable, Image_IsClusterLocal = EXCLUDED.Image_IsClusterLocal, Resource_ResourceType = EXCLUDED.Resource_ResourceType, Resource_Name = EXCLUDED.Resource_Name, Resource_ClusterId = EXCLUDED.Resource_ClusterId, Resource_ClusterName = EXCLUDED.Resource_ClusterName, Resource_Namespace = EXCLUDED.Resource_Namespace, Resource_NamespaceId = EXCLUDED.Resource_NamespaceId, ProcessViolation_Message = EXCLUDED.ProcessViolation_Message, Enforcement_Action = EXCLUDED.Enforcement_Action, Enforcement_Message = EXCLUDED.Enforcement_Message, Time = EXCLUDED.Time, FirstOccurred = EXCLUDED.FirstOccurred, ResolvedAt = EXCLUDED.ResolvedAt, State = EXCLUDED.State, SnoozeTill = EXCLUDED.SnoozeTill, Tags = EXCLUDED.Tags, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Rationale, Policy_Remediation, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_EventSource, Policy_Severity, Policy_EnforcementActions, Policy_Notifiers, Policy_LastUpdated, Policy_PolicyVersion, Policy_CriteriaLocked, Policy_MitreVectorsLocked, Policy_IsDefault, LifecycleStage, Deployment_Id, Deployment_Name, Deployment_Type, Deployment_Namespace, Deployment_NamespaceId, Deployment_Labels, Deployment_ClusterId, Deployment_ClusterName, Deployment_Annotations, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Resource_ResourceType, Resource_Name, Resource_ClusterId, Resource_ClusterName, Resource_Namespace, Resource_NamespaceId, ProcessViolation_Message, Enforcement_Action, Enforcement_Message, Time, FirstOccurred, ResolvedAt, State, SnoozeTill, Tags, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Rationale = EXCLUDED.Policy_Rationale, Policy_Remediation = EXCLUDED.Policy_Remediation, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_EventSource = EXCLUDED.Policy_EventSource, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_Notifiers = EXCLUDED.Policy_Notifiers, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_PolicyVersion = EXCLUDED.Policy_PolicyVersion, Policy_CriteriaLocked = EXCLUDED.Policy_CriteriaLocked, Policy_MitreVectorsLocked = EXCLUDED.Policy_MitreVectorsLocked, Policy_IsDefault = EXCLUDED.Policy_IsDefault, LifecycleStage = EXCLUDED.LifecycleStage, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Type = EXCLUDED.Deployment_Type, Deployment_Namespace = EXCLUDED.Deployment_Namespace, Deployment_NamespaceId = EXCLUDED.Deployment_NamespaceId, Deployment_Labels = EXCLUDED.Deployment_Labels, Deployment_ClusterId = EXCLUDED.Deployment_ClusterId, Deployment_ClusterName = EXCLUDED.Deployment_ClusterName, Deployment_Annotations = EXCLUDED.Deployment_Annotations, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_NotPullable = EXCLUDED.Image_NotPullable, Image_IsClusterLocal = EXCLUDED.Image_IsClusterLocal, Resource_ResourceType = EXCLUDED.Resource_ResourceType, Resource_Name = EXCLUDED.Resource_Name, Resource_ClusterId = EXCLUDED.Resource_ClusterId, Resource_ClusterName = EXCLUDED.Resource_ClusterName, Resource_Namespace = EXCLUDED.Resource_Namespace, Resource_NamespaceId = EXCLUDED.Resource_NamespaceId, ProcessViolation_Message = EXCLUDED.ProcessViolation_Message, Enforcement_Action = EXCLUDED.Enforcement_Action, Enforcement_Message = EXCLUDED.Enforcement_Message, Time = EXCLUDED.Time, FirstOccurred = EXCLUDED.FirstOccurred, ResolvedAt = EXCLUDED.ResolvedAt, State = EXCLUDED.State, SnoozeTill = EXCLUDED.SnoozeTill, Tags = EXCLUDED.Tags, serialized = EXCLUDED.serialized"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -866,124 +620,114 @@ func insertIntoAlerts(tx pgx.Tx, obj *storage.Alert) error {
 	var query string
 
 	for childIdx, child := range obj.GetPolicy().GetWhitelists() {
-		if err := insertIntoAlertsWhitelists(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsWhitelists(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Whitelists where parent_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetPolicy().GetWhitelists()))
+	query = "delete from alerts_Whitelists where alerts_Id = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetWhitelists()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetPolicy().GetExclusions() {
-		if err := insertIntoAlertsExclusions(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsExclusions(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Exclusions where parent_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetPolicy().GetExclusions()))
+	query = "delete from alerts_Exclusions where alerts_Id = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetExclusions()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetPolicy().GetScope() {
-		if err := insertIntoAlertsScope(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsScope(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Scope where parent_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetPolicy().GetScope()))
+	query = "delete from alerts_Scope where alerts_Id = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetScope()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetPolicy().GetPolicySections() {
-		if err := insertIntoAlertsPolicySections(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsPolicySections(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_PolicySections where parent_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetPolicy().GetPolicySections()))
+	query = "delete from alerts_PolicySections where alerts_Id = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetPolicySections()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetPolicy().GetMitreAttackVectors() {
-		if err := insertIntoAlertsMitreAttackVectors(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsMitreAttackVectors(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_MitreAttackVectors where parent_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetPolicy().GetMitreAttackVectors()))
+	query = "delete from alerts_MitreAttackVectors where alerts_Id = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetMitreAttackVectors()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetDeployment().GetContainers() {
-		if err := insertIntoAlertsContainers(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsContainers(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Containers where parent_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetDeployment().GetContainers()))
+	query = "delete from alerts_Containers where alerts_Id = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetDeployment().GetContainers()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetViolations() {
-		if err := insertIntoAlertsViolations(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsViolations(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Violations where parent_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetViolations()))
+	query = "delete from alerts_Violations where alerts_Id = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetViolations()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetProcessViolation().GetProcesses() {
-		if err := insertIntoAlertsProcesses(tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoAlertsProcesses(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Processes where parent_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(context.Background(), query, obj.GetId(), len(obj.GetProcessViolation().GetProcesses()))
+	query = "delete from alerts_Processes where alerts_Id = $1 AND idx >= $2"
+	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetProcessViolation().GetProcesses()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsWhitelists(tx pgx.Tx, obj *storage.Exclusion, parent_Id string, idx int) error {
+func insertIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, alerts_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Id,
-
+		alerts_Id,
 		idx,
-
 		obj.GetName(),
-
 		obj.GetDeployment().GetName(),
-
 		obj.GetDeployment().GetScope().GetCluster(),
-
 		obj.GetDeployment().GetScope().GetNamespace(),
-
 		obj.GetDeployment().GetScope().GetLabel().GetKey(),
-
 		obj.GetDeployment().GetScope().GetLabel().GetValue(),
-
 		obj.GetImage().GetName(),
-
 		pgutils.NilOrStringTimestamp(obj.GetExpiration()),
 	}
 
-	finalStr := "INSERT INTO alerts_Whitelists (parent_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_Whitelists (alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -991,34 +735,24 @@ func insertIntoAlertsWhitelists(tx pgx.Tx, obj *storage.Exclusion, parent_Id str
 	return nil
 }
 
-func insertIntoAlertsExclusions(tx pgx.Tx, obj *storage.Exclusion, parent_Id string, idx int) error {
+func insertIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, alerts_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Id,
-
+		alerts_Id,
 		idx,
-
 		obj.GetName(),
-
 		obj.GetDeployment().GetName(),
-
 		obj.GetDeployment().GetScope().GetCluster(),
-
 		obj.GetDeployment().GetScope().GetNamespace(),
-
 		obj.GetDeployment().GetScope().GetLabel().GetKey(),
-
 		obj.GetDeployment().GetScope().GetLabel().GetValue(),
-
 		obj.GetImage().GetName(),
-
 		pgutils.NilOrStringTimestamp(obj.GetExpiration()),
 	}
 
-	finalStr := "INSERT INTO alerts_Exclusions (parent_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_Exclusions (alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1026,26 +760,20 @@ func insertIntoAlertsExclusions(tx pgx.Tx, obj *storage.Exclusion, parent_Id str
 	return nil
 }
 
-func insertIntoAlertsScope(tx pgx.Tx, obj *storage.Scope, parent_Id string, idx int) error {
+func insertIntoAlertsScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, alerts_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Id,
-
+		alerts_Id,
 		idx,
-
 		obj.GetCluster(),
-
 		obj.GetNamespace(),
-
 		obj.GetLabel().GetKey(),
-
 		obj.GetLabel().GetValue(),
 	}
 
-	finalStr := "INSERT INTO alerts_Scope (parent_Id, idx, Cluster, Namespace, Label_Key, Label_Value) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Cluster = EXCLUDED.Cluster, Namespace = EXCLUDED.Namespace, Label_Key = EXCLUDED.Label_Key, Label_Value = EXCLUDED.Label_Value"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_Scope (alerts_Id, idx, Cluster, Namespace, Label_Key, Label_Value) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Cluster = EXCLUDED.Cluster, Namespace = EXCLUDED.Namespace, Label_Key = EXCLUDED.Label_Key, Label_Value = EXCLUDED.Label_Value"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1053,20 +781,17 @@ func insertIntoAlertsScope(tx pgx.Tx, obj *storage.Scope, parent_Id string, idx 
 	return nil
 }
 
-func insertIntoAlertsPolicySections(tx pgx.Tx, obj *storage.PolicySection, parent_Id string, idx int) error {
+func insertIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx, obj *storage.PolicySection, alerts_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Id,
-
+		alerts_Id,
 		idx,
-
 		obj.GetSectionName(),
 	}
 
-	finalStr := "INSERT INTO alerts_PolicySections (parent_Id, idx, SectionName) VALUES($1, $2, $3) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, SectionName = EXCLUDED.SectionName"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_PolicySections (alerts_Id, idx, SectionName) VALUES($1, $2, $3) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, SectionName = EXCLUDED.SectionName"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1074,39 +799,33 @@ func insertIntoAlertsPolicySections(tx pgx.Tx, obj *storage.PolicySection, paren
 	var query string
 
 	for childIdx, child := range obj.GetPolicyGroups() {
-		if err := insertIntoAlertsPolicySectionsPolicyGroups(tx, child, parent_Id, idx, childIdx); err != nil {
+		if err := insertIntoAlertsPolicySectionsPolicyGroups(ctx, tx, child, alerts_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_PolicySections_PolicyGroups where parent_parent_Id = $1 AND parent_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(context.Background(), query, parent_Id, idx, len(obj.GetPolicyGroups()))
+	query = "delete from alerts_PolicySections_PolicyGroups where alerts_Id = $1 AND alerts_PolicySections_idx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, alerts_Id, idx, len(obj.GetPolicyGroups()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsPolicySectionsPolicyGroups(tx pgx.Tx, obj *storage.PolicyGroup, parent_parent_Id string, parent_idx int, idx int) error {
+func insertIntoAlertsPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, obj *storage.PolicyGroup, alerts_Id string, alerts_PolicySections_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_parent_Id,
-
-		parent_idx,
-
+		alerts_Id,
+		alerts_PolicySections_idx,
 		idx,
-
 		obj.GetFieldName(),
-
 		obj.GetBooleanOperator(),
-
 		obj.GetNegate(),
 	}
 
-	finalStr := "INSERT INTO alerts_PolicySections_PolicyGroups (parent_parent_Id, parent_idx, idx, FieldName, BooleanOperator, Negate) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, FieldName = EXCLUDED.FieldName, BooleanOperator = EXCLUDED.BooleanOperator, Negate = EXCLUDED.Negate"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_PolicySections_PolicyGroups (alerts_Id, alerts_PolicySections_idx, idx, FieldName, BooleanOperator, Negate) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(alerts_Id, alerts_PolicySections_idx, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, alerts_PolicySections_idx = EXCLUDED.alerts_PolicySections_idx, idx = EXCLUDED.idx, FieldName = EXCLUDED.FieldName, BooleanOperator = EXCLUDED.BooleanOperator, Negate = EXCLUDED.Negate"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1114,37 +833,32 @@ func insertIntoAlertsPolicySectionsPolicyGroups(tx pgx.Tx, obj *storage.PolicyGr
 	var query string
 
 	for childIdx, child := range obj.GetValues() {
-		if err := insertIntoAlertsPolicySectionsPolicyGroupsValues(tx, child, parent_parent_Id, parent_idx, idx, childIdx); err != nil {
+		if err := insertIntoAlertsPolicySectionsPolicyGroupsValues(ctx, tx, child, alerts_Id, alerts_PolicySections_idx, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_PolicySections_PolicyGroups_Values where parent_parent_parent_Id = $1 AND parent_parent_idx = $2 AND parent_idx = $3 AND idx >= $4"
-	_, err = tx.Exec(context.Background(), query, parent_parent_Id, parent_idx, idx, len(obj.GetValues()))
+	query = "delete from alerts_PolicySections_PolicyGroups_Values where alerts_Id = $1 AND alerts_PolicySections_idx = $2 AND alerts_PolicySections_PolicyGroups_idx = $3 AND idx >= $4"
+	_, err = tx.Exec(ctx, query, alerts_Id, alerts_PolicySections_idx, idx, len(obj.GetValues()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsPolicySectionsPolicyGroupsValues(tx pgx.Tx, obj *storage.PolicyValue, parent_parent_parent_Id string, parent_parent_idx int, parent_idx int, idx int) error {
+func insertIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, obj *storage.PolicyValue, alerts_Id string, alerts_PolicySections_idx int, alerts_PolicySections_PolicyGroups_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_parent_parent_Id,
-
-		parent_parent_idx,
-
-		parent_idx,
-
+		alerts_Id,
+		alerts_PolicySections_idx,
+		alerts_PolicySections_PolicyGroups_idx,
 		idx,
-
 		obj.GetValue(),
 	}
 
-	finalStr := "INSERT INTO alerts_PolicySections_PolicyGroups_Values (parent_parent_parent_Id, parent_parent_idx, parent_idx, idx, Value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx) DO UPDATE SET parent_parent_parent_Id = EXCLUDED.parent_parent_parent_Id, parent_parent_idx = EXCLUDED.parent_parent_idx, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Value = EXCLUDED.Value"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_PolicySections_PolicyGroups_Values (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx, Value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, alerts_PolicySections_idx = EXCLUDED.alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx = EXCLUDED.alerts_PolicySections_PolicyGroups_idx, idx = EXCLUDED.idx, Value = EXCLUDED.Value"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1152,22 +866,18 @@ func insertIntoAlertsPolicySectionsPolicyGroupsValues(tx pgx.Tx, obj *storage.Po
 	return nil
 }
 
-func insertIntoAlertsMitreAttackVectors(tx pgx.Tx, obj *storage.Policy_MitreAttackVectors, parent_Id string, idx int) error {
+func insertIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx.Tx, obj *storage.Policy_MitreAttackVectors, alerts_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Id,
-
+		alerts_Id,
 		idx,
-
 		obj.GetTactic(),
-
 		obj.GetTechniques(),
 	}
 
-	finalStr := "INSERT INTO alerts_MitreAttackVectors (parent_Id, idx, Tactic, Techniques) VALUES($1, $2, $3, $4) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Tactic = EXCLUDED.Tactic, Techniques = EXCLUDED.Techniques"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_MitreAttackVectors (alerts_Id, idx, Tactic, Techniques) VALUES($1, $2, $3, $4) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Tactic = EXCLUDED.Tactic, Techniques = EXCLUDED.Techniques"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1175,34 +885,24 @@ func insertIntoAlertsMitreAttackVectors(tx pgx.Tx, obj *storage.Policy_MitreAtta
 	return nil
 }
 
-func insertIntoAlertsContainers(tx pgx.Tx, obj *storage.Alert_Deployment_Container, parent_Id string, idx int) error {
+func insertIntoAlertsContainers(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Deployment_Container, alerts_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Id,
-
+		alerts_Id,
 		idx,
-
 		obj.GetImage().GetId(),
-
 		obj.GetImage().GetName().GetRegistry(),
-
 		obj.GetImage().GetName().GetRemote(),
-
 		obj.GetImage().GetName().GetTag(),
-
 		obj.GetImage().GetName().GetFullName(),
-
 		obj.GetImage().GetNotPullable(),
-
 		obj.GetImage().GetIsClusterLocal(),
-
 		obj.GetName(),
 	}
 
-	finalStr := "INSERT INTO alerts_Containers (parent_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Name) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_NotPullable = EXCLUDED.Image_NotPullable, Image_IsClusterLocal = EXCLUDED.Image_IsClusterLocal, Name = EXCLUDED.Name"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_Containers (alerts_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Name) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_NotPullable = EXCLUDED.Image_NotPullable, Image_IsClusterLocal = EXCLUDED.Image_IsClusterLocal, Name = EXCLUDED.Name"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1210,46 +910,30 @@ func insertIntoAlertsContainers(tx pgx.Tx, obj *storage.Alert_Deployment_Contain
 	return nil
 }
 
-func insertIntoAlertsViolations(tx pgx.Tx, obj *storage.Alert_Violation, parent_Id string, idx int) error {
+func insertIntoAlertsViolations(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Violation, alerts_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Id,
-
+		alerts_Id,
 		idx,
-
 		obj.GetMessage(),
-
 		obj.GetNetworkFlowInfo().GetProtocol(),
-
 		obj.GetNetworkFlowInfo().GetSource().GetName(),
-
 		obj.GetNetworkFlowInfo().GetSource().GetEntityType(),
-
 		obj.GetNetworkFlowInfo().GetSource().GetDeploymentNamespace(),
-
 		obj.GetNetworkFlowInfo().GetSource().GetDeploymentType(),
-
 		obj.GetNetworkFlowInfo().GetSource().GetPort(),
-
 		obj.GetNetworkFlowInfo().GetDestination().GetName(),
-
 		obj.GetNetworkFlowInfo().GetDestination().GetEntityType(),
-
 		obj.GetNetworkFlowInfo().GetDestination().GetDeploymentNamespace(),
-
 		obj.GetNetworkFlowInfo().GetDestination().GetDeploymentType(),
-
 		obj.GetNetworkFlowInfo().GetDestination().GetPort(),
-
 		obj.GetType(),
-
 		pgutils.NilOrStringTimestamp(obj.GetTime()),
 	}
 
-	finalStr := "INSERT INTO alerts_Violations (parent_Id, idx, Message, NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port, Type, Time) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Message = EXCLUDED.Message, NetworkFlowInfo_Protocol = EXCLUDED.NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name = EXCLUDED.NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType = EXCLUDED.NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType = EXCLUDED.NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port = EXCLUDED.NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name = EXCLUDED.NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType = EXCLUDED.NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType = EXCLUDED.NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port = EXCLUDED.NetworkFlowInfo_Destination_Port, Type = EXCLUDED.Type, Time = EXCLUDED.Time"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_Violations (alerts_Id, idx, Message, NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port, Type, Time) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Message = EXCLUDED.Message, NetworkFlowInfo_Protocol = EXCLUDED.NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name = EXCLUDED.NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType = EXCLUDED.NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType = EXCLUDED.NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port = EXCLUDED.NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name = EXCLUDED.NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType = EXCLUDED.NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType = EXCLUDED.NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port = EXCLUDED.NetworkFlowInfo_Destination_Port, Type = EXCLUDED.Type, Time = EXCLUDED.Time"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1257,37 +941,32 @@ func insertIntoAlertsViolations(tx pgx.Tx, obj *storage.Alert_Violation, parent_
 	var query string
 
 	for childIdx, child := range obj.GetKeyValueAttrs().GetAttrs() {
-		if err := insertIntoAlertsViolationsAttrs(tx, child, parent_Id, idx, childIdx); err != nil {
+		if err := insertIntoAlertsViolationsAttrs(ctx, tx, child, alerts_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Violations_Attrs where parent_parent_Id = $1 AND parent_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(context.Background(), query, parent_Id, idx, len(obj.GetKeyValueAttrs().GetAttrs()))
+	query = "delete from alerts_Violations_Attrs where alerts_Id = $1 AND alerts_Violations_idx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, alerts_Id, idx, len(obj.GetKeyValueAttrs().GetAttrs()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsViolationsAttrs(tx pgx.Tx, obj *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, parent_parent_Id string, parent_idx int, idx int) error {
+func insertIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, alerts_Id string, alerts_Violations_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_parent_Id,
-
-		parent_idx,
-
+		alerts_Id,
+		alerts_Violations_idx,
 		idx,
-
 		obj.GetKey(),
-
 		obj.GetValue(),
 	}
 
-	finalStr := "INSERT INTO alerts_Violations_Attrs (parent_parent_Id, parent_idx, idx, Key, Value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_Violations_Attrs (alerts_Id, alerts_Violations_idx, idx, Key, Value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alerts_Id, alerts_Violations_idx, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, alerts_Violations_idx = EXCLUDED.alerts_Violations_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1295,58 +974,36 @@ func insertIntoAlertsViolationsAttrs(tx pgx.Tx, obj *storage.Alert_Violation_Key
 	return nil
 }
 
-func insertIntoAlertsProcesses(tx pgx.Tx, obj *storage.ProcessIndicator, parent_Id string, idx int) error {
+func insertIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, obj *storage.ProcessIndicator, alerts_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_Id,
-
+		alerts_Id,
 		idx,
-
 		obj.GetId(),
-
 		obj.GetDeploymentId(),
-
 		obj.GetContainerName(),
-
 		obj.GetPodId(),
-
 		obj.GetPodUid(),
-
 		obj.GetSignal().GetId(),
-
 		obj.GetSignal().GetContainerId(),
-
 		pgutils.NilOrStringTimestamp(obj.GetSignal().GetTime()),
-
 		obj.GetSignal().GetName(),
-
 		obj.GetSignal().GetArgs(),
-
 		obj.GetSignal().GetExecFilePath(),
-
 		obj.GetSignal().GetPid(),
-
 		obj.GetSignal().GetUid(),
-
 		obj.GetSignal().GetGid(),
-
 		obj.GetSignal().GetLineage(),
-
 		obj.GetSignal().GetScraped(),
-
 		obj.GetClusterId(),
-
 		obj.GetNamespace(),
-
 		pgutils.NilOrStringTimestamp(obj.GetContainerStartTime()),
-
 		obj.GetImageId(),
 	}
 
-	finalStr := "INSERT INTO alerts_Processes (parent_Id, idx, Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(parent_Id, idx) DO UPDATE SET parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_Processes (alerts_Id, idx, Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1354,37 +1011,32 @@ func insertIntoAlertsProcesses(tx pgx.Tx, obj *storage.ProcessIndicator, parent_
 	var query string
 
 	for childIdx, child := range obj.GetSignal().GetLineageInfo() {
-		if err := insertIntoAlertsProcessesLineageInfo(tx, child, parent_Id, idx, childIdx); err != nil {
+		if err := insertIntoAlertsProcessesLineageInfo(ctx, tx, child, alerts_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Processes_LineageInfo where parent_parent_Id = $1 AND parent_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(context.Background(), query, parent_Id, idx, len(obj.GetSignal().GetLineageInfo()))
+	query = "delete from alerts_Processes_LineageInfo where alerts_Id = $1 AND alerts_Processes_idx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, alerts_Id, idx, len(obj.GetSignal().GetLineageInfo()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsProcessesLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, parent_parent_Id string, parent_idx int, idx int) error {
+func insertIntoAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, alerts_Id string, alerts_Processes_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-
-		parent_parent_Id,
-
-		parent_idx,
-
+		alerts_Id,
+		alerts_Processes_idx,
 		idx,
-
 		obj.GetParentUid(),
-
 		obj.GetParentExecFilePath(),
 	}
 
-	finalStr := "INSERT INTO alerts_Processes_LineageInfo (parent_parent_Id, parent_idx, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4, $5) ON CONFLICT(parent_parent_Id, parent_idx, idx) DO UPDATE SET parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
-	_, err := tx.Exec(context.Background(), finalStr, values...)
+	finalStr := "INSERT INTO alerts_Processes_LineageInfo (alerts_Id, alerts_Processes_idx, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alerts_Id, alerts_Processes_idx, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, alerts_Processes_idx = EXCLUDED.alerts_Processes_idx, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
+	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
@@ -1393,56 +1045,54 @@ func insertIntoAlertsProcessesLineageInfo(tx pgx.Tx, obj *storage.ProcessSignal_
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
-	globaldb.RegisterTable(table, "Alert")
-
-	createTableAlerts(db)
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	createTableAlerts(ctx, db)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func (s *storeImpl) upsert(objs ...*storage.Alert) error {
-	conn, release := s.acquireConn(ops.Get, "Alert")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Alert) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "Alert")
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(context.Background())
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
 
-		if err := insertIntoAlerts(tx, obj); err != nil {
-			if err := tx.Rollback(context.Background()); err != nil {
+		if err := insertIntoAlerts(ctx, tx, obj); err != nil {
+			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
 			return err
 		}
-		if err := tx.Commit(context.Background()); err != nil {
+		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *storeImpl) Upsert(obj *storage.Alert) error {
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Alert) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Alert")
 
-	return s.upsert(obj)
+	return s.upsert(ctx, obj)
 }
 
-func (s *storeImpl) UpsertMany(objs []*storage.Alert) error {
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Alert) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Alert")
 
-	return s.upsert(objs...)
+	return s.upsert(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
-func (s *storeImpl) Count() (int, error) {
+func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Alert")
 
-	row := s.db.QueryRow(context.Background(), countStmt)
+	row := s.db.QueryRow(ctx, countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -1451,10 +1101,10 @@ func (s *storeImpl) Count() (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(id string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Alert")
 
-	row := s.db.QueryRow(context.Background(), existsStmt, id)
+	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -1463,13 +1113,13 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(id string) (*storage.Alert, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Alert, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Alert")
 
-	conn, release := s.acquireConn(ops.Get, "Alert")
+	conn, release := s.acquireConn(ctx, ops.Get, "Alert")
 	defer release()
 
-	row := conn.QueryRow(context.Background(), getStmt, id)
+	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -1482,9 +1132,9 @@ func (s *storeImpl) Get(id string) (*storage.Alert, bool, error) {
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
+	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -1492,23 +1142,23 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(id string) error {
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Alert")
 
-	conn, release := s.acquireConn(ops.Remove, "Alert")
+	conn, release := s.acquireConn(ctx, ops.Remove, "Alert")
 	defer release()
 
-	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
 }
 
 // GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]string, error) {
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.AlertIDs")
 
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -1525,13 +1175,13 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Alert, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Alert")
 
-	conn, release := s.acquireConn(ops.GetMany, "Alert")
+	conn, release := s.acquireConn(ctx, ops.GetMany, "Alert")
 	defer release()
 
-	rows, err := conn.Query(context.Background(), getManyStmt, ids)
+	rows, err := conn.Query(ctx, getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -1567,20 +1217,20 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
 }
 
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ids []string) error {
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
 
-	conn, release := s.acquireConn(ops.RemoveMany, "Alert")
+	conn, release := s.acquireConn(ctx, ops.RemoveMany, "Alert")
 	defer release()
-	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(fn func(obj *storage.Alert) error) error {
-	rows, err := s.db.Query(context.Background(), walkStmt)
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Alert) error) error {
+	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
@@ -1603,95 +1253,95 @@ func (s *storeImpl) Walk(fn func(obj *storage.Alert) error) error {
 
 //// Used for testing
 
-func dropTableAlerts(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts CASCADE")
-	dropTableAlertsWhitelists(db)
-	dropTableAlertsExclusions(db)
-	dropTableAlertsScope(db)
-	dropTableAlertsPolicySections(db)
-	dropTableAlertsMitreAttackVectors(db)
-	dropTableAlertsContainers(db)
-	dropTableAlertsViolations(db)
-	dropTableAlertsProcesses(db)
+func dropTableAlerts(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts CASCADE")
+	dropTableAlertsWhitelists(ctx, db)
+	dropTableAlertsExclusions(ctx, db)
+	dropTableAlertsScope(ctx, db)
+	dropTableAlertsPolicySections(ctx, db)
+	dropTableAlertsMitreAttackVectors(ctx, db)
+	dropTableAlertsContainers(ctx, db)
+	dropTableAlertsViolations(ctx, db)
+	dropTableAlertsProcesses(ctx, db)
 
 }
 
-func dropTableAlertsWhitelists(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Whitelists CASCADE")
+func dropTableAlertsWhitelists(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_Whitelists CASCADE")
 
 }
 
-func dropTableAlertsExclusions(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Exclusions CASCADE")
+func dropTableAlertsExclusions(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_Exclusions CASCADE")
 
 }
 
-func dropTableAlertsScope(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Scope CASCADE")
+func dropTableAlertsScope(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_Scope CASCADE")
 
 }
 
-func dropTableAlertsPolicySections(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_PolicySections CASCADE")
-	dropTableAlertsPolicySectionsPolicyGroups(db)
+func dropTableAlertsPolicySections(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_PolicySections CASCADE")
+	dropTableAlertsPolicySectionsPolicyGroups(ctx, db)
 
 }
 
-func dropTableAlertsPolicySectionsPolicyGroups(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_PolicySections_PolicyGroups CASCADE")
-	dropTableAlertsPolicySectionsPolicyGroupsValues(db)
+func dropTableAlertsPolicySectionsPolicyGroups(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_PolicySections_PolicyGroups CASCADE")
+	dropTableAlertsPolicySectionsPolicyGroupsValues(ctx, db)
 
 }
 
-func dropTableAlertsPolicySectionsPolicyGroupsValues(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_PolicySections_PolicyGroups_Values CASCADE")
+func dropTableAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_PolicySections_PolicyGroups_Values CASCADE")
 
 }
 
-func dropTableAlertsMitreAttackVectors(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_MitreAttackVectors CASCADE")
+func dropTableAlertsMitreAttackVectors(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_MitreAttackVectors CASCADE")
 
 }
 
-func dropTableAlertsContainers(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Containers CASCADE")
+func dropTableAlertsContainers(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_Containers CASCADE")
 
 }
 
-func dropTableAlertsViolations(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Violations CASCADE")
-	dropTableAlertsViolationsAttrs(db)
+func dropTableAlertsViolations(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_Violations CASCADE")
+	dropTableAlertsViolationsAttrs(ctx, db)
 
 }
 
-func dropTableAlertsViolationsAttrs(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Violations_Attrs CASCADE")
+func dropTableAlertsViolationsAttrs(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_Violations_Attrs CASCADE")
 
 }
 
-func dropTableAlertsProcesses(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Processes CASCADE")
-	dropTableAlertsProcessesLineageInfo(db)
+func dropTableAlertsProcesses(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_Processes CASCADE")
+	dropTableAlertsProcessesLineageInfo(ctx, db)
 
 }
 
-func dropTableAlertsProcessesLineageInfo(db *pgxpool.Pool) {
-	_, _ = db.Exec(context.Background(), "DROP TABLE alerts_Processes_LineageInfo CASCADE")
+func dropTableAlertsProcessesLineageInfo(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts_Processes_LineageInfo CASCADE")
 
 }
 
-func Destroy(db *pgxpool.Pool) {
-	dropTableAlerts(db)
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+	dropTableAlerts(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex() ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }

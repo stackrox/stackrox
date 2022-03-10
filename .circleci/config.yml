@@ -2214,6 +2214,26 @@ jobs:
           command: make go-unit-tests GOTAGS=release
       - post-go-unit-tests:
           path: go-unit-release-junit-reports
+  go-postgres-tests:
+    docker:
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.31
+        auth:
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
+      - image: postgres:14.2-alpine
+        environment:
+          POSTGRES_PASSWORD: password
+    resource_class: large
+    environment:
+      ROX_IMAGE_FLAVOR: stackrox.io
+    steps:
+    - pre-go-unit-tests
+    - run:
+        name: Run Go postgres unit tests
+        command:  make go-postgres-unit-tests
+    - post-go-unit-tests:
+        path: go-unit-release-junit-reports
+
 
   shell-unit-tests:
     executor: custom
@@ -2836,8 +2856,10 @@ jobs:
 
             REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
             for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"         "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}"      "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-slim:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner-slim:${MAIN_TAG}"
+              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db-slim:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db-slim:${MAIN_TAG}"
 
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
               ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
@@ -4576,8 +4598,10 @@ jobs:
             SCANNER_VERSION="$(make --quiet scanner-tag)"
             COLLECTOR_VERSION="$(make --quiet collector-tag)"
 
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "stackrox.io/scanner:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "stackrox.io/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"         "stackrox.io/scanner:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}"      "stackrox.io/scanner-db:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-slim:${SCANNER_VERSION}"    "stackrox.io/scanner-slim:${MAIN_TAG}"
+            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db-slim:${SCANNER_VERSION}" "stackrox.io/scanner-db-slim:${MAIN_TAG}"
 
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "collector.stackrox.io/collector:${MAIN_TAG}"
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "collector.stackrox.io/collector-slim:${MAIN_TAG}"
@@ -4912,6 +4936,8 @@ workflows:
       - go-unit-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - go-unit-tests-release:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - go-postgres-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - shell-unit-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx

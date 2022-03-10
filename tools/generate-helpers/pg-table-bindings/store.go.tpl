@@ -1,6 +1,6 @@
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.Name|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.Name}} = ${{add $idx 1}}{{end}}{{end}}
+{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
+{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
+{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
@@ -40,10 +40,10 @@ const (
         walkStmt = "SELECT serialized FROM {{.Table}}"
 
 {{- if $singlePK }}
-        getIDsStmt = "SELECT {{$singlePK.Name}} FROM {{.Table}}"
-        getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.Name}} = ANY($1::text[])"
+        getIDsStmt = "SELECT {{$singlePK.ColumnName}} FROM {{.Table}}"
+        getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 
-        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.Name}} = ANY($1::text[])"
+        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 {{- end }}
 )
 
@@ -53,24 +53,28 @@ var (
     table = "{{.Table}}"
 )
 
+func init() {
+    globaldb.RegisterTable(table, "{{.TrimmedType}}")
+}
+
 type Store interface {
-    Count() (int, error)
-    Exists({{template "paramList" $pks}}) (bool, error)
-    Get({{template "paramList" $pks}}) (*{{.Type}}, bool, error)
-    Upsert(obj *{{.Type}}) error
-    UpsertMany(objs []*{{.Type}}) error
-    Delete({{template "paramList" $pks}}) error
+    Count(ctx context.Context) (int, error)
+    Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
+    Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error)
+    Upsert(ctx context.Context, obj *{{.Type}}) error
+    UpsertMany(ctx context.Context, objs []*{{.Type}}) error
+    Delete(ctx context.Context, {{template "paramList" $pks}}) error
 
 {{- if $singlePK }}
-    GetIDs() ([]{{$singlePK.Type}}, error)
-    GetMany(ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
-    DeleteMany(ids []{{$singlePK.Type}}) error
+    GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
+    GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
+    DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
 {{- end }}
 
-    Walk(fn func(obj *{{.Type}}) error) error
+    Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error
 
-    AckKeysIndexed(keys ...string) error
-    GetKeysToIndex() ([]string, error)
+    AckKeysIndexed(ctx context.Context, keys ...string) error
+    GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -82,7 +86,7 @@ type storeImpl struct {
 
 {{- define "createTable"}}
 {{- $schema := . }}
-func {{template "createFunctionName" $schema}}(db *pgxpool.Pool) {
+func {{template "createFunctionName" $schema}}(ctx context.Context, db *pgxpool.Pool) {
     table := `
 create table if not exists {{$schema.Table}} (
 {{- range $idx, $field := $schema.ResolvedFields }}
@@ -95,7 +99,7 @@ create table if not exists {{$schema.Table}} (
 )
 `
 
-    _, err := db.Exec(context.Background(), table)
+    _, err := db.Exec(ctx, table)
     if err != nil {
         panic("error creating table: " + table)
     }
@@ -106,13 +110,13 @@ create table if not exists {{$schema.Table}} (
     {{end}}
     }
     for _, index := range indexes {
-       if _, err := db.Exec(context.Background(), index); err != nil {
+       if _, err := db.Exec(ctx, index); err != nil {
            panic(err)
         }
     }
 
     {{range $idx, $child := $schema.Children}}
-    {{template "createFunctionName" $child}}(db)
+    {{template "createFunctionName" $child}}(ctx, db)
     {{- end}}
 }
 {{range $idx, $child := $schema.Children}}{{template "createTable" $child}}{{end}}
@@ -125,7 +129,7 @@ create table if not exists {{$schema.Table}} (
 {{- define "insertObject"}}
 {{- $schema := . }}
 
-func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}) error {
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}) error {
     {{if not $schema.Parents }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
@@ -135,16 +139,16 @@ func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}
 
     values := []interface{} {
         // parent primary keys start
-        {{ range $idx, $field := $schema.ResolvedFields }}
-        {{if eq $field.DataType "datetime"}}
+        {{- range $idx, $field := $schema.ResolvedFields -}}
+        {{- if eq $field.DataType "datetime" }}
         pgutils.NilOrStringTimestamp({{$field.Getter "obj"}}),
-        {{- else}}
+        {{- else }}
         {{$field.Getter "obj"}},{{end}}
-        {{end}}
+        {{- end}}
     }
 
     finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedColumns" $schema.ResolvedFields }}) VALUES({{ valueExpansion (len $schema.ResolvedFields) }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}) DO UPDATE SET {{template "updateExclusions" $schema.ResolvedFields}}"
-    _, err := tx.Exec(context.Background(), finalStr, values...)
+    _, err := tx.Exec(ctx, finalStr, values...)
     if err != nil {
         return err
     }
@@ -155,13 +159,13 @@ func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}
 
     {{range $idx, $child := $schema.Children}}
     for childIdx, child := range obj.{{$child.ObjectGetter}} {
-        if err := {{ template "insertFunctionName" $child }}(tx, child{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
+        if err := {{ template "insertFunctionName" $child }}(ctx, tx, child{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
             return err
         }
     }
 
     query = "delete from {{$child.Table}} where {{ range $idx, $field := $child.ParentKeys }}{{if $idx}} AND {{end}}{{$field.ColumnName}} = ${{add $idx 1}}{{end}} AND idx >= ${{add (len $child.ParentKeys) 1}}"
-    _, err = tx.Exec(context.Background(), query, {{ range $idx, $field := $schema.ParentKeys }}{{$field.Name}}, {{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}} len(obj.{{$child.ObjectGetter}}))
+    _, err = tx.Exec(ctx, query, {{ range $idx, $field := $schema.ParentKeys }}{{$field.Name}}, {{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}} len(obj.{{$child.ObjectGetter}}))
     if err != nil {
         return err
     }
@@ -175,56 +179,54 @@ func {{ template "insertFunctionName" $schema }}(tx pgx.Tx, obj {{$schema.Type}}
 {{ template "insertObject" .Schema }}
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
-    globaldb.RegisterTable(table, "{{.TrimmedType}}")
-
-    {{template "createFunctionName" .Schema}}(db)
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+    {{template "createFunctionName" .Schema}}(ctx, db)
 
     return &storeImpl{
         db: db,
     }
 }
 
-func (s *storeImpl) upsert(objs ...*{{.Type}}) error {
-    conn, release := s.acquireConn(ops.Get, "{{.TrimmedType}}")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
+    conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
     defer release()
 
     for _, obj := range objs {
-	    tx, err := conn.Begin(context.Background())
+	    tx, err := conn.Begin(ctx)
 	    if err != nil {
     		return err
 	    }
 
-	    if err := {{ template "insertFunctionName" .Schema }}(tx, obj); err != nil {
-		    if err := tx.Rollback(context.Background()); err != nil {
+	    if err := {{ template "insertFunctionName" .Schema }}(ctx, tx, obj); err != nil {
+		    if err := tx.Rollback(ctx); err != nil {
 			    return err
 		    }
 		    return err
         }
-        if err := tx.Commit(context.Background()); err != nil {
+        if err := tx.Commit(ctx); err != nil {
             return err
         }
     }
     return nil
 }
 
-func (s *storeImpl) Upsert(obj *{{.Type}}) error {
+func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
 
-    return s.upsert(obj)
+    return s.upsert(ctx, obj)
 }
 
-func (s *storeImpl) UpsertMany(objs []*{{.Type}}) error {
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
 
-    return s.upsert(objs...)
+    return s.upsert(ctx, objs...)
 }
 
 // Count returns the number of objects in the store
-func (s *storeImpl) Count() (int, error) {
+func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "{{.TrimmedType}}")
 
-	row := s.db.QueryRow(context.Background(), countStmt)
+	row := s.db.QueryRow(ctx, countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -233,10 +235,10 @@ func (s *storeImpl) Count() (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists({{template "paramList" $pks}}) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
 
-	row := s.db.QueryRow(context.Background(), existsStmt, {{template "argList" $pks}})
+	row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $pks}})
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -245,13 +247,13 @@ func (s *storeImpl) Exists({{template "paramList" $pks}}) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get({{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ops.Get, "{{.TrimmedType}}")
+	conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	defer release()
 
-	row := conn.QueryRow(context.Background(), getStmt, {{template "argList" $pks}})
+	row := conn.QueryRow(ctx, getStmt, {{template "argList" $pks}})
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -264,9 +266,9 @@ func (s *storeImpl) Get({{template "paramList" $pks}}) (*{{.Type}}, bool, error)
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(context.Background())
+	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -274,13 +276,13 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete({{template "paramList" $pks}}) error {
+func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ops.Remove, "{{.TrimmedType}}")
+	conn, release := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
 	defer release()
 
-	if _, err := conn.Exec(context.Background(), deleteStmt, {{template "argList" $pks}}); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
 		return err
 	}
 	return nil
@@ -289,10 +291,10 @@ func (s *storeImpl) Delete({{template "paramList" $pks}}) error {
 {{- if $singlePK }}
 
 // GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs() ([]{{$singlePK.Type}}, error) {
+func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
 
-	rows, err := s.db.Query(context.Background(), getIDsStmt)
+	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -309,13 +311,13 @@ func (s *storeImpl) GetIDs() ([]{{$singlePK.Type}}, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
+func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ops.GetMany, "{{.TrimmedType}}")
+	conn, release := s.acquireConn(ctx, ops.GetMany, "{{.TrimmedType}}")
 	defer release()
 
-	rows, err := conn.Query(context.Background(), getManyStmt, ids)
+	rows, err := conn.Query(ctx, getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -351,12 +353,12 @@ func (s *storeImpl) GetMany(ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, erro
 }
 
 // Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ids []{{$singlePK.Type}}) error {
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ops.RemoveMany, "{{.TrimmedType}}")
+	conn, release := s.acquireConn(ctx, ops.RemoveMany, "{{.TrimmedType}}")
 	defer release()
-	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
@@ -364,8 +366,8 @@ func (s *storeImpl) DeleteMany(ids []{{$singlePK.Type}}) error {
 {{- end }}
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(fn func(obj *{{.Type}}) error) error {
-	rows, err := s.db.Query(context.Background(), walkStmt)
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error {
+	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
@@ -390,9 +392,9 @@ func (s *storeImpl) Walk(fn func(obj *{{.Type}}) error) error {
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
 {{- define "dropTable"}}
 {{- $schema := . }}
-func {{ template "dropTableFunctionName" $schema }}(db *pgxpool.Pool) {
-    _, _ = db.Exec(context.Background(), "DROP TABLE {{$schema.Table}} CASCADE")
-    {{range $idx, $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(db)
+func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
+    _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
+    {{range $idx, $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
     {{end}}
 }
 {{range $idx, $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
@@ -400,18 +402,18 @@ func {{ template "dropTableFunctionName" $schema }}(db *pgxpool.Pool) {
 
 {{template "dropTable" .Schema}}
 
-func Destroy(db *pgxpool.Pool) {
-    {{template "dropTableFunctionName" .Schema}}(db)
+func Destroy(ctx context.Context, db *pgxpool.Pool) {
+    {{template "dropTableFunctionName" .Schema}}(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex() ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }

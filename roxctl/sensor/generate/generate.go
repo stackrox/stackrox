@@ -11,9 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -38,9 +36,10 @@ Please use --admission-controller-enforce-on-creates instead to suppress this wa
 
 	errorDeprecatedFlag = "Specified deprecated flag %s and new flag %s at the same time"
 
-	warningRunningAgainstLegacyCentral = "Running older version of central. Can't rely on central configuration to determine default values. Using %s as main registry."
+	mainImageRepository = "main-image-repository"
+	slimCollector       = "slim-collector"
 
-	warningCentralEnvironmentError = "Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v."
+	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " and " + slimCollector + " settings."
 )
 
 type sensorGenerateCommand struct {
@@ -74,7 +73,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-		return errox.Newf(errox.InvalidArgs, errorDeprecatedFlag, "--create-admission-controller", "--admission-controller-listen-on-creates")
+		return errox.InvalidArgs.New(fmt.Sprintf(errorDeprecatedFlag, "--create-admission-controller", "--admission-controller-listen-on-creates"))
 	}
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerCreateSet)
@@ -83,7 +82,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-		return errox.Newf(errox.InvalidArgs, errorDeprecatedFlag, "--admission-controller-enabled", "--admission-controller-enforce-on-creates")
+		return errox.InvalidArgs.New(fmt.Sprintf(errorDeprecatedFlag, "--admission-controller-enabled", "--admission-controller-enforce-on-creates"))
 	}
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
@@ -93,11 +92,22 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	return nil
 }
 
-func (s *sensorGenerateCommand) isLegacyValidationError(err error) bool {
-	return err != nil &&
-		status.Code(err) == codes.Internal &&
-		s.cluster.MainImage == "" &&
-		status.Convert(err).Message() == "Cluster Validation error: invalid main image '': invalid reference format"
+func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv) {
+	// Here we only set the cluster property, which will be persisted by central.
+	// This is not directly related to fetching the bundle.
+	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
+	if s.slimCollectorP != nil {
+		s.cluster.SlimCollector = *s.slimCollectorP
+	} else {
+		s.cluster.SlimCollector = envDefaults.KernelSupportAvailable
+	}
+
+	if s.cluster.MainImage == "" {
+		// If no override was provided, use a possible default value from `envDefaults`. If this is a legacy central,
+		// envDefaults.MainImage will hold a local default (from Release Flag). If env.Defaults.MainImage is empty it
+		// means that roxctl is talking to newer version of Central which will accept empty MainImage values.
+		s.cluster.MainImage = envDefaults.MainImage
+	}
 }
 
 func (s *sensorGenerateCommand) fullClusterCreation() error {
@@ -110,33 +120,16 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
-	env := util.RetrieveCentralEnvOrDefault(ctx, service)
-	// Here we only set the cluster property, which will be persisted by central.
-	// This is not directly related to fetching the bundle.
-	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
-	if s.slimCollectorP != nil {
-		s.cluster.SlimCollector = *s.slimCollectorP
-	} else {
-		s.cluster.SlimCollector = env.KernelSupportAvailable
+	env, err := util.RetrieveCentralEnvOrDefault(ctx, service)
+	if err != nil {
+		s.env.Logger().WarnfLn(warningCentralEnvironmentError, err)
 	}
+	for _, warning := range env.Warnings {
+		s.env.Logger().WarnfLn(warning)
+	}
+	s.setClusterDefaults(env)
 
 	id, err := s.createCluster(ctx, service)
-
-	// Backward compatibility: if the central hasn't accepted the provided cluster
-	// then fill default values as RHACS.
-	if s.isLegacyValidationError(err) {
-		var flavor defaults.ImageFlavor
-		if buildinfo.ReleaseBuild {
-			flavor = defaults.RHACSReleaseImageFlavor()
-		} else {
-			flavor = defaults.DevelopmentBuildImageFlavor()
-		}
-
-		s.env.Logger().WarnfLn(warningRunningAgainstLegacyCentral, flavor.MainRegistry)
-
-		s.cluster.MainImage = flavor.MainImageNoTag()
-		id, err = s.createCluster(ctx, service)
-	}
 
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
 	// then return an error
@@ -155,7 +148,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 				}
 			}
 			if id == "" {
-				return errox.Newf(errox.NotFound, "error finding preexisting cluster with name %q", s.cluster.GetName())
+				return errox.NotFound.New(fmt.Sprintf("error finding preexisting cluster with name %q", s.cluster.GetName()))
 			}
 		} else {
 			return errors.Wrap(err, "error creating cluster")
@@ -182,9 +175,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		s.env.Logger().InfofLn(infoDefaultingToComprehensiveCollector)
 	}
 
-	if env.Error != nil {
-		s.env.Logger().WarnfLn(warningCentralEnvironmentError, env.Error)
-	}
 	return nil
 }
 
@@ -214,8 +204,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&generateCmd.continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, "main-image-repository", "", "image repository sensor should be deployed with (if unset, a default will be used)")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, a default will be derived according to the effective --main-image-repository value)")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "image repository sensor should be deployed with (if unset, a default will be used)")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value)")
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
 
@@ -228,7 +218,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 
-	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, "slim-collector", "Use slim collector in deployment bundle")
+	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle")
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
 	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))

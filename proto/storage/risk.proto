@@ -8,7 +8,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message Risk {
-    string id                       = 1;
+    string id                       = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     RiskSubject subject             = 2;
     float score                     = 3 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
 

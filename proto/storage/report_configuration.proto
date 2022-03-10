@@ -14,7 +14,7 @@ message ReportConfiguration {
     enum ReportType {
         VULNERABILITY = 0;
     }
-    string                    id                           = 1;
+    string                    id                           = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string                    name                         = 2 [(gogoproto.moretags) = "search:\"Report Name\""];
     string                    description                  = 3;
     ReportType                type                         = 4 [(gogoproto.moretags) = "search:\"Report Type\""];

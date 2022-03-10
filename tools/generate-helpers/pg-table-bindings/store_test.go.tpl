@@ -1,3 +1,9 @@
+
+{{define "paramList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.LocalPrimaryKeys}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
+
+{{- $ := . }}
+{{- $name := .TrimmedType|lowerCamelCase }}
+
 {{- $namePrefix := .Table|upperCamelCase}}
 
 //go:build sql_integration
@@ -12,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -40,46 +47,48 @@ func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
 }
 
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
+    ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	s.Require().NoError(err)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
-	{{.TrimmedType|lowerCamelCase}} := fixtures.Get{{.TrimmedType}}()
-	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get({{.TrimmedType|lowerCamelCase}}.GetId())
+	{{$name}} := &{{.Type}}{}
+	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-	s.NoError(store.Upsert({{.TrimmedType|lowerCamelCase}}))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{.TrimmedType|lowerCamelCase}}.GetId())
+	s.NoError(store.Upsert(ctx, {{$name}}))
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
-	s.Equal({{.TrimmedType|lowerCamelCase}}, found{{.TrimmedType|upperCamelCase}})
+	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	{{.TrimmedType|lowerCamelCase}}Count, err := store.Count()
+	{{$name}}Count, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal({{.TrimmedType|lowerCamelCase}}Count, 1)
+	s.Equal({{$name}}Count, 1)
 
-	{{.TrimmedType|lowerCamelCase}}Exists, err := store.Exists({{.TrimmedType|lowerCamelCase}}.GetId())
+	{{$name}}Exists, err := store.Exists(ctx, {{template "paramList" $}})
 	s.NoError(err)
-	s.True({{.TrimmedType|lowerCamelCase}}Exists)
-	s.NoError(store.Upsert({{.TrimmedType|lowerCamelCase}}))
+	s.True({{$name}}Exists)
+	s.NoError(store.Upsert(ctx, {{$name}}))
 
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{.TrimmedType|lowerCamelCase}}.GetId())
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True(exists)
-	s.Equal({{.TrimmedType|lowerCamelCase}}, found{{.TrimmedType|upperCamelCase}})
+	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	s.NoError(store.Delete({{.TrimmedType|lowerCamelCase}}.GetId()))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get({{.TrimmedType|lowerCamelCase}}.GetId())
+	s.NoError(store.Delete(ctx, {{template "paramList" $}}))
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})

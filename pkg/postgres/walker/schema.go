@@ -63,28 +63,37 @@ func (s *Schema) Print() {
 	}
 }
 
-func parentify(name string) string {
-	return "parent_" + name
+// tryParentify attempts to convert the specified field to a reference. If the field is already a reference in
+// the referenced schema, it is used as is.
+func tryParentify(field *Field, parentSchema *Schema) {
+	referencedColName := field.ColumnName
+	if field.Reference == "" {
+		field.Name = parentify(parentSchema.Table, field.Name)
+		field.ColumnName = parentify(parentSchema.Table, referencedColName)
+	}
+	field.Reference = referencedColName
+}
+
+func parentify(parent, name string) string {
+	return parent + "_" + name
 }
 
 // ResolvedFields is the total set of fields for the schema including
-// fields that are derived from the parent schemas. e.g. parent primary keys, array indexes, etc
+// fields that are derived from the parent schemas. e.g. parent primary keys, array indexes, etc.
 func (s *Schema) ResolvedFields() []Field {
 	var pks []Field
 	for _, parent := range s.Parents {
 		pks = parent.ResolvedPrimaryKeys()
+		for idx := range pks {
+			pk := &pks[idx]
+			tryParentify(pk, parent)
+			pk.ObjectGetter = ObjectGetter{
+				variable: true,
+				value:    pk.Name,
+			}
+		}
 	}
 
-	for idx := range pks {
-		pk := &pks[idx]
-		pk.Reference = pk.ColumnName
-		pk.Name = parentify(pk.Name)
-		pk.ObjectGetter = ObjectGetter{
-			variable: true,
-			value:    pk.Name,
-		}
-		pk.ColumnName = parentify(pk.ColumnName)
-	}
 	pks = append(pks, s.Fields...)
 	if len(s.Parents) == 0 {
 		pks = append(pks, serializedField)
@@ -93,36 +102,76 @@ func (s *Schema) ResolvedFields() []Field {
 }
 
 // ParentKeys are the keys from the parent schemas that should be defined
-// as foreign keys for the current schema
+// as foreign keys for the current schema.
 func (s *Schema) ParentKeys() []Field {
 	var pks []Field
 	for _, parent := range s.Parents {
 		pks = parent.ResolvedPrimaryKeys()
 		for idx := range pks {
 			pk := &pks[idx]
-			pk.Reference = pk.ColumnName
-			pk.Name = parentify(pk.Name)
-			pk.ColumnName = parentify(pk.ColumnName)
+			tryParentify(pk, parent)
 		}
 	}
 	return pks
 }
 
-// ParentKeysAsMap are the keys from the parent schemas that should be defined
-// as foreign keys for the current schema
+// ParentKeysAsMap returns the keys from the parent schemas that should be defined
+// as foreign keys for the current schema mapped by parent schema.
 func (s *Schema) ParentKeysAsMap() map[string][]Field {
 	pks := make(map[string][]Field)
 	for _, parent := range s.Parents {
 		currPks := parent.ResolvedPrimaryKeys()
 		for idx := range currPks {
 			pk := &currPks[idx]
-			pk.Reference = pk.ColumnName
-			pk.Name = parentify(pk.Name)
-			pk.ColumnName = parentify(pk.ColumnName)
+			tryParentify(pk, parent)
 		}
 		pks[parent.Table] = currPks
 	}
 	return pks
+}
+
+// ForeignKeysReferencesTo returns the foreign keys of the current schema referencing specified schema name.
+func (s *Schema) ForeignKeysReferencesTo(tableName string) []Field {
+	if len(s.Parents) == 0 {
+		return nil
+	}
+
+	var pSchema *Schema
+	for i := 0; i < len(s.Parents); i++ {
+		if s.Parents[i].Table == tableName {
+			pSchema = s.Parents[i]
+			break
+		}
+	}
+	if pSchema == nil {
+		return nil
+	}
+
+	// Only get the immediate references, and not the resolved ones.
+	pks := pSchema.LocalPrimaryKeys()
+	for idx := range pks {
+		fk := &pks[idx]
+		tryParentify(fk, pSchema)
+	}
+	// If we are here, it means all references to the required referenced table have been computed. Hence, stop.
+	return pks
+}
+
+// ForeignKeys are the foreign keys in current schema.
+func (s *Schema) ForeignKeys() []Field {
+	if len(s.Parents) == 0 {
+		return nil
+	}
+	var fks []Field
+	for _, parent := range s.Parents {
+		pks := parent.LocalPrimaryKeys()
+		for idx := range pks {
+			pk := &pks[idx]
+			tryParentify(pk, parent)
+		}
+		fks = append(fks, pks...)
+	}
+	return fks
 }
 
 // ResolvedPrimaryKeys are all the primary keys of the current schema which is the union
@@ -161,10 +210,11 @@ type SearchField struct {
 
 // PostgresOptions is the parsed representation of the sql tag on the struct field
 type PostgresOptions struct {
-	Ignored    bool
-	Index      string
-	PrimaryKey bool
-	Unique     bool
+	Ignored          bool
+	Index            string
+	PrimaryKey       bool
+	Unique           bool
+	IgnorePrimaryKey bool
 }
 
 // ObjectGetter is wrapper around determining how to represent the variable in the

@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -40,46 +41,48 @@ func (s *ProcessIndicatorsStoreSuite) TearDownTest() {
 }
 
 func (s *ProcessIndicatorsStoreSuite) TestStore() {
+	ctx := context.Background()
+
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		panic(err)
-	}
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	s.Require().NoError(err)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 
-	Destroy(pool)
-	store := New(pool)
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
 
-	processIndicator := fixtures.GetProcessIndicator()
-	foundProcessIndicator, exists, err := store.Get(processIndicator.GetId())
+	processIndicator := &storage.ProcessIndicator{}
+	s.NoError(testutils.FullInit(processIndicator, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	foundProcessIndicator, exists, err := store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessIndicator)
 
-	s.NoError(store.Upsert(processIndicator))
-	foundProcessIndicator, exists, err = store.Get(processIndicator.GetId())
+	s.NoError(store.Upsert(ctx, processIndicator))
+	foundProcessIndicator, exists, err = store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processIndicator, foundProcessIndicator)
 
-	processIndicatorCount, err := store.Count()
+	processIndicatorCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(processIndicatorCount, 1)
 
-	processIndicatorExists, err := store.Exists(processIndicator.GetId())
+	processIndicatorExists, err := store.Exists(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.True(processIndicatorExists)
-	s.NoError(store.Upsert(processIndicator))
+	s.NoError(store.Upsert(ctx, processIndicator))
 
-	foundProcessIndicator, exists, err = store.Get(processIndicator.GetId())
+	foundProcessIndicator, exists, err = store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processIndicator, foundProcessIndicator)
 
-	s.NoError(store.Delete(processIndicator.GetId()))
-	foundProcessIndicator, exists, err = store.Get(processIndicator.GetId())
+	s.NoError(store.Delete(ctx, processIndicator.GetId()))
+	foundProcessIndicator, exists, err = store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessIndicator)
