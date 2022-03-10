@@ -99,6 +99,18 @@ function PolicyBehaviorForm() {
                 false
             );
         });
+
+        // clear policy sections to prevent non-runtime criteria from being sent to BE
+        setFieldValue(
+            'policySections',
+            [
+                {
+                    sectionName: 'Policy Section 1',
+                    policyGroups: [],
+                },
+            ],
+            false
+        );
     }
 
     const responseMethodHelperText = showEnforcement
