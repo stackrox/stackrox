@@ -207,11 +207,10 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
 
     // Todo: I'm sure there is a cleaner way to do this.
-    copyCols := []string{}
     columns := "{{template "commaSeparatedColumns" $schema.ResolvedFields }}"
     columns = strings.ToLower(columns)
 
-    copyCols = strings.Split(columns, ",")
+    copyCols := strings.Split(columns, ",")
 
     for i := range copyCols {
     	copyCols[i] = strings.TrimSpace(copyCols[i])

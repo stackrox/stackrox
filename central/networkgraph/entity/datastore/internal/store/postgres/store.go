@@ -205,11 +205,10 @@ func (s *storeImpl) copyIntoNetworkentity(ctx context.Context, tx pgx.Tx, objs .
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Info_Type, Info_Id, Info_Deployment_Name, Info_Deployment_Namespace, Info_Deployment_Cluster, Info_ExternalSource_Name, Info_ExternalSource_Cidr, Info_ExternalSource_Default, Scope_ClusterId, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -296,11 +295,10 @@ func (s *storeImpl) copyIntoNetworkentityListenPorts(ctx context.Context, tx pgx
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "networkentity_Info_Id, idx, Port, L4Protocol"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

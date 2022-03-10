@@ -227,11 +227,10 @@ func (s *storeImpl) copyIntoProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -340,11 +339,10 @@ func (s *storeImpl) copyIntoProcessIndicatorsLineageInfo(ctx context.Context, tx
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "process_indicators_Id, idx, ParentUid, ParentExecFilePath"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

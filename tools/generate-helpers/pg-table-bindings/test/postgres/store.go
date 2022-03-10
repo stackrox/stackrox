@@ -220,11 +220,10 @@ func (s *storeImpl) copyIntoSinglekey(ctx context.Context, tx pgx.Tx, objs ...*s
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, Oneofnested_Nested2_Nested2, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -323,11 +322,10 @@ func (s *storeImpl) copyIntoSinglekeyNested(ctx context.Context, tx pgx.Tx, sing
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "singlekey_Key, idx, Nested, Nested2_Nested2"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

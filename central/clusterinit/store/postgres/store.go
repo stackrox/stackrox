@@ -201,11 +201,10 @@ func (s *storeImpl) copyIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Name, CreatedAt, CreatedBy_Id, CreatedBy_AuthProviderId, IsRevoked, ExpiresAt, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -288,11 +287,10 @@ func (s *storeImpl) copyIntoClusterinitbundlesAttributes(ctx context.Context, tx
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "clusterinitbundles_Id, idx, Key, Value"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

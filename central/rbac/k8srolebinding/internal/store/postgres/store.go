@@ -215,11 +215,10 @@ func (s *storeImpl) copyIntoRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, CreatedAt, RoleId, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -308,11 +307,10 @@ func (s *storeImpl) copyIntoRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "rolebindings_Id, idx, Id, Kind, Name, Namespace, ClusterId, ClusterName"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

@@ -195,11 +195,10 @@ func (s *storeImpl) copyIntoProcesswhitelistresults(ctx context.Context, tx pgx.
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "DeploymentId, ClusterId, Namespace, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -274,11 +273,10 @@ func (s *storeImpl) copyIntoProcesswhitelistresultsBaselineStatuses(ctx context.
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "processwhitelistresults_DeploymentId, idx, ContainerName, BaselineStatus, AnomalousProcessesExecuted"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

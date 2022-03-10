@@ -147,11 +147,10 @@ func (s *storeImpl) copyIntoServiceaccounts(ctx context.Context, tx pgx.Tx, objs
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, CreatedAt, AutomountToken, Secrets, ImagePullSecrets, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

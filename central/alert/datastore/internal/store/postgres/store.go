@@ -1071,11 +1071,10 @@ func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Policy_Id, Policy_Name, Policy_Description, Policy_Rationale, Policy_Remediation, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_EventSource, Policy_Severity, Policy_EnforcementActions, Policy_Notifiers, Policy_LastUpdated, Policy_PolicyVersion, Policy_CriteriaLocked, Policy_MitreVectorsLocked, Policy_IsDefault, LifecycleStage, Deployment_Id, Deployment_Name, Deployment_Type, Deployment_Namespace, Deployment_NamespaceId, Deployment_Labels, Deployment_ClusterId, Deployment_ClusterName, Deployment_Annotations, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Resource_ResourceType, Resource_Name, Resource_ClusterId, Resource_ClusterName, Resource_Namespace, Resource_NamespaceId, ProcessViolation_Message, Enforcement_Action, Enforcement_Message, Time, FirstOccurred, ResolvedAt, State, SnoozeTill, Tags, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1267,11 +1266,10 @@ func (s *storeImpl) copyIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, ale
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1336,11 +1334,10 @@ func (s *storeImpl) copyIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, ale
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1405,11 +1402,10 @@ func (s *storeImpl) copyIntoAlertsScope(ctx context.Context, tx pgx.Tx, alerts_I
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, idx, Cluster, Namespace, Label_Key, Label_Value"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1466,11 +1462,10 @@ func (s *storeImpl) copyIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, idx, SectionName"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1528,11 +1523,10 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroups(ctx context.Context
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, alerts_PolicySections_idx, idx, FieldName, BooleanOperator, Negate"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1596,11 +1590,10 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.C
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx, Value"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1655,11 +1648,10 @@ func (s *storeImpl) copyIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, idx, Tactic, Techniques"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1712,11 +1704,10 @@ func (s *storeImpl) copyIntoAlertsContainers(ctx context.Context, tx pgx.Tx, ale
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Name"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1781,11 +1772,10 @@ func (s *storeImpl) copyIntoAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, idx, Message, NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port, Type, Time"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1869,11 +1859,10 @@ func (s *storeImpl) copyIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, alerts_Violations_idx, idx, Key, Value"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1928,11 +1917,10 @@ func (s *storeImpl) copyIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, idx, Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -2028,11 +2016,10 @@ func (s *storeImpl) copyIntoAlertsProcessesLineageInfo(ctx context.Context, tx p
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "alerts_Id, alerts_Processes_idx, idx, ParentUid, ParentExecFilePath"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

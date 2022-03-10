@@ -211,11 +211,10 @@ func (s *storeImpl) copyIntoK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, CreatedAt, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -302,11 +301,10 @@ func (s *storeImpl) copyIntoK8srolesRules(ctx context.Context, tx pgx.Tx, k8srol
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "k8sroles_Id, idx, Verbs, ApiGroups, Resources, NonResourceUrls, ResourceNames"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

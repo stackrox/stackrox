@@ -263,11 +263,10 @@ func (s *storeImpl) copyIntoRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Subject_Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -348,11 +347,10 @@ func (s *storeImpl) copyIntoRiskResults(ctx context.Context, tx pgx.Tx, risk_Id 
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "risk_Id, idx, Name, Score"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -412,11 +410,10 @@ func (s *storeImpl) copyIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, r
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "risk_Id, risk_Results_idx, idx, Message, Url"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

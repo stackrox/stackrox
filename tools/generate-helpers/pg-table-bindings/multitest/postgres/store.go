@@ -216,11 +216,10 @@ func (s *storeImpl) copyIntoMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -314,11 +313,10 @@ func (s *storeImpl) copyIntoMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "multikey_Key1, multikey_Key2, idx, Nested, Nested2_Nested2"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

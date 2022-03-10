@@ -265,11 +265,10 @@ func (s *storeImpl) copyIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Key_DeploymentId, Key_ContainerName, Key_ClusterId, Key_Namespace, Created, UserLockedTimestamp, StackRoxLockedTimestamp, LastUpdate, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -359,11 +358,10 @@ func (s *storeImpl) copyIntoProcessbaselinesElements(ctx context.Context, tx pgx
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "processbaselines_Id, idx, Element_ProcessName, Auto"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -416,11 +414,10 @@ func (s *storeImpl) copyIntoProcessbaselinesElementGraveyard(ctx context.Context
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "processbaselines_Id, idx, Element_ProcessName, Auto"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

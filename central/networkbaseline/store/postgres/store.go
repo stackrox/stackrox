@@ -543,11 +543,10 @@ func (s *storeImpl) copyIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "DeploymentId, ClusterId, Namespace, ObservationPeriodEnd, Locked, DeploymentName, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -631,11 +630,10 @@ func (s *storeImpl) copyIntoNetworkbaselinePeers(ctx context.Context, tx pgx.Tx,
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "networkbaseline_DeploymentId, idx, Entity_Info_Type, Entity_Info_Id, Entity_Info_Deployment_Name, Entity_Info_Deployment_Namespace, Entity_Info_Deployment_Cluster, Entity_Info_ExternalSource_Name, Entity_Info_ExternalSource_Cidr, Entity_Info_ExternalSource_Default, Entity_Scope_ClusterId"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -712,11 +710,10 @@ func (s *storeImpl) copyIntoNetworkbaselinePeersListenPorts(ctx context.Context,
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx, Port, L4Protocol"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -771,11 +768,10 @@ func (s *storeImpl) copyIntoNetworkbaselinePeersProperties(ctx context.Context, 
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx, Ingress, Port, Protocol"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -832,11 +828,10 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeers(ctx context.Context, t
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "networkbaseline_DeploymentId, idx, Entity_Info_Type, Entity_Info_Id, Entity_Info_Deployment_Name, Entity_Info_Deployment_Namespace, Entity_Info_Deployment_Cluster, Entity_Info_ExternalSource_Name, Entity_Info_ExternalSource_Cidr, Entity_Info_ExternalSource_Default, Entity_Scope_ClusterId"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -913,11 +908,10 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeersListenPorts(ctx context
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx, Port, L4Protocol"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -972,11 +966,10 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeersProperties(ctx context.
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx, Ingress, Port, Protocol"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

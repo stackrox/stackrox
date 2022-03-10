@@ -139,11 +139,10 @@ func (s *storeImpl) copyIntoApitokens(ctx context.Context, tx pgx.Tx, objs ...*s
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Name, Roles, IssuedAt, Expiration, Revoked, Role, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

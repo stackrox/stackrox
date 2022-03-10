@@ -355,11 +355,10 @@ func (s *storeImpl) copyIntoPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Name, DeploymentId, Namespace, ClusterId, Started, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -443,11 +442,10 @@ func (s *storeImpl) copyIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "pods_Id, idx, InstanceId_ContainerRuntime, InstanceId_Id, InstanceId_Node, ContainingPodId, ContainerName, ContainerIps, Started, ImageDigest, Finished, ExitCode, TerminationReason"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -518,11 +516,10 @@ func (s *storeImpl) copyIntoPodsTerminatedInstances(ctx context.Context, tx pgx.
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "pods_Id, idx"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -578,11 +575,10 @@ func (s *storeImpl) copyIntoPodsTerminatedInstancesInstances(ctx context.Context
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "pods_Id, pods_TerminatedInstances_idx, idx, InstanceId_ContainerRuntime, InstanceId_Id, InstanceId_Node, ContainingPodId, ContainerName, ContainerIps, Started, ImageDigest, Finished, ExitCode, TerminationReason"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

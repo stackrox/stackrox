@@ -623,11 +623,10 @@ func (s *storeImpl) copyIntoPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Name, Description, Rationale, Remediation, Disabled, Categories, LifecycleStages, EventSource, Severity, EnforcementActions, Notifiers, LastUpdated, PolicyVersion, CriteriaLocked, MitreVectorsLocked, IsDefault, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -742,11 +741,10 @@ func (s *storeImpl) copyIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, pol
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -811,11 +809,10 @@ func (s *storeImpl) copyIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, pol
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -880,11 +877,10 @@ func (s *storeImpl) copyIntoPolicyScope(ctx context.Context, tx pgx.Tx, policy_I
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "policy_Id, idx, Cluster, Namespace, Label_Key, Label_Value"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -941,11 +937,10 @@ func (s *storeImpl) copyIntoPolicyPolicySections(ctx context.Context, tx pgx.Tx,
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "policy_Id, idx, SectionName"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1003,11 +998,10 @@ func (s *storeImpl) copyIntoPolicyPolicySectionsPolicyGroups(ctx context.Context
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "policy_Id, policy_PolicySections_idx, idx, FieldName, BooleanOperator, Negate"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1071,11 +1065,10 @@ func (s *storeImpl) copyIntoPolicyPolicySectionsPolicyGroupsValues(ctx context.C
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx, Value"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
@@ -1130,11 +1123,10 @@ func (s *storeImpl) copyIntoPolicyMitreAttackVectors(ctx context.Context, tx pgx
 	var err error
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "policy_Id, idx, Tactic, Techniques"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])

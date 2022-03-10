@@ -165,11 +165,10 @@ func (s *storeImpl) copyIntoReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 	var deletes []string
 
 	// Todo: I'm sure there is a cleaner way to do this.
-	copyCols := []string{}
 	columns := "Id, Name, Description, Type, VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport, VulnReportFilters_Severities, ScopeId, EmailConfig_NotifierId, EmailConfig_MailingLists, Schedule_IntervalType, Schedule_Hour, Schedule_Minute, Schedule_Weekly_Day, Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus, LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg, LastSuccessfulRunTime, serialized"
 	columns = strings.ToLower(columns)
 
-	copyCols = strings.Split(columns, ",")
+	copyCols := strings.Split(columns, ",")
 
 	for i := range copyCols {
 		copyCols[i] = strings.TrimSpace(copyCols[i])
