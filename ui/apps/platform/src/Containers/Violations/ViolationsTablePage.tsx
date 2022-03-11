@@ -21,7 +21,6 @@ import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 
 import './ViolationsTablePage.css';
-import ViolationsBreadcrumbs from './ViolationsBreadcrumbs';
 
 function runAfter5Seconds(fn: () => void) {
     return new Promise(() => {
@@ -159,7 +158,6 @@ function ViolationsTablePage(): ReactElement {
 
     return (
         <>
-            <ViolationsBreadcrumbs />
             <PageSection variant="light" id="violations-table">
                 <Title headingLevel="h1">Violations</Title>
                 <Divider className="pf-u-py-md" />
