@@ -53,10 +53,9 @@ var (
 
     table = "{{.Table}}"
 
-    // just starting this here for now.  may be a candidate for env var
-    batchLimit = 100
+    // threshold of records before we begin processing in batches
+    thresholdToBatch = 100
 
-    // just starting this here for now.  may be a candidate for env var
     // using copyFrom, we may not even want to batch.  It would probably be simpler
     // to deal with failures if we just sent it all.  Something to think about as we
     // proceed and move into more e2e and larger performance testing
@@ -151,7 +150,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
         // parent primary keys start
         {{- range $idx, $field := $schema.ResolvedFields -}}
         {{- if eq $field.DataType "datetime" }}
-        pgutils.NilOrStringTimestamp({{$field.Getter "obj"}}),
+        pgutils.NilOrTime({{$field.Getter "obj"}}),
         {{- else }}
         {{$field.Getter "obj"}},{{end}}
         {{- end}}
@@ -365,7 +364,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
 
-    if len(objs) < batchLimit {
+    if len(objs) < thresholdToBatch {
         return s.upsert(ctx, objs...)
     } else {
         return s.copyFrom(ctx, objs...)

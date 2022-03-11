@@ -2,8 +2,10 @@ package testutils
 
 import (
 	"errors"
+	"math/rand"
 	"reflect"
 	"strings"
+	"time"
 	"unicode"
 	"unsafe"
 
@@ -52,13 +54,16 @@ func (simpleInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField)
 type uniqueInitializer struct{}
 
 func (uniqueInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField) interface{} {
+	// seed rand
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	switch ty.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return 1
+		return r.Int()
 	case reflect.Float32, reflect.Float64:
-		return 1.0
+		return r.Float32()
 	case reflect.Complex64, reflect.Complex128:
-		return 1.0i
+		return complex(r.Float32(), 1.0)
 	case reflect.Bool:
 		return true
 	case reflect.String:
