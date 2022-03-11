@@ -59,8 +59,10 @@ func (s *IndexSuite) SetupTest() {
 }
 
 func (s *IndexSuite) TearDownTest() {
+	if features.PostgresDatastore.Enabled() {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
-	s.pool.Close()
 }
 
 func (s *IndexSuite) getStruct(i int, f func(s *storage.TestMultiKeyStruct)) *storage.TestMultiKeyStruct {
