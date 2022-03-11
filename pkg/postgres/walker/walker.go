@@ -121,6 +121,18 @@ func tableName(parent, child string) string {
 	return fmt.Sprintf("%s_%s", parent, child)
 }
 
+func typeIsEnum(typ reflect.Type) bool {
+	enum, ok := reflect.Zero(typ).Interface().(protoreflect.ProtoEnum)
+	if !ok {
+		return false
+	}
+	_, err := protoreflect.GetEnumDescriptor(enum)
+	if err != nil {
+		panic(err)
+	}
+	return true
+}
+
 // handleStruct takes in a struct object and properly handles all of the fields
 func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
@@ -168,7 +180,11 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				schema.AddFieldWithType(field, StringArray)
 				continue
 			case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
-				schema.AddFieldWithType(field, IntArray)
+				if typeIsEnum(elemType) {
+					schema.AddFieldWithType(field, EnumArray)
+				} else {
+					schema.AddFieldWithType(field, IntArray)
+				}
 				continue
 			}
 
@@ -203,16 +219,11 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts.IgnorePrimaryKey), schema, structField.Type)
 		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
-			enum, ok := reflect.Zero(structField.Type).Interface().(protoreflect.ProtoEnum)
-			if !ok {
+			if typeIsEnum(structField.Type) {
+				schema.AddFieldWithType(field, Enum)
+			} else {
 				schema.AddFieldWithType(field, Integer)
-				continue
 			}
-			_, err := protoreflect.GetEnumDescriptor(enum)
-			if err != nil {
-				panic(err)
-			}
-			schema.AddFieldWithType(field, Enum)
 		case reflect.Float32, reflect.Float64:
 			schema.AddFieldWithType(field, Numeric)
 		case reflect.Interface:
