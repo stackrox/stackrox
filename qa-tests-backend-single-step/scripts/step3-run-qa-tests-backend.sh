@@ -39,15 +39,11 @@ QUAY_USERNAME="$(pass quay-io-ro-username)"
 QUAY_PASSWORD="$(pass quay-io-ro-password)"
 export QUAY_USERNAME QUAY_PASSWORD
 
-# operates against current kube context
-pkill -f 'port-forward.*stackrox.*svc/central' || true
+export KUBECONFIG="/tmp/kubeconfig"
+pkill -f 'port-forward.*svc/central' || true
 sleep 2
-nohup kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
-sleep 5  # 2 seconds in unreliable but 5 seems to work
-pgrep -fl 'port-forward.*stackrox.*svc/central' || {
-    warning "Port forwarding to central has failed"
-    cat /tmp/central.log
-}
+kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
+sleep 3
 
 # The Groovy e2e api tests require these two variables are set
 export API_HOSTNAME="localhost"
