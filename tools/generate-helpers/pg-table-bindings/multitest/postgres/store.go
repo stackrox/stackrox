@@ -99,7 +99,11 @@ create table if not exists multikey_Nested (
     multikey_Key2 varchar,
     idx integer,
     Nested varchar,
+    IsNested bool,
+    Int64 integer,
     Nested2_Nested2 varchar,
+    Nested2_IsNested bool,
+    Nested2_Int64 integer,
     PRIMARY KEY(multikey_Key1, multikey_Key2, idx),
     CONSTRAINT fk_parent_table FOREIGN KEY (multikey_Key1, multikey_Key2) REFERENCES multikey(Key1, Key2) ON DELETE CASCADE
 )
@@ -179,10 +183,14 @@ func insertIntoMultikeyNested(ctx context.Context, tx pgx.Tx, obj *storage.TestM
 		multikey_Key2,
 		idx,
 		obj.GetNested(),
+		obj.GetIsNested(),
+		obj.GetInt64(),
 		obj.GetNested2().GetNested2(),
+		obj.GetNested2().GetIsNested(),
+		obj.GetNested2().GetInt64(),
 	}
 
-	finalStr := "INSERT INTO multikey_Nested (multikey_Key1, multikey_Key2, idx, Nested, Nested2_Nested2) VALUES($1, $2, $3, $4, $5) ON CONFLICT(multikey_Key1, multikey_Key2, idx) DO UPDATE SET multikey_Key1 = EXCLUDED.multikey_Key1, multikey_Key2 = EXCLUDED.multikey_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, Nested2_Nested2 = EXCLUDED.Nested2_Nested2"
+	finalStr := "INSERT INTO multikey_Nested (multikey_Key1, multikey_Key2, idx, Nested, IsNested, Int64, Nested2_Nested2, Nested2_IsNested, Nested2_Int64) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(multikey_Key1, multikey_Key2, idx) DO UPDATE SET multikey_Key1 = EXCLUDED.multikey_Key1, multikey_Key2 = EXCLUDED.multikey_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, IsNested = EXCLUDED.IsNested, Int64 = EXCLUDED.Int64, Nested2_Nested2 = EXCLUDED.Nested2_Nested2, Nested2_IsNested = EXCLUDED.Nested2_IsNested, Nested2_Int64 = EXCLUDED.Nested2_Int64"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

@@ -13,10 +13,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	deploymentBaseSchema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+)
+
 func TestMultiTableQueries(t *testing.T) {
 	t.Parallel()
 
-	baseSchema := walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 	for _, c := range []struct {
 		desc     string
 		q        *v1.Query
@@ -122,7 +125,7 @@ func TestMultiTableQueries(t *testing.T) {
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			actual, err := populatePath(c.q, mappings.OptionsMap, baseSchema, GET)
+			actual, err := populatePath(c.q, mappings.OptionsMap, deploymentBaseSchema, GET)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expected.Select, actual.Select)
 			assert.ElementsMatch(t, strings.Split(c.expected.From, ", "), strings.Split(actual.From, ", "))
