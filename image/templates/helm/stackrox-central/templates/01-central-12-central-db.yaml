@@ -27,6 +27,7 @@ spec:
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
     spec:
+      serviceAccountName: central-db
       containers:
       - name: central-db
         {{- /* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
