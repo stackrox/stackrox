@@ -1,15 +1,11 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { createSelector } from 'reselect';
-import { selectors } from 'reducers';
 
-import { ProductBranding, Metadata } from 'types/metadataService.proto';
 import rhacsFavicon from 'images/rh-favicon.ico';
 import stackroxFavicon from 'images/sr-favicon.ico';
 import rhacsLogoSvg from 'images/RHACS-Logo.svg';
 import stackroxLogoSvg from 'images/StackRox-Logo.svg';
 
-const selectMetadata = createSelector([selectors.getMetadata], (metadata: Metadata) => metadata);
+export type ProductBranding = 'RHACS_BRANDING' | 'STACKROX_BRANDING';
 
 export interface BrandingAssets {
     /** The branding value returned from Central used to generate assets */
@@ -40,30 +36,14 @@ const stackroxBranding: BrandingAssets = {
     favicon: stackroxFavicon,
 };
 
-// Empty asset values to prevent incorrect branding in the case of a logic change that
-// would cause the default case to fire.
-const fallbackAssets: BrandingAssets = {
-    type: null,
-    logoSvg: '',
-    logoAltText: '',
-    basePageTitle: '',
-    favicon: '',
-};
-
 function useBranding(): BrandingAssets {
-    const { productBranding }: Metadata = useSelector(selectMetadata);
+    const productBranding: string | undefined = process.env.REACT_APP_ROX_PRODUCT_BRANDING;
 
     switch (productBranding) {
         case 'RHACS_BRANDING':
             return rhacsBranding;
-        case 'STACKROX_BRANDING':
-            return stackroxBranding;
         default:
-            // eslint-disable-next-line no-console
-            console.warn(
-                `An invalid value for 'productBranding' was returned from Central, page assets may be missing.`
-            );
-            return fallbackAssets;
+            return stackroxBranding;
     }
 }
 
