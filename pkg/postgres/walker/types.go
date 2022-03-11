@@ -12,8 +12,9 @@ const (
 	Map         DataType = "map"
 	Enum        DataType = "enum"
 	StringArray DataType = "stringarray"
-	IntArray    DataType = "intarray"
+	EnumArray   DataType = "enumarray"
 	Integer     DataType = "integer"
+	IntArray    DataType = "intarray"
 )
 
 // DataTypeToSQLType converts the internal representation to SQL
@@ -34,7 +35,7 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "integer"
 	case StringArray:
 		sqlType = "text[]"
-	case IntArray:
+	case EnumArray, IntArray:
 		sqlType = "int[]"
 	default:
 		panic(dataType)
