@@ -32,7 +32,8 @@ func (j *joins) toSQLJoinClauseParts() *sqlJoinClauseParts {
 	if j == nil {
 		return nil
 	}
-	tables, joinsAsStr := make([]string, 0, 2*len(*j)), make([]string, 0, len(*j))
+	tables := make([]string, 0, 2*len(*j))
+	joinsAsStr := make([]string, 0, len(*j))
 	for _, currJoin := range *j {
 		lhs, rhs := currJoin.lhs, currJoin.rhs
 		if lhs.table == rhs.table {

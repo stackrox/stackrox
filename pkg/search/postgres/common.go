@@ -112,8 +112,6 @@ func generateSelectFieldsRecursive(schema *walker.Schema, added set.StringSet, q
 			// nothing to do here
 		case *v1.BaseQuery_MatchFieldQuery:
 			// Need to find base value.
-			// TODO: A query can span across multiple tables. Therefore, the primary options map may not contain
-			//  the query field. Consider embedding field path into  walker.Field.
 			field, ok := optionsMap.Get(subBQ.MatchFieldQuery.GetField())
 			if !ok {
 				return nil, nil
@@ -135,8 +133,6 @@ func generateSelectFieldsRecursive(schema *walker.Schema, added set.StringSet, q
 				fields []*searchPkg.Field
 			)
 			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
-				// TODO: A query can span across multiple tables. Therefore, the primary options map not contain the query field.
-				//  Consider embedding field path into  walker.Field.
 				field, ok := optionsMap.Get(q.GetField())
 				if !ok {
 					return nil, nil

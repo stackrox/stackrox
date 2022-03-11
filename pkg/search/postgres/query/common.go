@@ -54,8 +54,6 @@ func MatchFieldQueryFromField(dbField *walker.Field, value string, optionsMap se
 		return nil, nil
 	}
 	// Need to find base value
-	// TODO: A query can span across multiple tables. Therefore, the primary options map may not contain the query field.
-	//  Consider embedding field path into  walker.Field.
 	field, ok := optionsMap.Get(dbField.Search.FieldName)
 	if !ok {
 		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
