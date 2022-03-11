@@ -4,7 +4,4 @@ export type Metadata = {
     releaseBuild: boolean;
     licenseStatus: string;
     versionString?: string;
-    productBranding: ProductBranding;
 };
-
-export type ProductBranding = 'RHACS_BRANDING' | 'STACKROX_BRANDING';
