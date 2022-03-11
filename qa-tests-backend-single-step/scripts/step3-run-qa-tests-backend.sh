@@ -19,9 +19,9 @@ REGISTRY_PASSWORD="$(pass quay-io-ro-password)"; export REGISTRY_PASSWORD
 
 # Disabling build to accelerate dev loop -- takes 3-5 minutes on my laptop
 if false; then
-  make style proto-generated-srcs
+    make style proto-generated-srcs
 else
-  echo "SKIPPING BUILD TO SPEEDUP DEV LOOP"
+    echo "SKIPPING BUILD TO SPEEDUP DEV LOOP"
 fi
 
 export CLUSTER="OPENSHIFT"
@@ -39,7 +39,23 @@ QUAY_USERNAME="$(pass quay-io-ro-username)"
 QUAY_PASSWORD="$(pass quay-io-ro-password)"
 export QUAY_USERNAME QUAY_PASSWORD
 
-port-forward-central
+# operates against current kube context
+pkill -f 'port-forward.*stackrox.*svc/central' || true
+sleep 2
+nohup kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
+sleep 5  # 2 seconds in unreliable but 5 seems to work
+pgrep -fl 'port-forward.*stackrox.*svc/central' || {
+    warning "Port forwarding to central has failed"
+    cat /tmp/central.log
+}
+
+# The Groovy e2e api tests require these two variables are set
+export API_HOSTNAME="localhost"
+export API_PORT="8443"
+
+nc -vz "$API_HOSTNAME" "$API_PORT" \
+    || error "FAILED: [nc -vz $API_HOSTNAME $API_PORT]"
+
 PASSWORD_FILE_PATH="$GOPATH/src/github.com/stackrox/stackrox/deploy/openshift/central-deploy/password"
 CENTRAL_USERNAME="admin"
 CENTRAL_PASSWORD=$(cat "$PASSWORD_FILE_PATH")

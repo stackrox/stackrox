@@ -63,22 +63,3 @@ function assert_file_exists {
 function cluster_is_openshift {
   kubectl config view | grep -q devshift-org
 }
-
-function port-forward-central {
-  # operates against current kube context
-  pkill -f 'port-forward.*stackrox.*svc/central' || true
-  sleep 2
-  nohup kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
-  sleep 5  # 2 seconds in unreliable but 5 seems to work
-  pgrep -fl 'port-forward.*stackrox.*svc/central' || {
-    warning "Port forwarding to central has failed"
-    cat /tmp/central.log
-  }
-
-  # The Groovy e2e api tests require these two variables are set
-  export API_HOSTNAME="localhost"
-  export API_PORT="8443"
-
-  nc -vz "$API_HOSTNAME" "$API_PORT" \
-    || error "FAILED: [nc -vz $API_HOSTNAME $API_PORT]"
-}
