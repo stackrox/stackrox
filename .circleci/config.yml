@@ -2588,8 +2588,11 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.2.17
+      KOPS_AUTOMATION_VERSION: 0.0.9
+      EKS_AUTOMATION_VERSION: 0.2.17
+      # All CI builds go out with commercial product branding.
+      # TODO(ROX-9513): a separate CI setup is required for open source/community builds.
+      REACT_APP_ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - checkout
       - attach_workspace:
