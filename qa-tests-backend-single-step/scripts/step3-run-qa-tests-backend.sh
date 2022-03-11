@@ -31,10 +31,6 @@ export AWS_ECR_REGISTRY_REGION="us-east-2"
 AWS_ECR_DOCKER_PULL_PASSWORD="$(aws ecr get-login-password)" || true
 export AWS_ECR_DOCKER_PULL_PASSWORD
 
-CENTRAL_USERNAME="admin"
-CENTRAL_PASSWORD=$(cat "$GOPATH/src/github.com/stackrox/stackrox/deploy/openshift/central-deploy/password")
-export ROX_PASSWORD="$CENTRAL_PASSWORD"
-
 QUAY_USERNAME="$(pass quay-io-ro-username)"
 QUAY_PASSWORD="$(pass quay-io-ro-password)"
 export QUAY_USERNAME QUAY_PASSWORD
@@ -42,21 +38,22 @@ export QUAY_USERNAME QUAY_PASSWORD
 export KUBECONFIG="/tmp/kubeconfig"
 pkill -f 'port-forward.*svc/central' || true
 sleep 2
-kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
+kubectl port-forward -n stackrox svc/central 8000:443 &> /tmp/central.log &
 sleep 3
 
 # The Groovy e2e api tests require these two variables are set
 export API_HOSTNAME="localhost"
-export API_PORT="8443"
+export API_PORT="8000"
 
 nc -vz "$API_HOSTNAME" "$API_PORT" \
     || error "FAILED: [nc -vz $API_HOSTNAME $API_PORT]"
 
 PASSWORD_FILE_PATH="$GOPATH/src/github.com/stackrox/stackrox/deploy/openshift/central-deploy/password"
-CENTRAL_USERNAME="admin"
-CENTRAL_PASSWORD=$(cat "$PASSWORD_FILE_PATH")
-echo "Access Central console at localhost:8443"
-echo "Login with ($CENTRAL_USERNAME, $CENTRAL_PASSWORD)"
+ROX_USERNAME="admin"
+ROX_PASSWORD=$(cat "$PASSWORD_FILE_PATH")
+export ROX_USERNAME ROX_PASSWORD
+echo "Access Central console at localhost:8000"
+echo "Login with ($ROX_USERNAME, $ROX_PASSWORD)"
 
 gradle test --tests='ImageScanningTest'
 #gradle test --tests='ImageScanningTest.Image metadata from registry test'
