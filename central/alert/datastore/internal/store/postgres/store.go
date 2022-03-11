@@ -66,7 +66,7 @@ func createTableAlerts(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists alerts (
     Id varchar,
     Policy_Id varchar,
-    Policy_Name varchar UNIQUE,
+    Policy_Name varchar,
     Policy_Description varchar,
     Policy_Rationale varchar,
     Policy_Remediation varchar,
