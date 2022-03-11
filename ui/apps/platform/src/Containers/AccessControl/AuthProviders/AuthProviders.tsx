@@ -17,7 +17,7 @@ import {
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
@@ -189,9 +189,9 @@ function AuthProviders(): ReactElement {
                             {pluralize(authProvidersWithRules.length, 'result')} found
                         </Title>
                         {authProvidersWithRules.length === 0 && (
-                            <ACSEmptyState title="No auth providers" headingLevel="h2">
+                            <EmptyStateTemplate title="No auth providers" headingLevel="h3">
                                 Please add one.
-                            </ACSEmptyState>
+                            </EmptyStateTemplate>
                         )}
                         {authProvidersWithRules.length > 0 && (
                             <AuthProvidersList

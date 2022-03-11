@@ -20,7 +20,7 @@ import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { SearchFilter } from 'types/search';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -187,7 +187,10 @@ function DeferredCVEsTable({
                         <Tr>
                             <Td colSpan={9}>
                                 <PageSection variant={PageSectionVariants.light} isFilled>
-                                    <ACSEmptyState title="No deferral requests were approved." />
+                                    <EmptyStateTemplate
+                                        title="No deferral requests were approved."
+                                        headingLevel="h3"
+                                    />
                                 </PageSection>
                             </Td>
                         </Tr>

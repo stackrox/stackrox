@@ -18,7 +18,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { searchCategories } from 'constants/entityTypes';
@@ -174,7 +174,10 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
             )}
             {!isLoading && !reports?.length && (
                 <PageSection variant={PageSectionVariants.light} isFilled>
-                    <ACSEmptyState title="No reports are currently configured." />
+                    <EmptyStateTemplate
+                        title="No reports are currently configured."
+                        headingLevel="h2"
+                    />
                 </PageSection>
             )}
         </>
