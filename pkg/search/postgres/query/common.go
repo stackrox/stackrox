@@ -31,7 +31,7 @@ func NewTrueQuery() *QueryEntry {
 	}
 }
 
-// MatchFieldQuery is a simple query that performs operations on a single field
+// MatchFieldQuery is a simple query that performs operations on a single field.
 func MatchFieldQuery(schema *walker.Schema, query *v1.MatchFieldQuery, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
 	// Need to find base value
 	field, ok := optionsMap.Get(query.GetField())
@@ -46,4 +46,18 @@ func MatchFieldQuery(schema *walker.Schema, query *v1.MatchFieldQuery, optionsMa
 		return nil, nil
 	}
 	return matchFieldQuery(dbField, field, query.Value)
+}
+
+// MatchFieldQueryFromField is a simple query that performs operations on a single field.
+func MatchFieldQueryFromField(dbField *walker.Field, value string, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
+	if dbField == nil {
+		return nil, nil
+	}
+	// Need to find base value
+	field, ok := optionsMap.Get(dbField.Search.FieldName)
+	if !ok {
+		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
+		return nil, nil
+	}
+	return matchFieldQuery(dbField, field, value)
 }
