@@ -12,8 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -79,41 +79,35 @@ func tlsHandshakeErrorHandler(conn net.Conn, e error) {
 	_ = recordHdrErr.Conn.Close()
 }
 
-func isMisdirectedRequest(req *http.Request) bool {
+func checkMisdirectedRequest(req *http.Request) error {
 	if req.TLS == nil {
-		return false // we can only detect misdirected requests with TLS
+		return nil // we can only detect misdirected requests with TLS
 	}
 	if !req.ProtoAtLeast(2, 0) {
-		return false // connection caolescing requires HTTP/2.0 or higher
+		return nil // connection caolescing requires HTTP/2.0 or higher
 	}
 	tlsServerName := req.TLS.ServerName
 	if tlsServerName == "" {
-		return false // need an SNI ServerName
+		return nil // need an SNI ServerName
 	}
-	httpHostName := stringutils.GetUpTo(req.Host, ":") // may be of form host:port
-	if httpHostName == "" {
-		return false // need a HTTP Host or :authority header
+	httpHostName, _, _, err := netutil.ParseEndpoint(req.Host)
+	if httpHostName == "" || err != nil {
+		return nil // need a valid HTTP Host or :authority header
 	}
 	if tlsServerName == httpHostName {
-		return false
+		return nil
 	}
-	// Even if hostname and server name are distinct, let's limit ourselves to only classifying requests
-	// as positively misdirected if the discrepancy can be explained by a wildcard cert.
-	tlsServerNameDomain := stringutils.GetAfter(tlsServerName, ".")
-	if tlsServerNameDomain == "" {
-		return false
-	}
-	httpHostNameDomain := stringutils.GetAfter(httpHostName, ".")
-	if httpHostNameDomain == "" {
-		return false
-	}
-	return tlsServerNameDomain == httpHostNameDomain
+	// Whenever we have both a ServerName from SNI as well as a hostname from the :authority pseudo-header, enforce
+	// that they must match. While it is possible that the server is exposed under different DNS names that are both
+	// valid for the same served certificate (which would be a legitimate use case for connection coalescing), this
+	// case is rare enough that no harm is done if we require separate TCP connections where one would suffice.
+	return errors.Errorf("request was intended for host %s, but sent over a connection established for host %s", httpHostName, tlsServerName)
 }
 
 func denyMisdirectedRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if isMisdirectedRequest(req) {
-			http.Error(w, "received connection for unexpected hostname", http.StatusMisdirectedRequest)
+		if err := checkMisdirectedRequest(req); err != nil {
+			http.Error(w, err.Error(), http.StatusMisdirectedRequest)
 			return
 		}
 		next.ServeHTTP(w, req)
@@ -184,6 +178,10 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			} else {
 				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
 			}
+			// When using HTTP/2, connection coalescing in conjunction with wildcard or multi-SAN certificates may
+			// cause this server to receive requests not intended for it. Since we know of no legitimate use case
+			// for connection coalescing targeting us, deny such requests outright with a 421 (Misdirected Request)
+			// status code.
 			httpSrv.Handler = denyMisdirectedRequest(httpSrv.Handler)
 		}
 		result = append(result, serverAndListener{
