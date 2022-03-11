@@ -755,19 +755,6 @@ commands:
             fi
           when: always
 
-  install-ossls:
-    steps:
-      - run:
-          name: Install ossls
-          working_directory: /tmp
-          command: |
-            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.5/fetch_linux_amd64
-            sudo install fetch_linux_amd64 /usr/bin/fetch
-            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
-            fetch --repo="https://github.com/stackrox/ossls" --tag="0.10.1" --release-asset="ossls_linux_amd64" .
-            sudo install ossls_linux_amd64 /usr/bin/ossls
-            ossls version
-
   setup-egress-proxies:
     steps:
       - run:
@@ -2775,8 +2762,6 @@ jobs:
 
       - *refreshAlpineBaseImage
 
-      - install-ossls
-
       - restore-go-mod-cache
       - setup-go-build-env
 
@@ -2899,8 +2884,6 @@ jobs:
             make --quiet tag
 
       - setup_remote_docker
-
-      - install-ossls
 
       - restore-go-mod-cache
       - setup-go-build-env
