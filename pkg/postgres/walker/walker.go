@@ -19,6 +19,7 @@ type context struct {
 	column         string
 	searchDisabled bool
 	ignorePK       bool
+	ignoreUnique   bool
 }
 
 func (c context) Getter(name string) string {
@@ -36,12 +37,13 @@ func (c context) Column(name string) string {
 	return c.column + "_" + name
 }
 
-func (c context) childContext(name string, searchDisabled bool, ignorePK bool) context {
+func (c context) childContext(name string, searchDisabled bool, opts PostgresOptions) context {
 	return context{
 		getter:         c.Getter(name),
 		column:         c.Column(name),
 		searchDisabled: c.searchDisabled || searchDisabled,
-		ignorePK:       c.ignorePK || ignorePK,
+		ignorePK:       c.ignorePK || opts.IgnorePrimaryKey,
+		ignoreUnique:   c.ignoreUnique || opts.IgnoreUniqueConstraint,
 	}
 }
 
@@ -57,11 +59,13 @@ func Walk(obj reflect.Type, table string) *Schema {
 
 const defaultIndex = "btree"
 
-func getPostgresOptions(tag string, topLevel bool, ignorePK bool) PostgresOptions {
-	var opts PostgresOptions
+func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) PostgresOptions {
+	opts := PostgresOptions{
+		IgnorePrimaryKey:       ignorePK,
+		IgnoreUniqueConstraint: ignoreUnique,
+	}
 
 	for _, field := range strings.Split(tag, ",") {
-		opts.IgnorePrimaryKey = ignorePK
 		switch {
 		case field == "-":
 			opts.Ignored = true
@@ -71,23 +75,24 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK bool) PostgresOption
 			} else {
 				opts.Index = defaultIndex
 			}
+		case field == "ignore_unique":
+			// if this is an embedded entity that defines a unique constraint, then we want to ignore it as
+			// it is not a unique constraint at the top level
+			opts.IgnoreUniqueConstraint = true
 		case field == "ignore_pk":
 			// if this is an embedded entity with a primary key of its own, we do not want to use it as a
 			// primary key since the owning entity's primary key is what we'd like to use
 			opts.IgnorePrimaryKey = true
 
 		case field == "pk":
-			if ignorePK {
-				continue
-			}
 			// if we have a child object, we don't want to propagate its primary key
 			// an example of this is process_indicator.  It is its own object
 			// at which times it needs to use a primary key.  It can also be a child of
 			// alerts.  When it is a child of alerts, we want to ignore the pk of the
 			// process_indicator in favor of the parent_id and generated idx field.
-			opts.PrimaryKey = topLevel
+			opts.PrimaryKey = topLevel && !ignorePK
 		case field == "unique":
-			opts.Unique = true
+			opts.Unique = !ignoreUnique
 		case field == "":
 		default:
 			// ignore for just right now
@@ -140,7 +145,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(structField.Tag.Get("sql"), len(schema.Parents) == 0, ctx.ignorePK)
+		opts := getPostgresOptions(structField.Tag.Get("sql"), len(schema.Parents) == 0, ctx.ignorePK, ctx.ignoreUnique)
 
 		if opts.Ignored {
 			continue
@@ -171,7 +176,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				continue
 			}
 
-			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts.IgnorePrimaryKey), schema, structField.Type.Elem())
+			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type.Elem())
 		case reflect.Slice:
 			elemType := structField.Type.Elem()
 
@@ -215,9 +220,9 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 
-			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, ignorePK: opts.IgnorePrimaryKey}, childSchema, structField.Type.Elem().Elem())
+			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, ignorePK: opts.IgnorePrimaryKey, ignoreUnique: opts.IgnoreUniqueConstraint}, childSchema, structField.Type.Elem().Elem())
 		case reflect.Struct:
-			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts.IgnorePrimaryKey), schema, structField.Type)
+			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)
 		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
 			if typeIsEnum(structField.Type) {
 				schema.AddFieldWithType(field, Enum)
