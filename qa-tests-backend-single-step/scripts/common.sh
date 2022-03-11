@@ -75,14 +75,10 @@ function port-forward-central {
     cat /tmp/central.log
   }
 
+  # The Groovy e2e api tests require these two variables are set
   export API_HOSTNAME="localhost"
   export API_PORT="8443"
+
   nc -vz "$API_HOSTNAME" "$API_PORT" \
     || error "FAILED: [nc -vz $API_HOSTNAME $API_PORT]"
-
-  CENTRAL_USERNAME="admin"
-  CENTRAL_PASSWORD=$(cat \
-    "$GOPATH/src/github.com/stackrox/stackrox/deploy/openshift/central-deploy/password")
-  echo "Access Central console at localhost:8443"
-  echo "Login with ($CENTRAL_USERNAME, $CENTRAL_PASSWORD)"
 }

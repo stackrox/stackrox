@@ -40,6 +40,13 @@ QUAY_PASSWORD="$(pass quay-io-ro-password)"
 export QUAY_USERNAME QUAY_PASSWORD
 
 port-forward-central
+PASSWORD_FILE_PATH=$(join_by ""  \
+  "$GOPATH/src/github.com/stackrox/stackrox/" \
+  "deploy/openshift/central-deploy/password")
+CENTRAL_USERNAME="admin"
+CENTRAL_PASSWORD=$(cat "$PASSWORD_FILE_PATH")
+echo "Access Central console at localhost:8443"
+echo "Login with ($CENTRAL_USERNAME, $CENTRAL_PASSWORD)"
 
 gradle test --tests='ImageScanningTest'
 #gradle test --tests='ImageScanningTest.Image metadata from registry test'
