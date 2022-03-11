@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -58,7 +59,7 @@ type query struct {
 }
 
 func (q *query) String() string {
-	query := q.Select.Query + " " + q.From
+	query := q.Select.Query + " from " + q.From
 	if q.Where != "" {
 		query += " where " + q.Where
 	}
@@ -72,7 +73,7 @@ func qualifyColumn(table, column string) string {
 	return table + "." + column
 }
 
-func getPaginationQuery(pagination *v1.QueryPagination, queryFields map[string]*walker.Field) (string, error) {
+func getPaginationQuery(pagination *v1.QueryPagination, schema *walker.Schema, queryFields map[string]*walker.Field) (string, error) {
 	if pagination == nil {
 		return "", nil
 	}
@@ -84,6 +85,9 @@ func getPaginationQuery(pagination *v1.QueryPagination, queryFields map[string]*
 			direction = "desc"
 		}
 		dbField := queryFields[so.GetField()]
+		if dbField == nil {
+			return "", errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
+		}
 		orderByClauses = append(
 			orderByClauses,
 			fmt.Sprintf("%s %s", qualifyColumn(dbField.Schema.Table, dbField.ColumnName), direction),
@@ -108,8 +112,8 @@ func generateSelectFieldsRecursive(schema *walker.Schema, added set.StringSet, q
 			// nothing to do here
 		case *v1.BaseQuery_MatchFieldQuery:
 			// Need to find base value.
-			// TODO: A query can span across multiple tables. Therefore, the primary options map not contain the query field.
-			//  Consider embedding field path into  walker.Field.
+			// TODO: A query can span across multiple tables. Therefore, the primary options map may not contain
+			//  the query field. Consider embedding field path into  walker.Field.
 			field, ok := optionsMap.Get(subBQ.MatchFieldQuery.GetField())
 			if !ok {
 				return nil, nil
@@ -213,7 +217,7 @@ func generateSelectFields(schema *walker.Schema, q *v1.Query, optionsMap searchP
 		values = append(values, qualifyColumn(pk.Schema.Table, pk.ColumnName))
 	}
 	if selectType == VALUE {
-		// TODO: Tackle values serialized across multiple tables.
+		// TODO: Tackle request of serialized values that reside in multiple tables.
 		paths = append(values, qualifyColumn(schema.Table, "serialized"))
 	} else {
 		paths = append(values, paths...)
@@ -226,22 +230,20 @@ func generateSelectFields(schema *walker.Schema, q *v1.Query, optionsMap searchP
 func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, schema *walker.Schema, selectType QueryType) (*query, error) {
 	// Field can belong to multiple tables. Therefore, find all the tables reachable from starting table, that contain
 	// query fields.
-	dbFields := getTableFields(schema, q)
-
+	dbFields := getTableFieldsForQuery(schema, q)
 	tables := make([]*walker.Schema, 0, len(dbFields))
 	for _, f := range dbFields {
 		tables = append(tables, f.Schema)
 	}
-	tableNames, joinClause := getJoin(schema, tables...)
+	froms, joinsMap := getJoins(schema, tables...)
 
-	fromClause := fmt.Sprintf("from %s", stringutils.JoinNonEmpty(",", tableNames...))
-
+	fromClause := stringutils.JoinNonEmpty(", ", froms...)
 	selQuery := generateSelectFields(schema, q, optionsMap, selectType, dbFields)
-	queryEntry, err := compileBaseQuery(schema, q, optionsMap, dbFields)
+	queryEntry, err := compileBaseQuery(schema, q, optionsMap, dbFields, joinsMap)
 	if err != nil {
 		return nil, err
 	}
-	pagination, err := getPaginationQuery(q.Pagination, dbFields)
+	pagination, err := getPaginationQuery(q.Pagination, schema, dbFields)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +258,7 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, schema *walker.S
 	return &query{
 		Select:     selQuery,
 		From:       fromClause,
-		Where:      stringutils.JoinNonEmpty(" and ", queryEntry.Query, joinClause),
+		Where:      queryEntry.Query,
 		Pagination: pagination,
 		Data:       queryEntry.Values,
 	}, nil
@@ -281,10 +283,16 @@ func multiQueryFromQueryEntries(entries []*pgsearch.QueryEntry, separator string
 	}
 }
 
-func entriesFromQueries(table *walker.Schema, queries []*v1.Query, optionsMap searchPkg.OptionsMap, queryFields map[string]*walker.Field) ([]*pgsearch.QueryEntry, error) {
+func entriesFromQueries(
+	table *walker.Schema,
+	queries []*v1.Query,
+	optionsMap searchPkg.OptionsMap,
+	queryFields map[string]*walker.Field,
+	joinMap map[string]string,
+) ([]*pgsearch.QueryEntry, error) {
 	var entries []*pgsearch.QueryEntry
 	for _, q := range queries {
-		entry, err := compileBaseQuery(table, q, optionsMap, queryFields)
+		entry, err := compileBaseQuery(table, q, optionsMap, queryFields, joinMap)
 		if err != nil {
 			return nil, err
 		}
@@ -322,21 +330,17 @@ func collectFields(q *v1.Query) set.StringSet {
 		queries = append(queries, sub.BooleanQuery.MustNot.Queries...)
 	}
 
-	for _, q := range queries {
-		collectedFields.Union(collectFields(q))
+	for _, query := range queries {
+		collectedFields.AddAll(collectFields(query).AsSlice()...)
+	}
+	for _, sortOption := range q.GetPagination().GetSortOptions() {
+		collectedFields.Add(sortOption.GetField())
 	}
 	return collectedFields
 }
 
-func getTableFields(schema *walker.Schema, q *v1.Query) map[string]*walker.Field {
-	queryFields := collectFields(q)
-	dbFields := getDBFieldsForSearchFields(schema, queryFields)
-	for _, field := range queryFields.AsSlice() {
-		if dbFields[field] == nil {
-			log.Errorf("Field %s not found in table %s or connected tables", field, schema.Table)
-		}
-	}
-	return dbFields
+func getTableFieldsForQuery(schema *walker.Schema, q *v1.Query) map[string]*walker.Field {
+	return getDBFieldsForSearchFields(schema, collectFields(q))
 }
 
 func getDBFieldsForSearchFields(schema *walker.Schema, searchFields set.StringSet) map[string]*walker.Field {
@@ -376,20 +380,40 @@ func recursiveSearchForFields(schemaQ []*walker.Schema, searchFields set.StringS
 	recursiveSearchForFields(schemaQ, searchFields, reachableFields, visitedTables)
 }
 
-func compileBaseQuery(schema *walker.Schema, q *v1.Query, optionsMap searchPkg.OptionsMap, queryFields map[string]*walker.Field) (*pgsearch.QueryEntry, error) {
+func withJoinClause(queryEntry *pgsearch.QueryEntry, dbField *walker.Field, joinMap map[string]string) {
+	if queryEntry == nil {
+		return
+	}
+	queryEntry.Query = fmt.Sprintf("(%s)", stringutils.JoinNonEmpty(" and ", queryEntry.Query, joinMap[dbField.Schema.Table]))
+}
+
+func compileBaseQuery(
+	schema *walker.Schema,
+	q *v1.Query,
+	optionsMap searchPkg.OptionsMap,
+	queryFields map[string]*walker.Field,
+	joinMap map[string]string,
+) (*pgsearch.QueryEntry, error) {
+
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
 		switch subBQ := q.GetBaseQuery().Query.(type) {
 		case *v1.BaseQuery_DocIdQuery:
+			// TODO: Tackle selection of children.
 			return &pgsearch.QueryEntry{
 				Query:  fmt.Sprintf("%s.id = ANY($$::text[])", schema.Table),
 				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
 			}, nil
 		case *v1.BaseQuery_MatchFieldQuery:
-			return pgsearch.MatchFieldQueryFromField(
+			qe, err := pgsearch.MatchFieldQueryFromField(
 				queryFields[subBQ.MatchFieldQuery.GetField()],
 				subBQ.MatchFieldQuery.GetValue(), optionsMap,
 			)
+			if err != nil {
+				return nil, err
+			}
+			withJoinClause(qe, queryFields[subBQ.MatchFieldQuery.GetField()], joinMap)
+			return qe, nil
 		case *v1.BaseQuery_MatchNoneQuery:
 			return nil, nil
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
@@ -403,6 +427,7 @@ func compileBaseQuery(schema *walker.Schema, q *v1.Query, optionsMap searchPkg.O
 					continue
 				}
 
+				withJoinClause(qe, queryFields[q.GetField()], joinMap)
 				entries = append(entries, qe)
 			}
 			return multiQueryFromQueryEntries(entries, " and "), nil
@@ -410,19 +435,19 @@ func compileBaseQuery(schema *walker.Schema, q *v1.Query, optionsMap searchPkg.O
 			panic("unsupported")
 		}
 	case *v1.Query_Conjunction:
-		entries, err := entriesFromQueries(schema, sub.Conjunction.Queries, optionsMap, queryFields)
+		entries, err := entriesFromQueries(schema, sub.Conjunction.Queries, optionsMap, queryFields, joinMap)
 		if err != nil {
 			return nil, err
 		}
 		return multiQueryFromQueryEntries(entries, " and "), nil
 	case *v1.Query_Disjunction:
-		entries, err := entriesFromQueries(schema, sub.Disjunction.Queries, optionsMap, queryFields)
+		entries, err := entriesFromQueries(schema, sub.Disjunction.Queries, optionsMap, queryFields, joinMap)
 		if err != nil {
 			return nil, err
 		}
 		return multiQueryFromQueryEntries(entries, " or "), nil
 	case *v1.Query_BooleanQuery:
-		entries, err := entriesFromQueries(schema, sub.BooleanQuery.Must.Queries, optionsMap, queryFields)
+		entries, err := entriesFromQueries(schema, sub.BooleanQuery.Must.Queries, optionsMap, queryFields, joinMap)
 		if err != nil {
 			return nil, err
 		}
@@ -431,7 +456,7 @@ func compileBaseQuery(schema *walker.Schema, q *v1.Query, optionsMap searchPkg.O
 			cqe = pgsearch.NewTrueQuery()
 		}
 
-		entries, err = entriesFromQueries(schema, sub.BooleanQuery.MustNot.Queries, optionsMap, queryFields)
+		entries, err = entriesFromQueries(schema, sub.BooleanQuery.MustNot.Queries, optionsMap, queryFields, joinMap)
 		if err != nil {
 			return nil, err
 		}

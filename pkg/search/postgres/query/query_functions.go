@@ -30,17 +30,18 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 }
 
 func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string) (*QueryEntry, error) {
+	qualifiedColName := dbField.Schema.Table + "." + dbField.ColumnName
 	// Special case: wildcard
 	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
-		return handleExistenceQueries(dbField.ColumnName, value), nil
+		return handleExistenceQueries(qualifiedColName, value), nil
 	}
 
 	if dbField.DataType == walker.Map {
-		return newMapQuery(dbField.ColumnName, field, value)
+		return newMapQuery(qualifiedColName, field, value)
 	}
 
 	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
-	return datatypeToQueryFunc[dbField.DataType](dbField.ColumnName, field, trimmedValue, modifiers...)
+	return datatypeToQueryFunc[dbField.DataType](qualifiedColName, field, trimmedValue, modifiers...)
 }
 
 func handleExistenceQueries(root string, value string) *QueryEntry {

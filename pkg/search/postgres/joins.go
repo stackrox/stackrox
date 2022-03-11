@@ -52,48 +52,30 @@ func (j *joins) toSQLJoinClauseParts() *sqlJoinClauseParts {
 	}
 }
 
-func dedupeAndCombineJoins(src string, joins map[string]*sqlJoinClauseParts) *sqlJoinClauseParts {
-	tables := make([]string, 0, len(joins))
-	tables = append(tables, src)
-	var wheres []string
-	visitedTables := set.NewStringSet()
-	for _, currJoin := range joins {
-		// Not real join. Source is always at 0.
-		if len(currJoin.tables) < 2 {
-			continue
-		}
-		for i := 1; i < len(currJoin.tables); i++ {
-			if visitedTables.Add(currJoin.tables[i]) {
-				continue
-			}
-			wheres = append(wheres, currJoin.wheres[i-1:i]...)
-		}
-	}
-	return &sqlJoinClauseParts{
-		tables: tables,
-		wheres: wheres,
-	}
-}
-
-func getJoin(src *walker.Schema, destinations ...*walker.Schema) ([]string, string) {
-	joinsMap := make(map[string]*sqlJoinClauseParts)
+// getJoins returns join clauses to join src to destinations, as a map keyed by destination table name.
+func getJoins(src *walker.Schema, destinations ...*walker.Schema) ([]string, map[string]string) {
+	joinMap := make(map[string]*sqlJoinClauseParts)
 	for _, dst := range destinations {
 		if src == dst {
 			continue
 		}
-		if _, joinExists := joinsMap[dst.Table]; joinExists {
+		if _, joinExists := joinMap[dst.Table]; joinExists {
 			continue
 		}
 		currJoins := &joins{}
 		if joinPathRecursive(src, dst, currJoins, set.NewStringSet()) {
-			joinsMap[dst.Table] = currJoins.toSQLJoinClauseParts()
+			joinMap[dst.Table] = currJoins.toSQLJoinClauseParts()
 		}
 	}
-	ret := dedupeAndCombineJoins(src.Table, joinsMap)
-	if len(ret.wheres) == 0 {
-		return ret.tables, ""
+
+	tables := set.NewStringSet(src.Table)
+	joinStrMap := make(map[string]string)
+	for dst, currJoin := range joinMap {
+		tables.AddAll(currJoin.tables...)
+		joinStrMap[dst] = stringutils.JoinNonEmpty(" and ", currJoin.wheres...)
 	}
-	return ret.tables, fmt.Sprintf("(%s)", stringutils.JoinNonEmpty(" and ", ret.wheres...))
+
+	return tables.AsSlice(), joinStrMap
 }
 
 func joinPathRecursive(currSchema, dstSchema *walker.Schema, joins *joins, visited set.StringSet) bool {
