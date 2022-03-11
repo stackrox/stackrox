@@ -8,13 +8,17 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
-type ACSEmptyStateProps = {
+type EmptyStateTemplateProps = {
     children?: ReactNode;
     title: string;
-    headingLevel?: 'h1' | 'h2' | 'h3';
+    headingLevel: 'h1' | 'h2' | 'h3' | 'h4';
 };
 
-function ACSEmptyState({ children, title, headingLevel = 'h1' }: ACSEmptyStateProps): ReactElement {
+function EmptyStateTemplate({
+    children,
+    title,
+    headingLevel,
+}: EmptyStateTemplateProps): ReactElement {
     return (
         <EmptyState variant={EmptyStateVariant.large}>
             <EmptyStateIcon icon={CubesIcon} />
@@ -26,4 +30,4 @@ function ACSEmptyState({ children, title, headingLevel = 'h1' }: ACSEmptyStatePr
     );
 }
 
-export default ACSEmptyState;
+export default EmptyStateTemplate;
