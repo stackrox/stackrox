@@ -2138,6 +2138,11 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		}}),
 	}
 
+	allImages := set.NewStringSet()
+	for _, img := range images {
+		allImages.Add(img.GetName().GetFullName())
+	}
+
 	for _, testCase := range []struct {
 		value           string
 		negate          bool
@@ -2174,30 +2179,38 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		suite.Run(fmt.Sprintf("ImageMatcher %+v", c), func() {
 			imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageSignatureVerified, c.value, c.negate))
 			suite.NoError(err)
+			matchedImages := set.NewStringSet()
 			for _, img := range images {
 				violations, err := imgMatcher.MatchImage(nil, img)
 				suite.NoError(err)
-				if len(violations.AlertViolations) > 0 {
-					if c.negate {
-						suite.False(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match", img.GetName().GetFullName())
-					} else {
-						suite.True(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match", img.GetName().GetFullName())
-					}
+				if len(violations.AlertViolations) == 0 {
+					continue
+				}
+				matchedImages.Add(img.GetName().GetFullName())
+				if c.negate {
+					suite.False(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match", img.GetName().GetFullName())
+				} else {
+					suite.True(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match", img.GetName().GetFullName())
+				}
 
-					messages := set.NewStringSet()
-					for _, r := range img.GetSignatureVerificationData().GetResults() {
-						if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-							messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
-						}
-					}
-					for _, violation := range violations.AlertViolations {
-						if messages.Cardinality() > 0 {
-							suite.True(messages.Contains(violation.GetMessage()), "Message not found", violation.GetMessage())
-						} else {
-							suite.Equal("Image signature is unverified", violation.GetMessage())
-						}
+				messages := set.NewStringSet()
+				for _, r := range img.GetSignatureVerificationData().GetResults() {
+					if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+						messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
 					}
 				}
+				for _, violation := range violations.AlertViolations {
+					if messages.Cardinality() > 0 {
+						suite.True(messages.Contains(violation.GetMessage()), "Message not found", violation.GetMessage())
+					} else {
+						suite.Equal("Image signature is unverified", violation.GetMessage())
+					}
+				}
+			}
+			if c.negate {
+				suite.True(c.expectedMatches.Difference(allImages.Difference(matchedImages).Freeze()).IsEmpty())
+			} else {
+				suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty())
 			}
 		})
 	}
