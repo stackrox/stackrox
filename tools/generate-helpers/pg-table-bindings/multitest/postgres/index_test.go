@@ -112,12 +112,30 @@ func (s *IndexSuite) runTestCases(cases []testCase) {
 func (s *IndexSuite) TestString() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
 		s.String_ = "first"
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Nested: "nested_first",
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Nested2: "nested2_first",
+			},
+		})
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
 		s.String_ = "second"
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Nested: "nested_second",
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Nested2: "nested2_second",
+			},
+		})
 	})
 	testStruct2 := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
 		s.String_ = "fir"
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Nested: "nested_fir",
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Nested2: "nested2_fir",
+			},
+		})
 	})
 	s.runTestCases([]testCase{
 		{
@@ -140,22 +158,53 @@ func (s *IndexSuite) TestString() {
 			q:               search.NewQueryBuilder().AddStrings(search.TestString, "!fir").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
-
 		{
 			desc:            "negated regex",
 			q:               search.NewQueryBuilder().AddStrings(search.TestString, "!r/.*s.*").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct2},
 		},
+		{
+			desc:            "exact match nested string",
+			q:               search.NewQueryBuilder().AddExactMatches(search.TestNestedString, "nested_second").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc: "exact match top-level and nested string",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.TestString, "!fir").
+				AddExactMatches(search.TestNestedString, "nested_second").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc: "prefix match nested string",
+			q: search.NewQueryBuilder().
+				AddStrings(search.TestNestedString, "nested_fir").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct2},
+		},
+		{
+			desc:            "negated prefix match nested string",
+			q:               search.NewQueryBuilder().AddStrings(search.TestNestedString, "!nested2_fir").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
 	})
-
 }
 
 func (s *IndexSuite) TestBool() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
 		s.Bool = false
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			IsNested: true,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				IsNested: false,
+			}})
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
 		s.Bool = true
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			IsNested: false,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				IsNested: true,
+			}})
 	})
 	s.runTestCases([]testCase{
 		{
@@ -166,6 +215,18 @@ func (s *IndexSuite) TestBool() {
 		{
 			desc:            "true",
 			q:               search.NewQueryBuilder().AddBools(search.TestBool, true).ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc:            "nested true",
+			q:               search.NewQueryBuilder().AddBools(search.TestNestedBool, true).ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+		{
+			desc: "nest true + false",
+			q: search.NewQueryBuilder().
+				AddBools(search.TestNestedBool, false).
+				AddBools(search.TestNestedBool2, true).ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
 	})
@@ -233,9 +294,19 @@ func (s *IndexSuite) TestUint64() {
 func (s *IndexSuite) TestInt64() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
 		s.Int64 = -2
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Int64: 100,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Int64: -200,
+			}})
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
 		s.Int64 = 7
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Int64: -100,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Int64: -200,
+			}})
 	})
 
 	s.runTestCases([]testCase{
@@ -253,6 +324,17 @@ func (s *IndexSuite) TestInt64() {
 			desc:            ">=",
 			q:               search.NewQueryBuilder().AddStrings(search.TestInt64, ">=-2").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+		},
+		{
+			desc:            ">=",
+			q:               search.NewQueryBuilder().AddStrings(search.TestNestedInt64, ">=-200").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+		},
+		{
+			desc: ">=",
+			q: search.NewQueryBuilder().AddStrings(search.TestNestedInt64, ">=0").
+				AddStrings(search.TestNested2Int64, ">=-200").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
 		},
 	})
 }
