@@ -10,7 +10,7 @@ import org.spockframework.runtime.SpockAssertionError
 
 // Helpers defines useful helper methods. Is mixed in to every object in order to be visible everywhere.
 class Helpers {
-    private static final int MAX_RETRY_ATTEMPTS = 2
+    private static final int MAX_RETRY_ATTEMPTS = 0
     private static int retryAttempt = 0
 
     static <V> V evaluateWithRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
