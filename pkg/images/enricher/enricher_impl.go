@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
@@ -130,18 +130,21 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 	// Update the image with cached values depending on the FetchOption provided. This makes sure that we fetch any
 	// existing image only once from database.
+	// TODO(ROX-9687): Replace with proper injected context.
 	useCachedScan, useCachedSignature, useCachedSignatureVerificationData := e.updateImageFromDatabase(
 		context.TODO(), image, ctx.FetchOpt)
 
-	updatedMetadata, err := e.enrichWithMetadata(context.TODO(), ctx, image)
+	// TODO(ROX-9687): Replace with proper injected context.
+	didUpdateMetadata, err := e.enrichWithMetadata(context.TODO(), ctx, image)
 	errorList.AddError(err)
 	if image.GetMetadata() == nil {
 		imageNoteSet[storage.Image_MISSING_METADATA] = struct{}{}
 	} else {
 		delete(imageNoteSet, storage.Image_MISSING_METADATA)
 	}
-	updated = updated || updatedMetadata
+	updated = updated || didUpdateMetadata
 
+	// TODO(ROX-9687): Replace with proper injected context.
 	scanResult, err := e.enrichWithScan(context.TODO(), ctx, image, useCachedScan)
 	errorList.AddError(err)
 	if scanResult == ScanNotDone && image.GetScan() == nil {
@@ -152,6 +155,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	updated = updated || scanResult != ScanNotDone
 
 	if features.ImageSignatureVerification.Enabled() {
+		// TODO(ROX-9687): Replace with proper injected context.
 		didUpdateSignature, err := e.enrichWithSignature(context.TODO(), ctx, image, useCachedSignature)
 		errorList.AddError(err)
 		if len(image.GetSignature().GetSignatures()) == 0 {
@@ -161,6 +165,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 		}
 		updated = updated || didUpdateSignature
 
+		// TODO(ROX-9687): Replace with proper injected context.
 		didUpdateSigVerificationData, err := e.enrichWithSignatureVerificationData(context.TODO(), ctx, image,
 			useCachedSignatureVerificationData, didUpdateSignature)
 		errorList.AddError(err)
@@ -567,13 +572,16 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 func (e *enricherImpl) fetchAndAppendSignatures(ctx context.Context, img *storage.Image, registry registryTypes.ImageRegistry,
 	fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
+	// During fetching signatures, there is a timeout set by the http client making the remote call, which is 5 seconds.
+	// Hence, we can skip a specific timeout for the context here.
 	sigs, err := e.signatureFetcher.FetchSignatures(ctx, img, registry)
 	if err != nil {
 		return fetchedSignatures, err
 	}
 
 	for _, sig := range sigs {
-		if !protoutils.ContainsStorageSignatureInSlice(sig, fetchedSignatures) {
+		// TODO(ROX-9688): Replace with generated generic contains function.
+		if !containsSignature(sig, fetchedSignatures) {
 			fetchedSignatures = append(fetchedSignatures, sig)
 		}
 	}
@@ -732,4 +740,13 @@ func FillScanStats(i *storage.Image) {
 			}
 		}
 	}
+}
+
+func containsSignature(sig *storage.Signature, sigs []*storage.Signature) bool {
+	for _, s := range sigs {
+		if proto.Equal(sig, s) {
+			return true
+		}
+	}
+	return false
 }
