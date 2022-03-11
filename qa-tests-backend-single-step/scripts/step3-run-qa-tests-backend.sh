@@ -40,9 +40,7 @@ QUAY_PASSWORD="$(pass quay-io-ro-password)"
 export QUAY_USERNAME QUAY_PASSWORD
 
 port-forward-central
-PASSWORD_FILE_PATH=$(join_by ""  \
-  "$GOPATH/src/github.com/stackrox/stackrox/" \
-  "deploy/openshift/central-deploy/password")
+PASSWORD_FILE_PATH="$GOPATH/src/github.com/stackrox/stackrox/deploy/openshift/central-deploy/password"
 CENTRAL_USERNAME="admin"
 CENTRAL_PASSWORD=$(cat "$PASSWORD_FILE_PATH")
 echo "Access Central console at localhost:8443"
