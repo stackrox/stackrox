@@ -169,9 +169,9 @@ func (s *IndexSuite) TestString() {
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
 		{
-			desc: "exact match top-level and nested string",
+			desc: "negated prefix top-level and exact match nested string",
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.TestString, "!fir").
+				AddStrings(search.TestString, "!fir").
 				AddExactMatches(search.TestNestedString, "nested_second").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
@@ -183,7 +183,7 @@ func (s *IndexSuite) TestString() {
 		},
 		{
 			desc:            "negated prefix match nested string",
-			q:               search.NewQueryBuilder().AddStrings(search.TestNestedString, "!nested2_fir").ProtoQuery(),
+			q:               search.NewQueryBuilder().AddStrings(search.TestNestedString2, "!nested2_fir").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
 	})

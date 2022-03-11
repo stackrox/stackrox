@@ -123,6 +123,18 @@ func TestMultiTableQueries(t *testing.T) {
 				Data:  []interface{}{"central", "true"},
 			},
 		},
+		{
+			desc: "negated child schema query",
+			q:    search.NewQueryBuilder().AddStrings(search.ImageName, "!central").ProtoQuery(),
+			expected: &query{
+				Select: selectQuery{
+					Query: "select deployments.Id",
+				},
+				From:  "deployments, deployments_Containers",
+				Where: "(NOT (deployments_Containers.Image_Name_FullName ilike $$) and deployments.Id = deployments_Containers.deployments_Id)",
+				Data:  []interface{}{"central%"},
+			},
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			actual, err := populatePath(c.q, mappings.OptionsMap, deploymentBaseSchema, GET)
