@@ -77,6 +77,9 @@ create table if not exists policy (
     EnforcementActions int[],
     Notifiers text[],
     LastUpdated timestamp,
+    SORTName varchar,
+    SORTLifecycleStage varchar,
+    SORTEnforcement bool,
     PolicyVersion varchar,
     CriteriaLocked bool,
     MitreVectorsLocked bool,
@@ -348,6 +351,9 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		obj.GetEnforcementActions(),
 		obj.GetNotifiers(),
 		pgutils.NilOrStringTimestamp(obj.GetLastUpdated()),
+		obj.GetSORTName(),
+		obj.GetSORTLifecycleStage(),
+		obj.GetSORTEnforcement(),
 		obj.GetPolicyVersion(),
 		obj.GetCriteriaLocked(),
 		obj.GetMitreVectorsLocked(),
@@ -355,7 +361,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		serialized,
 	}
 
-	finalStr := "INSERT INTO policy (Id, Name, Description, Rationale, Remediation, Disabled, Categories, LifecycleStages, EventSource, Severity, EnforcementActions, Notifiers, LastUpdated, PolicyVersion, CriteriaLocked, MitreVectorsLocked, IsDefault, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Rationale = EXCLUDED.Rationale, Remediation = EXCLUDED.Remediation, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, EventSource = EXCLUDED.EventSource, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, Notifiers = EXCLUDED.Notifiers, LastUpdated = EXCLUDED.LastUpdated, PolicyVersion = EXCLUDED.PolicyVersion, CriteriaLocked = EXCLUDED.CriteriaLocked, MitreVectorsLocked = EXCLUDED.MitreVectorsLocked, IsDefault = EXCLUDED.IsDefault, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO policy (Id, Name, Description, Rationale, Remediation, Disabled, Categories, LifecycleStages, EventSource, Severity, EnforcementActions, Notifiers, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, PolicyVersion, CriteriaLocked, MitreVectorsLocked, IsDefault, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Rationale = EXCLUDED.Rationale, Remediation = EXCLUDED.Remediation, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, EventSource = EXCLUDED.EventSource, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, Notifiers = EXCLUDED.Notifiers, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, PolicyVersion = EXCLUDED.PolicyVersion, CriteriaLocked = EXCLUDED.CriteriaLocked, MitreVectorsLocked = EXCLUDED.MitreVectorsLocked, IsDefault = EXCLUDED.IsDefault, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
