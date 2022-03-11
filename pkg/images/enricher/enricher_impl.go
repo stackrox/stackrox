@@ -39,8 +39,8 @@ var (
 )
 
 type enricherImpl struct {
-	cvesSuppressor   cveSuppressor
-	cvesSuppressorV2 cveSuppressor
+	cvesSuppressor   CveSuppressor
+	cvesSuppressorV2 CveSuppressor
 	integrations     integration.Set
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
@@ -53,12 +53,12 @@ type enricherImpl struct {
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
 
-	signatureIntegrationGetter signatureIntegrationGetter
+	signatureIntegrationGetter SignatureIntegrationGetter
 	signatureVerifier          signatureVerifierForIntegrations
 	signatureFetcherLimiter    *rate.Limiter
 	signatureFetcher           signatures.SignatureFetcher
 
-	imageGetter imageGetter
+	imageGetter ImageGetter
 
 	asyncRateLimiter *rate.Limiter
 
@@ -131,7 +131,8 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	// Update the image with cached values depending on the FetchOption provided. This makes sure that we fetch any
 	// existing image only once from database.
 	// TODO(ROX-9687): Replace with proper injected context.
-	useCachedScan, useCachedSignature, useCachedSignatureVerificationData := e.updateImageFromDatabase(
+	useCachedScanIfPossible, useCachedSignatureIfPossible,
+		useCachedSignatureVerificationDataIfPossible := e.updateImageFromDatabase(
 		context.TODO(), image, ctx.FetchOpt)
 
 	// TODO(ROX-9687): Replace with proper injected context.
@@ -145,7 +146,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	updated = updated || didUpdateMetadata
 
 	// TODO(ROX-9687): Replace with proper injected context.
-	scanResult, err := e.enrichWithScan(context.TODO(), ctx, image, useCachedScan)
+	scanResult, err := e.enrichWithScan(context.TODO(), ctx, image, useCachedScanIfPossible)
 	errorList.AddError(err)
 	if scanResult == ScanNotDone && image.GetScan() == nil {
 		imageNoteSet[storage.Image_MISSING_SCAN_DATA] = struct{}{}
@@ -156,7 +157,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 	if features.ImageSignatureVerification.Enabled() {
 		// TODO(ROX-9687): Replace with proper injected context.
-		didUpdateSignature, err := e.enrichWithSignature(context.TODO(), ctx, image, useCachedSignature)
+		didUpdateSignature, err := e.enrichWithSignature(context.TODO(), ctx, image, useCachedSignatureIfPossible)
 		errorList.AddError(err)
 		if len(image.GetSignature().GetSignatures()) == 0 {
 			imageNoteSet[storage.Image_MISSING_SIGNATURE] = struct{}{}
@@ -167,7 +168,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 		// TODO(ROX-9687): Replace with proper injected context.
 		didUpdateSigVerificationData, err := e.enrichWithSignatureVerificationData(context.TODO(), ctx, image,
-			useCachedSignatureVerificationData, didUpdateSignature)
+			useCachedSignatureVerificationDataIfPossible, didUpdateSignature)
 		errorList.AddError(err)
 		if len(image.GetSignatureVerificationData().GetResults()) == 0 {
 			imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
@@ -286,7 +287,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		}
 	}
 
-	if !enrichmentContext.Internal && len(errorList.ErrorStrings()) == 0 {
+	if !enrichmentContext.Internal && errorList.Empty() {
 		errorList.AddError(errors.Errorf("no matching image registries found: please add an image integration for %s", image.GetName().GetRegistry()))
 	}
 
@@ -308,11 +309,11 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *stora
 	// Wait until limiter allows entrance
 	err := e.metadataLimiter.Wait(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "error waiting for metadata limiter")
+		return false, errors.Wrap(err, "waiting for metadata limiter")
 	}
 	metadata, err := registry.Metadata(image)
 	if err != nil {
-		return false, errors.Wrapf(err, "error getting metadata from registry: %q", registry.Name())
+		return false, errors.Wrapf(err, "getting metadata from registry: %q", registry.Name())
 	}
 	metadata.DataSource = registry.DataSource()
 	metadata.Version = metadataVersion
@@ -387,9 +388,10 @@ func (e *enricherImpl) useCachedSignatureVerificationData(img *storage.Image, ca
 	return false
 }
 
-func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image, useCachedScan bool) (ScanResult, error) {
+func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext EnrichmentContext,
+	image *storage.Image, useCachedScanIfPossible bool) (ScanResult, error) {
 	// Short-circuit if we are using cached values.
-	if useCachedScan {
+	if useCachedScanIfPossible {
 		return ScanSucceeded, nil
 	}
 
@@ -461,15 +463,15 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 // indicating whether any verification data was added to the image or not.
 // Based on the given FetchOption, it will try to short-circuit using cached values from existing images where
 // possible.
-func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, enrichmentContext EnrichmentContext, img *storage.Image, useCachedSignatureVerificationData bool,
-	updatedSignature bool) (bool, error) {
+func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, enrichmentContext EnrichmentContext,
+	img *storage.Image, useCachedSignatureVerificationDataIfPossible bool, updatedSignature bool) (bool, error) {
 	// If no external metadata should be taken into account, we skip the verification.
 	if enrichmentContext.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
 
 	// Do not fetch signature verification data from database if the signature was updated for the image.
-	if !updatedSignature && useCachedSignatureVerificationData {
+	if !updatedSignature && useCachedSignatureVerificationDataIfPossible {
 		return false, nil
 	}
 
@@ -498,7 +500,7 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 	verifySignatureCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	res := e.signatureVerifier.verifySignatureAgainstIntegrations(verifySignatureCtx, sigIntegrations, img)
+	res := e.signatureVerifier(verifySignatureCtx, sigIntegrations, img)
 	if res == nil {
 		return false, nil
 	}
@@ -513,29 +515,30 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 // updated on the image or not.
 // Based on the given FetchOption, it will try to short-circuit using cached values from existing images where
 // possible.
-func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContext EnrichmentContext, img *storage.Image, useCachedSignature bool) (bool, error) {
+func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContext EnrichmentContext,
+	img *storage.Image, useCachedSignatureIfPossible bool) (bool, error) {
 	// If no external metadata should be taken into account, we skip the fetching of signatures.
 	if enrichmentContext.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
 
 	// Short-circuit if possible when we are using cached values.
-	if useCachedSignature {
+	if useCachedSignatureIfPossible {
 		return false, nil
 	}
 
 	if err := e.checkRegistryForImage(img); err != nil {
-		return false, errors.Wrapf(err, "error checking registry for image %q", img.GetName().GetFullName())
+		return false, errors.Wrapf(err, "checking registry for image %q", img.GetName().GetFullName())
 	}
 
 	registrySet, err := e.getRegistriesForContext(enrichmentContext)
 	if err != nil {
-		return false, errors.Wrap(err, "error getting registries for context")
+		return false, errors.Wrap(err, "getting registries for context")
 	}
 
 	matchingRegistries, err := getMatchingRegistries(registrySet.GetAll(), img)
 	if err != nil {
-		return false, errors.Wrapf(err, "error getting matching registries for image %q",
+		return false, errors.Wrapf(err, "getting matching registries for image %q",
 			img.GetName().GetFullName())
 	}
 
@@ -547,14 +550,15 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 			// Wait until limiter allows entrance.
 			err := e.signatureFetcherLimiter.Wait(ctx)
 			if err != nil {
-				return errors.Wrapf(err, "error waiting for rate limiter for registry %q", matchingReg.Name())
+				return errors.Wrapf(err, "waiting for rate limiter for registry %q", matchingReg.Name())
 			}
+			// Will always return correctly marked errors as retryable / non-retryable.
 			fetchedSignatures, err = e.fetchAndAppendSignatures(ctx, img, matchingReg, fetchedSignatures)
 			return err
 		},
 			retry.Tries(2),
 			retry.OnlyRetryableErrors(),
-			retry.OnFailedAttempts(func(err error) {
+			retry.BetweenAttempts(func(_ int) {
 				time.Sleep(500 * time.Millisecond)
 			}))
 	}
@@ -650,7 +654,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	scan, err := scanner.GetScan(image)
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	if err != nil {
-		return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
+		return ScanNotDone, errors.Wrapf(err, "scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
 	}
 	if scan == nil {
 		return ScanNotDone, nil

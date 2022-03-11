@@ -95,31 +95,26 @@ type ImageEnricher interface {
 	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
 }
 
-type cveSuppressor interface {
+// CveSuppressor provides enrichment for suppressed CVEs for an image's components.
+type CveSuppressor interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
-type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
+// ImageGetter will be used to retrieve a specific image from the datastore.
+type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
-// signatureIntegrationGetter will be used to retrieve all available signature integrations.
-type signatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
+// SignatureIntegrationGetter will be used to retrieve all available signature integrations.
+type SignatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
 
-type signatureVerifierForIntegrations interface {
-	verifySignatureAgainstIntegrations(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
-}
-
-type prodSignatureVerifier struct{}
-
-func (p *prodSignatureVerifier) verifySignatureAgainstIntegrations(ctx context.Context,
-	integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
-	return signatures.VerifyAgainstSignatureIntegrations(ctx, integrations, image)
-}
+// signatureVerifierForIntegrations will be used to verify signatures for an image using a list of integrations.
+// This is used for mocking purposes, otherwise it will use signatures.VerifyAgainstSignatureIntegrations.
+type signatureVerifierForIntegrations func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
-	imageGetter imageGetter, healthReporter integrationhealth.Reporter,
-	signatureIntegrationGetter signatureIntegrationGetter) ImageEnricher {
+func New(cvesSuppressor CveSuppressor, cvesSuppressorV2 CveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
+	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
+	signatureIntegrationGetter SignatureIntegrationGetter) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
@@ -134,8 +129,8 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		metadataCache:   metadataCache,
 
 		signatureIntegrationGetter: signatureIntegrationGetter,
-		signatureVerifier:          &prodSignatureVerifier{},
-		signatureFetcherLimiter:    rate.NewLimiter(rate.Every(500*time.Millisecond), 3),
+		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
+		signatureFetcherLimiter:    rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		signatureFetcher:           signatures.NewSignatureFetcher(),
 
 		imageGetter: imageGetter,

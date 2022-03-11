@@ -36,7 +36,7 @@ func emptySignatureIntegrationGetter(ctx context.Context) ([]*storage.SignatureI
 	return nil, nil
 }
 
-func imageGetterFromImage(image *storage.Image) imageGetter {
+func imageGetterFromImage(image *storage.Image) ImageGetter {
 	return func(ctx context.Context, id string) (*storage.Image, bool, error) {
 		return image, true, nil
 	}
@@ -60,17 +60,6 @@ func (f *fakeSigFetcher) FetchSignatures(ctx context.Context, image *storage.Ima
 		return nil, err
 	}
 	return f.sigs, nil
-}
-
-var _ signatureVerifierForIntegrations = (*fakeSignatureVerifierForIntegrations)(nil)
-
-type fakeSignatureVerifierForIntegrations struct {
-	f func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
-}
-
-func (f *fakeSignatureVerifierForIntegrations) verifySignatureAgainstIntegrations(ctx context.Context,
-	integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
-	return f.f(ctx, integrations, image)
 }
 
 var _ scannertypes.Scanner = (*fakeScanner)(nil)
@@ -215,7 +204,7 @@ func TestEnricherFlow(t *testing.T) {
 		shortCircuitRegistry bool
 		shortCircuitScanner  bool
 		image                *storage.Image
-		imageGetter          imageGetter
+		imageGetter          ImageGetter
 
 		fsr    *fakeRegistryScanner
 		result EnrichmentResult
@@ -905,7 +894,7 @@ func TestEnrichWithSignatureVerificationData(t *testing.T) {
 	cases := map[string]struct {
 		img                         *storage.Image
 		sigVerifier                 signatureVerifierForIntegrations
-		sigIntegrationGetter        signatureIntegrationGetter
+		sigIntegrationGetter        SignatureIntegrationGetter
 		expectedVerificationResults []*storage.ImageSignatureVerificationResult
 		updatedSignature            bool
 		updated                     bool
@@ -914,12 +903,12 @@ func TestEnrichWithSignatureVerificationData(t *testing.T) {
 	}{
 		"verification result found without pre-existing verification results": {
 			img: &storage.Image{Id: "id"},
-			sigVerifier: &fakeSignatureVerifierForIntegrations{f: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
 				return []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier1",
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				}
-			}},
+			},
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
 				createSignatureVerificationResult("verifier1",
@@ -935,12 +924,12 @@ func TestEnrichWithSignatureVerificationData(t *testing.T) {
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				},
 			}},
-			sigVerifier: &fakeSignatureVerifierForIntegrations{f: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
 				return []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier2",
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				}
-			}},
+			},
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier2", false),
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
 				createSignatureVerificationResult("verifier2",
@@ -972,12 +961,12 @@ func TestEnrichWithSignatureVerificationData(t *testing.T) {
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				},
 			}},
-			sigVerifier: &fakeSignatureVerifierForIntegrations{f: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
+			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
 				return []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier2",
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				}
-			}},
+			},
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier2", false),
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
 				createSignatureVerificationResult("verifier2",
@@ -1050,7 +1039,7 @@ func createSignatureVerificationResult(verifier string, status storage.ImageSign
 	}
 }
 
-func fakeSignatureIntegrationGetter(id string, fail bool) signatureIntegrationGetter {
+func fakeSignatureIntegrationGetter(id string, fail bool) SignatureIntegrationGetter {
 	return func(ctx context.Context) ([]*storage.SignatureIntegration, error) {
 		if fail {
 			return nil, errors.New("fake error")

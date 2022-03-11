@@ -103,12 +103,8 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 // Note: This takes into account the definition of the transport.Error, you can find more here:
 // https://github.com/google/go-containerregistry/blob/f1fa40b162a1601a863364e8a2f63bbb9e4ff36e/pkg/v1/remote/transport/error.go#L90
 func makeTransientErrorRetryable(err error) error {
-	transportErr, ok := err.(*transport.Error)
 	// We don't expect any transient errors that are coming from cosign at the moment.
-	if !ok {
-		return err
-	}
-	if transportErr.Temporary() {
+	if transportErr, ok := err.(*transport.Error); ok && transportErr.Temporary() {
 		return retry.MakeRetryable(err)
 	}
 	return err
