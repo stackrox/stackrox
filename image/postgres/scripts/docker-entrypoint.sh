@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # This file is from https://github.com/docker-library/postgres/tree/master/14/bullseye
+set -x
+ls -al /run/secrets/stackrox.io/certs
+ls -al /run/secrets/stackrox.io
+ls -al /run/secrets
 set -Eeo pipefail
 # TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
 

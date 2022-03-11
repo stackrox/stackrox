@@ -100,6 +100,19 @@ central:
   {{- end }}
   {{- if .K8sConfig.EnableCentralDB }}
   enableCentralDB: true
+  {{- if ne (index .SecretsBase64Map "central-db-password") "" }}
+  # Internal password for securing the communication between Central and its DB.
+  dbPassword:
+    value: {{ index .SecretsBase64Map "central-db-password" | b64dec }}
+  {{- end }}
+  {{- if ne (index .SecretsBase64Map "central-db-cert.pem") "" }}
+  # Internal "central-db.stackrox" service TLS certificate.
+  dbServiceTLS:
+    cert: |
+      {{- index .SecretsBase64Map "central-db-cert.pem" | b64dec | nindent 6 }}
+    key: |
+      {{- index .SecretsBase64Map "central-db-key.pem" | b64dec | nindent 6 }}
+  {{- end }}
   {{- end }}
 
 scanner:

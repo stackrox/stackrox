@@ -52,17 +52,30 @@ spec:
           name: disk
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
+        - name: central-db-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs
       volumes:
       - name: disk
-        {{ if ._rox.central.persistence._pvcCfg -}}
+        {{- if ._rox.central.persistence._pvcCfg -}}
         persistentVolumeClaim:
           claimName: central-db
-        {{ else }}
+        {{- else }}
         emptyDir: {}
         {{- end }}
       - name: central-db-password
         secret:
           secretName: central-db-password
+      - name: central-db-tls-volume
+        secret:
+          secretName: central-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
 ---
 apiVersion: v1
 kind: Service
@@ -82,6 +95,8 @@ spec:
   selector:
     app: central-db
   type: ClusterIP
+{{- if ._rox.central._dbPassword }}
+{{- if not (kindIs "invalid" ._rox.central._dbPassword.value) }}
 ---
 apiVersion: v1
 kind: Secret
@@ -96,6 +111,8 @@ metadata:
     "helm.sh/resource-policy": keep
 type: Opaque
 stringData:
-  {{- /* TODO(ROX-9249): Create password */}}
-  password: SpTasCsKwRorXdFor$Now8
+  password: |
+    {{- ._rox.central._dbPassword.value | nindent 4 }}
+{{- end }}
+{{- end }}
 {{- end }}
