@@ -40,7 +40,7 @@ func newTimeQuery(column string, _ *search.Field, value string, modifiers ...sea
 	} else {
 		return nil, fmt.Errorf("invalid time query (prefix: %s, value: %s). Must be of the format (01/02/2006 or 1d)", prefix, trimmedValue)
 	}
-	fmt.Println(prefix, formattedTime)
+
 	return &QueryEntry{
 		Query:  fmt.Sprintf("%s %s $$", column, prefix),
 		Values: []interface{}{formattedTime},

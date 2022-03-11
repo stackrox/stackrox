@@ -108,9 +108,13 @@ message TestMultiKeyStruct {
   Embedded embedded = 12;
 
   message Nested {
-    string nested = 1;
+    string nested = 1 [(gogoproto.moretags) = 'search:"Test Nested String"'];
+    bool is_nested = 3 [(gogoproto.moretags) = 'search:"Test Nested Bool"'];
+    int64 int64 = 4 [(gogoproto.moretags) = 'search:"Test Nested Int64"'];
     message Nested2 {
-      string nested2 = 2;
+      string nested2 = 2 [(gogoproto.moretags) = 'search:"Test Nested String 2"'];
+      bool is_nested = 3 [(gogoproto.moretags) = 'search:"Test Nested Bool 2"'];
+      int64 int64 = 4 [(gogoproto.moretags) = 'search:"Test Nested Int64 2"'];
     }
     Nested2 nested2 = 2;
   }
