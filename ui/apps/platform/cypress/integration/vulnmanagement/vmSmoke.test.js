@@ -7,10 +7,7 @@ describe('Smoke test for vulnmanagement', () => {
 
     describe('with old single menu item', () => {
         before(function beforeHook() {
-            if (
-                hasFeatureFlag('ROX_VULN_RISK_MANAGEMENT') ||
-                hasFeatureFlag('ROX_VULN_REPORTING')
-            ) {
+            if (hasFeatureFlag('ROX_VULN_REPORTING')) {
                 this.skip();
             }
         });
@@ -24,10 +21,7 @@ describe('Smoke test for vulnmanagement', () => {
 
     describe('with old single menu item', () => {
         before(function beforeHook() {
-            if (
-                !hasFeatureFlag('ROX_VULN_RISK_MANAGEMENT') &&
-                !hasFeatureFlag('ROX_VULN_REPORTING')
-            ) {
+            if (!hasFeatureFlag('ROX_VULN_REPORTING')) {
                 this.skip();
             }
         });

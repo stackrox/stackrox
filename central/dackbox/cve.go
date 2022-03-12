@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -197,29 +196,14 @@ var (
 )
 
 func getImageCVEEdgeTransformationForVulns() transformation.OneToMany {
-	if features.VulnRiskManagement.Enabled() {
-		// CombineReversed ( { k1, k2 }
-		//          CVEs,
-		//          CVE (backwards) Image,
-		//          )
-		return transformation.ReverseEdgeKeys(
-			DoNothing,
-			transformation.AddPrefix(cveDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
-				Then(transformation.Dedupe()),
-		)
-	}
-
 	// CombineReversed ( { k1, k2 }
 	//          CVEs,
-	//          CVE (backwards) Components (backwards) Image,
+	//          CVE (backwards) Image,
 	//          )
 	return transformation.ReverseEdgeKeys(
 		DoNothing,
 		transformation.AddPrefix(cveDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+			ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
 			Then(transformation.Dedupe()),
 	)

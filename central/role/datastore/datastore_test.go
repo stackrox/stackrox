@@ -22,11 +22,6 @@ import (
 )
 
 func TestAllDefaultRolesAreCovered(t *testing.T) {
-	// Merge the roles for vuln risk management into the defaults
-	// TODO: Remove once the feature is released
-	for r, a := range vulnRiskManagementDefaultRoles {
-		defaultRoles[r] = a
-	}
 	// Merge the roles for vuln reporting into the defaults
 	// TODO: Remove once the feature is released
 	for r, a := range vulnReportingDefaultRoles {
