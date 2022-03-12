@@ -17,6 +17,7 @@ const fetchIntegrationsActionMap = {
     authProviders: authActions.fetchAuthProviders.request(),
     backups: actions.fetchBackups.request(),
     imageIntegrations: actions.fetchImageIntegrations.request(),
+    signatureIntegrations: actions.fetchSignatureIntegrations.request(),
     notifiers: actions.fetchNotifiers.request(),
     clusters: clusterActions.fetchClusters.request(),
     apitoken: apiTokenActions.fetchAPITokens.request(),
@@ -81,10 +82,22 @@ function* getImageIntegrations() {
     yield call(fetchIntegrationWrapper, 'imageIntegrations', actions.fetchImageIntegrations);
 }
 
-function* watchLocation() {
-    const effects = [getImageIntegrations, getNotifiers, getBackups, getAuthPlugins].map(
-        (fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
+function* getSignatureIntegrations() {
+    yield call(
+        fetchIntegrationWrapper,
+        'signatureIntegrations',
+        actions.fetchSignatureIntegrations
     );
+}
+
+function* watchLocation() {
+    const effects = [
+        getImageIntegrations,
+        getSignatureIntegrations,
+        getNotifiers,
+        getBackups,
+        getAuthPlugins,
+    ].map((fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc));
     yield all([
         ...effects,
         takeEveryNewlyMatchedLocation(policiesPath, getNotifiers),
@@ -98,6 +111,7 @@ function* watchFetchRequest() {
             types.FETCH_AUTH_PLUGINS.REQUEST,
             types.FETCH_BACKUPS.REQUEST,
             types.FETCH_IMAGE_INTEGRATIONS.REQUEST,
+            types.FETCH_SIGNATURE_INTEGRATIONS.REQUEST,
             types.FETCH_NOTIFIERS.REQUEST,
         ]);
         switch (action.type) {
@@ -112,6 +126,9 @@ function* watchFetchRequest() {
                 break;
             case types.FETCH_IMAGE_INTEGRATIONS.REQUEST:
                 yield fork(getImageIntegrations);
+                break;
+            case types.FETCH_SIGNATURE_INTEGRATIONS.REQUEST:
+                yield fork(getSignatureIntegrations);
                 break;
 
             default:

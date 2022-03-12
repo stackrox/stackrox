@@ -14,7 +14,7 @@ import { useParams, Link } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 import pluralize from 'pluralize';
 
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useTableSelection from 'hooks/useTableSelection';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
@@ -233,9 +233,9 @@ function IntegrationsTable({
                         </Tbody>
                     </TableComposable>
                 ) : (
-                    <ACSEmptyState
-                        key="no-results"
+                    <EmptyStateTemplate
                         title="No integrations of this type are currently configured."
+                        headingLevel="h3"
                     />
                 )}
             </PageSection>

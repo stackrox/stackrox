@@ -5,7 +5,8 @@ type IntegrationSource =
     | 'authProviders'
     | 'backups'
     | 'imageIntegrations'
-    | 'notifiers';
+    | 'notifiers'
+    | 'signatureIntegrations';
 
 type ActionType = 'create' | 'delete' | 'fetch' | 'save' | 'test' | 'trigger';
 
@@ -17,6 +18,8 @@ function getPath(source: IntegrationSource, action: ActionType): string {
             return '/v1/notifiers';
         case 'backups':
             return '/v1/externalbackups';
+        case 'signatureIntegrations':
+            return '/v1/signatureintegrations';
         case 'authPlugins':
             if (action === 'test') {
                 return '/v1/scopedaccessctrl';

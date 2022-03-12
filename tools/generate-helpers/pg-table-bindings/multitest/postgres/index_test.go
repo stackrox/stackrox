@@ -7,14 +7,17 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -56,8 +59,10 @@ func (s *IndexSuite) SetupTest() {
 }
 
 func (s *IndexSuite) TearDownTest() {
+	if features.PostgresDatastore.Enabled() {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
-	s.pool.Close()
 }
 
 func (s *IndexSuite) getStruct(i int, f func(s *storage.TestMultiKeyStruct)) *storage.TestMultiKeyStruct {
@@ -109,12 +114,30 @@ func (s *IndexSuite) runTestCases(cases []testCase) {
 func (s *IndexSuite) TestString() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
 		s.String_ = "first"
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Nested: "nested_first",
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Nested2: "nested2_first",
+			},
+		})
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
 		s.String_ = "second"
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Nested: "nested_second",
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Nested2: "nested2_second",
+			},
+		})
 	})
 	testStruct2 := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
 		s.String_ = "fir"
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Nested: "nested_fir",
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Nested2: "nested2_fir",
+			},
+		})
 	})
 	s.runTestCases([]testCase{
 		{
@@ -137,22 +160,53 @@ func (s *IndexSuite) TestString() {
 			q:               search.NewQueryBuilder().AddStrings(search.TestString, "!fir").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
-
 		{
 			desc:            "negated regex",
 			q:               search.NewQueryBuilder().AddStrings(search.TestString, "!r/.*s.*").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct2},
 		},
+		{
+			desc:            "exact match nested string",
+			q:               search.NewQueryBuilder().AddExactMatches(search.TestNestedString, "nested_second").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc: "negated prefix top-level and exact match nested string",
+			q: search.NewQueryBuilder().
+				AddStrings(search.TestString, "!fir").
+				AddExactMatches(search.TestNestedString, "nested_second").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc: "prefix match nested string",
+			q: search.NewQueryBuilder().
+				AddStrings(search.TestNestedString, "nested_fir").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct2},
+		},
+		{
+			desc:            "negated prefix match nested string",
+			q:               search.NewQueryBuilder().AddStrings(search.TestNestedString2, "!nested2_fir").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
 	})
-
 }
 
 func (s *IndexSuite) TestBool() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
 		s.Bool = false
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			IsNested: true,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				IsNested: false,
+			}})
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
 		s.Bool = true
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			IsNested: false,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				IsNested: true,
+			}})
 	})
 	s.runTestCases([]testCase{
 		{
@@ -163,6 +217,18 @@ func (s *IndexSuite) TestBool() {
 		{
 			desc:            "true",
 			q:               search.NewQueryBuilder().AddBools(search.TestBool, true).ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc:            "nested true",
+			q:               search.NewQueryBuilder().AddBools(search.TestNestedBool, true).ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+		{
+			desc: "nest true + false",
+			q: search.NewQueryBuilder().
+				AddBools(search.TestNestedBool, false).
+				AddBools(search.TestNestedBool2, true).ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
 	})
@@ -230,9 +296,19 @@ func (s *IndexSuite) TestUint64() {
 func (s *IndexSuite) TestInt64() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
 		s.Int64 = -2
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Int64: 100,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Int64: -200,
+			}})
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
 		s.Int64 = 7
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Int64: -100,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Int64: -200,
+			}})
 	})
 
 	s.runTestCases([]testCase{
@@ -250,6 +326,17 @@ func (s *IndexSuite) TestInt64() {
 			desc:            ">=",
 			q:               search.NewQueryBuilder().AddStrings(search.TestInt64, ">=-2").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+		},
+		{
+			desc:            ">=",
+			q:               search.NewQueryBuilder().AddStrings(search.TestNestedInt64, ">=-200").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+		},
+		{
+			desc: ">=",
+			q: search.NewQueryBuilder().AddStrings(search.TestNestedInt64, ">=0").
+				AddStrings(search.TestNested2Int64, ">=-200").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
 		},
 	})
 }
@@ -344,6 +431,157 @@ func (s *IndexSuite) TestMap() {
 			// Negated value does not mean non-existence of value, it just means there should be at least one element
 			// not matching the value. Unclear what the use-case of this is, but it is supported...
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+	})
+}
+
+var (
+	ts2029Mar09Noon = protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2029-03-09T12:00:00Z"))
+	ts2022Mar09Noon = protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2022-03-09T12:00:00Z"))
+	ts2022Feb09Noon = protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2022-02-09T12:00:00Z"))
+	ts2021Mar09Noon = protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2021-03-09T12:00:00Z"))
+	ts2020Mar09Noon = protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2020-03-09T12:00:00Z"))
+)
+
+func (s *IndexSuite) TestTime() {
+	testStruct2029Mar09Noon := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2029Mar09Noon
+	})
+	testStruct2022Mar09Noon := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2022Mar09Noon
+	})
+	testStruct2022Feb09Noon := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2022Feb09Noon
+	})
+	testStruct2021Mar09Noon := s.getStruct(3, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2021Mar09Noon
+	})
+	testStruct2020Mar09Noon := s.getStruct(4, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2020Mar09Noon
+	})
+	_ = testStruct2029Mar09Noon
+
+	s.runTestCases([]testCase{
+		{
+			desc:            "exact match (should evaluate if it's within the day) - matches",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "03/09/2022 UTC").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2022Mar09Noon},
+		},
+		{
+			desc:            "exact match (should evaluate if it's within the day) - no match",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "03/08/2022").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{},
+		},
+		{
+			desc:            "< date",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "< 03/09/2022").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2021Mar09Noon, testStruct2020Mar09Noon, testStruct2022Feb09Noon},
+		},
+		{
+			desc:            "< date time (this time, includes Mar 10th at noon)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "< 03/09/2022 1:00 PM").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2021Mar09Noon, testStruct2020Mar09Noon, testStruct2022Feb09Noon, testStruct2022Mar09Noon},
+		},
+		{
+			desc:            "> duration (this test will fail in 2029, but hopefully it's not still being run then)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "> 1d").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2021Mar09Noon, testStruct2020Mar09Noon, testStruct2022Feb09Noon, testStruct2022Mar09Noon},
+		},
+	})
+}
+
+func (s *IndexSuite) TestEnum() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Enum = storage.TestMultiKeyStruct_ENUM0
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Enum = storage.TestMultiKeyStruct_ENUM1
+	})
+	testStruct2 := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
+		s.Enum = storage.TestMultiKeyStruct_ENUM2
+	})
+
+	s.runTestCases([]testCase{
+		{
+			desc:            "exact match",
+			q:               search.NewQueryBuilder().AddExactMatches(search.TestEnum, "ENUM1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc:            "negation",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnum, "!ENUM1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct2},
+		},
+		{
+			desc:            "regex",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnum, "r/E.*1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc:            "negated regex",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnum, "!r/E.*1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct2},
+		},
+		{
+			desc:            ">",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnum, ">ENUM1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2},
+		},
+		{
+			desc:            "<=",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnum, "<=ENUM1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+		},
+	})
+}
+
+func (s *IndexSuite) TestEnumArray() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM0}
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM1}
+	})
+	testStruct01 := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM0, storage.TestMultiKeyStruct_ENUM1}
+	})
+	testStruct012 := s.getStruct(3, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM0, storage.TestMultiKeyStruct_ENUM1, storage.TestMultiKeyStruct_ENUM2}
+	})
+	testStruct12 := s.getStruct(4, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM1, storage.TestMultiKeyStruct_ENUM2}
+	})
+
+	s.runTestCases([]testCase{
+		{
+			desc:            "exact match",
+			q:               search.NewQueryBuilder().AddExactMatches(search.TestEnumSlice, "ENUM1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1, testStruct01, testStruct012, testStruct12},
+		},
+		{
+			desc:            "negation",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnumSlice, "!ENUM1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct01, testStruct012, testStruct12},
+		},
+		{
+			desc:            "regex",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnumSlice, "r/E.*1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1, testStruct01, testStruct012, testStruct12},
+		},
+		{
+			desc:            "negated regex",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnumSlice, "!r/E.*1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct01, testStruct012, testStruct12},
+		},
+		{
+			desc:            ">",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnumSlice, ">ENUM1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct012, testStruct12},
+		},
+		{
+			desc:            "<=",
+			q:               search.NewQueryBuilder().AddStrings(search.TestEnumSlice, "<=ENUM1").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1, testStruct12, testStruct012, testStruct01},
 		},
 	})
 }

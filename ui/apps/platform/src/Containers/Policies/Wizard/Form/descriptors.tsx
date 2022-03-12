@@ -174,7 +174,14 @@ export type BaseDescriptor = {
     disabled?: boolean;
 };
 
-export type DescriptorType = 'group' | 'multiselect' | 'number' | 'radioGroup' | 'select' | 'text';
+export type DescriptorType =
+    | 'group'
+    | 'multiselect'
+    | 'number'
+    | 'radioGroup'
+    | 'radioGroupString'
+    | 'select'
+    | 'text';
 
 export type Descriptor =
     | GroupDescriptor
@@ -195,7 +202,7 @@ export type NumberDescriptor = {
 } & BaseDescriptor;
 
 export type RadioGroupDescriptor = {
-    type: 'radioGroup';
+    type: 'radioGroup' | 'radioGroupString';
     radioButtons: { text: string; value: string | boolean }[];
     defaultValue?: string | boolean;
     reverse?: boolean;
@@ -700,7 +707,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         shortName: 'Seccomp profile type',
         negatedName: 'Seccomp profile type is not',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
-        type: 'radioGroup',
+        type: 'radioGroupString',
         radioButtons: Object.keys(seccompProfileTypeLabels).map((key) => ({
             text: seccompProfileTypeLabels[key],
             value: key,
@@ -1099,6 +1106,7 @@ export const auditLogDescriptor: Descriptor[] = [
         shortName: 'Kubernetes resource',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
+        placeholder: 'Select a resource',
         options: [
             {
                 label: 'Config maps',
@@ -1117,6 +1125,7 @@ export const auditLogDescriptor: Descriptor[] = [
         shortName: 'Kubernetes API verb',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
+        placeholder: 'Select an API verb',
         options: APIVerbs,
         canBooleanLogic: false,
     },

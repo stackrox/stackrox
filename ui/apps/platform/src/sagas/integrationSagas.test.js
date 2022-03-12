@@ -13,10 +13,15 @@ describe('Integrations Sagas', () => {
         const imageIntegrations = { integrations: ['int1'] };
         const notifiers = { notifiers: ['notifier1'] };
         const backups = { backups: ['backup1'] };
+        const signatureIntegrations = { signatureIntegrations: ['signatureIntegration1'] };
         return expectSaga(saga)
             .provide([
                 [call(fetchIntegration, 'authPlugins'), { response: authPlugin }],
                 [call(fetchIntegration, 'imageIntegrations'), { response: imageIntegrations }],
+                [
+                    call(fetchIntegration, 'signatureIntegrations'),
+                    { response: signatureIntegrations },
+                ],
                 [call(fetchIntegration, 'backups'), { response: backups }],
                 [call(fetchIntegration, 'notifiers'), { response: notifiers }],
             ])

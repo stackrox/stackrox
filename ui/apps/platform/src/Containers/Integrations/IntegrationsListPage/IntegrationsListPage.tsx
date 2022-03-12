@@ -20,6 +20,7 @@ import {
     getIsAPIToken,
     getIsClusterInitBundle,
     getIntegrationLabel,
+    getIsSignatureIntegration,
 } from 'Containers/Integrations/utils/integrationUtils';
 
 import PageTitle from 'Components/PageTitle';
@@ -45,6 +46,7 @@ function IntegrationsListPage({
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
+    const isSignatureIntegration = getIsSignatureIntegration(source);
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
@@ -84,8 +86,10 @@ function IntegrationsListPage({
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <Title headingLevel="h1">Integrations</Title>
-                <Title headingLevel="h2">{typeLabel}</Title>
+                <Title headingLevel="h1">
+                    {isSignatureIntegration ? 'Signature' : ''} Integrations
+                </Title>
+                {!isSignatureIntegration && <Title headingLevel="h2">{typeLabel}</Title>}
             </PageSection>
             <PageSection variant="default">
                 <IntegrationsTable

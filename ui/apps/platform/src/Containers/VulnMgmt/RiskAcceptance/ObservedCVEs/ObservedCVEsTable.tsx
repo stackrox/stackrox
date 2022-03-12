@@ -26,7 +26,7 @@ import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
@@ -215,7 +215,10 @@ function ObservedCVEsTable({
                         <Tr>
                             <Td colSpan={7}>
                                 <PageSection variant={PageSectionVariants.light} isFilled>
-                                    <ACSEmptyState title="No CVEs available" />
+                                    <EmptyStateTemplate
+                                        title="No CVEs available"
+                                        headingLevel="h3"
+                                    />
                                 </PageSection>
                             </Td>
                         </Tr>

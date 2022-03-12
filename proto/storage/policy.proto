@@ -38,11 +38,11 @@ message Policy {
     google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = "search:\"Policy Last Updated\""];
 
     // For internal use only.
-    string                      SORT_name               = 16 [(gogoproto.moretags) = 'search:"SORT_Policy,hidden,analyzer=keyword" sql:"-"'];
+    string                      SORT_name               = 16 [(gogoproto.moretags) = 'search:"SORT_Policy,hidden,analyzer=keyword"'];
     // For internal use only.
-    string                      SORT_lifecycleStage     = 17 [(gogoproto.moretags) = 'search:"SORT_Lifecycle Stage,hidden" sql:"-"'];
+    string                      SORT_lifecycleStage     = 17 [(gogoproto.moretags) = 'search:"SORT_Lifecycle Stage,hidden"'];
     // For internal use only.
-    bool                        SORT_enforcement        = 18 [(gogoproto.moretags) = 'search:"SORT_Enforcement,hidden" sql:"-"'];
+    bool                        SORT_enforcement        = 18 [(gogoproto.moretags) = 'search:"SORT_Enforcement,hidden"'];
 
     string                      policy_version          = 19;
     repeated PolicySection      policy_sections         = 20;

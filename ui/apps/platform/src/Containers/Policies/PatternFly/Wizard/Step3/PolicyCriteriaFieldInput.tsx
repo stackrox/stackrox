@@ -84,6 +84,22 @@ function PolicyCriteriaFieldInput({
                 </ToggleGroup>
             );
         }
+        case 'radioGroupString': {
+            return (
+                <ToggleGroup>
+                    {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
+                        <ToggleGroupItem
+                            key={text}
+                            text={text}
+                            buttonId={text}
+                            isDisabled={readOnly}
+                            isSelected={value.value === radioValue}
+                            onChange={handleChangeSelectedValue(radioValue)}
+                        />
+                    ))}
+                </ToggleGroup>
+            );
+        }
         case 'number':
             return (
                 <TextInput
@@ -92,7 +108,7 @@ function PolicyCriteriaFieldInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
-                    placeholder={descriptor.placeholder}
+                    // placeholder={descriptor.placeholder}
                 />
             );
         case 'select':
@@ -108,7 +124,7 @@ function PolicyCriteriaFieldInput({
                         isOpen={isSelectOpen}
                         isDisabled={readOnly}
                         selections={value.value}
-                        placeholderText={descriptor.placeholder}
+                        placeholderText={descriptor.placeholder || 'Select an option'}
                     >
                         {descriptor?.options?.map((option) => (
                             <SelectOption key={option.value} value={option.value}>
@@ -132,7 +148,7 @@ function PolicyCriteriaFieldInput({
                         isDisabled={readOnly}
                         selections={value.value === '' ? [] : value.value}
                         onClear={handleChangeSelectedValue([])}
-                        placeholderText={descriptor.placeholder}
+                        placeholderText={descriptor.placeholder || 'Select one or more options'}
                         variant={SelectVariant.typeaheadMulti}
                     >
                         {descriptor.options?.map((option) => (

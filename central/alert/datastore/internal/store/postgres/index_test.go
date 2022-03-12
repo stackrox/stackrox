@@ -55,8 +55,10 @@ func (s *AlertsIndexSuite) SetupTest() {
 }
 
 func (s *AlertsIndexSuite) TearDownTest() {
+	if features.PostgresDatastore.Enabled() {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
-	s.pool.Close()
 }
 
 func (s *AlertsIndexSuite) TestIndex() {

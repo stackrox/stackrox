@@ -256,6 +256,7 @@ export const integrationHealth = {
 
 export const integrations = {
     imageIntegrations: '/v1/imageintegrations',
+    signatureIntegrations: '/v1/signatureintegrations',
     notifiers: '/v1/notifiers',
     externalBackups: '/v1/externalbackups',
     authPlugins: '/v1/scopedaccessctrl/configs',

@@ -19,6 +19,7 @@ const SOURCE_LABELS = Object.freeze({
     imageIntegrations: 'image integrations',
     notifiers: 'notifier integrations',
     backups: 'backup integrations',
+    signatureIntegrations: 'signature integrations',
 });
 
 class IntegrationModal extends Component {
@@ -31,6 +32,7 @@ class IntegrationModal extends Component {
         source: PropTypes.oneOf([
             'authPlugins',
             'imageIntegrations',
+            'signatureIntegrations',
             'notifiers',
             'authProviders',
             'backups',
