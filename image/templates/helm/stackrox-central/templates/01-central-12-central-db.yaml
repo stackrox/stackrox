@@ -47,6 +47,9 @@ spec:
           requests:
             cpu: 200m
             memory: 200Mi
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: disk
@@ -54,6 +57,9 @@ spec:
           mountPath: /run/secrets/stackrox.io/secrets
         - name: central-db-tls-volume
           mountPath: /run/secrets/stackrox.io/certs
+      serviceAccountName: central
+      securityContext:
+        fsGroup: 70
       volumes:
       - name: disk
         {{- if ._rox.central.persistence._pvcCfg -}}

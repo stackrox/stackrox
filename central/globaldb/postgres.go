@@ -2,11 +2,17 @@ package globaldb
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+const (
+	dbPasswordFile = "/run/secrets/stackrox.io/secrets/password"
+	sslRootCert = "/run/secrets/stackrox.io/certs/ca.pem"
 )
 
 var (
@@ -42,7 +48,7 @@ func RegisterTable(table string, objType string) {
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
-		source := "host=central-db.stackrox port=5432 database=postgres user=postgres password=SpTasCsKwRorXdFor$Now8 sslmode=disable statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
+		source := fmt.Sprintf("host=central-db.stackrox port=5432 database=postgres user=postgres passfile=%s sslmode=verify-full sslrootcert=%s statement_timeout=600000 pool_min_conns=1 pool_max_conns=90", dbPasswordFile, sslRootCert)
 		config, err := pgxpool.ParseConfig(source)
 		if err != nil {
 			log.Fatalf("Could not parse postgres config: %v", err)
