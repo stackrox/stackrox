@@ -334,6 +334,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 					// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
 					// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
 					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName())
+					log.Infof("%s is cluster-local? %v", image.GetName().GetFullName(), image.GetIsClusterLocal())
 				}
 			}
 		}

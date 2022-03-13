@@ -2,7 +2,12 @@ package imageutil
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/registry"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // IsInternalImage determines if the image represented by the given name
@@ -13,5 +18,10 @@ func IsInternalImage(image *storage.ImageName) bool {
 	// then the image must be "internal" to the cluster, as Sensor only tracks
 	// "internal" registries.
 	reg, err := registry.Singleton().GetRegistryForImage(image)
-	return reg != nil && err == nil
+	if err != nil {
+		log.Infof("Registry %q for image %s is unknown at this time", image.GetRegistry(), image.GetFullName())
+		return false
+	}
+
+	return reg != nil
 }

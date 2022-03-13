@@ -4,7 +4,7 @@ import "time"
 
 var (
 	// ReprocessInterval will set the duration for which to reprocess all deployments and get new scans
-	ReprocessInterval = registerDurationSetting("ROX_REPROCESSING_INTERVAL", 4*time.Hour)
+	ReprocessInterval = registerDurationSetting("ROX_REPROCESSING_INTERVAL", 10*time.Minute)
 	// ActiveVulnRefreshInterval will set the duration for which to refresh active components and vulnerabilities.
 	ActiveVulnRefreshInterval = registerDurationSetting("ROX_ACTIVE_VULN_REFRESH_INTERVAL", 15*time.Minute)
 	// VulnDeferralTimedReObserveInterval will set the duration for when to check to see if timed vuln deferrals need to be checked for expiry.

@@ -284,6 +284,9 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 		log.Errorf("error fetching image %q from the database: %v", id, err)
 		return nil, false
 	}
+	if image.GetIsClusterLocal() {
+		log.Infof("Skipping reprocessing image %s because it's cluster-local", image.GetName().GetFullName())
+	}
 	if !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
 		return nil, false
 	}
@@ -473,6 +476,8 @@ func (l *loopImpl) reprocessWatchedImages() {
 }
 
 func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
+	log.Info("Starting reprocessing loop")
+
 	l.reprocessingComplete.Reset()
 	l.reprocessingStarted.Signal()
 
