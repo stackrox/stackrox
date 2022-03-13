@@ -297,6 +297,9 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		if exists && timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now()) {
 			return internalScanRespFromImage(img), nil
 		}
+		if exists {
+			log.Infof("Reprocessing cluster-local image %s", img.GetName().GetFullName())
+		}
 	}
 
 	img := &storage.Image{
