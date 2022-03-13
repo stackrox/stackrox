@@ -619,7 +619,9 @@ webhookserver-image: webhookserver-build
 mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
+ifdef CI
 	docker tag stackrox/grpc-server:$(TAG) quay.io/$(QUAY_REPO)/grpc-server:$(TAG)
+endif
 
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
