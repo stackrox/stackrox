@@ -78,11 +78,12 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 
 	// 6. Get the image's vulnerabilities from Central.
 	centralResp, err := centralClient.GetImageVulnerabilitiesInternal(ctx, &v1.GetImageVulnerabilitiesInternalRequest{
-		ImageId:    sha,
-		ImageName:  image.GetName(),
-		Metadata:   metadata,
-		Components: scanResp.GetComponents(),
-		Notes:      scanResp.GetNotes(),
+		ImageId:        sha,
+		ImageName:      image.GetName(),
+		Metadata:       metadata,
+		IsClusterLocal: image.GetIsClusterLocal(),
+		Components:     scanResp.GetComponents(),
+		Notes:          scanResp.GetNotes(),
 	})
 	if err != nil {
 		log.Debugf("Unable to retrieve image vulnerabilities for %s: %v", name, err)
