@@ -126,12 +126,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
-	k8s.io/api v0.22.5
-	k8s.io/apimachinery v0.22.5
+	k8s.io/api v0.22.7
+	k8s.io/apimachinery v0.22.7
 	k8s.io/apiserver v0.22.5
-	k8s.io/client-go v0.22.5
+	k8s.io/client-go v0.22.7
 	k8s.io/kubectl v0.22.5
-	k8s.io/kubelet v0.22.5
+	k8s.io/kubelet v0.22.7
 	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
 	sigs.k8s.io/controller-runtime v0.10.2
 	sigs.k8s.io/yaml v1.3.0
