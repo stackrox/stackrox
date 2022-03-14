@@ -15,8 +15,8 @@ var (
 // Only one client per Sensor is required.
 func GRPCClientSingleton() *client {
 	once.Do(func() {
-		if !env.UseLocalScanner.BooleanSetting() {
-			log.Info("No local Scanner connection desired")
+		if !env.OpenshiftAPI.BooleanSetting() {
+			log.Info("Will not attempt to connect to a local scanner")
 			return
 		}
 
