@@ -128,11 +128,11 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	// Signals whether any updates to the image were made throughout the enrichment flow.
 	updated := false
 
-	// Update the image with cached values depending on the FetchOption provided. This makes sure that we fetch any
-	// existing image only once from database.
+	// Update the image with existing values depending on the FetchOption provided or whether any are available.
+	// This makes sure that we fetch any existing image only once from database.
 	// TODO(ROX-9687): Replace with proper injected context.
-	useCachedScanIfPossible, useCachedSignatureIfPossible,
-		useCachedSignatureVerificationDataIfPossible := e.updateImageFromDatabase(
+	useExistingScanIfPossible, useExistingSignatureIfPossible,
+		useExistingSignatureVerificationDataIfPossible := e.updateImageFromDatabase(
 		context.TODO(), image, ctx.FetchOpt)
 
 	// TODO(ROX-9687): Replace with proper injected context.
@@ -146,7 +146,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	updated = updated || didUpdateMetadata
 
 	// TODO(ROX-9687): Replace with proper injected context.
-	scanResult, err := e.enrichWithScan(context.TODO(), ctx, image, useCachedScanIfPossible)
+	scanResult, err := e.enrichWithScan(context.TODO(), ctx, image, useExistingScanIfPossible)
 	errorList.AddError(err)
 	if scanResult == ScanNotDone && image.GetScan() == nil {
 		imageNoteSet[storage.Image_MISSING_SCAN_DATA] = struct{}{}
@@ -157,7 +157,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 	if features.ImageSignatureVerification.Enabled() {
 		// TODO(ROX-9687): Replace with proper injected context.
-		didUpdateSignature, err := e.enrichWithSignature(context.TODO(), ctx, image, useCachedSignatureIfPossible)
+		didUpdateSignature, err := e.enrichWithSignature(context.TODO(), ctx, image, useExistingSignatureIfPossible)
 		errorList.AddError(err)
 		if len(image.GetSignature().GetSignatures()) == 0 {
 			imageNoteSet[storage.Image_MISSING_SIGNATURE] = struct{}{}
@@ -168,7 +168,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 		// TODO(ROX-9687): Replace with proper injected context.
 		didUpdateSigVerificationData, err := e.enrichWithSignatureVerificationData(context.TODO(), ctx, image,
-			useCachedSignatureVerificationDataIfPossible, didUpdateSignature)
+			useExistingSignatureVerificationDataIfPossible, didUpdateSignature)
 		errorList.AddError(err)
 		if len(image.GetSignatureVerificationData().GetResults()) == 0 {
 			imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
@@ -193,17 +193,17 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 }
 
 func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage.Image, option FetchOption) (bool, bool, bool) {
-	cachedImg, exists := e.fetchFromDatabase(ctx, img, option)
-	// Short-circuit if no cached image exists or the FetchOption specifies to not use cached values.
+	existingImg, exists := e.fetchFromDatabase(ctx, img, option)
+	// Short-circuit if no image exists or the FetchOption specifies to not use existing values.
 	if !exists {
 		return false, false, false
 	}
 
-	usesCachedScan := e.useCachedScan(img, cachedImg, option)
-	usesCachedSignature := e.useCachedSignature(img, cachedImg, option)
-	usesCachedSignatureVerificationData := e.useCachedSignatureVerificationData(img, cachedImg, option)
+	usesExistingScan := e.useExistingScan(img, existingImg, option)
+	usesExistingSignature := e.useExistingSignature(img, existingImg, option)
+	usesExistingSignatureVerificationData := e.useExistingSignatureVerificationData(img, existingImg, option)
 
-	return usesCachedScan, usesCachedSignature, usesCachedSignatureVerificationData
+	return usesExistingScan, usesExistingSignature, usesExistingSignatureVerificationData
 }
 
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
@@ -349,39 +349,39 @@ func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image
 	return existingImage, exists
 }
 
-func (e *enricherImpl) useCachedScan(img *storage.Image, cachedImg *storage.Image, option FetchOption) bool {
+func (e *enricherImpl) useExistingScan(img *storage.Image, existingImg *storage.Image, option FetchOption) bool {
 	if option == ForceRefetchScansOnly {
 		return false
 	}
 
-	if cachedImg.GetScan() != nil {
-		img.Scan = cachedImg.GetScan()
+	if existingImg.GetScan() != nil {
+		img.Scan = existingImg.GetScan()
 		return true
 	}
 
 	return false
 }
 
-func (e *enricherImpl) useCachedSignature(img *storage.Image, cachedImg *storage.Image, option FetchOption) bool {
+func (e *enricherImpl) useExistingSignature(img *storage.Image, existingImg *storage.Image, option FetchOption) bool {
 	if option == ForceRefetchSignaturesOnly {
 		return false
 	}
 
-	if cachedImg.GetSignature() != nil {
-		img.Signature = cachedImg.GetSignature()
+	if existingImg.GetSignature() != nil {
+		img.Signature = existingImg.GetSignature()
 		return true
 	}
 
 	return false
 }
 
-func (e *enricherImpl) useCachedSignatureVerificationData(img *storage.Image, cachedImg *storage.Image, option FetchOption) bool {
+func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, existingImg *storage.Image, option FetchOption) bool {
 	if option == ForceRefetchSignaturesOnly {
 		return false
 	}
 
-	if cachedImg.GetSignatureVerificationData() != nil {
-		img.SignatureVerificationData = cachedImg.GetSignatureVerificationData()
+	if existingImg.GetSignatureVerificationData() != nil {
+		img.SignatureVerificationData = existingImg.GetSignatureVerificationData()
 		return true
 	}
 
@@ -389,9 +389,9 @@ func (e *enricherImpl) useCachedSignatureVerificationData(img *storage.Image, ca
 }
 
 func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext EnrichmentContext,
-	image *storage.Image, useCachedScanIfPossible bool) (ScanResult, error) {
-	// Short-circuit if we are using cached values.
-	if useCachedScanIfPossible {
+	image *storage.Image, useExistingScan bool) (ScanResult, error) {
+	// Short-circuit if we are using existing values.
+	if useExistingScan {
 		return ScanSucceeded, nil
 	}
 
@@ -461,17 +461,17 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 
 // enrichWithSignatureVerificationData enriches the image with signature verification data and returns a bool,
 // indicating whether any verification data was added to the image or not.
-// Based on the given FetchOption, it will try to short-circuit using cached values from existing images where
+// Based on the given FetchOption, it will try to short-circuit using values from existing images where
 // possible.
 func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, enrichmentContext EnrichmentContext,
-	img *storage.Image, useCachedSignatureVerificationDataIfPossible bool, updatedSignature bool) (bool, error) {
+	img *storage.Image, useExistingSignatureVerificationData bool, updatedSignature bool) (bool, error) {
 	// If no external metadata should be taken into account, we skip the verification.
 	if enrichmentContext.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
 
 	// Do not fetch signature verification data from database if the signature was updated for the image.
-	if !updatedSignature && useCachedSignatureVerificationDataIfPossible {
+	if !updatedSignature && useExistingSignatureVerificationData {
 		return false, nil
 	}
 
@@ -513,17 +513,17 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 
 // enrichWithSignature enriches the image with a signature and returns a bool, indicating whether a signature has been
 // updated on the image or not.
-// Based on the given FetchOption, it will try to short-circuit using cached values from existing images where
+// Based on the given FetchOption, it will try to short-circuit using values from existing images where
 // possible.
 func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContext EnrichmentContext,
-	img *storage.Image, useCachedSignatureIfPossible bool) (bool, error) {
+	img *storage.Image, useExistingSignature bool) (bool, error) {
 	// If no external metadata should be taken into account, we skip the fetching of signatures.
 	if enrichmentContext.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
 
-	// Short-circuit if possible when we are using cached values.
-	if useCachedSignatureIfPossible {
+	// Short-circuit if possible when we are using existing values.
+	if useExistingSignature {
 		return false, nil
 	}
 
