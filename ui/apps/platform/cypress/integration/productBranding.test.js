@@ -16,7 +16,7 @@ describe('Logo and title product branding checks', () => {
                 cy.get(selectors.rhacsLogoImage);
                 cy.get(selectors.stackroxLogoImage).should('not.exist');
             } else {
-                expect(title).to.have.string("StackRox");
+                expect(title).to.have.string('StackRox');
                 cy.get(selectors.rhacsLogoImage).should('not.exist');
                 cy.get(selectors.stackroxLogoImage);
             }
@@ -31,7 +31,7 @@ describe('Logo and title product branding checks', () => {
                 cy.get(selectors.rhacsLogoImage);
                 cy.get(selectors.stackroxLogoImage).should('not.exist');
             } else {
-                expect(title).to.have.string("StackRox");
+                expect(title).to.have.string('StackRox');
                 cy.get(selectors.rhacsLogoImage).should('not.exist');
                 cy.get(selectors.stackroxLogoImage);
             }
