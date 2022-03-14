@@ -46,7 +46,7 @@ func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest) (*sensor.GetImageResponse, error) {
 	if id := req.GetImage().GetId(); id != "" {
 		img, _ := s.imageCache.Get(imagecacheutils.GetImageCacheKey(req.GetImage())).(*storage.Image)
-		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
+		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) && (img.GetSignature() != nil) {
 			return &sensor.GetImageResponse{
 				Image: img,
 			}, nil
@@ -71,7 +71,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}, nil
 	}
 
-	img, err := scan.ScanImage(ctx, s.centralClient, req.GetImage())
+	img, err := scan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning image via local scanner")
 	}
