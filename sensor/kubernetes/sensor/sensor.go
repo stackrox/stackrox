@@ -163,7 +163,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		return nil, errors.Wrap(err, "creating central client")
 	}
 
-	if features.LocalImageScanning.Enabled() && securedClusterIsNotManagedManually(helmManagedConfig) {
+	if features.LocalImageScanning.Enabled() && securedClusterIsNotManagedManually(helmManagedConfig) && env.UseLocalScanner.BooleanSetting() {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
 			localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace, podName))
