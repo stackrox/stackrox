@@ -120,10 +120,8 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
         [<- if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
-        {{ $centralDeployment := dict }}
-        {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
         - name: ROX_USE_LOCAL_SCANNER
-          value: "{{ or (not ._rox.scanner.disable | not | not) ($centralDeployment.result | not | not) }}"
+          value: "{{ not ._rox.scanner.disable | not | not }}"
         - name: ROX_SCANNER_GRPC_ENDPOINT
           value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}
         [<- end >]
