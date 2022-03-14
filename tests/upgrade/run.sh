@@ -160,9 +160,14 @@ test_upgrader() {
 
     deploy_sensor_via_upgrader "yet again, but with a new upgrade process ID" 789c9262-5dd3-4d58-a824-c2a099892bd6
 
+    webhook_timeout_before_patch="$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')"
+    echo "Webhook timeout before patch: ${webhook_timeout_before_patch}"
+    webhook_timeout_after_patch="$((webhook_timeout_before_patch + 1))"
+    echo "Desired webhook timeout after patch: ${webhook_timeout_after_patch}"
+
     info "Patch admission webhook"
-    kubectl -n stackrox patch validatingwebhookconfiguration stackrox --type 'json' -p '[{"op":"replace","path":"/webhooks/0/timeoutSeconds","value":29}]'
-    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 29 ]]; then
+    kubectl -n stackrox patch validatingwebhookconfiguration stackrox --type 'json' -p "[{'op':'replace','path':'/webhooks/0/timeoutSeconds','value':${webhook_timeout_after_patch}}]"
+    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne "${webhook_timeout_after_patch}" ]]; then
         echo "Webhook not patched"
         kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
         exit 1
@@ -174,7 +179,7 @@ test_upgrader() {
     deploy_sensor_via_upgrader "after manually patching webhook" 060a9fa6-0ed6-49ac-b70c-9ca692614707
 
     info "Verify the webhook was patched back by the upgrader"
-    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 27 ]]; then
+    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne "${webhook_timeout_before_patch}" ]]; then
         echo "Webhook not patched"
         kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
         exit 1
