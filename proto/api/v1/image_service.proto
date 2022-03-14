@@ -158,6 +158,9 @@ service ImageService {
     // GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
     rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse);
 
+    // VerifyImageSignaturesInternal is used solely by the Sensor ato send signature verification
+    // requests.
+    rpc VerifyImageSignaturesInternal (VerifyImageSignaturesInternalRequest) returns (VerifyImageSignaturesInternalResponse);
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
         option (google.api.http) = {
