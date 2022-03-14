@@ -59,7 +59,7 @@ func (uniqueInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField)
 
 	switch ty.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return r.Int()
+		return r.Int31()
 	case reflect.Float32, reflect.Float64:
 		return r.Float32()
 	case reflect.Complex64, reflect.Complex128:

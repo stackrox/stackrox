@@ -72,4 +72,5 @@ var funcMap = template.FuncMap{
 	"lowerCamelCase": lowerCamelCase,
 	"upperCamelCase": upperCamelCase,
 	"valueExpansion": valueExpansion,
+	"lowerCase":      strings.ToLower,
 }

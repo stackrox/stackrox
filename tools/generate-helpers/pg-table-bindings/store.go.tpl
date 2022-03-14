@@ -2,6 +2,7 @@
 {{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
+{{define "columnsLower"}}{{range $idx, $field := .}}{{if $idx}},{{end}}{{$field.ColumnName|lowerCase}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
 
@@ -53,8 +54,8 @@ var (
 
     table = "{{.Table}}"
 
-    // threshold of records before we begin processing in batches
-    thresholdToBatch = 100
+    // We begin to process in batches after this number of records
+    batchAfter = 100
 
     // using copyFrom, we may not even want to batch.  It would probably be simpler
     // to deal with failures if we just sent it all.  Something to think about as we
@@ -204,28 +205,14 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     var deletes []string
     {{end}}
 
-
-    // Todo: I'm sure there is a cleaner way to do this.
-    columns := "{{template "commaSeparatedColumns" $schema.ResolvedFields }}"
-    columns = strings.ToLower(columns)
-
-    copyCols := strings.Split(columns, ",")
-
-    for i := range copyCols {
-    	copyCols[i] = strings.TrimSpace(copyCols[i])
-    }
-
-    lowerTable := strings.ToLower("{{$schema.Table}}")
-
-    i := 0;
+    copyCols := strings.Split("{{template "columnsLower" $schema.ResolvedFields }}", ",")
 
     {{if not $schema.Parents }}
-    for _, obj := range objs {
+    for idx, obj := range objs {
     {{else}}
     for idx, obj := range objs {
     {{end}}
-        i++
-        //Todo: Figure out how to more cleanly template around this issue.
+        // Todo: Figure out how to more cleanly template around this issue.
         log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 
@@ -258,7 +245,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         {{end}}
 
         // if we hit our batch size we need to push the data
-        if i % batchSize == 0 || i == len(objs) {
+        if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
             {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
@@ -270,7 +257,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             deletes = nil
             {{end}}
 
-            _, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+            _, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("{{$schema.Table}}")}, copyCols, pgx.CopyFromRows(inputRows))
 
             if err != nil {
                 return err
@@ -364,7 +351,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
 
-    if len(objs) < thresholdToBatch {
+    if len(objs) < batchAfter {
         return s.upsert(ctx, objs...)
     } else {
         return s.copyFrom(ctx, objs...)
