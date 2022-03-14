@@ -36,10 +36,9 @@ var (
 
 	table = "integrationhealth"
 
-	// just starting this here for now.  may be a candidate for env var
-	batchLimit = 100
+	// We begin to process in batches after this number of records
+	batchAfter = 100
 
-	// just starting this here for now.  may be a candidate for env var
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -113,7 +112,7 @@ func insertIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, obj *storage.In
 		obj.GetType(),
 		obj.GetStatus(),
 		obj.GetErrorMessage(),
-		pgutils.NilOrStringTimestamp(obj.GetLastTimestamp()),
+		pgutils.NilOrTime(obj.GetLastTimestamp()),
 		serialized,
 	}
 
@@ -136,24 +135,11 @@ func (s *storeImpl) copyIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, ob
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "Id, Name, Type, Status, ErrorMessage, LastTimestamp, serialized"
-	columns = strings.ToLower(columns)
+	copyCols := strings.Split("id,name,type,status,errormessage,lasttimestamp,serialized", ",")
 
-	copyCols := strings.Split(columns, ",")
+	for idx, obj := range objs {
 
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("integrationhealth")
-
-	i := 0
-
-	for _, obj := range objs {
-
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		serialized, marshalErr := obj.Marshal()
@@ -182,7 +168,7 @@ func (s *storeImpl) copyIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, ob
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
@@ -193,7 +179,7 @@ func (s *storeImpl) copyIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, ob
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("integrationhealth")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -269,7 +255,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.IntegrationHealth) 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.IntegrationHealth) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "IntegrationHealth")
 
-	if len(objs) < batchLimit {
+	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
 		return s.copyFrom(ctx, objs...)

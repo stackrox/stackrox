@@ -36,10 +36,9 @@ var (
 
 	table = "secrets"
 
-	// just starting this here for now.  may be a candidate for env var
-	batchLimit = 100
+	// We begin to process in batches after this number of records
+	batchAfter = 100
 
-	// just starting this here for now.  may be a candidate for env var
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -263,7 +262,7 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 		obj.GetType(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		pgutils.NilOrStringTimestamp(obj.GetCreatedAt()),
+		pgutils.NilOrTime(obj.GetCreatedAt()),
 		obj.GetRelationship().GetId(),
 		serialized,
 	}
@@ -339,8 +338,8 @@ func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretD
 		obj.GetCert().GetIssuer().GetPostalCode(),
 		obj.GetCert().GetIssuer().GetNames(),
 		obj.GetCert().GetSans(),
-		pgutils.NilOrStringTimestamp(obj.GetCert().GetStartDate()),
-		pgutils.NilOrStringTimestamp(obj.GetCert().GetEndDate()),
+		pgutils.NilOrTime(obj.GetCert().GetStartDate()),
+		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
 		obj.GetCert().GetAlgorithm(),
 	}
 
@@ -434,24 +433,11 @@ func (s *storeImpl) copyIntoSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "Id, Name, ClusterId, ClusterName, Namespace, Type, Labels, Annotations, CreatedAt, Relationship_Id, serialized"
-	columns = strings.ToLower(columns)
+	copyCols := strings.Split("id,name,clusterid,clustername,namespace,type,labels,annotations,createdat,relationship_id,serialized", ",")
 
-	copyCols := strings.Split(columns, ",")
+	for idx, obj := range objs {
 
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("secrets")
-
-	i := 0
-
-	for _, obj := range objs {
-
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		serialized, marshalErr := obj.Marshal()
@@ -488,7 +474,7 @@ func (s *storeImpl) copyIntoSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
@@ -499,7 +485,7 @@ func (s *storeImpl) copyIntoSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -532,24 +518,11 @@ func (s *storeImpl) copyIntoSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "secrets_Id, idx, Name, Type, Cert_Subject_CommonName, Cert_Subject_Country, Cert_Subject_Organization, Cert_Subject_OrganizationUnit, Cert_Subject_Locality, Cert_Subject_Province, Cert_Subject_StreetAddress, Cert_Subject_PostalCode, Cert_Subject_Names, Cert_Issuer_CommonName, Cert_Issuer_Country, Cert_Issuer_Organization, Cert_Issuer_OrganizationUnit, Cert_Issuer_Locality, Cert_Issuer_Province, Cert_Issuer_StreetAddress, Cert_Issuer_PostalCode, Cert_Issuer_Names, Cert_Sans, Cert_StartDate, Cert_EndDate, Cert_Algorithm"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("secrets_Files")
-
-	i := 0
+	copyCols := strings.Split("secrets_id,idx,name,type,cert_subject_commonname,cert_subject_country,cert_subject_organization,cert_subject_organizationunit,cert_subject_locality,cert_subject_province,cert_subject_streetaddress,cert_subject_postalcode,cert_subject_names,cert_issuer_commonname,cert_issuer_country,cert_issuer_organization,cert_issuer_organizationunit,cert_issuer_locality,cert_issuer_province,cert_issuer_streetaddress,cert_issuer_postalcode,cert_issuer_names,cert_sans,cert_startdate,cert_enddate,cert_algorithm", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -608,11 +581,11 @@ func (s *storeImpl) copyIntoSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets_Files")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -639,24 +612,11 @@ func (s *storeImpl) copyIntoSecretsFilesRegistries(ctx context.Context, tx pgx.T
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "secrets_Id, secrets_Files_idx, idx, Name, Username"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("secrets_Files_Registries")
-
-	i := 0
+	copyCols := strings.Split("secrets_id,secrets_files_idx,idx,name,username", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -673,11 +633,11 @@ func (s *storeImpl) copyIntoSecretsFilesRegistries(ctx context.Context, tx pgx.T
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets_Files_Registries")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -697,24 +657,11 @@ func (s *storeImpl) copyIntoSecretsContainerRelationships(ctx context.Context, t
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "secrets_Id, idx, Id, Path"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("secrets_ContainerRelationships")
-
-	i := 0
+	copyCols := strings.Split("secrets_id,idx,id,path", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -729,11 +676,11 @@ func (s *storeImpl) copyIntoSecretsContainerRelationships(ctx context.Context, t
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets_ContainerRelationships")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -753,24 +700,11 @@ func (s *storeImpl) copyIntoSecretsDeploymentRelationships(ctx context.Context, 
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "secrets_Id, idx, Id, Name"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("secrets_DeploymentRelationships")
-
-	i := 0
+	copyCols := strings.Split("secrets_id,idx,id,name", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -785,11 +719,11 @@ func (s *storeImpl) copyIntoSecretsDeploymentRelationships(ctx context.Context, 
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets_DeploymentRelationships")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -865,7 +799,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Secret) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Secret) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Secret")
 
-	if len(objs) < batchLimit {
+	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
 		return s.copyFrom(ctx, objs...)

@@ -36,10 +36,9 @@ var (
 
 	table = "alerts"
 
-	// just starting this here for now.  may be a candidate for env var
-	batchLimit = 100
+	// We begin to process in batches after this number of records
+	batchAfter = 100
 
-	// just starting this here for now.  may be a candidate for env var
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -583,7 +582,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		obj.GetPolicy().GetSeverity(),
 		obj.GetPolicy().GetEnforcementActions(),
 		obj.GetPolicy().GetNotifiers(),
-		pgutils.NilOrStringTimestamp(obj.GetPolicy().GetLastUpdated()),
+		pgutils.NilOrTime(obj.GetPolicy().GetLastUpdated()),
 		obj.GetPolicy().GetSORTName(),
 		obj.GetPolicy().GetSORTLifecycleStage(),
 		obj.GetPolicy().GetSORTEnforcement(),
@@ -618,11 +617,11 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		obj.GetProcessViolation().GetMessage(),
 		obj.GetEnforcement().GetAction(),
 		obj.GetEnforcement().GetMessage(),
-		pgutils.NilOrStringTimestamp(obj.GetTime()),
-		pgutils.NilOrStringTimestamp(obj.GetFirstOccurred()),
-		pgutils.NilOrStringTimestamp(obj.GetResolvedAt()),
+		pgutils.NilOrTime(obj.GetTime()),
+		pgutils.NilOrTime(obj.GetFirstOccurred()),
+		pgutils.NilOrTime(obj.GetResolvedAt()),
 		obj.GetState(),
-		pgutils.NilOrStringTimestamp(obj.GetSnoozeTill()),
+		pgutils.NilOrTime(obj.GetSnoozeTill()),
 		obj.GetTags(),
 		serialized,
 	}
@@ -739,7 +738,7 @@ func insertIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 		obj.GetDeployment().GetScope().GetLabel().GetKey(),
 		obj.GetDeployment().GetScope().GetLabel().GetValue(),
 		obj.GetImage().GetName(),
-		pgutils.NilOrStringTimestamp(obj.GetExpiration()),
+		pgutils.NilOrTime(obj.GetExpiration()),
 	}
 
 	finalStr := "INSERT INTO alerts_Whitelists (alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
@@ -764,7 +763,7 @@ func insertIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 		obj.GetDeployment().GetScope().GetLabel().GetKey(),
 		obj.GetDeployment().GetScope().GetLabel().GetValue(),
 		obj.GetImage().GetName(),
-		pgutils.NilOrStringTimestamp(obj.GetExpiration()),
+		pgutils.NilOrTime(obj.GetExpiration()),
 	}
 
 	finalStr := "INSERT INTO alerts_Exclusions (alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
@@ -945,7 +944,7 @@ func insertIntoAlertsViolations(ctx context.Context, tx pgx.Tx, obj *storage.Ale
 		obj.GetNetworkFlowInfo().GetDestination().GetDeploymentType(),
 		obj.GetNetworkFlowInfo().GetDestination().GetPort(),
 		obj.GetType(),
-		pgutils.NilOrStringTimestamp(obj.GetTime()),
+		pgutils.NilOrTime(obj.GetTime()),
 	}
 
 	finalStr := "INSERT INTO alerts_Violations (alerts_Id, idx, Message, NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port, Type, Time) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Message = EXCLUDED.Message, NetworkFlowInfo_Protocol = EXCLUDED.NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name = EXCLUDED.NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType = EXCLUDED.NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType = EXCLUDED.NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port = EXCLUDED.NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name = EXCLUDED.NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType = EXCLUDED.NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType = EXCLUDED.NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port = EXCLUDED.NetworkFlowInfo_Destination_Port, Type = EXCLUDED.Type, Time = EXCLUDED.Time"
@@ -1003,7 +1002,7 @@ func insertIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, obj *storage.Proc
 		obj.GetPodUid(),
 		obj.GetSignal().GetId(),
 		obj.GetSignal().GetContainerId(),
-		pgutils.NilOrStringTimestamp(obj.GetSignal().GetTime()),
+		pgutils.NilOrTime(obj.GetSignal().GetTime()),
 		obj.GetSignal().GetName(),
 		obj.GetSignal().GetArgs(),
 		obj.GetSignal().GetExecFilePath(),
@@ -1014,7 +1013,7 @@ func insertIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, obj *storage.Proc
 		obj.GetSignal().GetScraped(),
 		obj.GetClusterId(),
 		obj.GetNamespace(),
-		pgutils.NilOrStringTimestamp(obj.GetContainerStartTime()),
+		pgutils.NilOrTime(obj.GetContainerStartTime()),
 		obj.GetImageId(),
 	}
 
@@ -1070,24 +1069,11 @@ func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "Id, Policy_Id, Policy_Name, Policy_Description, Policy_Rationale, Policy_Remediation, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_EventSource, Policy_Severity, Policy_EnforcementActions, Policy_Notifiers, Policy_LastUpdated, Policy_PolicyVersion, Policy_CriteriaLocked, Policy_MitreVectorsLocked, Policy_IsDefault, LifecycleStage, Deployment_Id, Deployment_Name, Deployment_Type, Deployment_Namespace, Deployment_NamespaceId, Deployment_Labels, Deployment_ClusterId, Deployment_ClusterName, Deployment_Annotations, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Resource_ResourceType, Resource_Name, Resource_ClusterId, Resource_ClusterName, Resource_Namespace, Resource_NamespaceId, ProcessViolation_Message, Enforcement_Action, Enforcement_Message, Time, FirstOccurred, ResolvedAt, State, SnoozeTill, Tags, serialized"
-	columns = strings.ToLower(columns)
+	copyCols := strings.Split("id,policy_id,policy_name,policy_description,policy_rationale,policy_remediation,policy_disabled,policy_categories,policy_lifecyclestages,policy_eventsource,policy_severity,policy_enforcementactions,policy_notifiers,policy_lastupdated,policy_sortname,policy_sortlifecyclestage,policy_sortenforcement,policy_policyversion,policy_criterialocked,policy_mitrevectorslocked,policy_isdefault,lifecyclestage,deployment_id,deployment_name,deployment_type,deployment_namespace,deployment_namespaceid,deployment_labels,deployment_clusterid,deployment_clustername,deployment_annotations,deployment_inactive,image_id,image_name_registry,image_name_remote,image_name_tag,image_name_fullname,image_notpullable,image_isclusterlocal,resource_resourcetype,resource_name,resource_clusterid,resource_clustername,resource_namespace,resource_namespaceid,processviolation_message,enforcement_action,enforcement_message,time,firstoccurred,resolvedat,state,snoozetill,tags,serialized", ",")
 
-	copyCols := strings.Split(columns, ",")
+	for idx, obj := range objs {
 
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts")
-
-	i := 0
-
-	for _, obj := range objs {
-
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		serialized, marshalErr := obj.Marshal()
@@ -1124,6 +1110,12 @@ func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 			obj.GetPolicy().GetNotifiers(),
 
 			pgutils.NilOrTime(obj.GetPolicy().GetLastUpdated()),
+
+			obj.GetPolicy().GetSORTName(),
+
+			obj.GetPolicy().GetSORTLifecycleStage(),
+
+			obj.GetPolicy().GetSORTEnforcement(),
 
 			obj.GetPolicy().GetPolicyVersion(),
 
@@ -1206,7 +1198,7 @@ func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
@@ -1217,7 +1209,7 @@ func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1265,24 +1257,11 @@ func (s *storeImpl) copyIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, ale
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_Whitelists")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1309,11 +1288,11 @@ func (s *storeImpl) copyIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, ale
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Whitelists")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1333,24 +1312,11 @@ func (s *storeImpl) copyIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, ale
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_Exclusions")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1377,11 +1343,11 @@ func (s *storeImpl) copyIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, ale
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Exclusions")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1401,24 +1367,11 @@ func (s *storeImpl) copyIntoAlertsScope(ctx context.Context, tx pgx.Tx, alerts_I
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, idx, Cluster, Namespace, Label_Key, Label_Value"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_Scope")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,idx,cluster,namespace,label_key,label_value", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1437,11 +1390,11 @@ func (s *storeImpl) copyIntoAlertsScope(ctx context.Context, tx pgx.Tx, alerts_I
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Scope")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1461,24 +1414,11 @@ func (s *storeImpl) copyIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, idx, SectionName"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_PolicySections")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,idx,sectionname", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1491,11 +1431,11 @@ func (s *storeImpl) copyIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_PolicySections")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1522,24 +1462,11 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroups(ctx context.Context
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, alerts_PolicySections_idx, idx, FieldName, BooleanOperator, Negate"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_PolicySections_PolicyGroups")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,alerts_policysections_idx,idx,fieldname,booleanoperator,negate", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1558,11 +1485,11 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroups(ctx context.Context
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_PolicySections_PolicyGroups")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1589,24 +1516,11 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.C
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx, Value"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_PolicySections_PolicyGroups_Values")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,alerts_policysections_idx,alerts_policysections_policygroups_idx,idx,value", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1623,11 +1537,11 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.C
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_PolicySections_PolicyGroups_Values")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1647,24 +1561,11 @@ func (s *storeImpl) copyIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, idx, Tactic, Techniques"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_MitreAttackVectors")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,idx,tactic,techniques", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1679,11 +1580,11 @@ func (s *storeImpl) copyIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_MitreAttackVectors")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1703,24 +1604,11 @@ func (s *storeImpl) copyIntoAlertsContainers(ctx context.Context, tx pgx.Tx, ale
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Name"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_Containers")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,idx,image_id,image_name_registry,image_name_remote,image_name_tag,image_name_fullname,image_notpullable,image_isclusterlocal,name", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1747,11 +1635,11 @@ func (s *storeImpl) copyIntoAlertsContainers(ctx context.Context, tx pgx.Tx, ale
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Containers")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1771,24 +1659,11 @@ func (s *storeImpl) copyIntoAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, idx, Message, NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port, Type, Time"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_Violations")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,idx,message,networkflowinfo_protocol,networkflowinfo_source_name,networkflowinfo_source_entitytype,networkflowinfo_source_deploymentnamespace,networkflowinfo_source_deploymenttype,networkflowinfo_source_port,networkflowinfo_destination_name,networkflowinfo_destination_entitytype,networkflowinfo_destination_deploymentnamespace,networkflowinfo_destination_deploymenttype,networkflowinfo_destination_port,type,time", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1827,11 +1702,11 @@ func (s *storeImpl) copyIntoAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Violations")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1858,24 +1733,11 @@ func (s *storeImpl) copyIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, alerts_Violations_idx, idx, Key, Value"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_Violations_Attrs")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,alerts_violations_idx,idx,key,value", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1892,11 +1754,11 @@ func (s *storeImpl) copyIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Violations_Attrs")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1916,24 +1778,11 @@ func (s *storeImpl) copyIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, idx, Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_Processes")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,idx,id,deploymentid,containername,podid,poduid,signal_id,signal_containerid,signal_time,signal_name,signal_args,signal_execfilepath,signal_pid,signal_uid,signal_gid,signal_lineage,signal_scraped,clusterid,namespace,containerstarttime,imageid", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1984,11 +1833,11 @@ func (s *storeImpl) copyIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Processes")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -2015,24 +1864,11 @@ func (s *storeImpl) copyIntoAlertsProcessesLineageInfo(ctx context.Context, tx p
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "alerts_Id, alerts_Processes_idx, idx, ParentUid, ParentExecFilePath"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("alerts_Processes_LineageInfo")
-
-	i := 0
+	copyCols := strings.Split("alerts_id,alerts_processes_idx,idx,parentuid,parentexecfilepath", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -2049,11 +1885,11 @@ func (s *storeImpl) copyIntoAlertsProcessesLineageInfo(ctx context.Context, tx p
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Processes_LineageInfo")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -2129,7 +1965,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Alert) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Alert) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Alert")
 
-	if len(objs) < batchLimit {
+	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
 		return s.copyFrom(ctx, objs...)

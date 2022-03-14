@@ -36,10 +36,9 @@ var (
 
 	table = "process_indicators"
 
-	// just starting this here for now.  may be a candidate for env var
-	batchLimit = 100
+	// We begin to process in batches after this number of records
+	batchAfter = 100
 
-	// just starting this here for now.  may be a candidate for env var
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -159,7 +158,7 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 		obj.GetPodUid(),
 		obj.GetSignal().GetId(),
 		obj.GetSignal().GetContainerId(),
-		pgutils.NilOrStringTimestamp(obj.GetSignal().GetTime()),
+		pgutils.NilOrTime(obj.GetSignal().GetTime()),
 		obj.GetSignal().GetName(),
 		obj.GetSignal().GetArgs(),
 		obj.GetSignal().GetExecFilePath(),
@@ -170,7 +169,7 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 		obj.GetSignal().GetScraped(),
 		obj.GetClusterId(),
 		obj.GetNamespace(),
-		pgutils.NilOrStringTimestamp(obj.GetContainerStartTime()),
+		pgutils.NilOrTime(obj.GetContainerStartTime()),
 		obj.GetImageId(),
 		serialized,
 	}
@@ -226,24 +225,11 @@ func (s *storeImpl) copyIntoProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId, serialized"
-	columns = strings.ToLower(columns)
+	copyCols := strings.Split("id,deploymentid,containername,podid,poduid,signal_id,signal_containerid,signal_time,signal_name,signal_args,signal_execfilepath,signal_pid,signal_uid,signal_gid,signal_lineage,signal_scraped,clusterid,namespace,containerstarttime,imageid,serialized", ",")
 
-	copyCols := strings.Split(columns, ",")
+	for idx, obj := range objs {
 
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("process_indicators")
-
-	i := 0
-
-	for _, obj := range objs {
-
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		serialized, marshalErr := obj.Marshal()
@@ -300,7 +286,7 @@ func (s *storeImpl) copyIntoProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
@@ -311,7 +297,7 @@ func (s *storeImpl) copyIntoProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("process_indicators")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -338,24 +324,11 @@ func (s *storeImpl) copyIntoProcessIndicatorsLineageInfo(ctx context.Context, tx
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "process_indicators_Id, idx, ParentUid, ParentExecFilePath"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("process_indicators_LineageInfo")
-
-	i := 0
+	copyCols := strings.Split("process_indicators_id,idx,parentuid,parentexecfilepath", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -370,11 +343,11 @@ func (s *storeImpl) copyIntoProcessIndicatorsLineageInfo(ctx context.Context, tx
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("process_indicators_LineageInfo")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -450,7 +423,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ProcessIndicator) e
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessIndicator) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ProcessIndicator")
 
-	if len(objs) < batchLimit {
+	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
 		return s.copyFrom(ctx, objs...)

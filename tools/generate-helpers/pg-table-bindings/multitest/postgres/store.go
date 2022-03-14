@@ -32,10 +32,9 @@ var (
 
 	table = "multikey"
 
-	// just starting this here for now.  may be a candidate for env var
-	batchLimit = 100
+	// We begin to process in batches after this number of records
+	batchAfter = 100
 
-	// just starting this here for now.  may be a candidate for env var
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -153,7 +152,7 @@ func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKe
 		obj.GetInt64(),
 		obj.GetFloat(),
 		obj.GetLabels(),
-		pgutils.NilOrStringTimestamp(obj.GetTimestamp()),
+		pgutils.NilOrTime(obj.GetTimestamp()),
 		obj.GetEnum(),
 		obj.GetEnums(),
 		obj.GetString_(),
@@ -215,24 +214,11 @@ func (s *storeImpl) copyIntoMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized"
-	columns = strings.ToLower(columns)
+	copyCols := strings.Split("key1,key2,stringslice,bool,uint64,int64,float,labels,timestamp,enum,enums,string_,embedded_embedded,oneofstring,oneofnested_nested,serialized", ",")
 
-	copyCols := strings.Split(columns, ",")
+	for idx, obj := range objs {
 
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("multikey")
-
-	i := 0
-
-	for _, obj := range objs {
-
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		serialized, marshalErr := obj.Marshal()
@@ -281,11 +267,11 @@ func (s *storeImpl) copyIntoMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 		}
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("multikey")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -312,24 +298,11 @@ func (s *storeImpl) copyIntoMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "multikey_Key1, multikey_Key2, idx, Nested, Nested2_Nested2"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("multikey_Nested")
-
-	i := 0
+	copyCols := strings.Split("multikey_key1,multikey_key2,idx,nested,isnested,int64,nested2_nested2,nested2_isnested,nested2_int64", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -342,15 +315,23 @@ func (s *storeImpl) copyIntoMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 
 			obj.GetNested(),
 
+			obj.GetIsNested(),
+
+			obj.GetInt64(),
+
 			obj.GetNested2().GetNested2(),
+
+			obj.GetNested2().GetIsNested(),
+
+			obj.GetNested2().GetInt64(),
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("multikey_Nested")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -426,7 +407,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestMultiKeyStruct)
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestMultiKeyStruct) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestMultiKeyStruct")
 
-	if len(objs) < batchLimit {
+	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
 		return s.copyFrom(ctx, objs...)

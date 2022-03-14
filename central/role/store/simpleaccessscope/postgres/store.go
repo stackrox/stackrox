@@ -36,10 +36,9 @@ var (
 
 	table = "simpleaccessscopes"
 
-	// just starting this here for now.  may be a candidate for env var
-	batchLimit = 100
+	// We begin to process in batches after this number of records
+	batchAfter = 100
 
-	// just starting this here for now.  may be a candidate for env var
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -438,24 +437,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "Id, Name, Description, Rules_IncludedClusters, serialized"
-	columns = strings.ToLower(columns)
+	copyCols := strings.Split("id,name,description,rules_includedclusters,serialized", ",")
 
-	copyCols := strings.Split(columns, ",")
+	for idx, obj := range objs {
 
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("simpleaccessscopes")
-
-	i := 0
-
-	for _, obj := range objs {
-
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		serialized, marshalErr := obj.Marshal()
@@ -480,7 +466,7 @@ func (s *storeImpl) copyIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
@@ -491,7 +477,7 @@ func (s *storeImpl) copyIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -524,24 +510,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesIncludedNamespaces(ctx context.Con
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "simpleaccessscopes_Id, idx, ClusterName, NamespaceName"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("simpleaccessscopes_IncludedNamespaces")
-
-	i := 0
+	copyCols := strings.Split("simpleaccessscopes_id,idx,clustername,namespacename", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -556,11 +529,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesIncludedNamespaces(ctx context.Con
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_IncludedNamespaces")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -580,24 +553,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectors(ctx context.
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "simpleaccessscopes_Id, idx"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("simpleaccessscopes_ClusterLabelSelectors")
-
-	i := 0
+	copyCols := strings.Split("simpleaccessscopes_id,idx", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -608,11 +568,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectors(ctx context.
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_ClusterLabelSelectors")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -639,24 +599,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectorsRequirements(
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx, idx, Key, Op, Values"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("simpleaccessscopes_ClusterLabelSelectors_Requirements")
-
-	i := 0
+	copyCols := strings.Split("simpleaccessscopes_id,simpleaccessscopes_clusterlabelselectors_idx,idx,key,op,values", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -675,11 +622,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectorsRequirements(
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_ClusterLabelSelectors_Requirements")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -699,24 +646,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "simpleaccessscopes_Id, idx"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("simpleaccessscopes_NamespaceLabelSelectors")
-
-	i := 0
+	copyCols := strings.Split("simpleaccessscopes_id,idx", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -727,11 +661,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_NamespaceLabelSelectors")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -758,24 +692,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectorsRequirement
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx, idx, Key, Op, Values"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("simpleaccessscopes_NamespaceLabelSelectors_Requirements")
-
-	i := 0
+	copyCols := strings.Split("simpleaccessscopes_id,simpleaccessscopes_namespacelabelselectors_idx,idx,key,op,values", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -794,11 +715,11 @@ func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectorsRequirement
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_NamespaceLabelSelectors_Requirements")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -874,7 +795,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SimpleAccessScope) 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.SimpleAccessScope) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "SimpleAccessScope")
 
-	if len(objs) < batchLimit {
+	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
 		return s.copyFrom(ctx, objs...)

@@ -36,10 +36,9 @@ var (
 
 	table = "networkbaseline"
 
-	// just starting this here for now.  may be a candidate for env var
-	batchLimit = 100
+	// We begin to process in batches after this number of records
+	batchAfter = 100
 
-	// just starting this here for now.  may be a candidate for env var
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -311,7 +310,7 @@ func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.Netw
 		obj.GetDeploymentId(),
 		obj.GetClusterId(),
 		obj.GetNamespace(),
-		pgutils.NilOrStringTimestamp(obj.GetObservationPeriodEnd()),
+		pgutils.NilOrTime(obj.GetObservationPeriodEnd()),
 		obj.GetLocked(),
 		obj.GetDeploymentName(),
 		serialized,
@@ -542,24 +541,11 @@ func (s *storeImpl) copyIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "DeploymentId, ClusterId, Namespace, ObservationPeriodEnd, Locked, DeploymentName, serialized"
-	columns = strings.ToLower(columns)
+	copyCols := strings.Split("deploymentid,clusterid,namespace,observationperiodend,locked,deploymentname,serialized", ",")
 
-	copyCols := strings.Split(columns, ",")
+	for idx, obj := range objs {
 
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("networkbaseline")
-
-	i := 0
-
-	for _, obj := range objs {
-
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		serialized, marshalErr := obj.Marshal()
@@ -588,7 +574,7 @@ func (s *storeImpl) copyIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 		deletes = append(deletes, obj.GetDeploymentId())
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
@@ -599,7 +585,7 @@ func (s *storeImpl) copyIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("networkbaseline")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -629,24 +615,11 @@ func (s *storeImpl) copyIntoNetworkbaselinePeers(ctx context.Context, tx pgx.Tx,
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "networkbaseline_DeploymentId, idx, Entity_Info_Type, Entity_Info_Id, Entity_Info_Deployment_Name, Entity_Info_Deployment_Namespace, Entity_Info_Deployment_Cluster, Entity_Info_ExternalSource_Name, Entity_Info_ExternalSource_Cidr, Entity_Info_ExternalSource_Default, Entity_Scope_ClusterId"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("networkbaseline_Peers")
-
-	i := 0
+	copyCols := strings.Split("networkbaseline_deploymentid,idx,entity_info_type,entity_info_id,entity_info_deployment_name,entity_info_deployment_namespace,entity_info_deployment_cluster,entity_info_externalsource_name,entity_info_externalsource_cidr,entity_info_externalsource_default,entity_scope_clusterid", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -675,11 +648,11 @@ func (s *storeImpl) copyIntoNetworkbaselinePeers(ctx context.Context, tx pgx.Tx,
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("networkbaseline_Peers")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -709,24 +682,11 @@ func (s *storeImpl) copyIntoNetworkbaselinePeersListenPorts(ctx context.Context,
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx, Port, L4Protocol"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("networkbaseline_Peers_ListenPorts")
-
-	i := 0
+	copyCols := strings.Split("networkbaseline_deploymentid,networkbaseline_peers_idx,idx,port,l4protocol", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -743,11 +703,11 @@ func (s *storeImpl) copyIntoNetworkbaselinePeersListenPorts(ctx context.Context,
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("networkbaseline_Peers_ListenPorts")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -767,24 +727,11 @@ func (s *storeImpl) copyIntoNetworkbaselinePeersProperties(ctx context.Context, 
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx, Ingress, Port, Protocol"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("networkbaseline_Peers_Properties")
-
-	i := 0
+	copyCols := strings.Split("networkbaseline_deploymentid,networkbaseline_peers_idx,idx,ingress,port,protocol", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -803,11 +750,11 @@ func (s *storeImpl) copyIntoNetworkbaselinePeersProperties(ctx context.Context, 
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("networkbaseline_Peers_Properties")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -827,24 +774,11 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeers(ctx context.Context, t
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "networkbaseline_DeploymentId, idx, Entity_Info_Type, Entity_Info_Id, Entity_Info_Deployment_Name, Entity_Info_Deployment_Namespace, Entity_Info_Deployment_Cluster, Entity_Info_ExternalSource_Name, Entity_Info_ExternalSource_Cidr, Entity_Info_ExternalSource_Default, Entity_Scope_ClusterId"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("networkbaseline_ForbiddenPeers")
-
-	i := 0
+	copyCols := strings.Split("networkbaseline_deploymentid,idx,entity_info_type,entity_info_id,entity_info_deployment_name,entity_info_deployment_namespace,entity_info_deployment_cluster,entity_info_externalsource_name,entity_info_externalsource_cidr,entity_info_externalsource_default,entity_scope_clusterid", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -873,11 +807,11 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeers(ctx context.Context, t
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("networkbaseline_ForbiddenPeers")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -907,24 +841,11 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeersListenPorts(ctx context
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx, Port, L4Protocol"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("networkbaseline_ForbiddenPeers_ListenPorts")
-
-	i := 0
+	copyCols := strings.Split("networkbaseline_deploymentid,networkbaseline_forbiddenpeers_idx,idx,port,l4protocol", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -941,11 +862,11 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeersListenPorts(ctx context
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("networkbaseline_ForbiddenPeers_ListenPorts")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -965,24 +886,11 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeersProperties(ctx context.
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx, Ingress, Port, Protocol"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("networkbaseline_ForbiddenPeers_Properties")
-
-	i := 0
+	copyCols := strings.Split("networkbaseline_deploymentid,networkbaseline_forbiddenpeers_idx,idx,ingress,port,protocol", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1001,11 +909,11 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeersProperties(ctx context.
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("networkbaseline_ForbiddenPeers_Properties")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1081,7 +989,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkBaseline) er
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkBaseline) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkBaseline")
 
-	if len(objs) < batchLimit {
+	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
 		return s.copyFrom(ctx, objs...)

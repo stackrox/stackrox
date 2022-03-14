@@ -36,10 +36,9 @@ var (
 
 	table = "policy"
 
-	// just starting this here for now.  may be a candidate for env var
-	batchLimit = 100
+	// We begin to process in batches after this number of records
+	batchAfter = 100
 
-	// just starting this here for now.  may be a candidate for env var
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -360,7 +359,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		obj.GetSeverity(),
 		obj.GetEnforcementActions(),
 		obj.GetNotifiers(),
-		pgutils.NilOrStringTimestamp(obj.GetLastUpdated()),
+		pgutils.NilOrTime(obj.GetLastUpdated()),
 		obj.GetSORTName(),
 		obj.GetSORTLifecycleStage(),
 		obj.GetSORTEnforcement(),
@@ -450,7 +449,7 @@ func insertIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 		obj.GetDeployment().GetScope().GetLabel().GetKey(),
 		obj.GetDeployment().GetScope().GetLabel().GetValue(),
 		obj.GetImage().GetName(),
-		pgutils.NilOrStringTimestamp(obj.GetExpiration()),
+		pgutils.NilOrTime(obj.GetExpiration()),
 	}
 
 	finalStr := "INSERT INTO policy_Whitelists (policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
@@ -475,7 +474,7 @@ func insertIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 		obj.GetDeployment().GetScope().GetLabel().GetKey(),
 		obj.GetDeployment().GetScope().GetLabel().GetValue(),
 		obj.GetImage().GetName(),
-		pgutils.NilOrStringTimestamp(obj.GetExpiration()),
+		pgutils.NilOrTime(obj.GetExpiration()),
 	}
 
 	finalStr := "INSERT INTO policy_Exclusions (policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
@@ -622,24 +621,11 @@ func (s *storeImpl) copyIntoPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "Id, Name, Description, Rationale, Remediation, Disabled, Categories, LifecycleStages, EventSource, Severity, EnforcementActions, Notifiers, LastUpdated, PolicyVersion, CriteriaLocked, MitreVectorsLocked, IsDefault, serialized"
-	columns = strings.ToLower(columns)
+	copyCols := strings.Split("id,name,description,rationale,remediation,disabled,categories,lifecyclestages,eventsource,severity,enforcementactions,notifiers,lastupdated,sortname,sortlifecyclestage,sortenforcement,policyversion,criterialocked,mitrevectorslocked,isdefault,serialized", ",")
 
-	copyCols := strings.Split(columns, ",")
+	for idx, obj := range objs {
 
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("policy")
-
-	i := 0
-
-	for _, obj := range objs {
-
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		serialized, marshalErr := obj.Marshal()
@@ -675,6 +661,12 @@ func (s *storeImpl) copyIntoPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 
 			pgutils.NilOrTime(obj.GetLastUpdated()),
 
+			obj.GetSORTName(),
+
+			obj.GetSORTLifecycleStage(),
+
+			obj.GetSORTEnforcement(),
+
 			obj.GetPolicyVersion(),
 
 			obj.GetCriteriaLocked(),
@@ -690,7 +682,7 @@ func (s *storeImpl) copyIntoPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
@@ -701,7 +693,7 @@ func (s *storeImpl) copyIntoPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("policy")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -740,24 +732,11 @@ func (s *storeImpl) copyIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, pol
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("policy_Whitelists")
-
-	i := 0
+	copyCols := strings.Split("policy_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -784,11 +763,11 @@ func (s *storeImpl) copyIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, pol
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("policy_Whitelists")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -808,24 +787,11 @@ func (s *storeImpl) copyIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, pol
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("policy_Exclusions")
-
-	i := 0
+	copyCols := strings.Split("policy_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -852,11 +818,11 @@ func (s *storeImpl) copyIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, pol
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("policy_Exclusions")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -876,24 +842,11 @@ func (s *storeImpl) copyIntoPolicyScope(ctx context.Context, tx pgx.Tx, policy_I
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "policy_Id, idx, Cluster, Namespace, Label_Key, Label_Value"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("policy_Scope")
-
-	i := 0
+	copyCols := strings.Split("policy_id,idx,cluster,namespace,label_key,label_value", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -912,11 +865,11 @@ func (s *storeImpl) copyIntoPolicyScope(ctx context.Context, tx pgx.Tx, policy_I
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("policy_Scope")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -936,24 +889,11 @@ func (s *storeImpl) copyIntoPolicyPolicySections(ctx context.Context, tx pgx.Tx,
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "policy_Id, idx, SectionName"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("policy_PolicySections")
-
-	i := 0
+	copyCols := strings.Split("policy_id,idx,sectionname", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -966,11 +906,11 @@ func (s *storeImpl) copyIntoPolicyPolicySections(ctx context.Context, tx pgx.Tx,
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("policy_PolicySections")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -997,24 +937,11 @@ func (s *storeImpl) copyIntoPolicyPolicySectionsPolicyGroups(ctx context.Context
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "policy_Id, policy_PolicySections_idx, idx, FieldName, BooleanOperator, Negate"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("policy_PolicySections_PolicyGroups")
-
-	i := 0
+	copyCols := strings.Split("policy_id,policy_policysections_idx,idx,fieldname,booleanoperator,negate", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1033,11 +960,11 @@ func (s *storeImpl) copyIntoPolicyPolicySectionsPolicyGroups(ctx context.Context
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("policy_PolicySections_PolicyGroups")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1064,24 +991,11 @@ func (s *storeImpl) copyIntoPolicyPolicySectionsPolicyGroupsValues(ctx context.C
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx, Value"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("policy_PolicySections_PolicyGroups_Values")
-
-	i := 0
+	copyCols := strings.Split("policy_id,policy_policysections_idx,policy_policysections_policygroups_idx,idx,value", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1098,11 +1012,11 @@ func (s *storeImpl) copyIntoPolicyPolicySectionsPolicyGroupsValues(ctx context.C
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("policy_PolicySections_PolicyGroups_Values")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1122,24 +1036,11 @@ func (s *storeImpl) copyIntoPolicyMitreAttackVectors(ctx context.Context, tx pgx
 
 	var err error
 
-	// Todo: I'm sure there is a cleaner way to do this.
-	columns := "policy_Id, idx, Tactic, Techniques"
-	columns = strings.ToLower(columns)
-
-	copyCols := strings.Split(columns, ",")
-
-	for i := range copyCols {
-		copyCols[i] = strings.TrimSpace(copyCols[i])
-	}
-
-	lowerTable := strings.ToLower("policy_MitreAttackVectors")
-
-	i := 0
+	copyCols := strings.Split("policy_id,idx,tactic,techniques", ",")
 
 	for idx, obj := range objs {
 
-		i++
-		//Todo: Figure out how to more cleanly template around this issue.
+		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
 		inputRows = append(inputRows, []interface{}{
@@ -1154,11 +1055,11 @@ func (s *storeImpl) copyIntoPolicyMitreAttackVectors(ctx context.Context, tx pgx
 		})
 
 		// if we hit our batch size we need to push the data
-		if i%batchSize == 0 || i == len(objs) {
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{lowerTable}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("policy_MitreAttackVectors")}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1234,7 +1135,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Policy) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Policy")
 
-	if len(objs) < batchLimit {
+	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
 		return s.copyFrom(ctx, objs...)
