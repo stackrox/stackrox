@@ -2112,28 +2112,37 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
+
+	const (
+		verifier0  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
+		verifier1  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
+		verifier2  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"
+		verifier3  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000003"
+		unverifier = "io.stackrox.signatureintegration.00000000-0000-0000-0000-00000000000F"
+	)
+
 	var images = []*storage.Image{
 		imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
 		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "00000000-0000-0000-0000-000000000000",
+			VerifierId: verifier0,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
 		imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "11111111-1111-1111-1111-111111111111",
+			VerifierId: unverifier,
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
 		}}),
 		imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "00000000-0000-0000-0000-000000000002",
+			VerifierId: verifier2,
 			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 		}, {
-			VerifierId: "00000000-0000-0000-0000-000000000003",
+			VerifierId: verifier3,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
 		imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "00000000-0000-0000-0000-000000000002",
+			VerifierId: verifier2,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}, {
-			VerifierId: "00000000-0000-0000-0000-000000000003",
+			VerifierId: verifier3,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
 	}
@@ -2149,32 +2158,32 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		expectedMatches set.FrozenStringSet
 	}{
 		{
-			values:          []string{"00000000-0000-0000-0000-000000000000"},
+			values:          []string{verifier0},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
 		},
 		{
-			values:          []string{"00000000-0000-0000-0000-000000000001"},
+			values:          []string{verifier1},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet(),
 		},
 		{
-			values:          []string{"00000000-0000-0000-0000-000000000002"},
+			values:          []string{verifier2},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
 		},
 		{
-			values:          []string{"00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000002"},
+			values:          []string{verifier0, verifier2},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3"),
 		},
 		{
-			values:          []string{"00000000-0000-0000-0000-000000000003"},
+			values:          []string{verifier3},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3"),
 		},
 		{
-			values:          []string{"11111111-1111-1111-1111-111111111111"},
+			values:          []string{unverifier},
 			negate:          true,
 			expectedMatches: set.NewFrozenStringSet("unverified_image", "image_no_results"),
 		},

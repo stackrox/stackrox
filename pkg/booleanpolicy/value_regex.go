@@ -14,7 +14,6 @@ var (
 	keyValueValueRegex                       = createRegex("[^=]+=.*")
 	booleanValueRegex                        = createRegex("(?i:(true|false))")
 	stringValueRegex                         = createRegex(".*[^[:space:]]+.*")
-	uuidValueRegex                           = createRegex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 	integerValueRegex                        = createRegex("([[:digit:]]+)")
 	comparatorDecimalValueRegex              = createRegex(`(<|>|<=|>=)?[[:space:]]*[[:digit:]]*\.?[[:digit:]]+`)
 	environmentVariableWithSourceStrictRegex = createRegex("(?i:(UNSET|RAW|UNKNOWN|^)=([^=]*)=.*)|((SECRET_KEY|CONFIG_MAP_KEY|FIELD|RESOURCE_FIELD)=([^=]*)=$)")
@@ -32,6 +31,7 @@ var (
 	auditEventResourceValueRegex             = createRegex(`(?i:SECRETS|CONFIGMAPS)`)
 	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
+	signatureIntegrationIDValueRegex         = createRegex("io\\.stackrox\\.signatureintegration\\.[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 )
 
 func createRegex(s string) *regexp.Regexp {
