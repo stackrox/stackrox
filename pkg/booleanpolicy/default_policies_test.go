@@ -2193,9 +2193,9 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 				}
 				matchedImages.Add(img.GetName().GetFullName())
 				if c.negate {
-					suite.False(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match", img.GetName().GetFullName())
+					suite.Falsef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match %q", img.GetName().GetFullName())
 				} else {
-					suite.True(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match", img.GetName().GetFullName())
+					suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match %q", img.GetName().GetFullName())
 				}
 
 				messages := set.NewStringSet()
@@ -2206,7 +2206,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 				}
 				for _, violation := range violations.AlertViolations {
 					if messages.Cardinality() > 0 {
-						suite.True(messages.Contains(violation.GetMessage()), "Message not found", violation.GetMessage())
+						suite.Truef(messages.Contains(violation.GetMessage()), "Message not found %q", violation.GetMessage())
 					} else {
 						suite.Equal("Image signature is unverified", violation.GetMessage())
 					}
