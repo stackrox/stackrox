@@ -7,7 +7,6 @@ import exportPDF from 'services/PDFExportService';
 import downloadCSV from 'services/CSVDownloadService';
 import Menu, { MenuOption } from 'Components/Menu';
 import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
-import useBranding from 'hooks/useBranding';
 
 type ExportMenuProps = {
     fileName: string;
@@ -26,7 +25,6 @@ const ExportMenu = ({
     startExportingPDF,
     finishExportingPDF,
 }: ExportMenuProps) => {
-    const branding = useBranding();
     const options: MenuOption[] = [];
     if (pdfId) {
         options.push({
@@ -34,7 +32,7 @@ const ExportMenu = ({
             icon: <FileText className="h-4 w-4 text-base-600" />,
             label: 'Download PDF',
             onClick: () => {
-                exportPDF(fileName, pdfId, branding, startExportingPDF, finishExportingPDF);
+                exportPDF(fileName, pdfId, startExportingPDF, finishExportingPDF);
             },
         });
     }

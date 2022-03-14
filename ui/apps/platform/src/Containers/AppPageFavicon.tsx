@@ -1,10 +1,9 @@
 import React, { ReactElement } from 'react';
 import { Helmet } from 'react-helmet';
-
-import useBranding from 'hooks/useBranding';
+import { getProductBranding } from 'constants/productBranding';
 
 const AppPageFavicon = (): ReactElement => {
-    const branding = useBranding();
+    const branding = getProductBranding();
     return (
         <Helmet>
             <link rel="shortcut icon" href={branding.favicon} />

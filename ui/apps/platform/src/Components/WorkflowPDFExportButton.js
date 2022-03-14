@@ -9,7 +9,7 @@ import computedStyleToInlineStyle from 'computed-style-to-inline-style';
 import Button from 'Components/Button';
 import { actions } from 'reducers/pdfDownload';
 import { enhanceWordBreak } from 'utils/pdfUtils';
-import { withBranding } from 'hooks/useBranding';
+import { getProductBranding } from 'constants/productBranding';
 
 const printClassName = 'pdf-page';
 const imagesClassName = 'pdf-page-image';
@@ -42,10 +42,6 @@ class WorkflowPDFExportButton extends Component {
         className: PropTypes.string,
         tableOptions: PropTypes.shape({}),
         pdfTitle: PropTypes.string,
-        // Note: The shape of the branding type is incomplete
-        branding: PropTypes.shape({
-            logoSvg: PropTypes.string,
-        }),
     };
 
     static defaultProps = {
@@ -62,9 +58,6 @@ class WorkflowPDFExportButton extends Component {
         onClick: null,
         className: '',
         pdfTitle: '',
-        branding: {
-            logoSvg: '',
-        },
     };
 
     beforePDFPrinting = () => {
@@ -73,7 +66,7 @@ class WorkflowPDFExportButton extends Component {
 
         const promises = [];
         const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
-            <img alt="stackrox-logo" src=${this.props.branding.logoSvg} class="h-20 pl-2" />
+            <img alt="stackrox-logo" src=${getProductBranding().logoSvg} class="h-20 pl-2" />
             <div class="pr-4 text-right">
                 <div class="text-2xl">${this.props.pdfTitle}</div>
                 <div class="pt-2 text-xl">${dateFns.format(new Date(), 'MM/DD/YYYY')}</div>
@@ -307,12 +300,9 @@ class WorkflowPDFExportButton extends Component {
     }
 }
 
-// Wrap the button to allow access to the useBranding hook
-const HOCWorkflowPDFExportButton = withBranding(WorkflowPDFExportButton);
-
 const mapDispatchToProps = {
     setPDFRequestState: actions.fetchPdf.request,
     setPDFSuccessState: actions.fetchPdf.success,
 };
 
-export default connect(null, mapDispatchToProps)(HOCWorkflowPDFExportButton);
+export default connect(null, mapDispatchToProps)(WorkflowPDFExportButton);

@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas';
 
 import { getDate, addBrandedTimestampToString } from 'utils/dateUtils';
 import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
-import { BrandingAssets } from 'hooks/useBranding';
+import { getProductBranding } from 'constants/productBranding';
 
 /**
  * Creates a container div HTML element that will wrap around all the content to be exported
@@ -34,7 +34,7 @@ function createPDFHeaderElement(
     logoAlt: string
 ) {
     const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
-            <img alt=${logoAlt}src=${logoSrc} class="h-20 pl-2" />
+            <img alt=${logoAlt} src=${logoSrc} class="h-20 pl-2" />
             <div class="pr-4 text-right">
                 <div class="text-2xl">${pdfTitle}</div>
                 <div class="pt-2 text-xl">${timestamp}</div>
@@ -125,10 +125,10 @@ function savePDF(canvas, pdfFileName) {
 function exportPDF(
     fileName: string,
     pdfId: string,
-    branding: BrandingAssets,
     startExportingPDF: RequestAction,
     finishExportingPDF: SuccessAction
 ) {
+    const branding = getProductBranding();
     // This hides all the pdf generation behind an exporting screen
     startExportingPDF();
 
@@ -139,7 +139,6 @@ function exportPDF(
     // creates a container element that will include everything necessary to convert to a PDF
     const pdfContainerElement = createPDFContainerElement();
 
-    // add the StackRox header to the container element
     const pdfHeaderElement = createPDFHeaderElement(
         pdfTitle,
         currentTimestamp,

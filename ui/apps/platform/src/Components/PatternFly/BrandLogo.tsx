@@ -1,14 +1,13 @@
 import React, { ReactElement } from 'react';
 import { Brand } from '@patternfly/react-core';
-
-import useBranding from 'hooks/useBranding';
+import { getProductBranding } from 'constants/productBranding';
 
 export type BrandLogoProps = {
     className?: string;
 };
 
 function BrandLogo(props: BrandLogoProps): ReactElement {
-    const branding = useBranding();
+    const branding = getProductBranding();
     return <Brand {...props} src={branding.logoSvg} alt={branding.logoAltText} />;
 }
 
