@@ -93,7 +93,7 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
 
-	log.Debugf("Upserted registry %q for namespace %q into store", registry, namespace)
+	log.Infof("Upserted registry %q for namespace %q into store", registry, namespace)
 
 	return nil
 }
