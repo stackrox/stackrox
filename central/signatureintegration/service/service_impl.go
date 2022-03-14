@@ -6,6 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/signatureintegration/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -33,7 +34,8 @@ var (
 )
 
 type serviceImpl struct {
-	datastore datastore.DataStore
+	datastore        datastore.DataStore
+	reprocessingLoop reprocessor.Loop
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -83,7 +85,7 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedInt
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create signature integration")
 	}
-
+	s.signalSignatureVerificationReprocessing()
 	return integration, nil
 }
 
@@ -92,6 +94,7 @@ func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update signature integration")
 	}
+	s.signalSignatureVerificationReprocessing()
 	return &v1.Empty{}, nil
 }
 
@@ -100,5 +103,10 @@ func (s *serviceImpl) DeleteSignatureIntegration(ctx context.Context, id *v1.Res
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to delete signature integration")
 	}
+	s.signalSignatureVerificationReprocessing()
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) signalSignatureVerificationReprocessing() {
+	s.reprocessingLoop.ReprocessSignatureVerifications()
 }

@@ -66,6 +66,7 @@ type Loop interface {
 	Stop()
 
 	ReprocessRiskForDeployments(deploymentIDs ...string)
+	ReprocessSignatureVerifications()
 }
 
 // NewLoop returns a new instance of a Loop.
@@ -109,6 +110,8 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		enrichmentStopped: concurrency.NewSignal(),
 		riskStopped:       concurrency.NewSignal(),
 
+		signatureVerificationSig: concurrency.NewSignal(),
+
 		// Used for testing purposes
 		reprocessingStarted:  concurrency.NewSignal(),
 		reprocessingComplete: concurrency.NewSignal(),
@@ -117,6 +120,9 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		indexQueue:  indexQueue,
 	}
 }
+
+type individualImageReprocessingFunc = func(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
+	image *storage.Image) (imageEnricher.EnrichmentResult, error)
 
 type loopImpl struct {
 	enrichAndDetectTickerDuration time.Duration
@@ -146,6 +152,8 @@ type loopImpl struct {
 	stopSig           concurrency.Signal
 	riskStopped       concurrency.Signal
 	enrichmentStopped concurrency.Signal
+
+	signatureVerificationSig concurrency.Signal
 	// used for testing
 	reprocessingStarted  concurrency.Signal
 	reprocessingComplete concurrency.Signal
@@ -188,6 +196,13 @@ func (l *loopImpl) ShortCircuit() {
 	// Signal that we should run a short circuited reprocessing. If the signal is already triggered, then the current
 	// signal is effectively deduped
 	l.shortCircuitSig.Signal()
+}
+
+func (l *loopImpl) ReprocessSignatureVerifications() {
+	// Signal that we should reprocess signature verifications for all images. This will only trigger a reprocess with
+	// refetch of signature verification results.
+	// If the signal is already triggered, then the current signal is effectively deduped.
+	l.signatureVerificationSig.Signal()
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
@@ -278,7 +293,8 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	log.Infof("Successfully reprocessed %d/%d %ss", nReprocessed.Load(), len(ids), entityType)
 }
 
-func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption) (*storage.Image, bool) {
+func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
+	reprocessingFunc individualImageReprocessingFunc) (*storage.Image, bool) {
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorf("error fetching image %q from the database: %v", id, err)
@@ -288,7 +304,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 		return nil, false
 	}
 
-	result, err := l.imageEnricher.EnrichImage(imageEnricher.EnrichmentContext{
+	result, err := reprocessingFunc(context.TODO(), imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
 
@@ -328,7 +344,14 @@ func (l *loopImpl) waitForIndexing() {
 	}
 }
 
-func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption) {
+// TODO(ROX-XXXX): Remove when context is added to all image enricher functions.
+func (l *loopImpl) enrichImageWrapper() individualImageReprocessingFunc {
+	return func(_ context.Context, enrichCtx imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
+		return l.imageEnricher.EnrichImage(enrichCtx, image)
+	}
+}
+
+func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption, reprocessingFunc individualImageReprocessingFunc) {
 	if l.stopSig.IsDone() {
 		return
 	}
@@ -359,7 +382,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImage(id, fetchOpt)
+			image, successfullyProcessed := l.reprocessImage(id, fetchOpt, reprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -478,10 +501,26 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageFetchOpt)
+	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImageWrapper())
 
 	l.reprocessingStarted.Reset()
 	l.reprocessingComplete.Signal()
+}
+
+func (l *loopImpl) runSignatureVerificationReprocessing() {
+	// TODO: Do we need any signals here?
+	l.reprocessWatchedImages()
+	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchScansOnly, l.enrichSigVerificationWrapper())
+}
+
+// TODO: Is this "wrapper" solution _really_ worth it? Does it make sense to have the enrichment context added in the func?
+// I am unsure. I don't want to duplicate code, so this would be the easiest way to do it.
+// The wrappers are a bit sadge, so idk.
+func (l *loopImpl) enrichSigVerificationWrapper() individualImageReprocessingFunc {
+	return func(ctx context.Context, _ imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
+		return l.imageEnricher.EnrichWithSignatureVerificationData(ctx, image)
+	}
+
 }
 
 func (l *loopImpl) enrichLoop() {
@@ -498,6 +537,9 @@ func (l *loopImpl) enrichLoop() {
 		case <-l.shortCircuitSig.Done():
 			l.shortCircuitSig.Reset()
 			l.runReprocessing(imageEnricher.UseCachesIfPossible)
+		case <-l.signatureVerificationSig.Done():
+			l.signatureVerificationSig.Reset()
+			l.runReprocessing(imageEnricher.ForceRefetchSignaturesOnly)
 		case <-l.enrichAndDetectTicker.C:
 			l.runReprocessing(imageEnricher.ForceRefetchScansOnly)
 		}
