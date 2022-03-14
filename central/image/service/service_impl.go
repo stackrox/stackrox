@@ -299,8 +299,6 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		}
 	}
 
-	log.Infof("Retrieving vulnerabilities for image %s", request.GetImageName().GetFullName())
-
 	img := &storage.Image{
 		Id:             request.GetImageId(),
 		Name:           request.GetImageName(),
