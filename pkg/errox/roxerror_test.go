@@ -58,7 +58,7 @@ func TestErrorMessage(t *testing.T) {
 
 func TestCausedBy(t *testing.T) {
 	{
-		errInvalidAlgorithmF := func(alg string) RoxError {
+		errInvalidAlgorithmF := func(alg string) Error {
 			return InvalidArgs.Newf("invalid hashing algorithm %q used", alg)
 		}
 		assert.Equal(t, "invalid hashing algorithm \"SHA255\" used: only SHA256 is supported",
