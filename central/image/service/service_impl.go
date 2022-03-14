@@ -319,6 +319,47 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	return internalScanRespFromImage(img), nil
 }
 
+// VerifyImageSignaturesInternal retrieves an image's signature and verifies them specified by the given values.
+// It provides the possibility to define an image's metadata and signature associated with.
+// This is meant to be called by Sensor.
+func (s *serviceImpl) VerifyImageSignaturesInternal(ctx context.Context,
+	request *v1.VerifyImageSignaturesInternalRequest) (*v1.VerifyImageSignaturesInternalResponse, error) {
+	imgID := request.GetImageId()
+	if imgID != "" {
+		img, exists, err := s.datastore.GetImage(ctx, imgID)
+		if err != nil {
+			return nil, err
+		}
+		if exists && img.GetSignature() != nil && img.GetSignatureVerificationData() != nil {
+			return &v1.VerifyImageSignaturesInternalResponse{
+				Image: img,
+			}, nil
+		}
+	}
+
+	img := &storage.Image{
+		Id:             imgID,
+		Name:           request.GetImageName(),
+		Signature:      request.GetImageSignature(),
+		IsClusterLocal: request.GetIsClusterLocal(),
+	}
+
+	_, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img)
+	if err != nil {
+		return nil, err
+	}
+
+	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
+	// contained a digest.
+	if imgID != "" {
+		_ = s.saveImage(img)
+	}
+
+	return &v1.VerifyImageSignaturesInternalResponse{
+		Image: img,
+	}, nil
+}
+
 // DeleteImages deletes images based on query
 func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImagesRequest) (*v1.DeleteImagesResponse, error) {
 	if request.GetQuery() == nil {
