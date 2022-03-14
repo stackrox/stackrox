@@ -14,6 +14,7 @@ var (
 	keyValueValueRegex                       = createRegex("[^=]+=.*")
 	booleanValueRegex                        = createRegex("(?i:(true|false))")
 	stringValueRegex                         = createRegex(".*[^[:space:]]+.*")
+	uuidValueRegex                           = createRegex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 	integerValueRegex                        = createRegex("([[:digit:]]+)")
 	comparatorDecimalValueRegex              = createRegex(`(<|>|<=|>=)?[[:space:]]*[[:digit:]]*\.?[[:digit:]]+`)
 	environmentVariableWithSourceStrictRegex = createRegex("(?i:(UNSET|RAW|UNKNOWN|^)=([^=]*)=.*)|((SECRET_KEY|CONFIG_MAP_KEY|FIELD|RESOURCE_FIELD)=([^=]*)=$)")

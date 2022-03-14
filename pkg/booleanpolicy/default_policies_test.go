@@ -2115,25 +2115,25 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 	var images = []*storage.Image{
 		imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
 		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "verifier0",
+			VerifierId: "00000000-0000-0000-0000-000000000000",
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
 		imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "unverifier",
+			VerifierId: "11111111-1111-1111-1111-111111111111",
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
 		}}),
 		imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "verifier2",
+			VerifierId: "00000000-0000-0000-0000-000000000002",
 			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 		}, {
-			VerifierId: "verifier3",
+			VerifierId: "00000000-0000-0000-0000-000000000003",
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
 		imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
-			VerifierId: "verifier2",
+			VerifierId: "00000000-0000-0000-0000-000000000002",
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}, {
-			VerifierId: "verifier3",
+			VerifierId: "00000000-0000-0000-0000-000000000003",
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		}}),
 	}
@@ -2144,32 +2144,37 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 	}
 
 	for _, testCase := range []struct {
-		value           string
+		values          []string
 		negate          bool
 		expectedMatches set.FrozenStringSet
 	}{
 		{
-			value:           "verifier0",
+			values:          []string{"00000000-0000-0000-0000-000000000000"},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
 		},
 		{
-			value:           "verifier1",
+			values:          []string{"00000000-0000-0000-0000-000000000001"},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet(),
 		},
 		{
-			value:           "verifier2",
+			values:          []string{"00000000-0000-0000-0000-000000000002"},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
 		},
 		{
-			value:           "verifier3",
+			values:          []string{"00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000002"},
+			negate:          false,
+			expectedMatches: set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3"),
+		},
+		{
+			values:          []string{"00000000-0000-0000-0000-000000000003"},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3"),
 		},
 		{
-			value:           "unverifier",
+			values:          []string{"11111111-1111-1111-1111-111111111111"},
 			negate:          true,
 			expectedMatches: set.NewFrozenStringSet("unverified_image", "image_no_results"),
 		},
@@ -2177,7 +2182,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		c := testCase
 
 		suite.Run(fmt.Sprintf("ImageMatcher %+v", c), func() {
-			imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageSignatureVerified, c.value, c.negate))
+			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerified, c.values, c.negate, storage.BooleanOperator_OR))
 			suite.NoError(err)
 			matchedImages := set.NewStringSet()
 			for _, img := range images {

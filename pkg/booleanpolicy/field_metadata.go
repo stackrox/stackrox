@@ -398,7 +398,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(augmentedobjs.ImageSignatureVerifiedCustomTag),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return stringValueRegex
+			return uuidValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
