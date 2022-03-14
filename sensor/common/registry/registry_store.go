@@ -112,6 +112,7 @@ func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Re
 	reg := image.GetRegistry()
 
 	ns := utils.ExtractOpenShiftProject(image)
+	log.Infof("OpenShift project for %s: %s", image.GetFullName(), ns)
 	regs := rs.getRegistriesInNamespace(ns)
 	if regs != nil {
 		for _, r := range regs.GetAll() {
