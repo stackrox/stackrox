@@ -544,7 +544,6 @@ func (s *storeImpl) copyIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 	copyCols := strings.Split("deploymentid,clusterid,namespace,observationperiodend,locked,deploymentname,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -618,7 +617,6 @@ func (s *storeImpl) copyIntoNetworkbaselinePeers(ctx context.Context, tx pgx.Tx,
 	copyCols := strings.Split("networkbaseline_deploymentid,idx,entity_info_type,entity_info_id,entity_info_deployment_name,entity_info_deployment_namespace,entity_info_deployment_cluster,entity_info_externalsource_name,entity_info_externalsource_cidr,entity_info_externalsource_default,entity_scope_clusterid", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -685,7 +683,6 @@ func (s *storeImpl) copyIntoNetworkbaselinePeersListenPorts(ctx context.Context,
 	copyCols := strings.Split("networkbaseline_deploymentid,networkbaseline_peers_idx,idx,port,l4protocol", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -730,7 +727,6 @@ func (s *storeImpl) copyIntoNetworkbaselinePeersProperties(ctx context.Context, 
 	copyCols := strings.Split("networkbaseline_deploymentid,networkbaseline_peers_idx,idx,ingress,port,protocol", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -777,7 +773,6 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeers(ctx context.Context, t
 	copyCols := strings.Split("networkbaseline_deploymentid,idx,entity_info_type,entity_info_id,entity_info_deployment_name,entity_info_deployment_namespace,entity_info_deployment_cluster,entity_info_externalsource_name,entity_info_externalsource_cidr,entity_info_externalsource_default,entity_scope_clusterid", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -844,7 +839,6 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeersListenPorts(ctx context
 	copyCols := strings.Split("networkbaseline_deploymentid,networkbaseline_forbiddenpeers_idx,idx,port,l4protocol", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -889,7 +883,6 @@ func (s *storeImpl) copyIntoNetworkbaselineForbiddenPeersProperties(ctx context.
 	copyCols := strings.Split("networkbaseline_deploymentid,networkbaseline_forbiddenpeers_idx,idx,ingress,port,protocol", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

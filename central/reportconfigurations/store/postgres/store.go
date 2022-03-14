@@ -166,7 +166,6 @@ func (s *storeImpl) copyIntoReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 	copyCols := strings.Split("id,name,description,type,vulnreportfilters_fixability,vulnreportfilters_sincelastreport,vulnreportfilters_severities,scopeid,emailconfig_notifierid,emailconfig_mailinglists,schedule_intervaltype,schedule_hour,schedule_minute,schedule_weekly_day,schedule_daysofweek_days,schedule_daysofmonth_days,lastrunstatus_reportstatus,lastrunstatus_lastruntime,lastrunstatus_errormsg,lastsuccessfulruntime,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

@@ -624,7 +624,6 @@ func (s *storeImpl) copyIntoPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 	copyCols := strings.Split("id,name,description,rationale,remediation,disabled,categories,lifecyclestages,eventsource,severity,enforcementactions,notifiers,lastupdated,sortname,sortlifecyclestage,sortenforcement,policyversion,criterialocked,mitrevectorslocked,isdefault,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -735,7 +734,6 @@ func (s *storeImpl) copyIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, pol
 	copyCols := strings.Split("policy_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -790,7 +788,6 @@ func (s *storeImpl) copyIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, pol
 	copyCols := strings.Split("policy_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -845,7 +842,6 @@ func (s *storeImpl) copyIntoPolicyScope(ctx context.Context, tx pgx.Tx, policy_I
 	copyCols := strings.Split("policy_id,idx,cluster,namespace,label_key,label_value", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -892,7 +888,6 @@ func (s *storeImpl) copyIntoPolicyPolicySections(ctx context.Context, tx pgx.Tx,
 	copyCols := strings.Split("policy_id,idx,sectionname", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -940,7 +935,6 @@ func (s *storeImpl) copyIntoPolicyPolicySectionsPolicyGroups(ctx context.Context
 	copyCols := strings.Split("policy_id,policy_policysections_idx,idx,fieldname,booleanoperator,negate", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -994,7 +988,6 @@ func (s *storeImpl) copyIntoPolicyPolicySectionsPolicyGroupsValues(ctx context.C
 	copyCols := strings.Split("policy_id,policy_policysections_idx,policy_policysections_policygroups_idx,idx,value", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1039,7 +1032,6 @@ func (s *storeImpl) copyIntoPolicyMitreAttackVectors(ctx context.Context, tx pgx
 	copyCols := strings.Split("policy_id,idx,tactic,techniques", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

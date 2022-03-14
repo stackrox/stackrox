@@ -212,7 +212,6 @@ func (s *storeImpl) copyIntoK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 	copyCols := strings.Split("id,name,namespace,clusterid,clustername,clusterrole,labels,annotations,createdat,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -289,7 +288,6 @@ func (s *storeImpl) copyIntoK8srolesRules(ctx context.Context, tx pgx.Tx, k8srol
 	copyCols := strings.Split("k8sroles_id,idx,verbs,apigroups,resources,nonresourceurls,resourcenames", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

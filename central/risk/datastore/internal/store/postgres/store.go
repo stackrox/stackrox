@@ -264,7 +264,6 @@ func (s *storeImpl) copyIntoRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 	copyCols := strings.Split("id,subject_id,subject_namespace,subject_clusterid,subject_type,score,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -335,7 +334,6 @@ func (s *storeImpl) copyIntoRiskResults(ctx context.Context, tx pgx.Tx, risk_Id 
 	copyCols := strings.Split("risk_id,idx,name,score", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -385,7 +383,6 @@ func (s *storeImpl) copyIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, r
 	copyCols := strings.Split("risk_id,risk_results_idx,idx,message,url", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

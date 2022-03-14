@@ -440,7 +440,6 @@ func (s *storeImpl) copyIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 	copyCols := strings.Split("id,name,description,rules_includedclusters,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -513,7 +512,6 @@ func (s *storeImpl) copyIntoSimpleaccessscopesIncludedNamespaces(ctx context.Con
 	copyCols := strings.Split("simpleaccessscopes_id,idx,clustername,namespacename", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -556,7 +554,6 @@ func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectors(ctx context.
 	copyCols := strings.Split("simpleaccessscopes_id,idx", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -602,7 +599,6 @@ func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectorsRequirements(
 	copyCols := strings.Split("simpleaccessscopes_id,simpleaccessscopes_clusterlabelselectors_idx,idx,key,op,values", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -649,7 +645,6 @@ func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 	copyCols := strings.Split("simpleaccessscopes_id,idx", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -695,7 +690,6 @@ func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectorsRequirement
 	copyCols := strings.Split("simpleaccessscopes_id,simpleaccessscopes_namespacelabelselectors_idx,idx,key,op,values", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

@@ -207,11 +207,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     copyCols := strings.Split("{{template "columnsLower" $schema.ResolvedFields }}", ",")
 
-    {{if not $schema.Parents }}
     for idx, obj := range objs {
-    {{else}}
-    for idx, obj := range objs {
-    {{end}}
         // Todo: Figure out how to more cleanly template around this issue.
         log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

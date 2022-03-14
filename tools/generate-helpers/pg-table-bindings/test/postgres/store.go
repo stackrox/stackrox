@@ -221,7 +221,6 @@ func (s *storeImpl) copyIntoSinglekey(ctx context.Context, tx pgx.Tx, objs ...*s
 	copyCols := strings.Split("key,name,stringslice,bool,uint64,int64,float,labels,timestamp,enum,enums,embedded_embedded,oneofstring,oneofnested_nested,oneofnested_nested2_nested2,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -310,7 +309,6 @@ func (s *storeImpl) copyIntoSinglekeyNested(ctx context.Context, tx pgx.Tx, sing
 	copyCols := strings.Split("singlekey_key,idx,nested,nested2_nested2", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

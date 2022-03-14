@@ -1072,7 +1072,6 @@ func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 	copyCols := strings.Split("id,policy_id,policy_name,policy_description,policy_rationale,policy_remediation,policy_disabled,policy_categories,policy_lifecyclestages,policy_eventsource,policy_severity,policy_enforcementactions,policy_notifiers,policy_lastupdated,policy_sortname,policy_sortlifecyclestage,policy_sortenforcement,policy_policyversion,policy_criterialocked,policy_mitrevectorslocked,policy_isdefault,lifecyclestage,deployment_id,deployment_name,deployment_type,deployment_namespace,deployment_namespaceid,deployment_labels,deployment_clusterid,deployment_clustername,deployment_annotations,deployment_inactive,image_id,image_name_registry,image_name_remote,image_name_tag,image_name_fullname,image_notpullable,image_isclusterlocal,resource_resourcetype,resource_name,resource_clusterid,resource_clustername,resource_namespace,resource_namespaceid,processviolation_message,enforcement_action,enforcement_message,time,firstoccurred,resolvedat,state,snoozetill,tags,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1260,7 +1259,6 @@ func (s *storeImpl) copyIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, ale
 	copyCols := strings.Split("alerts_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1315,7 +1313,6 @@ func (s *storeImpl) copyIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, ale
 	copyCols := strings.Split("alerts_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1370,7 +1367,6 @@ func (s *storeImpl) copyIntoAlertsScope(ctx context.Context, tx pgx.Tx, alerts_I
 	copyCols := strings.Split("alerts_id,idx,cluster,namespace,label_key,label_value", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1417,7 +1413,6 @@ func (s *storeImpl) copyIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 	copyCols := strings.Split("alerts_id,idx,sectionname", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1465,7 +1460,6 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroups(ctx context.Context
 	copyCols := strings.Split("alerts_id,alerts_policysections_idx,idx,fieldname,booleanoperator,negate", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1519,7 +1513,6 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.C
 	copyCols := strings.Split("alerts_id,alerts_policysections_idx,alerts_policysections_policygroups_idx,idx,value", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1564,7 +1557,6 @@ func (s *storeImpl) copyIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx
 	copyCols := strings.Split("alerts_id,idx,tactic,techniques", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1607,7 +1599,6 @@ func (s *storeImpl) copyIntoAlertsContainers(ctx context.Context, tx pgx.Tx, ale
 	copyCols := strings.Split("alerts_id,idx,image_id,image_name_registry,image_name_remote,image_name_tag,image_name_fullname,image_notpullable,image_isclusterlocal,name", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1662,7 +1653,6 @@ func (s *storeImpl) copyIntoAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 	copyCols := strings.Split("alerts_id,idx,message,networkflowinfo_protocol,networkflowinfo_source_name,networkflowinfo_source_entitytype,networkflowinfo_source_deploymentnamespace,networkflowinfo_source_deploymenttype,networkflowinfo_source_port,networkflowinfo_destination_name,networkflowinfo_destination_entitytype,networkflowinfo_destination_deploymentnamespace,networkflowinfo_destination_deploymenttype,networkflowinfo_destination_port,type,time", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1736,7 +1726,6 @@ func (s *storeImpl) copyIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx
 	copyCols := strings.Split("alerts_id,alerts_violations_idx,idx,key,value", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1781,7 +1770,6 @@ func (s *storeImpl) copyIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 	copyCols := strings.Split("alerts_id,idx,id,deploymentid,containername,podid,poduid,signal_id,signal_containerid,signal_time,signal_name,signal_args,signal_execfilepath,signal_pid,signal_uid,signal_gid,signal_lineage,signal_scraped,clusterid,namespace,containerstarttime,imageid", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -1867,7 +1855,6 @@ func (s *storeImpl) copyIntoAlertsProcessesLineageInfo(ctx context.Context, tx p
 	copyCols := strings.Split("alerts_id,alerts_processes_idx,idx,parentuid,parentexecfilepath", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

@@ -202,7 +202,6 @@ func (s *storeImpl) copyIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 	copyCols := strings.Split("id,name,createdat,createdby_id,createdby_authproviderid,isrevoked,expiresat,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -275,7 +274,6 @@ func (s *storeImpl) copyIntoClusterinitbundlesAttributes(ctx context.Context, tx
 	copyCols := strings.Split("clusterinitbundles_id,idx,key,value", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

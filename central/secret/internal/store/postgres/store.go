@@ -436,7 +436,6 @@ func (s *storeImpl) copyIntoSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 	copyCols := strings.Split("id,name,clusterid,clustername,namespace,type,labels,annotations,createdat,relationship_id,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -521,7 +520,6 @@ func (s *storeImpl) copyIntoSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 	copyCols := strings.Split("secrets_id,idx,name,type,cert_subject_commonname,cert_subject_country,cert_subject_organization,cert_subject_organizationunit,cert_subject_locality,cert_subject_province,cert_subject_streetaddress,cert_subject_postalcode,cert_subject_names,cert_issuer_commonname,cert_issuer_country,cert_issuer_organization,cert_issuer_organizationunit,cert_issuer_locality,cert_issuer_province,cert_issuer_streetaddress,cert_issuer_postalcode,cert_issuer_names,cert_sans,cert_startdate,cert_enddate,cert_algorithm", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -615,7 +613,6 @@ func (s *storeImpl) copyIntoSecretsFilesRegistries(ctx context.Context, tx pgx.T
 	copyCols := strings.Split("secrets_id,secrets_files_idx,idx,name,username", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -660,7 +657,6 @@ func (s *storeImpl) copyIntoSecretsContainerRelationships(ctx context.Context, t
 	copyCols := strings.Split("secrets_id,idx,id,path", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -703,7 +699,6 @@ func (s *storeImpl) copyIntoSecretsDeploymentRelationships(ctx context.Context, 
 	copyCols := strings.Split("secrets_id,idx,id,name", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

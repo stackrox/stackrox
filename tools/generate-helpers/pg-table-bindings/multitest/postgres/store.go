@@ -217,7 +217,6 @@ func (s *storeImpl) copyIntoMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 	copyCols := strings.Split("key1,key2,stringslice,bool,uint64,int64,float,labels,timestamp,enum,enums,string_,embedded_embedded,oneofstring,oneofnested_nested,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -301,7 +300,6 @@ func (s *storeImpl) copyIntoMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 	copyCols := strings.Split("multikey_key1,multikey_key2,idx,nested,isnested,int64,nested2_nested2,nested2_isnested,nested2_int64", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

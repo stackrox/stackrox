@@ -356,7 +356,6 @@ func (s *storeImpl) copyIntoPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 	copyCols := strings.Split("id,name,deploymentid,namespace,clusterid,started,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -430,7 +429,6 @@ func (s *storeImpl) copyIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 	copyCols := strings.Split("pods_id,idx,instanceid_containerruntime,instanceid_id,instanceid_node,containingpodid,containername,containerips,started,imagedigest,finished,exitcode,terminationreason", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -491,7 +489,6 @@ func (s *storeImpl) copyIntoPodsTerminatedInstances(ctx context.Context, tx pgx.
 	copyCols := strings.Split("pods_id,idx", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -537,7 +534,6 @@ func (s *storeImpl) copyIntoPodsTerminatedInstancesInstances(ctx context.Context
 	copyCols := strings.Split("pods_id,pods_terminatedinstances_idx,idx,instanceid_containerruntime,instanceid_id,instanceid_node,containingpodid,containername,containerips,started,imagedigest,finished,exitcode,terminationreason", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 

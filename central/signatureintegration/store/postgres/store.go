@@ -192,7 +192,6 @@ func (s *storeImpl) copyIntoSignatureintegrations(ctx context.Context, tx pgx.Tx
 	copyCols := strings.Split("id,name,serialized", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
@@ -255,7 +254,6 @@ func (s *storeImpl) copyIntoSignatureintegrationsPublicKeys(ctx context.Context,
 	copyCols := strings.Split("signatureintegrations_id,idx,name,publickeypemenc", ",")
 
 	for idx, obj := range objs {
-
 		// Todo: Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
 
