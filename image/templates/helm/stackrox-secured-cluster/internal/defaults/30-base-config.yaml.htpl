@@ -38,7 +38,7 @@ admissionControl:
     enforceOnCreates: false
     scanInline: false
     disableBypass: false
-    timeout: 3
+    timeout: 20
     enforceOnUpdates: false
 
 collector:
