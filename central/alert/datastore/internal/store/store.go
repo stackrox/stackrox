@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
@@ -26,22 +27,45 @@ type Store interface {
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
+// GenStore provides the interface for generated effective store code.
+// This is a subset of what Store defines, but which is enough to implement
+// the full functionality
+type GenStore interface {
+	Walk(ctx context.Context, fn func(*storage.Alert) error) error
+	GetIDs(ctx context.Context) ([]string, error)
+	Get(ctx context.Context, id string) (*storage.Alert, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Alert, []int, error)
+	Upsert(ctx context.Context, alert *storage.Alert) error
+	Delete(ctx context.Context, id string) error
+	DeleteMany(ctx context.Context, ids []string) error
+
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
+}
+
 // NewFullStore returns the alert store interface
 func NewFullStore(store rocksdb.Store) Store {
 	return &fullStoreImpl{
-		Store: store,
+		GenStore: store,
+	}
+}
+
+// NewFullPgStore returns the alert store interface
+func NewFullPgStore(store postgres.Store) Store {
+	return &fullStoreImpl{
+		GenStore: store,
 	}
 }
 
 // This implements the alert store interface
 // it does not implement list alerts and instead converts alerts -> list alerts
 type fullStoreImpl struct {
-	rocksdb.Store
+	GenStore
 }
 
 // ListAlert retrieves a single list alert
 func (f *fullStoreImpl) ListAlert(ctx context.Context, id string) (*storage.ListAlert, bool, error) {
-	alert, exists, err := f.Store.Get(ctx, id)
+	alert, exists, err := f.GenStore.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -70,7 +94,7 @@ func (f *fullStoreImpl) GetListAlerts(ctx context.Context, ids []string) ([]*sto
 
 // Walk implements the walk interface of the store
 func (f *fullStoreImpl) Walk(ctx context.Context, fn func(*storage.ListAlert) error) error {
-	return f.Store.Walk(ctx, func(alert *storage.Alert) error {
+	return f.GenStore.Walk(ctx, func(alert *storage.Alert) error {
 		listAlert := convert.AlertToListAlert(alert)
 		return fn(listAlert)
 	})

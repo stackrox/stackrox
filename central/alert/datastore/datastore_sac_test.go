@@ -7,22 +7,24 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v4/pgxpool"
 	commentsStoreMocks "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore/mocks"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	rocksdbStore "github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
-	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -41,10 +43,12 @@ type alertDatastoreSACTestSuite struct {
 	engine *rocksdb.RocksDB
 	index  *bleve.Index
 
+	pool *pgxpool.Pool
+
 	comments  *commentsStoreMocks.MockStore
-	storage   *store.Store
-	indexer   *index.Indexer
-	search    *search.Searcher
+	storage   store.Store
+	indexer   index.Indexer
+	search    search.Searcher
 	datastore DataStore
 
 	mockCtrl *gomock.Controller
@@ -58,38 +62,44 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	alertObj := "alertSACTest"
 
-	// Here is the initialization code for running against a local rocksDB store + bleve index.
-	// For the migration to postgresql, the integration test infrastructure would be required,
-	// along with the initialization code for the datastore internals (storage, indexer and search)
-	// The feature flag could help with the engine toggle.
-	// BEGIN engine specific code
-	s.engine, err = rocksdb.NewTemp(alertObj)
-	s.NoError(err)
-	var bleveindex bleve.Index
-	bleveindex, err = globalindex.TempInitializeIndices(alertObj)
-	s.index = &bleveindex
-	s.NoError(err)
-
 	s.mockCtrl = gomock.NewController(s.T())
 	s.comments = commentsStoreMocks.NewMockStore(s.mockCtrl)
+	if features.PostgresDatastore.Enabled() {
+		ctx := context.Background()
+		source := pgtest.GetConnectionString(s.T())
+		config, err := pgxpool.ParseConfig(source)
+		s.NoError(err)
+		s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
+		s.NoError(err)
+		pgStore.Destroy(ctx, s.pool)
+		s.storage = store.NewFullPgStore(pgStore.New(ctx, s.pool))
+		s.indexer = pgStore.NewIndexWrapper(s.pool)
+	} else {
+		s.engine, err = rocksdb.NewTemp(alertObj)
+		s.NoError(err)
+		var bleveindex bleve.Index
+		bleveindex, err = globalindex.TempInitializeIndices(alertObj)
+		s.index = &bleveindex
+		s.NoError(err)
 
-	storage := rocksdbStore.NewFullStore(s.engine)
-	s.storage = &storage
-	indexer := index.New(*s.index)
-	s.indexer = &indexer
-	searcher := search.New(*s.storage, *s.indexer)
-	s.search = &searcher
-	// END engine specific code
+		s.storage = store.NewFullStore(rocksdbStore.New(s.engine))
+		s.indexer = index.New(*s.index)
+	}
+	s.search = search.New(s.storage, s.indexer)
 
-	s.datastore, err = New(*s.storage, s.comments, *s.indexer, *s.search)
+	s.datastore, err = New(s.storage, s.comments, s.indexer, s.search)
 	s.NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), resources.Alert.GetResource())
 }
 
 func (s *alertDatastoreSACTestSuite) TearDownSuite() {
-	err := rocksdb.CloseAndRemove(s.engine)
-	s.NoError(err)
+	if features.PostgresDatastore.Enabled() {
+		s.pool.Close()
+	} else {
+		err := rocksdb.CloseAndRemove(s.engine)
+		s.NoError(err)
+	}
 }
 
 func (s *alertDatastoreSACTestSuite) SetupTest() {
@@ -549,53 +559,12 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 	},
 }
 
-func (s *alertDatastoreSACTestSuite) validateSearchResultDistribution(expected, obtained map[string]map[string]int) {
-	s.Equal(len(expected), len(obtained), "unexpected cluster count in result")
-	for clusterID, clusterMap := range expected {
-		_, clusterFound := obtained[clusterID]
-		s.True(clusterFound)
-		if clusterFound {
-			for namespace, count := range clusterMap {
-				_, namespaceFound := obtained[clusterID][namespace]
-				s.True(namespaceFound)
-				s.Equalf(count, obtained[clusterID][namespace], "unexpected count for cluster %s and namespace %s", clusterID, namespace)
-			}
-		}
-	}
-}
-
-func countResultsPerClusterAndNamespace(searchResults []searchPkg.Result) map[string]map[string]int {
-	resultDistribution := make(map[string]map[string]int, 0)
-	clusterIDField, _ := mappings.OptionsMap.Get(searchPkg.ClusterID.String())
-	namespaceField, _ := mappings.OptionsMap.Get(searchPkg.Namespace.String())
-	for _, result := range searchResults {
-		var clusterID string
-		var namespace string
-		for k, v := range result.Fields {
-			if k == clusterIDField.GetFieldPath() {
-				clusterID = fmt.Sprintf("%v", v)
-			}
-			if k == namespaceField.GetFieldPath() {
-				namespace = fmt.Sprintf("%v", v)
-			}
-		}
-		if _, clusterIDExists := resultDistribution[clusterID]; !clusterIDExists {
-			resultDistribution[clusterID] = make(map[string]int, 0)
-		}
-		if _, namespaceExists := resultDistribution[clusterID][namespace]; !namespaceExists {
-			resultDistribution[clusterID][namespace] = 0
-		}
-		resultDistribution[clusterID][namespace]++
-	}
-	return resultDistribution
-}
-
 func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
-	resultCounts := countResultsPerClusterAndNamespace(searchResults)
-	s.validateSearchResultDistribution(testparams.resultCounts, resultCounts)
+	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, mappings.OptionsMap)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultCounts)
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedSearch() {
@@ -614,21 +583,11 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
 	}
 }
 
-func aggregateCounts(resultCounts map[string]map[string]int) int {
-	sum := 0
-	for _, submap := range resultCounts {
-		for _, count := range submap {
-			sum += count
-		}
-	}
-	return sum
-}
-
 func (s *alertDatastoreSACTestSuite) runCountTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
 	resultCount, err := s.datastore.Count(ctx, nil)
 	s.NoError(err)
-	expectedResultCount := aggregateCounts(testparams.resultCounts)
+	expectedResultCount := testutils.AggregateCounts(s.T(), testparams.resultCounts)
 	s.Equal(expectedResultCount, resultCount)
 }
 
@@ -652,7 +611,7 @@ func (s *alertDatastoreSACTestSuite) runCountAlertsTest(testparams alertSACSearc
 	ctx := s.testContexts[testparams.scopeKey]
 	resultCount, err := s.datastore.CountAlerts(ctx)
 	s.NoError(err)
-	expectedResultCount := aggregateCounts(testparams.resultCounts)
+	expectedResultCount := testutils.AggregateCounts(s.T(), testparams.resultCounts)
 	s.Equal(expectedResultCount, resultCount)
 }
 
@@ -672,42 +631,12 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCountAlerts() {
 	}
 }
 
-func countSearchAlertsResultsPerClusterAndNamespace(results []*v1.SearchResult) map[string]map[string]int {
-	resultDistribution := make(map[string]map[string]int, 0)
-	clusterIDField, _ := mappings.OptionsMap.Get(searchPkg.ClusterID.String())
-	namespaceField, _ := mappings.OptionsMap.Get(searchPkg.Namespace.String())
-	for _, result := range results {
-		var clusterID string
-		var namespace string
-		for k, v := range result.GetFieldToMatches() {
-			if k == clusterIDField.GetFieldPath() {
-				if v != nil && len(v.Values) > 0 {
-					clusterID = v.Values[0]
-				}
-			}
-			if k == namespaceField.GetFieldPath() {
-				if v != nil && len(v.Values) > 0 {
-					namespace = v.Values[0]
-				}
-			}
-		}
-		if _, clusterIDExists := resultDistribution[clusterID]; !clusterIDExists {
-			resultDistribution[clusterID] = make(map[string]int, 0)
-		}
-		if _, namespaceExists := resultDistribution[clusterID][namespace]; !namespaceExists {
-			resultDistribution[clusterID][namespace] = 0
-		}
-		resultDistribution[clusterID][namespace]++
-	}
-	return resultDistribution
-}
-
 func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchAlerts(ctx, nil)
 	s.NoError(err)
-	resultsDistribution := countSearchAlertsResultsPerClusterAndNamespace(searchResults)
-	s.validateSearchResultDistribution(testparams.resultCounts, resultsDistribution)
+	resultsDistribution := testutils.CountSearchResultsPerClusterAndNamespace(searchResults, mappings.OptionsMap)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchAlerts() {
@@ -750,7 +679,7 @@ func (s *alertDatastoreSACTestSuite) runSearchListAlertsTest(testparams alertSAC
 	searchResults, err := s.datastore.SearchListAlerts(ctx, nil)
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
-	s.validateSearchResultDistribution(testparams.resultCounts, resultsDistribution)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchListAlerts() {
@@ -774,7 +703,7 @@ func (s *alertDatastoreSACTestSuite) runListAlertsTest(testparams alertSACSearch
 	searchResults, err := s.datastore.ListAlerts(ctx, nil)
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
-	s.validateSearchResultDistribution(testparams.resultCounts, resultsDistribution)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedListAlerts() {
@@ -826,7 +755,7 @@ func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACS
 	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil)
 	s.NoError(err)
 	resultsDistribution := countSearchRawAlertsResultsPerClusterAndNamespace(searchResults)
-	s.validateSearchResultDistribution(testparams.resultCounts, resultsDistribution)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchRawAlerts() {
