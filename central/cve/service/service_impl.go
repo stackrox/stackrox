@@ -116,10 +116,6 @@ func (s *serviceImpl) waitForCVEToBeIndexed(ctx context.Context) error {
 	}
 }
 
-func (s *serviceImpl) reprocessDeployments() {
-	s.reprocessor.ShortCircuit()
-}
-
 func (s *serviceImpl) validateCVEsExist(ctx context.Context, ids ...string) error {
 	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery())
 	if err != nil {

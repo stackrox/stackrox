@@ -75,40 +75,29 @@ function NavigationSideBar(): ReactElement {
                     path={complianceBasePath}
                     title={basePathToLabelMap[complianceBasePath]}
                 />
-                {isVulnReportingEnabled && (
-                    <NavExpandable
-                        id="VulnerabilityManagement"
-                        title="Vulnerability Management"
-                        isActive={vulnerabilityManagementPaths.some((path) =>
-                            location.pathname.includes(path)
-                        )}
-                        isExpanded={vulnerabilityManagementPaths.some((path) =>
-                            location.pathname.includes(path)
-                        )}
-                    >
-                        {vulnerabilityManagementPaths.map((path) => {
-                            const isActive =
-                                path === vulnManagementPath
-                                    ? false
-                                    : location.pathname.includes(path);
-                            return (
-                                <LeftNavItem
-                                    key={path}
-                                    isActive={isActive}
-                                    path={path}
-                                    title={basePathToLabelMap[path]}
-                                />
-                            );
-                        })}
-                    </NavExpandable>
-                )}
-                {!isVulnReportingEnabled && (
-                    <LeftNavItem
-                        isActive={location.pathname.includes(vulnManagementPath)}
-                        path={vulnManagementPath}
-                        title="Vulnerability Management"
-                    />
-                )}
+                <NavExpandable
+                    id="VulnerabilityManagement"
+                    title="Vulnerability Management"
+                    isActive={vulnerabilityManagementPaths.some((path) =>
+                        location.pathname.includes(path)
+                    )}
+                    isExpanded={vulnerabilityManagementPaths.some((path) =>
+                        location.pathname.includes(path)
+                    )}
+                >
+                    {vulnerabilityManagementPaths.map((path) => {
+                        const isActive =
+                            path === vulnManagementPath ? false : location.pathname.includes(path);
+                        return (
+                            <LeftNavItem
+                                key={path}
+                                isActive={isActive}
+                                path={path}
+                                title={basePathToLabelMap[path]}
+                            />
+                        );
+                    })}
+                </NavExpandable>
                 <LeftNavItem
                     isActive={location.pathname.includes(configManagementPath)}
                     path={configManagementPath}
