@@ -25,7 +25,7 @@ config:
     enforceOnUpdates: [< default false .AdmissionControlEnforceOnUpdates >]
     scanInline: [< default false .ScanInline >]
     disableBypass: [< default false .DisableBypass >]
-    timeout: [< default 3 .TimeoutSeconds >]
+    timeout: [< default 20 .TimeoutSeconds >]
   registryOverride:
   disableTaintTolerations: [< default false (not .TolerationsEnabled ) >]
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]

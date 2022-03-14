@@ -6,6 +6,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- The default Admission Controller "fail open" timeout has been changed from 3 seconds to 20 seconds in Helm templates.
+- The maximum Admission Controller "fail open" timeout has been set at 25 seconds in Helm template verification performed by the Operator.
+  - This change is *not* backwards compatible; if an existing Custom Resource sets the value to > 25 seconds, then it will fail validation in case operator is downgraded. This change is accepted because the operator is still in v1alpha1 and subject to change.
+- The admission webhook timeout is now set to the admission controller timeout plus 2 seconds.
+
 ## [69.0]
 
 - `collector` image with `-slim` in the image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
