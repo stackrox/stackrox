@@ -118,8 +118,8 @@ get_central_diagnostics() {
 push_main_and_roxctl_images() {
     info "Pushing main and roxctl images"
 
-    if [[ -z "${1:-}" ]]; then
-        die "missing arg or value. usage: push_main_and_roxctl_images <branch>"
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_main_and_roxctl_images <branch>"
     fi
 
     require_environment "DOCKER_IO_PUSH_USERNAME"
