@@ -529,5 +529,15 @@ describe('cluster helpers', () => {
 
             expect(status).toBe('UNHEALTHY');
         });
+        it('should return UNHEALTHY when less than a month before expiry and sensorCertNotBefore is undefined', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertExpiry: '2022-12-31T23:59:59Z',
+                },
+                new Date('2022-12-30T12:00:00Z')
+            );
+
+            expect(status).toBe('UNHEALTHY');
+        });
     });
 });

@@ -339,9 +339,9 @@ const resolveThresholds = (expiryStatus: CertExpiryStatus) => {
         expiryStatus.sensorCertExpiry,
         expiryStatus.sensorCertNotBefore
     );
-    return certDurationDays > shortLivedCertMaxDays
-        ? longLivedCertThresholds
-        : shortLivedCertThresholds;
+    return certDurationDays <= shortLivedCertMaxDays
+        ? shortLivedCertThresholds
+        : longLivedCertThresholds;
 };
 
 /*
