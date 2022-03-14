@@ -66,6 +66,7 @@ type Loop interface {
 	Stop()
 
 	ReprocessRiskForDeployments(deploymentIDs ...string)
+	ReprocessSignatureVerifications()
 }
 
 // NewLoop returns a new instance of a Loop.
@@ -109,6 +110,8 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		enrichmentStopped: concurrency.NewSignal(),
 		riskStopped:       concurrency.NewSignal(),
 
+		signatureVerificationSig: concurrency.NewSignal(),
+
 		// Used for testing purposes
 		reprocessingStarted:  concurrency.NewSignal(),
 		reprocessingComplete: concurrency.NewSignal(),
@@ -146,6 +149,8 @@ type loopImpl struct {
 	stopSig           concurrency.Signal
 	riskStopped       concurrency.Signal
 	enrichmentStopped concurrency.Signal
+
+	signatureVerificationSig concurrency.Signal
 	// used for testing
 	reprocessingStarted  concurrency.Signal
 	reprocessingComplete concurrency.Signal
@@ -188,6 +193,13 @@ func (l *loopImpl) ShortCircuit() {
 	// Signal that we should run a short circuited reprocessing. If the signal is already triggered, then the current
 	// signal is effectively deduped
 	l.shortCircuitSig.Signal()
+}
+
+func (l *loopImpl) ReprocessSignatureVerifications() {
+	// Signal that we should reprocess signature verifications for all images. This will only trigger a reprocess with
+	// refetch of signature verification results.
+	// If the signal is already triggered, then the current signal is effectively deduped.
+	l.signatureVerificationSig.Signal()
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
@@ -498,6 +510,9 @@ func (l *loopImpl) enrichLoop() {
 		case <-l.shortCircuitSig.Done():
 			l.shortCircuitSig.Reset()
 			l.runReprocessing(imageEnricher.UseCachesIfPossible)
+		case <-l.signatureVerificationSig.Done():
+			l.signatureVerificationSig.Reset()
+			l.runReprocessing(imageEnricher.ForceRefetchSignatureVerificationDataOnly)
 		case <-l.enrichAndDetectTicker.C:
 			l.runReprocessing(imageEnricher.ForceRefetchScansOnly)
 		}
