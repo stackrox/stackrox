@@ -319,8 +319,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	return internalScanRespFromImage(img), nil
 }
 
-// VerifyImageSignaturesInternal retrieves an image's signature and verifies them specified by the given values.
-// It provides the possibility to define an image's metadata and signature associated with.
+// VerifyImageSignaturesInternal retrieves an image's signature and verifies them specified by the given signatures.
 // This is meant to be called by Sensor.
 func (s *serviceImpl) VerifyImageSignaturesInternal(ctx context.Context,
 	request *v1.VerifyImageSignaturesInternalRequest) (*v1.VerifyImageSignaturesInternalResponse, error) {

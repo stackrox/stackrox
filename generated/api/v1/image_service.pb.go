@@ -1372,6 +1372,10 @@ type ImageServiceClient interface {
 	ScanImageInternal(ctx context.Context, in *ScanImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
 	// GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
 	GetImageVulnerabilitiesInternal(ctx context.Context, in *GetImageVulnerabilitiesInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
+
+	// VerifyImageSignaturesInternal is used solely by the Sensor ato send signature verification
+	// requests.
+	VerifyImageSignaturesInternal(ctx context.Context, in *VerifyImageSignaturesInternalRequest, opts ...grpc.CallOption) (*VerifyImageSignaturesInternalResponse, error)
 	// InvalidateScanAndRegistryCaches removes the image metadata cache.
 	InvalidateScanAndRegistryCaches(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// DeleteImage removes the images based on a query
@@ -1508,6 +1512,9 @@ type ImageServiceServer interface {
 	ScanImageInternal(context.Context, *ScanImageInternalRequest) (*ScanImageInternalResponse, error)
 	// GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
 	GetImageVulnerabilitiesInternal(context.Context, *GetImageVulnerabilitiesInternalRequest) (*ScanImageInternalResponse, error)
+	// VerifyImageSignaturesInternal is used solely by the Sensor ato send signature verification
+	// requests.
+	VerifyImageSignaturesInternal(context.Context, *VerifyImageSignaturesInternalRequest) (*VerifyImageSignaturesInternalResponse, error)
 	// InvalidateScanAndRegistryCaches removes the image metadata cache.
 	InvalidateScanAndRegistryCaches(context.Context, *Empty) (*Empty, error)
 	// DeleteImage removes the images based on a query
