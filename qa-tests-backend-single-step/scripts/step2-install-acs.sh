@@ -51,7 +51,7 @@ function stackrox_deploy_via_helm {
 
 # __MAIN__
 kubectl config current-context \
-  | grep "default/api-sb-03-10-osdgcp-6e6d-s2-devshift-org:6443/admin"
+  | grep "default/api-sb-03-14-osdgcp-lxkx-s2-devshift-org:6443/admin"
 export LOAD_BALANCER="lb"
 export MONITORING_SUPPORT=true
 
