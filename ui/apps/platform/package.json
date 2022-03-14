@@ -89,7 +89,7 @@
         "slick-carousel": "^1.8.1",
         "store": "^2.0.12",
         "styled-components": "^5.3.1",
-        "tippy.js": "^6.3.0",
+        "tippy.js": "^6.3.7",
         "typeface-open-sans": "^1.1.13",
         "typeface-open-sans-condensed": "^1.1.13",
         "use-deep-compare-effect": "^1.8.1",
