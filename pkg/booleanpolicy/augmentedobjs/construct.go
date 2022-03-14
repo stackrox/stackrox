@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -213,7 +214,11 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	if features.ImageSignatureVerification.Enabled() {
 		// Since policies query for image verification status as a single boolean field, we add it to the image here.
 		for i, result := range image.GetSignatureVerificationData().GetResults() {
-			if result.GetVerifierId() != "" && result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+			if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+				if result.GetVerifierId() == "" {
+					return nil, utils.Should(errox.InvariantViolation.New(
+						"missing verifier ID in signature verification results"))
+				}
 				err := obj.AddPlainObjAt(
 					&imageSignatureVerification{
 						VerifiedBy: result.GetVerifierId(),
