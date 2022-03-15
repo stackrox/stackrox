@@ -161,6 +161,15 @@ func (root *ScopeTree) ToJSON() (string, error) {
 	return root.Compactify().ToJSON()
 }
 
+// GetClusterIDs returns the list of cluster IDs known to the current scope tree
+func (root *ScopeTree) GetClusterIDs() []string {
+	clusterIDs := make([]string, 0, len(root.clusterIDToName))
+	for k := range root.clusterIDToName {
+		clusterIDs = append(clusterIDs, k)
+	}
+	return clusterIDs
+}
+
 // GetClusterByID returns ClusterScopeSubTree for given cluster ID.
 // Returns nil when clusterID is not known.
 func (root *ScopeTree) GetClusterByID(clusterID string) *clustersScopeSubTree {
