@@ -4,8 +4,10 @@ import withAuth from '../../../helpers/basicAuth';
 import {
     searchPolicies,
     visitPolicies,
+    visitPoliciesCallback,
     visitPoliciesFromLeftNav,
 } from '../../../helpers/policiesPatternFly';
+import navSelectors from '../../../selectors/navigation';
 
 describe('Policies table', () => {
     withAuth();
@@ -15,6 +17,16 @@ describe('Policies table', () => {
 
         cy.location('pathname').should('eq', url);
         cy.get('h1:contains("Policies")');
+    });
+
+    it('should have selected item in nav bar', () => {
+        visitPolicies();
+
+        cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`);
+        cy.get(`${navSelectors.nestedNavLinks}:contains("Policies")`).should(
+            'have.class',
+            'pf-m-current'
+        );
     });
 
     it('table should have columnms', () => {
@@ -92,27 +104,152 @@ describe('Policies table', () => {
         cy.wait('@reassess');
     });
 
-    it('should have row action to disable policy if policy has enabled status', () => {
+    it('should have row action to edit policy', () => {
         visitPolicies();
 
-        // nth(0) selects the first of multiple cells to click.
-        cy.get(
-            `${selectors.table.statusCell}:contains("Enabled"):nth(0) ~ ${selectors.table.actionsToggleButton}`
-        ).click();
-        cy.get(`${selectors.table.actionsItemButton}:contains("Disable policy")`).should(
-            'be.enabled'
-        );
+        cy.intercept('GET', api.policies.policy).as('getPolicy');
+        cy.intercept('GET', api.policies.policies).as('getPolicies');
+
+        cy.get('tbody tr:first-child').then(([tr]) => {
+            cy.wrap(tr)
+                .find(selectors.table.policyLink)
+                .invoke('text')
+                .then((name) => {
+                    cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
+                    cy.wrap(tr)
+                        .find(`${selectors.table.actionsItemButton}:contains("Edit policy")`)
+                        .click();
+                    cy.wait('@getPolicy');
+
+                    // Policy wizard
+                    cy.location('search').should('eq', '?action=edit');
+                    cy.get(`h1:contains("${name}")`);
+                    cy.get(`button:contains("Cancel")`).click();
+                    cy.wait('@getPolicies');
+
+                    // Policy table
+                    cy.get(`h1:contains("Policies")`);
+                });
+        });
+    });
+
+    it('should have row action to clone policy', () => {
+        visitPolicies();
+
+        cy.intercept('GET', api.policies.policy).as('getPolicy');
+        cy.intercept('GET', api.policies.policies).as('getPolicies');
+
+        cy.get('tbody tr:first-child').then(([tr]) => {
+            cy.wrap(tr)
+                .find(selectors.table.policyLink)
+                .invoke('text')
+                .then((name) => {
+                    cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
+                    cy.wrap(tr)
+                        .find(`${selectors.table.actionsItemButton}:contains("Clone policy")`)
+                        .click();
+                    cy.wait('@getPolicy');
+
+                    // Policy wizard
+                    cy.location('search').should('eq', '?action=clone');
+                    cy.get(`h1:contains("${name}")`);
+                    cy.get(`button:contains("Cancel")`).click();
+                    cy.wait('@getPolicies');
+
+                    // Policy table
+                    cy.get(`h1:contains("Policies")`);
+                });
+        });
+    });
+
+    it('should have row action to disable policy if policy has enabled status', () => {
+        visitPoliciesCallback((policies) => {
+            const policy = policies.find(({ disabled }) => disabled === false);
+            const { name } = policy;
+            const trSelector = `tr:has('td[data-label="Policy"] a:contains("${name}")')`;
+
+            cy.intercept('PATCH', api.policies.policy).as('patchPolicy');
+
+            cy.get(trSelector).then(([tr]) => {
+                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Enabled")`);
+                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
+                cy.wrap(tr)
+                    .find(`${selectors.table.actionsItemButton}:contains("Disable policy")`)
+                    .should('be.enabled')
+                    .click();
+                cy.wait('@patchPolicy');
+            });
+
+            // Get tr element again after table renders.
+            cy.get(trSelector).then(([tr]) => {
+                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Disabled")`);
+                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
+                cy.wrap(tr)
+                    .find(`${selectors.table.actionsItemButton}:contains("Enable policy")`)
+                    .should('be.enabled')
+                    .click();
+                cy.wait('@patchPolicy');
+            });
+
+            // Get tr element again after table renders.
+            cy.get(trSelector).then(([tr]) => {
+                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Enabled")`);
+            });
+
+            // Policy has same state before and after the test.
+        });
     });
 
     it('should have row action to enable policy if policy has disabled status', () => {
-        visitPolicies();
+        visitPoliciesCallback((policies) => {
+            const policy = policies.find(({ disabled }) => disabled === true);
+            const { name } = policy;
+            const trSelector = `tr:has('td[data-label="Policy"] a:contains("${name}")')`;
 
-        // nth(0) selects the first of multiple cells to click.
-        cy.get(
-            `${selectors.table.statusCell}:contains("Disabled"):nth(0) ~ ${selectors.table.actionsToggleButton}`
-        ).click();
-        cy.get(`${selectors.table.actionsItemButton}:contains("Enable policy")`).should(
-            'be.enabled'
-        );
+            cy.intercept('PATCH', api.policies.policy).as('patchPolicy');
+
+            cy.get(trSelector).then(([tr]) => {
+                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Disabled")`);
+                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
+                cy.wrap(tr)
+                    .find(`${selectors.table.actionsItemButton}:contains("Enable policy")`)
+                    .should('be.enabled')
+                    .click();
+                cy.wait('@patchPolicy');
+            });
+
+            // Get tr element again after table renders.
+            cy.get(trSelector).then(([tr]) => {
+                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Enabled")`);
+                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
+                cy.wrap(tr)
+                    .find(`${selectors.table.actionsItemButton}:contains("Disable policy")`)
+                    .should('be.enabled')
+                    .click();
+                cy.wait('@patchPolicy');
+            });
+
+            // Get tr element again after table renders.
+            cy.get(trSelector).then(([tr]) => {
+                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Disabled")`);
+            });
+
+            // Policy has same state before and after the test.
+        });
+    });
+
+    it('should have disabled row action to delete system default policy', () => {
+        visitPoliciesCallback((policies) => {
+            const policy = policies.find(({ isDefault }) => isDefault === true);
+            const { name } = policy;
+            const trSelector = `tr:has('td[data-label="Policy"] a:contains("${name}")')`;
+
+            cy.get(trSelector).then(([tr]) => {
+                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
+                cy.wrap(tr)
+                    .find(`${selectors.table.actionsItemButton}:contains("Delete policy")`)
+                    .should('be.disabled');
+            });
+        });
     });
 });
