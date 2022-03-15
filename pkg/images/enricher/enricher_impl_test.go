@@ -551,7 +551,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := fmt.Sprintf("image enrichment error: error getting metadata for image: "+
-		"testimage error: not found: no registry is indicated for image %q", img.GetName().GetFullName())
+		"testimage error: invalid arguments: no registry is indicated for image %q", img.GetName().GetFullName())
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.True(t, results.ImageUpdated)
 	assert.Equal(t, ScanSucceeded, results.ScanResult)
@@ -850,7 +850,7 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 	}{
 		"no registry set for the image": {
 			img: &storage.Image{Id: "id"},
-			err: errox.NotFound,
+			err: errox.InvalidArgs,
 		},
 		"no registry available": {
 			img:            &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
