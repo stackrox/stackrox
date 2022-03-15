@@ -117,6 +117,18 @@ func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource 
 	return ScanSucceeded, nil
 }
 
+func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, image *storage.Image) (EnrichmentResult, error) {
+	if !features.ImageSignatureVerification.Enabled() {
+		return EnrichmentResult{}, errors.New("image signature verification feature is not enabled")
+	}
+
+	updated, err := e.enrichWithSignatureVerificationData(ctx, EnrichmentContext{}, image)
+
+	return EnrichmentResult{
+		ImageUpdated: updated,
+	}, err
+}
+
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	// TODO(ROX-9687): Replace with proper injected context.
