@@ -255,6 +255,8 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 }
 
 func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestContext, useHTTP2 bool) {
+	targetHost := c.validServerNames[0]
+
 	var scheme string
 	var transport http.RoundTripper
 	if c.skipTLS {
@@ -262,21 +264,26 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		if useHTTP2 {
 			transport = &http2.Transport{
 				AllowHTTP: true,
-				DialTLS: func(network string, addr string, _ *tls.Config) (net.Conn, error) {
-					return dialer.Dial(network, addr)
+				DialTLS: func(network string, _ string, _ *tls.Config) (net.Conn, error) {
+					return dialer.Dial(network, c.endpoint())
 				},
 			}
 		}
 	} else {
 		scheme = "https"
-		tlsConfig := testCtx.tlsConfig(c.clientCert, c.validServerNames[0], true)
+		tlsConfig := testCtx.tlsConfig(c.clientCert, targetHost, true)
 		if useHTTP2 {
 			transport = &http2.Transport{
+				DialTLS: func(network string, _ string, tlsConf *tls.Config) (net.Conn, error) {
+					return tls.Dial(network, c.endpoint(), tlsConf)
+				},
 				TLSClientConfig: tlsConfig,
 			}
 		} else {
 			transport = &http.Transport{
-				TLSClientConfig: tlsConfig,
+				DialTLSContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
+					return (&tls.Dialer{Config: tlsConfig}).DialContext(ctx, network, c.endpoint())
+				},
 			}
 		}
 	}
@@ -286,7 +293,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		Timeout:   timeout,
 	}
 
-	resp, err := client.Get(fmt.Sprintf("%s://%s/v1/metadata", scheme, c.endpoint()))
+	resp, err := client.Get(fmt.Sprintf("%s://%s/v1/metadata", scheme, targetHost))
 	if resp != nil {
 		defer utils.IgnoreError(resp.Body.Close)
 	}
@@ -304,7 +311,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 	var md v1.Metadata
 	assert.NoError(t, jsonpb.Unmarshal(resp.Body, &md), "expected response for metadata request to be unmarshalable into metadata PB")
 
-	resp, err = client.Get(fmt.Sprintf("%s://%s/v1/auth/status", scheme, c.endpoint()))
+	resp, err = client.Get(fmt.Sprintf("%s://%s/v1/auth/status", scheme, targetHost))
 	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
 		return
 	}
