@@ -83,7 +83,7 @@ spec:
         fsGroup: 70
       volumes:
       - name: disk
-        {{- if ._rox.central.persistence._pvcCfg -}}
+        {{- if ._rox.central.persistence._pvcCfg }}
         persistentVolumeClaim:
           claimName: central-db
         {{- else }}
