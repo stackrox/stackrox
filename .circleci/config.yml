@@ -5076,7 +5076,7 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - create-tag-from-pipeline-parameters
-            - build-scale-monitoring-and-mock-server
+            # - build-scale-monitoring-and-mock-server
             - provision-openshift-aro-api-e2e-tests
           context:
             - com-redhat-cloud
