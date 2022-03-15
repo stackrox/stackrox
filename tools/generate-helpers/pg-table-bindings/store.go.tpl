@@ -2,7 +2,6 @@
 {{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "columnsLower"}}{{range $idx, $field := .}}{{if $idx}},{{end}}{{$field.ColumnName|lowerCase}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
 
@@ -18,8 +17,6 @@ package postgres
 
 import (
     "context"
-    "fmt"
-    "strings"
     "time"
 
     "github.com/gogo/protobuf/proto"
@@ -188,7 +185,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 
 {{ template "insertObject" .Schema }}
 
-{{- define "copyFunctionName"}}{{- $schema := . }}copyInto{{$schema.Table|upperCamelCase}}
+{{- define "copyFunctionName"}}{{- $schema := . }}copyFrom{{$schema.Table|upperCamelCase}}
 {{- end}}
 
 {{- define "copyObject"}}
@@ -205,12 +202,15 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     var deletes []string
     {{end}}
 
-    copyCols := strings.Split("{{template "columnsLower" $schema.ResolvedFields }}", ",")
+    copyCols := []string {
+    {{range $idx, $field := $schema.ResolvedFields}}
+        "{{$field.ColumnName|lowerCase}}",
+    {{end}}
+    }
 
     for idx, obj := range objs {
         // Todo: Figure out how to more cleanly template around this issue.
-        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
-
+        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
         {{if not $schema.Parents }}
         serialized, marshalErr := obj.Marshal()
@@ -245,7 +245,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
             {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
-            err = s.DeleteMany(ctx, deletes)
+            _, err = tx.Exec(ctx, deleteManyStmt, deletes);
             if err != nil {
                 return err
             }
@@ -253,14 +253,14 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             deletes = nil
             {{end}}
 
-            _, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("{{$schema.Table}}")}, copyCols, pgx.CopyFromRows(inputRows))
+            _, err = tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows))
 
             if err != nil {
                 return err
             }
 
             // clear the input rows for the next batch
-            inputRows = [][]interface{}{}
+            inputRows = inputRows[:0]
         }
     }
 
@@ -271,14 +271,14 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     for idx, obj := range objs {
     {{end}}
         {{range $idx, $child := $schema.Children}}
-        if err := s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
+        if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
         {{- end}}
     }
     {{end}}
 
-    return nil
+    return err
 }
 {{range $idx, $child := $schema.Children}}{{ template "copyObject" $child }}{{end}}
 {{- end}}
