@@ -78,6 +78,12 @@ patch_resources_for_test() {
 start_port_forwards_for_test() {
     info "Creating port-forwards for test"
 
+    # Try preventing kubectl port-forward from hitting the FD limit, see
+    # https://github.com/kubernetes/kubernetes/issues/74551#issuecomment-910520361
+    # Note: this might fail if we don't have the correct privileges. Unfortunately,
+    # we cannot `sudo ulimit` because it is a shell builtin.
+    ulimit -n 65535 || true
+
     central_pod="$(kubectl -n stackrox get po -lapp=central -oname | head -n 1)"
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
         nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" </dev/null &>/dev/null &
