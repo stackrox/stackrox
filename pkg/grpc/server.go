@@ -231,7 +231,7 @@ func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (
 func allowPrettyQueryParameter(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// checking Values as map[string][]string also catches ?pretty and ?pretty=
-		// r.URLHost.Query().Get("pretty") would not.
+		// r.URL.Query().Get("pretty") would not.
 		if _, ok := r.URL.Query()["pretty"]; ok {
 			r.Header.Set("Accept", "application/json+pretty")
 		}
