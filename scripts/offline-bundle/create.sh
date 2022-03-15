@@ -29,7 +29,6 @@ bundle() {
   local name=$1
   pushd "${DIR}"
   tar -czvf "${name}.tgz" "${name}"
-  tar -czvf "${name}-rhel.tgz" "${name}-rhel"
   popd
 }
 
