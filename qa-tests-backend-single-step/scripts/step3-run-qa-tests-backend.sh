@@ -1,11 +1,11 @@
 #!/bin/bash
 # Run E2E tests (Groovy + Spock + Fabric8 + Gradle)
 set -eux
-source "scripts/common.sh"
-source "scripts/config.sh"
+source "qa-tests-backend-single-step/scripts/common.sh"
+source "qa-tests-backend-single-step/scripts/config.sh"
+cd "$STACKROX_SOURCE_ROOT"  # all paths should be relative to here
 
 SCRIPT_ROOT=$(realpath "$(dirname "$0")")  # brew install coreutils
-QA_TESTS_BACKEND_DIR="$GOPATH/src/github.com/stackrox/stackrox/qa-tests-backend"
 echo "SCRIPT_ROOT          : $SCRIPT_ROOT"
 echo "QA_TESTS_BACKEND_DIR : $QA_TESTS_BACKEND_DIR"
 

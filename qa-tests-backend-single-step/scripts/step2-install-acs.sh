@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
-source "scripts/common.sh"
-source "scripts/config.sh"
+source "qa-tests-backend-single-step/scripts/common.sh"
+source "qa-tests-backend-single-step/scripts/config.sh"
 
 function docker_login {
   docker login docker.io
@@ -45,9 +45,27 @@ function stackrox_deploy_via_helm {
   fi
 }
 
+function port-forward-central {
+  # operates against current kube context
+  pkill -f 'port-forward.*stackrox.*svc/central' || true
+  sleep 3
+  nohup kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
+  sleep 5
+  pgrep -fl 'port-forward.*stackrox.*svc/central' || {
+    warning "Port forwarding to central has failed"
+    cat /tmp/central.log
+  }
+
+  # The Groovy e2e api tests require these two variables are set
+  export API_HOSTNAME="localhost"
+  export API_PORT="8443"
+
+  nc -vz "$API_HOSTNAME" "$API_PORT" \
+    || error "FAILED: [nc -vz $API_HOSTNAME $API_PORT]"
+}
+
 
 # __MAIN__
-SCRIPT_DIR=$(dirname $0)
 cd "$STACKROX_SOURCE_ROOT"  # all paths should be relative to here
 
 kubectl config current-context \
@@ -61,6 +79,6 @@ kubectl delete --wait namespace qa &>/dev/null || true
 kubectl create namespace qa
 stackrox_deploy_via_helm
 port-forward-central
-
-kubectl delete -f "$SCRIPT_DIR/scc-qatest-anyuid.yaml" || true
-kubectl apply -f "$SCRIPT_DIR/scc-qatest-anyuid.yaml"
+kubectl delete -f "qa-tests-backend-single-step/scripts/scc-qatest-anyuid.yaml" || true
+kubectl apply -f "qa-tests-backend-single-step/scripts/scc-qatest-anyuid.yaml"
+echo "Cluster is ready for testing."
