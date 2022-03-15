@@ -175,6 +175,26 @@ func (s *misdirectedRequestSuite) TestAll() {
 			ServerName:           "bar.example.com",
 			Expect421IfSupported: true,
 		},
+		"IP, no ServerName": {
+			URLHost:              "1.2.3.4",
+			ServerName:           "",
+			Expect421IfSupported: false,
+		},
+		"IP:port, no ServerName": {
+			URLHost:              "1.2.3.4:1234",
+			ServerName:           "",
+			Expect421IfSupported: false,
+		},
+		"IP, correct ServerName": {
+			URLHost:              "1.2.3.4",
+			ServerName:           "foo.example.com",
+			Expect421IfSupported: false,
+		},
+		"IP:port, correct ServerName": {
+			URLHost:              "1.2.3.4:1234",
+			ServerName:           "foo.example.com",
+			Expect421IfSupported: false,
+		},
 	}
 
 	for name, serverBaseCfg := range s.generateBaseServerConfigs() {

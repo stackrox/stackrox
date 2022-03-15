@@ -95,6 +95,11 @@ func checkMisdirectedRequest(req *http.Request) error {
 	if httpHostName == "" || err != nil {
 		return nil // need a valid HTTP Host or :authority header
 	}
+	// Host may be an IP address (or IP:port, see https://datatracker.ietf.org/doc/html/rfc7230#section-5.4), but that
+	// can never be a valid ServerName, so we have nothing to compare.
+	if net.ParseIP(httpHostName) != nil {
+		return nil
+	}
 	if tlsServerName == httpHostName {
 		return nil
 	}
