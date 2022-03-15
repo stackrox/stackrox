@@ -5110,6 +5110,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
+          # still overnight from US PoV, but early enough for the early risers in Europe to not have to wait for the results
           cron: "0 5 * * *"
           filters:
             branches:
