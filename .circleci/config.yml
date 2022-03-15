@@ -4883,130 +4883,16 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-tag:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - pre-build-ui:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - pre-create-tag
       - pre-build-cli:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-create-tag
-      - pre-build-go-binaries:
-          <<: *runOnAllTagsWithPushCtx
-          requires:
-            - pre-create-tag
-      - build:
-          <<: *runOnAllTagsWithPushCtx
-          requires:
-            - pre-build-ui
-            - pre-build-cli
-            - pre-build-go-binaries
       - build-operator:
           <<: *runOnAllTagsWithPushCtx
       - build-race-condition-debug-image:
           <<: *runOnAllTagsWithPushCtx
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithPushCtx
-      - provision-gke-api-nongroovy-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-api-nongroovy-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-nongroovy-tests
-      - local-roxctl-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - pre-build-cli
-      - provision-gke-ui-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-ui-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-ui-e2e-tests
-      - provision-gke-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-e2e-tests
-      - provision-gke-kernel-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-kernel-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-kernel-api-e2e-tests
-      - provision-gke-api-upgrade-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-api-upgrade-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - provision-gke-api-upgrade-tests
-      - provision-gke-api-scale-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-api-scale-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-scale-tests
-      - provision-openshift-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - openshift-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-api-e2e-tests
-      - provision-openshift-crio-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - openshift-crio-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-crio-api-e2e-tests
-      - provision-eks-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - eks-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-eks-api-e2e-tests
-      - provision-kops-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - kops-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-kops-api-e2e-tests
-      # ROX-8306 - Disabled due to Azure account issue
-      # - provision-aks-api-e2e-tests:
-      #     <<: *runOnAllTagsWithQuayIOPullCtx
-      # - aks-api-e2e-tests:
-      #     <<: *runOnAllTagsWithQuayIOPullCtx
-      #     requires:
-      #       - build
-      #       - build-scale-monitoring-and-mock-server
-      #       - provision-aks-api-e2e-tests
-      - provision-openshift-4-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - openshift-4-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-4-api-e2e-tests
       - provision-openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - provision-openshift-4-6-operator-e2e-tests:
@@ -5014,13 +4900,13 @@ workflows:
       - openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            # - build # 
             - build-operator
             - provision-openshift-4-operator-e2e-tests
       - openshift-4-6-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            # - build # 
             - build-operator
             - provision-openshift-4-6-operator-e2e-tests
       - provision-race-condition-tests:
@@ -5035,15 +4921,133 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-build-cli
-      - mark-collector-release:
-          <<: *runOnlyOnReleaseBuilds
-          context:
-            - custom-executor-pull
+      - local-roxctl-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
-            - go-unit-tests
-            - ui-unit-tests
-            - push-release
+            - pre-build-cli
+      - check-docs-job:
+          <<: *runOnlyOnReleaseCandidateBuilds
+          context:
+          - custom-executor-pull
+      - check-scanner-and-collector-release-job:
+          <<: *runOnlyOnReleaseCandidateBuilds
+          context:
+          - custom-executor-pull
+
+  # To trigger e2e tests:
+  #
+  #   curl -X POST --header 'Content-Type: application/json' \
+  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d '{
+  #     "branch": "<your branch>",
+  #     "parameters": {
+  #         "trigger_on_demand": true,
+  #         "workflow_name": "e2e-tests",
+  #         "tag": "<tag to test>"
+  #     }
+  # }'
+
+  e2e_tests:
+    when:
+      equal: [ "e2e-tests", << pipeline.parameters.workflow_name >> ]
+    jobs:
+      - create-tag-from-pipeline-parameters:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - provision-gke-api-nongroovy-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-nongroovy-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-gke-api-nongroovy-tests
+      - provision-gke-ui-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-ui-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-gke-ui-e2e-tests
+      - provision-gke-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-gke-api-e2e-tests
+      - provision-gke-kernel-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-kernel-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-gke-kernel-api-e2e-tests
+      - provision-gke-api-upgrade-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-upgrade-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            - provision-gke-api-upgrade-tests
+      - provision-gke-api-scale-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-scale-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-gke-api-scale-tests
+      - provision-openshift-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - openshift-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-openshift-api-e2e-tests
+      - provision-openshift-crio-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - openshift-crio-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-openshift-crio-api-e2e-tests
+      - provision-eks-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - eks-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-eks-api-e2e-tests
+      - provision-kops-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - kops-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-kops-api-e2e-tests
+      # ROX-8306 - Disabled due to Azure account issue
+      # - provision-aks-api-e2e-tests:
+      #     <<: *runOnAllTagsWithQuayIOPullCtx
+      # - aks-api-e2e-tests:
+      #     <<: *runOnAllTagsWithQuayIOPullCtx
+      #     requires:
+      #       - build
+      #        # - build-scale-monitoring-and-mock-server
+      #       - provision-aks-api-e2e-tests
+      - provision-openshift-4-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - openshift-4-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
+            - provision-openshift-4-api-e2e-tests
 
       - provision-openshift-rosa-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5055,23 +5059,13 @@ workflows:
       - openshift-rosa-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-scale-monitoring-and-mock-server
+            - create-tag-from-pipeline-parameters
+            # - build-scale-monitoring-and-mock-server
             - provision-openshift-rosa-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
             - aws-setup
-
-      - check-docs-job:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context:
-          - custom-executor-pull
-      - check-scanner-and-collector-release-job:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context:
-          - custom-executor-pull
 
       - provision-openshift-aro-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5084,15 +5078,19 @@ workflows:
       - openshift-aro-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - create-tag-from-pipeline-parameters
             - build-scale-monitoring-and-mock-server
             - provision-openshift-aro-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
             - azure-ci
             - aro-cluster-manager
+
+      - go-unit-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - ui-unit-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
@@ -5100,9 +5098,16 @@ workflows:
             - custom-executor-pull
             - docker-io-and-stackrox-io-push
           requires:
-            - build
+            - create-tag-from-pipeline-parameters
             - go-unit-tests
             - ui-unit-tests
+
+      - mark-collector-release:
+          <<: *runOnlyOnReleaseBuilds
+          context:
+            - custom-executor-pull
+          requires:
+            - push-release
 
       - scan-images-in-quay:
           context:
@@ -5113,7 +5118,7 @@ workflows:
             branches:
               ignore: /.*/
           requires:
-            - build
+            - create-tag-from-pipeline-parameters
 
       - openshift-ci-upgrade-test:
           context:
@@ -5122,7 +5127,7 @@ workflows:
             branches:
               only: /.*(osci).*/
           requires:
-            - build
+            - create-tag-from-pipeline-parameters
 
       - retrigger-master-workflow:
           context: custom-executor-pull
@@ -5193,29 +5198,3 @@ workflows:
     jobs:
       - designated-image-tests:
           context: quay-rhacs-eng-readonly
-
-  # To trigger e2e tests:
-  #
-  #   curl -X POST --header 'Content-Type: application/json' \
-  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d '{
-  #     "branch": "<your branch>",
-  #     "parameters": {
-  #         "trigger_on_demand": true,
-  #         "workflow_name": "e2e-tests",
-  #         "tag": "<tag to test>"
-  #     }
-  # }'
-
-  e2e_tests:
-    when:
-      equal: [ "e2e-tests", << pipeline.parameters.workflow_name >> ]
-    jobs:
-      - create-tag-from-pipeline-parameters:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - provision-gke-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - create-tag-from-pipeline-parameters
-            - provision-gke-api-e2e-tests
