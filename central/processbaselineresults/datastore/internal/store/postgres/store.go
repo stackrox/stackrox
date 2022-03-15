@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -183,7 +182,7 @@ func insertIntoProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx p
 	return nil
 }
 
-func (s *storeImpl) copyIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
+func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
 
 	inputRows := [][]interface{}{}
 
@@ -193,11 +192,20 @@ func (s *storeImpl) copyIntoProcesswhitelistresults(ctx context.Context, tx pgx.
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("deploymentid,clusterid,namespace,serialized", ",")
+	copyCols := []string{
+
+		"deploymentid",
+
+		"clusterid",
+
+		"namespace",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -223,45 +231,56 @@ func (s *storeImpl) copyIntoProcesswhitelistresults(ctx context.Context, tx pgx.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("processwhitelistresults")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processwhitelistresults"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoProcesswhitelistresultsBaselineStatuses(ctx, tx, obj.GetDeploymentId(), obj.GetBaselineStatuses()...); err != nil {
+		if err = s.copyFromProcesswhitelistresultsBaselineStatuses(ctx, tx, obj.GetDeploymentId(), obj.GetBaselineStatuses()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, processwhitelistresults_DeploymentId string, objs ...*storage.ContainerNameAndBaselineStatus) error {
+func (s *storeImpl) copyFromProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, processwhitelistresults_DeploymentId string, objs ...*storage.ContainerNameAndBaselineStatus) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("processwhitelistresults_deploymentid,idx,containername,baselinestatus,anomalousprocessesexecuted", ",")
+	copyCols := []string{
+
+		"processwhitelistresults_deploymentid",
+
+		"idx",
+
+		"containername",
+
+		"baselinestatus",
+
+		"anomalousprocessesexecuted",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -281,18 +300,18 @@ func (s *storeImpl) copyIntoProcesswhitelistresultsBaselineStatuses(ctx context.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("processwhitelistresults_BaselineStatuses")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processwhitelistresults_baselinestatuses"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -313,7 +332,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 		return err
 	}
 
-	if err := s.copyIntoProcesswhitelistresults(ctx, tx, objs...); err != nil {
+	if err := s.copyFromProcesswhitelistresults(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -127,7 +126,7 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 	return nil
 }
 
-func (s *storeImpl) copyIntoApitokens(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
+func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
 
 	inputRows := [][]interface{}{}
 
@@ -137,11 +136,28 @@ func (s *storeImpl) copyIntoApitokens(ctx context.Context, tx pgx.Tx, objs ...*s
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,name,roles,issuedat,expiration,revoked,role,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"roles",
+
+		"issuedat",
+
+		"expiration",
+
+		"revoked",
+
+		"role",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -175,25 +191,25 @@ func (s *storeImpl) copyIntoApitokens(ctx context.Context, tx pgx.Tx, objs ...*s
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("apitokens")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"apitokens"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -214,7 +230,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TokenMetadata
 		return err
 	}
 
-	if err := s.copyIntoApitokens(ctx, tx, objs...); err != nil {
+	if err := s.copyFromApitokens(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

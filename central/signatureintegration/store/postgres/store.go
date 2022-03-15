@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -179,7 +178,7 @@ func insertIntoSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, o
 	return nil
 }
 
-func (s *storeImpl) copyIntoSignatureintegrations(ctx context.Context, tx pgx.Tx, objs ...*storage.SignatureIntegration) error {
+func (s *storeImpl) copyFromSignatureintegrations(ctx context.Context, tx pgx.Tx, objs ...*storage.SignatureIntegration) error {
 
 	inputRows := [][]interface{}{}
 
@@ -189,11 +188,18 @@ func (s *storeImpl) copyIntoSignatureintegrations(ctx context.Context, tx pgx.Tx
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,name,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -217,45 +223,54 @@ func (s *storeImpl) copyIntoSignatureintegrations(ctx context.Context, tx pgx.Tx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("signatureintegrations")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"signatureintegrations"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoSignatureintegrationsPublicKeys(ctx, tx, obj.GetId(), obj.GetCosign().GetPublicKeys()...); err != nil {
+		if err = s.copyFromSignatureintegrationsPublicKeys(ctx, tx, obj.GetId(), obj.GetCosign().GetPublicKeys()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, signatureintegrations_Id string, objs ...*storage.CosignPublicKeyVerification_PublicKey) error {
+func (s *storeImpl) copyFromSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, signatureintegrations_Id string, objs ...*storage.CosignPublicKeyVerification_PublicKey) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("signatureintegrations_id,idx,name,publickeypemenc", ",")
+	copyCols := []string{
+
+		"signatureintegrations_id",
+
+		"idx",
+
+		"name",
+
+		"publickeypemenc",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -273,18 +288,18 @@ func (s *storeImpl) copyIntoSignatureintegrationsPublicKeys(ctx context.Context,
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("signatureintegrations_PublicKeys")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"signatureintegrations_publickeys"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -305,7 +320,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SignatureInte
 		return err
 	}
 
-	if err := s.copyIntoSignatureintegrations(ctx, tx, objs...); err != nil {
+	if err := s.copyFromSignatureintegrations(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

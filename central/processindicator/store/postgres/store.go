@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -215,7 +214,7 @@ func insertIntoProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, obj 
 	return nil
 }
 
-func (s *storeImpl) copyIntoProcessIndicators(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessIndicator) error {
+func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessIndicator) error {
 
 	inputRows := [][]interface{}{}
 
@@ -225,11 +224,54 @@ func (s *storeImpl) copyIntoProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,deploymentid,containername,podid,poduid,signal_id,signal_containerid,signal_time,signal_name,signal_args,signal_execfilepath,signal_pid,signal_uid,signal_gid,signal_lineage,signal_scraped,clusterid,namespace,containerstarttime,imageid,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"deploymentid",
+
+		"containername",
+
+		"podid",
+
+		"poduid",
+
+		"signal_id",
+
+		"signal_containerid",
+
+		"signal_time",
+
+		"signal_name",
+
+		"signal_args",
+
+		"signal_execfilepath",
+
+		"signal_pid",
+
+		"signal_uid",
+
+		"signal_gid",
+
+		"signal_lineage",
+
+		"signal_scraped",
+
+		"clusterid",
+
+		"namespace",
+
+		"containerstarttime",
+
+		"imageid",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -289,45 +331,54 @@ func (s *storeImpl) copyIntoProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("process_indicators")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoProcessIndicatorsLineageInfo(ctx, tx, obj.GetId(), obj.GetSignal().GetLineageInfo()...); err != nil {
+		if err = s.copyFromProcessIndicatorsLineageInfo(ctx, tx, obj.GetId(), obj.GetSignal().GetLineageInfo()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, process_indicators_Id string, objs ...*storage.ProcessSignal_LineageInfo) error {
+func (s *storeImpl) copyFromProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, process_indicators_Id string, objs ...*storage.ProcessSignal_LineageInfo) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("process_indicators_id,idx,parentuid,parentexecfilepath", ",")
+	copyCols := []string{
+
+		"process_indicators_id",
+
+		"idx",
+
+		"parentuid",
+
+		"parentexecfilepath",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -345,18 +396,18 @@ func (s *storeImpl) copyIntoProcessIndicatorsLineageInfo(ctx context.Context, tx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("process_indicators_LineageInfo")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators_lineageinfo"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -377,7 +428,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessIndica
 		return err
 	}
 
-	if err := s.copyIntoProcessIndicators(ctx, tx, objs...); err != nil {
+	if err := s.copyFromProcessIndicators(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

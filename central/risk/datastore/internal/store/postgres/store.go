@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -251,7 +250,7 @@ func insertIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, obj *storage.R
 	return nil
 }
 
-func (s *storeImpl) copyIntoRisk(ctx context.Context, tx pgx.Tx, objs ...*storage.Risk) error {
+func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storage.Risk) error {
 
 	inputRows := [][]interface{}{}
 
@@ -261,11 +260,26 @@ func (s *storeImpl) copyIntoRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,subject_id,subject_namespace,subject_clusterid,subject_type,score,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"subject_id",
+
+		"subject_namespace",
+
+		"subject_clusterid",
+
+		"subject_type",
+
+		"score",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -297,45 +311,54 @@ func (s *storeImpl) copyIntoRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("risk")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoRiskResults(ctx, tx, obj.GetId(), obj.GetResults()...); err != nil {
+		if err = s.copyFromRiskResults(ctx, tx, obj.GetId(), obj.GetResults()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoRiskResults(ctx context.Context, tx pgx.Tx, risk_Id string, objs ...*storage.Risk_Result) error {
+func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, risk_Id string, objs ...*storage.Risk_Result) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("risk_id,idx,name,score", ",")
+	copyCols := []string{
+
+		"risk_id",
+
+		"idx",
+
+		"name",
+
+		"score",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -353,38 +376,49 @@ func (s *storeImpl) copyIntoRiskResults(ctx context.Context, tx pgx.Tx, risk_Id 
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("risk_Results")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk_results"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoRiskResultsFactors(ctx, tx, risk_Id, idx, obj.GetFactors()...); err != nil {
+		if err = s.copyFromRiskResultsFactors(ctx, tx, risk_Id, idx, obj.GetFactors()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, risk_Id string, risk_Results_idx int, objs ...*storage.Risk_Result_Factor) error {
+func (s *storeImpl) copyFromRiskResultsFactors(ctx context.Context, tx pgx.Tx, risk_Id string, risk_Results_idx int, objs ...*storage.Risk_Result_Factor) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("risk_id,risk_results_idx,idx,message,url", ",")
+	copyCols := []string{
+
+		"risk_id",
+
+		"risk_results_idx",
+
+		"idx",
+
+		"message",
+
+		"url",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -404,18 +438,18 @@ func (s *storeImpl) copyIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, r
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("risk_Results_Factors")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk_results_factors"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -436,7 +470,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Risk) error {
 		return err
 	}
 
-	if err := s.copyIntoRisk(ctx, tx, objs...); err != nil {
+	if err := s.copyFromRisk(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -427,7 +426,7 @@ func insertIntoSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx context
 	return nil
 }
 
-func (s *storeImpl) copyIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, objs ...*storage.SimpleAccessScope) error {
+func (s *storeImpl) copyFromSimpleaccessscopes(ctx context.Context, tx pgx.Tx, objs ...*storage.SimpleAccessScope) error {
 
 	inputRows := [][]interface{}{}
 
@@ -437,11 +436,22 @@ func (s *storeImpl) copyIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,name,description,rules_includedclusters,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"description",
+
+		"rules_includedclusters",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -469,51 +479,60 @@ func (s *storeImpl) copyIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"simpleaccessscopes"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoSimpleaccessscopesIncludedNamespaces(ctx, tx, obj.GetId(), obj.GetRules().GetIncludedNamespaces()...); err != nil {
+		if err = s.copyFromSimpleaccessscopesIncludedNamespaces(ctx, tx, obj.GetId(), obj.GetRules().GetIncludedNamespaces()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoSimpleaccessscopesClusterLabelSelectors(ctx, tx, obj.GetId(), obj.GetRules().GetClusterLabelSelectors()...); err != nil {
+		if err = s.copyFromSimpleaccessscopesClusterLabelSelectors(ctx, tx, obj.GetId(), obj.GetRules().GetClusterLabelSelectors()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoSimpleaccessscopesNamespaceLabelSelectors(ctx, tx, obj.GetId(), obj.GetRules().GetNamespaceLabelSelectors()...); err != nil {
+		if err = s.copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx, tx, obj.GetId(), obj.GetRules().GetNamespaceLabelSelectors()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSimpleaccessscopesIncludedNamespaces(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SimpleAccessScope_Rules_Namespace) error {
+func (s *storeImpl) copyFromSimpleaccessscopesIncludedNamespaces(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SimpleAccessScope_Rules_Namespace) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("simpleaccessscopes_id,idx,clustername,namespacename", ",")
+	copyCols := []string{
+
+		"simpleaccessscopes_id",
+
+		"idx",
+
+		"clustername",
+
+		"namespacename",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -531,31 +550,36 @@ func (s *storeImpl) copyIntoSimpleaccessscopesIncludedNamespaces(ctx context.Con
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_IncludedNamespaces")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"simpleaccessscopes_includednamespaces"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectors(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SetBasedLabelSelector) error {
+func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectors(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SetBasedLabelSelector) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("simpleaccessscopes_id,idx", ",")
+	copyCols := []string{
+
+		"simpleaccessscopes_id",
+
+		"idx",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -569,38 +593,51 @@ func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectors(ctx context.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_ClusterLabelSelectors")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"simpleaccessscopes_clusterlabelselectors"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoSimpleaccessscopesClusterLabelSelectorsRequirements(ctx, tx, simpleaccessscopes_Id, idx, obj.GetRequirements()...); err != nil {
+		if err = s.copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(ctx, tx, simpleaccessscopes_Id, idx, obj.GetRequirements()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, simpleaccessscopes_ClusterLabelSelectors_idx int, objs ...*storage.SetBasedLabelSelector_Requirement) error {
+func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, simpleaccessscopes_ClusterLabelSelectors_idx int, objs ...*storage.SetBasedLabelSelector_Requirement) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("simpleaccessscopes_id,simpleaccessscopes_clusterlabelselectors_idx,idx,key,op,values", ",")
+	copyCols := []string{
+
+		"simpleaccessscopes_id",
+
+		"simpleaccessscopes_clusterlabelselectors_idx",
+
+		"idx",
+
+		"key",
+
+		"op",
+
+		"values",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -622,31 +659,36 @@ func (s *storeImpl) copyIntoSimpleaccessscopesClusterLabelSelectorsRequirements(
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_ClusterLabelSelectors_Requirements")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"simpleaccessscopes_clusterlabelselectors_requirements"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SetBasedLabelSelector) error {
+func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SetBasedLabelSelector) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("simpleaccessscopes_id,idx", ",")
+	copyCols := []string{
+
+		"simpleaccessscopes_id",
+
+		"idx",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -660,38 +702,51 @@ func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_NamespaceLabelSelectors")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"simpleaccessscopes_namespacelabelselectors"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx, tx, simpleaccessscopes_Id, idx, obj.GetRequirements()...); err != nil {
+		if err = s.copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx, tx, simpleaccessscopes_Id, idx, obj.GetRequirements()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, simpleaccessscopes_NamespaceLabelSelectors_idx int, objs ...*storage.SetBasedLabelSelector_Requirement) error {
+func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, simpleaccessscopes_NamespaceLabelSelectors_idx int, objs ...*storage.SetBasedLabelSelector_Requirement) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("simpleaccessscopes_id,simpleaccessscopes_namespacelabelselectors_idx,idx,key,op,values", ",")
+	copyCols := []string{
+
+		"simpleaccessscopes_id",
+
+		"simpleaccessscopes_namespacelabelselectors_idx",
+
+		"idx",
+
+		"key",
+
+		"op",
+
+		"values",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -713,18 +768,18 @@ func (s *storeImpl) copyIntoSimpleaccessscopesNamespaceLabelSelectorsRequirement
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("simpleaccessscopes_NamespaceLabelSelectors_Requirements")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"simpleaccessscopes_namespacelabelselectors_requirements"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -745,7 +800,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SimpleAccessS
 		return err
 	}
 
-	if err := s.copyIntoSimpleaccessscopes(ctx, tx, objs...); err != nil {
+	if err := s.copyFromSimpleaccessscopes(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

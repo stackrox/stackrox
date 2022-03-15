@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -253,7 +252,7 @@ func insertIntoProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, 
 	return nil
 }
 
-func (s *storeImpl) copyIntoProcessbaselines(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaseline) error {
+func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaseline) error {
 
 	inputRows := [][]interface{}{}
 
@@ -263,11 +262,32 @@ func (s *storeImpl) copyIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,key_deploymentid,key_containername,key_clusterid,key_namespace,created,userlockedtimestamp,stackroxlockedtimestamp,lastupdate,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"key_deploymentid",
+
+		"key_containername",
+
+		"key_clusterid",
+
+		"key_namespace",
+
+		"created",
+
+		"userlockedtimestamp",
+
+		"stackroxlockedtimestamp",
+
+		"lastupdate",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -305,48 +325,57 @@ func (s *storeImpl) copyIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("processbaselines")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoProcessbaselinesElements(ctx, tx, obj.GetId(), obj.GetElements()...); err != nil {
+		if err = s.copyFromProcessbaselinesElements(ctx, tx, obj.GetId(), obj.GetElements()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoProcessbaselinesElementGraveyard(ctx, tx, obj.GetId(), obj.GetElementGraveyard()...); err != nil {
+		if err = s.copyFromProcessbaselinesElementGraveyard(ctx, tx, obj.GetId(), obj.GetElementGraveyard()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoProcessbaselinesElements(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
+func (s *storeImpl) copyFromProcessbaselinesElements(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("processbaselines_id,idx,element_processname,auto", ",")
+	copyCols := []string{
+
+		"processbaselines_id",
+
+		"idx",
+
+		"element_processname",
+
+		"auto",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -364,31 +393,40 @@ func (s *storeImpl) copyIntoProcessbaselinesElements(ctx context.Context, tx pgx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("processbaselines_Elements")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines_elements"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
+func (s *storeImpl) copyFromProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("processbaselines_id,idx,element_processname,auto", ",")
+	copyCols := []string{
+
+		"processbaselines_id",
+
+		"idx",
+
+		"element_processname",
+
+		"auto",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -406,18 +444,18 @@ func (s *storeImpl) copyIntoProcessbaselinesElementGraveyard(ctx context.Context
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("processbaselines_ElementGraveyard")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines_elementgraveyard"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -438,7 +476,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 		return err
 	}
 
-	if err := s.copyIntoProcessbaselines(ctx, tx, objs...); err != nil {
+	if err := s.copyFromProcessbaselines(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

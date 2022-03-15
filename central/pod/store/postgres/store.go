@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -343,7 +342,7 @@ func insertIntoPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, 
 	return nil
 }
 
-func (s *storeImpl) copyIntoPods(ctx context.Context, tx pgx.Tx, objs ...*storage.Pod) error {
+func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storage.Pod) error {
 
 	inputRows := [][]interface{}{}
 
@@ -353,11 +352,26 @@ func (s *storeImpl) copyIntoPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,name,deploymentid,namespace,clusterid,started,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"deploymentid",
+
+		"namespace",
+
+		"clusterid",
+
+		"started",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -389,48 +403,75 @@ func (s *storeImpl) copyIntoPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("pods")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoPodsLiveInstances(ctx, tx, obj.GetId(), obj.GetLiveInstances()...); err != nil {
+		if err = s.copyFromPodsLiveInstances(ctx, tx, obj.GetId(), obj.GetLiveInstances()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoPodsTerminatedInstances(ctx, tx, obj.GetId(), obj.GetTerminatedInstances()...); err != nil {
+		if err = s.copyFromPodsTerminatedInstances(ctx, tx, obj.GetId(), obj.GetTerminatedInstances()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.ContainerInstance) error {
+func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.ContainerInstance) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("pods_id,idx,instanceid_containerruntime,instanceid_id,instanceid_node,containingpodid,containername,containerips,started,imagedigest,finished,exitcode,terminationreason", ",")
+	copyCols := []string{
+
+		"pods_id",
+
+		"idx",
+
+		"instanceid_containerruntime",
+
+		"instanceid_id",
+
+		"instanceid_node",
+
+		"containingpodid",
+
+		"containername",
+
+		"containerips",
+
+		"started",
+
+		"imagedigest",
+
+		"finished",
+
+		"exitcode",
+
+		"terminationreason",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -466,31 +507,36 @@ func (s *storeImpl) copyIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("pods_LiveInstances")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_liveinstances"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.Pod_ContainerInstanceList) error {
+func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.Pod_ContainerInstanceList) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("pods_id,idx", ",")
+	copyCols := []string{
+
+		"pods_id",
+
+		"idx",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -504,38 +550,67 @@ func (s *storeImpl) copyIntoPodsTerminatedInstances(ctx context.Context, tx pgx.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("pods_TerminatedInstances")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_terminatedinstances"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoPodsTerminatedInstancesInstances(ctx, tx, pods_Id, idx, obj.GetInstances()...); err != nil {
+		if err = s.copyFromPodsTerminatedInstancesInstances(ctx, tx, pods_Id, idx, obj.GetInstances()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, pods_Id string, pods_TerminatedInstances_idx int, objs ...*storage.ContainerInstance) error {
+func (s *storeImpl) copyFromPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, pods_Id string, pods_TerminatedInstances_idx int, objs ...*storage.ContainerInstance) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("pods_id,pods_terminatedinstances_idx,idx,instanceid_containerruntime,instanceid_id,instanceid_node,containingpodid,containername,containerips,started,imagedigest,finished,exitcode,terminationreason", ",")
+	copyCols := []string{
+
+		"pods_id",
+
+		"pods_terminatedinstances_idx",
+
+		"idx",
+
+		"instanceid_containerruntime",
+
+		"instanceid_id",
+
+		"instanceid_node",
+
+		"containingpodid",
+
+		"containername",
+
+		"containerips",
+
+		"started",
+
+		"imagedigest",
+
+		"finished",
+
+		"exitcode",
+
+		"terminationreason",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -573,18 +648,18 @@ func (s *storeImpl) copyIntoPodsTerminatedInstancesInstances(ctx context.Context
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("pods_TerminatedInstances_Instances")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_terminatedinstances_instances"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -605,7 +680,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Pod) error {
 		return err
 	}
 
-	if err := s.copyIntoPods(ctx, tx, objs...); err != nil {
+	if err := s.copyFromPods(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

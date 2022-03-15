@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -1059,7 +1058,7 @@ func insertIntoAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, obj *s
 	return nil
 }
 
-func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*storage.Alert) error {
+func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*storage.Alert) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1069,11 +1068,122 @@ func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,policy_id,policy_name,policy_description,policy_rationale,policy_remediation,policy_disabled,policy_categories,policy_lifecyclestages,policy_eventsource,policy_severity,policy_enforcementactions,policy_notifiers,policy_lastupdated,policy_sortname,policy_sortlifecyclestage,policy_sortenforcement,policy_policyversion,policy_criterialocked,policy_mitrevectorslocked,policy_isdefault,lifecyclestage,deployment_id,deployment_name,deployment_type,deployment_namespace,deployment_namespaceid,deployment_labels,deployment_clusterid,deployment_clustername,deployment_annotations,deployment_inactive,image_id,image_name_registry,image_name_remote,image_name_tag,image_name_fullname,image_notpullable,image_isclusterlocal,resource_resourcetype,resource_name,resource_clusterid,resource_clustername,resource_namespace,resource_namespaceid,processviolation_message,enforcement_action,enforcement_message,time,firstoccurred,resolvedat,state,snoozetill,tags,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"policy_id",
+
+		"policy_name",
+
+		"policy_description",
+
+		"policy_rationale",
+
+		"policy_remediation",
+
+		"policy_disabled",
+
+		"policy_categories",
+
+		"policy_lifecyclestages",
+
+		"policy_eventsource",
+
+		"policy_severity",
+
+		"policy_enforcementactions",
+
+		"policy_notifiers",
+
+		"policy_lastupdated",
+
+		"policy_sortname",
+
+		"policy_sortlifecyclestage",
+
+		"policy_sortenforcement",
+
+		"policy_policyversion",
+
+		"policy_criterialocked",
+
+		"policy_mitrevectorslocked",
+
+		"policy_isdefault",
+
+		"lifecyclestage",
+
+		"deployment_id",
+
+		"deployment_name",
+
+		"deployment_type",
+
+		"deployment_namespace",
+
+		"deployment_namespaceid",
+
+		"deployment_labels",
+
+		"deployment_clusterid",
+
+		"deployment_clustername",
+
+		"deployment_annotations",
+
+		"deployment_inactive",
+
+		"image_id",
+
+		"image_name_registry",
+
+		"image_name_remote",
+
+		"image_name_tag",
+
+		"image_name_fullname",
+
+		"image_notpullable",
+
+		"image_isclusterlocal",
+
+		"resource_resourcetype",
+
+		"resource_name",
+
+		"resource_clusterid",
+
+		"resource_clustername",
+
+		"resource_namespace",
+
+		"resource_namespaceid",
+
+		"processviolation_message",
+
+		"enforcement_action",
+
+		"enforcement_message",
+
+		"time",
+
+		"firstoccurred",
+
+		"resolvedat",
+
+		"state",
+
+		"snoozetill",
+
+		"tags",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -1201,66 +1311,87 @@ func (s *storeImpl) copyIntoAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoAlertsWhitelists(ctx, tx, obj.GetId(), obj.GetPolicy().GetWhitelists()...); err != nil {
+		if err = s.copyFromAlertsWhitelists(ctx, tx, obj.GetId(), obj.GetPolicy().GetWhitelists()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoAlertsExclusions(ctx, tx, obj.GetId(), obj.GetPolicy().GetExclusions()...); err != nil {
+		if err = s.copyFromAlertsExclusions(ctx, tx, obj.GetId(), obj.GetPolicy().GetExclusions()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoAlertsScope(ctx, tx, obj.GetId(), obj.GetPolicy().GetScope()...); err != nil {
+		if err = s.copyFromAlertsScope(ctx, tx, obj.GetId(), obj.GetPolicy().GetScope()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoAlertsPolicySections(ctx, tx, obj.GetId(), obj.GetPolicy().GetPolicySections()...); err != nil {
+		if err = s.copyFromAlertsPolicySections(ctx, tx, obj.GetId(), obj.GetPolicy().GetPolicySections()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoAlertsMitreAttackVectors(ctx, tx, obj.GetId(), obj.GetPolicy().GetMitreAttackVectors()...); err != nil {
+		if err = s.copyFromAlertsMitreAttackVectors(ctx, tx, obj.GetId(), obj.GetPolicy().GetMitreAttackVectors()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoAlertsContainers(ctx, tx, obj.GetId(), obj.GetDeployment().GetContainers()...); err != nil {
+		if err = s.copyFromAlertsContainers(ctx, tx, obj.GetId(), obj.GetDeployment().GetContainers()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoAlertsViolations(ctx, tx, obj.GetId(), obj.GetViolations()...); err != nil {
+		if err = s.copyFromAlertsViolations(ctx, tx, obj.GetId(), obj.GetViolations()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoAlertsProcesses(ctx, tx, obj.GetId(), obj.GetProcessViolation().GetProcesses()...); err != nil {
+		if err = s.copyFromAlertsProcesses(ctx, tx, obj.GetId(), obj.GetProcessViolation().GetProcesses()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Exclusion) error {
+func (s *storeImpl) copyFromAlertsWhitelists(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Exclusion) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"idx",
+
+		"name",
+
+		"deployment_name",
+
+		"deployment_scope_cluster",
+
+		"deployment_scope_namespace",
+
+		"deployment_scope_label_key",
+
+		"deployment_scope_label_value",
+
+		"image_name",
+
+		"expiration",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1290,31 +1421,52 @@ func (s *storeImpl) copyIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, ale
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Whitelists")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_whitelists"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Exclusion) error {
+func (s *storeImpl) copyFromAlertsExclusions(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Exclusion) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,idx,name,deployment_name,deployment_scope_cluster,deployment_scope_namespace,deployment_scope_label_key,deployment_scope_label_value,image_name,expiration", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"idx",
+
+		"name",
+
+		"deployment_name",
+
+		"deployment_scope_cluster",
+
+		"deployment_scope_namespace",
+
+		"deployment_scope_label_key",
+
+		"deployment_scope_label_value",
+
+		"image_name",
+
+		"expiration",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1344,31 +1496,44 @@ func (s *storeImpl) copyIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, ale
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Exclusions")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_exclusions"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsScope(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Scope) error {
+func (s *storeImpl) copyFromAlertsScope(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Scope) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,idx,cluster,namespace,label_key,label_value", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"idx",
+
+		"cluster",
+
+		"namespace",
+
+		"label_key",
+
+		"label_value",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1390,31 +1555,38 @@ func (s *storeImpl) copyIntoAlertsScope(ctx context.Context, tx pgx.Tx, alerts_I
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Scope")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_scope"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.PolicySection) error {
+func (s *storeImpl) copyFromAlertsPolicySections(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.PolicySection) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,idx,sectionname", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"idx",
+
+		"sectionname",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1430,38 +1602,51 @@ func (s *storeImpl) copyIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_PolicySections")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_policysections"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoAlertsPolicySectionsPolicyGroups(ctx, tx, alerts_Id, idx, obj.GetPolicyGroups()...); err != nil {
+		if err = s.copyFromAlertsPolicySectionsPolicyGroups(ctx, tx, alerts_Id, idx, obj.GetPolicyGroups()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_PolicySections_idx int, objs ...*storage.PolicyGroup) error {
+func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_PolicySections_idx int, objs ...*storage.PolicyGroup) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,alerts_policysections_idx,idx,fieldname,booleanoperator,negate", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"alerts_policysections_idx",
+
+		"idx",
+
+		"fieldname",
+
+		"booleanoperator",
+
+		"negate",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1483,38 +1668,49 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroups(ctx context.Context
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_PolicySections_PolicyGroups")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_policysections_policygroups"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoAlertsPolicySectionsPolicyGroupsValues(ctx, tx, alerts_Id, alerts_PolicySections_idx, idx, obj.GetValues()...); err != nil {
+		if err = s.copyFromAlertsPolicySectionsPolicyGroupsValues(ctx, tx, alerts_Id, alerts_PolicySections_idx, idx, obj.GetValues()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_PolicySections_idx int, alerts_PolicySections_PolicyGroups_idx int, objs ...*storage.PolicyValue) error {
+func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_PolicySections_idx int, alerts_PolicySections_PolicyGroups_idx int, objs ...*storage.PolicyValue) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,alerts_policysections_idx,alerts_policysections_policygroups_idx,idx,value", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"alerts_policysections_idx",
+
+		"alerts_policysections_policygroups_idx",
+
+		"idx",
+
+		"value",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1534,31 +1730,40 @@ func (s *storeImpl) copyIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.C
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_PolicySections_PolicyGroups_Values")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_policysections_policygroups_values"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Policy_MitreAttackVectors) error {
+func (s *storeImpl) copyFromAlertsMitreAttackVectors(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Policy_MitreAttackVectors) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,idx,tactic,techniques", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"idx",
+
+		"tactic",
+
+		"techniques",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1576,31 +1781,52 @@ func (s *storeImpl) copyIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_MitreAttackVectors")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_mitreattackvectors"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsContainers(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Alert_Deployment_Container) error {
+func (s *storeImpl) copyFromAlertsContainers(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Alert_Deployment_Container) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,idx,image_id,image_name_registry,image_name_remote,image_name_tag,image_name_fullname,image_notpullable,image_isclusterlocal,name", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"idx",
+
+		"image_id",
+
+		"image_name_registry",
+
+		"image_name_remote",
+
+		"image_name_tag",
+
+		"image_name_fullname",
+
+		"image_notpullable",
+
+		"image_isclusterlocal",
+
+		"name",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1630,31 +1856,64 @@ func (s *storeImpl) copyIntoAlertsContainers(ctx context.Context, tx pgx.Tx, ale
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Containers")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_containers"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsViolations(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Alert_Violation) error {
+func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Alert_Violation) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,idx,message,networkflowinfo_protocol,networkflowinfo_source_name,networkflowinfo_source_entitytype,networkflowinfo_source_deploymentnamespace,networkflowinfo_source_deploymenttype,networkflowinfo_source_port,networkflowinfo_destination_name,networkflowinfo_destination_entitytype,networkflowinfo_destination_deploymentnamespace,networkflowinfo_destination_deploymenttype,networkflowinfo_destination_port,type,time", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"idx",
+
+		"message",
+
+		"networkflowinfo_protocol",
+
+		"networkflowinfo_source_name",
+
+		"networkflowinfo_source_entitytype",
+
+		"networkflowinfo_source_deploymentnamespace",
+
+		"networkflowinfo_source_deploymenttype",
+
+		"networkflowinfo_source_port",
+
+		"networkflowinfo_destination_name",
+
+		"networkflowinfo_destination_entitytype",
+
+		"networkflowinfo_destination_deploymentnamespace",
+
+		"networkflowinfo_destination_deploymenttype",
+
+		"networkflowinfo_destination_port",
+
+		"type",
+
+		"time",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1696,38 +1955,49 @@ func (s *storeImpl) copyIntoAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Violations")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_violations"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoAlertsViolationsAttrs(ctx, tx, alerts_Id, idx, obj.GetKeyValueAttrs().GetAttrs()...); err != nil {
+		if err = s.copyFromAlertsViolationsAttrs(ctx, tx, alerts_Id, idx, obj.GetKeyValueAttrs().GetAttrs()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_Violations_idx int, objs ...*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) error {
+func (s *storeImpl) copyFromAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_Violations_idx int, objs ...*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,alerts_violations_idx,idx,key,value", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"alerts_violations_idx",
+
+		"idx",
+
+		"key",
+
+		"value",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1747,31 +2017,76 @@ func (s *storeImpl) copyIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Violations_Attrs")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_violations_attrs"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.ProcessIndicator) error {
+func (s *storeImpl) copyFromAlertsProcesses(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.ProcessIndicator) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,idx,id,deploymentid,containername,podid,poduid,signal_id,signal_containerid,signal_time,signal_name,signal_args,signal_execfilepath,signal_pid,signal_uid,signal_gid,signal_lineage,signal_scraped,clusterid,namespace,containerstarttime,imageid", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"idx",
+
+		"id",
+
+		"deploymentid",
+
+		"containername",
+
+		"podid",
+
+		"poduid",
+
+		"signal_id",
+
+		"signal_containerid",
+
+		"signal_time",
+
+		"signal_name",
+
+		"signal_args",
+
+		"signal_execfilepath",
+
+		"signal_pid",
+
+		"signal_uid",
+
+		"signal_gid",
+
+		"signal_lineage",
+
+		"signal_scraped",
+
+		"clusterid",
+
+		"namespace",
+
+		"containerstarttime",
+
+		"imageid",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1825,38 +2140,49 @@ func (s *storeImpl) copyIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Processes")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_processes"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoAlertsProcessesLineageInfo(ctx, tx, alerts_Id, idx, obj.GetSignal().GetLineageInfo()...); err != nil {
+		if err = s.copyFromAlertsProcessesLineageInfo(ctx, tx, alerts_Id, idx, obj.GetSignal().GetLineageInfo()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_Processes_idx int, objs ...*storage.ProcessSignal_LineageInfo) error {
+func (s *storeImpl) copyFromAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_Processes_idx int, objs ...*storage.ProcessSignal_LineageInfo) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("alerts_id,alerts_processes_idx,idx,parentuid,parentexecfilepath", ",")
+	copyCols := []string{
+
+		"alerts_id",
+
+		"alerts_processes_idx",
+
+		"idx",
+
+		"parentuid",
+
+		"parentexecfilepath",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -1876,18 +2202,18 @@ func (s *storeImpl) copyIntoAlertsProcessesLineageInfo(ctx context.Context, tx p
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("alerts_Processes_LineageInfo")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"alerts_processes_lineageinfo"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -1908,7 +2234,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Alert) error 
 		return err
 	}
 
-	if err := s.copyIntoAlerts(ctx, tx, objs...); err != nil {
+	if err := s.copyFromAlerts(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

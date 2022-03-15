@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -208,7 +207,7 @@ func insertIntoSinglekeyNested(ctx context.Context, tx pgx.Tx, obj *storage.Test
 	return nil
 }
 
-func (s *storeImpl) copyIntoSinglekey(ctx context.Context, tx pgx.Tx, objs ...*storage.TestSingleKeyStruct) error {
+func (s *storeImpl) copyFromSinglekey(ctx context.Context, tx pgx.Tx, objs ...*storage.TestSingleKeyStruct) error {
 
 	inputRows := [][]interface{}{}
 
@@ -218,11 +217,44 @@ func (s *storeImpl) copyIntoSinglekey(ctx context.Context, tx pgx.Tx, objs ...*s
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("key,name,stringslice,bool,uint64,int64,float,labels,timestamp,enum,enums,embedded_embedded,oneofstring,oneofnested_nested,oneofnested_nested2_nested2,serialized", ",")
+	copyCols := []string{
+
+		"key",
+
+		"name",
+
+		"stringslice",
+
+		"bool",
+
+		"uint64",
+
+		"int64",
+
+		"float",
+
+		"labels",
+
+		"timestamp",
+
+		"enum",
+
+		"enums",
+
+		"embedded_embedded",
+
+		"oneofstring",
+
+		"oneofnested_nested",
+
+		"oneofnested_nested2_nested2",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -272,45 +304,54 @@ func (s *storeImpl) copyIntoSinglekey(ctx context.Context, tx pgx.Tx, objs ...*s
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("singlekey")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"singlekey"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoSinglekeyNested(ctx, tx, obj.GetKey(), obj.GetNested()...); err != nil {
+		if err = s.copyFromSinglekeyNested(ctx, tx, obj.GetKey(), obj.GetNested()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSinglekeyNested(ctx context.Context, tx pgx.Tx, singlekey_Key string, objs ...*storage.TestSingleKeyStruct_Nested) error {
+func (s *storeImpl) copyFromSinglekeyNested(ctx context.Context, tx pgx.Tx, singlekey_Key string, objs ...*storage.TestSingleKeyStruct_Nested) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("singlekey_key,idx,nested,nested2_nested2", ",")
+	copyCols := []string{
+
+		"singlekey_key",
+
+		"idx",
+
+		"nested",
+
+		"nested2_nested2",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -328,18 +369,18 @@ func (s *storeImpl) copyIntoSinglekeyNested(ctx context.Context, tx pgx.Tx, sing
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("singlekey_Nested")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"singlekey_nested"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -360,7 +401,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestSingleKey
 		return err
 	}
 
-	if err := s.copyIntoSinglekey(ctx, tx, objs...); err != nil {
+	if err := s.copyFromSinglekey(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

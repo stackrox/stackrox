@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -208,17 +207,50 @@ func insertIntoMultikeyNested(ctx context.Context, tx pgx.Tx, obj *storage.TestM
 	return nil
 }
 
-func (s *storeImpl) copyIntoMultikey(ctx context.Context, tx pgx.Tx, objs ...*storage.TestMultiKeyStruct) error {
+func (s *storeImpl) copyFromMultikey(ctx context.Context, tx pgx.Tx, objs ...*storage.TestMultiKeyStruct) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("key1,key2,stringslice,bool,uint64,int64,float,labels,timestamp,enum,enums,string_,embedded_embedded,oneofstring,oneofnested_nested,serialized", ",")
+	copyCols := []string{
+
+		"key1",
+
+		"key2",
+
+		"stringslice",
+
+		"bool",
+
+		"uint64",
+
+		"int64",
+
+		"float",
+
+		"labels",
+
+		"timestamp",
+
+		"enum",
+
+		"enums",
+
+		"string_",
+
+		"embedded_embedded",
+
+		"oneofstring",
+
+		"oneofnested_nested",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -270,38 +302,57 @@ func (s *storeImpl) copyIntoMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("multikey")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"multikey"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoMultikeyNested(ctx, tx, obj.GetKey1(), obj.GetKey2(), obj.GetNested()...); err != nil {
+		if err = s.copyFromMultikeyNested(ctx, tx, obj.GetKey1(), obj.GetKey2(), obj.GetNested()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoMultikeyNested(ctx context.Context, tx pgx.Tx, multikey_Key1 string, multikey_Key2 string, objs ...*storage.TestMultiKeyStruct_Nested) error {
+func (s *storeImpl) copyFromMultikeyNested(ctx context.Context, tx pgx.Tx, multikey_Key1 string, multikey_Key2 string, objs ...*storage.TestMultiKeyStruct_Nested) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("multikey_key1,multikey_key2,idx,nested,isnested,int64,nested2_nested2,nested2_isnested,nested2_int64", ",")
+	copyCols := []string{
+
+		"multikey_key1",
+
+		"multikey_key2",
+
+		"idx",
+
+		"nested",
+
+		"isnested",
+
+		"int64",
+
+		"nested2_nested2",
+
+		"nested2_isnested",
+
+		"nested2_int64",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -329,18 +380,18 @@ func (s *storeImpl) copyIntoMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("multikey_Nested")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"multikey_nested"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -361,7 +412,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestMultiKeyS
 		return err
 	}
 
-	if err := s.copyIntoMultikey(ctx, tx, objs...); err != nil {
+	if err := s.copyFromMultikey(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -189,7 +188,7 @@ func insertIntoClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, obj 
 	return nil
 }
 
-func (s *storeImpl) copyIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, objs ...*storage.InitBundleMeta) error {
+func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, objs ...*storage.InitBundleMeta) error {
 
 	inputRows := [][]interface{}{}
 
@@ -199,11 +198,28 @@ func (s *storeImpl) copyIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,name,createdat,createdby_id,createdby_authproviderid,isrevoked,expiresat,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"createdat",
+
+		"createdby_id",
+
+		"createdby_authproviderid",
+
+		"isrevoked",
+
+		"expiresat",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -237,45 +253,54 @@ func (s *storeImpl) copyIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("clusterinitbundles")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoClusterinitbundlesAttributes(ctx, tx, obj.GetId(), obj.GetCreatedBy().GetAttributes()...); err != nil {
+		if err = s.copyFromClusterinitbundlesAttributes(ctx, tx, obj.GetId(), obj.GetCreatedBy().GetAttributes()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, clusterinitbundles_Id string, objs ...*storage.UserAttribute) error {
+func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, clusterinitbundles_Id string, objs ...*storage.UserAttribute) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("clusterinitbundles_id,idx,key,value", ",")
+	copyCols := []string{
+
+		"clusterinitbundles_id",
+
+		"idx",
+
+		"key",
+
+		"value",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -293,18 +318,18 @@ func (s *storeImpl) copyIntoClusterinitbundlesAttributes(ctx context.Context, tx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("clusterinitbundles_Attributes")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles_attributes"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -325,7 +350,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.InitBundleMet
 		return err
 	}
 
-	if err := s.copyIntoClusterinitbundles(ctx, tx, objs...); err != nil {
+	if err := s.copyFromClusterinitbundles(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

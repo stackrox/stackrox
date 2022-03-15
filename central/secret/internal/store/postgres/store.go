@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -423,7 +422,7 @@ func insertIntoSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, ob
 	return nil
 }
 
-func (s *storeImpl) copyIntoSecrets(ctx context.Context, tx pgx.Tx, objs ...*storage.Secret) error {
+func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*storage.Secret) error {
 
 	inputRows := [][]interface{}{}
 
@@ -433,11 +432,34 @@ func (s *storeImpl) copyIntoSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,name,clusterid,clustername,namespace,type,labels,annotations,createdat,relationship_id,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"clusterid",
+
+		"clustername",
+
+		"namespace",
+
+		"type",
+
+		"labels",
+
+		"annotations",
+
+		"createdat",
+
+		"relationship_id",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -477,51 +499,104 @@ func (s *storeImpl) copyIntoSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoSecretsFiles(ctx, tx, obj.GetId(), obj.GetFiles()...); err != nil {
+		if err = s.copyFromSecretsFiles(ctx, tx, obj.GetId(), obj.GetFiles()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoSecretsContainerRelationships(ctx, tx, obj.GetId(), obj.GetRelationship().GetContainerRelationships()...); err != nil {
+		if err = s.copyFromSecretsContainerRelationships(ctx, tx, obj.GetId(), obj.GetRelationship().GetContainerRelationships()...); err != nil {
 			return err
 		}
-		if err := s.copyIntoSecretsDeploymentRelationships(ctx, tx, obj.GetId(), obj.GetRelationship().GetDeploymentRelationships()...); err != nil {
+		if err = s.copyFromSecretsDeploymentRelationships(ctx, tx, obj.GetId(), obj.GetRelationship().GetDeploymentRelationships()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSecretsFiles(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDataFile) error {
+func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDataFile) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("secrets_id,idx,name,type,cert_subject_commonname,cert_subject_country,cert_subject_organization,cert_subject_organizationunit,cert_subject_locality,cert_subject_province,cert_subject_streetaddress,cert_subject_postalcode,cert_subject_names,cert_issuer_commonname,cert_issuer_country,cert_issuer_organization,cert_issuer_organizationunit,cert_issuer_locality,cert_issuer_province,cert_issuer_streetaddress,cert_issuer_postalcode,cert_issuer_names,cert_sans,cert_startdate,cert_enddate,cert_algorithm", ",")
+	copyCols := []string{
+
+		"secrets_id",
+
+		"idx",
+
+		"name",
+
+		"type",
+
+		"cert_subject_commonname",
+
+		"cert_subject_country",
+
+		"cert_subject_organization",
+
+		"cert_subject_organizationunit",
+
+		"cert_subject_locality",
+
+		"cert_subject_province",
+
+		"cert_subject_streetaddress",
+
+		"cert_subject_postalcode",
+
+		"cert_subject_names",
+
+		"cert_issuer_commonname",
+
+		"cert_issuer_country",
+
+		"cert_issuer_organization",
+
+		"cert_issuer_organizationunit",
+
+		"cert_issuer_locality",
+
+		"cert_issuer_province",
+
+		"cert_issuer_streetaddress",
+
+		"cert_issuer_postalcode",
+
+		"cert_issuer_names",
+
+		"cert_sans",
+
+		"cert_startdate",
+
+		"cert_enddate",
+
+		"cert_algorithm",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -583,38 +658,49 @@ func (s *storeImpl) copyIntoSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets_Files")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_files"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for idx, obj := range objs {
 
-		if err := s.copyIntoSecretsFilesRegistries(ctx, tx, secrets_Id, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
+		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secrets_Id, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, secrets_Id string, secrets_Files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
+func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, secrets_Id string, secrets_Files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("secrets_id,secrets_files_idx,idx,name,username", ",")
+	copyCols := []string{
+
+		"secrets_id",
+
+		"secrets_files_idx",
+
+		"idx",
+
+		"name",
+
+		"username",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -634,31 +720,40 @@ func (s *storeImpl) copyIntoSecretsFilesRegistries(ctx context.Context, tx pgx.T
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets_Files_Registries")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_files_registries"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretContainerRelationship) error {
+func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretContainerRelationship) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("secrets_id,idx,id,path", ",")
+	copyCols := []string{
+
+		"secrets_id",
+
+		"idx",
+
+		"id",
+
+		"path",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -676,31 +771,40 @@ func (s *storeImpl) copyIntoSecretsContainerRelationships(ctx context.Context, t
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets_ContainerRelationships")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_containerrelationships"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDeploymentRelationship) error {
+func (s *storeImpl) copyFromSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDeploymentRelationship) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("secrets_id,idx,id,name", ",")
+	copyCols := []string{
+
+		"secrets_id",
+
+		"idx",
+
+		"id",
+
+		"name",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -718,18 +822,18 @@ func (s *storeImpl) copyIntoSecretsDeploymentRelationships(ctx context.Context, 
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("secrets_DeploymentRelationships")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_deploymentrelationships"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -750,7 +854,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Secret) error
 		return err
 	}
 
-	if err := s.copyIntoSecrets(ctx, tx, objs...); err != nil {
+	if err := s.copyFromSecrets(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

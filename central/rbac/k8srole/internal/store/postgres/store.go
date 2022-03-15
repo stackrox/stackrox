@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -199,7 +198,7 @@ func insertIntoK8srolesRules(ctx context.Context, tx pgx.Tx, obj *storage.Policy
 	return nil
 }
 
-func (s *storeImpl) copyIntoK8sroles(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRole) error {
+func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRole) error {
 
 	inputRows := [][]interface{}{}
 
@@ -209,11 +208,32 @@ func (s *storeImpl) copyIntoK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 	// which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
-	copyCols := strings.Split("id,name,namespace,clusterid,clustername,clusterrole,labels,annotations,createdat,serialized", ",")
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"namespace",
+
+		"clusterid",
+
+		"clustername",
+
+		"clusterrole",
+
+		"labels",
+
+		"annotations",
+
+		"createdat",
+
+		"serialized",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
@@ -251,45 +271,60 @@ func (s *storeImpl) copyIntoK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			err = s.DeleteMany(ctx, deletes)
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
 			if err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("k8sroles")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8sroles"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
 	for _, obj := range objs {
 
-		if err := s.copyIntoK8srolesRules(ctx, tx, obj.GetId(), obj.GetRules()...); err != nil {
+		if err = s.copyFromK8srolesRules(ctx, tx, obj.GetId(), obj.GetRules()...); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *storeImpl) copyIntoK8srolesRules(ctx context.Context, tx pgx.Tx, k8sroles_Id string, objs ...*storage.PolicyRule) error {
+func (s *storeImpl) copyFromK8srolesRules(ctx context.Context, tx pgx.Tx, k8sroles_Id string, objs ...*storage.PolicyRule) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("k8sroles_id,idx,verbs,apigroups,resources,nonresourceurls,resourcenames", ",")
+	copyCols := []string{
+
+		"k8sroles_id",
+
+		"idx",
+
+		"verbs",
+
+		"apigroups",
+
+		"resources",
+
+		"nonresourceurls",
+
+		"resourcenames",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -313,18 +348,18 @@ func (s *storeImpl) copyIntoK8srolesRules(ctx context.Context, tx pgx.Tx, k8srol
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("k8sroles_Rules")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8sroles_rules"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -345,7 +380,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRole) erro
 		return err
 	}
 
-	if err := s.copyIntoK8sroles(ctx, tx, objs...); err != nil {
+	if err := s.copyFromK8sroles(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
