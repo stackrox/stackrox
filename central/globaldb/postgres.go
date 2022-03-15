@@ -13,8 +13,8 @@ import (
 
 const (
 	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
-	sslRootCert = "/run/secrets/stackrox.io/certs/ca.pem"
-	dbSource = "host=central-db.stackrox port=5432 database=postgres user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
+	sslRootCert    = "/run/secrets/stackrox.io/certs/ca.pem"
+	dbSource       = "host=central-db.stackrox port=5432 database=postgres user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
 )
 
 var (
@@ -52,7 +52,7 @@ func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
 		password, err := os.ReadFile(dbPasswordFile)
 		if err != nil {
-			log.Fatalf( "pgsql: could not load password file %q: %v", dbPasswordFile, err)
+			log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
 			return
 		}
 		source := fmt.Sprintf("%s password=%s sslrootcert=%s", dbSource, password, sslRootCert)
