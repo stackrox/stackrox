@@ -491,9 +491,6 @@ parameters:
     type: string
     # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
     default: '^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
-  enable_build:
-    type: boolean
-    default: false
   tag:
     type: string
     default: ""
@@ -4851,8 +4848,7 @@ jobs:
 workflows:
   version: 2
 
-  build_all:
-    when: << pipeline.parameters.enable_build >>
+  initial:
     jobs:
       - slack-notify:
           filters:
