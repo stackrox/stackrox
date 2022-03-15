@@ -27,6 +27,29 @@ spec:
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
     spec:
+      initContainers:
+      - name: init-db
+        image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Initialize DB if it does not exist
+          if [ ! -s "$PGDATA/PG_VERSION" ]; then
+            docker-entrypoint.sh initdb --pwfile /run/secrets/stackrox.io/secrets/password
+          fi
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+
       containers:
       - name: central-db
         {{- /* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
@@ -53,8 +76,6 @@ spec:
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: disk
-        - name: central-db-password
-          mountPath: /run/secrets/stackrox.io/secrets
         - name: central-db-tls-volume
           mountPath: /run/secrets/stackrox.io/certs
       serviceAccountName: central
