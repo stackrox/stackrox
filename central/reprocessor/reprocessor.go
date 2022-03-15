@@ -290,7 +290,9 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	log.Infof("Successfully reprocessed %d/%d %ss", nReprocessed.Load(), len(ids), entityType)
 }
 
-func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption) (*storage.Image, bool) {
+func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
+	individualReprocessFunc func(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
+		img *storage.Image) (imageEnricher.EnrichmentResult, error)) (*storage.Image, bool) {
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorf("error fetching image %q from the database: %v", id, err)
@@ -300,7 +302,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 		return nil, false
 	}
 
-	result, err := l.imageEnricher.EnrichImage(imageEnricher.EnrichmentContext{
+	result, err := individualReprocessFunc(context.TODO(), imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
 
@@ -340,7 +342,8 @@ func (l *loopImpl) waitForIndexing() {
 	}
 }
 
-func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption) {
+func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption, individualReprocessFunc func(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
+	img *storage.Image) (imageEnricher.EnrichmentResult, error)) {
 	if l.stopSig.IsDone() {
 		return
 	}
@@ -496,6 +499,13 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessingComplete.Signal()
 }
 
+func (l *loopImpl) runSignatureVerificationReprocessing() {
+	_, _ = l.imageEnricher.EnrichWithSignatureVerificationData(context.Background(), nil)
+
+	l.reprocessWatchedImages()
+
+}
+
 func (l *loopImpl) enrichLoop() {
 	defer l.enrichAndDetectTicker.Stop()
 	defer l.enrichmentStopped.Signal()
@@ -512,7 +522,7 @@ func (l *loopImpl) enrichLoop() {
 			l.runReprocessing(imageEnricher.UseCachesIfPossible)
 		case <-l.signatureVerificationSig.Done():
 			l.signatureVerificationSig.Reset()
-			l.runReprocessing(imageEnricher.ForceRefetchSignatureVerificationDataOnly)
+			l.runReprocessing(imageEnricher.ForceRefetchSignaturesOnly)
 		case <-l.enrichAndDetectTicker.C:
 			l.runReprocessing(imageEnricher.ForceRefetchScansOnly)
 		}
