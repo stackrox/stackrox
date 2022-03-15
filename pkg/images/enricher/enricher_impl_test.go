@@ -908,13 +908,24 @@ func TestEnrichWithSignatureVerificationData_Success(t *testing.T) {
 			sigIntegrationGetter: emptySignatureIntegrationGetter,
 			ctx:                  EnrichmentContext{FetchOpt: ForceRefetch},
 		},
+		"empty signature integration with pre-existing verification results": {
+			img: &storage.Image{Id: "id", SignatureVerificationData: &storage.ImageSignatureVerificationData{
+				Results: []*storage.ImageSignatureVerificationResult{
+					createSignatureVerificationResult("verifier1",
+						storage.ImageSignatureVerificationResult_VERIFIED),
+				}}},
+			sigIntegrationGetter: emptySignatureIntegrationGetter,
+			ctx:                  EnrichmentContext{FetchOpt: UseCachesIfPossible},
+			updated:              true,
+		},
 		"cached values should be respected": {
 			img: &storage.Image{Id: "id", SignatureVerificationData: &storage.ImageSignatureVerificationData{
 				Results: []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier1",
 						storage.ImageSignatureVerificationResult_VERIFIED),
 				}}},
-			ctx: EnrichmentContext{FetchOpt: UseCachesIfPossible},
+			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
+			ctx:                  EnrichmentContext{FetchOpt: UseCachesIfPossible},
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
 				createSignatureVerificationResult("verifier1",
 					storage.ImageSignatureVerificationResult_VERIFIED),

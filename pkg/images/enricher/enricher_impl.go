@@ -473,13 +473,6 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		return false, nil
 	}
 
-	// We can neglect updated signatures here, since refetching is tied to the same FetchOption for both signature and
-	// verification results. If we decide to introduce a new fetch option for signature verification only, we need to
-	// account for updated signatures to not have stale verification results after the enrichment process.
-	if img.GetSignatureVerificationData() != nil {
-		return false, nil
-	}
-
 	// Fetch signature integrations from the data store.
 	sigIntegrations, err := e.signatureIntegrationGetter(sac.WithAllAccess(ctx))
 	if err != nil {
@@ -496,6 +489,13 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		}
 		// If no integrations are available and no pre-existing results, short-circuit and don't signal updated
 		// verification results.
+		return false, nil
+	}
+
+	// We can neglect updated signatures here, since refetching is tied to the same FetchOption for both signature and
+	// verification results. If we decide to introduce a new fetch option for signature verification only, we need to
+	// account for updated signatures to not have stale verification results after the enrichment process.
+	if img.GetSignatureVerificationData() != nil {
 		return false, nil
 	}
 
