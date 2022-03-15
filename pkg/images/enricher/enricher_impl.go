@@ -600,7 +600,7 @@ func (e *enricherImpl) fetchAndAppendSignatures(ctx context.Context, img *storag
 
 func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	if image.GetName().GetRegistry() == "" {
-		return errox.NotFound.CausedBy(fmt.Sprintf("no registry is indicated for image %q",
+		return errox.InvalidArgs.CausedBy(fmt.Sprintf("no registry is indicated for image %q",
 			image.GetName().GetFullName()))
 	}
 	return nil
@@ -654,7 +654,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	sema := scanner.MaxConcurrentScanSemaphore()
 	err := sema.Acquire(ctx, 1)
 	if err != nil {
-		return ScanNotDone, nil
+		return ScanNotDone, err
 	}
 	defer sema.Release(1)
 
