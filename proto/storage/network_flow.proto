@@ -11,7 +11,7 @@ package storage;
 message NetworkFlow {
     NetworkFlowProperties props                     = 1;
 
-    google.protobuf.Timestamp last_seen_timestamp   = 2;
+    google.protobuf.Timestamp last_seen_timestamp   = 2 [(gogoproto.moretags) = 'sql:"index=brin"'];;
 }
 
 message NetworkFlowProperties {
