@@ -29,7 +29,8 @@ type EndpointConfig struct {
 
 	ServeGRPC, ServeHTTP bool
 
-	NoHTTP2 bool
+	NoHTTP2                 bool
+	DenyMisdirectedRequests bool
 }
 
 // Kind returns a human-readable description of this endpoint.
@@ -132,7 +133,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		}
 	}
 
-	if c.NoHTTP2 {
+	if c.NoHTTP2 && tlsConf != nil {
 		tlsConf = tlsConf.Clone()
 		tlsConf.NextProtos = sliceutils.StringDifference(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
 	}
@@ -178,11 +179,12 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			} else {
 				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
 			}
-			// When using HTTP/2, connection coalescing in conjunction with wildcard or multi-SAN certificates may
-			// cause this server to receive requests not intended for it. Since we know of no legitimate use case
-			// for connection coalescing targeting us, deny such requests outright with a 421 (Misdirected Request)
-			// status code.
-			httpSrv.Handler = denyMisdirectedRequest(httpSrv.Handler)
+			if c.DenyMisdirectedRequests {
+				// When using HTTP/2, connection coalescing in conjunction with wildcard or multi-SAN certificates may
+				// cause this server to receive requests not intended for it. If DenyMisdirectedRequests is set to true,
+				// deny such requests outright with a 421 (Misdirected Request) status code.
+				httpSrv.Handler = denyMisdirectedRequest(httpSrv.Handler)
+			}
 		}
 		result = append(result, serverAndListener{
 			srv:      httpSrv,
