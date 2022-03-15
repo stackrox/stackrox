@@ -9,17 +9,12 @@ import {
     PageSection,
     Spinner,
     Bullseye,
-    Button,
-    ButtonVariant,
 } from '@patternfly/react-core';
 
 import { fetchAlert } from 'services/AlertsService';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
-import { violationsBasePath } from 'routePaths';
-import { AngleLeftIcon } from '@patternfly/react-icons';
-import LinkShim from 'Components/PatternFly/LinkShim';
 import PolicyDetailContent from '../../Policies/PatternFly/Detail/PolicyDetailContent';
 import DeploymentDetails from './DeploymentDetails';
 import PolicyDetails from './PolicyDetails';
@@ -75,22 +70,9 @@ function ViolationDetailsPage(): ReactElement {
     return (
         <>
             <ViolationsBreadcrumbs current={title} />
-            <PageSection variant="light" className="pf-u-pb-0">
-                <Button
-                    variant={ButtonVariant.link}
-                    isInline
-                    icon={<AngleLeftIcon />}
-                    component={LinkShim}
-                    href={violationsBasePath}
-                >
-                    Back to violations
-                </Button>
-                <Title headingLevel="h1" className="pf-u-mt-md">
-                    {title}
-                </Title>
-                <Title headingLevel="h2" className="pf-u-mb-md">{`in "${
-                    entityName as string
-                }" ${resourceType}`}</Title>
+            <PageSection variant="light">
+                <Title headingLevel="h1">{title}</Title>
+                <Title headingLevel="h2">{`in "${entityName as string}" ${resourceType}`}</Title>
             </PageSection>
             <PageSection
                 variant="default"
@@ -101,7 +83,7 @@ function ViolationDetailsPage(): ReactElement {
                     mountOnEnter
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    className="pf-u-background-color-100 pf-u-pl-lg pf-u-pt-md"
+                    className="pf-u-background-color-100 pf-u-pl-lg"
                 >
                     <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
                         <PageSection variant="default">
