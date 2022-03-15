@@ -30,11 +30,11 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.ClusterHealthStatus, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ClusterHealthStatus, []int, error)
-	UpsertWithID(ctx context.Context, id string, obj *storage.ClusterHealthStatus) error
-	UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.ClusterHealthStatus) error
+	Upsert(ctx context.Context, obj *storage.ClusterHealthStatus) error
+	UpsertMany(ctx context.Context, objs []*storage.ClusterHealthStatus) error
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-	WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.ClusterHealthStatus) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ClusterHealthStatus) error) error
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
@@ -47,11 +47,19 @@ func alloc() proto.Message {
 	return &storage.ClusterHealthStatus{}
 }
 
+func keyFunc(msg proto.Message) []byte {
+	return []byte(msg.(*storage.ClusterHealthStatus).GetId())
+}
+
+func uniqKeyFunc(msg proto.Message) []byte {
+	return []byte(msg.(*storage.ClusterHealthStatus).GetId())
+}
+
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "ClusterHealthStatus")
-	baseCRUD := generic.NewCRUD(db, bucket, nil, alloc, false)
-	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, nil)
+	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
+	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -106,15 +114,16 @@ func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Cluster
 	}
 	return objs, missingIndices, nil
 }
-// UpsertWithID inserts the object into the DB
-func (b *storeImpl) UpsertWithID(_ context.Context, id string, obj *storage.ClusterHealthStatus) error {
+
+// Upsert inserts the object into the DB
+func (b *storeImpl) Upsert(_ context.Context, obj *storage.ClusterHealthStatus) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "ClusterHealthStatus")
 
-	return b.crud.UpsertWithID(id, obj)
+	return b.crud.Upsert(obj)
 }
 
-// UpsertManyWithIDs batches objects into the DB
-func (b *storeImpl) UpsertManyWithIDs(_ context.Context, ids []string, objs []*storage.ClusterHealthStatus) error {
+// UpsertMany batches objects into the DB
+func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.ClusterHealthStatus) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "ClusterHealthStatus")
 
 	msgs := make([]proto.Message, 0, len(objs))
@@ -122,7 +131,7 @@ func (b *storeImpl) UpsertManyWithIDs(_ context.Context, ids []string, objs []*s
 		msgs = append(msgs, o)
     }
 
-	return b.crud.UpsertManyWithIDs(ids, msgs)
+	return b.crud.UpsertMany(msgs)
 }
 
 // Delete removes the specified ID from the store
@@ -138,10 +147,11 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 
 	return b.crud.DeleteMany(ids)
 }
-// WalkAllWithID iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) WalkAllWithID(_ context.Context, fn func(id string, obj *storage.ClusterHealthStatus) error) error {
-	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
-		return fn(string(id), msg.(*storage.ClusterHealthStatus))
+
+// Walk iterates over all of the objects in the store and applies the closure
+func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.ClusterHealthStatus) error) error {
+	return b.crud.Walk(func(msg proto.Message) error {
+		return fn(msg.(*storage.ClusterHealthStatus))
 	})
 }
 
