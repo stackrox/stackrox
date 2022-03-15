@@ -3555,6 +3555,9 @@ jobs:
           name: Setup for proxy tests
           command: |
             source tests/e2e/run.sh
+            # Make sure kubectl port-forward doesn't hit the FD limit, see
+            # https://github.com/kubernetes/kubernetes/issues/74551#issuecomment-910520361
+            ulimit -n 65535
             setup_proxy_tests
             cci-export PROXY_CERTS_DIR "$PROXY_CERTS_DIR"
 
