@@ -41,15 +41,15 @@ class OpenShift extends Kubernetes {
         }
 
         try {
-            SecurityContextConstraints qatest = oClient.securityContextConstraints().withName("qatest").get()
-            if (qatest != null &&
-                    (!qatest.users.contains("system:serviceaccount:" + ns + ":default") ||
-                            !qatest.allowHostNetwork ||
-                            !qatest.allowHostDirVolumePlugin ||
-                            !qatest.allowHostPorts
+            SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName("qatest-anyuid").get()
+            if (anyuid != null &&
+                    (!anyuid.users.contains("system:serviceaccount:" + ns + ":default") ||
+                            !anyuid.allowHostNetwork ||
+                            !anyuid.allowHostDirVolumePlugin ||
+                            !anyuid.allowHostPorts
                     )) {
-                println "Adding system:serviceaccount:" + ns + ":default to qatest user list"
-                qatest.with {
+                println "Adding system:serviceaccount:" + ns + ":default to anyuid user list"
+                anyuid.with {
                     users.addAll(["system:serviceaccount:" + ns + ":default"])
                     setAllowHostNetwork(true)
                     setAllowHostDirVolumePlugin(true)
@@ -59,7 +59,7 @@ class OpenShift extends Kubernetes {
                     setAllowedCapabilities(["*"])
                     setAllowedUnsafeSysctls(["*"])
                 }
-                oClient.securityContextConstraints().createOrReplace(qatest)
+                oClient.securityContextConstraints().createOrReplace(anyuid)
             }
         } catch (Exception e) {
             println e.toString()
