@@ -89,7 +89,7 @@ func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
 	return nil
 }
 
-func (a *globalScopeChecker) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+func (a *globalScopeChecker) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	return nil, errors.New("global scope checker has no effective access scope")
 }
 
@@ -183,7 +183,7 @@ func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 	return sac.Deny
 }
 
-func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	eas := effectiveaccessscope.DenyAllEffectiveAccessScope()
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())

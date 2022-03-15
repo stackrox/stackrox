@@ -51,6 +51,6 @@ func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerC
 	return denyAllScopeCheckerCore
 }
 
-func (c allowFixedScopesCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+func (c allowFixedScopesCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	return nil, errors.New("fixed scope checker has no effective access scope")
 }

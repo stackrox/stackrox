@@ -37,18 +37,18 @@ func (m *MockScopeCheckerCore) EXPECT() *MockScopeCheckerCoreMockRecorder {
 }
 
 // EffectiveAccessScope mocks base method.
-func (m *MockScopeCheckerCore) EffectiveAccessScope(ctx context.Context) (*effectiveaccessscope.ScopeTree, error) {
+func (m *MockScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EffectiveAccessScope", ctx)
+	ret := m.ctrl.Call(m, "EffectiveAccessScope")
 	ret0, _ := ret[0].(*effectiveaccessscope.ScopeTree)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EffectiveAccessScope indicates an expected call of EffectiveAccessScope.
-func (mr *MockScopeCheckerCoreMockRecorder) EffectiveAccessScope(ctx interface{}) *gomock.Call {
+func (mr *MockScopeCheckerCoreMockRecorder) EffectiveAccessScope() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EffectiveAccessScope", reflect.TypeOf((*MockScopeCheckerCore)(nil).EffectiveAccessScope), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EffectiveAccessScope", reflect.TypeOf((*MockScopeCheckerCore)(nil).EffectiveAccessScope))
 }
 
 // PerformChecks mocks base method.

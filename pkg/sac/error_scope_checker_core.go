@@ -31,6 +31,6 @@ func ErrorAccessScopeCheckerCore(err error) ScopeCheckerCore {
 	}
 }
 
-func (s errScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+func (s errScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	return effectiveaccessscope.DenyAllEffectiveAccessScope(), s.err
 }

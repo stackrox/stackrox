@@ -42,7 +42,7 @@ type ScopeCheckerCore interface {
 	PerformChecks(ctx context.Context) error
 	// EffectiveAccessScope returns effective access scope for given principal stored in context.
 	// If checker is not at resource level then it returns an error.
-	EffectiveAccessScope(ctx context.Context) (*effectiveaccessscope.ScopeTree, error)
+	EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error)
 }
 
 // NewRootScopeCheckerCore returns a ScopeCheckerCore with a root AccessScope

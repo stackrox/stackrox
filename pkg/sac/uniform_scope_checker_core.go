@@ -38,7 +38,7 @@ func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
 	return nil
 }
 
-func (s uniformScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+func (s uniformScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	if s {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}

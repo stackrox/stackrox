@@ -91,7 +91,7 @@ func (scc *ScopeCheckerCoreImpl) PerformChecks(ctx context.Context) error {
 
 // EffectiveAccessScope returns EffectiveAccessScope of namespace or cluster sub scope.
 // It returns error if not namespaces or cluster sub scope is defined.
-func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(ctx context.Context) (*effectiveaccessscope.ScopeTree, error) {
+func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	var nsOrClusterSubScope ScopeCheckerCore
 	concurrency.WithRLock(&scc.childrenLock, func() {
 		for key, subScope := range scc.children {
@@ -107,7 +107,7 @@ func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(ctx context.Context) (*eff
 	if nsOrClusterSubScope == nil {
 		return nil, errox.NewErrInvalidArgs("no namespace or cluster sub scope defined")
 	}
-	return nsOrClusterSubScope.EffectiveAccessScope(ctx)
+	return nsOrClusterSubScope.EffectiveAccessScope()
 }
 
 // SetState sets the Allow/Deny/Unknown state of this ScopeCheckerCore, it should only be called by RootScopeCheckerCore

@@ -36,6 +36,6 @@ func (c OneStepSCC) PerformChecks(ctx context.Context) error {
 }
 
 // EffectiveAccessScope fix me.
-func (c OneStepSCC) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
+func (c OneStepSCC) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	panic("Implement me!")
 }
