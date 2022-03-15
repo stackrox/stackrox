@@ -3463,6 +3463,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
+      - setup_remote_docker
       - restore-go-mod-cache
       - *setupRoxctl
       - run:
