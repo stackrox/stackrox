@@ -50,7 +50,7 @@ message CVE {
         repeated string tags = 2;
     }
 
-    string                    id                    = 1 [(gogoproto.moretags) = 'search:\"CVE,store\" sql:"pk"'];
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE,store" sql:"pk"'];
     float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score\""];
 
@@ -59,7 +59,7 @@ message CVE {
     // TODO: Move type to relationship objects.
 
     CVEType                   type                  = 3 [(gogoproto.moretags) = 'sql:"-"'];
-    repeated CVEType          types                 = 18 [(gogoproto.moretags) = 'search:\"CVE Type\" sql:"-"'];
+    repeated CVEType          types                 = 18 [(gogoproto.moretags) = 'search:"CVE Type" sql:"-"'];
 
     string                    summary               = 4;
     string                    link                  = 5;

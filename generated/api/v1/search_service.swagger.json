@@ -45,12 +45,12 @@
               "enum": [
                 "SEARCH_UNSET",
                 "ALERTS",
-                "DEPLOYMENTS",
                 "IMAGES",
                 "IMAGE_COMPONENTS",
                 "IMAGE_VULN_EDGE",
                 "IMAGE_COMPONENT_EDGE",
                 "POLICIES",
+                "DEPLOYMENTS",
                 "ACTIVE_COMPONENT",
                 "PODS",
                 "SECRETS",
@@ -123,12 +123,12 @@
               "enum": [
                 "SEARCH_UNSET",
                 "ALERTS",
-                "DEPLOYMENTS",
                 "IMAGES",
                 "IMAGE_COMPONENTS",
                 "IMAGE_VULN_EDGE",
                 "IMAGE_COMPONENT_EDGE",
                 "POLICIES",
+                "DEPLOYMENTS",
                 "ACTIVE_COMPONENT",
                 "PODS",
                 "SECRETS",
@@ -195,12 +195,12 @@
               "enum": [
                 "SEARCH_UNSET",
                 "ALERTS",
-                "DEPLOYMENTS",
                 "IMAGES",
                 "IMAGE_COMPONENTS",
                 "IMAGE_VULN_EDGE",
                 "IMAGE_COMPONENT_EDGE",
                 "POLICIES",
+                "DEPLOYMENTS",
                 "ACTIVE_COMPONENT",
                 "PODS",
                 "SECRETS",
@@ -316,12 +316,12 @@
       "enum": [
         "SEARCH_UNSET",
         "ALERTS",
-        "DEPLOYMENTS",
         "IMAGES",
         "IMAGE_COMPONENTS",
         "IMAGE_VULN_EDGE",
         "IMAGE_COMPONENT_EDGE",
         "POLICIES",
+        "DEPLOYMENTS",
         "ACTIVE_COMPONENT",
         "PODS",
         "SECRETS",
@@ -352,7 +352,7 @@
         "VULN_REQUEST"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 32"
+      "title": "Next available tag: 37"
     },
     "v1SearchOptionsResponse": {
       "type": "object",
