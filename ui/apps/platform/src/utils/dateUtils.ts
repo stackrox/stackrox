@@ -20,12 +20,12 @@ export function getDate(timestamp) {
     return format(timestamp, dateFormat);
 }
 
-export function getLatestDatedItemByKey(key, list = []) {
+export function getLatestDatedItemByKey<T>(key: string | null, list: T[] = []): T | null {
     if (!key || !list.length || !list[0][key]) {
         return null;
     }
 
-    return list.reduce((acc, item) => {
+    return list.reduce((acc: T | null, item) => {
         const nextDate = item[key] && Date.parse(item[key]);
 
         if (!acc || nextDate > Date.parse(acc[key])) {
