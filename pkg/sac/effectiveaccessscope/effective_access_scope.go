@@ -236,6 +236,7 @@ func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAcc
 }
 
 // Merge adds scope tree to the current root so result tree includes nodes that are included at least in one of them.
+// As we don't know in which form we get tree to merge with result will be in MINIMAL form
 func (root *ScopeTree) Merge(tree *ScopeTree) {
 	if tree.State == Included || root.State == Included {
 		root.State = Included
@@ -243,11 +244,15 @@ func (root *ScopeTree) Merge(tree *ScopeTree) {
 	}
 	for key, cluster := range tree.Clusters {
 		rootCluster := root.Clusters[key]
+		if rootCluster == nil {
+			root.Clusters[key] = cluster
+			continue
+		}
 		if rootCluster.State == Included || cluster.State == Excluded {
 			continue
 		}
 		if cluster.State == Included {
-			rootCluster = cluster
+			root.Clusters[key] = cluster
 			continue
 		}
 		// partial
@@ -256,11 +261,14 @@ func (root *ScopeTree) Merge(tree *ScopeTree) {
 				continue
 			}
 			if namespace.State == Included {
+				if rootCluster.Namespaces == nil {
+					rootCluster.Namespaces = map[string]*namespacesScopeSubTree{}
+				}
 				rootCluster.Namespaces[nsName] = namespace
 			}
 		}
-		rootCluster.State = Partial
 	}
+	root.bubbleUpStatesAndCompactify(v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 }
 
 // populateStateForNamespace adds given namespace as Included or Excluded to
