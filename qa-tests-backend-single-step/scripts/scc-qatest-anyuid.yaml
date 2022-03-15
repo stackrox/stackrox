@@ -1,4 +1,10 @@
-# oc get scc anyuid -o yaml | kfilter
+# OSD (openshift dedicated) clusters disallow updates to the 'anyuid' scc.
+#
+# This 'qatest-anyuid' resource is a copy of 'anyuid' as gathered via:
+# `oc get scc anyuid -o yaml | kfilter`
+#
+# The 'qatest-anyuid' is augmented in test setup in:
+# //stackrox/qa-tests-backend/src/main/groovy/orchestratormanager/OpenShift.groovy
 
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1

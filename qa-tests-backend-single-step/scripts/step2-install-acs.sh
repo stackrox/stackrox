@@ -15,7 +15,6 @@ function docker_login {
 
 function stackrox_teardown {
   assert_file_exists "$STACKROX_TEARDOWN_SCRIPT"
-  cd "$WORKFLOW_SOURCE_ROOT"
   "$STACKROX_TEARDOWN_SCRIPT" <<<"yes"
 
   # Remove existing stackrox resources
@@ -30,15 +29,13 @@ function stackrox_teardown {
   helm uninstall central || true
   helm uninstall scanner || true
   helm uninstall sensor || true
-  kubectl create namespace qa
   if kubectl get namespace -o name | grep -qE '^namespace/qa'; then
-     kubectl delete --wait 'namespace/qa'
+     kubectl delete --wait namespace qa
   fi
 }
 
 function stackrox_deploy_via_helm {
   # https://help-internal.stackrox.com/docs/get-started/quick-start/
-  cd "$STACKROX_SOURCE_ROOT"
   helm plugin update diff >/dev/null  # https://github.com/databus23/helm-diff
 
   if cluster_is_openshift; then
@@ -50,6 +47,9 @@ function stackrox_deploy_via_helm {
 
 
 # __MAIN__
+SCRIPT_DIR=$(dirname $0)
+cd "$STACKROX_SOURCE_ROOT"  # all paths should be relative to here
+
 kubectl config current-context \
   | grep "default/api-sb-03-14-osdgcp-lxkx-s2-devshift-org:6443/admin"
 export LOAD_BALANCER="lb"
@@ -57,5 +57,10 @@ export MONITORING_SUPPORT=true
 
 docker_login
 stackrox_teardown
+kubectl delete --wait namespace qa &>/dev/null || true
+kubectl create namespace qa
 stackrox_deploy_via_helm
 port-forward-central
+
+kubectl delete -f "$SCRIPT_DIR/scc-qatest-anyuid.yaml" || true
+kubectl apply -f "$SCRIPT_DIR/scc-qatest-anyuid.yaml"
