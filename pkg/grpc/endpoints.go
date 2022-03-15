@@ -184,10 +184,11 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			} else {
 				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
 			}
-			if c.DenyMisdirectedRequests {
-				// When using HTTP/2, connection coalescing in conjunction with wildcard or multi-SAN certificates may
-				// cause this server to receive requests not intended for it. If DenyMisdirectedRequests is set to true,
-				// deny such requests outright with a 421 (Misdirected Request) status code.
+			if c.DenyMisdirectedRequests && tlsConf != nil {
+				// When using HTTP/2 over TLS, connection coalescing in conjunction with wildcard or multi-SAN
+				// certificates may cause this server to receive requests not intended for it. If
+				// DenyMisdirectedRequests is set to true, deny such requests outright with a 421 (Misdirected Request)
+				// status code.
 				httpSrv.Handler = denyMisdirectedRequest(httpSrv.Handler)
 			}
 		}
