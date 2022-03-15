@@ -7,14 +7,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
 	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
-	sslRootCert    = "/run/secrets/stackrox.io/certs/ca.pem"
-	dbSource       = "host=central-db.stackrox port=5432 database=postgres user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
 )
 
 var (
@@ -50,12 +49,13 @@ func RegisterTable(table string, objType string) {
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
+		centralConfig := config.GetConfig()
 		password, err := os.ReadFile(dbPasswordFile)
 		if err != nil {
 			log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
 			return
 		}
-		source := fmt.Sprintf("%s password=%s sslrootcert=%s", dbSource, password, sslRootCert)
+		source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
 
 		config, err := pgxpool.ParseConfig(source)
 		if err != nil {

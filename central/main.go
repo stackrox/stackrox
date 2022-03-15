@@ -218,10 +218,10 @@ func runSafeMode() {
 func main() {
 	premain.StartMain()
 
-	conf, err := config.ReadConfig()
-	if err != nil || conf.Maintenance.SafeMode {
-		if err != nil {
-			log.Errorf("error reading config file: %v. Starting up in safe mode", err)
+	conf := config.GetConfig()
+	if conf == nil || conf.Maintenance.SafeMode {
+		if conf == nil {
+			log.Error("cannot get central configuration. Starting up in safe mode")
 		}
 		runSafeMode()
 		return
@@ -247,7 +247,7 @@ func main() {
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	licenseMgr := licenseSingletons.ManagerSingleton()
-	_, err = licenseMgr.Initialize()
+	_, err := licenseMgr.Initialize()
 	if err != nil {
 		log.Warnf("Could not initialize license manager: %v", err)
 	}

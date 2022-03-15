@@ -15,7 +15,7 @@ data:
     {{- if ._rox.central.enableCentralDB }}
     centralDB:
       source: >
-        central-db.central-db.{{ .Release.Namespace }}
+        host=central-db.{{ .Release.Namespace }}.svc
         port=5432
         database=postgres
         user=postgres
