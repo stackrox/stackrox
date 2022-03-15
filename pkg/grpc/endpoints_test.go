@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -49,6 +51,13 @@ func (c *baseCase) Run(t *testing.T, endpoint net.Addr, serverBaseCfg EndpointCo
 
 	if expect421 {
 		assert.Equal(t, http.StatusMisdirectedRequest, resp.StatusCode, "expected a 421 status code")
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err, "failed to read HTTP response body")
+		bodyStr := string(body)
+		urlHostWithoutPort, _, _, err := netutil.ParseEndpoint(c.URLHost)
+		require.NoError(t, err, "failed to parse URL host", c.URLHost)
+		assert.Contains(t, bodyStr, urlHostWithoutPort, "error response should contain hostname from the request")
+		assert.Contains(t, bodyStr, c.ServerName, "error response should contain ServerName")
 	} else {
 		assert.Equal(t, http.StatusOK, resp.StatusCode, "expected a 200 status code")
 	}
